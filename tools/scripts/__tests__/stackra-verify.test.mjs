@@ -75,6 +75,8 @@ import {
   imagesToRemove,
   installArgs,
   installCommand,
+  LICENSED_BUILDS,
+  INSTALL_COMMAND,
   licensedScript,
   lockedVersions,
   needleScanner,
@@ -210,6 +212,14 @@ import {
   migrationLintCiReplace,
   lockfileResolutionProblems,
   judgeBuildRoots,
+  prepareScript,
+  installCommands,
+  nodeModulesPlan,
+  PNPM_DOT_ENTRIES,
+  VIEW_REFUSED_EXIT,
+  viewOf,
+  OVERLAY_FIELDS,
+  MIGRATION_PENDING_PER_MEMBER,
   judgeDockerfile,
   judgeTag,
   stepArgs,
@@ -221,7 +231,6 @@ import {
   NOT_PACKAGE_COMMANDS,
   isGateToolPackage,
   SHARED_STEP_LOADERS,
-  GATE_TOOL_PACKAGES,
   JUDGE_ROOTS,
 } from "../pr-merge.mjs";
 
@@ -475,7 +484,7 @@ test("verify: the tested tree is unpacked again over /work and committed (the ga
   const check = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR });
   assert.match(
     check.at(-1),
-    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; tar -tf \/in\/src\.tar .*; exit 3; fi; rm -rf \.git; git init -q; git fetch -q --no-tags \/in\/history\.bundle .*; git update-ref HEAD "\$commit"; git reset -q; bash \/in\/gate\.sh$/,
+    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; planted\(\) \{[\s\S]*; exit 3; fi; rm -rf \.git; git init -q; git fetch -q --no-tags \/in\/history\.bundle .*; git update-ref HEAD "\$commit"; git reset -q; bash \/in\/gate\.sh$/,
   );
   const mobile = verifyArgs(S, {
     name: "v",
@@ -487,7 +496,7 @@ test("verify: the tested tree is unpacked again over /work and committed (the ga
   });
   assert.match(
     mobile.at(-1),
-    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; tar -tf \/in\/src\.tar .*; exit 3; fi; rm -rf \.git; git init -q; git add -A; .* commit -qm tested --no-verify; bash \/in\/mobile\.sh$/,
+    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; planted\(\) \{[\s\S]*; exit 3; fi; rm -rf \.git; git init -q; git add -A; .* commit -qm tested --no-verify; bash \/in\/mobile\.sh$/,
   );
 });
 
@@ -904,10 +913,10 @@ test("postCheckRun: the body goes on stdin to POST check-runs with the App token
  * exit is `exits[<id>]` and otherwise `exits.verify` (every step container).
  */
 const roleOf = (name) => {
-  const m = /-(install|verify|base|view|shared|step-([a-z0-9-]+))$/.exec(name);
+  const m = /-(install|rebuild|verify|base|view|shared|pr|step-([a-z0-9-]+))$/.exec(name);
   return m[2] ?? m[1];
 };
-const OWN = new Set(["base", "view", "shared"]);
+const OWN = new Set(["rebuild", "base", "view", "shared", "pr"]);
 
 /** runJob with fakes. `exits` maps container role to its exit code (null: never started); `hang` never returns. */
 function fakeDeps({
@@ -999,20 +1008,24 @@ test("runJob: exit 0 of the verify container is the only pass; install on the ru
   assert.equal(r.post, true);
   assert.equal(r.conclusion, "success");
   assert.match(calls.network, /^sv-net-/);
-  assert.equal(calls.runs[0][calls.runs[0].indexOf("--network") + 1], calls.network);
-  for (const run of calls.runs.slice(1)) assert.equal(run[run.indexOf("--network") + 1], "none");
+  // the install and its rebuild on the run's network; everything after on none
+  for (const run of calls.runs.slice(0, 2))
+    assert.equal(run[run.indexOf("--network") + 1], calls.network);
+  for (const run of calls.runs.slice(2)) assert.equal(run[run.indexOf("--network") + 1], "none");
   assert.equal(calls.cleanUp.length, 1);
-  // install, verify, proxy; then base, view, shared and one per step
-  assert.equal(calls.cleanUp[0].names.length, 6 + GATE_STEPS.length);
+  // install, verify, proxy; then rebuild, base, view, shared, pr and one per step
+  assert.equal(calls.cleanUp[0].names.length, 8 + GATE_STEPS.length);
   const run = calls.cleanUp[0].images[0];
   assert.match(run, /^stackra-verify-run:0123456789ab-[a-z0-9]+$/);
   assert.deepEqual(
     calls.cleanUp[0].images.map((i) => i.replace(run, "stackra-verify-run:<id>")),
     [
       "stackra-verify-run:<id>",
+      "stackra-verify-run:<id>-installed",
       "stackra-verify-run:<id>-base",
       "stackra-verify-run:<id>-view",
       "stackra-verify-run:<id>-shared",
+      "stackra-verify-run:<id>-pr",
       "stackra-verify-run:<id>-built",
     ],
   );
@@ -1773,7 +1786,7 @@ test("token scan: finds the token across chunk boundaries; nothing found stays n
 test("runJob: a licensed build missing from the run image is the service's error, never the PR's pass, fail or neutral", async () => {
   const r = await runJob(
     JOB,
-    fakeDeps({ exits: { install: NEEDS_STORE_REBUILD_EXIT, verify: 0 } }).deps,
+    fakeDeps({ exits: { install: 0, rebuild: NEEDS_STORE_REBUILD_EXIT, verify: 0 } }).deps,
   );
   assert.equal(r.post, false);
   assert.match(r.error, /licensed build is missing/);
@@ -4065,6 +4078,9 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
     ["/runs/x/bin", "/in/bin"],
     ["/runs/x/main-paths", "/in/main-paths"],
     ["/runs/x/judge-view.sh", "/in/judge-view.sh"],
+    ["/runs/x/prepare.sh", "/in/prepare.sh"],
+    ["/runs/x/importers", "/in/importers"],
+    ["/runs/x/node-modules.tsv", "/in/node-modules.tsv"],
   ]);
   assert.deepEqual(kindMounts("mobile", { runDir: "/runs/x" }), [
     ["/runs/x/mobile.sh", "/in/mobile.sh"],
@@ -4074,19 +4090,33 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
     ["/runs/x/bin", "/in/bin"],
     ["/runs/x/main-paths", "/in/main-paths"],
     ["/runs/x/judge-view.sh", "/in/judge-view.sh"],
+    ["/runs/x/prepare.sh", "/in/prepare.sh"],
+    ["/runs/x/importers", "/in/importers"],
+    ["/runs/x/node-modules.tsv", "/in/node-modules.tsv"],
   ]);
   assert.throws(() => kindMounts("nope", { runDir: "/r" }), /not a verify kind/);
   const argv = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR, mounts });
   const volumes = argv.filter((_, i) => argv[i - 1] === "--volume");
-  assert.equal(volumes.length, 13);
+  assert.equal(volumes.length, 16);
   for (const v of volumes) assert.match(v, /:ro$/, v);
   assert.equal(argv[argv.indexOf("--network") + 1], "none");
   const judgeFiles = ["judge-guard.mjs", "bin/node", "bin/turbo", "judge-view.sh"];
-  assert.deepEqual(Object.keys(kindFiles("gate")), ["gate.sh", "licence-check.mjs", ...judgeFiles]);
+  assert.deepEqual(Object.keys(kindFiles("gate")), [
+    "gate.sh",
+    "licence-check.mjs",
+    "prepare.sh",
+    ...judgeFiles,
+  ]);
+  assert.equal(kindFiles("gate")["prepare.sh"], prepareScript("gate"));
+  assert.match(
+    prepareScript("gate"),
+    /^#!\/usr\/bin\/env bash\n[^\n]*\nset -o pipefail\nset -e; tar -xf/,
+  );
   assert.equal(kindFiles("gate")["gate.sh"], gateScript());
   assert.deepEqual(Object.keys(kindFiles("mobile")), [
     "mobile.sh",
     "licence-check.mjs",
+    "prepare.sh",
     ...judgeFiles,
   ]);
   assert.equal(kindFiles("mobile")["licence-check.mjs"], licenceCheckSource());
@@ -4096,13 +4126,12 @@ test("runJob gate: installs without the Uniwind Pro members and never lays in a 
   const { deps, calls } = fakeDeps({ builds: ["esbuild", "uniwind-pro"], facts: async () => true });
   const r = await runJob({ ...JOB, kind: "gate" }, deps);
   assert.equal(r.conclusion, "success");
+  // the scripts-off install, then (from its committed image) main's allowed builds (round 7, M2)
   const install = calls.runs[0].at(-1);
-  assert.match(
-    install,
-    /--filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile esbuild$/,
-  );
-  assert.doesNotMatch(install, /uniwind-pro|prebuilt/);
-  assert.match(calls.runs[1].at(-1), /git update-ref HEAD "\$commit"; git reset -q$/);
+  assert.match(install, /--filter='!@figentra\/mobile' --filter='!@figentra\/playground'$/);
+  assert.equal(calls.runs[1].at(-1), "set -e; cd /work; pnpm rebuild --ignore-pnpmfile esbuild");
+  for (const run of calls.runs.slice(0, 2)) assert.doesNotMatch(run.at(-1), /uniwind-pro|prebuilt/);
+  assert.equal(calls.runs[2].at(-1), "bash /in/prepare.sh");
   const steps = calls.runs.filter((run) => / --step /.test(run.at(-1)));
   assert.deepEqual(
     steps.map((run) => run.at(-1)),
@@ -4115,14 +4144,14 @@ test("runJob mobile: the full install with the licensed build; a licence failure
   const { deps, calls } = fakeDeps({ builds: ["esbuild", "uniwind-pro"] });
   const r = await runJob({ ...JOB, kind: "mobile" }, deps);
   assert.equal(r.conclusion, "success");
-  assert.doesNotMatch(calls.runs[0].at(-1), /--filter=/);
+  assert.doesNotMatch(calls.runs[0].at(-1), /--filter=|rebuild/);
   assert.match(
-    calls.runs[0].at(-1),
-    /pnpm rebuild --ignore-pnpmfile esbuild && for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
+    calls.runs[1].at(-1),
+    /^set -e; cd \/work; pnpm rebuild --ignore-pnpmfile esbuild && for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
   );
-  assert.match(calls.runs[1].at(-1), /commit -qm tested --no-verify$/);
+  assert.equal(calls.runs[2].at(-1), "bash /in/prepare.sh");
   assert.deepEqual(
-    calls.runs.slice(2).map((run) => run.at(-1)),
+    calls.runs.slice(3).map((run) => run.at(-1)),
     ["bash /in/mobile.sh --step licence-policy", "bash /in/mobile.sh --step mobile-apps"],
   );
   const licence = Object.assign(new Error("could not build the licensed image"), { licence: true });
@@ -6429,83 +6458,101 @@ test("B: every gate step is a judge or a PR step, as ruled; judges never start f
   );
 });
 
-test("B runJob: prepare, the judge view and the shared view, then one container per step in ci.yml's order", async () => {
+test("B runJob: install, its rebuild, prepare, the views, then one container per step in ci.yml's order", async () => {
   const { deps, calls } = fakeDeps({ facts: async () => true });
   const r = await runJob({ ...JOB, kind: "gate" }, deps);
   assert.equal(r.conclusion, "success");
-  const [install, base, view, shared, ...steps] = calls.runs;
-  assert.match(install[install.indexOf("--name") + 1], /-install$/);
+  const [install, rebuild, base, view, shared, pr, ...steps] = calls.runs;
+  assert.match(nameOf(install), /-install$/);
   const id = nameOf(base).slice("sv-".length, -"-base".length);
-  assert.equal(imageOf(base), `stackra-verify-run:${id}`);
-  assert.match(base.at(-1), /git update-ref HEAD "\$commit"/);
-  assert.equal(imageOf(view), `stackra-verify-run:${id}-base`);
-  assert.equal(view.at(-1), "bash /in/judge-view.sh");
-  assert.ok(
-    view.includes(`type=image,source=stackra-verify-judge:abc,target=/judge,image-subpath=judge`),
-  );
-  assert.equal(imageOf(shared), `stackra-verify-run:${id}-view`);
+  const run = `stackra-verify-run:${id}`;
+  // the rebuild starts from the committed scripts-off install (round 7, M2)
+  assert.equal(imageOf(rebuild), `${run}-installed`);
+  assert.equal(imageOf(base), run);
+  assert.equal(base.at(-1), "bash /in/prepare.sh");
+  // main's view: the store image (no install ever ran in it), prepared, main's node_modules (round 7, R6-H1 c)
+  assert.equal(imageOf(view), "stackra-verify-store:abc");
+  assert.equal(view.at(-1), "bash /in/prepare.sh && bash /in/judge-view.sh main");
+  const judgeMount = "type=image,source=stackra-verify-judge:abc,target=/judge,image-subpath=judge";
+  assert.ok(view.includes(judgeMount));
+  assert.equal(imageOf(shared), `${run}-view`);
   assert.equal(shared.at(-1), "bash /in/gate.sh --swap");
-  // committed in that order (the install first); the build's container is kept as the built image
+  // knip's view: the checked PR install, with main's copies, bins and config modules
+  assert.equal(imageOf(pr), `${run}-base`);
+  assert.equal(pr.at(-1), "bash /in/judge-view.sh pr && bash /in/gate.sh --swap");
+  assert.ok(pr.includes(judgeMount));
   assert.deepEqual(
     calls.docker
       .filter((a) => a[0] === "commit")
-      .map((a) => a[2].replace(`stackra-verify-run:${id}`, "<run>")),
-    ["<run>", "<run>-base", "<run>-view", "<run>-shared", "<run>-built"],
+      .map((a) => [a[1].replace(`sv-${id}-`, ""), a[2].replace(run, "<run>")]),
+    [
+      ["install", "<run>-installed"],
+      ["rebuild", "<run>"],
+      ["base", "<run>-base"],
+      ["view", "<run>-view"],
+      ["shared", "<run>-shared"],
+      ["pr", "<run>-pr"],
+      ["step-build", "<run>-built"],
+    ],
   );
   assert.deepEqual(
-    steps.map((run) => run.at(-1).replace("bash /in/gate.sh --step ", "")),
+    steps.map((step) => step.at(-1).replace("bash /in/gate.sh --step ", "")),
     GATE_STEPS.map((s) => s.id),
   );
+  const expectedView = { installed: "installed", view: "view", shared: "shared", pr: "pr" };
   for (const [i, step] of GATE_STEPS.entries()) {
-    const run = steps[i];
-    const env = run[run.indexOf("--env-file") + 1];
-    const judgeMount = run.some((a) =>
-      a.startsWith("type=image,source=stackra-verify-judge:abc,target=/judge"),
-    );
-    const work = run.find((a) => a.startsWith("type=volume,"));
+    const argv = steps[i];
+    const env = argv[argv.indexOf("--env-file") + 1];
+    const mounted = argv.includes(judgeMount);
+    const work = argv.find((a) => a.startsWith("type=volume,"));
     if (step.judge) {
-      // fresh from a view, read-only, /work noexec, guarded (the only node), with main's judge image
-      assert.ok(run.includes("--read-only"), step.id);
+      // fresh from its view, read-only, /work noexec, guarded (the only node), with main's judge image
+      assert.ok(argv.includes("--read-only"), step.id);
       assert.equal(env, step.evalAllowed ? "/runs/x/judge-eval.env" : "/runs/x/judge.env", step.id);
       assert.match(
         work,
-        /^type=volume,source=sv-[\w-]+-work-[012],target=\/work,volume-subpath=work$/,
+        /^type=volume,source=sv-[\w-]+-work-[0-3],target=\/work,volume-subpath=work$/,
         step.id,
       );
-      assert.ok(run.includes(`/runs/x/bin/node:${IMAGE_NODE}:ro`), step.id);
-      assert.ok(judgeMount, step.id);
-      assert.equal(
-        imageOf(run),
-        `stackra-verify-run:${id}-${step.view ?? (step.shared ? "shared" : "view")}`,
-        step.id,
-      );
+      assert.ok(argv.includes(`/runs/x/bin/node:${IMAGE_NODE}:ro`), step.id);
+      assert.ok(mounted, step.id);
+      assert.equal(imageOf(argv), `${run}-${expectedView[viewOf(step)]}`, step.id);
     } else {
-      assert.equal(run.includes("--read-only"), false, step.id);
+      assert.equal(argv.includes("--read-only"), false, step.id);
       assert.equal(env, ENV, step.id);
       assert.equal(work, undefined, step.id);
-      assert.equal(run.includes(`/runs/x/bin/node:${IMAGE_NODE}:ro`), false, step.id);
-      assert.equal(judgeMount, step.id === "manifests-match-gen", step.id);
-      assert.equal(imageOf(run), `stackra-verify-run:${id}-${step.from}`, step.id);
+      assert.equal(argv.includes(`/runs/x/bin/node:${IMAGE_NODE}:ro`), false, step.id);
+      assert.equal(mounted, step.id === "manifests-match-gen", step.id);
+      assert.equal(imageOf(argv), `${run}-${step.from}`, step.id);
     }
-    assert.equal(run[run.indexOf("--network") + 1], "none", step.id);
+    assert.equal(argv[argv.indexOf("--network") + 1], "none", step.id);
   }
-  // migration-lint reads the read-only tree of the view: no mount of anything a PR step wrote (5b)
-  const lint = steps[GATE_STEPS.findIndex((s) => s.id === "migration-lint")];
-  assert.equal(imageOf(lint), `stackra-verify-run:${id}-view`);
-  assert.equal(
-    lint.some((a) => a.includes(".tar:/in/") && !a.startsWith(`${TAR}:`)),
-    false,
-  );
-  // one noexec /work volume per view, made from that view's image; licence-policy's is the prepared tree (H2)
-  assert.deepEqual(calls.volumes, [
-    [`stackra-verify-run:${id}-base`, `sv-${id}-work-0`],
-    [`stackra-verify-run:${id}-view`, `sv-${id}-work-1`],
-    [`stackra-verify-run:${id}-shared`, `sv-${id}-work-2`],
-  ]);
+  // which judge sees which node_modules: licence-policy the install before any build script, knip the checked PR
+  // install, every other judge main's (round 7)
   assert.deepEqual(
-    GATE_STEPS.filter((step) => step.view).map((step) => [step.id, step.view]),
-    [["licence-policy", "base"]],
+    GATE_STEPS.filter((step) => step.judge).map((step) => [step.id, viewOf(step)]),
+    [
+      ["licence-policy", "installed"],
+      ["dependency-scan", "view"],
+      ["workflow-lint", "view"],
+      ["linear-key-check", "view"],
+      ["format-check", "shared"],
+      ["lint", "view"],
+      ["migration-lint", "view"],
+      ["validate", "view"],
+      ["env-names", "view"],
+      ["boundaries", "view"],
+      ["knip", "pr"],
+      ["secrets-scan", "view"],
+    ],
   );
+  // one noexec /work volume per view image, in the order first used
+  assert.deepEqual(calls.volumes, [
+    [`${run}-installed`, `sv-${id}-work-0`],
+    [`${run}-view`, `sv-${id}-work-1`],
+    [`${run}-shared`, `sv-${id}-work-2`],
+    [`${run}-pr`, `sv-${id}-work-3`],
+  ]);
 });
 
 test("B runJob: a failing step fails the run and every later step still runs; a step that never started is an error", async () => {
@@ -6553,7 +6600,7 @@ test("B runJob: a failing step fails the run and every later step still runs; a 
     flat.calls.runs.some((run) => / --step /.test(run.at(-1))),
     false,
   );
-  assert.match(licence.at(-4), /-base$/);
+  assert.match(licence.at(-4), /-installed$/);
 });
 
 test("B judge image: main's tree, installed offline as the gate installs, the judges built, main's gen; tag from main's tree", () => {
@@ -6747,66 +6794,6 @@ test("header: the step audit covers every gate step, names the one eval exceptio
 /** Any bash will do for the view and prepare scripts (no bash 4 feature); the gate script needs BASH (4 or later). */
 const ANY_BASH = BASH ?? "/bin/bash";
 
-test("round 6 H2: prepare refuses every file outside node_modules the tested tree does not have, naming each", () => {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-planted-")));
-  const tree = join(dir, "tree");
-  const work = join(dir, "work");
-  putFiles(tree, {
-    "knip.jsonc": "{}\n",
-    "packages/a/src/x.ts": "export {};\n",
-    "packages/a/.oxlintrc.json": "{}\n",
-  });
-  const tar = join(dir, "src.tar");
-  // as git archive writes it: paths without a ./ prefix
-  assert.equal(spawnSync("tar", ["-cf", tar, "-C", tree, "knip.jsonc", "packages"], {}).status, 0);
-  const run = () => {
-    rmSync(work, { recursive: true, force: true });
-    mkdirSync(work, { recursive: true });
-    return (files) => {
-      putFiles(work, files);
-      assert.equal(spawnSync("tar", ["-xf", tar, "-C", work]).status, 0);
-      return spawnSync("sh", ["-c", `cd "${work}"; ${plantedCheck(dir)}; echo clean`], {
-        encoding: "utf8",
-      });
-    };
-  };
-  try {
-    // what install writes under node_modules (any depth) and the install's .git are not the tree's business here
-    const clean = run()({
-      "node_modules/.modules.yaml": "x\n",
-      "packages/a/node_modules/.bin/tsc": "x\n",
-      ".git/HEAD": "ref\n",
-    });
-    assert.equal(clean.status, 0, clean.stderr);
-    assert.match(clean.stdout, /^clean$/m);
-    // anything else install left behind is refused: a knip.json that beats main's knip.jsonc, a nested ignore file,
-    // a squawk config, generated files the view would not overwrite
-    const planted = run()({
-      "knip.json": '{"ignore":["**"]}\n',
-      "packages/a/.gitignore": "*\n",
-      ".squawk.toml": "x\n",
-      "packages/a/.stackra/vitest.config.mts": "process.exit(0)\n",
-    });
-    assert.equal(planted.status, PLANTED_EXIT, planted.stdout);
-    assert.deepEqual(
-      planted.stdout
-        .trim()
-        .split("\n")
-        .map((line) => line.replace(PLANTED_LINE, ""))
-        .toSorted(),
-      [
-        ".squawk.toml",
-        "knip.json",
-        "packages/a/.gitignore",
-        "packages/a/.stackra/vitest.config.mts",
-      ],
-    );
-    assert.doesNotMatch(planted.stdout, /clean/);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
 test("round 6 H2: a prepare that finds planted files is the PR's tree failure, naming them; no step runs", async () => {
   const { deps, calls } = fakeDeps({ exits: { install: 0, verify: 0, base: PLANTED_EXIT } });
   deps.readLog = () => `noise\n${PLANTED_LINE}knip.json\n${PLANTED_LINE}.squawk.toml\n`;
@@ -6899,59 +6886,6 @@ const linkAt = (base, from, to) => {
   symlinkSync(to, join(base, from));
 };
 
-test("round 6 H1/H2: the judge view makes every registry package main has main's copy, gate tools included; workspace links stay; bins are main's, turbo guarded", () => {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-view6-")));
-  const root = join(dir, "judge");
-  const tree = join(dir, "work");
-  try {
-    const tools = [...new Set([...GATE_TOOL_PACKAGES, "zod", "@s/only-pr"])];
-    for (const base of [root, tree]) {
-      for (const name of tools) {
-        if (base === root && name === "@s/only-pr") continue;
-        const store = `node_modules/.pnpm/${name.replace("/", "+")}@1/node_modules/${name}`;
-        putFiles(base, {
-          [`${store}/package.json`]: `{"name":"${name}","where":"${base === root ? "main" : "PR"}"}`,
-        });
-        linkAt(base, `node_modules/${name}`, join(base, store));
-      }
-      putFiles(base, {
-        "packages/x/package.json": "{}\n",
-        "node_modules/.bin/knip": "",
-        "node_modules/.bin/turbo": "",
-      });
-      linkAt(base, "node_modules/@stackra/x", join(base, "packages/x"));
-    }
-    const r = spawnSync(ANY_BASH, ["-c", judgeViewScript(root, tree)], { encoding: "utf8" });
-    assert.equal(r.status, 0, r.stderr);
-    for (const name of tools.filter((n) => n !== "@s/only-pr")) {
-      assert.equal(
-        readlinkSync(join(tree, "node_modules", name)),
-        join(root, "node_modules", name),
-        name,
-      );
-      assert.match(
-        readFileSync(join(tree, "node_modules", name, "package.json"), "utf8"),
-        /"where":"main"/,
-        name,
-      );
-    }
-    // a package main does not have stays as installed (data; the guard never runs it); a workspace link stays the tree's
-    assert.match(
-      readFileSync(join(tree, "node_modules/@s/only-pr/package.json"), "utf8"),
-      /"where":"PR"/,
-    );
-    assert.equal(realpathSync(join(tree, "node_modules/@stackra/x")), join(tree, "packages/x"));
-    // bins: each main's, turbo through the guarded turbo
-    assert.equal(
-      readlinkSync(join(tree, "node_modules/.bin/knip")),
-      join(root, "node_modules/.bin/knip"),
-    );
-    assert.equal(readlinkSync(join(tree, "node_modules/.bin/turbo")), "/in/bin/turbo");
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
 test("round 6 H1: the guarded turbo is main's and never infers a local turbo", () => {
   assert.match(
     judgeTurboSource(),
@@ -7033,4 +6967,449 @@ test("round 6 L4: the judge image builds main's computed judge members; a lockfi
     () => judgeBuildRoots("lockfileVersion: '9.0'\n\nimporters:\n\n  .: {}\n"),
     /has no importer packages\/developer\/cli/,
   );
+});
+
+/**
+ * A tested tree and an install on disk, as prepare and the judge views see them (round 7): `tree` files go into
+ * src.tar (no ./ prefix, as git archive writes); `install(work)` lays down what pnpm writes for the lockfile plan:
+ * root deps turbo (registry) and @stackra/a (workspace), packages/a's zod (registry).
+ */
+function installFixture() {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-install-")));
+  const tree = join(dir, "tree");
+  putFiles(tree, {
+    "knip.jsonc": "{}\n",
+    "package.json": "{}\n",
+    "packages/a/package.json": "{}\n",
+    "packages/a/src/x.ts": "export {};\n",
+  });
+  const tar = join(dir, "src.tar");
+  assert.equal(
+    spawnSync("tar", ["-cf", tar, "-C", tree, "knip.jsonc", "package.json", "packages"]).status,
+    0,
+  );
+  writeFileSync(join(dir, "importers"), ".\npackages/a\n");
+  writeFileSync(
+    join(dir, "node-modules.tsv"),
+    nodeModulesPlan({
+      ".": { turbo: "2.11.9", "@stackra/a": "link:packages/a" },
+      "packages/a": { zod: "4.0.0" },
+    })
+      .entries.map((line) => `${line}\n`)
+      .join(""),
+  );
+  const install = (work) => {
+    putFiles(work, {
+      "node_modules/.pnpm/turbo@2.11.9/node_modules/turbo/package.json": '{"where":"PR"}',
+      "node_modules/.pnpm/zod@4.0.0/node_modules/zod/package.json": '{"where":"PR"}',
+      "node_modules/.pnpm/@turbo+darwin-64@2.11.9/node_modules/@turbo/darwin-64/package.json": "{}",
+      "node_modules/.modules.yaml": "x\n",
+      "node_modules/.bin/turbo": "#!/bin/sh\n",
+      "packages/a/node_modules/.bin/tsc": "#!/bin/sh\n",
+    });
+    linkAt(
+      work,
+      "node_modules/turbo",
+      join(work, "node_modules/.pnpm/turbo@2.11.9/node_modules/turbo"),
+    );
+    linkAt(work, "node_modules/@stackra/a", join(work, "packages/a"));
+    linkAt(
+      work,
+      "packages/a/node_modules/zod",
+      join(work, "node_modules/.pnpm/zod@4.0.0/node_modules/zod"),
+    );
+  };
+  /** A fresh work directory: the tree unpacked over `setup(work)`; then prepare's check in it (bash). */
+  const prepare = (setup) => {
+    const work = join(dir, "work");
+    rmSync(work, { recursive: true, force: true });
+    mkdirSync(work, { recursive: true });
+    setup(work);
+    assert.equal(spawnSync("tar", ["-xf", tar, "-C", work]).status, 0);
+    const r = spawnSync(
+      ANY_BASH,
+      ["-c", `set -eo pipefail; cd "${work}"; ${plantedCheck(dir)}; echo clean`],
+      {
+        encoding: "utf8",
+      },
+    );
+    return {
+      ...r,
+      work,
+      planted: r.stdout
+        .split("\n")
+        .filter((l) => l.startsWith(PLANTED_LINE))
+        .map((l) => l.slice(PLANTED_LINE.length)),
+    };
+  };
+  return { dir, tree, install, prepare };
+}
+
+test("round 7 R6-H1: prepare accepts exactly what pnpm writes for the lockfile, and refuses every other node_modules shape", () => {
+  const f = installFixture();
+  try {
+    const clean = f.prepare(f.install);
+    assert.equal(clean.status, 0, clean.stdout + clean.stderr);
+    assert.match(clean.stdout, /^clean$/m);
+    // The reviewer's lab: node_modules swapped for a link to a stash inside a member's node_modules
+    const stash = f.prepare((work) => {
+      putFiles(work, { "packages/a/node_modules/.stash/.bin/knip": "#!/bin/sh\nexit 0\n" });
+      linkAt(work, "node_modules", join(work, "packages/a/node_modules/.stash"));
+    });
+    assert.equal(stash.status, PLANTED_EXIT, stash.stdout);
+    assert.deepEqual(stash.planted.toSorted(), [
+      "node_modules (a node_modules that is not a directory)",
+      "packages/a/node_modules/.stash (not an entry pnpm writes)",
+    ]);
+    for (const [why, setup, expected] of [
+      [
+        "outside a member",
+        (w) => putFiles(w, { "packages/a/src/node_modules/x/index.js": "" }),
+        "packages/a/src/node_modules (a node_modules outside every workspace member)",
+      ],
+      [
+        "a link out of the store",
+        (w) => {
+          rmSync(join(w, "node_modules/turbo"));
+          linkAt(w, "node_modules/turbo", "/usr/bin");
+        },
+        "node_modules/turbo (not a link into node_modules/.pnpm)",
+      ],
+      [
+        "a dependency the lockfile does not name",
+        (w) =>
+          linkAt(w, "node_modules/evil", join(w, "node_modules/.pnpm/zod@4.0.0/node_modules/zod")),
+        "node_modules/evil (not a dependency the lockfile names)",
+      ],
+      [
+        "a real directory",
+        (w) => putFiles(w, { "node_modules/real/index.js": "" }),
+        "node_modules/real (not a link)",
+      ],
+      [
+        "a workspace link to another place",
+        (w) => {
+          rmSync(join(w, "node_modules/@stackra/a"));
+          linkAt(w, "node_modules/@stackra/a", join(w, "packages"));
+        },
+        "node_modules/@stackra/a (not a link to packages/a)",
+      ],
+      [
+        "a dot entry pnpm does not write",
+        (w) => putFiles(w, { "node_modules/.cache/x": "" }),
+        "node_modules/.cache (not an entry pnpm writes)",
+      ],
+      [
+        ".bin that is a link",
+        (w) => {
+          rmSync(join(w, "packages/a/node_modules/.bin"), { recursive: true });
+          linkAt(w, "packages/a/node_modules/.bin", "/usr/bin");
+        },
+        "packages/a/node_modules/.bin (not a directory)",
+      ],
+      [
+        "a scope that is a link",
+        (w) => linkAt(w, "node_modules/@evil", "/usr"),
+        "node_modules/@evil (a scope that is not a directory)",
+      ],
+      [
+        "an untracked file outside node_modules",
+        (w) => putFiles(w, { "knip.json": '{"ignore":["**"]}' }),
+        "knip.json",
+      ],
+    ]) {
+      const r = f.prepare((work) => {
+        f.install(work);
+        setup(work);
+      });
+      assert.equal(r.status, PLANTED_EXIT, `${why}: ${r.stdout}${r.stderr}`);
+      assert.ok(r.planted.includes(expected), `${why}: ${r.planted.join(" | ")}`);
+    }
+    // what pnpm 12 writes besides links, to be confirmed against main's real install on box 1
+    assert.deepEqual(PNPM_DOT_ENTRIES, [
+      ".bin",
+      ".pnpm",
+      ".modules.yaml",
+      ".pnpm-workspace-state-v1.json",
+    ]);
+    // a failing find or tar stops prepare (pipefail, set -e): a missing archive is an error, never "clean"
+    const broken = spawnSync(
+      ANY_BASH,
+      [
+        "-c",
+        `set -eo pipefail; cd "${f.dir}"; ${plantedCheck(join(f.dir, "nowhere"))}; echo clean`,
+      ],
+      { encoding: "utf8" },
+    );
+    assert.notEqual(broken.status, 0);
+    assert.doesNotMatch(broken.stdout, /clean/);
+  } finally {
+    rmSync(f.dir, { recursive: true, force: true });
+  }
+});
+
+test("round 7: the lockfile plan names each member's direct dependencies, registry or the member a link names", () => {
+  assert.deepEqual(
+    nodeModulesPlan({
+      ".": { turbo: "2.11.9(x@1)", "@stackra/a": "link:packages/a" },
+      "packages/b": { "@stackra/a": "link:../a", zod: "4.0.0" },
+    }),
+    {
+      importers: [".", "packages/b"],
+      entries: [
+        ".\t@stackra/a\tpackages/a",
+        ".\tturbo\tregistry",
+        "packages/b\t@stackra/a\tpackages/a",
+        "packages/b\tzod\tregistry",
+      ],
+    },
+  );
+  assert.throws(
+    () => nodeModulesPlan({ "a\tb": {}, ".": { "x\ty": "1" } }),
+    /not a lockfile importer entry/,
+  );
+});
+
+/** The judge image's side of a view test: main's node_modules for the root and packages/a. */
+function mainInstall(root) {
+  putFiles(root, {
+    "node_modules/.pnpm/turbo@2.11.8/node_modules/turbo/package.json": '{"where":"main"}',
+    "node_modules/.bin/turbo": "#!/bin/sh\n",
+    "node_modules/.bin/knip": "#!/bin/sh\n",
+    "packages/a/node_modules/.bin/tsc": "#!/bin/sh\n",
+    "packages/a/.stackra/vitest.config.mts": "main gen a\n",
+    "packages/a/.stackra/migrations/0001.up.sql": "create table main ();\n",
+  });
+  linkAt(
+    root,
+    "node_modules/turbo",
+    join(root, "node_modules/.pnpm/turbo@2.11.8/node_modules/turbo"),
+  );
+}
+
+test("round 7 R6-H1 c: the main view gives every member main's node_modules on a tree no install touched, and refuses one that has its own", () => {
+  const f = installFixture();
+  const root = join(f.dir, "judge");
+  mainInstall(root);
+  try {
+    const work = join(f.dir, "work");
+    mkdirSync(work, { recursive: true });
+    assert.equal(spawnSync("tar", ["-xf", join(f.dir, "src.tar"), "-C", work]).status, 0);
+    const view = () =>
+      spawnSync(
+        ANY_BASH,
+        [
+          "-c",
+          `${judgeViewScript(root, work, f.dir).replace("#!/usr/bin/env bash\n", "")}`,
+          "judge-view",
+          "main",
+        ],
+        {
+          encoding: "utf8",
+        },
+      );
+    const r = view();
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(readlinkSync(join(work, "node_modules")), join(root, "node_modules"));
+    assert.equal(
+      readlinkSync(join(work, "packages/a/node_modules")),
+      join(root, "packages/a/node_modules"),
+    );
+    assert.equal(
+      readFileSync(join(work, "packages/a/.stackra/vitest.config.mts"), "utf8"),
+      "main gen a\n",
+    );
+    assert.equal(existsSync(join(work, "packages/a/.stackra/migrations")), false);
+    // a tree that brings its own node_modules is refused
+    rmSync(join(work, "packages/a/node_modules"));
+    putFiles(work, { "packages/a/node_modules/.bin/knip": "#!/bin/sh\nexit 0\n" });
+    const refused = view();
+    assert.equal(refused.status, VIEW_REFUSED_EXIT, refused.stdout);
+  } finally {
+    rmSync(f.dir, { recursive: true, force: true });
+  }
+});
+
+test("round 7: knip's view keeps the PR's dependencies, makes main's copies main's, drops hoisted extras, and holds main's bins only", () => {
+  const f = installFixture();
+  const root = join(f.dir, "judge");
+  mainInstall(root);
+  try {
+    const work = join(f.dir, "work");
+    mkdirSync(work, { recursive: true });
+    f.install(work);
+    assert.equal(spawnSync("tar", ["-xf", join(f.dir, "src.tar"), "-C", work]).status, 0);
+    // a hoisted platform package main's lockfile does not name for the root (round 7, L2)
+    linkAt(
+      work,
+      "node_modules/@turbo/darwin-64",
+      join(work, "node_modules/.pnpm/@turbo+darwin-64@2.11.9/node_modules/@turbo/darwin-64"),
+    );
+    const view = () =>
+      spawnSync(
+        ANY_BASH,
+        [
+          "-c",
+          judgeViewScript(root, work, f.dir).replace("#!/usr/bin/env bash\n", ""),
+          "judge-view",
+          "pr",
+        ],
+        {
+          encoding: "utf8",
+        },
+      );
+    const r = view();
+    // packages/a's .bin has no turbo, and may be the last node_modules visited (R6-M1: the view still succeeds)
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(readlinkSync(join(work, "node_modules/turbo")), join(root, "node_modules/turbo"));
+    assert.match(
+      readFileSync(join(work, "packages/a/node_modules/zod/package.json"), "utf8"),
+      /"where":"PR"/,
+    );
+    assert.equal(realpathSync(join(work, "node_modules/@stackra/a")), join(work, "packages/a"));
+    assert.equal(existsSync(join(work, "node_modules/@turbo/darwin-64")), false);
+    assert.equal(
+      readlinkSync(join(work, "node_modules/.bin/knip")),
+      join(root, "node_modules/.bin/knip"),
+    );
+    // the guarded turbo (/in/bin/turbo in a judge; this test's input directory here)
+    assert.equal(readlinkSync(join(work, "node_modules/.bin/turbo")), join(f.dir, "bin/turbo"));
+    assert.equal(
+      readlinkSync(join(work, "packages/a/node_modules/.bin/tsc")),
+      join(root, "packages/a/node_modules/.bin/tsc"),
+    );
+    // anything it does not recognise stops the view (a service error, fail closed)
+    for (const plant of [
+      (w) => putFiles(w, { "node_modules/.cache/x": "" }),
+      (w) => putFiles(w, { "node_modules/real/index.js": "" }),
+      (w) => putFiles(w, { "packages/a/src/node_modules/x/y.js": "" }),
+    ]) {
+      plant(work);
+      const refused = view();
+      assert.equal(refused.status, VIEW_REFUSED_EXIT, refused.stdout);
+      rmSync(join(work, "node_modules/.cache"), { recursive: true, force: true });
+      rmSync(join(work, "node_modules/real"), { recursive: true, force: true });
+      rmSync(join(work, "packages/a/src/node_modules"), { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(f.dir, { recursive: true, force: true });
+  }
+});
+
+test("round 7 M2: the install is two parts, scripts off first; licence-policy judges the image between them", () => {
+  const parts = installCommands(["esbuild"], [], GATE_FILTERS);
+  assert.equal(
+    parts.install,
+    "pnpm install --frozen-lockfile --store-dir /store --ignore-scripts --ignore-pnpmfile --filter='!@figentra/mobile' --filter='!@figentra/playground'",
+  );
+  assert.equal(parts.rebuild, "pnpm rebuild --ignore-pnpmfile esbuild");
+  assert.equal(
+    installCommand(["esbuild"], [], GATE_FILTERS),
+    `${parts.install} && ${parts.rebuild}`,
+  );
+  assert.deepEqual(installCommands([], [], []), { install: INSTALL_COMMAND, rebuild: "" });
+  assert.match(
+    installCommands(["uniwind-pro"], LICENSED_BUILDS, []).rebuild,
+    /^for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
+  );
+  assert.deepEqual(
+    GATE_STEPS.filter((step) => viewOf(step) === "installed").map((step) => step.id),
+    ["licence-policy"],
+  );
+});
+
+test("round 7 M2: with no allowed build there is no rebuild container; licence-policy and prepare start from the install", async () => {
+  const { deps, calls } = fakeDeps({ builds: [] });
+  const r = await runJob(JOB, deps);
+  assert.equal(r.conclusion, "success");
+  assert.equal(
+    calls.runs.some((run) => run[run.indexOf("--name") + 1].endsWith("-rebuild")),
+    false,
+  );
+  const [, base] = calls.runs;
+  assert.match(imageOf(base), /-installed$/);
+});
+
+test("round 7 NIT: the install runs main's pnpm: packageManager and devEngines are main's in every package.json", () => {
+  assert.ok(OVERLAY_FIELDS.includes("packageManager") && OVERLAY_FIELDS.includes("devEngines"));
+  const main = JSON.stringify({
+    name: "r",
+    packageManager: "pnpm@12.16.1",
+    devEngines: { packageManager: { name: "pnpm" } },
+  });
+  const pr = JSON.stringify({
+    name: "r",
+    packageManager: "pnpm@99.0.0",
+    devEngines: { runtime: { name: "node" } },
+    dependencies: { a: "1" },
+  });
+  const out = JSON.parse(withMainScripts(pr, main));
+  assert.equal(out.packageManager, "pnpm@12.16.1");
+  assert.deepEqual(out.devEngines, { packageManager: { name: "pnpm" } });
+  assert.deepEqual(out.dependencies, { a: "1" });
+  // a PR that adds one where main has none: it goes
+  assert.equal(
+    "packageManager" in
+      JSON.parse(withMainScripts(JSON.stringify({ packageManager: "pnpm@1.0.0" }), "{}")),
+    false,
+  );
+});
+
+test("round 7: a judge's PATH puts the guarded node and main's tools first, and never names the tree", () => {
+  const path = judgeEnv()
+    .match(/^PATH=(.*)$/m)[1]
+    .split(":");
+  assert.deepEqual(path.slice(0, 2), ["/in/bin", "/judge/node_modules/.bin"]);
+  assert.equal(
+    path.some((dir) => dir.startsWith("/work")),
+    false,
+  );
+});
+
+test("round 7 L3: once SQL is compiled, every member with migration sources must have its own; manifests-match-gen compares the SQL", () => {
+  const step = GATE_STEPS.find((s) => s.id === "manifests-match-gen");
+  assert.match(
+    step.run,
+    /git diff --quiet -- '\*stackra\.manifest\.json' '\*src\/node\/entities\.gen\.ts' '\*\/\.stackra\/migrations\/\*\.up\.sql'/,
+  );
+  assert.ok(migrationLintRun(true).includes(MIGRATION_PENDING_PER_MEMBER));
+  assert.equal(migrationLintRun(false).includes(MIGRATION_PENDING_PER_MEMBER), false);
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-member-")));
+  try {
+    const check = (files) => {
+      rmSync(join(dir, "t"), { recursive: true, force: true });
+      putFiles(join(dir, "t"), files);
+      return spawnSync(
+        ANY_BASH,
+        [
+          "-c",
+          `cd "${join(dir, "t")}"; check() {\n${MIGRATION_PENDING_PER_MEMBER}\n}; check; echo all-compiled`,
+        ],
+        {
+          encoding: "utf8",
+        },
+      );
+    };
+    const one = check({
+      "services/a/package.json": "{}",
+      "services/a/src/node/database/migrations/0001-a.migration.ts": "x",
+      "services/a/.stackra/migrations/0001_a.up.sql": "create table a ();",
+      "services/b/package.json": "{}",
+      "services/b/src/node/database/migrations/0001-b.migration.ts": "x",
+    });
+    assert.equal(one.status, 1, one.stdout);
+    assert.match(
+      one.stdout,
+      /^::error title=STA-2788 pending::migration sources with no compiled SQL in \.\/services\/b $/m,
+    );
+    const all = check({
+      "services/a/package.json": "{}",
+      "services/a/src/node/database/migrations/0001-a.migration.ts": "x",
+      "services/a/.stackra/migrations/0001_a.up.sql": "create table a ();",
+    });
+    assert.equal(all.status, 0, all.stdout + all.stderr);
+    assert.match(all.stdout, /all-compiled/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

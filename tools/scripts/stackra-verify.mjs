@@ -53,51 +53,62 @@
  *     by main's root tree id (judgeTag), recorded and kept like the store image. oxlint, oxfmt, knip, jscpd,
  *     commitlint, turbo and fflow are main's installed versions there; gitleaks, osv-scanner, actionlint, zizmor,
  *     shfmt and squawk are the store image's pinned binaries; the licence check is this service's generated file.
- *   - Containers (runSteps), none with a network: install (the PR's lockfile; main's allowBuilds only; every lockfile
- *     resolution a registry package under its own name, lockfileResolutionProblems); prepare (tar and git: the merge
- *     commit; it refuses, as the PR's failure, any file outside node_modules the tested tree does not have, which the
- *     install wrote, plantedCheck), committed as the base image; the judge view (judge-view.sh: main's generated
- *     files where the tree has the member, never over a tree file and never compiled migrations; every registry
- *     package a node_modules holds is main's copy where main's install has it at the same place, workspace links
- *     stay the tree's; every node_modules/.bin holds main's bins, turbo's through the guarded turbo), committed; the
- *     shared view (main's config modules only, C1), committed; then one container per step, in ci.yml's order.
+ *   - Containers (runSteps), none with a network but the two install ones: install, in two parts (the PR's lockfile,
+ *     every resolution a registry package under its own name, lockfileResolutionProblems; main's pnpm, since
+ *     packageManager and devEngines are main's): the scripts-off `pnpm install`, committed as the installed image,
+ *     then main's allowBuilds (`pnpm rebuild`), committed as the run image; prepare (bash /in/prepare.sh: tar and git,
+ *     the merge commit; it refuses as the PR's tree failure any file outside node_modules the tested tree lacks, and
+ *     any node_modules that is not exactly what pnpm writes for the tested lockfile: a real directory at a member's
+ *     root, holding PNPM_DOT_ENTRIES and links to what the lockfile names, plantedCheck), committed as the base image;
+ *     then the judge views (judgeViewScript): `view`, the tree prepared again from the store image (no install ever
+ *     ran there) with every member's node_modules main's; `shared`, that with main's config modules only (C1); `pr`,
+ *     the base image checked again with main's copies, main's bins and main's config modules; each committed; then
+ *     one container per step, in ci.yml's order.
  *   - A judging step (licence-policy, dependency-scan, workflow-lint, linear-key-check, format-check, lint,
  *     migration-lint, validate, env-names, boundaries, knip, secrets-scan) starts fresh, never from an image a PR
  *     step wrote, with the root filesystem read-only, HOME and /tmp on tmpfs, /work from a volume of its view's
  *     layers mounted read-only and noexec (noexecVolumeArgs: nothing in the tree, binary or addon, executes), the
- *     judge image read-only at /judge, and main's tools first on PATH; turbo is main's with --skip-infer, so it never
- *     hands off to a "local" turbo. Which view: licence-policy the prepared tree (it judges the PR's install as
- *     installed); every other judge the judge view (main's registry packages, so nothing it resolves or reads from
- *     node_modules is what the PR's install wrote); format-check and knip the shared view. Every Node process is
- *     guarded: `node` on PATH, at the image's node path (mounted over), as process.execPath and as argv[0] is the
- *     guarded node (/in/bin/node), which runs the real node (the judge image's copy) with the guard and with code
- *     generation from strings disallowed (eval, new Function). The one exception is linear-key-check: commitlint
- *     validates its config with ajv, which compiles schemas with new Function. The real node can still be started by
- *     its own path, which no PATH, execPath or argv names. Under the guard a file of /work runs only when its bytes
- *     are main's (main-paths, the tracked paths whose blob is main's, or a file equal to the judge image's copy); any
- *     other runs as the judge image's copy at that path, or not at all; a native addon of the tree never loads; a
- *     bare import from /work resolves in main's install; a guard for another tree (a test's own) applies too. So the
- *     oxlint plugin, repo-checks, runway, gen's templates and every config a judge loads are main's, whatever the PR
- *     changed. What each judge reads as data: the tree's files (format-check, lint, validate, boundaries, knip,
- *     secrets-scan, workflow-lint; env-names reads runway.yaml; migration-lint reads the migration SQL the tree
- *     commits under .stackra/migrations, and fails while migration sources have nothing compiled, STA-2788), the
- *     install's packages (licence-policy), the lockfile (dependency-scan) and the PR facts (linear-key-check).
- *     The gate has no judge run without the judge image (a service error). stackra/verify-mobile, never required,
- *     runs its licence judge without the judge image and without the node mounted over the image's: our licence
- *     check and pnpm only.
+ *     judge image read-only at /judge, the guarded node and main's tools first on PATH (never a directory of the
+ *     tree; a `pnpm run` puts a member's node_modules/.bin first, and every one a judge sees is main's, checked by the
+ *     view); turbo is main's with --skip-infer, so it never hands off to a "local" turbo. Which node_modules each judge
+ *     sees (round 7): licence-policy the installed image's (the PR's packages as pnpm laid them down, before any build
+ *     script could rewrite a licence field); knip the `pr` view's (knip judges the PR's dependencies, so it must see
+ *     them: the PR install after prepare's strict check, a registry dependency main has at the same place replaced by
+ *     main's copy, a new one kept as data, hoisted packages the lockfile does not name for that member removed, bins
+ *     main's; main's node_modules would report every added dependency as missing, and laying the PR's new packages
+ *     into main's would need their layout rebuilt for no gain, since the guard never runs them); every other judge
+ *     main's node_modules (none of them needs the PR's packages, so none sees what the PR's install wrote). A
+ *     dependency bump is judged with main's copy wherever a view links main's (as a gate tool's is).
+ *     Every Node process is guarded: `node` on PATH, at the image's node path (mounted over), as process.execPath and
+ *     as argv[0] is the guarded node (/in/bin/node), which runs the real node (the judge image's copy) with the guard
+ *     and with code generation from strings disallowed (eval, new Function). The one exception is linear-key-check:
+ *     commitlint validates its config with ajv, which compiles schemas with new Function. The real node can still be
+ *     started by its own path, which no PATH, execPath or argv names. Under the guard a file of /work runs only when
+ *     its bytes are main's (main-paths, the tracked paths whose blob is main's, or a file equal to the judge image's
+ *     copy); any other runs as the judge image's copy at that path, or not at all; a native addon of the tree never
+ *     loads; a bare import from /work resolves in main's install; a guard for another tree (a test's own) applies
+ *     too. So the oxlint plugin, repo-checks, runway, gen's templates and every config a judge loads are main's,
+ *     whatever the PR changed. What each judge reads as data: the tree's files (format-check, lint, validate,
+ *     boundaries, knip, secrets-scan, workflow-lint; env-names reads runway.yaml; migration-lint reads the migration
+ *     SQL the tree commits under .stackra/migrations, and fails while migration sources have nothing compiled,
+ *     STA-2788), the install's packages (licence-policy), the lockfile (dependency-scan) and the PR facts
+ *     (linear-key-check). The gate has no judge run without the judge image (a service error). stackra/verify-mobile,
+ *     never required, runs its licence judge without the judge image and without the node mounted over the image's:
+ *     our licence check and pnpm only.
  *   - A PR step (typecheck, build, service-gen, manifests-match-gen, test) runs in a writable container of its own,
  *     from the base image (typecheck, build) or the build's (service-gen, manifests-match-gen, test); nothing it
  *     writes reaches a judge. manifests-match-gen runs main's gen (the judge image's CLI) on the PR's sources and
  *     decides by git diff; gen imports the PR's own migrations and resource trees, so it is a PR step.
- *   - A PR that changes a gate tool's version (risk:R3) is judged by main's version until it merges: the judges run
- *     main's install. A new workspace member's own package.json scripts stand (the new member is risk:R3), and its
- *     config modules are set aside for the shared judges, so knip may honestly report it until main has them.
+ *   - A PR that changes a gate tool's version, or pnpm's (risk:R3), is judged by main's version until it merges: the
+ *     judges run main's install and main's pnpm. A new workspace member's own package.json scripts stand (the new
+ *     member is risk:R3), and its config modules are set aside for the shared judges, so knip may honestly report it
+ *     until main has them.
  *   Residual: PR code can still make its own tests pass (it writes the tests), and manifests-match-gen's gen runs the
  *   PR's own migrations, so the PR's code shapes the generated output that step compares with the PR's own commit (in
  *   its own container; nothing it writes reaches another step). That is what review is for.
  * Step audit (C1, round 5): what each step runs, and whether the tree's code can run in it.
  *   step                  | runs                                                    | tree code? | container
- *   licence-policy        | pnpm listings; this service's licence check             | no (data)  | judge
+ *   licence-policy        | pnpm listings; this service's licence check             | no (data)  | judge (installed)
  *   dependency-scan       | osv-scanner (store image) on the lockfile               | no (data)  | judge
  *   workflow-lint         | actionlint, zizmor (store image)                        | no (data)  | judge
  *   linear-key-check      | main's linear.mjs; commitlint, main's config and preset | no         | judge, eval allowed
@@ -110,7 +121,7 @@
  *   validate              | main's CLI: validate, doc-standard, fflow, duplication   | no: main's | judge
  *   env-names             | main's runway on runway.yaml                            | no: main's | judge
  *   boundaries            | turbo boundaries                                        | no (data)  | judge
- *   knip                  | one knip (jiti loads every workspace's configs)         | no: main's | shared judge
+ *   knip                  | one knip (jiti loads every workspace's configs)         | no: main's | shared judge (pr)
  *   secrets-scan          | gitleaks (store image), main's config                   | no (data)  | judge
  *   Every judge disallows code generation from strings except linear-key-check: commitlint validates its config with
  *   ajv, which compiles each schema with `new Function` (the step's `evalAllowed`). "no: main's" is the guard's doing.
@@ -191,6 +202,11 @@
  *     - "no judge image": the gate never runs its judges with the tree's tools; see the judge image's reason first.
  *   migration-lint failing "STA-2788 pending: N migration sources not linted" is the known gap until STA-2788 (compiled
  *   migrations committed; MIGRATION_LINT_REQUIRES_COMPILED); it is a go-live item, below.
+ *   A tree failure naming a node_modules ("not a directory", "outside every workspace member", "not a link into
+ *   node_modules/.pnpm", "not a dependency the lockfile names", "not an entry pnpm writes") is the PR's: its install
+ *   left a node_modules pnpm would not have written for its lockfile. If main's own install shows one (a dot entry
+ *   pnpm writes that PNPM_DOT_ENTRIES lacks), add it there with the evidence. "the judge view refuses …" after a
+ *   clean prepare is a service problem (the view and prepare disagree): read both checks.
  *   A tree failure "the install wrote files the tested tree does not have: …" is the PR's: an allowed build, at the
  *   version its lockfile chose, wrote outside node_modules (round 6, H2). Read the named files in the PR's lockfile
  *   changes; the PR fixes it, or the owner removes the build from main's allowBuilds.
@@ -205,11 +221,15 @@
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
  *   The OSV canary's first real run (the daemon's first database refresh in the verify user's Docker) passes and is
  *   recorded in #1043 before the ruleset swap.
+ *   When STA-2788 (#1079) lands, ci.yml's "Committed manifests match gen" step changes (git status --porcelain and gen
+ *   --check per service and package, three lines down): mirror it in manifests-match-gen then, keeping main's gen,
+ *   and switch migration-lint to the per-member form (MIGRATION_PENDING_PER_MEMBER) once compiled SQL is committed.
  *   The ruleset swap also waits until STA-2788 has merged (compiled migrations committed, applied exactly as committed),
  *   so that migration-lint lints each PR's migration SQL from the tree; until then it lints nothing on a PR.
  *   The judges from main (round 5, B) pass on main in the verify user's Docker before the swap: the judge image
  *   builds, every judge is green on main read-only and guarded (lint, boundaries and validate with its own self-tests
- *   named: each green on main inside its judge container), and the H1 and H2 reproductions turn no judge green;
+ *   named: each green on main inside its judge container), prepare's node_modules check passes on main's real install
+ *   (PNPM_DOT_ENTRIES confirmed), and the H1, H2 and round-6 H1 (a linked node_modules) reproductions turn no judge green;
  *   the results and the gate's time against the one-container layout (within about 1.5x) are recorded in #1043.
  *   stackra/verify-mobile runs the licence policy over the full install (the mobile-scoped exceptions and every licence
  *   only the mobile apps pull in). A red licence step on stackra/verify-mobile is a lane finding with an STA issue,
@@ -246,7 +266,7 @@ import {
 } from "node:fs";
 import { createRequire } from "node:module";
 import { hostname, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, posix } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
@@ -330,10 +350,22 @@ const FILTER = /^!?[@\w./-]+$/;
  * `filters` narrow the install to the members a check covers (the Quality Gate leaves out GATE_FILTERS, as ci.yml).
  */
 export function installCommand(builds, licensed = LICENSED_BUILDS, filters = []) {
+  const { install, rebuild } = installCommands(builds, licensed, filters);
+  return [install, rebuild].filter(Boolean).join(" && ");
+}
+
+/**
+ * The install in two parts (round 7, M2): `install`, the scripts-off `pnpm install` (no PR code, no registry script
+ * runs), and `rebuild`, main's allowed builds and the licensed copies ("" when there are none). runJob commits the
+ * image between them, and licence-policy judges that one: an allowed build, at the version the PR chose, cannot
+ * rewrite a licence field it reads.
+ */
+export function installCommands(builds, licensed = LICENSED_BUILDS, filters = []) {
   for (const filter of filters)
     if (!FILTER.test(filter)) throw new Error(`not a pnpm filter: ${filter}`);
   const free = builds.filter((b) => !licensed.includes(b));
-  const steps = [[INSTALL_COMMAND, ...filters.map((f) => `--filter='${f}'`)].join(" ")];
+  const install = [INSTALL_COMMAND, ...filters.map((f) => `--filter='${f}'`)].join(" ");
+  const steps = [];
   if (free.length) steps.push(`pnpm rebuild --ignore-pnpmfile ${free.join(" ")}`);
   for (const name of licensed.filter((l) => builds.includes(l)))
     steps.push(
@@ -341,7 +373,7 @@ export function installCommand(builds, licensed = LICENSED_BUILDS, filters = [])
         `v=$(node -p "require('./$d/package.json').version"); ` +
         `[ -d "/prebuilt/${name}@$v" ] || exit ${NEEDS_STORE_REBUILD_EXIT}; cp -a "/prebuilt/${name}@$v/." "$d/"; done`,
     );
-  return steps.join(" && ");
+  return { install, rebuild: steps.join(" && ") };
 }
 
 // ---- the Quality Gate: main's ci.yml, step by step ------------------------------------------------------------
@@ -385,6 +417,20 @@ export const MIGRATION_PENDING = [
   '  if [ "$sources" -gt 0 ]; then echo "::error title=STA-2788 pending::$sources migration sources not linted: compiled migrations are not committed (STA-2788)"; exit 1; fi',
 ].join("\n");
 
+/**
+ * Once compiled SQL exists (STA-2788), the per-member form of the pending check: every member with migration sources
+ * must have compiled SQL to lint, or the step fails naming the members. Bash (the step's shell).
+ */
+export const MIGRATION_PENDING_PER_MEMBER = [
+  "missing=()",
+  "while IFS= read -r -d '' source; do",
+  '  member=$(dirname -- "$source")',
+  '  while [ "$member" != . ] && [ ! -f "$member/package.json" ]; do member=$(dirname -- "$member"); done',
+  '  if ! compgen -G "$member/.stackra/migrations/*.up.sql" > /dev/null; then missing+=("$member"); fi',
+  "done < <(find . -path ./node_modules -prune -o -name '*.migration.ts' -not -path '*/__golden__/*' -not -path '*/__tests__/*' -type f -print0)",
+  `if [ "\${#missing[@]}" -gt 0 ]; then echo "::error title=STA-2788 pending::migration sources with no compiled SQL in $(printf '%s\\n' "\${missing[@]}" | sort -u | tr '\\n' ' ')"; exit 1; fi`,
+].join("\n");
+
 /** migration-lint's commands: ci.yml's, plus the STA-2788 check when `requiresCompiled` (MIGRATION_LINT_REQUIRES_COMPILED). */
 export const migrationLintRun = (requiresCompiled) =>
   [
@@ -394,6 +440,7 @@ export const migrationLintRun = (requiresCompiled) =>
     ...(requiresCompiled ? [MIGRATION_PENDING] : []),
     "  exit 0",
     "fi",
+    ...(requiresCompiled ? [MIGRATION_PENDING_PER_MEMBER] : []),
     "transactional=()",
     "online=()",
     'for file in "${files[@]}"; do',
@@ -411,7 +458,14 @@ export const migrationLintCiReplace = (requiresCompiled) => [
   ["mise exec github:sbdchd/squawk@2.71.0 -- squawk", "squawk"],
   // nothing compiled to lint while migration sources exist fails the step until STA-2788 lands
   ...(requiresCompiled ? [[NOTHING_LINTED, `${NOTHING_LINTED}\n${MIGRATION_PENDING}`]] : []),
+  // and, once some SQL is compiled, every member with sources must have its own (the per-member form)
+  ...(requiresCompiled
+    ? [["transactional=()", `${MIGRATION_PENDING_PER_MEMBER}\ntransactional=()`]]
+    : []),
 ];
+
+/** manifests-match-gen's pathspecs after the manifests: ci.yml's entity lists, and the compiled migration SQL. */
+const COMPILED_SQL_DIFF = "'*src/node/entities.gen.ts' '*/.stackra/migrations/*.up.sql'";
 
 /** Where a judging container sees the judge image's tree (main's, installed and built), and its path in that image. */
 export const JUDGE_MOUNT = "/judge";
@@ -463,8 +517,8 @@ export function licenceRun(install) {
 export const GATE_STEPS = Object.freeze([
   // Not in ci.yml, so its place is free: first, before any lockfile-installed code runs (linear-key-check's
   // `pnpm exec commitlint`, lint, build, validate), reading the install pnpm laid down as the install left it.
-  // It judges the PR's install as installed, so its view is the prepared tree (main's packages laid in would hide it).
-  { id: "licence-policy", judge: true, view: "base", run: licenceRun("gate") },
+  // It judges the PR's install as pnpm laid it down, before any build script ran (round 7, M2): the installed image.
+  { id: "licence-policy", judge: true, view: "installed", run: licenceRun("gate") },
   {
     id: "dependency-scan",
     judge: true,
@@ -574,11 +628,15 @@ export const GATE_STEPS = Object.freeze([
     job: "gate",
     ci: "Committed manifests match gen",
     line: 168,
-    ciReplace: [["if ! git diff --quiet", `${JUDGE_GEN}\nif ! git diff --quiet`]],
+    ciReplace: [
+      ["if ! git diff --quiet", `${JUDGE_GEN}\nif ! git diff --quiet`],
+      // the committed compiled SQL against gen's output too (round 7, L3); a no-op until STA-2788 tracks it
+      ["'*src/node/entities.gen.ts'", COMPILED_SQL_DIFF],
+    ],
     run: [
       JUDGE_GEN,
-      "if ! git diff --quiet -- '*stackra.manifest.json' '*src/node/entities.gen.ts'; then",
-      "  git diff --stat -- '*stackra.manifest.json' '*src/node/entities.gen.ts'",
+      `if ! git diff --quiet -- '*stackra.manifest.json' ${COMPILED_SQL_DIFF}; then`,
+      `  git diff --stat -- '*stackra.manifest.json' ${COMPILED_SQL_DIFF}`,
       '  echo "::error title=Stale manifests::run pnpm gen and commit the stackra.manifest.json and entities.gen.ts files above"',
       "  exit 1",
       "fi",
@@ -631,6 +689,8 @@ export const GATE_STEPS = Object.freeze([
     // preset is built and the generated configs are main's gen's, both from the judge image (the view lays them in).
     shared: true,
     judge: true,
+    // knip judges the PR's dependencies, so it needs the PR's install (checked, with main's copies; judgeViewScript).
+    view: "pr",
     id: "knip",
     job: "gate",
     ci: "Check unused code",
@@ -665,7 +725,7 @@ export const GATE_STEPS = Object.freeze([
  */
 export const MOBILE_STEPS = Object.freeze([
   // The mobile install's licences, before the mobile apps' code runs; a red here is a lane finding (runbook).
-  { id: "licence-policy", judge: true, view: "base", run: licenceRun("mobile") },
+  { id: "licence-policy", judge: true, view: "installed", run: licenceRun("mobile") },
   {
     id: "mobile-apps",
     from: "base",
@@ -804,19 +864,86 @@ export const PLANTED_EXIT = 3;
 /** The line prepare prints for each such file (at most 50), which the check run names. */
 export const PLANTED_LINE = "stackra-verify: not in the tested tree: ";
 
+/** The dot entries pnpm 12 writes in a node_modules (each to be confirmed against main's real install on box 1). */
+export const PNPM_DOT_ENTRIES = Object.freeze([
+  ".bin",
+  ".pnpm",
+  ".modules.yaml",
+  ".pnpm-workspace-state-v1.json",
+]);
+
 /**
- * Round 6, H2: every file or link in /work outside node_modules (any directory of that name) must be one the tested
- * tree has (src.tar, unpacked just before): anything else was written at install time (by an allowed build, at the
- * version the PR chose) and would reach the judges as data, so prepare exits PLANTED_EXIT naming each one. The
- * leftover `.git` of the install is the service's own and is replaced next. POSIX sh; runs in the tree.
+ * What the tested tree's lockfile says each node_modules holds (round 7, R6-H1), for prepare and the judge view:
+ * `importers`, the member directories ("." the root), and `entries`, one `<importer>\t<name>\t<target>` line per
+ * direct dependency, `<target>` being `registry` or the member directory its `link:` names. From lockfileGraph's
+ * importers; a name or directory with a tab or a newline is refused.
+ */
+export function nodeModulesPlan(importers) {
+  const entries = [];
+  for (const [dir, deps] of Object.entries(importers))
+    for (const [name, version] of Object.entries(deps)) {
+      if (/[\t\n]/.test(dir + name))
+        throw new Error(`not a lockfile importer entry: ${dir} ${name}`);
+      const target = String(version).startsWith("link:")
+        ? posix.normalize(posix.join(dir, String(version).slice(5))).replace(/\/$/, "")
+        : "registry";
+      entries.push(`${dir}\t${name}\t${target}`);
+    }
+  return { importers: Object.keys(importers).toSorted(), entries: entries.toSorted() };
+}
+
+/**
+ * What prepare refuses (round 6, H2; round 7, R6-H1), as the PR's tree failure naming each path (PLANTED_EXIT). Bash,
+ * with pipefail and every find and tar checked (set -e in prepare):
+ *   - a file or link outside every node_modules that the tested tree (src.tar, unpacked just before) does not have:
+ *     the install wrote it;
+ *   - a node_modules that is not a real directory (a link to a stash elsewhere), or not at a member's root (the
+ *     lockfile's importers, `<inDir>/importers`);
+ *   - in a node_modules, a dot entry pnpm does not write (PNPM_DOT_ENTRIES; .bin and .pnpm real directories, the
+ *     others regular files), a scope that is not a real directory, and any other entry that is not a link to what the
+ *     lockfile names for that member (`<inDir>/node-modules.tsv`): a registry dependency to
+ *     node_modules/.pnpm/<id>/node_modules/<name>, a workspace one to its member's directory. pnpm hoists nothing
+ *     else to a node_modules' top level here (shamefully-hoist and public hoisting are off).
  */
 export const plantedCheck = (inDir = IN_DIR) =>
   [
-    `tar -tf ${inDir}/src.tar | grep -v '/$' | LC_ALL=C sort -u > /tmp/stackra-tracked`,
-    "find . \\( -name node_modules -o -path ./.git \\) -prune -o \\( -type f -o -type l \\) -print | sed 's|^\\./||' | LC_ALL=C sort -u > /tmp/stackra-present",
-    "LC_ALL=C comm -13 /tmp/stackra-tracked /tmp/stackra-present > /tmp/stackra-planted",
+    "planted() {",
+    `  tar -tf ${inDir}/src.tar | { grep -v '/$' || true; } | LC_ALL=C sort -u > /tmp/stackra-tracked`,
+    "  find . \\( -name node_modules -o -path ./.git \\) -prune -o \\( -type f -o -type l \\) -print | sed 's|^\\./||' | LC_ALL=C sort -u > /tmp/stackra-present",
+    "  LC_ALL=C comm -13 /tmp/stackra-tracked /tmp/stackra-present",
+    "  local nm p imp e n real target",
+    // to a file first, so a failing find stops prepare (set -e) instead of feeding the loop nothing
+    "  find . -path ./.git -prune -o -name node_modules -prune -print0 > /tmp/stackra-modules",
+    "  while IFS= read -r -d '' nm; do",
+    '    p=${nm#./}; imp=$(dirname -- "$p")',
+    '    if [ -L "$p" ] || [ ! -d "$p" ]; then echo "$p (a node_modules that is not a directory)"; continue; fi',
+    `    if ! grep -qxF -- "$imp" ${inDir}/importers; then echo "$p (a node_modules outside every workspace member)"; continue; fi`,
+    '    for e in "$p"/.[!.]* "$p"/..?* "$p"/* "$p"/@*/*; do',
+    '      if [ ! -e "$e" ] && [ ! -L "$e" ]; then continue; fi',
+    '      n=${e#"$p"/}',
+    '      case "$n" in',
+    `        ${PNPM_DOT_ENTRIES.filter((d) => d === ".bin" || d === ".pnpm").join("|")})`,
+    '          if [ -L "$e" ] || [ ! -d "$e" ]; then echo "$e (not a directory)"; fi; continue ;;',
+    `        ${PNPM_DOT_ENTRIES.filter((d) => d !== ".bin" && d !== ".pnpm").join("|")})`,
+    '          if [ -L "$e" ] || [ ! -f "$e" ]; then echo "$e (not a file)"; fi; continue ;;',
+    '        .*) echo "$e (not an entry pnpm writes)"; continue ;;',
+    "        @*/*) ;;",
+    '        @*) if [ -L "$e" ] || [ ! -d "$e" ]; then echo "$e (a scope that is not a directory)"; fi; continue ;;',
+    "      esac",
+    '      if [ ! -L "$e" ]; then echo "$e (not a link)"; continue; fi',
+    '      real=$(readlink -f -- "$e") || { echo "$e (a link to nothing)"; continue; }',
+    `      target=$(awk -F '\\t' -v i="$imp" -v n="$n" '$1 == i && $2 == n { print $3; exit }' ${inDir}/node-modules.tsv)`,
+    '      case "$target" in',
+    '        "") echo "$e (not a dependency the lockfile names)" ;;',
+    '        registry) case "$real" in "$PWD/node_modules/.pnpm/"*"/node_modules/$n") ;; *) echo "$e (not a link into node_modules/.pnpm)" ;; esac ;;',
+    '        *) if [ "$real" != "$PWD/$target" ]; then echo "$e (not a link to $target)"; fi ;;',
+    "      esac",
+    "    done",
+    "  done < /tmp/stackra-modules",
+    "}",
+    "planted > /tmp/stackra-planted",
     `if [ -s /tmp/stackra-planted ]; then head -n 50 /tmp/stackra-planted | sed 's|^|${PLANTED_LINE}|'; exit ${PLANTED_EXIT}; fi`,
-  ].join("; ");
+  ].join("\n");
 
 /**
  * Before the gate: the tested tree is unpacked again over /work and committed as a merge onto main, like GitHub's
@@ -2137,52 +2264,109 @@ export const judgeEnv = (inDir = IN_DIR, { evalAllowed = false } = {}) =>
   `NODE_OPTIONS=--import ${inDir}/judge-guard.mjs${evalAllowed ? "" : " --disallow-code-generation-from-strings"}\n` +
   `TURBO_CACHE=local:,remote:\n${evalAllowed ? "STACKRA_JUDGE_EVAL=1\n" : ""}`;
 
+/** The judge view's exit when the tree holds something it does not recognise (a service error, fail closed). */
+export const VIEW_REFUSED_EXIT = 4;
+
 /**
- * The judge view, made by a container of its own from the prepared tree (main's code only: this script, cp, ln):
- * main's generated files (the judge image ran main's gen on main's tree) are added wherever the tree has the member,
- * never replacing a file of the tree, and never main's compiled migrations (migration-lint reads the tree's own SQL);
- * every registry package a node_modules in the tree holds becomes main's copy where main's install has it at the same
- * place (workspace links stay the tree's), and every node_modules/.bin holds main's bins (none where main has no such
- * member), turbo's through the guarded turbo (`--skip-infer`), so a script's tool is main's tool.
+ * The judge views (round 7), each made by a container of its own (main's code only: this script, cp, ln, awk), run as
+ * `bash /in/judge-view.sh main|pr`. Bash, pipefail, set -e; every loop body ends in `true` and every test is an `if`
+ * (a false `[ … ] && …` at a body's end would end the script).
+ *   - Both: main's generated files (the judge image ran main's gen on main's tree) are added wherever the tree has the
+ *     directory, never over a file of the tree, and never main's compiled migrations (migration-lint reads the tree's
+ *     own SQL).
+ *   - `main`, on the tree prepared from the store image (no install, no PR code ever ran there): each member's
+ *     node_modules (`importers`) is the judge image's, a link to it, or none where main has no such member. Every judge
+ *     but licence-policy and knip runs here: none of them needs the PR's packages.
+ *   - `pr`, on the prepared PR install (prepare checked it against the lockfile): knip's, which must see the PR's
+ *     dependencies. Each node_modules is checked again: a dot entry pnpm does not write, a top-level entry that is not
+ *     a link, or a node_modules that is not a directory at a member's root stops the view (VIEW_REFUSED_EXIT). A
+ *     registry dependency main's install has at the same place becomes main's copy (a bump is judged by main's copy,
+ *     as a gate tool's is); a new one stays the PR's (data; the guard never runs it); a workspace link stays the
+ *     tree's; anything the lockfile does not name as that member's dependency (a hoisted platform package) goes.
+ *     .bin holds main's bins only, turbo's through the guarded turbo.
+ *   - Then every `.bin` in the tree is checked: each entry a link into the judge image or the guarded turbo.
  */
-export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work") =>
+export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work", inDir = IN_DIR) =>
   [
-    "set -e",
+    "#!/usr/bin/env bash",
+    "# Generated by tools/scripts/stackra-verify.mjs (STA-2761): a judge view of the tested tree.",
+    "set -eo pipefail",
+    "mode=${1-}",
+    'case "$mode" in main|pr) ;; *) echo "usage: judge-view.sh main|pr"; exit 2 ;; esac',
+    `refuse() { echo "stackra-verify: the judge view refuses $1"; exit ${VIEW_REFUSED_EXIT}; }`,
+    // main's generated files
     `cd ${root}`,
-    "find . -name node_modules -prune -o -type d \\( -name .stackra -o -name stackra-encore \\) -print0 |",
-    "  while IFS= read -r -d '' d; do",
-    "    p=${d#./}",
-    '    case "$p" in packages/developer/gen/__golden__/*) continue ;; esac',
-    '    parent=$(dirname -- "$p")',
-    `    [ -d "${tree}/$parent" ] && [ ! -L "${tree}/$parent" ] && [ ! -L "${tree}/$p" ] || continue`,
-    "    (cd \"$p\" && find . -print0) | while IFS= read -r -d '' f; do",
-    '      case "$f" in ./migrations|./migrations/*) continue ;; esac',
-    `      if [ -d "$p/$f" ] && [ ! -L "$p/$f" ]; then mkdir -p "${tree}/$p/$f"`,
-    `      elif [ ! -e "${tree}/$p/$f" ] && [ ! -L "${tree}/$p/$f" ]; then cp -P -- "$p/$f" "${tree}/$p/$f"; fi`,
-    "    done",
-    "  done",
+    "find . -name node_modules -prune -o -type d \\( -name .stackra -o -name stackra-encore \\) -print0 > /tmp/stackra-generated",
+    "while IFS= read -r -d '' d; do",
+    "  p=${d#./}",
+    '  case "$p" in packages/developer/gen/__golden__/*) continue ;; esac',
+    '  parent=$(dirname -- "$p")',
+    `  if [ ! -d "${tree}/$parent" ] || [ -L "${tree}/$parent" ] || [ -L "${tree}/$p" ]; then continue; fi`,
+    '  (cd "$p" && find . -print0) > /tmp/stackra-generated-files',
+    "  while IFS= read -r -d '' f; do",
+    '    case "$f" in ./migrations|./migrations/*) continue ;; esac',
+    `    if [ -d "$p/$f" ] && [ ! -L "$p/$f" ]; then mkdir -p "${tree}/$p/$f"`,
+    `    elif [ ! -e "${tree}/$p/$f" ] && [ ! -L "${tree}/$p/$f" ]; then cp -P -- "$p/$f" "${tree}/$p/$f"; fi`,
+    "    true",
+    "  done < /tmp/stackra-generated-files",
+    "  true",
+    "done < /tmp/stackra-generated",
     `cd ${tree}`,
-    "find . -name node_modules -type d -prune -print0 | while IFS= read -r -d '' nm; do",
-    "  p=${nm#./}",
-    // Every registry package a node_modules holds that main's install holds at the same place is main's copy (round
-    // 6, H1 and H2): a judge that resolves a tool or reads a package "locally" (turbo hands off to the local turbo,
-    // tsconfig extends, knip reads manifests) gets main's. Workspace links (into the tree) stay the PR's: they are
-    // the tested tree. A package main does not have stays as installed (data; the guard never runs it).
-    '  for e in "$p"/* "$p"/@*/*; do',
-    '    [ -e "$e" ] || [ -L "$e" ] || continue',
-    '    case "$e" in "$p"/@*) [ -d "$e" ] && [ ! -L "$e" ] && [ "${e#"$p"/@*/}" = "$e" ] && continue ;; esac',
-    `    real=$(readlink -f -- "$e" || true)`,
-    `    case "$real" in */node_modules/.pnpm/*|"${tree}/$e") ;; *) continue ;; esac`,
-    `    if [ -e "${root}/$e" ]; then rm -rf -- "$e" && ln -s "${root}/$e" "$e"; fi`,
-    "  done",
-    // Its bins: main's, each one linked; turbo through the guarded turbo, which never infers another turbo.
-    '  rm -rf -- "$p/.bin"',
-    `  if [ -d "${root}/$p/.bin" ]; then`,
-    '    mkdir "$p/.bin"',
-    `    for b in "${root}/$p/.bin"/*; do [ -e "$b" ] || continue; ln -s "$b" "$p/.bin/\${b##*/}"; done`,
-    `    [ -e "$p/.bin/turbo" ] && ln -sfn ${IN_DIR}/bin/turbo "$p/.bin/turbo"`,
+    "find . -path ./.git -prune -o -name node_modules -prune -print0 > /tmp/stackra-modules",
+    'if [ "$mode" = main ]; then',
+    // main's node_modules for every member; the prepared tree has none of its own (no install ran on it)
+    '  if [ -s /tmp/stackra-modules ]; then refuse "a node_modules in a tree that had no install"; fi',
+    "  while IFS= read -r imp; do",
+    `    if [ -z "$imp" ] || [ ! -d "$imp" ] || [ -L "$imp" ]; then continue; fi`,
+    '    nm=$imp/node_modules; if [ "$imp" = . ]; then nm=node_modules; fi',
+    `    if [ -d "${root}/$nm" ]; then ln -s "${root}/$nm" "$nm"; fi`,
+    "    true",
+    `  done < ${inDir}/importers`,
+    "else",
+    "  while IFS= read -r -d '' nm; do",
+    '    p=${nm#./}; imp=$(dirname -- "$p")',
+    '    if [ -L "$p" ] || [ ! -d "$p" ]; then refuse "$p (not a directory)"; fi',
+    `    if ! grep -qxF -- "$imp" ${inDir}/importers; then refuse "$p (outside every workspace member)"; fi`,
+    '    for e in "$p"/.[!.]* "$p"/..?* "$p"/* "$p"/@*/*; do',
+    '      if [ ! -e "$e" ] && [ ! -L "$e" ]; then continue; fi',
+    '      n=${e#"$p"/}',
+    '      case "$n" in',
+    `        ${PNPM_DOT_ENTRIES.join("|")}) continue ;;`,
+    '        .*) refuse "$e (not an entry pnpm writes)" ;;',
+    "        @*/*) ;;",
+    '        @*) if [ -L "$e" ] || [ ! -d "$e" ]; then refuse "$e (a scope that is not a directory)"; fi; continue ;;',
+    "      esac",
+    '      if [ ! -L "$e" ]; then refuse "$e (not a link)"; fi',
+    `      target=$(awk -F '\\t' -v i="$imp" -v n="$n" '$1 == i && $2 == n { print $3; exit }' ${inDir}/node-modules.tsv)`,
+    '      if [ -z "$target" ]; then rm -f -- "$e"',
+    `      elif [ "$target" = registry ] && [ -e "${root}/$e" ]; then rm -f -- "$e"; ln -s "${root}/$e" "$e"; fi`,
+    "      true",
+    "    done",
+    '    rm -rf -- "$p/.bin"',
+    `    if [ -d "${root}/$p/.bin" ]; then`,
+    '      mkdir "$p/.bin"',
+    `      for b in "${root}/$p/.bin"/*; do if [ -e "$b" ]; then ln -s "$b" "$p/.bin/\${b##*/}"; fi; done`,
+    `      if [ -e "$p/.bin/turbo" ]; then ln -sfn ${inDir}/bin/turbo "$p/.bin/turbo"; fi`,
+    "    fi",
+    "    true",
+    "  done < /tmp/stackra-modules",
+    "fi",
+    // every .bin a judge's pnpm could put on PATH (a member's node_modules/.bin) holds main's tools only
+    "find . -path ./.git -prune -o -name node_modules -prune -print0 > /tmp/stackra-modules",
+    "while IFS= read -r -d '' nm; do",
+    // main's node_modules (the main view): a link into the judge image, nothing of the tree's inside
+    '  if [ -L "${nm#./}" ]; then',
+    `    case "$(readlink -- "\${nm#./}")" in ${root}/*) continue ;; *) refuse "\${nm#./} (a node_modules that is not main's)" ;; esac`,
     "  fi",
-    "done",
+    "  bin=${nm#./}/.bin",
+    '  for b in "$bin"/* "$bin"/.[!.]*; do',
+    '    if [ ! -e "$b" ] && [ ! -L "$b" ]; then continue; fi',
+    '    link=$(readlink -- "$b" || true)',
+    `    case "$link" in ${root}/*|${inDir}/bin/turbo) ;; *) refuse "$b (a bin that is not main's)" ;; esac`,
+    "  done",
+    "  true",
+    "done < /tmp/stackra-modules",
+    "",
   ].join("\n");
 
 /**
@@ -2254,7 +2438,15 @@ export const VERIFY_COMMAND = kindCommand("gate");
 export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
   const file = (name) => [join(runDir, name), `${IN_DIR}/${name}`];
   // Every step container's judge parts (its judging steps run guarded): the guard, the guarded node, main's paths.
-  const judging = [file("judge-guard.mjs"), file("bin"), file("main-paths"), file("judge-view.sh")];
+  const judging = [
+    file("judge-guard.mjs"),
+    file("bin"),
+    file("main-paths"),
+    file("judge-view.sh"),
+    file("prepare.sh"),
+    file("importers"),
+    file("node-modules.tsv"),
+  ];
   if (kind === "gate")
     return [
       file("gate.sh"),
@@ -2274,6 +2466,10 @@ export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
   throw new Error(`not a verify kind: ${kind}`);
 }
 
+/** A kind's prepare as the file its prepare containers run (`bash /in/prepare.sh`): bash, pipefail, set -e. */
+export const prepareScript = (kind) =>
+  `#!/usr/bin/env bash\n# Generated by tools/scripts/stackra-verify.mjs (STA-2761): prepare the tested tree.\nset -o pipefail\n${kind === "gate" ? gatePrepare() : VERIFY_PREPARE}\n`;
+
 /** The files a kind's run writes for its mounts (the facts and the bundle come from GitHub and the mirror). */
 export function kindFiles(kind, languages = CODEQL_DEFAULT_LANGUAGES) {
   const judging = {
@@ -2283,9 +2479,19 @@ export function kindFiles(kind, languages = CODEQL_DEFAULT_LANGUAGES) {
     "judge-view.sh": judgeViewScript(),
   };
   if (kind === "gate")
-    return { "gate.sh": gateScript(), "licence-check.mjs": licenceCheckSource(), ...judging };
+    return {
+      "gate.sh": gateScript(),
+      "licence-check.mjs": licenceCheckSource(),
+      "prepare.sh": prepareScript("gate"),
+      ...judging,
+    };
   if (kind === "mobile")
-    return { "mobile.sh": mobileScript(), "licence-check.mjs": licenceCheckSource(), ...judging };
+    return {
+      "mobile.sh": mobileScript(),
+      "licence-check.mjs": licenceCheckSource(),
+      "prepare.sh": prepareScript("mobile"),
+      ...judging,
+    };
   if (kind === "codeql")
     return {
       "codeql.sh": codeqlScript(languages),
@@ -2626,6 +2832,10 @@ export const CONTAINER_USER = "1000:1000";
  * Before verify: the tested tree is unpacked again over /work (undoing whatever the install phase wrote to tracked
  * files), and committed to a fresh git repository so `git ls-files` sees the tree as a local checkout would.
  */
+/** CodeQL's prepare (no install, nothing to check): the tree unpacked and committed. POSIX sh. */
+export const CODEQL_PREPARE =
+  "set -e; tar -xf /in/src.tar -C /work; cd /work; rm -rf .git; git init -q; git add -A; " +
+  "git -c user.name=stackra-verify -c user.email=verify@stackra.invalid -c commit.gpgsign=false commit -qm tested --no-verify";
 export const VERIFY_PREPARE =
   `set -e; tar -xf /in/src.tar -C /work; cd /work; ${plantedCheck(IN_DIR)}; rm -rf .git; git init -q; git add -A; ` +
   "git -c user.name=stackra-verify -c user.email=verify@stackra.invalid -c commit.gpgsign=false commit -qm tested --no-verify";
@@ -2868,7 +3078,17 @@ export const containerLimits = (s, envFile) => [
  */
 export const installArgs = (
   s,
-  { name, image, tarPath, envFile, network, builds = [], licensed = LICENSED_BUILDS, filters = [] },
+  {
+    name,
+    image,
+    tarPath,
+    envFile,
+    network,
+    builds = [],
+    licensed = LICENSED_BUILDS,
+    filters = [],
+    command = `set -e; tar -xf /in/src.tar -C /work; cd /work; ${installCommand(builds, licensed, filters)}`,
+  },
 ) => [
   "run",
   "--name",
@@ -2884,7 +3104,7 @@ export const installArgs = (
   image,
   "sh",
   "-c",
-  `set -e; tar -xf /in/src.tar -C /work; cd /work; ${installCommand(builds, licensed, filters)}`,
+  command,
 ];
 
 /** The hosts the install's proxy lets through, on port 443 only: the package registries. */
@@ -3396,7 +3616,9 @@ export function pnpmVersionOf(packageJson) {
  * The package.json fields the tested tree always takes from main's copy: the commands, and the knip and commitlint
  * configs a package.json can carry (the Quality Gate reads both). A field main does not have is dropped.
  */
-export const OVERLAY_FIELDS = ["scripts", "knip", "commitlint"];
+// packageManager and devEngines (round 7): the install runs main's pnpm; a pnpm bump (risk:R3) is judged by main's pnpm
+// until it merges, as a gate tool's is.
+export const OVERLAY_FIELDS = ["scripts", "knip", "commitlint", "packageManager", "devEngines"];
 
 const overlayFields = (json) => JSON.stringify(OVERLAY_FIELDS.map((field) => json[field] ?? null));
 
@@ -4292,6 +4514,7 @@ export async function runJob(job, deps) {
     // The gate's judges run main's code from the judge image, built (or reused) before any PR code runs.
     const judge = gate && deps.judgeImage ? await deps.judgeImage(store) : null;
     let image = store;
+    let installed = null;
     if (KINDS[kind].install) {
       const builds = deps.builds();
 
@@ -4310,6 +4533,11 @@ export async function runJob(job, deps) {
         };
       }
 
+      const commands = installCommands(
+        gate ? builds.filter((b) => !LICENSED_BUILDS.includes(b)) : builds,
+        gate ? [] : LICENSED_BUILDS,
+        gate ? GATE_FILTERS : [],
+      );
       const installTimedOut = await limited(
         installArgs(s, {
           name: install,
@@ -4317,9 +4545,7 @@ export async function runJob(job, deps) {
           tarPath,
           envFile: deps.installEnvFile,
           network: net.network,
-          builds: gate ? builds.filter((b) => !LICENSED_BUILDS.includes(b)) : builds,
-          licensed: gate ? [] : LICENSED_BUILDS,
-          filters: gate ? GATE_FILTERS : [],
+          command: `set -e; tar -xf /in/src.tar -C /work; cd /work; ${commands.install}`,
         }),
         install,
       );
@@ -4329,16 +4555,47 @@ export async function runJob(job, deps) {
       const installExit = deps.exitCodeOf(install);
       if (installExit === null)
         return { post: false, error: "the install container did not start" };
-      // The licensed image is built for exactly the versions this tree locks, so a missing build is the service's
-      // fault: an error (retried), never the PR's pass, fail or neutral.
-      if (installExit === NEEDS_STORE_REBUILD_EXIT)
-        return { post: false, error: "a licensed build is missing from the run image" };
       if (installExit !== 0) return settle(job, deps, { conclusion: "failure", phase: "install" });
-
-      const commit = deps.docker(["commit", install, runImage]);
-      if (commit.code !== 0)
+      // The install before any build script ran: licence-policy's image (round 7, M2).
+      installed = `${runImage}-installed`;
+      images.push(installed);
+      if (deps.docker(["commit", install, installed]).code !== 0)
         return { post: false, error: "could not commit the install container" };
-      image = runImage;
+      image = installed;
+      if (commands.rebuild) {
+        const rebuild = `sv-${id}-rebuild`;
+        names.push(rebuild);
+        const rebuildTimedOut = await limited(
+          installArgs(s, {
+            name: rebuild,
+            image: installed,
+            tarPath,
+            envFile: deps.installEnvFile,
+            network: net.network,
+            command: `set -e; cd /work; ${commands.rebuild}`,
+          }),
+          rebuild,
+        );
+        if (deps.stopping() && !rebuildTimedOut) return { post: false, stopped: true };
+        if (rebuildTimedOut)
+          return settle(job, deps, {
+            conclusion: "failure",
+            phase: "install",
+            reason: "time limit",
+          });
+        const rebuildExit = deps.exitCodeOf(rebuild);
+        if (rebuildExit === null)
+          return { post: false, error: "the rebuild container did not start" };
+        // The licensed image is built for exactly the versions this tree locks, so a missing build is the service's
+        // fault: an error (retried), never the PR's pass, fail or neutral.
+        if (rebuildExit === NEEDS_STORE_REBUILD_EXIT)
+          return { post: false, error: "a licensed build is missing from the run image" };
+        if (rebuildExit !== 0)
+          return settle(job, deps, { conclusion: "failure", phase: "install" });
+        if (deps.docker(["commit", rebuild, runImage]).code !== 0)
+          return { post: false, error: "could not commit the rebuild container" };
+        image = runImage;
+      }
     }
 
     if (KINDS[kind].steps)
@@ -4351,7 +4608,8 @@ export async function runJob(job, deps) {
         names,
         images,
         tarPath,
-        prepare: gate ? gatePrepare() : VERIFY_PREPARE,
+        store,
+        installed,
       });
 
     const verifyTimedOut = await limited(
@@ -4362,7 +4620,7 @@ export async function runJob(job, deps) {
         tarPath,
         mounts: deps.verifyMounts?.() ?? [],
         command: kindCommand(kind),
-        prepare: gate ? gatePrepare() : VERIFY_PREPARE,
+        prepare: CODEQL_PREPARE,
       }),
       check,
     );
@@ -4382,6 +4640,9 @@ export async function runJob(job, deps) {
   }
 }
 
+/** The view a judging step starts from: its `view`, else the shared view for a shared step, else the judge view. */
+export const viewOf = (step) => step.view ?? (step.shared ? "shared" : "view");
+
 /**
  * A kind's steps, each in a container of its own (CTO ruling, round 5, B), in the kind's order (ci.yml's):
  *   - prepare: the tree unpacked again over the install and committed as the run's merge (`prepare`), from the
@@ -4397,7 +4658,7 @@ export async function runJob(job, deps) {
 async function runSteps(
   job,
   deps,
-  { kind, id, image, judge, limited, names, images, tarPath, prepare },
+  { kind, id, image, judge, limited, names, images, tarPath, store, installed },
 ) {
   const s = deps.settings;
   const mounts = deps.verifyMounts?.() ?? [];
@@ -4456,7 +4717,8 @@ async function runSteps(
       post: false,
       error: "no judge image: the gate's judges never run with the tree's tools",
     };
-  const from = {};
+  const from = { installed };
+  const prepare = `bash ${IN_DIR}/prepare.sh`;
   let r = await own("base", image, prepare);
   if (r.exit === PLANTED_EXIT) {
     const planted = String(deps.readLog())
@@ -4473,16 +4735,28 @@ async function runSteps(
   }
   if (!r.tag) return ended(r);
   from.base = r.tag;
-  from.view = from.base;
-  if (judge) {
-    r = await own("view", from.base, `bash ${IN_DIR}/judge-view.sh`, judge);
+  // The views the kind's judges use (judgeViewScript): main's node_modules on a tree no install touched (`view`, and
+  // `shared` with main's config modules only), and knip's on the checked PR install with main's config modules (`pr`).
+  const views = new Set(steps.filter((step) => step.judge).map((step) => viewOf(step)));
+  if (views.has("view") || views.has("shared")) {
+    r = await own("view", store, `${prepare} && bash ${IN_DIR}/judge-view.sh main`, judge);
     if (!r.tag) return ended(r);
     from.view = r.tag;
   }
-  if (steps.some((step) => step.judge && step.shared)) {
+  if (views.has("shared")) {
     r = await own("shared", from.view, command("--swap"));
     if (!r.tag) return ended(r);
     from.shared = r.tag;
+  }
+  if (views.has("pr")) {
+    r = await own(
+      "pr",
+      from.base,
+      `bash ${IN_DIR}/judge-view.sh pr && ${command("--swap")}`,
+      judge,
+    );
+    if (!r.tag) return ended(r);
+    from.pr = r.tag;
   }
 
   // Each view's /work as a noexec volume, made once per view image.
@@ -4497,9 +4771,7 @@ async function runSteps(
   const failed = [];
   for (const step of steps) {
     const name = named(`step-${step.id}`);
-    const start = step.judge
-      ? from[step.view ?? (step.shared ? "shared" : "view")]
-      : from[step.from ?? "base"];
+    const start = step.judge ? from[viewOf(step)] : from[step.from ?? "base"];
     if (!start)
       return { post: false, error: `${step.id} has no image to start from (${step.from})` };
     let volume = null;
@@ -5241,6 +5513,7 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}
     const lockText = blob(mergedByPath.get("pnpm-lock.yaml"));
     const graph = lockfileGraph(lockText);
     importerDirs = new Set(Object.keys(graph.importers));
+    out.nodeModules = nodeModulesPlan(graph.importers);
     // What an allowed build installs is the registry's package under its own name, never a tarball the PR chose.
     problems.push(...lockfileResolutionProblems(lockText));
   }
@@ -5385,6 +5658,14 @@ function archiveJob(s, job, runDir, { history = false } = {}) {
       { mode: 0o644 },
     );
     writeFileSync(join(runDir, "shared-main.tar"), "", { mode: 0o644 });
+    // What each node_modules may hold, from the tested lockfile: prepare and the judge view check against it.
+    const plan = built.nodeModules ?? { importers: ["."], entries: [] };
+    writeFileSync(join(runDir, "importers"), plan.importers.map((d) => `${d}\n`).join(""), {
+      mode: 0o644,
+    });
+    writeFileSync(join(runDir, "node-modules.tsv"), plan.entries.map((l) => `${l}\n`).join(""), {
+      mode: 0o644,
+    });
     // The judge guard's list: the tested tree's paths whose blob is main's (they run in a judge as main's code).
     writeFileSync(join(runDir, "main-paths"), built.mainPaths.map((p) => `${p}\0`).join(""), {
       mode: 0o644,
