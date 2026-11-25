@@ -4,14 +4,14 @@
 
 **Created**: 2026-11-25
 
-**Status**: Clarified — approval requested from the leader
+**Status**: Planned — approval requested from the leader
 
 **Tier**: big
 
 **Approver**: leader (technical-only stops, under the owner's delegation): the Clarified stop now, the Planned stop
 after the leader reads plan.md
 
-**ADR**: [0535](../../../apps/docs/src/docs/adr/0535-agent-schemas-layers-and-native-install.mdx) (Proposed); the tier is big because of the new ADR (CTO ruling R4, 2026-11-25)
+**ADR**: [0537](../../../apps/docs/src/docs/adr/0537-agent-schemas-layers-and-native-install.mdx) (Proposed); the tier is big because of the new ADR (CTO ruling R4, 2026-11-25)
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
@@ -62,7 +62,8 @@ Academorix and Stackra's own lanes as the first consumers.
 - **Layers**: the company base (the 30-persona roster), then each product repo's `.agents/`, then optional repo or
   user overrides. The nearest layer wins under the merge rules; one validator covers every layer.
 - **Tools**: `agents.list`, `agents.resolve` (with where each field came from), `agents.validate`, `agents.install`,
-  `agents.diff`, `agents.sync`. Install writes Claude Code's native formats only; it is idempotent, never overwrites a
+  `agents.diff`, `agents.sync` (house names per R2: `agents_list`, `agents_resolve`, `agents_validate`,
+  `agents_install`, `agents_diff`, `agents_sync`; never the dotted form). Install writes Claude Code's native formats only; it is idempotent, never overwrites a
   hand edit without showing a diff, and records what it wrote so it can be removed cleanly.
 - **Harvest**: the persona model, skill scoring and the policy and approval schema, listed with what was taken and why.
 - **Consumers**: Academorix's `.agents/` and Stackra's lanes; the proof is a product installing its agents into a
@@ -81,7 +82,7 @@ CTO (Idris):
 - **R3 base**: platform/figentra's `team/roster.yml` on `origin/main`. The leaders branch
   (`team/leaders-v2-2026-11-23`) lands through its own pull request first, and is a dependency of this work. The
   canonical Stackra lead name is **Tarek**.
-- **R4 ADR**: a new ADR (0535), not amendment notes. It supersedes ADR 0282 decisions 9 and 10 for agent and skill
+- **R4 ADR**: a new ADR (0537), not amendment notes. It supersedes ADR 0282 decisions 9 and 10 for agent and skill
   files, with links both ways. This makes the spec the big tier: two stops, after Clarified and after Planned.
 
 Leader:
@@ -103,7 +104,7 @@ source is a local path, an installed package at an exact version, or a git repos
 
 ## Impact
 
-- **Apps touched**: apps/docs (the guide, the new ADR 0535, a forward note on ADR 0282, the ADR index)
+- **Apps touched**: apps/docs (the guide, the new ADR 0537, a forward note on ADR 0282, the ADR index)
 - **Services touched**: none
 - **Packages touched**: packages/developer/mcp (the schemas, the resolver, the renderers, the install planner, the
   file IO); packages/developer/cli (six commands and the existing `agents:sync` and `agents:check`)
@@ -116,13 +117,13 @@ source is a local path, an installed package at an exact version, or a git repos
   server entries are validated, widening needs a person. Agent and roster files carry no personal data and no secret
   values (names only)
 - **Secrets**: none read or written; an MCP entry names a secret as `${NAME}` only
-- **ADR needed**: yes, a new ADR: 0535 (Proposed; supersedes ADR 0282 decisions 9 and 10 for agent and skill files,
+- **ADR needed**: yes, a new ADR: 0537 (Proposed; supersedes ADR 0282 decisions 9 and 10 for agent and skill files,
   amends ADR 0016 and ADR 0503); its number is reserved in `apps/docs/adr/numbers.yaml`
 - **New dependencies**: none (zod and yaml are already the package's)
 - **Deploy modes**: none deployed; developer workstation and CI only
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none (CLI and MCP output)
-- **Docs to update**: a guide `apps/docs/src/docs/agents/agents-install.mdx`, `.agents/README.md`, ADR 0535, ADR 0282
+- **Docs to update**: a guide `apps/docs/src/docs/agents/agents-install.mdx`, `.agents/README.md`, ADR 0537, ADR 0282
   (forward note), ADR 0016 (forward note), the ADR index
 - **Lane**: full
 - **Change risk**: R3 (writes permission configuration that every agent session obeys)
@@ -259,7 +260,7 @@ source is a local path, an installed package at an exact version, or a git repos
   of an `academorix` product layer extending the base, move its 9 skill folders from `.agents/agents/` to
   `.agents/skills/`, install Lukas, Selim and its other session personas as session personas (AC-036), and change
   nothing in Academorix through this work's pull requests.
-- **AC-038**: THE docs SHALL carry ADR 0535 (agent schemas, layers and the native install), reserved in
+- **AC-038**: THE docs SHALL carry ADR 0537 (agent schemas, layers and the native install), reserved in
   `apps/docs/adr/numbers.yaml` and listed in the ADR index, and ADR 0282 and ADR 0016 SHALL link forward to it.
 
 ## Out of scope
@@ -296,5 +297,6 @@ source is a local path, an installed package at an exact version, or a git repos
 
 - 2026-11-25 → Draft (STA-2787 session, from the owner's ruling and the CTO's six points)
 - 2026-11-25 → Clarified (the CTO's six points; rulings R1 to R9 on PR figentra/stackra#1080; tier raised to big
-  with the new ADR 0535) — approval requested from the leader
-- plan.md and tasks.md are drafted ahead and wait for the Planned stop, after the leader reads them
+  with the new ADR 0537) — Approved by leader (Tarek · Stackra Lead) 2026-11-25
+- 2026-11-25 → Planned (plan.md, tasks.md; ADR renumbered 0535 → 0537 at the leader's review) — approval requested
+  from the leader

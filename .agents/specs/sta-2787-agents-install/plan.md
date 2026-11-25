@@ -42,7 +42,7 @@ schema. Claude Code runs the agents; Stackra only writes its files.
 | Versions and catalogs                 | PASS   | no new dependency; changesets minor for `@stackra/mcp` and `@stackra/cli`         |
 | Deploy modes (ADR 0076)               | PASS   | nothing deployed                                                                  |
 | Licence tier (ADR 0077)               | PASS   | free, MIT                                                                         |
-| Docs and ADRs                         | PASS   | guide; new ADR 0535 (Proposed), forward notes on ADR 0282 and 0016                |
+| Docs and ADRs                         | PASS   | guide; new ADR 0537 (Proposed), forward notes on ADR 0282 and 0016                |
 
 ## Deploy modes
 
@@ -250,11 +250,11 @@ packages/developer/cli/src/node/
 .agents/agents/lanes/l1-foundation.md … l8-template-pro.md
 .agents/README.md
 apps/docs/src/docs/agents/agents-install.mdx
-apps/docs/src/docs/adr/0535-agent-schemas-layers-and-native-install.mdx   (new, Proposed; drafted with the spec)
+apps/docs/src/docs/adr/0537-agent-schemas-layers-and-native-install.mdx   (new, Proposed; drafted with the spec)
 apps/docs/src/docs/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc.mdx (forward note)
 apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx       (forward note)
 apps/docs/src/docs/adr/index.mdx
-apps/docs/adr/numbers.yaml                                   (0535 reserved)
+apps/docs/adr/numbers.yaml                                   (0537 reserved)
 .changeset/agents-install.md
 ```
 
@@ -548,7 +548,7 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
   session persona renders `initialPrompt` and starts with `claude --agent <id>` in the proof run.
 - **Academorix migration** (AC-037): the follow-up in Academorix runs `stackra agents validate` and `diff` on its new
   layer before install, and its recorded proof starts Lukas with `claude --agent lukas`.
-- **ADR** (AC-038): the docs build and the `adr-numbers` check (`stackra check`, config phase) pass with 0535.
+- **ADR** (AC-038): the docs build and the `adr-numbers` check (`stackra check`, config phase) pass with 0537.
 
 ## Rollout
 
@@ -564,7 +564,7 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
    personas (Lukas, Selim and the others) become session personas, and its `models.json` tiers become its layer's
    `models`.
 5. Minor changesets for `@stackra/mcp` and `@stackra/cli` in the next release; the schemas ship in the package.
-6. ADR 0535 moves from Proposed to Accepted with the Planned approval; the index rows change in that commit.
+6. ADR 0537 moves from Proposed to Accepted with the Planned approval; the index rows change in that commit.
 
 ## Delegation and risk plan
 
@@ -575,18 +575,21 @@ T026).
 
 ## ADRs
 
-A new ADR, [0535](../../../apps/docs/src/docs/adr/0535-agent-schemas-layers-and-native-install.mdx) (Proposed
-2026-11-25, ruling R4), reserved in `apps/docs/adr/numbers.yaml`: agent definitions are schema'd data in layers, and
+A new ADR, [0537](../../../apps/docs/src/docs/adr/0537-agent-schemas-layers-and-native-install.mdx) (Proposed
+2026-11-25, ruling R4), reserved in `apps/docs/adr/numbers.yaml` (key `"0537"`, the register's quoted form). 0535 and
+0536 are taken by open work: 0535 by PR figentra/stackra#1041 (the design system tier split) and 0536 by the branch
+`figentra/sta-2783-box-deploy` (box deploys); neither is in the register on main yet, so this ADR was renumbered from
+0535 to 0537 at the leader's review. The ADR: agent definitions are schema'd data in layers, and
 `stackra agents` installs them into each tool's native files. It supersedes ADR 0282 decisions 9 and 10 for agent and
 skill files (0282 keeps them for everything else), amends ADR 0016 (layers and the schema) and ADR 0503 (the agent and
 skill projection moves to `stackra agents sync`, by behaviour). ADR 0282 and ADR 0016 carry forward notes now; the
-index rows change to "superseded" and "amended" when 0535 is accepted.
+index rows change to "superseded" and "amended" when 0537 is accepted.
 
 ## Docs
 
 `apps/docs/src/docs/agents/agents-install.mdx` (layers, schema, merge table, the commands, conflict handling, the
 widening record, the proof steps, the Academorix migration), `.agents/README.md`, the package `README.md` and
-`AGENTS.md`, ADR 0535.
+`AGENTS.md`, ADR 0537.
 
 ## Harvest from the retired Flow console (read-only)
 
@@ -608,7 +611,7 @@ widening record, the proof steps, the Academorix migration), `.agents/README.md`
 | R1  | fflow (CTO)          | depend on the workflow tooling's behaviour (gate, sync, guard), never on the Flow console or the `@figentra-oss` scope | Dependency boundary; T022                         |
 | R2  | tool names (CTO)     | house convention, `agents_list` …                                                                                      | Contracts; AC-032                                 |
 | R3  | roster (CTO)         | `team/roster.yml` on `origin/main`; the leaders PR lands first; the lead is Tarek                                      | spec Dependencies; AC-016, AC-034; T007, T021     |
-| R4  | ADR (CTO)            | a new ADR, 0535; big tier with two stops; supersedes 0282 decisions 9 and 10                                           | ADRs; AC-038; T024                                |
+| R4  | ADR (CTO)            | a new ADR, 0537; big tier with two stops; supersedes 0282 decisions 9 and 10                                           | ADRs; AC-038; T024                                |
 | R5  | base source (leader) | git commit pin of platform/figentra, through the roster adapter; a package later via the registry                      | step 2 of the algorithm; T007, T013               |
 | R6  | schema host (leader) | `$id`s on schemas.figentra.com (STA-2784's ADR); the schemas ship in `@stackra/mcp`                                    | AC-001; T002                                      |
 | R7  | widening (leader)    | interactive confirmation, recorded in the manifest (who, when, what); base changes are R3 PRs in platform/figentra     | Manifest v1; Security; AC-027, AC-035; T012, T014 |
