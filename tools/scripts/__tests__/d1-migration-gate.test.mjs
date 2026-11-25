@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: hold the box deploy's D1 gate (stackra-deploy-sql.mjs, ADR 0536 gate 3) to its contract: only additive
+ * Purpose: hold the D1 gate (d1-migration-gate.mjs, ADR 0536 gate 3, shared by the box and CI) to its contract: only additive
  *          statements pass, every destructive or unknown one stops the deploy, quoted text and comments never fool the
  *          split, and wrangler's pending-migration list is read fail-closed. Every migration of workers/registry is
  *          additive today.
@@ -14,10 +14,13 @@ import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   classifyStatement,
+  insertTable,
   migrationVerdict,
+  parseGateArgs,
   pendingMigrations,
+  REGISTRY_TRUST_TABLES,
   sqlStatements,
-} from "../stackra-deploy-sql.mjs";
+} from "../d1-migration-gate.mjs";
 
 const MIGRATIONS = fileURLToPath(new URL("../../../workers/registry/migrations/", import.meta.url));
 
@@ -105,7 +108,7 @@ test("a migration with one destructive statement stops the whole deploy and name
   ]);
 });
 
-test("every registry migration on main is additive", () => {
+test("every registry migration on main is additive, and the trust rows among them wait for the owner", () => {
   const files = readdirSync(MIGRATIONS)
     .filter((f) => f.endsWith(".sql"))
     .map((file) => ({ file, sql: readFileSync(`${MIGRATIONS}${file}`, "utf8") }));
@@ -113,6 +116,53 @@ test("every registry migration on main is additive", () => {
   const verdict = migrationVerdict(files);
   assert.deepEqual(verdict.blocking, []);
   assert.equal(verdict.additive, true);
+  // Under the registry's trust tables, the seeded scopes and publishers are trust changes.
+  const strict = migrationVerdict(files, { ownerTables: REGISTRY_TRUST_TABLES });
+  assert.equal(strict.additive, false);
+  const kinds = new Set(strict.blocking.map((b) => b.kind));
+  assert.ok(kinds.has("INSERT INTO publishers"));
+  assert.ok(kinds.has("INSERT INTO scopes"));
+});
+
+test("an insert into a table that grants rights stops for the owner; other inserts pass", () => {
+  for (const table of REGISTRY_TRUST_TABLES) {
+    const verdict = classifyStatement(
+      `INSERT INTO ${table} (a) VALUES ('x')`,
+      REGISTRY_TRUST_TABLES,
+    );
+    assert.equal(verdict.additive, false, table);
+    assert.equal(verdict.trust, true, table);
+  }
+  assert.equal(
+    classifyStatement('INSERT OR IGNORE INTO "main"."Publishers" VALUES (1)', REGISTRY_TRUST_TABLES)
+      .additive,
+    false,
+  );
+  assert.equal(
+    classifyStatement("INSERT INTO versions (a) VALUES (1)", REGISTRY_TRUST_TABLES).additive,
+    true,
+  );
+  assert.equal(
+    classifyStatement("CREATE TABLE publishers_audit (a TEXT)", REGISTRY_TRUST_TABLES).additive,
+    true,
+  );
+  assert.equal(insertTable("CREATE TABLE t (a)"), null);
+  // Every trust table exists in the registry's schema.
+  const schema = readdirSync(MIGRATIONS)
+    .map((f) => readFileSync(`${MIGRATIONS}${f}`, "utf8"))
+    .join("\n");
+  for (const table of REGISTRY_TRUST_TABLES)
+    assert.match(schema, new RegExp(`CREATE TABLE ${table} \\(`));
+});
+
+test("the CLI's arguments: the registry preset or named tables, then files", () => {
+  assert.deepEqual(parseGateArgs(["--registry", "a.sql"]).ownerTables, [...REGISTRY_TRUST_TABLES]);
+  assert.deepEqual(parseGateArgs(["--owner-tables", "Users, keys", "a.sql", "b.sql"]), {
+    files: ["a.sql", "b.sql"],
+    ownerTables: ["users", "keys"],
+  });
+  assert.equal(parseGateArgs([]), null);
+  assert.equal(parseGateArgs(["--bogus", "a.sql"]), null);
 });
 
 test("wrangler's pending list is read fail-closed", () => {

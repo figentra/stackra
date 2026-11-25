@@ -16,7 +16,7 @@
  *       reproduces CI's caller workflow and runway-cloudflare-workers.yml step for step (install, build, gen, the
  *       member build, the binding-id swap, runway's rendering of the operational settings with the deployed SHA's own
  *       @stackra/runway, `d1 migrations apply --remote`, `versions upload --message <sha>`), with these differences:
- *       a D1 migration runs only when every pending statement is additive (stackra-deploy-sql.mjs; anything else
+ *       a D1 migration runs only when every pending statement is additive (d1-migration-gate.mjs; anything else
  *       stops and is recorded "needs the owner"); the new version first joins the deployment at 0% beside the one
  *       serving at 100% (a version override only reaches a version that is in the current deployment, and every
  *       member keeps `previewUrls: false`), where the smoke suite (stackra-deploy-smoke.mjs) runs through
@@ -110,7 +110,7 @@ import { hostname, userInfo } from "node:os";
 import { dirname, isAbsolute, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseAllDocuments, parse as parseYaml } from "yaml";
-import { migrationVerdict, pendingMigrations } from "./stackra-deploy-sql.mjs";
+import { migrationVerdict, pendingMigrations } from "./d1-migration-gate.mjs";
 import { registryBaseline, registrySample, smokeWorker } from "./stackra-deploy-smoke.mjs";
 
 // ---- constants --------------------------------------------------------------------------------------------------
