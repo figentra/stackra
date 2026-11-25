@@ -229,9 +229,10 @@ source is a local path, an installed package at an exact version, or a git repos
   layer with no parent lacks any of the four ceilings THEN THE validator SHALL refuse it with `no_ceiling`, never
   treating a ceiling as unbounded.
 - **AC-040**: WHERE a base deny rule cannot be expressed as a settings rule (a force flag in any position, a refspec, the
-  current branch for `git reset --hard`) THE install SHALL enforce it with the generated guard, run as a `PreToolUse`
+  current branch for `git reset --hard`, a package runner's `dlx` behind global options such as `pnpm --filter x dlx`) THE install SHALL enforce it with the generated guard, run as a `PreToolUse`
   hook for `Bash` from one `settings.json` entry and from every installed agent's frontmatter, and the guard SHALL deny
-  the protected-branch forms while allowing the same commands on other branches.
+  the protected-branch and package-runner forms while allowing the same commands on other branches and `pnpm exec`,
+  `pnpm run`, `pnpm install` and `pnpm --filter x <script>`.
 - **AC-027**: IF an install would widen any agent or layer policy compared with the manifest, or install a new
   agent with a write tool, an allow rule or an MCP server THEN THE command SHALL list each widening and SHALL write it
   only after a person confirms at an interactive terminal; a non-interactive run and every MCP tool call SHALL refuse

@@ -384,8 +384,8 @@ out.
   - not in the base: `Bash(gh pr edit * -R academorix/academorix-legacy --add-label ready-to-merge)`. It is an
     Academorix-layer rule (the owner's label rule of 18 Nov lets Academorix agents set `ready-to-merge`, one label per
     train when it is ready) under Academorix's own ceiling, carried by the migration (T026, AC-037).
-  - Flagged for the CTO: `Bash(pnpm *)` still admits `pnpm dlx <package>`, which, like `npx`, fetches and runs a
-    package. Denying `Bash(pnpm dlx *)` in the base would close it; the table leaves it as ruled until the CTO says.
+  - `Bash(pnpm *)` would also admit `pnpm dlx <package>`, which fetches and runs a package like `npx`; the CTO ruled
+    (2026-11-25) that the deny table closes it and the other package runners (see "package runners" below).
   - The broad rules that stay (`Bash(git *)`, `Bash(wrangler *)`, `Bash(pnpm *)`) are bounded by the deny table
     below and by each product's own deny and ask rules, which always win.
 - **`mcpServers.allow`** (the servers the products configure today): `aws-knowledge`, `betterstack`,
@@ -405,6 +405,15 @@ out.
     `Bash(encore secret set*)`, `Bash(security find-generic-password*)`, `Bash(security find-internet-password*)`,
     `Bash(security dump-keychain*)`;
   - production deploys (S): `Bash(encore deploy*)`;
+  - package runners that fetch and run an arbitrary package (S for the plain shapes, G for the rest; CTO ruling
+    2026-11-25): `Bash(pnpm dlx *)`, `Bash(pnpx *)`, `Bash(bunx *)`, `Bash(yarn dlx *)`, and `Bash(bun x *)` (Bun's
+    documented spelling of `bunx`). A trailing ` *` also matches the bare command, and Claude Code strips wrappers and
+    leading assignments first, so `timeout 30 pnpm dlx x` and `CI=1 bunx x` are caught by S. A settings prefix cannot
+    see past a runner's global options, so the guard denies `dlx` after any of them: `pnpm --filter x dlx …`,
+    `pnpm -F x dlx …`, `pnpm -C dir dlx …`, `pnpm --dir dir dlx …`, `pnpm -w dlx …`, `pnpm -r dlx …`,
+    `pnpm --silent dlx …`, `yarn --cwd dir dlx …`, and the same commands behind `mise exec … --` or one level of
+    `sh -c` / `bash -c`. `pnpm exec`, `pnpm run`, `pnpm install` and `pnpm --filter x <script>` stay allowed: they run
+    only what the lockfile installed;
   - destructive deletes (S): `Bash(rm -rf /)`, `Bash(rm -rf / *)`, `Bash(rm -rf ~*)`, `Bash(rm -rf $HOME*)`;
   - skipping the commit hooks (S and G): `Bash(LEFTHOOK=0*)`; the guard is the authority, because Claude Code matches
     rules past a leading variable assignment, and it also refuses `git commit --no-verify` and `-n`;
@@ -420,7 +429,8 @@ out.
     `Bash(git push * --delete main)`, `Bash(git push --delete * main)`, `Bash(git push * -d main)`,
     `Bash(git branch -d main)`, `Bash(git branch -D main)`, `Bash(git branch --delete main)`,
     `Bash(git branch --delete --force main)`; the guard covers the remaining forms (`:refs/heads/main`, flags after
-    the name, several names);
+    the name, several names). "Deleting branches on main" means deleting `main` itself, locally or on the remote
+    (confirmed by the CTO, 2026-11-25);
   - `git reset --hard` on a protected branch (G only): a settings rule cannot see the current branch, so the guard reads
     it (`git rev-parse --abbrev-ref HEAD` in the command's effective directory, after `cd <dir> &&` or `-C <dir>`) and
     denies when it is protected, detached on a protected branch's commit, or unknown (fail closed).
@@ -655,6 +665,13 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
   `git branch feature -D main`, `git commit --no-verify -m x`, `LEFTHOOK=0 git commit -m x`), and for
   `git reset --hard` reads the branch from a temporary repository: denied on `main`, allowed on `feature`, denied when
   the branch cannot be read.
+- **Package runners, both ways** (AC-039, AC-040): S denies `pnpm dlx cowsay`, `pnpm dlx` (bare),
+  `pnpx create-vite`, `bunx prettier --check .`, `bun x prettier`, `yarn dlx create-next-app`,
+  `timeout 30 pnpm dlx x`, `CI=1 bunx x`; the guard with `--base` denies the flag-variant shapes S misses
+  (`pnpm --filter web dlx x`, `pnpm -F web dlx x`, `pnpm -C apps/web dlx x`, `pnpm --dir apps/web dlx x`,
+  `pnpm -w dlx x`, `pnpm -r --silent dlx x`, `yarn --cwd apps/web dlx x`, `mise exec -- pnpm dlx x`,
+  `sh -c 'pnpm dlx x'`); and neither denies `pnpm exec playwright test`, `pnpm install`, `pnpm run build`,
+  `pnpm --filter x test`, `pnpm --filter x exec vitest`, `yarn install` or `bun install`.
 - **Generated cases** (P-002, P-003, P-004, P-013): a seeded generator (no new dependency) builds 500 random four-layer
   stacks; each is resolved in shuffled file order (same digest), with an extra random layer (no deny lost) and checked
   against its ceilings.
