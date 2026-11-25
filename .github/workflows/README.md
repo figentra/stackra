@@ -36,4 +36,16 @@
   exports `TURBO_API`, `TURBO_TOKEN`, `TURBO_TEAM` and `TURBO_REMOTE_CACHE_SIGNATURE_KEY`. A fork pull request has no
   OIDC token, so ci.yml skips the step there and turbo uses its local cache only.
 
+## Self-hosted runner
+
+While GitHub refuses hosted runners for figentra's billing (STA-2785), the jobs that need no Docker, Encore, `sudo`,
+gcloud or `gh` run on figentra's self-hosted runner `figentra-b2-1` on box 2 (`runs-on: [self-hosted, figentra]`;
+labels in `../actionlint.yaml`): ci.yml's `Dependency scan (OSV-Scanner)`, `Quality Gate` and `Dependency Review`,
+and regen.yml's `Regen (build the patch)`. The runner user has no `sudo` and no Docker group and reads only its work
+directory, so every tool comes from mise. Everything else stays GitHub-hosted: `release.yml` (npm provenance through
+OIDC needs a hosted runner, ADR 0453), every deploy, apply and production job, every job holding a deploy or approver
+credential, the generated `fflow-*.yml` files, the reusable `runway-*.yml` workflows other repositories call, and the
+jobs that need Docker or preinstalled tools. A fork's pull request runs on the box only after a maintainer approves
+the run (the repository's "require approval for all external contributors" setting, which must stay on).
+
 Runbooks: [CI](../../apps/docs/src/docs/runbooks/ci.mdx), [release](../../apps/docs/src/docs/runbooks/release.mdx).
