@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-25
 
-**Status**: Draft (design for the CTO's read; plan.md and tasks.md follow his read)
+**Status**: Clarified (the CTO's answers, 2026-11-25). Kept as the fallback: not built while the owner decides on unlocking GitHub billing; if he declines, plan.md and tasks.md follow
 
 **Tier**: big (it amends [ADR 0166](../../../apps/docs/src/docs/adr/0166-ci-policy-runners-budgets-concurrency-and-check-matrix.mdx) CI1, where required checks run)
 
@@ -14,7 +14,7 @@
 
 **Linear**: STA-2785
 
-**Clarifications status**: open (see Open questions)
+**Clarifications status**: complete
 
 **Input**: figentra's GitHub-hosted jobs do not start while the account is locked for billing. This was checked on 2026-11-25 on this public repository: a `pull_request` run and a `workflow_dispatch` run of ci.yml on `ubuntu-latest` both failed every job with zero steps, annotated "The job was not started because your account is locked due to a billing issue". So the free public-repository minutes are blocked too. The first version of STA-2785 moved the gate to a persistent self-hosted runner. The CTO rejected that on 2026-11-25 because this repository is public: a fork's pull request runs the fork's own workflow file and can target any runner label, so one approved run would execute outside code on a long-lived shared machine. His decision: no persistent self-hosted runner on a public repository; CI on our machines only through single-use, per-job runners on a host that serves nothing else; fork pull requests stay on GitHub-hosted runners or require approval.
 
@@ -88,12 +88,25 @@ The plan turns each into a test.
 
 `.github/workflows/README.md` gains the rule: no persistent self-hosted runner serves a public repository. Our machines serve its CI only through single-use, per-job runners on hosts that serve nothing else.
 
-### Open questions for the CTO
+### Clarifications (the CTO, 2026-11-25)
 
-1. **The host for the controller and the VMs:** the testbed's AWS account and region, or a separate account. I'd use a separate account, so a job VM can never share an account boundary with the testbed.
-2. **Webhooks or polling:** webhooks need a public endpoint (a small Worker forwarding to the controller); polling the queued jobs every 15 s needs none. I'd poll first.
-3. **The App:** whether a new GitHub App with Administration: write on this repository is acceptable, or whether it should use stackra-bot's App with that permission added.
-4. **Billing:** whether this should be built at all if the owner unlocks billing soon. GitHub-hosted runners then cover every job for free, since the repository is public, and this design becomes a fallback.
+1. **Host:** a separate AWS account, not the testbed's (accounts by purpose). The owner creates it.
+2. **Queue:** the controller polls the queued jobs. Webhooks come later, only if latency matters.
+3. **GitHub credential:** a new, dedicated GitHub App installed on figentra/stackra only, with the minimum permission JIT registration needs. Its private key lives only on the controller. stackra-bot is not widened.
+4. **When:** this is the fallback. The CTO recommends that the owner unlock billing, because hosted minutes are free on a public repository and every check then runs with no new infrastructure. It is built only if the owner declines.
+
+### What the owner would create, if it is built
+
+- **The AWS account:** a new member account in the organization, for CI job VMs only. It needs:
+  - one region, the testbed's eu-west-1;
+  - the default quotas (ADR 0516: no quota request);
+  - a budget alarm at the ceiling the plan sets;
+  - no access to or from the testbed's or any product's account.
+- **The GitHub App:** installed on figentra/stackra only.
+  - Repository permissions: Administration read and write (JIT runner registration requires it), Actions read (to list queued jobs), Metadata read.
+  - No other permission, no webhook, and no other repository.
+  - The owner generates its private key and places it on the controller host; it never goes in a repository or a chat.
+- **Nothing else:** the controller's host, the VM image and the network are built from code in the plan.
 
 ## Impact
 
@@ -113,3 +126,8 @@ The plan turns each into a test.
 - **Lane**: full
 - **Change risk**: high
 - **Money**: spot instances under an alarmed ceiling
+
+## Status history
+
+- 2026-11-25 → Draft: the design for the CTO's read (Tarek).
+- 2026-11-25 → Clarified: the CTO answered the four questions; kept as the fallback while the owner decides on unlocking billing.
