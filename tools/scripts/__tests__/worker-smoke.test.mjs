@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: hold the box deploy's smoke suites (stackra-deploy-smoke.mjs, ADR 0536 gate 2) to their contract against
- *          fake Workers: the registry suite passes a healthy registry and fails on each broken check (integrity,
+ * Purpose: hold the Worker smoke suites (worker-smoke.mjs, ADR 0536 gate 2, shared by the box and CI) to their
+ *          contract against fake Workers: the version proof fails the false pass (an ignored override answered by
+ *          the old version) for edge and docs, and fails a Worker with no proof; the docs suite; the registry suite passes a healthy registry and fails on each broken check (integrity,
  *          signature, signing keys, abbreviated packument, the publish refusal, the 404 path, a package that vanished
  *          since production's baseline); the turbo-cache suite needs the 401s and a byte-equal round trip; static and
  *          edge their own answers; every request of a version smoke carries the version override; the turbo token
@@ -16,15 +17,19 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import {
+  headerProof,
   overrideFor,
+  parseSmokeArgs,
+  redirectsOf,
   registryBaseline,
   registrySample,
   runwayChecks,
   smokeWorker,
-} from "../stackra-deploy-smoke.mjs";
+} from "../worker-smoke.mjs";
 import { fakeWorkers } from "./__fixtures__/fake-workers.mjs";
 
 const {
+  docs: fakeDocs,
   edge: fakeEdge,
   registry: fakeRegistry,
   static: fakeStatic,
@@ -51,14 +56,32 @@ const registryRun = async (breaks = [], extra = {}) => {
     member: "registry",
     workerName: "stackra-registry",
     version: VERSION,
+    // The registry's own version proof comes with STA-2786; these tests check its suite.
+    expect: false,
     sample: SAMPLE,
     ...extra,
   });
   return { result, registry };
 };
 
-const hosts = (breaks) =>
-  routedFetch({ "edge.example.test": fakeEdge({ breaks: new Set(breaks) }) });
+const hosts = (breaks, options = {}) =>
+  routedFetch({ "edge.example.test": fakeEdge({ breaks: new Set(breaks), ...options }) });
+
+/** runway.yaml with an edge and a docs member on test hosts, as the Stackra account would declare them. */
+const stackraRoot = () => {
+  const root = structuredClone(ROOT);
+  root.targets["cloudflare-workers"].members.edge = {
+    path: "workers/edge",
+    customDomains: ["edge.example.test"],
+    smoke: [{ url: "https://edge.example.test/" }],
+  };
+  root.targets["cloudflare-workers"].members.docs = {
+    ...root.targets["cloudflare-workers"].members.docs,
+    customDomains: ["docs.example.test"],
+    smoke: [{ url: "https://docs.example.test/" }, { url: "https://docs.example.test/llms.txt" }],
+  };
+  return root;
+};
 
 const failedNames = (result) => result.results.filter((r) => !r.ok).map((r) => r.name);
 
@@ -177,6 +200,7 @@ test("turbo-cache: the 401s, the authenticated status and a byte-equal round tri
         member: "turbo-cache",
         workerName: "stackra-turbo-cache",
         version: VERSION,
+        expect: false,
         turboToken: TURBO,
       },
     );
@@ -203,12 +227,12 @@ test("turbo-cache: the 401s, the authenticated status and a byte-equal round tri
 test("static: the root and the schema index", async () => {
   const healthy = await smokeWorker(
     { fetch: fakeStatic().fetch },
-    { root: ROOT, member: "static", workerName: "stackra-static", version: VERSION },
+    { root: ROOT, member: "static", workerName: "stackra-static", version: VERSION, expect: false },
   );
   assert.deepEqual(failedNames(healthy), []);
   const broken = await smokeWorker(
     { fetch: fakeStatic({ breaks: new Set(["index"]) }).fetch },
-    { root: ROOT, member: "static", workerName: "stackra-static", version: VERSION },
+    { root: ROOT, member: "static", workerName: "stackra-static", version: VERSION, expect: false },
   );
   assert.deepEqual(failedNames(broken).toSorted(), [
     "smoke /schemas/index.json",
@@ -216,13 +240,8 @@ test("static: the root and the schema index", async () => {
   ]);
 });
 
-test("edge: an unsigned JWT is refused by the edge itself, and a missing member fails", async () => {
-  const root = structuredClone(ROOT);
-  root.targets["cloudflare-workers"].members.edge = {
-    path: "workers/edge",
-    customDomains: ["edge.example.test"],
-    smoke: [{ url: "https://edge.example.test/" }],
-  };
+test("edge: an unsigned JWT is refused by the edge itself, every answer from the version under test", async () => {
+  const root = stackraRoot();
   // The member smoke URL itself answers 401 to the probe, and 200 to the plain runway smoke.
   const healthy = await smokeWorker(
     { fetch: hosts([]) },
@@ -239,6 +258,79 @@ test("edge: an unsigned JWT is refused by the edge itself, and a missing member 
     { root: ROOT, member: "edge", workerName: "stackra-edge", version: VERSION },
   );
   assert.equal(absent.ok, false);
+});
+
+test("the false pass: an ignored override serves the old version with 200s, and the smoke now fails", async () => {
+  const root = stackraRoot();
+  // edge: every check of its suite passes on the old version, only the version proof sees it.
+  const edge = await smokeWorker(
+    { fetch: hosts([], { ignoreOverride: true }) },
+    { root, member: "edge", workerName: "stackra-edge", version: VERSION },
+  );
+  assert.deepEqual(failedNames(edge), ["version proof"]);
+  assert.match(edge.results.find((r) => r.name === "version proof").detail, /old-version/);
+  // docs: the same, read through /-/version before and after the suite.
+  const docs = await smokeWorker(
+    { fetch: routedFetch({ "docs.example.test": fakeDocs({ ignoreOverride: true }) }) },
+    { root, member: "docs", workerName: "stackra-docs", version: VERSION },
+  );
+  assert.deepEqual(failedNames(docs), ["version proof", "version proof"]);
+  // A live smoke (no override) at 100% expects the new version too.
+  const live = await smokeWorker(
+    { fetch: hosts([], { serving: VERSION }) },
+    { root, member: "edge", workerName: "stackra-edge", expect: VERSION },
+  );
+  assert.deepEqual(failedNames(live), []);
+});
+
+test("docs: the root, a page, an asset, the 404 and the redirects, with the version proof", async () => {
+  const root = stackraRoot();
+  const run = async (breaks = [], redirects = [{ from: "/old", to: "/new" }]) =>
+    smokeWorker(
+      { fetch: routedFetch({ "docs.example.test": fakeDocs({ breaks: new Set(breaks) }) }) },
+      { root, member: "docs", workerName: "stackra-docs", version: VERSION, redirects },
+    );
+  const healthy = await run();
+  assert.deepEqual(failedNames(healthy), []);
+  const names = new Set(healthy.results.map((r) => r.name));
+  for (const name of [
+    "docs root",
+    "docs page /adr",
+    "docs asset",
+    "docs unknown path is 404",
+    "docs redirect /old",
+    "version proof",
+  ])
+    assert.ok(names.has(name), name);
+  assert.deepEqual(failedNames(await run(["asset"])), ["docs asset"]);
+  assert.deepEqual(failedNames(await run(["redirect"])), ["docs redirect /old"]);
+  assert.deepEqual(redirectsOf("/licensing /customers/install 301\n/x/* /y 301\n# note\n/a /b"), [
+    { from: "/licensing", to: "/customers/install" },
+    { from: "/a", to: "/b" },
+  ]);
+});
+
+test("a Worker without a version proof fails a smoke that expects a version", async () => {
+  const result = await smokeWorker(
+    { fetch: fakeStatic().fetch },
+    { root: ROOT, member: "static", workerName: "stackra-static", version: VERSION },
+  );
+  assert.deepEqual(failedNames(result), ["version proof"]);
+  assert.equal(headerProof([], VERSION).ok, false);
+});
+
+test("the CI CLI's arguments", () => {
+  assert.deepEqual(parseSmokeArgs(["--member", "registry"]), { member: "registry" });
+  assert.deepEqual(
+    parseSmokeArgs(["--member", "docs", "--version", VERSION, "--worker-name", "stackra-docs"]),
+    {
+      member: "docs",
+      version: VERSION,
+      workerName: "stackra-docs",
+    },
+  );
+  assert.equal(parseSmokeArgs(["--member", "docs", "--version", VERSION]), null);
+  assert.equal(parseSmokeArgs(["--bogus"]), null);
 });
 
 test("runway's checks come from the uptime list and the member smoke URLs", () => {

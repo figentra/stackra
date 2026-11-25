@@ -1,34 +1,59 @@
+#!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: the smoke suites of the box Worker deploy path (STA-2783, ADR 0536 gate 2), run against one Worker version
- *   at every promotion step: at 0% (the version is in the deployment with no traffic and reached through
- *   `Cloudflare-Workers-Version-Overrides`) and at each step after. Every Worker gets runway.yaml's uptime checks for
- *   its hosts and its member `smoke` URLs, then its own suite:
- *   - registry (the strongest: no approval stands behind it): `/-/ping`; `/-/npm/v1/keys` (each keyid is the SHA-256
- *     of its key); for each sampled @stackra package (one per release group under packages/, plus @stackra/cli) the
- *     full and the abbreviated packument (shape, `dist-tags.latest` among the versions, the tarball URL on the
- *     registry host), the latest version's tarball (gzip, sha512 equal to `dist.integrity`, sha1 equal to
- *     `dist.shasum`, the same integrity as production served before the deploy), and its registry signature
- *     (ECDSA P-256 over `<name>@<version>:<integrity>` under a key of `/-/npm/v1/keys`); then the refusals that
- *     change nothing: a publish `PUT` without a token (401 with `WWW-Authenticate: Bearer`, the auth runs before the
- *     body is read, and `{}` carries no version), an unpublish `DELETE` (405, versions are immutable), `/-/whoami`
- *     without a token (401), and a package that does not exist (404 `not_found`). While `REGISTRY_READ_ONLY` is
- *     `true`, the two writes answer 503 `registry_read_only` instead.
+ * Purpose: the Worker smoke suites (STA-2783, ADR 0536 gate 2), shared by the box deploy service (docs, edge) and CI's
+ *   Worker deploys (registry, turbo-cache, static; STA-2786 wires CI). One run checks one Worker version: at 0% (the
+ *   version is in the deployment with no traffic and reached through `Cloudflare-Workers-Version-Overrides`) and at
+ *   each promotion step after. Every Worker gets runway.yaml's uptime checks for its hosts and its member `smoke` URLs,
+ *   then its own suite:
+ *   - registry (the strongest): `/-/ping`; `/-/npm/v1/keys` (each keyid is the SHA-256 of its key); for each sampled
+ *     @stackra package (one per release group under packages/, plus @stackra/cli) the full and the abbreviated
+ *     packument (shape, `dist-tags.latest` among the versions, the tarball URL on the registry host), the latest
+ *     version's tarball (gzip, sha512 equal to `dist.integrity`, sha1 equal to `dist.shasum`, the same integrity as
+ *     production served before the deploy), and its registry signature (ECDSA P-256 over
+ *     `<name>@<version>:<integrity>` under a key of `/-/npm/v1/keys`); then the refusals that change nothing: a
+ *     publish `PUT` without a token (401 with `WWW-Authenticate: Bearer`; the auth runs before the body is read, and
+ *     `{}` carries no version), an unpublish `DELETE` (405), `/-/whoami` without a token (401), and a package that
+ *     does not exist (404 `not_found`). While `REGISTRY_READ_ONLY` is `true` the two writes answer 503.
  *   - turbo-cache: `/v8/artifacts/status` without a token and with a wrong one (401), with the token (200 enabled),
- *     then a round trip in its own `stackra-deploy-smoke` team: PUT (202), HEAD (200), GET (200, same bytes and tag).
- *   - static: the root and `/schemas/index.json` (JSON).
- *   - edge: each smoke URL with a JWT-shaped bearer token signed by nobody (`alg: none`) answers 401
- *     `Bearer error="invalid_token"` with `X-Content-Type-Options: nosniff`, the edge's own answer before any origin.
+ *     then a round trip in its own `stackra-deploy-smoke` team: PUT (202), HEAD (200), GET (same bytes and tag).
+ *   - static: the root and `/schemas/index.json`.
+ *   - docs: the root, the ADR index, an asset the root links, an unknown path (404) and the site's redirects.
+ *   - edge: each smoke URL with an unsigned JWT answers 401 `Bearer error="invalid_token"` with nosniff.
+ *   Version proof: when a run expects a version, it must see that version answer, so a smoke whose override was
+ *   ignored (a version not in the deployment) fails instead of passing on the old one. edge names its version in an
+ *   `x-stackra-version` header on every answer (all are read); docs, whose answers are static assets, serves
+ *   `/-/version` (read before and after the suite). A Worker without a proof fails a run that expects a version.
+ *   CLI, for a CI step (tokens by name from the step's environment: TURBO_TOKEN):
+ *     node tools/scripts/worker-smoke.mjs --member <key> [--version <id> --worker-name <script> [--expect <id>]]
  * Boundary: HTTP GET/HEAD and the two refused writes through the given `fetch` only; no secret is printed: the
  *   turbo token is a header value and never part of a result. A result names the URL path and what was wrong.
  * Runtime: node
  * Governing contract: ADR 0536; ADR 0453 (the registry routes and signatures); ADR 0026 (the cache API); ADR 0437
- *   (the edge Worker); ADR 0185 (uptime checks).
+ *   (the edge Worker); ADR 0514 (the docs Worker); ADR 0185 (uptime checks); STA-2786.
+ * Exit (CLI): 0 every check passed, 1 a check failed, 2 usage.
  */
 import { createHash, createPublicKey, randomBytes, verify as verifySignature } from "node:crypto";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 
 /** The header that routes a request to one version of a Worker in the current deployment. */
 export const VERSION_OVERRIDE_HEADER = "cloudflare-workers-version-overrides";
+
+/** The response header a Worker names the version it runs in (its `CF_VERSION_METADATA` binding's id). */
+export const VERSION_HEADER = "x-stackra-version";
+
+/** The route a Worker whose answers are static assets serves its version at (`{ "version": "<id>" }`). */
+export const VERSION_ROUTE = "/-/version";
+
+/**
+ * How each Worker proves which version answered: `header` (every answer carries VERSION_HEADER) or `route`
+ * (VERSION_ROUTE, read before and after the suite). A Worker without an entry cannot pass a smoke that expects a
+ * version; STA-2786 adds the registry's.
+ */
+export const VERSION_PROOF = Object.freeze({ edge: "header", docs: "route" });
 
 /** npm's media type for the abbreviated packument. */
 export const ABBREVIATED = "application/vnd.npm.install-v1+json";
@@ -455,6 +480,74 @@ export async function staticSuite(io, { base, override }) {
   ];
 }
 
+/**
+ * The docs Worker's suite: the root (HTML), a known page (the ADR index), the first script or stylesheet the root
+ * links, an unknown path (404, the site's own 404 page) and each of `redirects` (`{ from, to }` paths, answered with a
+ * redirect to `to`).
+ */
+export async function docsSuite(io, { base, override, redirects = [] }) {
+  const results = [];
+  const root = await request(io, `${base}/`, { override });
+  const html = root.status === 200 ? await root.text() : "";
+  results.push(
+    root.status === 200 && /<html/i.test(html)
+      ? pass("docs root")
+      : fail("docs root", `/ answered ${root.status}`),
+  );
+  const page = await request(io, `${base}/adr`, { override });
+  results.push(
+    page.status === 200
+      ? pass("docs page /adr")
+      : fail("docs page /adr", `answered ${page.status}`),
+  );
+  const asset = /(?:src|href)="(\/[^"]+\.(?:js|css))"/.exec(html)?.[1];
+  if (asset === undefined)
+    results.push(fail("docs asset", "the root links no script or stylesheet"));
+  else {
+    const answer = await request(io, `${base}${asset}`, { override });
+    results.push(
+      answer.status === 200
+        ? pass("docs asset")
+        : fail("docs asset", `${asset} answered ${answer.status}`),
+    );
+  }
+  const missing = await request(
+    io,
+    `${base}/stackra-deploy-smoke-missing-${randomBytes(6).toString("hex")}`,
+    {
+      override,
+    },
+  );
+  results.push(
+    missing.status === 404
+      ? pass("docs unknown path is 404")
+      : fail("docs unknown path is 404", `answered ${missing.status}`),
+  );
+  for (const { from, to } of redirects) {
+    const answer = await request(io, `${base}${from}`, { override });
+    const location = answer.headers.get("location") ?? "";
+    const target = new URL(location || "/", `${base}${from}`);
+    results.push(
+      [301, 302, 307, 308].includes(answer.status) && `${target.pathname}${target.search}` === to
+        ? pass(`docs redirect ${from}`)
+        : fail(`docs redirect ${from}`, `answered ${answer.status} to ${location || "nowhere"}`),
+    );
+  }
+  return results;
+}
+
+/** The redirects of a built site's `_redirects` file (`/from /to [status]` lines), the first `limit` of them. */
+export function redirectsOf(text, limit = 5) {
+  return String(text)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("/") && !line.includes("*") && !line.includes(":"))
+    .map((line) => line.split(/\s+/))
+    .filter(([, to]) => typeof to === "string" && to.startsWith("/"))
+    .slice(0, limit)
+    .map(([from, to]) => ({ from, to }));
+}
+
 /** The edge Worker's suite: an unsigned JWT is refused by the edge itself, with the security headers. */
 export async function edgeSuite(io, { urls, override }) {
   if (urls.length === 0) return [fail("edge", "the edge member has no smoke URL to probe")];
@@ -490,31 +583,97 @@ export async function smokeWorker(io, context) {
   const domain = member.customDomains?.[0];
   const base = domain ? `https://${domain}` : undefined;
   const override = version ? overrideFor(workerName, version) : undefined;
-  const results = await runRunwayChecks(io, runwayChecks(root, memberKey), {
-    override,
-    bearers: { TURBO_TOKEN: context.turboToken },
-  });
-  if (memberKey === "registry")
-    results.push(
-      ...(await registrySuite(io, {
-        base,
-        override,
-        sample: context.sample ?? [],
-        baseline: context.baseline,
-        readOnly: context.readOnly,
-      })),
-    );
-  else if (memberKey === "turbo-cache")
-    results.push(...(await turboCacheSuite(io, { base, override, token: context.turboToken })));
-  else if (memberKey === "static") results.push(...(await staticSuite(io, { base, override })));
-  else if (memberKey === "edge")
-    results.push(
-      ...(await edgeSuite(io, { urls: (member.smoke ?? []).map((s) => s.url), override })),
-    );
-  else results.push(fail("suite", `no smoke suite for ${memberKey}`));
+  const expect = context.expect ?? version;
+  const proof = VERSION_PROOF[memberKey];
+  // Every answer from the member's own hosts is read through this, so a header proof sees all of them.
+  const hosts = new Set(member.customDomains ?? []);
+  const served = [];
+  const proving = {
+    ...io,
+    fetch: async (url, init) => {
+      const response = await io.fetch(url, init);
+      if (proof === "header" && expect && hosts.has(new URL(url).host))
+        served.push({ path: pathOf(url), version: response.headers.get(VERSION_HEADER) });
+      return response;
+    },
+  };
+  const results = [];
+  if (expect && proof === "route")
+    results.push(await routeProof(proving, { base, override, expect }));
+  results.push(
+    ...(await runRunwayChecks(proving, runwayChecks(root, memberKey), {
+      override,
+      bearers: { TURBO_TOKEN: context.turboToken },
+    })),
+  );
+  try {
+    results.push(...(await suiteOf(proving, memberKey, member, { ...context, base, override })));
+  } catch (error) {
+    results.push(fail("suite", `${memberKey} suite failed: ${error.name}: ${error.message}`));
+  }
+  if (expect) {
+    if (proof === "route") results.push(await routeProof(proving, { base, override, expect }));
+    else if (proof === "header") results.push(headerProof(served, expect));
+    else
+      results.push(fail("version proof", `${memberKey} exposes no version id to prove the answer`));
+  }
   if (!base && memberKey !== "edge")
     results.push(fail("host", `${memberKey} has no custom domain to probe`));
   return { ok: results.every((r) => r.ok), results };
+}
+
+/** The Worker's own suite. */
+async function suiteOf(io, memberKey, member, context) {
+  const { base, override } = context;
+  if (memberKey === "registry")
+    return registrySuite(io, {
+      base,
+      override,
+      sample: context.sample ?? [],
+      baseline: context.baseline,
+      readOnly: context.readOnly,
+    });
+  if (memberKey === "turbo-cache")
+    return turboCacheSuite(io, { base, override, token: context.turboToken });
+  if (memberKey === "static") return staticSuite(io, { base, override });
+  if (memberKey === "docs")
+    return docsSuite(io, { base, override, redirects: context.redirects ?? [] });
+  if (memberKey === "edge")
+    return edgeSuite(io, { urls: (member.smoke ?? []).map((s) => s.url), override });
+  return [fail("suite", `no smoke suite for ${memberKey}`)];
+}
+
+/** Every answer of the member's hosts named `expect` in its version header; at least one answer was read. */
+export function headerProof(served, expect) {
+  if (served.length === 0)
+    return fail("version proof", "no answer from the Worker's hosts was read");
+  const wrong = served.filter((s) => s.version !== expect);
+  return wrong.length === 0
+    ? pass("version proof")
+    : fail(
+        "version proof",
+        `${wrong.length} of ${served.length} answers came from another version (${wrong
+          .slice(0, 3)
+          .map((s) => `${s.path}: ${s.version ?? "no version"}`)
+          .join(", ")})`,
+      );
+}
+
+/** `GET <base>/-/version` names `expect` in its body and its version header. */
+export async function routeProof(io, { base, override, expect }) {
+  try {
+    const answer = await request(io, `${base}${VERSION_ROUTE}`, { override });
+    const body = answer.status === 200 ? await jsonOf(answer) : undefined;
+    const header = answer.headers.get(VERSION_HEADER);
+    return body?.version === expect && header === expect
+      ? pass("version proof")
+      : fail(
+          "version proof",
+          `${VERSION_ROUTE} answered ${answer.status} for version ${body?.version ?? header ?? "none"}, not ${expect}`,
+        );
+  } catch (error) {
+    return fail("version proof", `${VERSION_ROUTE} failed: ${error.name}`);
+  }
 }
 
 /**
@@ -541,4 +700,81 @@ export async function registryBaseline(io, { base, sample }) {
     baseline[name] = { version: latest, integrity };
   }
   return { baseline, absent };
+}
+
+/** The workspace packages of a tree: `[{ name, dir, private }]` for every packages/<group>/<name>/package.json. */
+export function workspacePackages(tree, fs = { readdirSync, readFileSync, existsSync }) {
+  const list = (path) => {
+    try {
+      return fs.readdirSync(path).toSorted();
+    } catch {
+      return [];
+    }
+  };
+  const out = [];
+  for (const group of list(join(tree, "packages")))
+    for (const name of list(join(tree, "packages", group))) {
+      const file = join(tree, "packages", group, name, "package.json");
+      if (!fs.existsSync(file)) continue;
+      try {
+        const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
+        out.push({
+          name: pkg.name,
+          dir: `packages/${group}/${name}`,
+          private: pkg.private === true,
+        });
+      } catch {
+        // A package.json that is not JSON is not a published package.
+      }
+    }
+  return out;
+}
+
+/** The CLI's options, or null on a usage error. */
+export function parseSmokeArgs(argv) {
+  const out = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const name = {
+      "--member": "member",
+      "--version": "version",
+      "--worker-name": "workerName",
+      "--expect": "expect",
+    }[argv[i]];
+    if (!name) return null;
+    out[name] = argv[(i += 1)] ?? "";
+  }
+  if (!/^[a-z][a-z0-9-]*$/.test(out.member ?? "")) return null;
+  if (out.version !== undefined && !out.workerName) return null;
+  return out;
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const options = parseSmokeArgs(process.argv.slice(2));
+  if (options === null) {
+    process.stderr.write(
+      "usage: worker-smoke.mjs --member <key> [--version <id> --worker-name <script> [--expect <id>]]\n",
+    );
+    process.exitCode = 2;
+  } else {
+    const root = parseYaml(readFileSync("runway.yaml", "utf8"));
+    const member = root?.targets?.["cloudflare-workers"]?.members?.[options.member];
+    const io = { fetch: (url, init) => globalThis.fetch(url, init) };
+    const context = { root, ...options, turboToken: process.env.TURBO_TOKEN };
+    if (options.member === "registry" && member?.customDomains?.[0]) {
+      const { baseline } = await registryBaseline(io, {
+        base: `https://${member.customDomains[0]}`,
+        sample: registrySample(workspacePackages(".")),
+      });
+      Object.assign(context, { baseline, sample: Object.keys(baseline) });
+    }
+    const built = join(member?.path ?? ".", ".stackra/site/build/client/_redirects");
+    if (options.member === "docs" && existsSync(built))
+      context.redirects = redirectsOf(readFileSync(built, "utf8"));
+    const result = await smokeWorker(io, context);
+    for (const r of result.results)
+      process.stdout.write(
+        `${r.ok ? "pass" : "FAIL"} ${r.name}${r.detail ? `: ${r.detail}` : ""}\n`,
+      );
+    process.exitCode = result.ok ? 0 : 1;
+  }
 }

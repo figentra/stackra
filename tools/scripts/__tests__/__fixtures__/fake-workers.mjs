@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: fakes of the four Workers the box deploy smoke-tests (registry, turbo-cache, static, edge), built at
+ * Purpose: fakes of the Workers the smoke suites test (registry, turbo-cache, static, edge, docs), built at
  *          runtime with no network: a registry with real ECDSA P-256 signatures and gzip tarballs, a turbo cache that
- *          stores what is put, a static site and an edge that refuses an unsigned JWT. Each takes `breaks` to model
- *          one failure, and records every request (with its version override) for the tests to read.
+ *          stores what is put, a static site, an edge that refuses an unsigned JWT and a docs site with its
+ *          `/-/version` route. Each takes `breaks` to model one failure and records every request for the tests to
+ *          read; edge and docs name the version that answers, and `ignoreOverride` reproduces the false pass (an
+ *          override Cloudflare ignores because the version is not in the deployment, so the old one answers).
  * Boundary: test fixture; answers `fetch(url, init)` calls with WHATWG Response objects.
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0536; workers/registry/src (routes and answers), workers/turbo-cache/src,
@@ -181,15 +183,22 @@ function fakeStatic({ breaks = new Set() } = {}) {
   return { fetch, requests };
 }
 
-/** An edge host; `breaks`: `forward` (an unsigned JWT is forwarded to the origin). */
-function fakeEdge({ breaks = new Set() } = {}) {
+/**
+ * The version that answers a request: the override's version when the fake honours overrides (a version in the
+ * deployment), else the one serving. `ignoreOverride` reproduces a version that is not in the deployment, whose
+ * override Cloudflare ignores: the old version answers, often with a 200.
+ */
+const answeringVersion = (init, { serving, ignoreOverride }) => {
+  const override = headerOf(init, "cloudflare-workers-version-overrides");
+  return override && !ignoreOverride ? override.split('"')[1] : serving;
+};
+
+/** An edge host; `breaks`: `forward` (an unsigned JWT is forwarded to the origin). Every answer names its version. */
+function fakeEdge({ breaks = new Set(), serving = "old-version", ignoreOverride = false } = {}) {
   const requests = [];
   const fetch = async (url, init = {}) => {
-    requests.push({
-      url,
-      method: init.method ?? "GET",
-      override: headerOf(init, "cloudflare-workers-version-overrides"),
-    });
+    const version = answeringVersion(init, { serving, ignoreOverride });
+    requests.push({ url, method: init.method ?? "GET", version });
     if (
       !breaks.has("forward") &&
       /^Bearer [\w-]+\.[\w-]+\.[\w-]*$/.test(headerOf(init, "authorization") ?? "")
@@ -199,9 +208,47 @@ function fakeEdge({ breaks = new Set() } = {}) {
         headers: {
           "www-authenticate": 'Bearer error="invalid_token"',
           "x-content-type-options": "nosniff",
+          "x-stackra-version": version,
         },
       });
-    return new Response("from the origin", { status: 200 });
+    return new Response("from the origin", {
+      status: 200,
+      headers: { "x-stackra-version": version },
+    });
+  };
+  return { fetch, requests };
+}
+
+/**
+ * A docs host (static assets plus the `/-/version` route); `breaks`: `asset` (the linked script is missing),
+ * `redirect` (`/old` is not redirected).
+ */
+function fakeDocs({ breaks = new Set(), serving = "old-version", ignoreOverride = false } = {}) {
+  const requests = [];
+  const fetch = async (url, init = {}) => {
+    const version = answeringVersion(init, { serving, ignoreOverride });
+    const { pathname } = new URL(url);
+    requests.push({ url, method: init.method ?? "GET", version });
+    if (pathname === "/-/version")
+      return Response.json(
+        { version },
+        { headers: { "x-stackra-version": version, "cache-control": "no-store" } },
+      );
+    if (pathname === "/")
+      return new Response(
+        '<!doctype html><html><script src="/assets/entry-abc.js"></script></html>',
+        {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        },
+      );
+    if (pathname === "/adr" || pathname === "/llms.txt")
+      return new Response("page", { status: 200 });
+    if (pathname === "/assets/entry-abc.js" && !breaks.has("asset"))
+      return new Response("js", { status: 200 });
+    if (pathname === "/old" && !breaks.has("redirect"))
+      return new Response(null, { status: 301, headers: { location: "/new" } });
+    return new Response("<html>404</html>", { status: 404 });
   };
   return { fetch, requests };
 }
@@ -213,11 +260,12 @@ const routedFetch = (hosts) => async (url, init) => {
   return fake.fetch(url, init);
 };
 
-/** The fakes, by Worker: `registry`, `turboCache`, `static`, `edge`, and `routed` to serve several hosts. */
+/** The fakes, by Worker: `registry`, `turboCache`, `static`, `edge`, `docs`, and `routed` to serve several hosts. */
 export const fakeWorkers = Object.freeze({
   registry: fakeRegistry,
   turboCache: fakeTurboCache,
   static: fakeStatic,
   edge: fakeEdge,
+  docs: fakeDocs,
   routed: routedFetch,
 });
