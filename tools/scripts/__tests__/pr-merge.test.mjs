@@ -683,14 +683,16 @@ packages:
 test("B5: the judge members are JUDGE_ROOTS' runtime closure over main's lockfile importers; unreadable fails closed", () => {
   assert.deepEqual(judgeMembers(JUDGE_LOCK), [
     "packages/developer/cli",
+    "packages/developer/testing",
     "packages/foundation/errors",
     "packages/foundation/support",
   ]);
   const members = judgeMembers(JUDGE_LOCK);
   assert.equal(isJudgePath("packages/foundation/errors/src/index.ts", members), true);
   assert.equal(isJudgePath("packages/developer/cli/package.json", members), true);
-  // a dev dependency of a judge is not run by it, and a member that only depends on a judge is not one
-  assert.equal(isJudgePath("packages/developer/testing/src/x.ts", members), false);
+  // a dev dependency of a judge is built with it (turbo's `<root>...`), so it counts (round 6, L4); a member that only
+  // depends on a judge is not one
+  assert.equal(isJudgePath("packages/developer/testing/src/x.ts", members), true);
   assert.equal(isJudgePath("packages/c/src/x.ts", members), false);
   assert.equal(isJudgePath("packages/developer/cli-other/x.ts", members), false);
   // the root links the CLI, but the root is never a judge directory (every path would be one)
@@ -727,14 +729,14 @@ test("verifyFacts: the main block reads the head's verify runs, current main and
       { filename: "packages/c/src/x.ts", status: "modified" },
     ];
   };
-  const raw = (path, ref) =>
-    path === "pnpm-lock.yaml"
-      ? JUDGE_LOCK
-      : path === "packages/a/package.json"
-        ? ref === HEAD
-          ? '{"scripts":{"test":"true"}}'
-          : '{"scripts":{"test":"vitest run"}}'
-        : '{"version":"' + ref.slice(0, 1) + '"}';
+  const raw = (path, ref) => {
+    if (path === "pnpm-lock.yaml") {
+      calls.push(`lock@${ref}`);
+      return JUDGE_LOCK;
+    }
+    if (path !== "packages/a/package.json") return '{"version":"' + ref.slice(0, 1) + '"}';
+    return ref === HEAD ? '{"scripts":{"test":"true"}}' : '{"scripts":{"test":"vitest run"}}';
+  };
   const facts = verifyFacts({ repo: "figentra/stackra", n: "7", headSha: HEAD, api, list, raw });
   assert.equal(facts.verifyRuns.length, 1);
   assert.equal(facts.mainSha, MAIN);
@@ -746,6 +748,11 @@ test("verifyFacts: the main block reads the head's verify runs, current main and
     "packages/foundation/support/src/x.ts",
   ]);
   assert.ok(calls.includes("repos/figentra/stackra/pulls/7/files?per_page=100"));
+  // the judges' members come from current main's lockfile, not the PR's older base (round 6, L5)
+  assert.deepEqual(
+    calls.filter((c) => c.startsWith("lock@")),
+    [`lock@${MAIN}`],
+  );
   // only our App's runs are listed (LOW 8): another App's flood cannot push ours past the first page
   assert.match(calls[0], /check-runs\?check_name=stackra%2Fverify&app_id=5907714&filter=all/);
   assert.equal(VERIFY_APP.id, 5_907_714);

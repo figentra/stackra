@@ -191,7 +191,8 @@ export const JUDGE_ROOTS = Object.freeze([
 
 /**
  * The members the judges are built from, from a pnpm-lock.yaml's importers: JUDGE_ROOTS and every member they reach
- * through a `link:` dependency or optional dependency (their runtime closure), as sorted directories. A lockfile that
+ * through a `link:` dependency, optional dependency or dev dependency (what the judge image's `turbo build
+ * --filter=<root>...` builds, round 6 L4), as sorted directories. A lockfile that
  * names no importer gives null: the caller fails closed. A small reader of the importers' block layout, as pnpm writes
  * it (the daemon's fail-closed reader checks the same file before any judge runs).
  */
@@ -218,7 +219,9 @@ export function judgeMembers(lockText, roots = JUDGE_ROOTS) {
       depth === 4 &&
       key === "version" &&
       dep &&
-      (section === "dependencies" || section === "optionalDependencies") &&
+      (section === "dependencies" ||
+        section === "optionalDependencies" ||
+        section === "devDependencies") &&
       value.startsWith("link:")
     ) {
       const parts = importer === "." ? [] : importer.split("/");
@@ -350,6 +353,8 @@ export const NOT_PACKAGE_COMMANDS = Object.freeze([
   "sort",
   "squawk",
   "then",
+  "tr",
+  "wc",
   "zizmor",
 ]);
 /** Packages whose resolution decides what the gate runs: GATE_TOOL_BINS' packages and the vitest and commitlint scopes. */
@@ -433,7 +438,8 @@ export function verifyFacts({ repo, n, headSha, api, list: listAll = api, raw })
   const files = listAll(`repos/${repo}/pulls/${n}/files?per_page=100`);
   const definitionChanges = [];
   // The judges' own members, from main's lockfile: a PR touching a judge's source needs the owner's review (B5).
-  const judges = judgeMembers(raw("pnpm-lock.yaml", pull.base.sha));
+  // Read at current main (the judges a verify against main builds), never at the PR's older base (round 6, L5).
+  const judges = judgeMembers(raw("pnpm-lock.yaml", mainSha));
   if (pull.changed_files > files.length)
     definitionChanges.push(`${pull.changed_files - files.length} unlisted files`);
   for (const file of files)
