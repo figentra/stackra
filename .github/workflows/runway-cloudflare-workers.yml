@@ -4,7 +4,9 @@
 #          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
 #          builds what the member needs, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
 #          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
-#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml, deploy-docs.yml,
+#          stdin, adds it to the deployment at 0% (an override reaches only a version in the deployment), smoke-tests it
+#          by override and moves traffic to it, smoking each step; every smoke proves the version that answered is the
+#          new one (STA-2786). Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml, deploy-docs.yml,
 #          and a product repository's own caller (`product: true`, e.g. its docs Worker): the product's installed
 #          `stackra` ships, and the job first reads the Stackra registry token so the install resolves @figentra/*.
 # Secrets: none in the repository. The job decrypts figentra/secrets scopes as itself (ADR 0525, the shared
@@ -215,9 +217,12 @@ jobs:
             echo "$name=$value" >> "$GITHUB_ENV"
           done
 
-      # Runway checks every id, secret and bearer before anything ships, then builds, migrates, deploys with the commit
-      # as the message and its secrets on stdin, and retries the smoke checks while a new domain's certificate comes
-      # up. `--kind web` with `--member` ships only the named Worker member (the docs site is the `docs` member).
+      # Runway checks every id, secret, bearer and smoke check before anything ships, then builds, migrates, uploads
+      # with the commit as the message and its secrets on stdin, stages the version at 0% beside the one serving and
+      # smokes it by version override, then promotes it (10/50/100 for an `api` member in production) with a smoke at
+      # each step. Each smoke must see the new version answer (`x-stackra-version`, or `/-/version` for a static
+      # member), so one that reaches the old version fails (STA-2786); it retries while a new domain's certificate
+      # comes up. `--kind web` with `--member` ships only the named Worker member (the docs site is the `docs` member).
       - name: Deploy (Runway)
         id: deploy
         env:

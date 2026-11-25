@@ -40,6 +40,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `runwayJsonSchema(kind)`                                                                                                                                    | the zod schemas as JSON Schema, tested against the shipped canonical files                                                                                             |
 | `.`         | `deployTargets(root, environment)`                                                                                                                          | every place a release lands, in release order (regions, dedicated tenants)                                                                                             |
 | `.`         | `deploy`, `promote`, `rollback`                                                                                                                             | ship, promote and roll back a release through the providers                                                                                                            |
+| `.`         | `WORKER_VERSION`, `WorkerVersionProof`, `servedVersionProblem` | the Worker deploy's version proof: the `x-stackra-version` header, the `/-/version` route, the override header and the check of one answer (STA-2786) |
 | `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                                                                                         | one apply per environment at a time (ADR 0435)                                                                                                                         |
 | `.`         | `RunwayProvider`                                                                                                                                            | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)                                                                                             |
 | `.`         | `RunwayConfig`, `RunwayConfig$`                                                                                                                             | what the providers need beyond the runway: the Encore app id and tree, the mobile and docs folders (key `runway`)                                                      |
@@ -513,9 +514,39 @@ const results = await promote(root, "staging", "production", providers); // one 
 | `encore-cloud` | `git push encore://<app> <sha>:refs/heads/<branch>` (`encore.branch`)                                            | the branch holds the commit, then `GET <encore.origin>/readyz` is 200 | force-push the earlier commit      |
 | `eas`          | `eas build --profile <channel>` or `eas update --channel` (`targets.eas`)                                        | build status, or the group                                            | republish the earlier group        |
 | `mintlify`     | `stackra build` and `stackra lint`, then `.stackra/site` force-pushed as one commit to `targets.mintlify.branch` | the branch's `Source:` trailer is the SHA                             | refused: promote the last good SHA |
+| `cloudflare-workers` | per member: build, D1 migrations, `wrangler versions upload`, staged at 0%, smoked, then moved in its `rollout` steps with a smoke after each | the commit from `wrangler deployments list`, then the smoke against the recorded version | `wrangler rollback <recorded version>` |
 
 The `encore-cloud` verify reads `/readyz` (@stackra/app's readiness route, every bound `HealthIndicator`) when the
 environment's `encore` block, or its region's, names an `origin`; without one it checks the branch only.
+
+The `cloudflare-workers` provider (`CloudflareWorkersProviderDriver`, `./node`) never smokes a version Cloudflare
+would not route to. A version override (`Cloudflare-Workers-Version-Overrides`) is honoured only for a version in the
+current deployment; any other request is routed as usual, to the version already serving. So the new version first
+joins the deployment at 0% (`wrangler versions deploy <serving>@100 <new>@0`), is smoked there by override, and only
+then takes traffic, in the member's `rollout` steps in production (10/50/100 by default) and at once elsewhere, with a
+smoke after every step. Every smoke proves the version that answered (STA-2786): each answer's `x-stackra-version`
+header must name the version under test (`versionProof: header`, the default), or, for a Worker whose answers are
+static assets, its `GET /-/version` route must, read before and after the member's checks (`versionProof: route`).
+Another version answering, or none named, fails the step; it is retried for a minute at most (`proofAttempts`), while
+a non-2xx answer is retried for ten (a new domain's certificate). A failed 0% smoke takes the version out of the
+deployment again and moves no traffic; a failed later step puts the previous version back. A member with no `smoke`
+entry is refused before anything ships. `WORKER_VERSION`, `WorkerVersionProof` and `servedVersionProblem` (`.`) are the
+names and the check, for another smoke to apply the same proof.
+
+```yaml
+targets:
+  cloudflare-workers:
+    members:
+      registry: # a script on every path: x-stackra-version on every answer
+        path: workers/registry
+        preset: api
+        smoke: [{ url: https://npm.example.com/-/ping }]
+      docs: # static assets, plus a script that answers GET /-/version only
+        path: apps/docs
+        kind: docs
+        smoke: [{ url: https://docs.example.com/ }]
+        versionProof: route
+```
 
 A store build cannot be rolled back; the EAS provider refuses it. The `mintlify` provider (STA-1316, ADR 0002 amendment
 of 2026-10-27) publishes the site gen assembles in a docs app's `.stackra/site/`: the Mintlify GitHub app builds the
