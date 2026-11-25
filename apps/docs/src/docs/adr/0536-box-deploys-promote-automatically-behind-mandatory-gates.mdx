@@ -1,65 +1,69 @@
 ---
-title: "0536 — Box deploys of the four core Workers promote automatically behind mandatory gates"
+title: "0536 — Box deploys of Stackra's own Workers promote automatically behind mandatory gates"
 description: "Accepted · 2026-11-25"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0536 (Accepted 2026-11-25, the owner's choice "All automatic" relayed by the CTO on STA-2783): production promotion of the registry, static, turbo-cache and edge Workers deployed from box 1 is automatic when every gate passes; it amends ADR 0468's per-deploy approval for those box deploys only and lists the gates. Boundary: decision text; the code is tools/scripts/stackra-deploy.mjs and its two modules, built OFF. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0170, 0352, 0453, 0468, 0519, 0525. */}
+{/* Stackra file contract. Purpose: ADR 0536 (Accepted 2026-11-25, the owner's choice "All automatic" relayed by the CTO on STA-2783, reshaped by STA-2784): box 1 deploys only Stackra's own Workers in the Stackra Cloudflare account, and their production promotion is automatic when every gate passes; the shared Figentra services stay in the main account and deploy through CI with ADR 0468's approval. Boundary: decision text; the code is tools/scripts/stackra-deploy.mjs, worker-smoke.mjs and d1-migration-gate.mjs, built OFF. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0170, 0352, 0440, 0453, 0468, 0519, 0525. */}
 
 ## Context
 
-figentra's GitHub Actions is billing-locked, so the CI deploy workflows (deploy-registry.yml, deploy-static.yml,
-deploy-turbo-cache.yml, each behind the `production` Environment approval of
-[0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)) cannot run. The owner
-chose on 2026-11-25 a recorded exception: box 1 deploys Encore staging and the Cloudflare Workers when a Worker
-changes (STA-2783). Asked how production promotion works for those box deploys, the owner answered the CTO: **"All
-automatic"**. With no person clicking, the gates have to carry the whole weight, so they are part of this decision.
+figentra's GitHub Actions is billing-locked, so the CI deploy workflows behind the `production` Environment approval of
+[0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval) cannot run. The owner chose
+on 2026-11-25 a recorded exception: box 1 deploys Encore staging and Stackra's Workers (STA-2783). The owner then
+separated the accounts (STA-2784): the shared Figentra services (the registry, the build cache) stay in the main
+Cloudflare account and deploy through CI only, never with a box token; Stackra's own Workers move to a Stackra account
+on Stackra's own domain. Asked how production promotion works for the box deploys, the owner answered **"All
+automatic"**. With no person clicking, the gates carry the whole weight, so they are part of this decision.
 
 ## Decision
 
-1. Box deploys of the registry, static, turbo-cache and edge Workers promote to production automatically when every
-   gate below passes (`STACKRA_DEPLOY_PROMOTION` defaults to `auto` for all four). This replaces 0468 decision 2's
-   per-deploy Environment approval **for these four Workers' box deploys only**; CI deploys, Encore production and
-   package releases keep 0468 unchanged.
+1. Box deploys of Stackra's own Workers in the Stackra account (`57227d408957e241465c38ebd9c3959a`: docs and edge;
+   the landing is experience documents rendered by the OS landing shell, not a Worker here) promote to production
+   automatically when every gate below passes. This replaces 0468 decision 2's per-deploy Environment approval **for
+   those box deploys only**. The shared services in the main account (the registry, the build cache, static), Encore
+   production and package releases deploy through CI with 0468 unchanged; the box holds no token for the main account.
 2. Every gate is mandatory; none has a setting that skips it:
    1. **Main and verify.** Only a commit of origin/main, with a green `stackra/verify` check run from the
       stackra-verify App at that exact SHA. Until stackra/verify is live, a box-green record at that SHA stands in,
       only while `STACKRA_DEPLOY_ACCEPT_BOX_GREEN` is on, and only when written by its owner (never the deploy user).
-   2. **No traffic before the smoke.** `wrangler versions upload`, the version joins the deployment at 0%, and the
-      smoke suite runs on it through the version override: runway.yaml's uptime and member checks plus each Worker's
-      own. The registry's is the strongest: per release group and `@stackra/cli`, the newest version's packument
-      (full and abbreviated), its tarball with sha512 equal to `dist.integrity` and to what production served before,
-      its registry signature, the signing keys, the refusals of a publish without a token and of an unpublish, and
-      the 404 of an unknown package.
-   3. **Additive D1 only.** Pending migrations run before any version ships, and only when every statement is
-      `CREATE TABLE`, `CREATE INDEX`, `ALTER TABLE … ADD COLUMN` or `INSERT`; anything else stops and is recorded as
-      needing the owner.
-   4. **Gradual promotion with automatic rollback.** 10% then 100%, held, with the whole smoke again at each step and
-      on the live hosts at the end; any failure puts the previous version back at 100%.
-   5. **A bounded token.** The Cloudflare API token is the owner's, restricted to box 1's egress IP, with an expiry,
-      held 0400 by a dedicated deploy user (the account also holds Agent Desk / Figentra Flow's and the tax-practice
-      Workers, which is why the IP filter and the expiry are not optional).
-   6. **The ledger.** Every attempt is one JSON line: SHA, trigger, verify evidence, migrations, old and new version
-      ids, every step and smoke result, rollback, and times. No secret reaches it.
+   2. **No traffic before a proven smoke.** `wrangler versions upload`, the version joins the deployment at 0%, and the
+      smoke runs on it through the version override: runway.yaml's uptime and member checks plus the Worker's own
+      suite. Every smoke step proves which version answered (edge's `x-stackra-version`, docs' `/-/version`), so an
+      override that does not reach the new version fails instead of passing on the old one.
+   3. **Additive D1 only.** Pending migrations run before any version ships, and only when every statement is `CREATE
+TABLE`, `CREATE INDEX`, `ALTER TABLE … ADD COLUMN` or `INSERT`; anything else stops for the owner, and so does an
+      insert into a table that grants rights (the registry's publishers, scopes, tokens, licences and grants).
+   4. **Gradual promotion with automatic rollback.** 10%, 50%, then 100%, as CI's rollout, held, with the whole smoke
+      again at each step and live at the end; any failure puts the previous version back at 100%.
+   5. **A bounded token.** The Cloudflare API token is the owner's, for the Stackra account only, restricted to box 1's
+      egress IP, with an expiry, kept in its own sops scope `ci/deploy/box1-stackra` and held 0400 by a dedicated
+      deploy user. Its blast radius is Stackra's own Workers.
+   6. **The ledger.** Every attempt is one JSON line: SHA, trigger, verify evidence, migrations, old and new version ids,
+      every step and smoke result with its version proof, rollback, and times. No secret reaches it.
 3. Everything is built OFF. The path switches on only after the strict reads, with the owner's token in place and the
-   first deploy of each Worker run by hand, watched by Lukas and recorded in the ledger.
+   go-live list of the runbook (tools/scripts/stackra-deploy.mjs) verified on the first watched deploy of each Worker
+   and recorded in the ledger by Lukas.
 4. `approve` stays in code (per Worker, tested): it stops after the 0% smoke until the approver user's file names the
    SHA and the version. Choosing it for a Worker is a setting change, not a new decision.
 
 ## Consequences
 
-A Worker change on main reaches production without a person in the loop, so a gap in the smoke is a production gap:
-adding a route or a failure mode to a Worker means adding it to its suite in `stackra-deploy-smoke.mjs`. A destructive
-migration always waits for the owner. When Actions returns, the box path is switched off and CI resumes under 0468.
+A Stackra Worker change on main reaches production without a person in the loop, so a gap in a smoke is a production
+gap: adding a route or a failure mode to docs or edge means adding it to its suite in `worker-smoke.mjs`. A destructive
+or trust-changing migration always waits for the owner. The shared services keep the owner's approval through CI, and
+CI can run the same smoke suites and D1 gate (STA-2786 wires the registry's version proof). When Actions returns, the
+box path is switched off and CI resumes under 0468.
 
 ## Enforcement
 
-`tools/scripts/stackra-deploy.mjs` with `tools/scripts/stackra-deploy-smoke.mjs` and
-`tools/scripts/stackra-deploy-sql.mjs`; their tests in `tools/scripts/__tests__/stackra-deploy*.test.mjs` cover each
-gate (non-main and unverified SHAs refused, destructive migrations stopped, the smoke failure and its rollback at 0%
-and at 10%, the promotion steps, approve mode, the ledger, no secret in argv or output, Encore production refused).
+`tools/scripts/stackra-deploy.mjs` with `tools/scripts/worker-smoke.mjs` and `tools/scripts/d1-migration-gate.mjs`;
+their tests in `tools/scripts/__tests__/` cover each gate: non-main and unverified SHAs refused, the shared services and
+the main account refused, destructive and trust-changing migrations stopped, the false pass failing the version proof,
+the smoke failure and its rollback at 0% and at 10%, the 10/50/100 steps, approve mode, the ledger, no secret in argv
+or output, and Encore production refused before any API call.
 
 ## Supersedes and sources
 
 `Supersedes: none`. Amends [0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)
-decision 2 for the four Workers' box deploys. Sources: STA-2783; the owner's answer to the CTO, 2026-11-25 ("All
-automatic").
+decision 2 for the box deploys of Stackra's own Workers. Sources: STA-2783; STA-2784; the owner's answer to the CTO,
+2026-11-25 ("All automatic").

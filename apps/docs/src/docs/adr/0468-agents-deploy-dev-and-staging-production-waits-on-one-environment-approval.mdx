@@ -125,12 +125,13 @@ deploy`: production only with `--prod`. `eas submit`, `--auto-submit`, `channel:
 - Apply the settings and `opencode.jsonc` edits listed on STA-1395, and the guard change (or clear an agent to).
 - Encore repository relink and the Infisical identity for deploy-static (STA-15), when an Encore app ships.
 
-## Amendment 2026-11-25: box deploys of the four core Workers
+## Amendment 2026-11-25: box deploys of Stackra's own Workers
 
-While figentra's GitHub Actions is billing-locked, box 1 deploys the registry, static, turbo-cache and edge Workers
-(STA-2783). For those box deploys only, decision 2's per-deploy approval is replaced by automatic promotion behind the
-mandatory gates of [0536](/adr/0536-box-deploys-promote-automatically-behind-mandatory-gates) (the owner's "All
-automatic"). CI deploys, Encore production and package releases keep decision 2.
+While figentra's GitHub Actions is billing-locked, box 1 deploys Stackra's own Workers (docs and edge) in the Stackra
+Cloudflare account (STA-2783, STA-2784). For those box deploys only, decision 2's per-deploy approval is replaced by
+automatic promotion behind the mandatory gates of [0536](/adr/0536-box-deploys-promote-automatically-behind-mandatory-gates)
+(the owner's "All automatic"). The shared services in the main account (the registry, the build cache, static), Encore
+production and package releases keep decision 2, through CI.
 
 ## Supersedes and sources
 
