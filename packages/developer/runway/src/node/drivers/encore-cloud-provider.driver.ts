@@ -5,7 +5,8 @@
  *          `encore://<app>` remote, rollback force-pushes an earlier deploy, current reads the branch, and verify reads
  *          the branch and then polls the deployment's `GET <origin>/readyz` while Encore builds. The generated app is gitignored, so when the
  *          working tree holds one, apply pushes its deploy commit (`encoreDeployTree`: the source commit plus the
- *          generated app) and records that commit as the deploy's reference; without one it pushes the commit as is.
+ *          generated app, with the compiled migrations exactly as the source commit holds them, STA-2788) and records
+ *          that commit as the deploy's reference; without one it pushes the commit as is.
  * Boundary: runs `git` through the given `CommandRunner` and `GET`s through `fetch`; the push credentials are the
  *           job's Encore login. The branch and origin are runway data: `encore.branch` / `encore.origin` of the
  *           environment, `encore.regions.<region>.*` for one region, or a dedicated deployment's own `encore` block.
