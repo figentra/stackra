@@ -19,6 +19,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   chmodSync,
+  existsSync,
   globSync,
   mkdirSync,
   mkdtempSync,
@@ -137,6 +138,13 @@ import {
   licenceViolations,
   untilLine,
   childLine,
+  ledgerNews,
+  SWITCH_STARTED,
+  SWITCH_PREVIOUS,
+  globMatches,
+  recordedRun,
+  serviceProblemConclusion,
+  SERVICE_PROBLEM,
   SERVICE_INSTALL,
   stepScript,
   sharedStepSwaps,
@@ -180,6 +188,17 @@ import {
   mobileScript,
   spdxAllowed,
   stepSections,
+  judgeGuard,
+  judgeGuardSource,
+  judgeNodeSource,
+  judgeEnv,
+  judgeViewScript,
+  JUDGE_GEN,
+  JUDGE_MOUNT,
+  COLLECT_DIR,
+  judgeDockerfile,
+  judgeTag,
+  stepArgs,
 } from "../stackra-verify.mjs";
 import {
   VERIFY_APP,
@@ -737,13 +756,32 @@ test("needsRun: only our App's completed run against current main stands; forger
   const old = { count: 1, at: NOW - ERROR_RETRY_MS - 60_000 };
   assert.equal(needsRun({ checkRuns: [], sha: SHA, appId: APP_ID, errors: recent }, NOW), false);
   assert.equal(needsRun({ checkRuns: [], sha: SHA, appId: APP_ID, errors: old }, NOW), true);
+  // after MAX_ERROR_ATTEMPTS the service problem is posted, and the head is tried again after the delay (M2)
   assert.equal(
     needsRun(
       { checkRuns: [], sha: SHA, appId: APP_ID, errors: { count: MAX_ERROR_ATTEMPTS, at: old.at } },
       NOW,
     ),
+    true,
+  );
+  assert.equal(
+    needsRun(
+      {
+        checkRuns: [],
+        sha: SHA,
+        appId: APP_ID,
+        errors: { count: MAX_ERROR_ATTEMPTS, at: recent.at },
+      },
+      NOW,
+    ),
     false,
   );
+  // a service problem, or a neutral from an older service, never stands
+  for (const run of [
+    { ...ours, output: { title: `${SERVICE_PROBLEM} (not the PR's fault): docker` } },
+    { ...ours, conclusion: "neutral" },
+  ])
+    assert.equal(needsRun({ checkRuns: [run], sha: SHA, appId: APP_ID, base: BASE }, NOW), true);
 });
 
 test("jobsFrom: own-repo, non-draft PRs oldest first, merge queue commits, then main; malformed SHAs skipped", () => {
@@ -845,6 +883,16 @@ test("postCheckRun: the body goes on stdin to POST check-runs with the App token
   );
 });
 
+/**
+ * A container's role from its name: `install`, the service's own (`base`, `view`, `shared`), or a step's id, whose
+ * exit is `exits[<id>]` and otherwise `exits.verify` (every step container).
+ */
+const roleOf = (name) => {
+  const m = /-(install|verify|base|view|shared|step-([a-z0-9-]+))$/.exec(name);
+  return m[2] ?? m[1];
+};
+const OWN = new Set(["base", "view", "shared"]);
+
 /** runJob with fakes. `exits` maps container role to its exit code (null: never started); `hang` never returns. */
 function fakeDeps({
   exits = { install: 0, verify: 0 },
@@ -862,6 +910,10 @@ function fakeDeps({
   const deps = {
     settings: S,
     envFile: ENV,
+    judgeEnvFile: "/runs/x/judge.env",
+    judgeImage: async () => "stackra-verify-judge:abc",
+    collect: (container, step) => (calls.collect ??= []).push([container, step]),
+    collected: (step) => [`/runs/x/${step}.tar`, `/in/${step}.tar`],
     installEnvFile: "/runs/x/install.env",
     now: () => Date.now(),
     builds: () => builds,
@@ -886,15 +938,20 @@ function fakeDeps({
     },
     runContainer: (args, name) => {
       calls.runs.push(args);
-      const role = name.endsWith("-install") ? "install" : "verify";
-      if (stop === role) stopping = true;
-      if (hang === role)
+      const role = roleOf(name);
+      const group = role === "install" || OWN.has(role) ? role : "verify";
+      if (stop === role || stop === group) stopping = true;
+      if (hang === role || hang === group)
         return new Promise((resolve) => {
           deps.release = resolve;
         });
       return Promise.resolve({ code: 0 });
     },
-    exitCodeOf: (name) => exits[name.endsWith("-install") ? "install" : "verify"],
+    exitCodeOf: (name) => {
+      const role = roleOf(name);
+      if (role in exits) return exits[role];
+      return OWN.has(role) ? 0 : exits.verify;
+    },
     kill: (name) => {
       calls.kill.push(name);
       deps.release?.({ code: 137 });
@@ -923,9 +980,22 @@ test("runJob: exit 0 of the verify container is the only pass; install on the ru
   assert.equal(r.conclusion, "success");
   assert.match(calls.network, /^sv-net-/);
   assert.equal(calls.runs[0][calls.runs[0].indexOf("--network") + 1], calls.network);
-  assert.equal(calls.runs[1][calls.runs[1].indexOf("--network") + 1], "none");
+  for (const run of calls.runs.slice(1)) assert.equal(run[run.indexOf("--network") + 1], "none");
   assert.equal(calls.cleanUp.length, 1);
-  assert.equal(calls.cleanUp[0].names.length, 3);
+  // install, verify, proxy; then base, view, shared and one per step
+  assert.equal(calls.cleanUp[0].names.length, 6 + GATE_STEPS.length);
+  const run = calls.cleanUp[0].images[0];
+  assert.match(run, /^stackra-verify-run:0123456789ab-[a-z0-9]+$/);
+  assert.deepEqual(
+    calls.cleanUp[0].images.map((i) => i.replace(run, "stackra-verify-run:<id>")),
+    [
+      "stackra-verify-run:<id>",
+      "stackra-verify-run:<id>-base",
+      "stackra-verify-run:<id>-view",
+      "stackra-verify-run:<id>-shared",
+      "stackra-verify-run:<id>-built",
+    ],
+  );
 });
 
 test("runJob: the egress probe and the install wait for the install network, the proxy's readiness included", async () => {
@@ -953,7 +1023,7 @@ test("runJob: the egress probe and the install wait for the install network, the
   assert.equal(probed.proxy, "proxy:3128");
 });
 
-test("definitionDrift: a service whose loaded files are not main's blobs errors as neutral, naming each one", async () => {
+test("definitionDrift: a service whose loaded files are not main's blobs posts a service problem, naming each one", async () => {
   const own = {
     "tools/scripts/stackra-verify.mjs": "a".repeat(40),
     "tools/scripts/pr-merge.mjs": "c".repeat(40),
@@ -978,11 +1048,12 @@ test("definitionDrift: a service whose loaded files are not main's blobs errors 
   };
   const r = await runJob(JOB, deps);
   assert.equal(r.post, true);
-  assert.equal(r.conclusion, "neutral");
-  assert.equal(r.phase, "definition");
+  assert.equal(r.conclusion, "failure");
+  assert.equal(r.phase, "service");
   assert.equal(calls.runs.length, 0);
   const body = checkRunBody({ sha: SHA, base: BASE, ...r, durationMs: 1000 });
-  assert.equal(body.conclusion, "neutral");
+  assert.equal(body.conclusion, "failure");
+  assert.match(body.output.title, /^stackra\/verify service problem \(not the PR's fault\): /);
   assert.ok(
     body.output.title.includes("a".repeat(40)) && body.output.title.includes("b".repeat(40)),
   );
@@ -1040,7 +1111,7 @@ test(
       log: "PASS everything is fine\n",
     });
     assert.equal(calls.kill.length, 1);
-    assert.match(calls.kill[0], /^sv-0123456789ab-.*-verify$/);
+    assert.match(calls.kill[0], /^sv-0123456789ab-.*-step-licence-policy$/);
     assert.equal(calls.cleanUp.length, 1);
   },
 );
@@ -1110,9 +1181,14 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
       "packages/a/.oxlintrc.json",
       "mise.toml",
       "README.md",
+      "packages/new/package.json",
       "packages/new/vitest.config.ts",
       "packages/new/src/new.test.ts",
       "packages/new/.config/config.json",
+      "packages/new/sub/vitest.config.ts",
+      "packages/a/src/newdir/.oxlintrc.json",
+      "newtop/pnpm-workspace.yaml",
+      "newtop/package.json",
       "packages/a/.config/config.json",
       "tools/scripts/new.mjs",
       "tools/scripts/newdir/x.mjs",
@@ -1127,6 +1203,7 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
       { path: ".gitattributes" },
       { path: ".pnpmfile.cjs" },
     ],
+    ["packages/*"],
   );
   assert.deepEqual(plan.whole.map((e) => e.path).sort(), [
     ".gitattributes",
@@ -1140,11 +1217,18 @@ test("withMainScripts and overlayPlan: the PR keeps its dependencies, main keeps
     "knip.json",
     "packages/a/.oxlintrc.json",
     "mise.toml",
+    "packages/new/sub/vitest.config.ts",
+    "packages/a/src/newdir/.oxlintrc.json",
+    "newtop/pnpm-workspace.yaml",
     "packages/a/.config/config.json",
     "tools/scripts/new.mjs",
     "tools/scripts/newdir/x.mjs",
     "packages/tooling/new-preset/index.js",
   ]);
+  // review round 5, L2: only a new workspace member's own directory is exempt (a package.json main lacks, at a glob)
+  assert.equal(globMatches("packages/*", "packages/new"), true);
+  assert.equal(globMatches("packages/*/*", "packages/new"), false);
+  assert.equal(globMatches("!packages/*", "packages/new"), false);
   // a new member's own configs stay in the tested tree (CTO ruling, round 4): main has no packages/new at all
 });
 
@@ -1218,6 +1302,7 @@ function fixtureRepo() {
   write("packages/a/vitest.config.ts", "export default { test: { include: ['src/**'] } };\n");
   write("packages/a/src/a.ts", "export const a = 1;\n");
   write(".github/workflows/ci.yml", "on: push\n");
+  write("pnpm-workspace.yaml", "packages:\n  - packages/*\n");
   git("add", "-A");
   git("commit", "-qm", "main");
   const base = git("rev-parse", "HEAD");
@@ -2196,7 +2281,11 @@ function gateFixture(facts = PR_FACTS) {
     "-- stackra:transactional=false\ncreate index concurrently a_id on a (id);\n",
   );
   writeFileSync(join(work, "x/stackra.manifest.json"), "{}\n");
+  writeFileSync(join(work, "services/a/package.json"), '{"scripts":{"gen":"stackra gen"}}\n');
   writeFileSync(join(work, "tools/scripts/linear.mjs"), NODE_STUB("linear"));
+  // main's CLI as the judge image has it (the script's /judge is this fixture's judge directory)
+  mkdirSync(join(dir, "judge/packages/developer/cli/dist"), { recursive: true });
+  writeFileSync(join(dir, "judge/packages/developer/cli/dist/stackra.mjs"), NODE_STUB("stackra"));
   writeFileSync(join(input, "licence-check.mjs"), NODE_STUB("licence-check"));
   writeFileSync(join(input, "facts.json"), JSON.stringify(facts));
   for (const tool of ["pnpm", "actionlint", "zizmor", "osv-scanner", "squawk"]) {
@@ -2216,10 +2305,16 @@ function gateFixture(facts = PR_FACTS) {
 }
 
 /** Runs the gate script in a fixture; `fail` is a shell glob of the stub call to fail. */
-function runGate(fixture, fail = "__never__", script = gateScript) {
+function runGate(fixture, fail = "__never__", script = gateScript, args = []) {
   const path = join(fixture.dir, "gate.sh");
-  writeFileSync(path, script({ inDir: fixture.input, workDir: fixture.work }));
-  const r = spawnSync(BASH, [path], {
+  writeFileSync(
+    path,
+    script({ inDir: fixture.input, workDir: fixture.work }).replaceAll(
+      `${JUDGE_MOUNT}/`,
+      `${fixture.dir}/judge/`,
+    ),
+  );
+  const r = spawnSync(BASH, [path, ...args], {
     encoding: "utf8",
     env: {
       PATH: [fixture.bin, dirname(process.execPath), "/usr/bin", "/bin"].join(":"),
@@ -2287,7 +2382,8 @@ const STEP_CASES = {
     calls: ["pnpm exec turbo run gen --filter=./services/*"],
     fail: "pnpm exec turbo run gen --filter=./services/*",
   },
-  "manifests-match-gen": { calls: [], stale: true },
+  // main's gen (the judge image's CLI): the workspace gen, then each service with a gen script
+  "manifests-match-gen": { calls: ["stackra gen", "stackra gen"], stale: true },
   "migration-lint": {
     calls: [
       `${SQUAWK} --assume-in-transaction ./services/a/.stackra/migrations/0001.up.sql`,
@@ -2300,28 +2396,83 @@ const STEP_CASES = {
     env: { SPEC_GATE_REQUIRE_READY: "1", STACKRA_BRANCH: PR_FACTS.branch },
     fail: "pnpm validate",
   },
-  "env-names": {
-    calls: [
-      "pnpm exec turbo run build --filter=@stackra/runway --output-logs=errors-only",
-      "pnpm runway env check",
-    ],
-    fail: "pnpm runway env check",
-  },
+  "env-names": { calls: ["pnpm runway env check"], fail: "pnpm runway env check" },
   boundaries: { calls: ["pnpm boundaries"], fail: "pnpm boundaries" },
-  knip: {
-    calls: [
-      "pnpm exec turbo run build --filter=@stackra/vitest-config --output-logs=errors-only",
-      `pnpm exec turbo run gen ${X} --output-logs=errors-only`,
-      "pnpm knip",
-    ],
-    fail: "pnpm knip",
-  },
+  knip: { calls: ["pnpm knip"], fail: "pnpm knip" },
   "secrets-scan": { calls: ["pnpm secrets:scan"], fail: "pnpm secrets:scan" },
   test: {
     calls: [`pnpm exec turbo run test ${X} --continue=dependencies-successful`],
     fail: "pnpm exec turbo run test *",
   },
 };
+
+test(
+  "gate script --step: one step only, in its own section; --swap lays in main's config modules only; anything else refused",
+  needsBash,
+  () => {
+    const fixture = gateFixture();
+    const one = runGate(fixture, "__never__", gateScript, ["--step", "lint"]);
+    assert.equal(one.status, 0, one.stdout);
+    assert.deepEqual(Object.keys(one.sections), ["lint"]);
+    assert.match(one.stdout, /^== passed: every step$/m);
+    const red = runGate(fixture, "pnpm lint:root", gateScript, ["--step", "lint"]);
+    assert.equal(red.status, 1);
+    assert.match(red.stdout, /^== failed: lint$/m);
+    for (const args of [["--step", "nope"], ["--step"], ["--bogus"]]) {
+      const refused = runGate(fixture, "__never__", gateScript, args);
+      assert.equal(refused.status, 2, args.join(" "));
+      assert.deepEqual(Object.keys(refused.sections), []);
+    }
+    // --swap: main's copy in, the PR's own loader out, no step run
+    writeFileSync(join(fixture.input, "shared-definitions"), "x/vitest.config.ts\0");
+    writeFileSync(join(fixture.work, "x/vitest.config.ts"), "process.exit(0)\n");
+    writeFileSync(join(fixture.input, "shared-main.tar"), "");
+    const swap = runGate(fixture, "__never__", gateScript, ["--swap"]);
+    assert.equal(swap.status, 0, swap.stdout);
+    assert.deepEqual(Object.keys(swap.sections), []);
+    assert.equal(readdirSync(join(fixture.work, "x")).includes("vitest.config.ts"), false);
+    rmSync(fixture.dir, { recursive: true, force: true });
+  },
+);
+
+test(
+  "gate script --step: manifests-match-gen collects main's gen output as data; migration-lint lints only that, never the tree",
+  needsBash,
+  () => {
+    const fixture = gateFixture();
+    const gen = runGate(fixture, "__never__", gateScript, ["--step", "manifests-match-gen"]);
+    assert.equal(gen.status, 0, gen.stdout);
+    assert.deepEqual(
+      readdirSync(join(fixture.work, COLLECT_DIR, "services/a/.stackra/migrations")).toSorted(),
+      ["0001.up.sql", "0002.up.sql"],
+    );
+    // the daemon copies the collected directory out (docker cp's tar), and mounts it as the next step's input
+    const tar = spawnSync(
+      "tar",
+      ["-cf", join(fixture.input, "manifests-match-gen.tar"), COLLECT_DIR],
+      {
+        cwd: fixture.work,
+      },
+    );
+    assert.equal(tar.status, 0);
+    // the tree's own migrations are not what migration-lint reads: change them, the result is the collected ones
+    rmSync(join(fixture.work, "services"), { recursive: true, force: true });
+    rmSync(join(fixture.work, COLLECT_DIR), { recursive: true, force: true });
+    const lint = runGate(fixture, "__never__", gateScript, ["--step", "migration-lint"]);
+    assert.equal(lint.status, 0, lint.stdout);
+    assert.deepEqual(
+      lint.calls("migration-lint").map((c) => c.call),
+      STEP_CASES["migration-lint"].calls,
+    );
+    // nothing collected (an empty file) is a failure of migration-lint, never a pass with nothing to lint
+    writeFileSync(join(fixture.input, "manifests-match-gen.tar"), "");
+    const empty = runGate(fixture, "__never__", gateScript, ["--step", "migration-lint"]);
+    assert.equal(empty.status, 1, empty.stdout);
+    assert.equal(empty.sections["migration-lint"].result, "FAIL");
+    assert.match(empty.stdout, /manifests-match-gen's files are not readable/);
+    rmSync(fixture.dir, { recursive: true, force: true });
+  },
+);
 
 test("gate script: the step cases cover every step, in GATE_STEPS order", () => {
   assert.deepEqual(
@@ -3895,7 +4046,7 @@ test("OSV database: missing, future-dated or older than the maximum is refused (
   assert.match(hostProblems({ ...S, osvMaxAgeMs: Number.NaN }, 0o400).join(), /OSV_MAX_AGE_H/);
 });
 
-test("kinds: the gate mounts its script, licence check, main's licence policy, PR facts, history and OSV database read-only, and nothing else", () => {
+test("kinds: the gate mounts its script, licence check, main's licence policy, PR facts, history, OSV database and judge parts read-only, and nothing else", () => {
   const mounts = kindMounts("gate", { runDir: "/runs/x", osvDir: "/osv-db" });
   assert.deepEqual(mounts, [
     ["/runs/x/gate.sh", "/in/gate.sh"],
@@ -3906,21 +4057,34 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
     ["/runs/x/facts.json", "/in/facts.json"],
     ["/runs/x/history.bundle", "/in/history.bundle"],
     ["/osv-db", "/osv"],
+    ["/runs/x/judge-guard.mjs", "/in/judge-guard.mjs"],
+    ["/runs/x/bin", "/in/bin"],
+    ["/runs/x/main-paths", "/in/main-paths"],
+    ["/runs/x/judge-view.sh", "/in/judge-view.sh"],
   ]);
   assert.deepEqual(kindMounts("mobile", { runDir: "/runs/x" }), [
     ["/runs/x/mobile.sh", "/in/mobile.sh"],
     ["/runs/x/licence-check.mjs", "/in/licence-check.mjs"],
     ["/runs/x/licences.json", "/in/licences.json"],
+    ["/runs/x/judge-guard.mjs", "/in/judge-guard.mjs"],
+    ["/runs/x/bin", "/in/bin"],
+    ["/runs/x/main-paths", "/in/main-paths"],
+    ["/runs/x/judge-view.sh", "/in/judge-view.sh"],
   ]);
   assert.throws(() => kindMounts("nope", { runDir: "/r" }), /not a verify kind/);
   const argv = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR, mounts });
   const volumes = argv.filter((_, i) => argv[i - 1] === "--volume");
-  assert.equal(volumes.length, 9);
+  assert.equal(volumes.length, 13);
   for (const v of volumes) assert.match(v, /:ro$/, v);
   assert.equal(argv[argv.indexOf("--network") + 1], "none");
-  assert.deepEqual(Object.keys(kindFiles("gate")), ["gate.sh", "licence-check.mjs"]);
+  const judgeFiles = ["judge-guard.mjs", "bin/node", "judge-view.sh"];
+  assert.deepEqual(Object.keys(kindFiles("gate")), ["gate.sh", "licence-check.mjs", ...judgeFiles]);
   assert.equal(kindFiles("gate")["gate.sh"], gateScript());
-  assert.deepEqual(Object.keys(kindFiles("mobile")), ["mobile.sh", "licence-check.mjs"]);
+  assert.deepEqual(Object.keys(kindFiles("mobile")), [
+    "mobile.sh",
+    "licence-check.mjs",
+    ...judgeFiles,
+  ]);
   assert.equal(kindFiles("mobile")["licence-check.mjs"], licenceCheckSource());
 });
 
@@ -3934,8 +4098,13 @@ test("runJob gate: installs without the Uniwind Pro members and never lays in a 
     /--filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile esbuild$/,
   );
   assert.doesNotMatch(install, /uniwind-pro|prebuilt/);
-  assert.match(calls.runs[1].at(-1), /; bash \/in\/gate\.sh$/);
-  assert.ok(calls.runs[1].includes("/runs/x/gate.sh:/in/gate.sh:ro"));
+  assert.match(calls.runs[1].at(-1), /git update-ref HEAD "\$commit"; git reset -q$/);
+  const steps = calls.runs.filter((run) => / --step /.test(run.at(-1)));
+  assert.deepEqual(
+    steps.map((run) => run.at(-1)),
+    GATE_STEPS.map((step) => `bash /in/gate.sh --step ${step.id}`),
+  );
+  for (const run of steps) assert.ok(run.includes("/runs/x/gate.sh:/in/gate.sh:ro"));
 });
 
 test("runJob mobile: the full install with the licensed build; a licence failure fails verify-mobile only, as a result", async () => {
@@ -3947,7 +4116,11 @@ test("runJob mobile: the full install with the licensed build; a licence failure
     calls.runs[0].at(-1),
     /pnpm rebuild --ignore-pnpmfile esbuild && for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
   );
-  assert.match(calls.runs[1].at(-1), /commit -qm tested --no-verify; bash \/in\/mobile\.sh$/);
+  assert.match(calls.runs[1].at(-1), /commit -qm tested --no-verify$/);
+  assert.deepEqual(
+    calls.runs.slice(2).map((run) => run.at(-1)),
+    ["bash /in/mobile.sh --step licence-policy", "bash /in/mobile.sh --step mobile-apps"],
+  );
   const licence = Object.assign(new Error("could not build the licensed image"), { licence: true });
   const failed = await runJob({ ...JOB, kind: "mobile" }, fakeDeps({ storeError: licence }).deps);
   assert.equal(failed.post, true);
@@ -4679,7 +4852,7 @@ test("self-update: refused on a non-fast-forward, on local changes, while a job 
   }
 });
 
-test("self-update: a refused update keeps the neutral path, naming the refusal", async () => {
+test("self-update: a refused update posts a service problem, naming the refusal", async () => {
   const own = "a".repeat(40);
   const main = "b".repeat(40);
   const reason = "the new code's self-check failed (exit 1): - the self-check tests failed";
@@ -4693,7 +4866,8 @@ test("self-update: a refused update keeps the neutral path, naming the refusal",
     throw Object.assign(new Error(message), { drift: true });
   };
   const r = await runJob(JOB, deps);
-  assert.equal(r.conclusion, "neutral");
+  assert.equal(r.conclusion, "failure");
+  assert.equal(r.phase, "service");
   assert.match(
     checkRunBody({ sha: SHA, base: BASE, ...r, durationMs: 1 }).output.title,
     /self-update refused/,
@@ -4907,6 +5081,10 @@ function treeRepo() {
       "",
     ].join("\n"),
   );
+  write(
+    "pnpm-lock.yaml",
+    "lockfileVersion: '9.0'\n\nimporters:\n\n  .: {}\n\n  packages/a: {}\n\n  packages/b: {}\n",
+  );
   git("add", "-A");
   git("commit", "-qm", "main workspace");
   const base = git("rev-parse", "HEAD");
@@ -5089,6 +5267,13 @@ test(
   },
 );
 
+/** dependencySpecProblems for two `$` overrides against a root package.json's devDependencies. */
+const rootOverrides = (deps) =>
+  dependencySpecProblems({
+    workspace: { overrides: { knip: "$knipx", c: "$c" } },
+    rootManifest: { devDependencies: deps },
+  });
+
 /** dependencySpecProblems over one workspace, its manifests and member names. */
 const specProblems = (workspace, manifests = [], members = []) =>
   dependencySpecProblems({ workspace, manifests, memberNames: new Set(members) });
@@ -5099,7 +5284,25 @@ test("dependencySpecProblems: the spec grammar, without a repository", () => {
     problems({ catalog: { a: "^1", b: "1.2.3", c: "latest", d: ">=1 <2", e: "npm:e@1" } }),
     [],
   );
-  assert.deepEqual(problems({ overrides: { "a@1>b": "-", c: "$c", "d>vitest": "5.0.6" } }), []);
+  assert.deepEqual(problems({ overrides: { "a@1>b": "-", "d>vitest": "5.0.6" } }), []);
+  // review round 5, L3: a `$name` override is checked as the root's spec for `name`
+  const root = rootOverrides;
+  assert.deepEqual(root({ knipx: "6.41.0", c: "^1" }), []);
+  assert.match(
+    root({ knipx: "npm:evil-knip@1.0.0", c: "^1" })[0],
+    /renames the gate tool knip to evil-knip/,
+  );
+  assert.match(root({ c: "^1" })[0], /knip "\$knipx" names no root dependency/);
+  assert.match(root({ knipx: "link:./x", c: "^1" })[0], /is not a registry spec/);
+  // and a gate tool is never a workspace link, even to a member
+  assert.match(
+    specProblems(
+      {},
+      [{ path: "p/package.json", json: { devDependencies: { vitest: "workspace:*" } } }],
+      ["vitest"],
+    )[0],
+    /links a gate tool to a workspace member/,
+  );
   for (const spec of [
     "link:../x",
     "file:x.tgz",
@@ -5224,8 +5427,36 @@ function gateCommands(steps, root) {
   return found;
 }
 
+/**
+ * The tools the stackra CLI starts itself (review L4): every command resolveTool picks for a member task (`at("vite",
+ * …)`) and every bin it runs by path (`join(root, "node_modules", ".bin", "jscpd")`), read from the CLI's source.
+ */
+function cliSpawned(root) {
+  const found = new Set();
+  for (const file of globSync("packages/developer/cli/src/**/*.ts", { cwd: root })) {
+    if (file.includes("__tests__")) continue;
+    const text = readFileSync(join(root, file), "utf8");
+    for (const m of text.matchAll(/\bat\("([a-z][\w.-]*)"/g)) found.add(m[1]);
+    for (const m of text.matchAll(/"node_modules",\s*"\.bin",\s*"([a-z][\w.-]*)"/g))
+      found.add(m[1]);
+  }
+  return found;
+}
+
 test("GATE_TOOL_PACKAGES: derived from what the gate's steps run; a command without its package fails here (ruling 2c)", () => {
   const commands = gateCommands(GATE_STEPS, CODE_DIR);
+  // the gate runs the stackra CLI (by its bin, or by path in validate), so the tools it starts count too
+  const rootScripts = JSON.stringify(
+    JSON.parse(readFileSync(join(CODE_DIR, "package.json"), "utf8")).scripts,
+  );
+  assert.ok(
+    commands.has("stackra") || rootScripts.includes("packages/developer/cli/dist/stackra.mjs"),
+  );
+  const spawned = cliSpawned(CODE_DIR);
+  for (const bin of ["jscpd", "vite", "vitest", "tsdown", "oxlint", "tsc"])
+    assert.ok(spawned.has(bin), `${bin} is no longer started by the CLI`);
+  for (const cmd of spawned)
+    if (!commands.has(cmd)) commands.set(cmd, "started by the stackra CLI");
   for (const [cmd, where] of commands)
     assert.ok(
       cmd in GATE_TOOL_BINS || NOT_PACKAGE_COMMANDS.includes(cmd),
@@ -5629,8 +5860,8 @@ test("N1: a self-check that refuses on the clone's root deps names the operator'
     const body = checkRunBody({
       sha: SHA,
       base: BASE,
-      conclusion: "neutral",
-      phase: "definition",
+      conclusion: "failure",
+      phase: "service",
       reason: message,
       durationMs: 1,
     });
@@ -5639,3 +5870,628 @@ test("N1: a self-check that refuses on the clone's root deps names the operator'
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("M2: stackra/verify never posts neutral; a service problem is a failure that says so, on the gate only", () => {
+  assert.throws(
+    () =>
+      checkRunBody({
+        kind: "gate",
+        sha: SHA,
+        base: BASE,
+        conclusion: "neutral",
+        reason: "x",
+        durationMs: 1,
+      }),
+    /never posts neutral/,
+  );
+  assert.equal(serviceProblemConclusion("gate"), "failure");
+  // the two checks that are never required keep "could not run"
+  for (const kind of ["mobile", "codeql"]) {
+    assert.equal(serviceProblemConclusion(kind), "neutral");
+    const body = checkRunBody({
+      kind,
+      sha: SHA,
+      base: BASE,
+      conclusion: "neutral",
+      phase: "service",
+      reason: "docker",
+      durationMs: 1,
+    });
+    assert.equal(body.conclusion, "neutral");
+  }
+  const body = checkRunBody({
+    sha: SHA,
+    base: BASE,
+    conclusion: "failure",
+    phase: "service",
+    reason: "the store image could not be pulled",
+    durationMs: 1,
+  });
+  assert.equal(body.conclusion, "failure");
+  assert.match(
+    body.output.title,
+    /^stackra\/verify service problem \(not the PR's fault\): the store image could not be pulled/,
+  );
+  assert.ok(body.output.summary.includes("- Reason: the store image could not be pulled"));
+  const posted = {
+    name: "stackra/verify",
+    head_sha: SHA,
+    app: { id: 1 },
+    status: "completed",
+    conclusion: "failure",
+    output: { title: body.output.title },
+  };
+  assert.equal(recordedRun([posted], SHA, 1), undefined);
+  const prFailure = { ...posted, output: { title: "Quality Gate failed in 1 s" } };
+  assert.equal(recordedRun([prFailure], SHA, 1), prFailure);
+});
+
+test("M1: main's .gitignore never refuses a definition file or a path main tracks (main force-tracks vitest configs)", () => {
+  const repo = treeRepo();
+  try {
+    const { dir, git } = repo;
+    // like main: an ignore rule for generated vitest configs, and the configs tracked anyway
+    writeFileSync(
+      join(dir, ".gitignore"),
+      "node_modules/\n.turbo/\ndist/\npackages/*/vitest.config.ts\n",
+    );
+    git("add", "-A", "-f");
+    git("commit", "-qm", "main ignores generated vitest configs");
+    assert.match(git("ls-files", "packages/a/vitest.config.ts"), /vitest\.config\.ts/);
+    const base = git("rev-parse", "HEAD");
+    const build = (files) => {
+      git("checkout", "-q", "-b", `m1-${Object.keys(files)[0].replaceAll("/", "-")}`, base);
+      for (const [path, text] of Object.entries(files)) {
+        mkdirSync(join(dir, path, ".."), { recursive: true });
+        writeFileSync(join(dir, path), text);
+      }
+      git("add", "-A", "-f");
+      git("commit", "-qm", "pr");
+      const sha = git("rev-parse", "HEAD");
+      git("checkout", "-q", "main");
+      return buildTree(mirrorOf(dir), base, sha, join(dir, `index-${sha}`), YAML);
+    };
+    // a new member's vitest.config.ts (ignored by name, a definition file): kept for the member, not refused
+    const added = build({
+      "packages/new/package.json": '{"name":"new"}\n',
+      "packages/new/vitest.config.ts": "export default {};\n",
+    });
+    assert.ok(
+      git("ls-tree", "-r", "--name-only", added)
+        .split("\n")
+        .includes("packages/new/vitest.config.ts"),
+    );
+    // an edit to a tracked one: not refused (main's copy wins, as for every definition file)
+    const edited = build({ "packages/a/vitest.config.ts": "export default { test: {} };\n" });
+    assert.match(
+      git("cat-file", "blob", `${edited}:packages/a/vitest.config.ts`),
+      /include: \['src\/\*\*'\]/,
+    );
+    // node_modules is refused whatever the rules say
+    assert.throws(
+      () => build({ "packages/a/node_modules/x.js": "x\n" }),
+      (error) => error.refused,
+    );
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("L5: a gitlink the PR adds or changes is refused; main's own unchanged gitlink stays", () => {
+  const repo = treeRepo();
+  try {
+    const { dir, git } = repo;
+    const commit = git("rev-parse", "HEAD");
+    git("update-index", "--add", "--cacheinfo", `160000,${commit},.notes`);
+    git("commit", "-qm", "main has a gitlink");
+    const base = git("rev-parse", "HEAD");
+    let n = 0;
+    const pr = (path, target) => {
+      git("checkout", "-q", "-b", `l5-${++n}`, base);
+      git("update-index", "--add", "--cacheinfo", `160000,${target},${path}`);
+      writeFileSync(join(dir, "packages/a/src/l5.ts"), `export const x = "${path}";\n`);
+      git("add", "packages/a/src/l5.ts");
+      git("commit", "-qm", "pr");
+      const sha = git("rev-parse", "HEAD");
+      git("checkout", "-q", "main");
+      return sha;
+    };
+    const build = (sha) => buildTree(mirrorOf(dir), base, sha, join(dir, `index-${sha}`), YAML);
+    assert.match(build(pr(".notes", commit)), /^[0-9a-f]{40}$/);
+    for (const [path, target] of [
+      ["vendor/tool", commit],
+      ["node_modules/.bin/node", commit],
+      [".notes", git("rev-parse", "HEAD~2")],
+    ])
+      assert.throws(
+        () => build(pr(path, target)),
+        (error) => error.refused && error.message.includes(path),
+        path,
+      );
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test(
+  "L1: a stop during a run that would restart ends the service; it is not started again",
+  needsFlock,
+  async () => {
+    const dir = mkdtempSync(join(tmpdir(), "stackra-lock-"));
+    const script = join(dir, "service.mjs");
+    try {
+      writeFileSync(
+        script,
+        [
+          'import { appendFileSync, writeFileSync } from "node:fs";',
+          `appendFileSync(${JSON.stringify(join(dir, "runs"))}, "run\\n");`,
+          // a self-update finished just as the stop arrived: this run would ask for a restart
+          `process.on("SIGTERM", () => process.exit(${RESTART_EXIT}));`,
+          `writeFileSync(${JSON.stringify(join(dir, "started"))}, "");`,
+          "setInterval(() => {}, 1000);",
+        ].join("\n"),
+      );
+      const shell = spawn("/bin/sh", lockedShell(join(dir, "lock"), [process.execPath, script]));
+      const exited = new Promise((resolve) => {
+        shell.on("close", resolve);
+      });
+      for (let i = 0; i < 100 && spawnSync("test", ["-e", join(dir, "started")]).status !== 0; i++)
+        await new Promise((resolve) => {
+          setTimeout(resolve, 50);
+        });
+      shell.kill("SIGTERM");
+      assert.equal(await exited, RESTART_EXIT);
+      assert.equal(readFileSync(join(dir, "runs"), "utf8"), "run\n");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "L1: new code that ends before its first pass is rolled back to the previous HEAD, in the ledger, and the old code runs",
+  needsFlock,
+  () => {
+    const dir = mkdtempSync(join(tmpdir(), "stackra-roll-"));
+    const home = join(dir, "home");
+    const clone = join(dir, "clone");
+    try {
+      mkdirSync(join(home, "ledger"), { recursive: true });
+      mkdirSync(clone);
+      gitIn(clone, "init", "-q", "-b", "main");
+      writeFileSync(join(clone, "code.txt"), "old\n");
+      gitIn(clone, "add", "-A");
+      gitIn(clone, "commit", "-qm", "old");
+      const old = gitIn(clone, "rev-parse", "HEAD");
+      writeFileSync(join(clone, "code.txt"), "new\n");
+      gitIn(clone, "commit", "-qam", "new");
+      const fresh = gitIn(clone, "rev-parse", "HEAD");
+      // the switch just happened: the daemon recorded the HEAD to go back to and cleared the started mark
+      writeFileSync(join(home, SWITCH_PREVIOUS), `${old}\n`);
+      // the service: the new code dies at start; the old code reaches its passes and stops
+      const script = join(dir, "service.mjs");
+      writeFileSync(
+        script,
+        [
+          'import { readFileSync, writeFileSync, appendFileSync } from "node:fs";',
+          `const code = readFileSync(${JSON.stringify(join(clone, "code.txt"))}, "utf8").trim();`,
+          `appendFileSync(${JSON.stringify(join(dir, "runs"))}, code + "\\n");`,
+          'if (code === "new") process.exit(3);',
+          `writeFileSync(${JSON.stringify(join(home, SWITCH_STARTED))}, "");`,
+          "process.exit(0);",
+        ].join("\n"),
+      );
+      const r = spawnSync(
+        "/bin/sh",
+        lockedShell(join(dir, "lock"), [process.execPath, script], { home, clone }),
+        {
+          encoding: "utf8",
+        },
+      );
+      assert.equal(r.status, 0, r.stderr);
+      assert.equal(readFileSync(join(dir, "runs"), "utf8"), "new\nold\n");
+      assert.equal(gitIn(clone, "rev-parse", "HEAD"), old);
+      const ledger = readFileSync(join(home, "ledger/service.jsonl"), "utf8")
+        .trim()
+        .split("\n")
+        .map((l) => JSON.parse(l));
+      assert.equal(ledger.length, 1);
+      assert.equal(ledger[0].event, "self-update-rolled-back");
+      assert.equal(ledger[0].from, fresh);
+      assert.equal(ledger[0].to, old);
+      assert.equal(ledger[0].exit, 3);
+      assert.equal(spawnSync("test", ["-e", join(home, SWITCH_PREVIOUS)]).status, 1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test("ledgerNews: a refusal is written once per episode; every switch is written", () => {
+  const refused = { event: "self-update-refused", reason: "local changes", main: "m1" };
+  assert.equal(ledgerNews(undefined, refused), true);
+  assert.equal(ledgerNews({ refused: "local changes", main: "m1" }, refused), false);
+  assert.equal(ledgerNews({ refused: "local changes", main: "m0" }, refused), true);
+  assert.equal(ledgerNews({ refused: "a job is running", main: "m1" }, refused), true);
+  assert.equal(
+    ledgerNews({ refused: "x", main: "m1" }, { event: "self-update", main: "m1" }),
+    true,
+  );
+});
+
+/** Writes `files` ({ path: text }) under `base`, making directories. */
+const putFiles = (base, files) => {
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(dirname(join(base, path)), { recursive: true });
+    writeFileSync(join(base, path), text);
+  }
+};
+/** A module that prints `word`. */
+const say = (word) => `console.log(${JSON.stringify(word)});\n`;
+/** A docker run argv's container name and image. */
+const nameOf = (run) => run[run.indexOf("--name") + 1];
+const imageOf = (run) => run.at(-4);
+
+/**
+ * A tested tree and a judge image tree on disk, and `run(args, files)`: node with the judge guard for them. The guard
+ * is judgeGuard's own source, as the generated file is.
+ */
+function guardFixture() {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-guard-")));
+  const tree = join(dir, "work");
+  const root = join(dir, "judge");
+  putFiles(tree, {
+    "main.mjs": 'import "pkg";\nimport "./helper.mjs";\n' + say("tree main"),
+    "helper.mjs": say("tree helper"),
+    "changed.mjs": say("PR changed"),
+    "pr.mjs": 'process.stdout.write("PR RAN\\n"); process.exit(0);\n',
+    "equal.mjs": say("generated"),
+    "main.cjs": 'require("cpkg");\n' + say("tree cjs"),
+    "node_modules/pkg/package.json": '{"name":"pkg","type":"module","exports":"./index.mjs"}',
+    "node_modules/pkg/index.mjs": 'process.stdout.write("TREE PKG\\n"); process.exit(0);\n',
+    "node_modules/cpkg/package.json": '{"name":"cpkg","main":"index.js"}',
+    "node_modules/cpkg/index.js": 'process.stdout.write("TREE CPKG\\n"); process.exit(0);\n',
+    "vm.mjs": [
+      'import vm from "node:vm";',
+      'import { readFileSync } from "node:fs";',
+      "const file = process.argv[2];",
+      'vm.runInThisContext(readFileSync(file, "utf8"), { filename: file });',
+      "",
+    ].join("\n"),
+    "resolve.cjs": 'console.log(require.resolve("cpkg"));\n',
+  });
+  putFiles(root, {
+    "main.mjs": "",
+    "main.cjs": "",
+    "resolve.cjs": "",
+    "changed.mjs": say("main's changed"),
+    "equal.mjs": say("generated"),
+    "dist/built.mjs": say("main's build"),
+    "node_modules/pkg/package.json": '{"name":"pkg","type":"module","exports":"./index.mjs"}',
+    "node_modules/pkg/index.mjs": say("judge pkg"),
+    "node_modules/cpkg/package.json": '{"name":"cpkg","main":"index.js"}',
+    "node_modules/cpkg/index.js": say("judge cpkg"),
+  });
+  const mainList = join(dir, "main-paths");
+  writeFileSync(
+    mainList,
+    ["main.mjs", "helper.mjs", "main.cjs", "vm.mjs", "resolve.cjs"].map((p) => `${p}\0`).join(""),
+  );
+  const guard = join(dir, "guard.mjs");
+  writeFileSync(
+    guard,
+    `(${judgeGuard.toString()})(${JSON.stringify({ tree, root, mainList })});\n`,
+  );
+  const run = (...args) =>
+    spawnSync(process.execPath, ["--import", guard, ...args], { cwd: tree, encoding: "utf8" });
+  return { dir, tree, root, run };
+}
+
+test("judge guard: a judge runs main's files only; the tree's own code never runs, main's copy or build runs instead", () => {
+  const g = guardFixture();
+  try {
+    // main's files run; a bare import from them resolves in main's install (the judge image), never the tree's
+    const main = g.run(join(g.tree, "main.mjs"));
+    assert.equal(main.status, 0, main.stderr);
+    assert.equal(main.stdout, "judge pkg\ntree helper\ntree main\n");
+    const cjs = g.run(join(g.tree, "main.cjs"));
+    assert.equal(cjs.stdout, "judge cpkg\ntree cjs\n", cjs.stderr);
+    const resolved = g.run(join(g.tree, "resolve.cjs"));
+    assert.equal(
+      resolved.stdout.trim(),
+      join(g.root, "node_modules/cpkg/index.js"),
+      resolved.stderr,
+    );
+    // a file the PR changed runs as main's copy; a file only the judge image has (a build output) runs from there
+    assert.equal(g.run(join(g.tree, "changed.mjs")).stdout, "main's changed\n");
+    assert.equal(g.run(join(g.tree, "dist/built.mjs")).stdout, "main's build\n");
+    // a file whose bytes are the judge image's (main's generated files laid in) runs
+    assert.equal(g.run(join(g.tree, "equal.mjs")).stdout, "generated\n");
+    // the PR's own code never runs, through import, require or node:vm (jiti's way in)
+    const pr = g.run(join(g.tree, "pr.mjs"));
+    assert.notEqual(pr.status, 0);
+    assert.doesNotMatch(pr.stdout, /PR RAN/);
+    assert.match(pr.stderr, /a judge never runs the tested tree's pr\.mjs \(it is not main's\)/);
+    const viaVm = g.run(join(g.tree, "vm.mjs"), join(g.tree, "pr.mjs"));
+    assert.notEqual(viaVm.status, 0);
+    assert.doesNotMatch(viaVm.stdout, /PR RAN/);
+    assert.match(viaVm.stderr, /never runs the tested tree's pr\.mjs/);
+    const viaRequire = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        join(g.dir, "guard.mjs"),
+        "-e",
+        `require(${JSON.stringify(join(g.tree, "node_modules/cpkg/index.js"))})`,
+      ],
+      { cwd: g.tree, encoding: "utf8" },
+    );
+    // the tree's copy of a package is main's when main's install has the same file at the same place
+    assert.equal(viaRequire.stdout, "judge cpkg\n", viaRequire.stderr);
+    // once loaded, the guard stays: a second import does not reset it
+    assert.match(judgeGuardSource(), /^\/\/ Generated by tools\/scripts\/stackra-verify\.mjs/);
+    assert.match(
+      judgeGuardSource(),
+      /"tree":"\/work","root":"\/judge","mainList":"\/in\/main-paths"/,
+    );
+  } finally {
+    rmSync(g.dir, { recursive: true, force: true });
+  }
+});
+
+test("judge container setup: guarded node first on PATH, the guard in NODE_OPTIONS, turbo without a cache", () => {
+  assert.match(judgeNodeSource(), /exec "\$node" --import \/in\/judge-guard\.mjs "\$@"/);
+  const env = Object.fromEntries(
+    judgeEnv()
+      .trim()
+      .split("\n")
+      .map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]),
+  );
+  assert.deepEqual(env.PATH.split(":").slice(0, 2), ["/in/bin", "/judge/node_modules/.bin"]);
+  assert.equal(env.NODE_OPTIONS, "--import /in/judge-guard.mjs");
+  assert.equal(env.TURBO_CACHE, "local:,remote:");
+  assert.equal(JUDGE_MOUNT, "/judge");
+  assert.match(JUDGE_GEN, /^node \/judge\/packages\/developer\/cli\/dist\/stackra\.mjs gen$/m);
+  for (const m of JUDGE_GEN.matchAll(/\S*stackra\.mjs/g))
+    assert.equal(m[0], "/judge/packages/developer/cli/dist/stackra.mjs");
+});
+
+/** The judging steps and the PR steps, as Idris's ruling (B) names them. */
+const JUDGING = [
+  "licence-policy",
+  "dependency-scan",
+  "workflow-lint",
+  "linear-key-check",
+  "format-check",
+  "lint",
+  "migration-lint",
+  "validate",
+  "env-names",
+  "boundaries",
+  "knip",
+  "secrets-scan",
+];
+const PR_STEPS = ["typecheck", "build", "service-gen", "manifests-match-gen", "test"];
+
+test("B: every gate step is a judge or a PR step, as ruled; judges never start from a PR step's image", () => {
+  assert.deepEqual(
+    GATE_STEPS.filter((s) => s.judge).map((s) => s.id),
+    JUDGING,
+  );
+  assert.deepEqual(
+    GATE_STEPS.filter((s) => !s.judge).map((s) => s.id),
+    PR_STEPS,
+  );
+  for (const step of GATE_STEPS) {
+    // a judge starts from a view; a PR step names the image it starts from, and only the build's is kept
+    if (step.judge) assert.equal(step.from, undefined, step.id);
+    else assert.ok(["base", "built"].includes(step.from), step.id);
+    if (step.commit) assert.equal(step.id, "build");
+  }
+  // the built image is made by build, which runs before every step that starts from it
+  const order = GATE_STEPS.map((s) => s.id);
+  for (const step of GATE_STEPS.filter((s) => s.from === "built"))
+    assert.ok(order.indexOf(step.id) > order.indexOf("build"), step.id);
+  // a step's input comes from an earlier step that collects
+  for (const step of GATE_STEPS.filter((s) => s.input)) {
+    const source = GATE_STEPS.find((s) => s.id === step.input);
+    assert.ok(source?.collect && order.indexOf(source.id) < order.indexOf(step.id), step.id);
+  }
+  assert.deepEqual(
+    MOBILE_STEPS.map((s) => [s.id, Boolean(s.judge), s.from]),
+    [
+      ["licence-policy", true, undefined],
+      ["mobile-apps", false, "base"],
+    ],
+  );
+});
+
+test("B runJob: prepare, the judge view and the shared view, then one container per step in ci.yml's order", async () => {
+  const { deps, calls } = fakeDeps({ facts: async () => true });
+  const r = await runJob({ ...JOB, kind: "gate" }, deps);
+  assert.equal(r.conclusion, "success");
+  const [install, base, view, shared, ...steps] = calls.runs;
+  assert.match(install[install.indexOf("--name") + 1], /-install$/);
+  const id = nameOf(base).slice("sv-".length, -"-base".length);
+  assert.equal(imageOf(base), `stackra-verify-run:${id}`);
+  assert.match(base.at(-1), /git update-ref HEAD "\$commit"/);
+  assert.equal(imageOf(view), `stackra-verify-run:${id}-base`);
+  assert.equal(view.at(-1), "bash /in/judge-view.sh");
+  assert.ok(
+    view.includes(`type=image,source=stackra-verify-judge:abc,target=/judge,image-subpath=judge`),
+  );
+  assert.equal(imageOf(shared), `stackra-verify-run:${id}-view`);
+  assert.equal(shared.at(-1), "bash /in/gate.sh --swap");
+  // committed in that order (the install first); the build's container is kept as the built image
+  assert.deepEqual(
+    calls.docker
+      .filter((a) => a[0] === "commit")
+      .map((a) => a[2].replace(`stackra-verify-run:${id}`, "<run>")),
+    ["<run>", "<run>-base", "<run>-view", "<run>-shared", "<run>-built"],
+  );
+  assert.deepEqual(
+    steps.map((run) => run.at(-1).replace("bash /in/gate.sh --step ", "")),
+    GATE_STEPS.map((s) => s.id),
+  );
+  for (const [i, step] of GATE_STEPS.entries()) {
+    const run = steps[i];
+    const env = run[run.indexOf("--env-file") + 1];
+    const judgeMount = run.some((a) =>
+      a.startsWith("type=image,source=stackra-verify-judge:abc,target=/judge"),
+    );
+    if (step.judge) {
+      // fresh from a view, read-only, guarded, with main's judge image
+      assert.ok(run.includes("--read-only"), step.id);
+      assert.equal(env, "/runs/x/judge.env", step.id);
+      assert.ok(judgeMount, step.id);
+      assert.equal(
+        imageOf(run),
+        `stackra-verify-run:${id}-${step.shared ? "shared" : "view"}`,
+        step.id,
+      );
+    } else {
+      assert.equal(run.includes("--read-only"), false, step.id);
+      assert.equal(env, ENV, step.id);
+      assert.equal(judgeMount, step.id === "manifests-match-gen", step.id);
+      assert.equal(imageOf(run), `stackra-verify-run:${id}-${step.from}`, step.id);
+    }
+    assert.equal(run[run.indexOf("--network") + 1], "none", step.id);
+  }
+  // main's gen output leaves its container as data and reaches migration-lint read-only
+  assert.deepEqual(
+    calls.collect.map(([, step]) => step),
+    ["manifests-match-gen"],
+  );
+  const lint = steps[GATE_STEPS.findIndex((s) => s.id === "migration-lint")];
+  assert.ok(lint.includes("/runs/x/manifests-match-gen.tar:/in/manifests-match-gen.tar:ro"));
+});
+
+test("B runJob: a failing step fails the run and every later step still runs; a step that never started is an error", async () => {
+  const { deps, calls } = fakeDeps({ exits: { install: 0, verify: 0, lint: 1, build: 2 } });
+  const r = await runJob(JOB, deps);
+  assert.equal(r.conclusion, "failure");
+  assert.equal(r.phase, "verify");
+  assert.equal(calls.runs.filter((run) => / --step /.test(run.at(-1))).length, GATE_STEPS.length);
+  // a failed build is still kept: the steps after it start from what it left, as in one job
+  assert.ok(calls.docker.some((a) => a[0] === "commit" && a[2].endsWith("-built")));
+  const unstarted = await runJob(
+    JOB,
+    fakeDeps({ exits: { install: 0, verify: 0, knip: null } }).deps,
+  );
+  assert.deepEqual([unstarted.post, unstarted.error], [false, "the knip container did not start"]);
+  // the service's own containers must succeed: a failed prepare is an error, never the PR's result
+  const prep = await runJob(JOB, fakeDeps({ exits: { install: 0, verify: 0, base: 1 } }).deps);
+  assert.deepEqual([prep.post, prep.error], [false, "the base container failed (1)"]);
+  // no judge image (the mobile kind): no view container, judges start from the prepared tree, unmounted
+  const mobile = fakeDeps({});
+  await runJob({ ...JOB, kind: "mobile" }, mobile.deps);
+  const licence = mobile.calls.runs.find((run) => run.at(-1).endsWith(" --step licence-policy"));
+  assert.ok(licence.includes("--read-only"));
+  assert.equal(
+    licence.some((a) => a.startsWith("type=image,")),
+    false,
+  );
+  assert.match(licence.at(-4), /-base$/);
+});
+
+test("B judge image: main's tree, installed offline as the gate installs, the judges built, main's gen; tag from main's tree", () => {
+  const dockerfile = judgeDockerfile({
+    storeImage: "stackra-verify-store:abc",
+    builds: ["esbuild", "uniwind-pro"],
+    roots: ["packages/developer/cli", "packages/tooling/oxlint"],
+  });
+  const lines = dockerfile.trim().split("\n");
+  assert.equal(lines[0], "FROM stackra-verify-store:abc");
+  assert.ok(lines.includes("ADD tree.tar /judge/"));
+  assert.match(
+    dockerfile,
+    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile --offline --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile esbuild\n/,
+  );
+  assert.doesNotMatch(dockerfile, /uniwind-pro|prebuilt/);
+  assert.match(
+    dockerfile,
+    /turbo run build --filter='\.\/packages\/developer\/cli\.\.\.' --filter='\.\/packages\/tooling\/oxlint\.\.\.'/,
+  );
+  assert.match(
+    dockerfile,
+    /RUN node packages\/developer\/cli\/dist\/stackra\.mjs gen && pnpm exec turbo run gen /,
+  );
+  assert.equal(lines.at(-1).startsWith("RUN "), true);
+  assert.throws(
+    () => judgeDockerfile({ storeImage: "s", builds: [], roots: ["../x"] }),
+    /not a judge member/,
+  );
+  assert.throws(
+    () => judgeDockerfile({ storeImage: "s", builds: [], roots: ["a b"] }),
+    /not a judge member/,
+  );
+  const tag = judgeTag("t".repeat(40), "sha256:1", dockerfile);
+  assert.match(tag, /^stackra-verify-judge:[0-9a-f]{16}$/);
+  assert.equal(judgeTag("t".repeat(40), "sha256:1", dockerfile), tag);
+  for (const other of [
+    judgeTag("u".repeat(40), "sha256:1", dockerfile),
+    judgeTag("t".repeat(40), "sha256:2", dockerfile),
+    judgeTag("t".repeat(40), "sha256:1", `${dockerfile}#`),
+  ])
+    assert.notEqual(other, tag);
+  // the clean-up keeps the recorded judge image
+  assert.deepEqual(keepIdsFrom({ judges: { [tag]: { id: "sha256:j" } } }, "sha256:b"), [
+    "sha256:j",
+    "sha256:b",
+  ]);
+  // a judging container: read-only root, the judge image read-only at /judge
+  const argv = stepArgs(S, {
+    name: "n",
+    image: "i",
+    envFile: ENV,
+    tarPath: TAR,
+    command: "bash /in/gate.sh --step lint",
+    readOnly: true,
+    judgeImage: tag,
+  });
+  assert.ok(argv.includes("--read-only"));
+  assert.ok(argv.includes(`type=image,source=${tag},target=/judge,image-subpath=judge`));
+  assert.equal(argv[argv.indexOf("--network") + 1], "none");
+  assert.deepEqual(argv.slice(-4), ["i", "sh", "-c", "bash /in/gate.sh --step lint"]);
+});
+
+test(
+  "B judge view: main's generated files added where the tree has the member, never over a tree file; every .bin is main's",
+  needsBash,
+  () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-view-")));
+    const root = join(dir, "judge");
+    const tree = join(dir, "work");
+    putFiles(root, {
+      "packages/a/.stackra/vitest.config.mts": "main gen a\n",
+      "packages/a/.stackra/app-manifest.json": "main manifest\n",
+      "packages/gone/.stackra/vitest.config.mts": "main gen gone\n",
+      "packages/developer/gen/__golden__/x/.stackra/y.golden": "golden\n",
+      "node_modules/.bin/knip": "main knip\n",
+      "packages/a/node_modules/.bin/oxlint": "main oxlint\n",
+    });
+    putFiles(tree, {
+      "packages/a/src/index.ts": "export {};\n",
+      "packages/a/.stackra/app-manifest.json": "PR manifest\n",
+      "packages/new/package.json": "{}\n",
+      "packages/developer/gen/__golden__/x/.stackra/keep": "tree\n",
+      "node_modules/.bin/knip": "PR knip\n",
+      "packages/a/node_modules/.bin/oxlint": "PR oxlint\n",
+      "packages/new/node_modules/.bin/tsc": "PR tsc\n",
+    });
+    const r = spawnSync(BASH, ["-c", judgeViewScript(root, tree)], { encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    const read = (p) => readFileSync(join(tree, p), "utf8");
+    assert.equal(read("packages/a/.stackra/vitest.config.mts"), "main gen a\n");
+    assert.equal(read("packages/a/.stackra/app-manifest.json"), "PR manifest\n");
+    assert.equal(existsSync(join(tree, "packages/gone")), false);
+    assert.equal(
+      existsSync(join(tree, "packages/developer/gen/__golden__/x/.stackra/y.golden")),
+      false,
+    );
+    assert.equal(read("node_modules/.bin/knip"), "main knip\n");
+    assert.equal(read("packages/a/node_modules/.bin/oxlint"), "main oxlint\n");
+    assert.equal(existsSync(join(tree, "packages/new/node_modules/.bin")), false);
+    rmSync(dir, { recursive: true, force: true });
+  },
+);

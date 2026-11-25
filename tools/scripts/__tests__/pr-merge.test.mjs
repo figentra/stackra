@@ -40,6 +40,9 @@ import {
   DEFINITION_FIELDS,
   verifyFacts,
   verifyRun,
+  JUDGE_ROOTS,
+  judgeMembers,
+  isJudgePath,
 } from "../pr-merge.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
@@ -579,7 +582,6 @@ test("condition 6: a PR that adds only a patch and a workspace entry needs risk:
     "packages/a/tsconfig.build.json",
     "packages/a/vite.config.ts",
     "packages/a/vitest.setup.ts",
-    "packages/developer/cli/src/x.ts",
     ".pnpmfile.cjs",
     ".gitattributes",
   ])
@@ -629,6 +631,78 @@ test("condition 5: a success against an older main refuses until the re-verify",
   );
 });
 
+/** A lockfile whose importers link the CLI to support (and support to errors); packages/c links nothing a judge uses. */
+const JUDGE_LOCK = `lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+
+importers:
+
+  .:
+    devDependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:packages/developer/cli
+
+  packages/c:
+    dependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:../../packages/developer/cli
+
+  packages/developer/cli:
+    dependencies:
+      '@stackra/support':
+        specifier: workspace:*
+        version: link:../../foundation/support
+      yaml:
+        specifier: 2.8.1
+        version: 2.8.1
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../testing
+
+  packages/developer/testing: {}
+
+  packages/foundation/errors: {}
+
+  packages/foundation/support:
+    optionalDependencies:
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../errors
+
+packages:
+
+  yaml@2.8.1:
+    resolution: {integrity: sha512-x}
+`;
+
+test("B5: the judge members are JUDGE_ROOTS' runtime closure over main's lockfile importers; unreadable fails closed", () => {
+  assert.deepEqual(judgeMembers(JUDGE_LOCK), [
+    "packages/developer/cli",
+    "packages/foundation/errors",
+    "packages/foundation/support",
+  ]);
+  const members = judgeMembers(JUDGE_LOCK);
+  assert.equal(isJudgePath("packages/foundation/errors/src/index.ts", members), true);
+  assert.equal(isJudgePath("packages/developer/cli/package.json", members), true);
+  // a dev dependency of a judge is not run by it, and a member that only depends on a judge is not one
+  assert.equal(isJudgePath("packages/developer/testing/src/x.ts", members), false);
+  assert.equal(isJudgePath("packages/c/src/x.ts", members), false);
+  assert.equal(isJudgePath("packages/developer/cli-other/x.ts", members), false);
+  // the root links the CLI, but the root is never a judge directory (every path would be one)
+  assert.equal(isJudgePath("src/x.ts", judgeMembers(JUDGE_LOCK, [".", ...JUDGE_ROOTS])), false);
+  // a lockfile that names no importer (unreadable, or not a lockfile) counts every path
+  for (const text of [null, "", "{}", "lockfileVersion: '9.0'\n"]) {
+    assert.equal(judgeMembers(text), null);
+    assert.equal(isJudgePath("src/a.ts", judgeMembers(text)), true);
+  }
+  for (const root of JUDGE_ROOTS) assert.match(root, /^packages\/(?:developer|tooling)\/[\w-]+$/);
+});
+
 test("verifyFacts: the main block reads the head's verify runs, current main and every changed definition file", () => {
   const HEAD = SHA;
   const MAIN = "e".repeat(40);
@@ -638,7 +712,7 @@ test("verifyFacts: the main block reads the head's verify runs, current main and
     if (path.startsWith("repos/figentra/stackra/commits/" + HEAD + "/check-runs"))
       return { check_runs: [appRun("success")] };
     if (path === "repos/figentra/stackra/pulls/7")
-      return { base: { sha: "b".repeat(40), ref: "main" }, changed_files: 5 };
+      return { base: { sha: "b".repeat(40), ref: "main" }, changed_files: 7 };
     if (path === "repos/figentra/stackra/commits/main") return { sha: MAIN };
     throw new Error(`unexpected ${path}`);
   };
@@ -649,14 +723,18 @@ test("verifyFacts: the main block reads the head's verify runs, current main and
       { filename: "packages/a/package.json", status: "modified" },
       { filename: "packages/b/package.json", status: "modified" },
       { filename: "turbo.jsonc", status: "modified" },
+      { filename: "packages/foundation/support/src/x.ts", status: "modified" },
+      { filename: "packages/c/src/x.ts", status: "modified" },
     ];
   };
   const raw = (path, ref) =>
-    path === "packages/a/package.json"
-      ? ref === HEAD
-        ? '{"scripts":{"test":"true"}}'
-        : '{"scripts":{"test":"vitest run"}}'
-      : '{"version":"' + ref.slice(0, 1) + '"}';
+    path === "pnpm-lock.yaml"
+      ? JUDGE_LOCK
+      : path === "packages/a/package.json"
+        ? ref === HEAD
+          ? '{"scripts":{"test":"true"}}'
+          : '{"scripts":{"test":"vitest run"}}'
+        : '{"version":"' + ref.slice(0, 1) + '"}';
   const facts = verifyFacts({ repo: "figentra/stackra", n: "7", headSha: HEAD, api, list, raw });
   assert.equal(facts.verifyRuns.length, 1);
   assert.equal(facts.mainSha, MAIN);
@@ -664,6 +742,8 @@ test("verifyFacts: the main block reads the head's verify runs, current main and
     "1 unlisted files",
     "packages/a/package.json",
     "turbo.jsonc",
+    // a judge's own closure (B5), read from main's lockfile
+    "packages/foundation/support/src/x.ts",
   ]);
   assert.ok(calls.includes("repos/figentra/stackra/pulls/7/files?per_page=100"));
   // only our App's runs are listed (LOW 8): another App's flood cannot push ours past the first page
@@ -817,12 +897,6 @@ test("condition 6 (round 5, C1): knip's config modules are main's; the members v
       assert.equal(isVerifyOverlay(`${dir}${name}`), true, `${dir}${name}`);
       assert.equal(SHARED_STEP_LOADERS.test(`${dir}${name}`), true, `${dir}${name}`);
     }
-  for (const path of [
-    "packages/developer/runway/src/x.ts",
-    "packages/developer/repo-checks/src/x.ts",
-    "packages/developer/skills/src/contracts.ts",
-  ])
-    assert.equal(isVerifyDefinition(path), true, path);
   assert.equal(SHARED_STEP_LOADERS.test("packages/a/src/index.ts"), false);
   assert.equal(SHARED_STEP_LOADERS.test("packages/a/.storybook/main.ts"), true);
 });

@@ -105,7 +105,7 @@ export function verifyRun(checkRuns, sha, app = VERIFY_APP) {
  * and commitlint. A test derives that list from the installed knip's plugins and fails when a name is missing here.
  */
 export const VERIFY_OVERLAY =
-  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|(?:vite|tsdown|babel|metro|playwright|react-native|react-router|nuxt|app)\.config\.[cm]?[jt]s|\.babelrc(?:\.[cm]?[jt]s|\.json)?|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins|\.flow)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$|^.+\/pnpm-workspace\.ya?ml$/;
+  /(?:^|\/)(?:turbo\.jsonc?|\.?knip(?:\.config)?\.(?:jsonc?|[cm]?[jt]s)|\.oxlintrc(?:\.jsonc?)?|\.oxfmtrc(?:\.jsonc?)?|ox(?:lint|fmt)\.config\.[cm]?[jt]s|vitest(?:\.[\w-]+)?\.config\.[cm]?[jt]s|(?:vite|tsdown|babel|metro|playwright|react-native|react-router|nuxt|app|stackra)\.config\.[cm]?[jt]s|\.babelrc(?:\.[cm]?[jt]s|\.json)?|vitest\.(?:workspace|projects)\.[cm]?[jt]s|\.npmrc|\.pnpmfile\.[cm]?js|lefthook(?:-local)?\.ya?ml|\.lefthook(?:-local)?\.ya?ml|\.gitattributes|\.gitignore|flow\.config\.jsonc?|\.gitleaks\.toml|\.gitleaksignore|osv-scanner\.toml|\.commitlintrc(?:\.\w+)?|commitlint\.config\.[cm]?[jt]s|package\.(?:yaml|yml|json5)|\.(?:eslint|oxlint|prettier)ignore|\.prettierrc(?:\.\w+)?|prettier\.config\.[cm]?[jt]s|\.editorconfig|\.?shellcheckrc|\.squawk\.toml)$|(?:^|\/)\.config\/|^(?:packages\/tooling|tools\/scripts|tools\/policy|\.agents\/hooks|\.opencode\/plugins|\.flow)\/|^(?:\.github\/)?(?:zizmor|actionlint)\.ya?ml$|^.+\/pnpm-workspace\.ya?ml$/;
 
 /**
  * The verify-definition directories whose every file is main's, new ones included (a new file there is removed from
@@ -162,13 +162,87 @@ export const SHARED_STEP_LOADERS = new RegExp(
 /**
  * Files a PR legitimately changes that still change what `pnpm verify` checks: the workspace (catalogs, overrides,
  * allowed builds), the TypeScript projects and the CLI the repository checks run, and `runway.yaml`, which decides
- * where things deploy (CTO ruling, round 4). The members whose built code the shared validate and env-names steps
- * load into one repo-wide process are here too (round 5, C1): the CLI and the repo-checks, runway and skills
- * (its contracts) members under packages/developer. The service runs the PR's copy, so
+ * where things deploy (CTO ruling, round 4). The members the judges are built from are not listed here: they are
+ * computed from main's lockfile (judgeMembers), so a PR that touches a judge's source needs risk:R3 too. The service runs the PR's copy, so
  * a change to them needs the owner's review (condition 6), like a change to VERIFY_OVERLAY.
  */
 export const VERIFY_SENSITIVE =
-  /^runway\.yaml$|(?:^|\/)(?:pnpm-workspace\.yaml|pnpm-lock\.yaml|tsconfig(?:\.[\w-]+)?\.json|vitest\.setup\.[cm]?[jt]s|setup-tests?\.[cm]?[jt]s|test-setup\.[cm]?[jt]s)$|^(?:packages\/developer\/(?:cli|repo-checks|runway|skills)|patches)\/|(?:^|\/)__tests__\/setup\.[cm]?[jt]s$/;
+  /^runway\.yaml$|(?:^|\/)(?:pnpm-workspace\.yaml|pnpm-lock\.yaml|tsconfig(?:\.[\w-]+)?\.json|vitest\.setup\.[cm]?[jt]s|setup-tests?\.[cm]?[jt]s|test-setup\.[cm]?[jt]s)$|^patches\/|(?:^|\/)__tests__\/setup\.[cm]?[jt]s$/;
+
+/**
+ * The workspace members the gate's judges run from (CTO ruling, round 5, B5): the stackra CLI (validate, doc-standard,
+ * duplication and its repo-checks), the oxlint plugin (coding-standard) and the oxlint, commitlint and other presets,
+ * runway (env check), gen (the generated configs and manifests the judges compare) and skills (whose contracts validate
+ * loads). Their source is judged code, so judgeMembers adds every member they depend on.
+ */
+export const JUDGE_ROOTS = Object.freeze([
+  "packages/developer/cli",
+  "packages/developer/coding-standard",
+  "packages/developer/gen",
+  "packages/developer/repo-checks",
+  "packages/developer/runway",
+  "packages/developer/skills",
+  "packages/tooling/commitlint",
+  "packages/tooling/oxlint",
+  "packages/tooling/tsdown",
+  "packages/tooling/typescript",
+  "packages/tooling/vitest",
+]);
+
+/**
+ * The members the judges are built from, from a pnpm-lock.yaml's importers: JUDGE_ROOTS and every member they reach
+ * through a `link:` dependency or optional dependency (their runtime closure), as sorted directories. A lockfile that
+ * names no importer gives null: the caller fails closed. A small reader of the importers' block layout, as pnpm writes
+ * it (the daemon's fail-closed reader checks the same file before any judge runs).
+ */
+export function judgeMembers(lockText, roots = JUDGE_ROOTS) {
+  const links = new Map();
+  let top = null;
+  let importer = null;
+  let section = null;
+  let dep = null;
+  for (const line of String(lockText ?? "").split(/\r?\n/)) {
+    const m = /^( *)('(?:[^']|'')*'|[^\s:'][^:]*?):(?:\s+(.*))?$/.exec(line);
+    if (!m) continue;
+    const depth = m[1].length / 2;
+    const key = m[2].startsWith("'") ? m[2].slice(1, -1).replaceAll("''", "'") : m[2];
+    const value = (m[3] ?? "").trim();
+    if (depth === 0) top = key;
+    if (top !== "importers") continue;
+    if (depth === 1) {
+      importer = key;
+      if (!links.has(importer)) links.set(importer, new Set());
+    } else if (depth === 2) section = key;
+    else if (depth === 3) dep = key;
+    else if (
+      depth === 4 &&
+      key === "version" &&
+      dep &&
+      (section === "dependencies" || section === "optionalDependencies") &&
+      value.startsWith("link:")
+    ) {
+      const parts = importer === "." ? [] : importer.split("/");
+      for (const part of value.slice(5).split("/"))
+        if (part === "..") parts.pop();
+        else if (part && part !== ".") parts.push(part);
+      links.get(importer).add(parts.join("/") || ".");
+    }
+  }
+  if (!links.size) return null;
+  const seen = new Set();
+  const queue = roots.filter((r) => links.has(r));
+  while (queue.length) {
+    const dir = queue.shift();
+    if (seen.has(dir)) continue;
+    seen.add(dir);
+    for (const next of links.get(dir) ?? []) if (!seen.has(next)) queue.push(next);
+  }
+  return [...seen].toSorted();
+}
+
+/** Whether `path` is in one of the judge members (`members`, judgeMembers' answer; null counts every path). */
+export const isJudgePath = (path, members) =>
+  members === null || members.some((dir) => dir !== "." && path.startsWith(`${dir}/`));
 
 /**
  * How long a stackra/verify success against an older main counts (CTO ruling M3): long enough to enter the merge
@@ -221,6 +295,14 @@ export const DEFINITION_FIELDS = [
  */
 export const GATE_TOOL_BINS = Object.freeze({
   commitlint: "@commitlint/cli",
+  // The tools the stackra CLI starts for a member's task (resolveTool) or by path (duplication's jscpd), review L4.
+  expo: "expo",
+  jscpd: "jscpd",
+  mint: "mint",
+  playwright: "@playwright/test",
+  "react-router": "@react-router/dev",
+  vite: "vite",
+  wrangler: "wrangler",
   fflow: "@figentra-oss/flow",
   knip: "knip",
   oxfmt: "oxfmt",
@@ -240,7 +322,12 @@ export const GATE_TOOL_BINS = Object.freeze({
  */
 export const NOT_PACKAGE_COMMANDS = Object.freeze([
   "actionlint",
+  // downloaded by mise, started by the stackra CLI for a service or a mobile flow
+  "encore",
+  "maestro",
   "case",
+  "cd",
+  "continue",
   "do",
   "done",
   "echo",
@@ -345,11 +432,13 @@ export function verifyFacts({ repo, n, headSha, api, list: listAll = api, raw })
   const mainSha = api(`repos/${repo}/commits/${pull.base.ref}`).sha;
   const files = listAll(`repos/${repo}/pulls/${n}/files?per_page=100`);
   const definitionChanges = [];
+  // The judges' own members, from main's lockfile: a PR touching a judge's source needs the owner's review (B5).
+  const judges = judgeMembers(raw("pnpm-lock.yaml", pull.base.sha));
   if (pull.changed_files > files.length)
     definitionChanges.push(`${pull.changed_files - files.length} unlisted files`);
   for (const file of files)
     for (const path of [file.filename, file.previous_filename].filter(Boolean)) {
-      if (isVerifyDefinition(path)) definitionChanges.push(path);
+      if (isVerifyDefinition(path) || isJudgePath(path, judges)) definitionChanges.push(path);
       else if (
         /(?:^|\/)package\.json$/.test(path) &&
         definitionFieldsChanged(raw(path, pull.base.sha), raw(path, headSha), file.status)
