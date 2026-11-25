@@ -1,99 +1,113 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: the box deploy service (STA-2783, ADR 0536), Stackra's recorded exception to "Runway + CI, no hand
+ * Purpose: the box deploy service (STA-2783, STA-2784, ADR 0536), Stackra's recorded exception to "Runway + CI, no hand
  *   deploys" while figentra's GitHub Actions is billing-locked. Built OFF: nothing deploys until its switch is on.
- *   Two paths, each a target with its own lock, ledger lines and switch:
- *   (1) Encore staging: app `stackra-nzk2`, environment `staging` and nothing else (any other environment is refused
- *       in code before a setting is read). Mints a one-hour token from the staging OAuth client (Encore's Deployer
- *       role), triggers a rollout of the exact SHA (`POST /api/apps/<app>/envs/staging/rollouts {sha}`), follows it
- *       to its end, then requires `GET <staging>/readyz` to answer 200. A failed rollout or smoke is recorded failed
- *       and rolled back by a rollout of the last SHA the ledger records as good (Encore has no rollback endpoint; a
- *       rollout of an earlier commit is its rollback). A rollout that proposes infrastructure changes stops for the
- *       owner: the service never approves or rejects them.
- *   (2) The Cloudflare Workers registry, static, turbo-cache and edge, from runway.yaml's
- *       `targets.cloudflare-workers.members` (a Worker that is not a member there is refused). Per Worker and SHA it
- *       reproduces CI's caller workflow and runway-cloudflare-workers.yml step for step (install, build, gen, the
- *       member build, the binding-id swap, runway's rendering of the operational settings with the deployed SHA's own
- *       @stackra/runway, `d1 migrations apply --remote`, `versions upload --message <sha>`), with these differences:
- *       a D1 migration runs only when every pending statement is additive (d1-migration-gate.mjs; anything else
- *       stops and is recorded "needs the owner"); the new version first joins the deployment at 0% beside the one
- *       serving at 100% (a version override only reaches a version that is in the current deployment, and every
- *       member keeps `previewUrls: false`), where the smoke suite (stackra-deploy-smoke.mjs) runs through
- *       `Cloudflare-Workers-Version-Overrides`; then promotion in STACKRA_DEPLOY_STEPS (10 then 100), held
- *       STACKRA_DEPLOY_HOLD_SECONDS and smoked again at each step; any failure puts the old version back at 100%. The
- *       Worker's secrets are not handled here: `wrangler versions upload` inherits a Worker's secrets from the
- *       previous version (wrangler 4.148.0 sets keep_bindings secret_text and secret_key), so the box holds no
- *       REGISTRY_SIGNING_KEY or EDGE_SIGNING_SECRET; rotating one stays CI's or the owner's. Promotion mode per Worker
- *       (STACKRA_DEPLOY_PROMOTION): `auto` (the owner's choice of 2026-11-25 for all four, ADR 0536) or `approve`
- *       (stop after the 0% smoke until an approval file written by the approver user names the SHA and the version;
- *       the approval is recorded in the ledger).
- *   Both deploy only commits on origin/main with a green `stackra/verify` check run from the stackra-verify App
- *   (5907714) at that exact SHA; while STACKRA_DEPLOY_ACCEPT_BOX_GREEN is on (until verify is live), a box-green
- *   record at that SHA stands in for it. The timer (`once`) deploys main's head: Encore whenever it moved, a Worker
- *   only when a file of its runway unit or of its workspace dependency closure (pnpm-lock importers, `link:` deps)
- *   changed since the last SHA the ledger records as deployed; the first box deploy of a target is run by hand.
- *   Verbs: preflight [encore|workers]  |  once [--dry-run]  |  status  |  workers run --worker <w> --sha <sha>
- *          [--dry-run]  |  encore run --sha <sha> [--dry-run]  |  approve --worker <w> --sha <sha> --version <id>
+ *   It never deploys the shared Figentra services (the registry, the build cache, static): those stay in the main
+ *   Cloudflare account and deploy through CI only, and the box holds no token for that account. Two paths, each a
+ *   target with its own lock, ledger lines and switch:
+ *   (1) Encore staging: app `stackra-nzk2`, environment `staging` only (ENCORE_DEPLOY_ENVS, checked before any API
+ *       call, the token mint included; every call is recorded with its environment). Mints a one-hour token from the
+ *       box's OAuth client (Encore's Deployer role, which Encore does not scope to an environment, so this code does),
+ *       triggers a rollout of the exact SHA, follows it, then requires `GET <staging>/readyz` to answer 200. A failure
+ *       is rolled back by a rollout of the last SHA the ledger records as good (Encore has no rollback endpoint). A
+ *       rollout that proposes infrastructure changes stops for the owner. `encore audit` (its own daily timer) reads
+ *       production's recent rollouts and alerts (a ledger line and exit 1) on any that is not from CI: its actor must
+ *       be a CI OAuth client (never the box's) and GitHub must record a successful `production` deployment of its SHA.
+ *   (2) Stackra's own Workers in the Stackra Cloudflare account 57227d408957e241465c38ebd9c3959a (BOX_WORKERS: docs,
+ *       edge), each a runway.yaml member of `targets.cloudflare-workers` whose own wrangler.jsonc names that account and
+ *       whose hosts are on Stackra's own domain (STACKRA_DEPLOY_STACKRA_DOMAIN, `<stackra-domain>` until the owner
+ *       picks it); anything else is refused, the main account by name. The Stackra landing is not a Worker here: it is
+ *       experience documents the OS landing shell renders in figentra/os's edge Worker (ADR 0440). Per Worker and SHA
+ *       it reproduces CI's caller workflow and runway-cloudflare-workers.yml step for step (install, build, gen, the
+ *       member build, the binding-id swap, runway's rendering with the deployed SHA's own @stackra/runway,
+ *       `d1 migrations apply --remote`, `versions upload --message <sha>`; the parity test is mandatory), with these
+ *       differences: a D1 migration runs only when every pending statement is additive (d1-migration-gate.mjs); the new
+ *       version joins the deployment at 0% beside the one at 100% (an override only reaches a version in the current
+ *       deployment), where the smoke (worker-smoke.mjs) runs through `Cloudflare-Workers-Version-Overrides` and must
+ *       see that version answer (edge's `x-stackra-version`, docs' `/-/version`), so an ignored override fails; then
+ *       10%, 50% and 100% (STACKRA_DEPLOY_STEPS, as CI's rollout), held and smoked again at each step, and live at the
+ *       end; any failure puts the old version back at 100% and smokes it. A Worker's secrets stay on the Worker:
+ *       `wrangler versions upload` inherits them (wrangler 4.148.0 keeps secret_text and secret_key bindings).
+ *       Promotion per Worker (STACKRA_DEPLOY_PROMOTION): `auto`, the owner's "All automatic" of 2026-11-25, or
+ *       `approve` (kept, tested: stop after the 0% smoke until the approver's file names the SHA and the version).
+ *   Both deploy only commits on origin/main with a green `stackra/verify` from the stackra-verify App (5907714) at that
+ *   exact SHA; while STACKRA_DEPLOY_ACCEPT_BOX_GREEN is on (until verify is live) a box-green record at that SHA stands
+ *   in. The timer (`once`) deploys main's head: Encore whenever it moved, a Worker only when a file of its runway unit
+ *   or its workspace closure (pnpm-lock importers, `link:` deps) changed since its last recorded deploy.
+ *   Verbs: preflight [encore|workers] | once [--dry-run] | status | workers run --worker <docs|edge> --sha <sha>
+ *          [--dry-run] | encore run --sha <sha> [--dry-run] | encore audit | approve --worker <w> --sha <sha>
+ *          --version <id>
  * Boundary: runs git, sudo (install and build as the build user), node (wrangler from the deployed tree, and a child
- *   that loads the tree's @stackra/runway to render the config) and flock; calls the GitHub REST API (check runs),
- *   the Encore Cloud API and the Workers' own URLs. Never touches Encore production: the environment is a constant
- *   checked before anything else. Never writes a secret into argv, a child's environment beyond what wrangler needs,
- *   a log, the ledger or a file other than wrangler's private run folder.
+ *   that loads the tree's @stackra/runway to render the config) and flock; calls the GitHub REST API (check runs and
+ *   deployments), the Encore Cloud API and the Workers' own URLs. Never writes a secret into argv, a child's
+ *   environment beyond wrangler's, a log, the ledger or a file other than wrangler's private run folder.
  * Runbook (box 1), what Lukas sets up:
- *   - Users: `stackra-deploy` (the deploy user: no login shell, no sudo except the rule below, never `build`, never
- *     `stackra-verify` or `stackra-verifyd`), `stackra-deploy-build` (installs and builds the SHA's tree; holds no
- *     secret) and `stackra-deploy-approver` (writes approval files; only needed when a Worker is set to approve).
- *     sudoers: `stackra-deploy ALL=(stackra-deploy-build) NOPASSWD: /usr/bin/env`.
+ *   - Users: `stackra-deploy` (the deploy user: no login shell, never `build`, `stackra-verify` or `stackra-verifyd`),
+ *     `stackra-deploy-build` (installs and builds the SHA's tree; holds no secret) and `stackra-deploy-approver`
+ *     (only when a Worker is set to approve). sudoers: `stackra-deploy ALL=(stackra-deploy-build) NOPASSWD: /usr/bin/env`.
  *   - Folders: STACKRA_DEPLOY_HOME=/work/stackra/deploy, 0700 stackra-deploy (ledger/, locks/, state/, run/);
- *     STACKRA_DEPLOY_MIRROR=/work/stackra/deploy-mirror.git, 0755 stackra-deploy (main and tags only, nothing
- *     secret; the build user clones from it); STACKRA_DEPLOY_WORK=/work/stackra/deploy-work, 0755 stackra-deploy-build (the trees);
+ *     STACKRA_DEPLOY_MIRROR=/work/stackra/deploy-mirror.git, 0755 stackra-deploy (main and tags only, nothing secret;
+ *     the build user clones from it); STACKRA_DEPLOY_WORK=/work/stackra/deploy-work, 0755 stackra-deploy-build;
  *     /etc/stackra-deploy 0750 root:stackra-deploy holding the secret files, each 0400 stackra-deploy;
- *     STACKRA_DEPLOY_BOX_GREEN_DIR (box-green records, owned by STACKRA_DEPLOY_BOX_GREEN_OWNER, the user that runs
- *     the box trains) and STACKRA_DEPLOY_APPROVALS (0755 stackra-deploy-approver).
- *   - The service clone /work/stackra/deploy-service (main, `pnpm install --frozen-lockfile --ignore-scripts
- *     --filter .` for `yaml`), owned by stackra-deploy.
+ *     STACKRA_DEPLOY_BOX_GREEN_DIR (records owned by STACKRA_DEPLOY_BOX_GREEN_OWNER, the user that runs the box trains)
+ *     and STACKRA_DEPLOY_APPROVALS (0755 stackra-deploy-approver).
+ *   - The service clone /work/stackra/deploy-service (main, `pnpm install --frozen-lockfile --ignore-scripts --filter .`
+ *     for `yaml`), owned by stackra-deploy.
  *   - systemd: `stackra-deploy.service` (Type=oneshot, User=stackra-deploy, WorkingDirectory=the service clone,
  *     ExecStartPre=/usr/bin/git pull --ff-only origin main, ExecStart=/usr/local/bin/node
- *     tools/scripts/stackra-deploy.mjs once, EnvironmentFile=/etc/stackra-deploy/settings.env (settings only, no
- *     secret), Nice=10) and `stackra-deploy.timer` (OnUnitActiveSec=5min). Before the first timer run: `preflight`,
- *     then each target's first deploy by hand (`workers run --worker <w> --sha <sha>`, `encore run --sha <sha>`)
- *     watched and recorded.
- *   - Settings (none secret): STACKRA_DEPLOY_WORKERS and STACKRA_DEPLOY_ENCORE (the switches: exactly `on`, else
- *     off; a typo is a preflight problem), STACKRA_DEPLOY_ACCEPT_BOX_GREEN (`on` until stackra/verify is live, then
- *     `off`), STACKRA_DEPLOY_PROMOTION (`registry=auto,static=auto,turbo-cache=auto,edge=auto` by default),
- *     STACKRA_DEPLOY_STEPS (10,100), STACKRA_DEPLOY_HOLD_SECONDS (300), STACKRA_DEPLOY_BUILD_AS, STACKRA_DEPLOY_BUILD_HOME,
- *     STACKRA_DEPLOY_APPROVER, STACKRA_DEPLOY_BOX_GREEN_OWNER, STACKRA_DEPLOY_WORKER_VARS_FILE (the binding ids and
- *     vars CI reads from the `registry` environment's variables, as JSON: REGISTRY_D1_DATABASE_ID,
- *     REGISTRY_KV_NAMESPACE_ID, REGISTRY_READ_ONLY; ids, not secrets, but not writable by others),
- *     STACKRA_DEPLOY_ENCORE_URL (the staging base URL of /readyz), and the file settings below.
+ *     tools/scripts/stackra-deploy.mjs once, EnvironmentFile=/etc/stackra-deploy/settings.env, Nice=10) with
+ *     `stackra-deploy.timer` (OnUnitActiveSec=5min); `stackra-deploy-audit.service` (ExecStart=… encore audit) with
+ *     `stackra-deploy-audit.timer` (OnCalendar=daily) and OnFailure= to the box's alert unit, so a non-zero audit
+ *     reaches a person.
+ *   - Settings (none secret): STACKRA_DEPLOY_WORKERS and STACKRA_DEPLOY_ENCORE (the switches: exactly `on`, else off;
+ *     a typo is a preflight problem), STACKRA_DEPLOY_ACCEPT_BOX_GREEN (`on` until stackra/verify is live, then `off`),
+ *     STACKRA_DEPLOY_PROMOTION (`docs=auto,edge=auto` by default), STACKRA_DEPLOY_STEPS (10,50,100),
+ *     STACKRA_DEPLOY_HOLD_SECONDS (300), STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID=57227d408957e241465c38ebd9c3959a,
+ *     STACKRA_DEPLOY_STACKRA_DOMAIN (<stackra-domain>), STACKRA_DEPLOY_BUILD_AS, STACKRA_DEPLOY_BUILD_HOME,
+ *     STACKRA_DEPLOY_APPROVER, STACKRA_DEPLOY_BOX_GREEN_OWNER, STACKRA_DEPLOY_WORKER_VARS_FILE (ids and vars a member
+ *     declares, as JSON; none today), STACKRA_DEPLOY_ENCORE_URL (the staging origin), STACKRA_DEPLOY_ENCORE_CI_ACTORS
+ *     (the CI OAuth client ids that may deploy Encore production) and the file settings below.
  *   What the owner creates and places (never pasted into a chat, a command or a file in a repository): through
- *   ~/Secrets-inbox into figentra/secrets, scope ci/deploy/box1, from where Lukas installs each value as a 0400 file:
- *   - STACKRA_DEPLOY_ENCORE_CLIENT_FILE: an Encore OAuth client of app stackra-nzk2 with the Deployer role, made for
- *     this box only, as JSON {"client_id","client_secret"}. Encore's OAuth clients carry a role, not an
- *     environment, so the token could deploy any environment of the app: the staging-only rule is this code's
- *     (ENCORE_ENV, tested), and the owner revokes the client to stop it at once.
- *   - STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE: an account API token with Workers Scripts Edit, D1 Edit and Account
- *     Settings Read on account d861f9ac9df28b7f0b1298cc0c89bc9d, Client IP Address Filtering set to box 1's egress
- *     address only, and an expiry (TTL) the owner picks. Blast radius: Cloudflare cannot scope Workers Scripts Edit
- *     to named scripts, so the token can change every Worker and D1 database of the account, which also holds Agent
- *     Desk / Figentra Flow's Workers and the tax-practice Worker; the IP filter and the expiry are what bound it.
- *   - STACKRA_DEPLOY_TURBO_TOKEN_FILE: the turbo cache token (ci/build/turbo TURBO_TOKEN), read only by the
- *     turbo-cache smoke. STACKRA_DEPLOY_GITHUB_TOKEN_FILE (optional): a read-only token for check runs; without it
- *     the public API's rate limit applies.
- *   Switch on: set the switch to `on` in settings.env after `preflight` passes and the first hand run is recorded;
- *   switch off: set it to `off` (the next run refuses), or stop the timer; the owner revokes the Encore client or the
- *   Cloudflare token to cut it off from outside. A run in flight finishes or rolls back; nothing restarts it.
+ *   ~/Secrets-inbox into figentra/secrets, in the new scope ci/deploy/box1-stackra (never the shared ci/deploy or
+ *   ci/production), from where Lukas installs each value as a 0400 file:
+ *   - STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE: an API token on account 57227d408957e241465c38ebd9c3959a only, with Workers
+ *     Scripts Edit (and D1 Edit only once a Stackra-account member declares a D1 database; none does), Client IP
+ *     Address Filtering set to box 1's egress address, and an expiry. Blast radius: Stackra's own Workers in that
+ *     account (docs, edge); the shared services in the main account are out of its reach.
+ *   - STACKRA_DEPLOY_ENCORE_CLIENT_FILE: an Encore OAuth client of app stackra-nzk2 with the Deployer role, for this box
+ *     only, as JSON {"client_id","client_secret"}. The role is not environment-scoped: staging-only is this code's
+ *     rule (tested), and the owner revokes the client to stop it at once.
+ *   - STACKRA_DEPLOY_GITHUB_TOKEN_FILE (optional): a read-only token for check runs and deployments.
+ *   Go-live list (each verified on the first watched deploy and recorded in the ledger by Lukas before the switch):
+ *     1. `preflight` passes for both paths, as the deploy user.
+ *     2. Encore builds a bare SHA of stackra-nzk2 (the app is linked to figentra/stackra and builds the generated app),
+ *        and staging's `/readyz` answers 200 (the health readiness fix and #1060/#1061/#1063/#1064 merged).
+ *     3. `encore audit` reads production's rollouts: the list route answers, and its rollouts name an actor and a
+ *        commit (Encore documents no list route and no actor field; until both are confirmed the audit alerts, never
+ *        passes silently).
+ *     4. wrangler 4.148.0's real output matches what the box parses: `deployments status --json`, `versions view
+ *        --json` (the message), `versions upload` (Worker Version ID) and `d1 migrations list`.
+ *     5. The override reaches the 0% version on Stackra's domain: the smoke's version proof passes at 0%, and Workers
+ *        Logs show the new version id for those requests.
+ *     6. The token: its scope is the Stackra account only, the IP filter refuses a call from elsewhere, the expiry is
+ *        set; a deploy to the main account is refused (preflight).
+ *     7. docs and edge carry their version proof once deployed by CI or the owner's first deploy (`/-/version`,
+ *        `x-stackra-version`), their wrangler.jsonc names the Stackra account, and runway.yaml's members name hosts on
+ *        Stackra's domain.
+ *     8. Wrangler runs from the deploy user's run folder with a config pointing into the build user's tree.
+ *   Switch on: set the switch to `on` in settings.env after the go-live list is recorded; switch off: set it to `off`
+ *   (the next run refuses) or stop the timer; the owner revokes the Encore client or the Cloudflare token to cut it off
+ *   from outside. A run in flight finishes or rolls back; nothing restarts it.
  * Runtime: node 24 on Linux with git, flock and sudo.
- * Governing contract: ADR 0536 (box deploys); ADR 0468 (amended by 0536); ADR 0170; ADR 0352; ADR 0453; ADR 0519;
- *   ADR 0525 (secrets); STA-2783.
- * Secrets: each read from its 0400 file of the deploy user at the moment it is needed: the Encore client secret
- *   goes only in the token request's body; the Cloudflare token only into wrangler's environment
- *   (CLOUDFLARE_API_TOKEN); the turbo token only into the turbo-cache smoke's header; the GitHub token only into the
- *   check-run request's header. The build user's environment is PATH, HOME and CI only. Every output path is
- *   scrubbed of the values read.
- * Exit: 0 done (deployed, skipped, waiting for approval, dry run), 1 refused, failed or needs the owner, 2 usage,
- *   75 the target's lock is held.
+ * Governing contract: ADR 0536 (box deploys); ADR 0468 (amended by 0536); ADR 0170; ADR 0352; ADR 0440; ADR 0519;
+ *   ADR 0525 (secrets); STA-2783; STA-2784; STA-2786.
+ * Secrets: each read from its 0400 file of the deploy user at the moment it is needed: the Encore client secret goes
+ *   only in the token request's body; the Cloudflare token only into wrangler's environment (CLOUDFLARE_API_TOKEN);
+ *   the GitHub token only into GitHub requests' headers. The build user's environment is PATH, HOME and CI only. Every
+ *   output path is scrubbed of the values read.
+ * Exit: 0 done (deployed, skipped, waiting for approval, dry run, a clean audit), 1 refused, failed, needs the owner
+ *   or an audit alert, 2 usage, 75 the target's lock is held.
  */
 import { spawn, spawnSync } from "node:child_process";
 import {
@@ -111,7 +125,7 @@ import { dirname, isAbsolute, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseAllDocuments, parse as parseYaml } from "yaml";
 import { migrationVerdict, pendingMigrations } from "./d1-migration-gate.mjs";
-import { registryBaseline, registrySample, smokeWorker } from "./stackra-deploy-smoke.mjs";
+import { redirectsOf, smokeWorker } from "./worker-smoke.mjs";
 
 // ---- constants --------------------------------------------------------------------------------------------------
 
@@ -121,15 +135,25 @@ export const VERIFY_APP_ID = 5_907_714;
 /** The Encore app and the one environment this service may deploy. */
 export const ENCORE_APP = "stackra-nzk2";
 export const ENCORE_ENV = "staging";
-/** The Workers this service may deploy; each must also be a runway.yaml member. */
-export const WORKER_KEYS = Object.freeze(["registry", "static", "turbo-cache", "edge"]);
-/** The owner's choice of 2026-11-25 (ADR 0536): all four promote automatically when every check passes. */
-export const DEFAULT_PROMOTION = Object.freeze({
-  registry: "auto",
-  static: "auto",
-  "turbo-cache": "auto",
-  edge: "auto",
-});
+/**
+ * The Cloudflare account of Stackra's own Workers, the only account the box deploys to (STA-2784). The main Figentra
+ * account holds the shared services (the registry, the build cache, static) and is deployed by CI only.
+ */
+export const STACKRA_ACCOUNT_ID = "57227d408957e241465c38ebd9c3959a";
+export const MAIN_ACCOUNT_ID = "d861f9ac9df28b7f0b1298cc0c89bc9d";
+/**
+ * The Workers this service may deploy: Stackra's own, in the Stackra account; each must also be a runway.yaml member
+ * whose wrangler.jsonc names that account. The Stackra landing is not among them: it is experience documents the OS
+ * landing shell renders in figentra/os's edge Worker (ADR 0440), published by runway's product publish, not a Worker
+ * of this repository.
+ */
+export const BOX_WORKERS = Object.freeze(["docs", "edge"]);
+/** The owner's choice of 2026-11-25 (ADR 0536): Stackra's Workers promote automatically when every check passes. */
+export const DEFAULT_PROMOTION = Object.freeze({ docs: "auto", edge: "auto" });
+/** The one Encore environment a deploy may name; checked before any API call, the token mint included. */
+export const ENCORE_DEPLOY_ENVS = Object.freeze(["staging"]);
+/** The Encore environment the daily audit reads (never writes). */
+export const ENCORE_AUDIT_ENV = "production";
 /** The reusable workflow whose steps the box reproduces, and runway's driver whose deploy steps it mirrors. */
 export const PROVIDER_WORKFLOW = ".github/workflows/runway-cloudflare-workers.yml";
 export const RUNWAY_DRIVER =
@@ -153,6 +177,8 @@ const VERSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const BINDING_ID = /^[A-Za-z0-9-]+$/;
 const VAR_NAME = /^[A-Z][A-Z0-9_]*$/;
 const USER_NAME = /^[a-z_][a-z0-9_-]*$/;
+/** A DNS name of at least two labels. */
+const DOMAIN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 /** The version line `wrangler versions upload` prints. */
 const UPLOADED = /(?:Worker|Current) Version ID:\s*([0-9a-f-]{36})/;
 /** A string, or a `//` or block comment of JSONC; strings are kept (runway's driver strips the same way). */
@@ -207,7 +233,12 @@ export function parseArgs(argv) {
   const args = argv.filter((a) => a !== "--");
   const verb = args.shift();
   const out = { verb, dryRun: false, trigger: "manual" };
-  if (verb === "workers" || verb === "encore") {
+  if (verb === "encore" && args[0] === "audit") {
+    args.shift();
+    out.target = "encore";
+    out.verb = "audit";
+    if (args.length > 0) return null;
+  } else if (verb === "workers" || verb === "encore") {
     if (args.shift() !== "run") return null;
     out.target = verb;
     out.verb = "run";
@@ -226,7 +257,7 @@ export function parseArgs(argv) {
   if (!["manual", "timer"].includes(out.trigger)) return null;
   if (out.verb === "run" || out.verb === "approve") {
     if (!SHA.test(out.sha ?? "")) return null;
-    if (out.target !== "encore" && !WORKER_KEYS.includes(out.worker ?? "")) return null;
+    if (out.target !== "encore" && !BOX_WORKERS.includes(out.worker ?? "")) return null;
     if (out.verb === "approve") out.target = "workers";
   } else if (out.sha !== undefined || out.worker !== undefined) return null;
   if (out.verb === "approve" && !VERSION_ID.test(out.version ?? "")) return null;
@@ -251,7 +282,7 @@ export function parsePromotion(value) {
   if (value === undefined || value.trim() === "") return modes;
   for (const pair of value.split(",")) {
     const [name, mode, extra] = pair.trim().split("=");
-    if (extra !== undefined || !WORKER_KEYS.includes(name) || !["auto", "approve"].includes(mode))
+    if (extra !== undefined || !BOX_WORKERS.includes(name) || !["auto", "approve"].includes(mode))
       return null;
     modes[name] = mode;
   }
@@ -260,7 +291,7 @@ export function parsePromotion(value) {
 
 /** The promotion steps (percent of traffic), ascending and ending at 100; null when malformed. */
 export function parseSteps(value) {
-  const steps = String(value ?? "10,100")
+  const steps = String(value ?? "10,50,100")
     .split(",")
     .map((s) => s.trim());
   if (!steps.every((s) => /^\d{1,3}$/.test(s))) return null;
@@ -298,11 +329,10 @@ export function settings(env = process.env) {
     holdMs: seconds(env.STACKRA_DEPLOY_HOLD_SECONDS, 300),
     propagationMs: seconds(env.STACKRA_DEPLOY_PROPAGATION_SECONDS, 15),
     smokeAttempts: Number(env.STACKRA_DEPLOY_SMOKE_ATTEMPTS ?? 3),
-    minSample: Number(env.STACKRA_DEPLOY_REGISTRY_MIN_SAMPLE ?? 3),
     cloudflareTokenFile: env.STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE || null,
     cloudflareAccountId: env.STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID || null,
     varsFile: env.STACKRA_DEPLOY_WORKER_VARS_FILE || null,
-    turboTokenFile: env.STACKRA_DEPLOY_TURBO_TOKEN_FILE || null,
+    stackraDomain: env.STACKRA_DEPLOY_STACKRA_DOMAIN || null,
     githubTokenFile: env.STACKRA_DEPLOY_GITHUB_TOKEN_FILE || null,
     githubApi: env.STACKRA_DEPLOY_GITHUB_API || "https://api.github.com",
     encoreClientFile: env.STACKRA_DEPLOY_ENCORE_CLIENT_FILE || null,
@@ -310,6 +340,11 @@ export function settings(env = process.env) {
     encoreEnv: env.STACKRA_DEPLOY_ENCORE_ENV || ENCORE_ENV,
     encoreApi: env.STACKRA_DEPLOY_ENCORE_API || "https://api.encore.dev",
     encoreUrl: env.STACKRA_DEPLOY_ENCORE_URL || null,
+    encoreCiActors: (env.STACKRA_DEPLOY_ENCORE_CI_ACTORS ?? "")
+      .split(",")
+      .map((actor) => actor.trim())
+      .filter(Boolean),
+    auditHours: Number(env.STACKRA_DEPLOY_AUDIT_HOURS ?? 26),
     rolloutTimeoutMs: seconds(env.STACKRA_DEPLOY_ENCORE_ROLLOUT_MINUTES, 30) * 60,
     readyTimeoutMs: seconds(env.STACKRA_DEPLOY_READY_SECONDS, 300),
     pollMs: seconds(env.STACKRA_DEPLOY_POLL_SECONDS, 10),
@@ -318,7 +353,7 @@ export function settings(env = process.env) {
 
 /** Refuses any Encore app or environment but stackra-nzk2 staging; the first check of the Encore path. */
 export function assertEncoreTarget(app, environment) {
-  if (environment !== ENCORE_ENV)
+  if (!ENCORE_DEPLOY_ENVS.includes(environment))
     throw new Error(
       `refused: the box deploys Encore environment "${ENCORE_ENV}" only, never "${environment}"`,
     );
@@ -447,16 +482,19 @@ export function preflightProblems(s, io, target, { dryRun = false } = {}) {
   }
   if (dryRun) return problems;
 
-  for (const [label, path] of [
-    ["STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE", s.cloudflareTokenFile],
-    ["STACKRA_DEPLOY_TURBO_TOKEN_FILE", s.turboTokenFile],
-  ]) {
+  for (const [label, path] of [["STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE", s.cloudflareTokenFile]]) {
     const problem = secretFileProblem(io, label, path);
     if (problem) problems.push(problem);
   }
-  if (!/^[0-9a-f]{32}$/.test(s.cloudflareAccountId ?? ""))
+  if (s.cloudflareAccountId !== STACKRA_ACCOUNT_ID)
     problems.push(
-      "STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID must be the 32-hex account id of runway.yaml",
+      s.cloudflareAccountId === MAIN_ACCOUNT_ID
+        ? "STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID names the main account: the box never deploys there (CI does)"
+        : `STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID must be the Stackra account ${STACKRA_ACCOUNT_ID}`,
+    );
+  if (!DOMAIN.test(s.stackraDomain ?? ""))
+    problems.push(
+      "STACKRA_DEPLOY_STACKRA_DOMAIN must name Stackra's own domain (<stackra-domain>)",
     );
   if (!s.varsFile) problems.push("STACKRA_DEPLOY_WORKER_VARS_FILE is not set");
   else
@@ -482,7 +520,7 @@ export function preflightProblems(s, io, target, { dryRun = false } = {}) {
       );
   }
   if (s.steps === null)
-    problems.push("STACKRA_DEPLOY_STEPS must be ascending percentages ending at 100 (10,100)");
+    problems.push("STACKRA_DEPLOY_STEPS must be ascending percentages ending at 100 (10,50,100)");
   for (const [setting, value] of [
     ["STACKRA_DEPLOY_HOLD_SECONDS", s.holdMs],
     ["STACKRA_DEPLOY_PROPAGATION_SECONDS", s.propagationMs],
@@ -491,8 +529,6 @@ export function preflightProblems(s, io, target, { dryRun = false } = {}) {
       problems.push(`${setting} must be a number of seconds`);
   if (!Number.isInteger(s.smokeAttempts) || s.smokeAttempts < 1)
     problems.push("STACKRA_DEPLOY_SMOKE_ATTEMPTS must be a whole number, at least 1");
-  if (!Number.isInteger(s.minSample) || s.minSample < 2)
-    problems.push("STACKRA_DEPLOY_REGISTRY_MIN_SAMPLE must be at least 2");
   return problems;
 }
 
@@ -909,13 +945,16 @@ export function swapIds(config, member, vars) {
 /**
  * The rendered config made runnable from the deploy user's run folder: every path absolute against the member's
  * folder; refused when it ships Durable Object migrations (those go out at 100% through `wrangler deploy`, which
- * the box never runs) or names another account.
+ * the box never runs) or does not name the Stackra account itself.
  */
 export function placeConfig(config, memberDir, accountId) {
   if (config.migrations !== undefined)
     throw new Error("the Worker ships Durable Object migrations: a deploy at 100% needs the owner");
-  if (config.account_id !== undefined && config.account_id !== accountId)
-    throw new Error(`wrangler.jsonc names account ${config.account_id}, not ${accountId}`);
+  // The member's own wrangler.jsonc states the account: runway.yaml has one account for the whole root (the main one).
+  if (config.account_id !== accountId)
+    throw new Error(
+      `wrangler.jsonc names account ${config.account_id ?? "none"}, not the Stackra account ${accountId}`,
+    );
   const at = (p) => (isAbsolute(p) ? p : join(memberDir, p));
   const out = { ...config, account_id: accountId };
   if (typeof out.main === "string") out.main = at(out.main);
@@ -929,6 +968,10 @@ export function placeConfig(config, memberDir, accountId) {
     }));
   return out;
 }
+
+/** The member's custom domains that are not Stackra's own domain (or a name under it). */
+export const foreignHosts = (member, domain) =>
+  (member.customDomains ?? []).filter((host) => host !== domain && !host.endsWith(`.${domain}`));
 
 /** The child that renders a member's config with the deployed tree's own @stackra/runway (no secret in it). */
 export const RENDER_SCRIPT = [
@@ -962,28 +1005,6 @@ export function parseVersionMessage(output) {
   } catch {
     return null;
   }
-}
-
-/** The workspace packages of a tree: `[{ name, dir, private }]` for every packages/<group>/<name>/package.json. */
-export function workspacePackages(io, tree) {
-  const out = [];
-  for (const group of io.list(join(tree, "packages"))) {
-    for (const name of io.list(join(tree, "packages", group))) {
-      const file = join(tree, "packages", group, name, "package.json");
-      if (!io.exists(file)) continue;
-      try {
-        const pkg = JSON.parse(io.readFile(file));
-        out.push({
-          name: pkg.name,
-          dir: `packages/${group}/${name}`,
-          private: pkg.private === true,
-        });
-      } catch {
-        // A package.json that is not JSON is not a published package.
-      }
-    }
-  }
-  return out;
 }
 
 /** The node and pnpm versions mise.toml pins (`node = "24.22.0"`). */
@@ -1112,7 +1133,7 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
 
   const problems = preflightProblems(s, io, "workers", { dryRun });
   if (problems.length > 0) return finish("refused", { reason: problems.join("; ") });
-  if (!WORKER_KEYS.includes(worker))
+  if (!BOX_WORKERS.includes(worker))
     return finish("refused", { reason: `${worker} is not a box Worker` });
 
   await fetchMain(s, io);
@@ -1128,6 +1149,12 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
   if (!member)
     return finish("refused", {
       reason: `${worker} is not a runway.yaml member at ${sha}; its first deploy is the owner's`,
+    });
+  // Stackra's own Workers answer on Stackra's own domain only (the main account's zone is not reachable from its account).
+  const foreign = s.stackraDomain ? foreignHosts(member, s.stackraDomain) : [];
+  if (foreign.length > 0 || (!dryRun && (member.customDomains ?? []).length === 0))
+    return finish("refused", {
+      reason: `${worker} must answer on ${s.stackraDomain} only, not ${foreign.join(", ") || "no host"}`,
     });
   const workflow = root.targets["cloudflare-workers"].workflows?.[worker];
   const workflowText = workflow
@@ -1155,7 +1182,7 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
     return finish("dry-run", { plan: plan.map((p) => p.id) });
   }
 
-  // The secrets are read only now, after every gate: the token for wrangler, the turbo token for its smoke.
+  // The token is read only later, after every gate and the build: it goes to wrangler alone.
   const vars = readVars(io, s);
   for (const name of caller.vars)
     if (vars[name] === undefined)
@@ -1239,8 +1266,6 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
     entry.worker = config.name;
 
     const token = readSecret(io, "the Cloudflare token", s.cloudflareTokenFile);
-    const turboToken =
-      worker === "turbo-cache" ? readSecret(io, "the turbo token", s.turboTokenFile) : undefined;
     const wrangler = async (id, args) => {
       const answer = await io.run(
         process.execPath,
@@ -1319,24 +1344,11 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
     }
     entry.oldVersion = oldVersion;
 
-    // ---- the registry sample and production's answers before the deploy ----
-    const base = member.customDomains?.[0] ? `https://${member.customDomains[0]}` : undefined;
-    let sample = [];
-    let baseline = {};
-    if (worker === "registry") {
-      const { baseline: before, absent } = await registryBaseline(io, {
-        base,
-        sample: registrySample(workspacePackages(io, tree)),
-      });
-      baseline = before;
-      sample = Object.keys(before);
-      entry.sample = { names: sample, absent };
-      if (!sample.includes("@stackra/cli") || sample.length < s.minSample)
-        return finish("refused", {
-          reason: `the registry sample is too small (${sample.join(", ")})`,
-        });
-    }
-    const smoke = async (stage, version) => {
+    // ---- the site's own redirects (docs), checked at every step ----
+    const redirectsFile = join(memberDir, ".stackra", "site", "build", "client", "_redirects");
+    const redirects = io.exists(redirectsFile) ? redirectsOf(io.readFile(redirectsFile)) : [];
+    /** One smoke stage: `version` is the override target (none: production as it serves), `expect` must answer. */
+    const smoke = async (stage, version, expect) => {
       let last;
       for (let attempt = 1; attempt <= s.smokeAttempts; attempt += 1) {
         if (attempt > 1) await io.sleep(s.propagationMs);
@@ -1346,10 +1358,8 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
             member: worker,
             workerName: config.name,
             version,
-            sample,
-            baseline,
-            readOnly: vars.REGISTRY_READ_ONLY === "true",
-            turboToken,
+            expect,
+            redirects,
           });
         } catch (error) {
           last = {
@@ -1376,7 +1386,9 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
       const after = back.code === 0 ? await status().catch(() => []) : [];
       const restored =
         after.length === 1 && after[0].version === oldVersion && after[0].percent === 100;
-      const health = restored ? await smoke("after-rollback", undefined) : "not restored";
+      const health = restored
+        ? await smoke("after-rollback", undefined, oldVersion)
+        : "not restored";
       return finish("failure", {
         reason: why,
         newVersion,
@@ -1452,7 +1464,7 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
     if (!joined.some((v) => v.version === newVersion))
       return rollBack(`${newVersion} is not in the deployment, so no override can reach it`);
 
-    const previewFailure = await smoke(0, newVersion);
+    const previewFailure = await smoke(0, newVersion, newVersion);
     if (previewFailure) return rollBack(`the 0% smoke failed: ${previewFailure}`);
 
     if (entry.mode === "approve") {
@@ -1503,10 +1515,10 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
       if (moved.code !== 0)
         return rollBack(`promote to ${percent}% failed: ${tail(moved.stderr || moved.stdout)}`);
       await io.sleep(percent === 100 ? s.propagationMs : s.holdMs);
-      const failure = await smoke(percent, newVersion);
+      const failure = await smoke(percent, newVersion, newVersion);
       if (failure) return rollBack(`the ${percent}% smoke failed: ${failure}`);
     }
-    const live = await smoke("live", undefined);
+    const live = await smoke("live", undefined, newVersion);
     if (live) return rollBack(`the live smoke failed: ${live}`);
     writeState(s, io, target, null);
     return finish("success", { newVersion });
@@ -1555,16 +1567,32 @@ class StepError extends Error {
 
 // ---- Encore staging ---------------------------------------------------------------------------------------------
 
-/** The Encore Cloud API client: a one-hour token from the OAuth client, refreshed before it expires. */
-export function encoreClient(s, io) {
+/** Refuses an Encore environment a deploy may not name; runs before any API call, the token mint included. */
+export function assertEncoreDeployEnv(environment) {
+  if (!ENCORE_DEPLOY_ENVS.includes(environment))
+    throw new Error(
+      `refused: the box deploys Encore environments ${ENCORE_DEPLOY_ENVS.join(", ")} only, never "${environment}"`,
+    );
+}
+
+/**
+ * The Encore Cloud API client: a one-hour token from the OAuth client, refreshed before it expires. Each call names
+ * its environment and is recorded in `calls` (method, kind, environment, time) before it is made; a write is refused
+ * for any environment outside ENCORE_DEPLOY_ENVS, and a read for any but those and the audit's.
+ */
+export function encoreClient(s, io, calls = []) {
   let token = null;
   let expires = 0;
-  const call = async (method, path, body) => {
+  const app = encodeURIComponent(s.encoreApp);
+  const call = async ({ method, kind, env, path, body }) => {
+    if (method !== "GET") assertEncoreDeployEnv(env);
+    else if (env !== null && env !== ENCORE_AUDIT_ENV) assertEncoreDeployEnv(env);
     if (token === null || io.now() > expires - 5 * 60_000) {
       const client = JSON.parse(readSecret(io, "the Encore OAuth client", s.encoreClientFile));
       if (typeof client.client_id !== "string" || typeof client.client_secret !== "string")
         throw new Error("the Encore OAuth client file must hold client_id and client_secret");
       registerSecret(client.client_secret);
+      calls.push({ method: "POST", kind: "token", env, at: new Date(io.now()).toISOString() });
       const answer = await io.fetch(`${s.encoreApi}/api/oauth/token`, {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -1583,6 +1611,7 @@ export function encoreClient(s, io) {
       registerSecret(token);
       expires = io.now() + Number(doc.expires_in ?? 3600) * 1000;
     }
+    calls.push({ method, kind, env, at: new Date(io.now()).toISOString() });
     const answer = await io.fetch(`${s.encoreApi}${path}`, {
       method,
       headers: {
@@ -1595,30 +1624,45 @@ export function encoreClient(s, io) {
     const doc = await answer.json().catch(() => ({}));
     if (!answer.ok || doc.ok === false)
       throw new Error(
-        `Encore answered ${answer.status} to ${method} ${path}: ${scrub(doc.error?.code ?? "")}`,
+        `Encore answered ${answer.status} to ${method} ${kind} (${env ?? "app"}): ${scrub(doc.error?.code ?? "")}`,
       );
     return doc.data ?? doc;
   };
   return {
-    trigger: (sha) =>
-      call(
-        "POST",
-        `/api/apps/${encodeURIComponent(s.encoreApp)}/envs/${encodeURIComponent(s.encoreEnv)}/rollouts`,
-        { sha },
-      ),
-    rollout: (id) =>
-      call(
-        "GET",
-        `/api/apps/${encodeURIComponent(s.encoreApp)}/rollouts/${encodeURIComponent(id)}`,
-      ),
+    /** Starts a rollout of `sha` in `env`: refused before any call unless `env` is allowed. */
+    trigger: async (env, sha) => {
+      assertEncoreDeployEnv(env);
+      return call({
+        method: "POST",
+        kind: "rollout",
+        env,
+        path: `/api/apps/${app}/envs/${encodeURIComponent(env)}/rollouts`,
+        body: { sha },
+      });
+    },
+    rollout: (id, env) =>
+      call({
+        method: "GET",
+        kind: "rollout-read",
+        env,
+        path: `/api/apps/${app}/rollouts/${encodeURIComponent(id)}`,
+      }),
+    /** The recent rollouts of `env` (a read: the audit's). */
+    list: (env) =>
+      call({
+        method: "GET",
+        kind: "rollouts-list",
+        env,
+        path: `/api/apps/${app}/envs/${encodeURIComponent(env)}/rollouts`,
+      }),
   };
 }
 
 /** Follows a rollout to its end: `{ conclusion, rollout }`, `needs-owner` for proposed infra, `timeout`. */
-export async function followRollout(s, io, client, id) {
+export async function followRollout(s, io, client, id, env = ENCORE_ENV) {
   const deadline = io.now() + s.rolloutTimeoutMs;
   for (;;) {
-    const rollout = await client.rollout(id);
+    const rollout = await client.rollout(id, env);
     if (rollout.infra?.status === "proposed") return { conclusion: "needs-owner", rollout };
     if (rollout.status === "completed") return { conclusion: rollout.conclusion, rollout };
     if (io.now() >= deadline) return { conclusion: "timeout", rollout };
@@ -1691,9 +1735,11 @@ export async function deployEncore(
   if (dryRun)
     return finish("dry-run", { plan: ["token", `rollout ${sha}`, "follow", "readyz 200"] });
 
-  const client = encoreClient(s, io);
+  // Every Encore API call is recorded with its environment.
+  entry.apiCalls = [];
+  const client = encoreClient(s, io, entry.apiCalls);
   try {
-    const rollout = await client.trigger(sha);
+    const rollout = await client.trigger(ENCORE_ENV, sha);
     if (typeof rollout.id !== "string" || !/^roll_\w+$/.test(rollout.id))
       return finish("failure", { reason: "Encore's rollout answer has no rollout id" });
     entry.rollout = rollout.id;
@@ -1713,7 +1759,7 @@ export async function deployEncore(
         reason: `${failure}; no earlier good SHA to roll back to`,
         rolledBack: false,
       });
-    const back = await client.trigger(previous.sha);
+    const back = await client.trigger(ENCORE_ENV, previous.sha);
     const backFollowed = await followRollout(s, io, client, back.id);
     const backReady =
       backFollowed.conclusion === "success" ? await readyz(s, io) : backFollowed.conclusion;
@@ -1724,6 +1770,120 @@ export async function deployEncore(
     });
   } catch (error) {
     return finish("failure", { reason: scrub(error.message) });
+  }
+}
+
+// ---- the daily Encore production audit ----------------------------------------------------------------------
+
+/** A rollout's commit, from whichever field Encore names it in. */
+const rolloutSha = (r) =>
+  [r.commit?.hash, r.commit_hash, r.commit, r.sha].find(
+    (v) => typeof v === "string" && SHA.test(v),
+  ) ?? null;
+
+/** Who started a rollout, from whichever field Encore names it in; null when it names nobody. */
+const rolloutActor = (r) =>
+  [r.trigger?.actor, r.triggered_by, r.actor, r.author?.id].find(
+    (v) => typeof v === "string" && v !== "",
+  ) ?? null;
+
+/**
+ * Why a production rollout is not from CI; empty when it is. "From CI" means both: its actor is one of the CI OAuth
+ * clients (STACKRA_DEPLOY_ENCORE_CI_ACTORS, never the box's own client), and GitHub records a successful deployment of
+ * its commit to the `production` environment (the CI job's record, ADR 0170 `records: github-deployments`). A rollout
+ * that names no actor or no commit cannot be shown to be from CI, so it is reported too.
+ */
+export function rolloutProblems(rollout, { ciActors, boxActor, deployedByCi }) {
+  const problems = [];
+  const actor = rolloutActor(rollout);
+  const sha = rolloutSha(rollout);
+  if (actor === null) problems.push("it names no actor");
+  else if (actor === boxActor) problems.push("the box's own OAuth client started it");
+  else if (!ciActors.includes(actor)) problems.push(`its actor ${actor} is not a CI client`);
+  if (sha === null) problems.push("it names no commit");
+  else if (!deployedByCi)
+    problems.push(`GitHub records no successful production deployment of ${sha}`);
+  return problems;
+}
+
+/** Whether GitHub records a successful deployment of `sha` to `production` (public reads; the token is optional). */
+export async function deployedToProduction(s, io, sha) {
+  const headers = { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28" };
+  if (s.githubTokenFile)
+    headers.authorization = `Bearer ${readSecret(io, "the GitHub token", s.githubTokenFile)}`;
+  const base = `${s.githubApi}/repos/${s.repo}/deployments`;
+  const list = await io.fetch(`${base}?sha=${sha}&environment=production&per_page=20`, {
+    headers,
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!list.ok) throw new Error(`GitHub answered ${list.status} for the deployments of ${sha}`);
+  for (const deployment of await list.json()) {
+    const statuses = await io.fetch(`${base}/${deployment.id}/statuses?per_page=20`, {
+      headers,
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (statuses.ok && (await statuses.json()).some((status) => status.state === "success"))
+      return true;
+  }
+  return false;
+}
+
+/**
+ * The daily audit (`encore audit`, its own timer): every production rollout of stackra-nzk2 queued in the last
+ * STACKRA_DEPLOY_AUDIT_HOURS must be from CI. One ledger line; exit 1 (which the timer surfaces) on an alert or when
+ * the rollouts cannot be read, which is never taken as clean.
+ */
+export async function auditEncore(s, io) {
+  const started = io.now();
+  const entry = {
+    target: `encore:${ENCORE_AUDIT_ENV}-audit`,
+    env: ENCORE_AUDIT_ENV,
+    app: ENCORE_APP,
+    apiCalls: [],
+    windowHours: s.auditHours,
+  };
+  const finish = (result, extra = {}) => {
+    Object.assign(entry, extra, { result, durationMs: io.now() - started });
+    appendLedger(s, io, entry);
+    io.log(`${entry.target} ${result}${extra.reason ? `: ${extra.reason}` : ""}`);
+    return { code: result === "clean" ? 0 : 1, result };
+  };
+  try {
+    assertEncoreTarget(s.encoreApp, s.encoreEnv);
+    const problem = secretFileProblem(io, "STACKRA_DEPLOY_ENCORE_CLIENT_FILE", s.encoreClientFile);
+    if (problem) return finish("error", { reason: problem });
+    const boxActor = JSON.parse(
+      readSecret(io, "the Encore OAuth client", s.encoreClientFile),
+    ).client_id;
+    const answer = await encoreClient(s, io, entry.apiCalls).list(ENCORE_AUDIT_ENV);
+    const rollouts = Array.isArray(answer) ? answer : (answer.rollouts ?? answer.items ?? null);
+    if (!Array.isArray(rollouts))
+      return finish("error", { reason: "Encore's answer holds no rollout list" });
+    const since = started - s.auditHours * 3_600_000;
+    const recent = rollouts.filter((r) => {
+      const at = Date.parse(r.queued_at ?? r.started_at ?? "");
+      return Number.isNaN(at) || at >= since;
+    });
+    const verdicts = [];
+    for (const rollout of recent) {
+      const sha = rolloutSha(rollout);
+      const deployedByCi = sha === null ? false : await deployedToProduction(s, io, sha);
+      const problems = rolloutProblems(rollout, {
+        ciActors: s.encoreCiActors,
+        boxActor,
+        deployedByCi,
+      });
+      verdicts.push({ id: rollout.id ?? null, sha, actor: rolloutActor(rollout), problems });
+    }
+    const alerts = verdicts.filter((v) => v.problems.length > 0);
+    return alerts.length === 0
+      ? finish("clean", { rollouts: verdicts })
+      : finish("alert", {
+          rollouts: verdicts,
+          reason: alerts.map((a) => `${a.id ?? "?"}: ${a.problems.join("; ")}`).join(" | "),
+        });
+  } catch (error) {
+    return finish("error", { reason: scrub(error.message) });
   }
 }
 
@@ -1764,7 +1924,7 @@ export async function plannedRuns(s, io, { dryRun = false } = {}) {
   const root = rootText === null ? null : parseYaml(rootText);
   const afterLock = await showFile(s, io, head, "pnpm-lock.yaml");
   const afterImporters = afterLock === null ? {} : lockImporters(afterLock);
-  for (const worker of WORKER_KEYS) {
+  for (const worker of BOX_WORKERS) {
     const target = `worker:${worker}`;
     const member = memberOf(root, worker);
     if (!member) continue;
@@ -1921,7 +2081,7 @@ function runLocked(s, lockTarget, args) {
 
 const USAGE =
   "usage: stackra-deploy.mjs preflight [workers|encore] | once [--dry-run] | status\n" +
-  "       | workers run --worker <registry|static|turbo-cache|edge> --sha <sha> [--dry-run]\n" +
+  "       | workers run --worker <docs|edge> --sha <sha> [--dry-run] | encore audit\n" +
   "       | encore run --sha <sha> [--dry-run] | approve --worker <w> --sha <sha> --version <id>";
 
 async function main(argv) {
@@ -1951,7 +2111,7 @@ async function main(argv) {
       io.log(
         `${e.at} ${e.target} ${String(e.sha).slice(0, 12)} ${e.result}${e.reason ? `: ${e.reason}` : ""}`,
       );
-    for (const worker of WORKER_KEYS) {
+    for (const worker of BOX_WORKERS) {
       const state = readState(s, io, `worker:${worker}`);
       if (state)
         io.log(
@@ -1959,6 +2119,11 @@ async function main(argv) {
         );
     }
     return 0;
+  }
+  if (options.verb === "audit") {
+    const lock = lockPath(s, "encore-audit");
+    if (process.env.STACKRA_DEPLOY_LOCK !== lock) return runLocked(s, "encore-audit", argv);
+    return (await auditEncore(s, io)).code;
   }
   if (options.verb === "approve") {
     io.log(`approval written: ${writeApproval(s, io, options)}`);

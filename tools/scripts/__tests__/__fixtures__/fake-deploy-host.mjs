@@ -1,10 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: a fake box for stackra-deploy.mjs: a temporary home, work and approvals folder, and an `io` whose `run`
- *          answers git (the mirror), sudo (the build user's clone, checkout, toolchain and builds: the clone lays a
- *          small tree), the runway render child and wrangler (a deployment state machine: status, versions view and
- *          upload, versions deploy, d1 migrations list and apply), and whose `fetch` answers GitHub's check runs, the
- *          Encore Cloud API and the fake Workers. Every argv, environment, log line and request is recorded so a test
+ *          answers git (the mirror, with runway.yaml's docs member moved to the Stackra test domain), sudo (the build
+ *          user's clone, checkout, toolchain and builds: the clone lays a small docs tree), the runway render child
+ *          and wrangler (a deployment state machine: status, versions view and upload, versions deploy, d1
+ *          migrations list and apply), and whose `fetch` answers GitHub's check runs and deployments, the Encore
+ *          Cloud API (with a production rollout list for the audit) and a fake docs Worker that names the version
+ *          answering (or ignores the override, the false pass). Every argv, environment, log line and request is recorded so a test
  *          can prove no secret went where it must not.
  * Boundary: test fixture; files only under its own temporary folder; no network, no real git, sudo or wrangler.
  * Runtime: node
@@ -19,31 +21,27 @@ import {
   readFileSync,
   writeFileSync,
 } from "node:fs";
-import { generateKeyPairSync } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse, stringify } from "yaml";
 import { fakeWorkers } from "./fake-workers.mjs";
 
-const { registry: fakeRegistry, static: fakeStatic, turboCache: fakeTurboCache } = fakeWorkers;
+const { docs: fakeDocs } = fakeWorkers;
 
 const REPO_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
 const SHA = "a".repeat(40);
 const OLD_SHA = "b".repeat(40);
 const OLD = "00000000-0000-4000-8000-000000000001";
 const NEW = "00000000-0000-4000-8000-000000000002";
-const ACCOUNT = "d861f9ac9df28b7f0b1298cc0c89bc9d";
+const ACCOUNT = "57227d408957e241465c38ebd9c3959a";
+const MAIN_ACCOUNT = "d861f9ac9df28b7f0b1298cc0c89bc9d";
+const DOMAIN = "stackra.test";
+const DOCS_HOST = `docs.${DOMAIN}`;
 const CF_TOKEN = "cf-token-value-that-must-never-leak-0123456789";
-const TURBO_TOKEN = "turbo-token-value-that-must-never-leak-012345";
 const ENCORE_SECRET = "encore-client-secret-that-must-never-leak-0123";
 const ENCORE_TOKEN = "encore-access-token-that-must-never-leak-4567";
 const D1_ID = "12345678-1234-1234-1234-123456789abc";
-const KV_ID = "0123456789abcdef0123456789abcdef";
-const PACKAGES = {
-  "@stackra/cli": "0.21.0",
-  "@stackra/contracts": "0.21.0",
-  "@stackra/store": "0.21.0",
-};
 const TRAINER_UID = 4242;
 const APPROVER_UID = 4343;
 
@@ -66,7 +64,7 @@ const LOCK = [
   "      turbo:",
   "        specifier: catalog:quality",
   "        version: 2.9.0",
-  "  workers/registry:",
+  "  apps/docs:",
   "    dependencies:",
   "      '@stackra/contracts':",
   "        specifier: workspace:*",
@@ -87,53 +85,78 @@ const LOCK = [
   "",
 ].join("\n");
 
-const WRANGLER_JSONC = `// the registry, as a fixture
+/** The docs member's wrangler.jsonc: `account` (null: none), `d1` (a database binding). */
+const wranglerJsonc = ({ account = ACCOUNT, d1 = false } = {}) => `// the docs Worker, as a fixture
 {
-  "name": "stackra-registry",
-  "main": "./dist/main.mjs",
-  "account_id": "${ACCOUNT}",
-  "d1_databases": [
-    { "binding": "DB", "database_name": "stackra-registry", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" },
-  ],
-  "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
+  "name": "stackra-docs",
+  "main": "./worker/main.ts",
+  ${account === null ? "" : `"account_id": "${account}",`}
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "assets": { "directory": "./.stackra/site/build/client", "binding": "ASSETS", "run_worker_first": ["/-/version"] },
+  ${d1 ? `"d1_databases": [{ "binding": "DB", "database_name": "stackra-docs-db", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],` : ""}
 }
 `;
 
 /** A command's answer. */
 const answer = (code, stdout = "", stderr = "") => ({ code, stdout, stderr });
 
-/** A file of the repository as git would show it at the deployed SHA; the lockfile is the small fixture. */
-const realShow = (path) => {
+/**
+ * A file of the repository as git would show it at the deployed SHA: the lockfile is the small fixture, and
+ * runway.yaml's docs member answers on the Stackra test domain (`foreignHost` keeps it on figentra.com; `d1` gives it
+ * a database with a placeholder id).
+ */
+const showAt = (path, options) => {
   if (path === "pnpm-lock.yaml") return LOCK;
+  let text;
   try {
-    return readFileSync(join(REPO_ROOT, path), "utf8");
+    text = readFileSync(join(REPO_ROOT, path), "utf8");
   } catch {
     return null;
   }
+  if (path !== "runway.yaml") return text;
+  const root = parse(text);
+  const docs = root.targets["cloudflare-workers"].members.docs;
+  if (!options.foreignHost) {
+    docs.customDomains = [DOCS_HOST];
+    docs.smoke = docs.smoke.map((s) => ({
+      ...s,
+      url: s.url.replace("docs.stackra.figentra.com", DOCS_HOST),
+    }));
+  }
+  if (options.d1) {
+    docs.d1 = ["stackra-docs-db"];
+    docs.ids = { DOCS_D1_DATABASE_ID: "00000000-0000-0000-0000-000000000000" };
+  }
+  return stringify(root);
 };
+
 /** Lays the tree the build user would have cloned and built. */
-function layTree(tree, migrations) {
+function layTree(tree, migrations, options) {
   const put = (path, text) => {
     mkdirSync(join(tree, path, ".."), { recursive: true });
     writeFileSync(join(tree, path), text);
   };
   put("mise.toml", '[tools]\nnode = "24.22.0" # exact\npnpm = "12.16.1"\n');
   put("pnpm-lock.yaml", LOCK);
-  put("workers/registry/wrangler.jsonc", WRANGLER_JSONC);
-  put("workers/registry/node_modules/wrangler/package.json", '{ "version": "4.148.0" }');
-  for (const [file, sql] of Object.entries(migrations))
-    put(`workers/registry/migrations/${file}`, sql);
-  put("packages/developer/cli/package.json", '{ "name": "@stackra/cli" }');
-  put("packages/developer/runway/package.json", '{ "name": "@stackra/runway" }');
-  put("packages/foundation/contracts/package.json", '{ "name": "@stackra/contracts" }');
-  put("packages/state/store/package.json", '{ "name": "@stackra/store" }');
-  put("packages/state/secret/package.json", '{ "name": "@stackra/secret", "private": true }');
+  put(
+    "apps/docs/wrangler.jsonc",
+    wranglerJsonc({
+      account: options.account === undefined ? ACCOUNT : options.account,
+      d1: options.d1,
+    }),
+  );
+  put("apps/docs/node_modules/wrangler/package.json", '{ "version": "4.148.0" }');
+  put("apps/docs/.stackra/site/build/client/_redirects", "/old /new 301\n");
+  for (const [file, sql] of Object.entries(migrations)) put(`apps/docs/migrations/${file}`, sql);
 }
 
 /**
- * A fake host. `options`: `onMain` (false: the SHA is not on main), `checkRuns` (GitHub's answer), `pending` and
- * `migrations` (D1), `registryBreaks` (a Set, or a function of the version the request targets), `oldMessage`,
- * `deployFails` (a percent whose `versions deploy` fails), `encore` (the Encore fake's script).
+ * A fake host. `options`: `onMain` (false: the SHA is not on main), `checkRuns` (GitHub's answer), `deployments` (its
+ * production deployments of a SHA, all with a success status), `pending`, `migrations` and `d1` (D1), `account` (the
+ * account docs' wrangler.jsonc names; null for none), `foreignHost`, `docsBreaks` (a function of the version a request
+ * reaches and the deployment, giving a Set), `ignoreOverride` (a function of the deployment: the false pass),
+ * `oldMessage`, `deployFails` (a percent whose `versions deploy` fails), `encore` (the Encore fake's script:
+ * `endFor`, `readyFor`, `production` rollouts for the audit).
  */
 function fakeHost(options = {}) {
   const dir = mkdtempSync(join(tmpdir(), "stackra-deploy-test-"));
@@ -152,22 +175,15 @@ function fakeHost(options = {}) {
   };
   const files = {
     cloudflare: secret("cloudflare.token", CF_TOKEN),
-    turbo: secret("turbo.token", TURBO_TOKEN),
     encore: secret(
       "encore.json",
       JSON.stringify({ client_id: "client-1", client_secret: ENCORE_SECRET }),
     ),
   };
   const vars = join(etc, "vars.json");
-  writeFileSync(
-    vars,
-    JSON.stringify({
-      REGISTRY_D1_DATABASE_ID: D1_ID,
-      REGISTRY_KV_NAMESPACE_ID: KV_ID,
-      REGISTRY_READ_ONLY: "",
-    }),
-    { mode: 0o600 },
-  );
+  writeFileSync(vars, JSON.stringify(options.d1 ? { DOCS_D1_DATABASE_ID: D1_ID } : {}), {
+    mode: 0o600,
+  });
   const env = {
     STACKRA_DEPLOY_HOME: home,
     STACKRA_DEPLOY_MIRROR: join(dir, "mirror.git"),
@@ -181,7 +197,7 @@ function fakeHost(options = {}) {
     STACKRA_DEPLOY_BUILD_HOME: "/home/stackra-deploy-build",
     STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE: files.cloudflare,
     STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID: ACCOUNT,
-    STACKRA_DEPLOY_TURBO_TOKEN_FILE: files.turbo,
+    STACKRA_DEPLOY_STACKRA_DOMAIN: DOMAIN,
     STACKRA_DEPLOY_WORKER_VARS_FILE: vars,
     STACKRA_DEPLOY_ENCORE_CLIENT_FILE: files.encore,
     STACKRA_DEPLOY_ENCORE_URL: "https://staging.stackra.test",
@@ -238,7 +254,7 @@ function fakeHost(options = {}) {
     if (key === "versions upload") {
       wrangler.uploads += 1;
       wrangler.messages[NEW] = a[a.indexOf("--message") + 1];
-      return answer(0, `Uploaded stackra-registry\nWorker Version ID: ${NEW}\n`);
+      return answer(0, `Uploaded stackra-docs\nWorker Version ID: ${NEW}\n`);
     }
     if (key === "versions deploy") {
       const split = a.slice(2).filter((x) => /@\d+$/.test(x));
@@ -269,7 +285,7 @@ function fakeHost(options = {}) {
       if (a[0] === "rev-parse") return answer(0, `${options.head ?? SHA}\n`);
       if (a[0] === "merge-base") return answer(options.onMain === false ? 1 : 0);
       if (a[0] === "show") {
-        const text = realShow(a[1].split(":").slice(1).join(":"));
+        const text = showAt(a[1].split(":").slice(1).join(":"), options);
         return text === null ? answer(128, "", "no such path") : answer(0, text);
       }
       if (a[0] === "diff") return answer(0, (options.changed ?? []).join("\n"));
@@ -279,7 +295,7 @@ function fakeHost(options = {}) {
       const inner = args.slice(args.indexOf("-i") + 1).filter((x) => !/^[A-Z_]+=/.test(x));
       const [tool, ...rest] = inner;
       if (tool === "git" && rest.includes("clone")) {
-        layTree(rest.at(-1), migrations);
+        layTree(rest.at(-1), migrations, options);
         return answer(0);
       }
       if (tool === "node" && rest[0] === "--version") return answer(0, "v24.22.0\n");
@@ -304,24 +320,18 @@ function fakeHost(options = {}) {
     return answer(127, "", `unknown command ${command}`);
   };
 
-  // The Workers answer as the version a request targets: the override names it, none means what serves at 100%.
-  const keyPair = generateKeyPairSync("ec", { namedCurve: "P-256" });
-  const registryFor = (version) => {
-    const breaks =
-      typeof options.registryBreaks === "function"
-        ? options.registryBreaks(version, wrangler)
-        : options.registryBreaks;
-    return fakeRegistry({ packages: PACKAGES, breaks: breaks ?? new Set(), keyPair });
-  };
-  const turbo = fakeTurboCache({ token: TURBO_TOKEN });
-  const staticSite = fakeStatic();
   const encore = { rollouts: [], tokens: 0, script: options.encore ?? {} };
   const fetch = async (url, init = {}) => {
     const { host, pathname } = new URL(url);
     const headers = init.headers ?? {};
     fetches.push({ url, method: init.method ?? "GET", headers: { ...headers }, body: init.body });
-    if (host === "api.github.com")
-      return Response.json({ check_runs: options.checkRuns ?? [verifyRun(SHA, "success")] });
+    if (host === "api.github.com") {
+      if (pathname.endsWith("/check-runs"))
+        return Response.json({ check_runs: options.checkRuns ?? [verifyRun(SHA, "success")] });
+      if (pathname.endsWith("/statuses")) return Response.json([{ state: "success" }]);
+      const sha = new URL(url).searchParams.get("sha");
+      return Response.json((options.deployments ?? []).includes(sha) ? [{ id: 7 }] : []);
+    }
     if (host === "api.encore.dev") return encoreAnswer(encore, pathname, init);
     if (host === "staging.stackra.test") {
       const sha = encore.live;
@@ -331,10 +341,15 @@ function fakeHost(options = {}) {
     const override = Object.entries(headers).find(
       ([k]) => k.toLowerCase() === "cloudflare-workers-version-overrides",
     )?.[1];
-    const version = override ? override.split('"')[1] : wrangler.deployment[0].version;
-    if (host === "npm.stackra.figentra.com") return registryFor(version).fetch(url, init);
-    if (host === "turbo.stackra.figentra.com") return turbo.fetch(url, init);
-    if (host === "static.stackra.figentra.com") return staticSite.fetch(url, init);
+    const serving = wrangler.deployment[0].version;
+    const ignore = options.ignoreOverride?.(wrangler) ?? false;
+    const version = override && !ignore ? override.split('"')[1] : serving;
+    if (host === DOCS_HOST)
+      return fakeDocs({
+        serving,
+        ignoreOverride: ignore,
+        breaks: options.docsBreaks?.(version, wrangler) ?? new Set(),
+      }).fetch(url, init);
     throw new Error(`no fake for ${url}`);
   };
 
@@ -423,12 +438,15 @@ async function encoreAnswer(encore, pathname, init) {
   if ((init.headers?.authorization ?? "") !== `Bearer ${ENCORE_TOKEN}`)
     return Response.json({ ok: false, error: { code: "unauthenticated" } }, { status: 401 });
   const trigger = /^\/api\/apps\/([^/]+)\/envs\/([^/]+)\/rollouts$/.exec(pathname);
-  if (trigger) {
+  if (trigger && init.method === "POST") {
     const { sha } = JSON.parse(init.body);
     const id = `roll_${encore.rollouts.length + 1}`;
     encore.rollouts.push({ id, app: trigger[1], env: trigger[2], sha });
     return Response.json({ ok: true, data: { id, status: "queued", conclusion: "pending" } });
   }
+  const list = /^\/api\/apps\/([^/]+)\/envs\/([^/]+)\/rollouts$/.exec(pathname);
+  if (list && (init.method ?? "GET") === "GET")
+    return Response.json({ ok: true, data: { rollouts: encore.script.production ?? [] } });
   const get = /^\/api\/apps\/([^/]+)\/rollouts\/([^/]+)$/.exec(pathname);
   if (get) {
     const rollout = encore.rollouts.find((r) => r.id === get[2]);
@@ -455,13 +473,13 @@ export const fakeDeployHost = Object.freeze({
   OLD,
   NEW,
   ACCOUNT,
+  MAIN_ACCOUNT,
+  DOMAIN,
+  DOCS_HOST,
   CF_TOKEN,
-  TURBO_TOKEN,
   ENCORE_SECRET,
   ENCORE_TOKEN,
   D1_ID,
-  KV_ID,
-  PACKAGES,
   host: fakeHost,
   verifyRun,
 });
