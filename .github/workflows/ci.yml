@@ -34,7 +34,9 @@ jobs:
   # build and tests (2026-11-09).
   dependency-scan:
     name: Dependency scan (OSV-Scanner)
-    runs-on: ubuntu-latest
+    # STA-2785: figentra's self-hosted runner (box 2) while GitHub-hosted runners are refused for billing; see the
+    # workflows README, "Self-hosted runner".
+    runs-on: [self-hosted, figentra]
     timeout-minutes: 10
     permissions:
       contents: read
@@ -61,7 +63,12 @@ jobs:
 
   gate:
     name: Quality Gate
-    runs-on: ubuntu-latest
+    # STA-2785: figentra's self-hosted runner (box 2) while GitHub-hosted runners are refused for billing; see the
+    # workflows README, "Self-hosted runner".
+    runs-on: [self-hosted, figentra]
+    # A full run (workflow_dispatch, or a change every member depends on) builds the whole workspace; the default of six
+    # hours would hold the one runner that long if a step hung.
+    timeout-minutes: 90
     permissions:
       contents: read
       id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for the ci/build/turbo scope only
@@ -87,11 +94,13 @@ jobs:
       # ADR 0019, ADR 0168 (Enforcement), STA-311: every workflow parses and type-checks (actionlint, with shellcheck
       # on each `run:`), and passes zizmor's security audits, including the hash pin of every `uses:`
       # (.github/zizmor.yml). The read-only job token lets zizmor check that each pinned SHA belongs to its action.
+      # actionlint runs shellcheck only when one is on PATH: hosted runners carry it, the self-hosted runner does not,
+      # so it comes from mise at a pinned version (STA-2785). The self-hosted labels are in .github/actionlint.yaml.
       - name: Workflow lint
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          actionlint
+          mise exec aqua:koalaman/shellcheck@0.11.0 -- actionlint
           zizmor --config .github/zizmor.yml .github/workflows
 
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
@@ -99,8 +108,11 @@ jobs:
       # Cloud as itself through infra's `callers` provider and decrypts only that scope. Skipped on fork pull requests
       # (no OIDC token there): turbo then has no TURBO_TOKEN and uses its local cache only, so no `--cache` flag is
       # needed to keep a fork from writing to the remote cache.
+      # The cache only speeds the gate up, and the decrypt needs the gcloud CLI and jq, which GitHub-hosted runners
+      # carry and the self-hosted runner may not (STA-2785): without them turbo uses its local cache, as Regen does.
       - name: Turborepo remote cache (sops)
         if: ${{ !github.event.pull_request.head.repo.fork }}
+        continue-on-error: true
         uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build/turbo
@@ -354,7 +366,10 @@ jobs:
 
   dependency-review:
     name: Dependency Review
-    runs-on: ubuntu-latest
+    # STA-2785: figentra's self-hosted runner (box 2) while GitHub-hosted runners are refused for billing; see the
+    # workflows README, "Self-hosted runner".
+    runs-on: [self-hosted, figentra]
+    timeout-minutes: 10
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
