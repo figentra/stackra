@@ -13,12 +13,14 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  baselineAt,
   judge,
   main,
   normalizePath,
@@ -26,6 +28,7 @@ import {
   parseBaseline,
   parseJsonc,
   parseReports,
+  resolveBase,
   sha256,
 } from "../squawk-baseline.mjs";
 
@@ -210,85 +213,221 @@ test("reads the baseline as JSONC: comments outside strings, a `//` inside one k
 test("parseArgs needs --baseline and refuses a flag without its value", () => {
   assert.deepEqual(parseArgs(["--baseline", "b.json", "t.json", "o.json"]), {
     baseline: "b.json",
-    base: undefined,
+    baseRef: undefined,
     root: ".",
     reports: ["t.json", "o.json"],
   });
   assert.throws(() => parseArgs(["t.json"]), /usage/);
   assert.throws(() => parseArgs(["--baseline"]), /usage/);
-  assert.throws(() => parseArgs(["--baseline", "b.json", "--base"]), /usage/);
+  assert.throws(() => parseArgs(["--baseline", "b.json", "--base-ref"]), /usage/);
+  assert.throws(() => parseArgs(["--baseline", "b.json", "--base", "x.json"]), /usage/);
   assert.throws(() => parseArgs(["--baseline", "b.json", "--strict"]), /usage/);
 });
 
-test("main exits 0 on a clean tree, 1 on a problem, 2 on a broken input", () => {
+/**
+ * A temporary git repository on `main` holding one listed file, its report and, unless `list` is false, a baseline that
+ * waives `ban-drop-table` there; with `run` (the gate over the repository) and `git`, `write`, `commit` helpers.
+ */
+function gitRepo({ list = true } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "squawk-baseline-"));
-  try {
-    const write = (name, content) => {
-      const path = join(dir, name);
-      writeFileSync(path, content);
-      return path;
-    };
-    const listed = "a_0001_drop.up.sql";
-    write(listed, BYTES);
-    const baseline = write(
-      "baseline.json",
-      JSON.stringify({ entries: [{ ...ENTRY, path: listed, rules: ["ban-drop-table"] }] }),
+  const git = (...args) =>
+    execFileSync("git", args, {
+      cwd: dir,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  const write = (name, content) => {
+    mkdirSync(join(dir, name, ".."), { recursive: true });
+    writeFileSync(join(dir, name), content);
+  };
+  const commit = (message) => {
+    git("add", "--all");
+    git("-c", "user.name=t", "-c", "user.email=t@t.invalid", "commit", "--quiet", "-m", message);
+    return git("rev-parse", "HEAD");
+  };
+  const entry = (path, rules) => ({ ...ENTRY, path, sha256: sha256(BYTES), rules });
+  const writeList = (entries) =>
+    write(LIST, `// the baseline\n${JSON.stringify({ entries }, undefined, 2)}\n`);
+  const report = (findings) =>
+    write(
+      "report.json",
+      JSON.stringify(
+        findings.map(([file, rule]) => ({ file, line: 0, message: "m", rule_name: rule })),
+      ),
     );
-    const report = (findings) =>
-      write(
-        "report.json",
-        JSON.stringify(
-          findings.map(([file, rule]) => ({ file, line: 0, message: "m", rule_name: rule })),
-        ),
-      );
-    const run = (args) => {
-      const out = sink();
-      const err = sink();
-      return { code: main(args, { out, err }), out: out.text(), err: err.text() };
-    };
-    const clean = run([
-      "--baseline",
-      baseline,
-      "--root",
-      dir,
-      report([[listed, "ban-drop-table"]]),
-    ]);
+  git("init", "--quiet", "--initial-branch=main");
+  write("a_0001_drop.up.sql", BYTES);
+  write("b_0001_drop.up.sql", BYTES);
+  if (list) writeList([entry("a_0001_drop.up.sql", ["ban-drop-table"])]);
+  report([["a_0001_drop.up.sql", "ban-drop-table"]]);
+  commit("main");
+  const run = (extra = []) => {
+    const out = sink();
+    const err = sink();
+    const code = main(
+      ["--baseline", join(dir, LIST), "--root", dir, ...extra, join(dir, "report.json")],
+      { out, err },
+    );
+    return { code, out: out.text(), err: err.text() };
+  };
+  return { dir, git, write, commit, entry, writeList, report, run };
+}
+
+/** Where the test repositories keep their baseline. */
+const LIST = "tools/scripts/squawk-baseline.jsonc";
+
+test("main exits 0 on a clean tree, 1 on a problem, 2 on a broken input", () => {
+  const repo = gitRepo();
+  try {
+    const clean = repo.run();
     assert.equal(clean.code, 0, clean.err);
     assert.match(clean.out, /1 finding\(s\), 1 waived by 1 pinned file\(s\), 0 problem\(s\)/);
-    const added = run([
-      "--baseline",
-      baseline,
-      "--root",
-      dir,
-      report([
-        [listed, "ban-drop-table"],
-        ["b_0001_new.up.sql", "require-concurrent-index-creation"],
-      ]),
+    repo.report([
+      ["a_0001_drop.up.sql", "ban-drop-table"],
+      ["c_0001_new.up.sql", "require-concurrent-index-creation"],
     ]);
+    const added = repo.run();
     assert.equal(added.code, 1);
     assert.match(
       added.out,
-      /::error file=b_0001_new\.up\.sql,line=1,title=Squawk require-concurrent-index-creation::m/,
+      /::error file=c_0001_new\.up\.sql,line=1,title=Squawk require-concurrent-index-creation::m/,
     );
-    write(listed, Buffer.concat([BYTES, Buffer.from("-- edited\n")]));
-    const edited = run([
-      "--baseline",
-      baseline,
-      "--root",
-      dir,
-      report([[listed, "ban-drop-table"]]),
-    ]);
+    repo.report([["a_0001_drop.up.sql", "ban-drop-table"]]);
+    repo.write("a_0001_drop.up.sql", Buffer.concat([BYTES, Buffer.from("-- edited\n")]));
+    const edited = repo.run();
     assert.equal(edited.code, 1);
     assert.match(edited.err, /SHA-256 is/);
-    const broken = run([
-      "--baseline",
-      baseline,
-      "--root",
-      dir,
-      write("bad.json", "Failed to find files"),
-    ]);
-    assert.equal(broken.code, 2);
+    repo.write("report.json", "Failed to find files");
+    assert.equal(repo.run().code, 2);
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("a list grown in a branch's first commit still fails after a second commit touches something else", () => {
+  const repo = gitRepo();
+  try {
+    repo.git("switch", "--quiet", "-c", "feature");
+    repo.writeList([
+      repo.entry("a_0001_drop.up.sql", ["ban-drop-table"]),
+      repo.entry("b_0001_drop.up.sql", ["ban-drop-table"]),
+    ]);
+    repo.report([
+      ["a_0001_drop.up.sql", "ban-drop-table"],
+      ["b_0001_drop.up.sql", "ban-drop-table"],
+    ]);
+    repo.commit("grow the list");
+    repo.write("notes.txt", "something else\n");
+    repo.commit("touch something else");
+    // HEAD~1 holds the grown list; the merge base with main does not.
+    const result = repo.run();
+    assert.equal(result.code, 1, result.err);
+    assert.match(
+      result.err,
+      /b_0001_drop\.up\.sql: not in the base revision's baseline; the baseline only shrinks/,
+    );
+    // The pull request's base SHA, as CI passes it, finds the same merge base.
+    const mainTip = repo.git("rev-parse", "main");
+    assert.equal(repo.run(["--base-ref", mainTip]).code, 1);
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("a merge commit whose first parent is not main compares with the merge base", () => {
+  const repo = gitRepo();
+  try {
+    repo.git("switch", "--quiet", "-c", "side");
+    repo.writeList([
+      repo.entry("a_0001_drop.up.sql", ["ban-drop-table"]),
+      repo.entry("b_0001_drop.up.sql", ["ban-drop-table"]),
+    ]);
+    repo.report([
+      ["a_0001_drop.up.sql", "ban-drop-table"],
+      ["b_0001_drop.up.sql", "ban-drop-table"],
+    ]);
+    repo.commit("grow the list on side");
+    repo.git("switch", "--quiet", "main");
+    repo.write("main.txt", "main moves on\n");
+    const tip = repo.commit("main moves on");
+    repo.git("switch", "--quiet", "side");
+    repo.git(
+      "-c",
+      "user.name=t",
+      "-c",
+      "user.email=t@t.invalid",
+      "merge",
+      "--quiet",
+      "--no-edit",
+      "main",
+    );
+    assert.notEqual(repo.git("rev-parse", "HEAD~1"), tip);
+    assert.deepEqual(resolveBase(repo.dir, undefined), { commit: tip, target: "main" });
+    const result = repo.run();
+    assert.equal(result.code, 1);
+    assert.match(result.err, /b_0001_drop\.up\.sql: not in the base revision's baseline/);
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("a shrink passes: an entry dropped with its finding fixed", () => {
+  const repo = gitRepo();
+  try {
+    repo.git("switch", "--quiet", "-c", "fix");
+    repo.writeList([]);
+    repo.report([]);
+    repo.commit("a forward migration fixes the finding");
+    const result = repo.run();
+    assert.equal(result.code, 0, result.err);
+    assert.equal(baselineAt(repo.dir, repo.git("rev-parse", "main"), LIST)?.length, 1);
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("an unresolvable base fails the step, never skips it", () => {
+  const repo = gitRepo();
+  try {
+    const bogus = repo.run(["--base-ref", "0000000000000000000000000000000000000000"]);
+    assert.equal(bogus.code, 2);
+    assert.match(bogus.out, /::error title=Squawk baseline::no merge base of HEAD and 0{40}/);
+    repo.git("branch", "--quiet", "-m", "main", "trunk");
+    const none = repo.run();
+    assert.equal(none.code, 2);
+    assert.match(
+      none.out,
+      /::error title=Squawk baseline::no merge base of HEAD and origin\/main or main/,
+    );
+    assert.equal(resolveBase(repo.dir, undefined), undefined);
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("bootstrap: a base without the list skips only the shrink comparison, with a notice", () => {
+  const repo = gitRepo({ list: false });
+  try {
+    repo.git("switch", "--quiet", "-c", "add-list");
+    repo.writeList([repo.entry("a_0001_drop.up.sql", ["ban-drop-table"])]);
+    repo.commit("add the list");
+    assert.equal(baselineAt(repo.dir, repo.git("rev-parse", "main"), LIST), undefined);
+    const clean = repo.run();
+    assert.equal(clean.code, 0, clean.err);
+    assert.match(
+      clean.out,
+      /::notice title=Squawk baseline::the base revision [0-9a-f]{12} \(merge base with main\) has no tools\/scripts\/squawk-baseline\.jsonc: the shrink comparison is skipped/,
+    );
+    // Every other check still runs: an unlisted finding fails.
+    repo.report([
+      ["a_0001_drop.up.sql", "ban-drop-table"],
+      ["b_0001_drop.up.sql", "ban-drop-table"],
+    ]);
+    const unlisted = repo.run();
+    assert.equal(unlisted.code, 1);
+    assert.match(unlisted.out, /::notice title=Squawk baseline::/);
+    assert.match(unlisted.err, /b_0001_drop\.up\.sql:1: ban-drop-table: m/);
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
   }
 });

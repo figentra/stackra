@@ -178,6 +178,8 @@ jobs:
             stale=1
           fi
           export STACKRA_CLI="$PWD/packages/developer/cli/dist/stackra.mjs"
+          # The single-quoted script is the inner sh's: it expands $1 and STACKRA_CLI itself.
+          # shellcheck disable=SC2016
           {
             for member in services/*/; do grep -qs '"gen":' "${member}package.json" && echo "$member"; done
             for member in packages/*/*/; do [ -d "${member}src/node/database/migrations" ] || [ -d "${member}src/node/database/compiled-migrations" ] && echo "$member"; done
@@ -196,9 +198,14 @@ jobs:
       # statement timeouts per session (ADR 0159), so the files need no `set lock_timeout`.
       # STA-2788: squawk-baseline.mjs judges Squawk's JSON reports. A finding passes only in a file the CTO-owned
       # tools/scripts/squawk-baseline.jsonc pins by exact path and SHA-256 under that rule (migrations frozen once
-      # applied); a changed or missing pinned file, an entry or rule that matches nothing, one main's list lacks
-      # (HEAD~1: the list only shrinks) and any other finding fail the step.
+      # applied); a changed or missing pinned file, an entry or rule that matches nothing, one main's list lacks (the
+      # list only shrinks) and any other finding fail the step. Main's list is the one at the merge base of HEAD and
+      # the pull request's base SHA (else origin/main, else main), never HEAD~1; no merge base fails the step (the job
+      # checks out with fetch-depth 0). Bootstrap: a merge base without the list (the change that adds it) skips only
+      # the shrink comparison, with a notice; every other check runs.
       - name: Migration lint (Squawk)
+        env:
+          SQUAWK_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           mapfile -t files < <(find . -path ./node_modules -prune -o \( -path '*/.stackra/migrations/*.up.sql' -o -path '*/src/node/database/compiled-migrations/*.up.sql' \) -print | sort)
           if [ "${#files[@]}" -eq 0 ]; then
@@ -223,7 +230,7 @@ jobs:
           if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}" > "$reports/transactional.json" || [ $? -eq 1 ]; fi
           if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}" > "$reports/online.json" || [ $? -eq 1 ]; fi
           base=()
-          if git show HEAD~1:tools/scripts/squawk-baseline.jsonc > "$reports/base.jsonc" 2> /dev/null; then base=(--base "$reports/base.jsonc"); fi
+          if [ -n "$SQUAWK_BASE_SHA" ]; then base=(--base-ref "$SQUAWK_BASE_SHA"); fi
           node tools/scripts/squawk-baseline.mjs --baseline tools/scripts/squawk-baseline.jsonc "${base[@]}" "$reports/transactional.json" "$reports/online.json"
 
       # spec-gate: a ready-for-review PR needs its own spec (the branch key's folder), when changed, at Tasked or later; other changed specs get the stage check, and a change to another spec's Status line needs a commit with `Refs:` naming that spec's key; STACKRA_BRANCH feeds the lane check (check-pr owns the branch name).

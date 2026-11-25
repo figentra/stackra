@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: `node tools/scripts/squawk-baseline.mjs --baseline <file.jsonc> [--base <file>] [--root <dir>] <report.json>...`
+ * Purpose: `node tools/scripts/squawk-baseline.mjs --baseline <file.jsonc> [--base-ref <ref>] [--root <dir>] <report.json>...`
  *          (STA-2788): the verdict of the Quality Gate's "Migration lint (Squawk)" step over Squawk's JSON reports
  *          (`--reporter json`). A finding passes only when the baseline lists its file, by exact path, with that file's
  *          SHA-256 and the finding's rule. The baseline holds the findings of compiled migrations that are frozen once
  *          applied (ADR 0159), so they are waived only as committed: the step fails when a listed file's hash changes or
  *          the file is missing, when an entry or one of its rules matches no finding (the list never goes stale), when
  *          the base revision's list lacks an entry or rule (the list only shrinks), and on any other finding: every new
- *          file is linted in full.
- * Boundary: reads the baseline, the base baseline, the reports and the listed files; writes nothing. Node built-ins
+ *          file is linted in full. The base revision is the merge base of HEAD and `--base-ref` (CI passes the pull
+ *          request's base SHA), else of HEAD and `origin/main`, else `main` (`resolveBase`); none resolving fails the
+ *          step (exit 2), never skips it. A base that resolves without the list (the change that adds it) skips only the
+ *          shrink comparison, with a notice; every other check runs.
+ * Boundary: reads the baseline, the base revision's baseline (`git show`, in `--root`), the reports and the listed
+ *           files; runs only `git merge-base`, `git cat-file` and `git show`, and writes nothing. Node built-ins
  *           only, so stackra/verify's judge image runs it as main's tool with no install; the baseline is JSONC (`//`
  *           and block comments, no trailing comma), read by `parseJsonc`. A baseline path is exact:
  *           a glob, a folder, `..` or an absolute path is refused, and `syntax-error` is never waived.
@@ -17,9 +21,10 @@
  * Governing contract: ADR 0159 (decision 3: Squawk lints the compiled stream); STA-2788 (the CTO's SHA-256-pinned
  *                     baseline).
  */
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** An exact repository-relative path to a compiled `.sql` file: no glob, folder, `..` or absolute path. */
@@ -225,10 +230,57 @@ export function judge({ entries, findings, read, base }) {
   return { problems, unwaived, waived };
 }
 
-/** `{ baseline, base, root, reports }` from the arguments, or throws on a wrong shape. */
+/** `git <args>` in `cwd`, its trimmed output, or undefined when git fails. */
+function git(cwd, args) {
+  try {
+    return execFileSync("git", args, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return undefined;
+  }
+}
+
+/** The refs the base falls back to when no `--base-ref` is given: main's tip on the remote, then locally. */
+export const DEFAULT_BASE_REFS = ["origin/main", "main"];
+
+/**
+ * The base revision the shrink check compares with: the merge base of HEAD and `ref` (only it, when given), else of
+ * HEAD and the first of `DEFAULT_BASE_REFS` that resolves, with the ref it came from; undefined when none resolves.
+ * Never HEAD~1: on a branch of several commits, or a merge commit whose first parent is not main, that is not main.
+ *
+ * @param root - the repository folder.
+ * @param ref - the base ref or SHA (CI: the pull request's base SHA), or undefined.
+ */
+export function resolveBase(root, ref) {
+  for (const target of ref === undefined || ref === "" ? DEFAULT_BASE_REFS : [ref]) {
+    const commit = git(root, ["merge-base", "HEAD", target]);
+    if (commit !== undefined && /^[0-9a-f]{40,64}$/.test(commit)) return { commit, target };
+  }
+  return undefined;
+}
+
+/**
+ * The baseline at the base revision: its entries, or undefined when that revision has no such file (the change that
+ * adds the list, the bootstrap).
+ *
+ * @param root - the repository folder.
+ * @param commit - the base revision.
+ * @param path - the baseline's repository-relative path.
+ */
+export function baselineAt(root, commit, path) {
+  if (git(root, ["cat-file", "-e", `${commit}:${path}`]) === undefined) return undefined;
+  const text = git(root, ["show", `${commit}:${path}`]);
+  if (text === undefined) throw new Error(`git show ${commit}:${path} failed`);
+  return parseBaseline(parseJsonc(text), `${commit.slice(0, 12)}:${path}`);
+}
+
+/** `{ baseline, baseRef, root, reports }` from the arguments, or throws on a wrong shape. */
 export function parseArgs(args) {
   const reports = [];
-  const flags = { "--baseline": undefined, "--base": undefined, "--root": "." };
+  const flags = { "--baseline": undefined, "--base-ref": undefined, "--root": "." };
   let complete = true;
   for (let i = 0; i < args.length; i += 1) {
     if (args[i] in flags) {
@@ -238,21 +290,34 @@ export function parseArgs(args) {
     } else if (args[i].startsWith("--")) complete = false;
     else reports.push(args[i]);
   }
-  const { "--baseline": baseline, "--base": base, "--root": root } = flags;
+  const { "--baseline": baseline, "--base-ref": baseRef, "--root": root } = flags;
   if (!complete || baseline === undefined)
     throw new Error(
-      "usage: squawk-baseline.mjs --baseline <file> [--base <file>] [--root <dir>] <report.json>...",
+      "usage: squawk-baseline.mjs --baseline <file> [--base-ref <ref>] [--root <dir>] <report.json>...",
     );
-  return { baseline, base, root, reports };
+  return { baseline, baseRef, root, reports };
 }
 
 /** Runs the gate over the arguments and returns its exit code, writing to `out` and `err`. */
 export function main(args, { out = process.stdout, err = process.stderr } = {}) {
   try {
-    const { baseline, base, root, reports } = parseArgs(args);
+    const { baseline, baseRef, root, reports } = parseArgs(args);
     const entries = parseBaseline(parseJsonc(readFileSync(baseline, "utf8")), baseline);
-    const baseEntries =
-      base === undefined ? undefined : parseBaseline(parseJsonc(readFileSync(base, "utf8")), base);
+    // Fail closed: the shrink check needs a base revision; a missing one never skips it.
+    const base = resolveBase(root, baseRef);
+    if (base === undefined) {
+      const tried = baseRef === undefined || baseRef === "" ? DEFAULT_BASE_REFS : [baseRef];
+      out.write(
+        `::error title=Squawk baseline::no merge base of HEAD and ${tried.join(" or ")}, so the baseline cannot be held to main's (fetch the full history: fetch-depth 0)\n`,
+      );
+      return 2;
+    }
+    const listPath = relative(resolve(root), resolve(baseline)).split(sep).join("/");
+    const baseEntries = baselineAt(root, base.commit, listPath);
+    if (baseEntries === undefined)
+      out.write(
+        `::notice title=Squawk baseline::the base revision ${base.commit.slice(0, 12)} (merge base with ${base.target}) has no ${listPath}: the shrink comparison is skipped (the change that adds the list); every other check runs\n`,
+      );
     const findings = parseReports(
       reports.map((name) => ({ name, text: readFileSync(name, "utf8") })),
     );
