@@ -138,10 +138,21 @@
  *     - Any other error three times on one SHA (a fetch, Docker, the store image, the install network or its proxy,
  *       disk): the service log names it; fix the host and post a new run (`stackra-verify.mjs run --sha <sha>`).
  *     - The egress probe found a leak or did not run: the service has stopped itself; fix the network rules first.
+ *     - "could not build the judge image from main": main's own install, judge build or gen failed with no network
+ *       (the service log has the build's tail). Fix main (a red main is red for every PR), or the store image if a
+ *       package is missing from it; the next pass builds the image again.
+ *     - "the base / view / shared container failed" or "did not start": the service's own containers (tar, git, cp,
+ *       ln) failed: read the run's log and the verify user's Docker (disk, image mounts need Docker 28 or later).
+ *   A judge that says "a judge never runs the tested tree's <path>" refused to run the PR's code: an honest red. The
+ *   PR's change to that path is judged by main's copy of the judge, or lands through risk:R3 and the owner first.
+ *   Residual: PR code can still make its own tests pass (it writes the tests); that is what review is for.
  *   Go-live, before the ruleset swap: the ruleset swap to stackra/verify waits until STA-2781 (replace
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
  *   The OSV canary's first real run (the daemon's first database refresh in the verify user's Docker) passes and is
  *   recorded in #1043 before the ruleset swap.
+ *   The judges from main (round 5, B) pass on main in the verify user's Docker before the swap: the judge image
+ *   builds, every judge is green on main read-only and guarded, and the H1 and H2 reproductions turn no judge green;
+ *   the results and the gate's time against the one-container layout (within about 1.5x) are recorded in #1043.
  *   stackra/verify-mobile runs the licence policy over the full install (the mobile-scoped exceptions and every licence
  *   only the mobile apps pull in). A red licence step on stackra/verify-mobile is a lane finding with an STA issue,
  *   never ignored. verify-mobile becomes required after 7 consecutive days with no infrastructure-caused red, by the

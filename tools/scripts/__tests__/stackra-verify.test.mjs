@@ -6142,6 +6142,8 @@ function guardFixture() {
   const root = join(dir, "judge");
   putFiles(tree, {
     "main.mjs": 'import "pkg";\nimport "./helper.mjs";\n' + say("tree main"),
+    // the oxlint plugin's way in (H2): a main file importing a computed URL of a file the PR changed
+    "plugin.mjs": 'await import(new URL("./changed.mjs", import.meta.url).href);\n',
     "helper.mjs": say("tree helper"),
     "changed.mjs": say("PR changed"),
     "pr.mjs": 'process.stdout.write("PR RAN\\n"); process.exit(0);\n',
@@ -6175,7 +6177,9 @@ function guardFixture() {
   const mainList = join(dir, "main-paths");
   writeFileSync(
     mainList,
-    ["main.mjs", "helper.mjs", "main.cjs", "vm.mjs", "resolve.cjs"].map((p) => `${p}\0`).join(""),
+    ["main.mjs", "helper.mjs", "main.cjs", "vm.mjs", "resolve.cjs", "plugin.mjs"]
+      .map((p) => `${p}\0`)
+      .join(""),
   );
   const guard = join(dir, "guard.mjs");
   writeFileSync(
@@ -6204,6 +6208,7 @@ test("judge guard: a judge runs main's files only; the tree's own code never run
     );
     // a file the PR changed runs as main's copy; a file only the judge image has (a build output) runs from there
     assert.equal(g.run(join(g.tree, "changed.mjs")).stdout, "main's changed\n");
+    assert.equal(g.run(join(g.tree, "plugin.mjs")).stdout, "main's changed\n");
     assert.equal(g.run(join(g.tree, "dist/built.mjs")).stdout, "main's build\n");
     // a file whose bytes are the judge image's (main's generated files laid in) runs
     assert.equal(g.run(join(g.tree, "equal.mjs")).stdout, "generated\n");
