@@ -53,27 +53,38 @@
  *     by main's root tree id (judgeTag), recorded and kept like the store image. oxlint, oxfmt, knip, jscpd,
  *     commitlint, turbo and fflow are main's installed versions there; gitleaks, osv-scanner, actionlint, zizmor,
  *     shfmt and squawk are the store image's pinned binaries; the licence check is this service's generated file.
- *   - Containers (runSteps), none with a network: install (the PR's lockfile; main's allowBuilds only); prepare (tar
- *     and git: the merge commit), committed as the base image; the judge view (judge-view.sh: main's generated files
- *     where the tree has the member, never over a tree file, and every node_modules/.bin is main's), committed; the
+ *   - Containers (runSteps), none with a network: install (the PR's lockfile; main's allowBuilds only; every lockfile
+ *     resolution a registry package under its own name, lockfileResolutionProblems); prepare (tar and git: the merge
+ *     commit; it refuses, as the PR's failure, any file outside node_modules the tested tree does not have, which the
+ *     install wrote, plantedCheck), committed as the base image; the judge view (judge-view.sh: main's generated
+ *     files where the tree has the member, never over a tree file and never compiled migrations; every registry
+ *     package a node_modules holds is main's copy where main's install has it at the same place, workspace links
+ *     stay the tree's; every node_modules/.bin holds main's bins, turbo's through the guarded turbo), committed; the
  *     shared view (main's config modules only, C1), committed; then one container per step, in ci.yml's order.
  *   - A judging step (licence-policy, dependency-scan, workflow-lint, linear-key-check, format-check, lint,
- *     migration-lint, validate, env-names, boundaries, knip, secrets-scan) starts fresh from a view, never from an
- *     image a PR step wrote, with the root filesystem read-only, HOME and /tmp on tmpfs, /work from a volume of the
- *     view's layers mounted read-only and noexec (noexecVolumeArgs: nothing in the tree, binary or addon, executes),
- *     the judge image read-only at /judge, and main's tools first on PATH. Every Node process is guarded: the only
- *     node a judge reaches is the guarded node (/in/bin/node, first on PATH and mounted over the image's node; the
- *     real node is the judge image's copy, which nothing points to), the guard sets process.execPath to it, so a
- *     child started from process.execPath is guarded whatever NODE_OPTIONS says, and code generation from strings
- *     is disallowed (eval, new Function). The one exception is linear-key-check: commitlint validates its config
- *     with ajv, which compiles schemas with new Function. Under the guard a file of /work runs only when its bytes
+ *     migration-lint, validate, env-names, boundaries, knip, secrets-scan) starts fresh, never from an image a PR
+ *     step wrote, with the root filesystem read-only, HOME and /tmp on tmpfs, /work from a volume of its view's
+ *     layers mounted read-only and noexec (noexecVolumeArgs: nothing in the tree, binary or addon, executes), the
+ *     judge image read-only at /judge, and main's tools first on PATH; turbo is main's with --skip-infer, so it never
+ *     hands off to a "local" turbo. Which view: licence-policy the prepared tree (it judges the PR's install as
+ *     installed); every other judge the judge view (main's registry packages, so nothing it resolves or reads from
+ *     node_modules is what the PR's install wrote); format-check and knip the shared view. Every Node process is
+ *     guarded: `node` on PATH, at the image's node path (mounted over), as process.execPath and as argv[0] is the
+ *     guarded node (/in/bin/node), which runs the real node (the judge image's copy) with the guard and with code
+ *     generation from strings disallowed (eval, new Function). The one exception is linear-key-check: commitlint
+ *     validates its config with ajv, which compiles schemas with new Function. The real node can still be started by
+ *     its own path, which no PATH, execPath or argv names. Under the guard a file of /work runs only when its bytes
  *     are main's (main-paths, the tracked paths whose blob is main's, or a file equal to the judge image's copy); any
- *     other runs as the judge image's copy at that path, or not at all; a bare import from /work resolves in main's
- *     install. So the oxlint plugin, repo-checks, runway, gen's templates and every config a judge loads are main's,
- *     whatever the PR changed. What each judge reads as data: the tree's files (format-check, lint, validate,
- *     boundaries, knip, secrets-scan, workflow-lint; env-names reads runway.yaml; migration-lint reads the migration
- *     SQL the tree commits under .stackra/migrations), the install's packages (licence-policy), the lockfile
- *     (dependency-scan) and the PR facts (linear-key-check).
+ *     other runs as the judge image's copy at that path, or not at all; a native addon of the tree never loads; a
+ *     bare import from /work resolves in main's install; a guard for another tree (a test's own) applies too. So the
+ *     oxlint plugin, repo-checks, runway, gen's templates and every config a judge loads are main's, whatever the PR
+ *     changed. What each judge reads as data: the tree's files (format-check, lint, validate, boundaries, knip,
+ *     secrets-scan, workflow-lint; env-names reads runway.yaml; migration-lint reads the migration SQL the tree
+ *     commits under .stackra/migrations, and fails while migration sources have nothing compiled, STA-2788), the
+ *     install's packages (licence-policy), the lockfile (dependency-scan) and the PR facts (linear-key-check).
+ *     The gate has no judge run without the judge image (a service error). stackra/verify-mobile, never required,
+ *     runs its licence judge without the judge image and without the node mounted over the image's: our licence
+ *     check and pnpm only.
  *   - A PR step (typecheck, build, service-gen, manifests-match-gen, test) runs in a writable container of its own,
  *     from the base image (typecheck, build) or the build's (service-gen, manifests-match-gen, test); nothing it
  *     writes reaches a judge. manifests-match-gen runs main's gen (the judge image's CLI) on the PR's sources and
@@ -177,8 +188,12 @@
  *     - "/work cannot be mounted noexec" or "could not make the noexec /work volume": the verify user's Docker must
  *       keep images as overlay2 layer directories (storage-driver overlay2, not the containerd image store) and be
  *       able to mount an overlay volume (kernel 5.11 or later for a rootless one); fix the daemon's configuration.
- *   migration-lint saying "no compiled migrations … nothing linted" on a PR is the known gap until STA-2788 (compiled
- *   migrations committed); it is a go-live item, below.
+ *     - "no judge image": the gate never runs its judges with the tree's tools; see the judge image's reason first.
+ *   migration-lint failing "STA-2788 pending: N migration sources not linted" is the known gap until STA-2788 (compiled
+ *   migrations committed; MIGRATION_LINT_REQUIRES_COMPILED); it is a go-live item, below.
+ *   A tree failure "the install wrote files the tested tree does not have: …" is the PR's: an allowed build, at the
+ *   version its lockfile chose, wrote outside node_modules (round 6, H2). Read the named files in the PR's lockfile
+ *   changes; the PR fixes it, or the owner removes the build from main's allowBuilds.
  *   A judge that says "a judge never runs the tested tree's <path>" refused to run the PR's code: an honest red. The
  *   PR's change to that path is judged by main's copy of the judge, or lands through risk:R3 and the owner first.
  *   A gate-tool version bump (risk:R3) is judged by main's version until it merges; a new member's own scripts stand
@@ -193,7 +208,8 @@
  *   The ruleset swap also waits until STA-2788 has merged (compiled migrations committed, applied exactly as committed),
  *   so that migration-lint lints each PR's migration SQL from the tree; until then it lints nothing on a PR.
  *   The judges from main (round 5, B) pass on main in the verify user's Docker before the swap: the judge image
- *   builds, every judge is green on main read-only and guarded, and the H1 and H2 reproductions turn no judge green;
+ *   builds, every judge is green on main read-only and guarded (lint, boundaries and validate with its own self-tests
+ *   named: each green on main inside its judge container), and the H1 and H2 reproductions turn no judge green;
  *   the results and the gate's time against the one-container layout (within about 1.5x) are recorded in #1043.
  *   stackra/verify-mobile runs the licence policy over the full install (the mobile-scoped exceptions and every licence
  *   only the mobile apps pull in). A red licence step on stackra/verify-mobile is a lane finding with an STA issue,
@@ -354,6 +370,49 @@ export const SQUAWK_FLAGS =
   "--pg-version=18.0 \\\n    --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field \\\n" +
   "    --exclude=prefer-bigint-over-int \\\n    --exclude=require-lock-timeout --exclude=require-statement-timeout";
 
+/**
+ * Round 6, H3 (Idris: on until STA-2788 lands): compiled migrations are not committed, so with nothing compiled in the
+ * tree migration-lint would pass every PR without linting. While this is true, migration sources with no compiled
+ * SQL fail the step, titled "STA-2788 pending". Set it to false only by the CTO's ruling.
+ */
+export const MIGRATION_LINT_REQUIRES_COMPILED = true;
+/** ci.yml's line when nothing compiled is found. */
+const NOTHING_LINTED =
+  '  echo "::notice title=Squawk::no compiled migrations (.stackra/migrations) in this checkout; nothing linted"';
+/** Migration sources (ADR 0159's *.migration.ts, outside fixtures) with nothing compiled: a failure (POSIX sh). */
+export const MIGRATION_PENDING = [
+  "  sources=$(find . -path ./node_modules -prune -o -name '*.migration.ts' -not -path '*/__golden__/*' -not -path '*/__tests__/*' -type f -print | wc -l | tr -d ' ')",
+  '  if [ "$sources" -gt 0 ]; then echo "::error title=STA-2788 pending::$sources migration sources not linted: compiled migrations are not committed (STA-2788)"; exit 1; fi',
+].join("\n");
+
+/** migration-lint's commands: ci.yml's, plus the STA-2788 check when `requiresCompiled` (MIGRATION_LINT_REQUIRES_COMPILED). */
+export const migrationLintRun = (requiresCompiled) =>
+  [
+    "mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)",
+    'if [ "${#files[@]}" -eq 0 ]; then',
+    NOTHING_LINTED,
+    ...(requiresCompiled ? [MIGRATION_PENDING] : []),
+    "  exit 0",
+    "fi",
+    "transactional=()",
+    "online=()",
+    'for file in "${files[@]}"; do',
+    `  if head -n 1 "$file" | grep -qx -- '-- stackra:transactional=false'; then online+=("$file"); else transactional+=("$file"); fi`,
+    "done",
+    "lint() {",
+    `  squawk ${SQUAWK_FLAGS} "$@"`,
+    "}",
+    'if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi',
+    'if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi',
+  ].join("\n");
+/** How migration-lint differs from ci.yml's step, each with its reason (the mirror test applies them). */
+export const migrationLintCiReplace = (requiresCompiled) => [
+  // squawk 2.71.0 is baked into the store image (TOOLS), so `mise exec` is not needed.
+  ["mise exec github:sbdchd/squawk@2.71.0 -- squawk", "squawk"],
+  // nothing compiled to lint while migration sources exist fails the step until STA-2788 lands
+  ...(requiresCompiled ? [[NOTHING_LINTED, `${NOTHING_LINTED}\n${MIGRATION_PENDING}`]] : []),
+];
+
 /** Where a judging container sees the judge image's tree (main's, installed and built), and its path in that image. */
 export const JUDGE_MOUNT = "/judge";
 export const JUDGE_IMAGE_PATH = "judge";
@@ -404,7 +463,8 @@ export function licenceRun(install) {
 export const GATE_STEPS = Object.freeze([
   // Not in ci.yml, so its place is free: first, before any lockfile-installed code runs (linear-key-check's
   // `pnpm exec commitlint`, lint, build, validate), reading the install pnpm laid down as the install left it.
-  { id: "licence-policy", judge: true, run: licenceRun("gate") },
+  // It judges the PR's install as installed, so its view is the prepared tree (main's packages laid in would hide it).
+  { id: "licence-policy", judge: true, view: "base", run: licenceRun("gate") },
   {
     id: "dependency-scan",
     judge: true,
@@ -532,25 +592,10 @@ export const GATE_STEPS = Object.freeze([
     job: "gate",
     ci: "Migration lint (Squawk)",
     line: 182,
-    // squawk 2.71.0 is baked into the store image (TOOLS), so `mise exec` is not needed.
-    ciReplace: [["mise exec github:sbdchd/squawk@2.71.0 -- squawk", "squawk"]],
-    run: [
-      "mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)",
-      'if [ "${#files[@]}" -eq 0 ]; then',
-      '  echo "::notice title=Squawk::no compiled migrations (.stackra/migrations) in this checkout; nothing linted"',
-      "  exit 0",
-      "fi",
-      "transactional=()",
-      "online=()",
-      'for file in "${files[@]}"; do',
-      `  if head -n 1 "$file" | grep -qx -- '-- stackra:transactional=false'; then online+=("$file"); else transactional+=("$file"); fi`,
-      "done",
-      "lint() {",
-      `  squawk ${SQUAWK_FLAGS} "$@"`,
-      "}",
-      'if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi',
-      'if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi',
-    ].join("\n"),
+    // squawk 2.71.0 is baked into the store image (TOOLS), so `mise exec` is not needed. With nothing compiled to
+    // lint, migration sources fail the step while STA-2788 is pending (MIGRATION_LINT_REQUIRES_COMPILED, round 6).
+    ciReplace: migrationLintCiReplace(MIGRATION_LINT_REQUIRES_COMPILED),
+    run: migrationLintRun(MIGRATION_LINT_REQUIRES_COMPILED),
   },
   {
     id: "validate",
@@ -620,7 +665,7 @@ export const GATE_STEPS = Object.freeze([
  */
 export const MOBILE_STEPS = Object.freeze([
   // The mobile install's licences, before the mobile apps' code runs; a red here is a lane finding (runbook).
-  { id: "licence-policy", judge: true, run: licenceRun("mobile") },
+  { id: "licence-policy", judge: true, view: "base", run: licenceRun("mobile") },
   {
     id: "mobile-apps",
     from: "base",
@@ -754,6 +799,25 @@ export function stepScript(steps, { inDir = IN_DIR, workDir = "/work", facts = t
 export const gateScript = (options) => stepScript(GATE_STEPS, options);
 export const mobileScript = (options) => stepScript(MOBILE_STEPS, { ...options, facts: false });
 
+/** prepare's exit when the install left a file outside node_modules that the tested tree does not have. */
+export const PLANTED_EXIT = 3;
+/** The line prepare prints for each such file (at most 50), which the check run names. */
+export const PLANTED_LINE = "stackra-verify: not in the tested tree: ";
+
+/**
+ * Round 6, H2: every file or link in /work outside node_modules (any directory of that name) must be one the tested
+ * tree has (src.tar, unpacked just before): anything else was written at install time (by an allowed build, at the
+ * version the PR chose) and would reach the judges as data, so prepare exits PLANTED_EXIT naming each one. The
+ * leftover `.git` of the install is the service's own and is replaced next. POSIX sh; runs in the tree.
+ */
+export const plantedCheck = (inDir = IN_DIR) =>
+  [
+    `tar -tf ${inDir}/src.tar | grep -v '/$' | LC_ALL=C sort -u > /tmp/stackra-tracked`,
+    "find . \\( -name node_modules -o -path ./.git \\) -prune -o \\( -type f -o -type l \\) -print | sed 's|^\\./||' | LC_ALL=C sort -u > /tmp/stackra-present",
+    "LC_ALL=C comm -13 /tmp/stackra-tracked /tmp/stackra-present > /tmp/stackra-planted",
+    `if [ -s /tmp/stackra-planted ]; then head -n 50 /tmp/stackra-planted | sed 's|^|${PLANTED_LINE}|'; exit ${PLANTED_EXIT}; fi`,
+  ].join("; ");
+
 /**
  * Before the gate: the tested tree is unpacked again over /work and committed as a merge onto main, like GitHub's
  * merge ref: first parent main (`refs/stackra/base`), second the PR head (`refs/stackra/head`, absent for main
@@ -765,6 +829,7 @@ export const gatePrepare = (inDir = IN_DIR, workDir = "/work") =>
     "set -e",
     `tar -xf ${inDir}/src.tar -C ${workDir}`,
     `cd ${workDir}`,
+    plantedCheck(inDir),
     "rm -rf .git",
     "git init -q",
     `git fetch -q --no-tags ${inDir}/history.bundle '+refs/stackra/*:refs/stackra/*'`,
@@ -1848,11 +1913,16 @@ export const licenceCheckSource = () =>
  * generated file is this function's source.
  */
 export function judgeGuard({ tree, root, mainList, execPath = null }) {
-  const loaded = Symbol.for("stackra-verify.judgeGuard");
+  // Once per tree and judge root: a second guard for another tree (a test's own) applies too (round 6, M1).
+  const loaded = Symbol.for(`stackra-verify.judgeGuard:${tree}:${root}`);
   if (globalThis[loaded]) return;
   globalThis[loaded] = true;
-  // A child started as process.execPath (fork, spawn, worker pools) starts the guarded node, whatever its env says.
-  if (execPath) process.execPath = execPath;
+  // A child started as process.execPath or argv[0] (fork, spawn, worker pools) starts the guarded node, whatever its
+  // env says (round 6, L1 for argv[0]).
+  if (execPath) {
+    process.execPath = execPath;
+    process.argv[0] = execPath;
+  }
   const fs = process.getBuiltinModule("node:fs");
   const path = process.getBuiltinModule("node:path");
   const url = process.getBuiltinModule("node:url");
@@ -1984,6 +2054,24 @@ export function judgeGuard({ tree, root, mainList, execPath = null }) {
       return original.apply(this, args);
     };
   }
+  // Native addons: a file of the tree never loads; the judge image's copy at that path does (round 6, M2). /work is
+  // mounted noexec in a judge, so this is the second wall.
+  const native = (p) => {
+    if (!inTree(p)) return p;
+    const copy = copyOf(p);
+    if (fs.existsSync(copy)) return copy;
+    throw new Error(`stackra-verify: a judge never loads the tested tree's addon ${rel(p)}`);
+  };
+  const dlopen = process.dlopen;
+  process.dlopen = function (module, filename, ...rest) {
+    return dlopen.call(this, module, native(filePath(filename) ?? filename), ...rest);
+  };
+  // oxlint-disable-next-line no-underscore-dangle -- Node's own CommonJS loader for .node files
+  const loadNative = Module._extensions[".node"];
+  // oxlint-disable-next-line no-underscore-dangle -- Node's own CommonJS loader for .node files
+  Module._extensions[".node"] = function (module, filename, ...rest) {
+    return loadNative.call(this, module, native(filename), ...rest);
+  };
   const Script = vm.Script;
   vm.Script = class extends Script {
     constructor(code, options) {
@@ -2028,6 +2116,18 @@ export const judgeNodeSource = (inDir = IN_DIR) =>
   ].join("\n");
 
 /**
+ * `turbo` for a judging container (`/in/bin/turbo`; first on PATH, and every .bin's turbo in the view links to it):
+ * main's turbo, which never hands off to a "local" turbo it infers (round 6, H1).
+ */
+export const judgeTurboSource = () =>
+  [
+    "#!/bin/sh",
+    "# Generated by tools/scripts/stackra-verify.mjs (STA-2761): main's turbo, never an inferred local one.",
+    `exec ${JUDGE_MOUNT}/node_modules/.bin/turbo --skip-infer "$@"`,
+    "",
+  ].join("\n");
+
+/**
  * A judging container's environment (with CONTAINER_ENV): the guarded node and main's tools first on PATH, the guard
  * and the ban on code generation from strings in NODE_OPTIONS too (the guarded node applies both anyway), and turbo
  * with no cache (the tree is read-only, so it writes no task log either). `evalAllowed`: the step's tools need eval.
@@ -2041,8 +2141,9 @@ export const judgeEnv = (inDir = IN_DIR, { evalAllowed = false } = {}) =>
  * The judge view, made by a container of its own from the prepared tree (main's code only: this script, cp, ln):
  * main's generated files (the judge image ran main's gen on main's tree) are added wherever the tree has the member,
  * never replacing a file of the tree, and never main's compiled migrations (migration-lint reads the tree's own SQL);
- * and every node_modules/.bin in the tree becomes the judge image's one at the same place (none where main has no
- * such member), so a script's tool is main's tool.
+ * every registry package a node_modules in the tree holds becomes main's copy where main's install has it at the same
+ * place (workspace links stay the tree's), and every node_modules/.bin holds main's bins (none where main has no such
+ * member), turbo's through the guarded turbo (`--skip-infer`), so a script's tool is main's tool.
  */
 export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work") =>
   [
@@ -2063,8 +2164,24 @@ export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work") =>
     `cd ${tree}`,
     "find . -name node_modules -type d -prune -print0 | while IFS= read -r -d '' nm; do",
     "  p=${nm#./}",
+    // Every registry package a node_modules holds that main's install holds at the same place is main's copy (round
+    // 6, H1 and H2): a judge that resolves a tool or reads a package "locally" (turbo hands off to the local turbo,
+    // tsconfig extends, knip reads manifests) gets main's. Workspace links (into the tree) stay the PR's: they are
+    // the tested tree. A package main does not have stays as installed (data; the guard never runs it).
+    '  for e in "$p"/* "$p"/@*/*; do',
+    '    [ -e "$e" ] || [ -L "$e" ] || continue',
+    '    case "$e" in "$p"/@*) [ -d "$e" ] && [ ! -L "$e" ] && [ "${e#"$p"/@*/}" = "$e" ] && continue ;; esac',
+    `    real=$(readlink -f -- "$e" || true)`,
+    `    case "$real" in */node_modules/.pnpm/*|"${tree}/$e") ;; *) continue ;; esac`,
+    `    if [ -e "${root}/$e" ]; then rm -rf -- "$e" && ln -s "${root}/$e" "$e"; fi`,
+    "  done",
+    // Its bins: main's, each one linked; turbo through the guarded turbo, which never infers another turbo.
     '  rm -rf -- "$p/.bin"',
-    `  if [ -d "${root}/$p/.bin" ]; then ln -s "${root}/$p/.bin" "$p/.bin"; fi`,
+    `  if [ -d "${root}/$p/.bin" ]; then`,
+    '    mkdir "$p/.bin"',
+    `    for b in "${root}/$p/.bin"/*; do [ -e "$b" ] || continue; ln -s "$b" "$p/.bin/\${b##*/}"; done`,
+    `    [ -e "$p/.bin/turbo" ] && ln -sfn ${IN_DIR}/bin/turbo "$p/.bin/turbo"`,
+    "  fi",
     "done",
   ].join("\n");
 
@@ -2162,6 +2279,7 @@ export function kindFiles(kind, languages = CODEQL_DEFAULT_LANGUAGES) {
   const judging = {
     "judge-guard.mjs": judgeGuardSource(),
     "bin/node": judgeNodeSource(),
+    "bin/turbo": judgeTurboSource(),
     "judge-view.sh": judgeViewScript(),
   };
   if (kind === "gate")
@@ -2509,7 +2627,7 @@ export const CONTAINER_USER = "1000:1000";
  * files), and committed to a fresh git repository so `git ls-files` sees the tree as a local checkout would.
  */
 export const VERIFY_PREPARE =
-  "set -e; tar -xf /in/src.tar -C /work; cd /work; rm -rf .git; git init -q; git add -A; " +
+  `set -e; tar -xf /in/src.tar -C /work; cd /work; ${plantedCheck(IN_DIR)}; rm -rf .git; git init -q; git add -A; ` +
   "git -c user.name=stackra-verify -c user.email=verify@stackra.invalid -c commit.gpgsign=false commit -qm tested --no-verify";
 /** An infrastructure error (fetch, Docker, disk) is retried after this long … */
 export const ERROR_RETRY_MS = 30 * 60 * 1000;
@@ -3082,6 +3200,21 @@ export function noexecVolumeArgs(name, graphDriver) {
   ];
 }
 
+/**
+ * The members the judge image builds (round 6, L4): main's lockfile's judge closure (judgeMembers), each built with
+ * its dependencies. A lockfile with no importer, or without every JUDGE_ROOTS member, is refused.
+ */
+export function judgeBuildRoots(lockText) {
+  const roots = judgeMembers(lockText);
+  if (!roots) throw new Error("main's lockfile names no importer: the judges cannot be built");
+  const missing = JUDGE_ROOTS.filter((root) => !roots.includes(root));
+  if (missing.length)
+    throw new Error(
+      `main's lockfile has no importer ${missing.join(", ")}: the judges cannot be built`,
+    );
+  return roots;
+}
+
 /** The judge image's tag: main's tree (its root tree id), the store image it starts from, and how it is built. */
 export const judgeTag = (baseTree, storeId, dockerfile) =>
   `stackra-verify-judge:${createHash("sha256").update(baseTree).update("\0").update(storeId).update("\0").update(dockerfile).digest("hex").slice(0, 16)}`;
@@ -3491,6 +3624,70 @@ const overrideTarget = (selector) =>
  * swap the gate's runner for a stub. An override may also be `-` (removal) or a `$name` reference, which is checked as
  * the root package.json's spec for `name` (`rootManifest`); `memberNames` are the lockfile importers' names.
  */
+/**
+ * Round 6, H2: every package the tested tree's lockfile resolves comes from a package registry under its own name.
+ * A `resolution:` is `{integrity: sha512-…}`, optionally with the `tarball` of that very package and version on an
+ * allowed registry host (`https://<host>/<name>/-/<base name>-<version>.tgz`). Anything else (another package's
+ * tarball, another host, a directory, git, a block-style resolution) is refused: with a frozen lockfile pnpm installs
+ * exactly that, and an allowed build would run it at install time.
+ */
+export function lockfileResolutionProblems(lockText, hosts = REGISTRY_HOSTS) {
+  const problems = [];
+  let top = null;
+  let key = null;
+  for (const line of String(lockText ?? "").split(/\r?\n/)) {
+    const section = /^([^\s#][^:]*):/.exec(line);
+    if (section) {
+      top = section[1];
+      continue;
+    }
+    if (top !== "packages") continue;
+    const entry = /^ {2}('?)([^\s'][^']*?)\1:\s*$/.exec(line);
+    if (entry) {
+      key = entry[2];
+      continue;
+    }
+    const resolution = /^ {4}resolution:(.*)$/.exec(line);
+    if (!resolution) continue;
+    const where = `pnpm-lock.yaml: ${key}'s resolution`;
+    const flow = /^\s*\{(.*)\}\s*$/.exec(resolution[1]);
+    if (!flow) {
+      problems.push(`${where} is not an {integrity: …} entry`);
+      continue;
+    }
+    const fields = Object.fromEntries(
+      flow[1]
+        .split(",")
+        .map((field) => field.trim())
+        .filter(Boolean)
+        .map((field) => [
+          field.slice(0, field.indexOf(":")).trim(),
+          field.slice(field.indexOf(":") + 1).trim(),
+        ]),
+    );
+    const names = Object.keys(fields);
+    if (
+      !/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(fields.integrity ?? "") ||
+      names.some((n) => n !== "integrity" && n !== "tarball")
+    ) {
+      problems.push(`${where} is not a registry package (${names.join(", ")})`);
+      continue;
+    }
+    if (fields.tarball === undefined) continue;
+    const at = key.lastIndexOf("@");
+    const name = key.slice(0, at);
+    const version = key.slice(at + 1);
+    const registryUrls = hosts.map(
+      (host) => `https://${host}/${name}/-/${name.split("/").pop()}-${version}.tgz`,
+    );
+    if (at < 1 || !registryUrls.includes(fields.tarball))
+      problems.push(
+        `${where} is a tarball that is not ${key} on a package registry: ${fields.tarball}`,
+      );
+  }
+  return problems;
+}
+
 export function dependencySpecProblems({
   workspace = {},
   manifests = [],
@@ -4239,7 +4436,7 @@ async function runSteps(
     );
     if (r.stopped || r.timedOut) return r;
     if (r.exit === null) return { error: `the ${role} container did not start` };
-    if (r.exit !== 0) return { error: `the ${role} container failed (${r.exit})` };
+    if (r.exit !== 0) return { exit: r.exit, error: `the ${role} container failed (${r.exit})` };
     const tag = tagged(role);
     if (deps.docker(["commit", name, tag]).code !== 0)
       return { error: `could not commit the ${role} container` };
@@ -4253,8 +4450,27 @@ async function runSteps(
   };
 
   const steps = KINDS[kind].steps;
+  // The gate's judges run main's tools only: without the judge image there is no judge run at all (round 6, L3).
+  if (KINDS[kind].install === "gate" && !judge)
+    return {
+      post: false,
+      error: "no judge image: the gate's judges never run with the tree's tools",
+    };
   const from = {};
   let r = await own("base", image, prepare);
+  if (r.exit === PLANTED_EXIT) {
+    const planted = String(deps.readLog())
+      .split("\n")
+      .filter((line) => line.startsWith(PLANTED_LINE))
+      .map((line) => line.slice(PLANTED_LINE.length));
+    return settle(job, deps, {
+      conclusion: "failure",
+      phase: "tree",
+      reason: scrub(
+        `the install wrote files the tested tree does not have: ${planted.join(", ")}`,
+      ).slice(0, 600),
+    });
+  }
   if (!r.tag) return ended(r);
   from.base = r.tag;
   from.view = from.base;
@@ -4281,7 +4497,9 @@ async function runSteps(
   const failed = [];
   for (const step of steps) {
     const name = named(`step-${step.id}`);
-    const start = step.judge ? from[step.shared ? "shared" : "view"] : from[step.from ?? "base"];
+    const start = step.judge
+      ? from[step.view ?? (step.shared ? "shared" : "view")]
+      : from[step.from ?? "base"];
     if (!start)
       return { post: false, error: `${step.id} has no image to start from (${step.from})` };
     let volume = null;
@@ -5020,8 +5238,11 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}
   // The members are the lockfile's importers (L3): a package.json no importer names is not a member.
   let importerDirs = new Set();
   if (mergedByPath.has("pnpm-lock.yaml")) {
-    const graph = lockfileGraph(blob(mergedByPath.get("pnpm-lock.yaml")));
+    const lockText = blob(mergedByPath.get("pnpm-lock.yaml"));
+    const graph = lockfileGraph(lockText);
     importerDirs = new Set(Object.keys(graph.importers));
+    // What an allowed build installs is the registry's package under its own name, never a tarball the PR chose.
+    problems.push(...lockfileResolutionProblems(lockText));
   }
   const memberNames = new Set(
     manifests
@@ -5250,9 +5471,8 @@ async function ensureStore(s, mirror, base, runDir, state) {
  */
 async function ensureJudge(s, { mirror, base, baseTree, store, builds, runDir, state }) {
   const storeId = docker(s, ["image", "inspect", "--format", "{{.Id}}", store]).stdout.trim();
-  const roots = judgeMembers(git(mirror, ["show", `${base}:pnpm-lock.yaml`]));
-  if (!roots) throw new Error("main's lockfile names no importer: the judges cannot be built");
-  const dockerfile = judgeDockerfile({ storeImage: store, builds, roots: JUDGE_ROOTS });
+  const roots = judgeBuildRoots(git(mirror, ["show", `${base}:pnpm-lock.yaml`]));
+  const dockerfile = judgeDockerfile({ storeImage: store, builds, roots });
   const tag = judgeTag(baseTree, storeId, dockerfile);
   const recorded = state.judges?.[tag];
   const current = docker(s, ["image", "inspect", "--format", "{{.Id}}", tag]).stdout.trim();

@@ -19,6 +19,8 @@ import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   chmodSync,
+  symlinkSync,
+  readlinkSync,
   existsSync,
   globSync,
   mkdirSync,
@@ -198,6 +200,16 @@ import {
   noexecVolumeArgs,
   JUDGE_NODE,
   IMAGE_NODE,
+  plantedCheck,
+  PLANTED_EXIT,
+  PLANTED_LINE,
+  judgeTurboSource,
+  MIGRATION_LINT_REQUIRES_COMPILED,
+  MIGRATION_PENDING,
+  migrationLintRun,
+  migrationLintCiReplace,
+  lockfileResolutionProblems,
+  judgeBuildRoots,
   judgeDockerfile,
   judgeTag,
   stepArgs,
@@ -209,6 +221,8 @@ import {
   NOT_PACKAGE_COMMANDS,
   isGateToolPackage,
   SHARED_STEP_LOADERS,
+  GATE_TOOL_PACKAGES,
+  JUDGE_ROOTS,
 } from "../pr-merge.mjs";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
@@ -461,7 +475,7 @@ test("verify: the tested tree is unpacked again over /work and committed (the ga
   const check = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR });
   assert.match(
     check.at(-1),
-    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; rm -rf \.git; git init -q; git fetch -q --no-tags \/in\/history\.bundle .*; git update-ref HEAD "\$commit"; git reset -q; bash \/in\/gate\.sh$/,
+    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; tar -tf \/in\/src\.tar .*; exit 3; fi; rm -rf \.git; git init -q; git fetch -q --no-tags \/in\/history\.bundle .*; git update-ref HEAD "\$commit"; git reset -q; bash \/in\/gate\.sh$/,
   );
   const mobile = verifyArgs(S, {
     name: "v",
@@ -473,7 +487,7 @@ test("verify: the tested tree is unpacked again over /work and committed (the ga
   });
   assert.match(
     mobile.at(-1),
-    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; rm -rf \.git; git init -q; git add -A; .* commit -qm tested --no-verify; bash \/in\/mobile\.sh$/,
+    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; tar -tf \/in\/src\.tar .*; exit 3; fi; rm -rf \.git; git init -q; git add -A; .* commit -qm tested --no-verify; bash \/in\/mobile\.sh$/,
   );
 });
 
@@ -4067,7 +4081,7 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
   assert.equal(volumes.length, 13);
   for (const v of volumes) assert.match(v, /:ro$/, v);
   assert.equal(argv[argv.indexOf("--network") + 1], "none");
-  const judgeFiles = ["judge-guard.mjs", "bin/node", "judge-view.sh"];
+  const judgeFiles = ["judge-guard.mjs", "bin/node", "bin/turbo", "judge-view.sh"];
   assert.deepEqual(Object.keys(kindFiles("gate")), ["gate.sh", "licence-check.mjs", ...judgeFiles]);
   assert.equal(kindFiles("gate")["gate.sh"], gateScript());
   assert.deepEqual(Object.keys(kindFiles("mobile")), [
@@ -6160,12 +6174,29 @@ function guardFixture() {
     ].join("\n"),
     "eval.mjs":
       'try { eval("1"); console.log("eval ran"); } catch (error) { console.log(error.name); }\n',
+    "argv.mjs":
+      "console.log(process.argv[0] === process.execPath ? 'argv0 is execPath' : process.argv[0]);\n",
+    // native addons (round 6, M2): the tree's never loads; the judge image's copy at that path does
+    "native.cjs": [
+      "const [how, file] = process.argv.slice(2);",
+      "try {",
+      '  if (how === "dlopen") process.dlopen({ exports: {} }, file);',
+      "  else require(file);",
+      '  console.log("LOADED");',
+      "} catch (error) {",
+      '  console.log(error.message.split("\\n")[0]);',
+      "}",
+      "",
+    ].join("\n"),
+    "node_modules/natpkg/addon.node": "not an addon",
+    "node_modules/judged/addon.node": "not an addon either",
   });
   putFiles(root, {
     "main.mjs": "",
     "main.cjs": "",
     "resolve.cjs": "",
     "changed.mjs": say("main's changed"),
+    "node_modules/judged/addon.node": "main's bytes, not an addon",
     "equal.mjs": say("generated"),
     "dist/built.mjs": say("main's build"),
     "node_modules/pkg/package.json": '{"name":"pkg","type":"module","exports":"./index.mjs"}',
@@ -6185,6 +6216,8 @@ function guardFixture() {
       "plugin.mjs",
       "spawn.mjs",
       "eval.mjs",
+      "argv.mjs",
+      "native.cjs",
     ]
       .map((p) => `${p}\0`)
       .join(""),
@@ -6261,6 +6294,44 @@ test("judge guard: a judge runs main's files only; the tree's own code never run
       encoding: "utf8",
     });
     assert.equal(viaNode.stdout, "EvalError\n", viaNode.stderr);
+    // argv[0] is the guarded node too (round 6, L1)
+    assert.equal(g.run(join(g.tree, "argv.mjs")).stdout, "argv0 is execPath\n");
+    // the tree's native addon never loads, by dlopen or require; one the judge image has loads from there (M2)
+    for (const how of ["dlopen", "require"]) {
+      const addon = join(g.tree, "node_modules/natpkg/addon.node");
+      const refused = g.run(join(g.tree, "native.cjs"), how, addon);
+      assert.match(
+        refused.stdout,
+        /never loads the tested tree's addon node_modules\/natpkg\/addon\.node/,
+        how,
+      );
+      const judged = g.run(
+        join(g.tree, "native.cjs"),
+        how,
+        join(g.tree, "node_modules/judged/addon.node"),
+      );
+      assert.ok(
+        judged.stdout.includes(join(g.root, "node_modules/judged/addon.node")),
+        `${how}: ${judged.stdout}`,
+      );
+      assert.doesNotMatch(judged.stdout, /LOADED|never loads/, how);
+    }
+    // a guard for another tree applies too, even after the judge's own loaded (round 6, M1: validate's self-tests)
+    const other = join(g.dir, "other");
+    putFiles(other, { "pr.mjs": 'process.stdout.write("OTHER PR RAN\\n");\n' });
+    const otherList = join(g.dir, "other-paths");
+    writeFileSync(otherList, "");
+    const otherGuard = join(g.dir, "other-guard.mjs");
+    const otherConfig = { tree: other, root: join(g.dir, "nowhere"), mainList: otherList };
+    writeFileSync(otherGuard, `(${judgeGuard.toString()})(${JSON.stringify(otherConfig)});\n`);
+    const nested = spawnSync(
+      process.execPath,
+      ["--import", join(g.dir, "guard.mjs"), "--import", otherGuard, join(other, "pr.mjs")],
+      { cwd: other, encoding: "utf8" },
+    );
+    assert.notEqual(nested.status, 0);
+    assert.doesNotMatch(nested.stdout, /OTHER PR RAN/);
+    assert.match(nested.stderr, /never runs the tested tree's pr\.mjs/);
     // once loaded, the guard stays: a second import does not reset it
     assert.match(judgeGuardSource(), /^\/\/ Generated by tools\/scripts\/stackra-verify\.mjs/);
     assert.match(
@@ -6398,14 +6469,14 @@ test("B runJob: prepare, the judge view and the shared view, then one container 
       assert.equal(env, step.evalAllowed ? "/runs/x/judge-eval.env" : "/runs/x/judge.env", step.id);
       assert.match(
         work,
-        /^type=volume,source=sv-[\w-]+-work-[01],target=\/work,volume-subpath=work$/,
+        /^type=volume,source=sv-[\w-]+-work-[012],target=\/work,volume-subpath=work$/,
         step.id,
       );
       assert.ok(run.includes(`/runs/x/bin/node:${IMAGE_NODE}:ro`), step.id);
       assert.ok(judgeMount, step.id);
       assert.equal(
         imageOf(run),
-        `stackra-verify-run:${id}-${step.shared ? "shared" : "view"}`,
+        `stackra-verify-run:${id}-${step.view ?? (step.shared ? "shared" : "view")}`,
         step.id,
       );
     } else {
@@ -6425,11 +6496,16 @@ test("B runJob: prepare, the judge view and the shared view, then one container 
     lint.some((a) => a.includes(".tar:/in/") && !a.startsWith(`${TAR}:`)),
     false,
   );
-  // one noexec /work volume per view, made from that view's image
+  // one noexec /work volume per view, made from that view's image; licence-policy's is the prepared tree (H2)
   assert.deepEqual(calls.volumes, [
-    [`stackra-verify-run:${id}-view`, `sv-${id}-work-0`],
-    [`stackra-verify-run:${id}-shared`, `sv-${id}-work-1`],
+    [`stackra-verify-run:${id}-base`, `sv-${id}-work-0`],
+    [`stackra-verify-run:${id}-view`, `sv-${id}-work-1`],
+    [`stackra-verify-run:${id}-shared`, `sv-${id}-work-2`],
   ]);
+  assert.deepEqual(
+    GATE_STEPS.filter((step) => step.view).map((step) => [step.id, step.view]),
+    [["licence-policy", "base"]],
+  );
 });
 
 test("B runJob: a failing step fails the run and every later step still runs; a step that never started is an error", async () => {
@@ -6666,4 +6742,295 @@ test("header: the step audit covers every gate step, names the one eval exceptio
   const goLive = header.slice(header.indexOf("Go-live, before the ruleset swap"));
   assert.match(goLive, /STA-2781/);
   assert.match(goLive, /The ruleset swap also waits until STA-2788 has merged/);
+});
+
+/** Any bash will do for the view and prepare scripts (no bash 4 feature); the gate script needs BASH (4 or later). */
+const ANY_BASH = BASH ?? "/bin/bash";
+
+test("round 6 H2: prepare refuses every file outside node_modules the tested tree does not have, naming each", () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-planted-")));
+  const tree = join(dir, "tree");
+  const work = join(dir, "work");
+  putFiles(tree, {
+    "knip.jsonc": "{}\n",
+    "packages/a/src/x.ts": "export {};\n",
+    "packages/a/.oxlintrc.json": "{}\n",
+  });
+  const tar = join(dir, "src.tar");
+  // as git archive writes it: paths without a ./ prefix
+  assert.equal(spawnSync("tar", ["-cf", tar, "-C", tree, "knip.jsonc", "packages"], {}).status, 0);
+  const run = () => {
+    rmSync(work, { recursive: true, force: true });
+    mkdirSync(work, { recursive: true });
+    return (files) => {
+      putFiles(work, files);
+      assert.equal(spawnSync("tar", ["-xf", tar, "-C", work]).status, 0);
+      return spawnSync("sh", ["-c", `cd "${work}"; ${plantedCheck(dir)}; echo clean`], {
+        encoding: "utf8",
+      });
+    };
+  };
+  try {
+    // what install writes under node_modules (any depth) and the install's .git are not the tree's business here
+    const clean = run()({
+      "node_modules/.modules.yaml": "x\n",
+      "packages/a/node_modules/.bin/tsc": "x\n",
+      ".git/HEAD": "ref\n",
+    });
+    assert.equal(clean.status, 0, clean.stderr);
+    assert.match(clean.stdout, /^clean$/m);
+    // anything else install left behind is refused: a knip.json that beats main's knip.jsonc, a nested ignore file,
+    // a squawk config, generated files the view would not overwrite
+    const planted = run()({
+      "knip.json": '{"ignore":["**"]}\n',
+      "packages/a/.gitignore": "*\n",
+      ".squawk.toml": "x\n",
+      "packages/a/.stackra/vitest.config.mts": "process.exit(0)\n",
+    });
+    assert.equal(planted.status, PLANTED_EXIT, planted.stdout);
+    assert.deepEqual(
+      planted.stdout
+        .trim()
+        .split("\n")
+        .map((line) => line.replace(PLANTED_LINE, ""))
+        .toSorted(),
+      [
+        ".squawk.toml",
+        "knip.json",
+        "packages/a/.gitignore",
+        "packages/a/.stackra/vitest.config.mts",
+      ],
+    );
+    assert.doesNotMatch(planted.stdout, /clean/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("round 6 H2: a prepare that finds planted files is the PR's tree failure, naming them; no step runs", async () => {
+  const { deps, calls } = fakeDeps({ exits: { install: 0, verify: 0, base: PLANTED_EXIT } });
+  deps.readLog = () => `noise\n${PLANTED_LINE}knip.json\n${PLANTED_LINE}.squawk.toml\n`;
+  const r = await runJob(JOB, deps);
+  assert.equal(r.post, true);
+  assert.equal(r.conclusion, "failure");
+  assert.equal(r.phase, "tree");
+  assert.equal(
+    r.reason,
+    "the install wrote files the tested tree does not have: knip.json, .squawk.toml",
+  );
+  assert.equal(
+    calls.runs.some((run) => / --step /.test(run.at(-1))),
+    false,
+  );
+});
+
+/** A lockfile with one package `key` resolved as `resolution`. */
+const oneResolution = (resolution, key = "esbuild@0.25.0") =>
+  `lockfileVersion: '9.0'\n\nimporters:\n\n  .: {}\n\npackages:\n\n  ${key}:\n    resolution: ${resolution}\n\nsnapshots:\n\n  ${key}: {}\n`;
+
+test("round 6 H2: every lockfile resolution is a registry package under its own name; anything else is refused", () => {
+  const sri = "sha512-YWJj";
+  for (const ok of [
+    `{integrity: ${sri}}`,
+    `{integrity: ${sri}, tarball: https://registry.npmjs.org/esbuild/-/esbuild-0.25.0.tgz}`,
+    `{integrity: ${sri}, tarball: https://npm.stackra.figentra.com/esbuild/-/esbuild-0.25.0.tgz}`,
+  ])
+    assert.deepEqual(lockfileResolutionProblems(oneResolution(ok)), [], ok);
+  assert.deepEqual(
+    lockfileResolutionProblems(
+      oneResolution(
+        `{integrity: ${sri}, tarball: https://registry.npmjs.org/@s/x/-/x-1.0.0.tgz}`,
+        "'@s/x@1.0.0'",
+      ),
+    ),
+    [],
+  );
+  for (const [bad, why] of [
+    // another package's tarball on an allowed registry: what an allowed build would run is the PR's choice
+    [
+      `{integrity: ${sri}, tarball: https://registry.npmjs.org/evil/-/evil-1.0.0.tgz}`,
+      /not esbuild@0\.25\.0 on a package registry/,
+    ],
+    [
+      `{integrity: ${sri}, tarball: https://evil.example/esbuild/-/esbuild-0.25.0.tgz}`,
+      /not esbuild@0\.25\.0 on a package registry/,
+    ],
+    [
+      `{integrity: ${sri}, tarball: http://registry.npmjs.org/esbuild/-/esbuild-0.25.0.tgz}`,
+      /not esbuild@0\.25\.0/,
+    ],
+    ["{directory: packages/evil, type: directory}", /not a registry package \(directory, type\)/],
+    ["{type: git, repo: https://github.com/x/y, commit: abc}", /not a registry package/],
+    [
+      `{tarball: https://registry.npmjs.org/esbuild/-/esbuild-0.25.0.tgz}`,
+      /not a registry package/,
+    ],
+    ["", /is not an \{integrity: …\} entry/],
+  ])
+    assert.match(lockfileResolutionProblems(oneResolution(bad)).join(), why, bad);
+  // main's own lockfile has no such resolution
+  assert.deepEqual(
+    lockfileResolutionProblems(readFileSync(join(CODE_DIR, "pnpm-lock.yaml"), "utf8")),
+    [],
+  );
+});
+
+test("round 6 H2: buildTree refuses a lockfile that installs a tarball the PR chose", () => {
+  const repo = treeRepo();
+  try {
+    const sha = repo.pr({
+      "pnpm-lock.yaml":
+        "lockfileVersion: '9.0'\n\nimporters:\n\n  .: {}\n\n  packages/a: {}\n\n  packages/b: {}\n\npackages:\n\n  esbuild@0.25.0:\n    resolution: {integrity: sha512-YWJj, tarball: https://registry.npmjs.org/evil/-/evil-1.0.0.tgz}\n\nsnapshots:\n\n  esbuild@0.25.0: {}\n",
+    });
+    assert.throws(
+      () => repo.build(sha),
+      (error) =>
+        error.refused === true &&
+        error.message.includes("esbuild@0.25.0's resolution is a tarball"),
+    );
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+/** A symlink at `from` under `base`, to `to`. */
+const linkAt = (base, from, to) => {
+  mkdirSync(dirname(join(base, from)), { recursive: true });
+  symlinkSync(to, join(base, from));
+};
+
+test("round 6 H1/H2: the judge view makes every registry package main has main's copy, gate tools included; workspace links stay; bins are main's, turbo guarded", () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-view6-")));
+  const root = join(dir, "judge");
+  const tree = join(dir, "work");
+  try {
+    const tools = [...new Set([...GATE_TOOL_PACKAGES, "zod", "@s/only-pr"])];
+    for (const base of [root, tree]) {
+      for (const name of tools) {
+        if (base === root && name === "@s/only-pr") continue;
+        const store = `node_modules/.pnpm/${name.replace("/", "+")}@1/node_modules/${name}`;
+        putFiles(base, {
+          [`${store}/package.json`]: `{"name":"${name}","where":"${base === root ? "main" : "PR"}"}`,
+        });
+        linkAt(base, `node_modules/${name}`, join(base, store));
+      }
+      putFiles(base, {
+        "packages/x/package.json": "{}\n",
+        "node_modules/.bin/knip": "",
+        "node_modules/.bin/turbo": "",
+      });
+      linkAt(base, "node_modules/@stackra/x", join(base, "packages/x"));
+    }
+    const r = spawnSync(ANY_BASH, ["-c", judgeViewScript(root, tree)], { encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    for (const name of tools.filter((n) => n !== "@s/only-pr")) {
+      assert.equal(
+        readlinkSync(join(tree, "node_modules", name)),
+        join(root, "node_modules", name),
+        name,
+      );
+      assert.match(
+        readFileSync(join(tree, "node_modules", name, "package.json"), "utf8"),
+        /"where":"main"/,
+        name,
+      );
+    }
+    // a package main does not have stays as installed (data; the guard never runs it); a workspace link stays the tree's
+    assert.match(
+      readFileSync(join(tree, "node_modules/@s/only-pr/package.json"), "utf8"),
+      /"where":"PR"/,
+    );
+    assert.equal(realpathSync(join(tree, "node_modules/@stackra/x")), join(tree, "packages/x"));
+    // bins: each main's, turbo through the guarded turbo
+    assert.equal(
+      readlinkSync(join(tree, "node_modules/.bin/knip")),
+      join(root, "node_modules/.bin/knip"),
+    );
+    assert.equal(readlinkSync(join(tree, "node_modules/.bin/turbo")), "/in/bin/turbo");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("round 6 H1: the guarded turbo is main's and never infers a local turbo", () => {
+  assert.match(
+    judgeTurboSource(),
+    /^exec \/judge\/node_modules\/\.bin\/turbo --skip-infer "\$@"$/m,
+  );
+  assert.ok(Object.keys(kindFiles("gate")).includes("bin/turbo"));
+});
+
+test("round 6 H3: migration sources with nothing compiled fail migration-lint while STA-2788 is pending; off, ci.yml's pass", () => {
+  assert.equal(MIGRATION_LINT_REQUIRES_COMPILED, true);
+  const step = GATE_STEPS.find((s) => s.id === "migration-lint");
+  assert.equal(step.run, migrationLintRun(true));
+  assert.deepEqual(step.ciReplace, migrationLintCiReplace(true));
+  assert.ok(migrationLintRun(true).includes(MIGRATION_PENDING));
+  assert.equal(migrationLintRun(false).includes("STA-2788"), false);
+  assert.equal(migrationLintCiReplace(false).length, 1);
+  // the check itself (POSIX sh), in a tree with sources and none compiled, and in one with only fixtures
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "sv-pending-")));
+  try {
+    const check = (files) => {
+      rmSync(join(dir, "t"), { recursive: true, force: true });
+      putFiles(join(dir, "t"), files);
+      return spawnSync(
+        "sh",
+        [
+          "-c",
+          `cd "${join(dir, "t")}"; check() {\n${MIGRATION_PENDING}\n}; check; echo nothing-pending`,
+        ],
+        {
+          encoding: "utf8",
+        },
+      );
+    };
+    const pending = check({
+      "services/a/src/node/database/migrations/0001-a.migration.ts": "x",
+      "services/a/src/node/database/migrations/0002-b.migration.ts": "x",
+    });
+    assert.equal(pending.status, 1);
+    assert.match(
+      pending.stdout,
+      /^::error title=STA-2788 pending::2 migration sources not linted/m,
+    );
+    const fixtures = check({
+      "packages/developer/gen/__golden__/x/a.migration.ts": "x",
+      "packages/a/__tests__/b.migration.ts": "x",
+      "node_modules/@s/x/src/c.migration.ts": "x",
+    });
+    assert.equal(fixtures.status, 0, fixtures.stdout);
+    assert.match(fixtures.stdout, /nothing-pending/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("round 6 L3: the gate never runs its judges without the judge image; mobile's licence judge does", async () => {
+  const { deps, calls } = fakeDeps({});
+  delete deps.judgeImage;
+  const r = await runJob(JOB, deps);
+  assert.deepEqual(
+    [r.post, r.error],
+    [false, "no judge image: the gate's judges never run with the tree's tools"],
+  );
+  assert.equal(
+    calls.runs.some((run) => / --step /.test(run.at(-1))),
+    false,
+  );
+  const mobile = fakeDeps({});
+  delete mobile.deps.judgeImage;
+  assert.equal((await runJob({ ...JOB, kind: "mobile" }, mobile.deps)).conclusion, "success");
+});
+
+test("round 6 L4: the judge image builds main's computed judge members; a lockfile without them is refused", () => {
+  const lockText = readFileSync(join(CODE_DIR, "pnpm-lock.yaml"), "utf8");
+  const roots = judgeBuildRoots(lockText);
+  for (const root of JUDGE_ROOTS) assert.ok(roots.includes(root), root);
+  assert.ok(roots.length > JUDGE_ROOTS.length);
+  assert.throws(() => judgeBuildRoots("lockfileVersion: '9.0'\n"), /names no importer/);
+  assert.throws(
+    () => judgeBuildRoots("lockfileVersion: '9.0'\n\nimporters:\n\n  .: {}\n"),
+    /has no importer packages\/developer\/cli/,
+  );
 });
