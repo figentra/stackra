@@ -42,7 +42,7 @@ schema. Claude Code runs the agents; Stackra only writes its files.
 | Versions and catalogs                 | PASS   | no new dependency; changesets minor for `@stackra/mcp` and `@stackra/cli`         |
 | Deploy modes (ADR 0076)               | PASS   | nothing deployed                                                                  |
 | Licence tier (ADR 0077)               | PASS   | free, MIT                                                                         |
-| Docs and ADRs                         | PASS   | guide plus amendment notes on ADR 0016, 0282, 0503                                |
+| Docs and ADRs                         | PASS   | guide; new ADR 0535 (Proposed), forward notes on ADR 0282 and 0016                |
 
 ## Deploy modes
 
@@ -90,6 +90,15 @@ schema. Claude Code runs the agents; Stackra only writes its files.
  stackra agents <cmd> (CLI)  ==  stackra mcp tools agents_<cmd> (toolsOf, same definition and --json document)
 ```
 
+### Dependency boundary (ruling R1)
+
+This design relies on the behaviour of Stackra's workflow tooling, named by what it does: the spec gate (stage and
+trace checks), the sync that projects `.agents/` into `.claude/` and `.opencode/`, and the guard hooks in
+`.agents/hooks`. It relies on nothing in the retired Flow console and on nothing specific to the `@figentra-oss` scope or
+the `fflow` command name. Today that behaviour ships as `fflow`; the CTO recommends folding it into the `stackra` CLI,
+and the owner has not confirmed. Either way this work only takes over one behaviour, the agent and skill projection
+(T022); the gate and the guard stay where they are, and only command names in the docs change if the fold happens.
+
 ### Layer resolution algorithm
 
 1. **Load the stack.** Start at the target repository. Its `.agents/agents.yaml` (layer v1) names the product layer
@@ -99,9 +108,11 @@ schema. Claude Code runs the agents; Stackra only writes its files.
    with `--with-user` or the user scope. Each layer extends at most one layer; following `extends` past a layer already
    seen is `layer_cycle`. Order, nearest first: user, repo, product, base.
 2. **Fetch and pin.** A `path` source is read in place; a `package` source must be installed at the exact version
-   named; a `git` source needs a 40-hex commit and is read with `git archive` into
-   `~/.cache/stackra/agents/<sha>/` (no branch names, so an install is reproducible). Each layer's digest is the
-   SHA-256 of its canonical input (sorted paths, normalised line ends).
+   named; a `git` source needs a 40-hex commit: the commit is fetched shallow (`git fetch --depth 1 <url> <sha>`) into
+   a bare cache under `~/.cache/stackra/agents/` and read with `git archive <sha> <path>` (no branch names, so an install
+   is reproducible). The base is always a git source: platform/figentra at a commit of `origin/main` (R5); a package
+   source for it comes later through the registry. Each layer's digest is the SHA-256 of its canonical input (sorted
+   paths, normalised line ends).
 3. **Parse and validate each definition** against the schema major its `$schema` names (no `$schema` reads as v1 while
    v1 is the only major). Skill folders are validated with the skill schema; the roster through its adapter (step 3a).
    - 3a. **Roster adapter.** `team/roster.yml` `personas[]` becomes abstract agents in a layer named `figentra`: `id`,
@@ -239,10 +250,11 @@ packages/developer/cli/src/node/
 .agents/agents/lanes/l1-foundation.md … l8-template-pro.md
 .agents/README.md
 apps/docs/src/docs/agents/agents-install.mdx
-apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx       (amendment note)
-apps/docs/src/docs/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc.mdx (note on 9, 10)
-apps/docs/src/docs/adr/0503-figentra-flow-runs-the-development-workflow.mdx (note: the projection moves)
+apps/docs/src/docs/adr/0535-agent-schemas-layers-and-native-install.mdx   (new, Proposed; drafted with the spec)
+apps/docs/src/docs/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc.mdx (forward note)
+apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx       (forward note)
 apps/docs/src/docs/adr/index.mdx
+apps/docs/adr/numbers.yaml                                   (0535 reserved)
 .changeset/agents-install.md
 ```
 
@@ -278,6 +290,7 @@ mcpServers:
   - heroui-pro # a name the repository already configures
   - playwright: { command: npx, args: ["-y", "@playwright/mcp@0.0.41"] }
 claude: { isolation: worktree, maxTurns: 80, memory: project, background: false } # passthrough, documented only
+session: false # true: a session persona, started with `claude --agent <id>` (AC-036); may set claude.initialPrompt
 disabled: false
 metadata: { owns: ["lanes console-revamp"], escalatesTo: owner }
 ---
@@ -291,6 +304,7 @@ keyed by the heading's slug.
 | Field                         | Rule      | Detail                                                                                                                                              |
 | ----------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `$schema`                     | own       | each definition is read by its own major; the result is the internal model                                                                          |
+| `session`                     | replace   | a session persona renders `initialPrompt` from `claude.initialPrompt` (AC-036)                                                                      |
 | `id`, `extends`, `abstract`   | own       | never inherited; `abstract` defaults to false                                                                                                       |
 | `name`, `role`, `description` | replace   | nearest non-empty wins                                                                                                                              |
 | `persona.*`                   | keyed     | deep merge by key; each leaf replaces                                                                                                               |
@@ -403,11 +417,29 @@ install: { scope: project, target: claude }
       "allow": [],
       "mcpServers": ["heroui-pro"]
     }
-  }
+  },
+  "widenings": [
+    {
+      "confirmedBy": "<git user.name> <git user.email>",
+      "confirmedAt": "2026-11-25T10:42:07Z",
+      "changes": [
+        {
+          "agent": "console-builder",
+          "field": "tools.allow",
+          "before": ["Read"],
+          "after": ["Read", "Write"],
+          "layer": "academorix"
+        }
+      ]
+    }
+  ]
 }
 ```
 
-Entries are sorted by path then pointer; no time stamps (AC-019). `ceilings` is what the widening check compares with.
+Entries are sorted by path then pointer. `ceilings` is what the widening check compares with. `widenings` (R7,
+AC-035) is append-only: one record per confirmed widening, with who confirmed it (the terminal's git identity, as a
+commit author records it), when (UTC) and each change; it is the only time stamp in the file, so a run with no
+widening stays byte-identical (AC-019). A user-scope manifest lives in the user folder and is never committed.
 
 ### Versioning (v1 and v2 side by side)
 
@@ -468,8 +500,11 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
   layer without a policy inherits its parent's, so a missing ceiling fails closed to the base.
 - **No self-grant.** A product agent cannot exceed its product layer's policy, which cannot exceed the base's; a repo or
   user override can narrow but never widen past the product's ceiling. Widening against the manifest needs an
-  interactive confirmation (D5); the MCP tools and `--no-interaction` runs refuse it. `bypassPermissions` is refused
-  everywhere; `auto` only when the base allows it.
+  interactive confirmation by a person at a terminal, recorded in the manifest (R7, AC-035); the MCP tools and
+  `--no-interaction` runs refuse it. `bypassPermissions` is refused everywhere; `auto` only when the base allows it.
+- **The base is governed where it lives.** A change to the company base layer is a reviewed pull request in
+  platform/figentra at risk R3, where the owner's approval sits; a product pins the base by commit, so a base change
+  reaches a product only when its layer file moves the pin, which `agents check` and review see.
 - **Scoped rules are enforced natively.** Layer rules go to `settings.json` `permissions` (Claude Code applies a
   settings deny to the main conversation and to subagents); an agent's own scoped deny or ask rules become its
   `PreToolUse` hook calling the rendered guard (AC-031), because `disallowedTools` with a specifier removes the whole
@@ -507,34 +542,51 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
 - **Proof** (AC-033): an end-to-end test installs a synthetic product layer extending a synthetic base into a fresh
   `git init` folder and checks the files; the recorded proof run uses the real Academorix layer on the Mac:
   `claude --agent <id> -p "…"`, its output pasted into the pull request.
-- **Consumers** (AC-034): the lane agents validate and install in this repository's own `agents check`.
+- **Widening record** (AC-035): a confirmed widening appends one record with the git identity, the UTC time and the
+  changes; a second run with no widening leaves the manifest byte-identical.
+- **Consumers** (AC-034, AC-036): the lane agents validate and install in this repository's own `agents check`; a
+  session persona renders `initialPrompt` and starts with `claude --agent <id>` in the proof run.
+- **Academorix migration** (AC-037): the follow-up in Academorix runs `stackra agents validate` and `diff` on its new
+  layer before install, and its recorded proof starts Lukas with `claude --agent lukas`.
+- **ADR** (AC-038): the docs build and the `adr-numbers` check (`stackra check`, config phase) pass with 0535.
 
 ## Rollout
 
 1. Merge behind nothing: the new commands are additive; `agents:sync` keeps rendering `.mcp.json` first and installs
    agents only when `.agents/agents.yaml` exists.
-2. Stackra adopts it: `.agents/agents.yaml`, the lane agents, then (after the leader's answer on `fflow`) the agent and
-   skill projection moves from `fflow sync` to `stackra agents sync`; the guard-paths message names the new command.
-3. Academorix follows in its own repository (a follow-up issue): its 38 agent files and 9 misplaced skill folders move
-   to the schema, extending the base; its `models.json` tiers become its layer's `models`.
-4. Minor changesets for `@stackra/mcp` and `@stackra/cli` in the next release; the schemas ship in the package.
+2. The leaders pull request lands in platform/figentra (with `tariq` renamed to `tarek`), and the base pin moves to
+   that `origin/main` commit.
+3. Stackra adopts it: `.agents/agents.yaml`, the lane agents (extending `tarek`), then the agent and skill projection
+   moves from the workflow tooling's sync to `stackra agents sync` (T022, by behaviour, R1); the guard-paths message
+   names the new command.
+4. Academorix follows in its own repository on its own issue (T026, AC-037): its 38 agent files become an `academorix`
+   product layer extending the base, its 9 skill folders move from `.agents/agents/` to `.agents/skills/`, its session
+   personas (Lukas, Selim and the others) become session personas, and its `models.json` tiers become its layer's
+   `models`.
+5. Minor changesets for `@stackra/mcp` and `@stackra/cli` in the next release; the schemas ship in the package.
+6. ADR 0535 moves from Proposed to Accepted with the Planned approval; the index rows change in that commit.
 
 ## Delegation and risk plan
 
-Claude only. R3: the resolver, ceilings, guard and planner tasks are security builders on Opus with an independent
-Opus review; renderers and commands on Sonnet. Two waves: core (T001 to T012), then commands, consumers, docs.
+Claude only. R3, big tier: two approval stops (ADR 0502), the leader's at Clarified and at Planned. The resolver,
+ceilings, guard and planner tasks are security builders on Opus with an independent Opus review; renderers and
+commands on Sonnet. Three waves: core (T001 to T012), IO and commands (T013 to T020), consumers and docs (T021 to
+T026).
 
 ## ADRs
 
-Amendment notes, dated 2026-11-25, citing the owner's ruling: ADR 0016 (the source of truth gains layers and a schema;
-`stackra agents sync` projects agents and skills), ADR 0282 decisions 9 and 10 (a product repository may now hold
-`.claude/agents`, `.claude/skills` and the manifest, written by `stackra agents install|sync`), ADR 0503 (the agent and
-skill projection leaves Flow).
+A new ADR, [0535](../../../apps/docs/src/docs/adr/0535-agent-schemas-layers-and-native-install.mdx) (Proposed
+2026-11-25, ruling R4), reserved in `apps/docs/adr/numbers.yaml`: agent definitions are schema'd data in layers, and
+`stackra agents` installs them into each tool's native files. It supersedes ADR 0282 decisions 9 and 10 for agent and
+skill files (0282 keeps them for everything else), amends ADR 0016 (layers and the schema) and ADR 0503 (the agent and
+skill projection moves to `stackra agents sync`, by behaviour). ADR 0282 and ADR 0016 carry forward notes now; the
+index rows change to "superseded" and "amended" when 0535 is accepted.
 
 ## Docs
 
 `apps/docs/src/docs/agents/agents-install.mdx` (layers, schema, merge table, the commands, conflict handling, the
-proof steps), `.agents/README.md`, the package `README.md` and `AGENTS.md`.
+widening record, the proof steps, the Academorix migration), `.agents/README.md`, the package `README.md` and
+`AGENTS.md`, ADR 0535.
 
 ## Harvest from the retired Flow console (read-only)
 
@@ -549,23 +601,22 @@ proof steps), `.agents/README.md`, the package `README.md` and `AGENTS.md`.
 | Scores are measured, never typed in; benchmark case shape (difficulty 1 to 5, a check)                                                        | `docs/skill-scoring.md` (formula v2), `shared/scoring.ts` | skill `evals` cases; a `score` field is refused                                                                          |
 | Not taken: prices, hiring counts, marketplace publishing, D1 tables, the nightly runner, appeals, step-up sessions, the sandbox network rules | the same files                                            | they need a runtime or a business model we no longer run; Claude Code and the repository are the runtime                 |
 
-## Open questions for the leader and the CTO
+## Rulings applied (2026-11-25, PR figentra/stackra#1080)
 
-1. **fflow.** "Retire Flow totally": does it cover `figentra/flow` and `@figentra-oss/flow` (the spec gate, `fflow
-sync`, the guard) or only the console? This plan moves only the agent and skill projection; the gates stay on `fflow`.
-2. **Tool names.** Keep the house `agents_list` (D1), or rename `toolsOf` output for this family to `agents.list`?
-3. **Base source.** Read `team/roster.yml` through the adapter (D3), or first convert the roster to layer v1 in
-   platform/figentra? And is the base fetched by git commit (D4) or published as a package?
-4. **Leadership personas.** Idris, Selim, Mira and Tariq are on the unmerged branch `team/leaders-v2-2026-11-23`;
-   who-handles-what names "Tarek · Stackra Lead", the session-persona note says "Tariq". Which name and which branch is
-   the base?
-5. **Schema hosting.** Who hosts `schemas.figentra.com` (after STA-2784's Cloudflare move), and does it need its own ADR?
-6. **ADR shape.** Amendment notes (D7) or a new ADR (which would make this the big tier with two stops)?
-7. **Widening.** Is an interactive confirmation enough (D5), or does widening need the owner's recorded approval like a
-   hotfix marker?
-8. **Uninstall.** Accept `agents:uninstall` as a seventh tool (D6)?
-9. **Academorix scope.** Do the session personas (Lukas, Selim) install as `claude --agent` main-thread agents, and do
-   the 9 skill folders under its `.agents/agents/` move to `.agents/skills/` in the follow-up?
+| #   | Question             | Ruling                                                                                                                 | Where it lands                                    |
+| --- | -------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| R1  | fflow (CTO)          | depend on the workflow tooling's behaviour (gate, sync, guard), never on the Flow console or the `@figentra-oss` scope | Dependency boundary; T022                         |
+| R2  | tool names (CTO)     | house convention, `agents_list` …                                                                                      | Contracts; AC-032                                 |
+| R3  | roster (CTO)         | `team/roster.yml` on `origin/main`; the leaders PR lands first; the lead is Tarek                                      | spec Dependencies; AC-016, AC-034; T007, T021     |
+| R4  | ADR (CTO)            | a new ADR, 0535; big tier with two stops; supersedes 0282 decisions 9 and 10                                           | ADRs; AC-038; T024                                |
+| R5  | base source (leader) | git commit pin of platform/figentra, through the roster adapter; a package later via the registry                      | step 2 of the algorithm; T007, T013               |
+| R6  | schema host (leader) | `$id`s on schemas.figentra.com (STA-2784's ADR); the schemas ship in `@stackra/mcp`                                    | AC-001; T002                                      |
+| R7  | widening (leader)    | interactive confirmation, recorded in the manifest (who, when, what); base changes are R3 PRs in platform/figentra     | Manifest v1; Security; AC-027, AC-035; T012, T014 |
+| R8  | uninstall (leader)   | `agents_uninstall` is the seventh tool                                                                                 | Contracts; AC-024, AC-032; T017                   |
+| R9  | Academorix (leader)  | session personas install as main-thread agents; the 9 skill folders move to `.agents/skills/`                          | AC-036, AC-037; T026                              |
+
+Still open, for the owner (not blocking this plan): whether fflow folds into the `stackra` CLI (R1 keeps this work
+independent of the answer).
 
 ## Complexity tracking
 

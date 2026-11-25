@@ -1,0 +1,76 @@
+---
+title: "0535 — Agent definitions are schema'd data in layers, installed into each tool's native files"
+description: "Proposed · 2026-11-25"
+---
+
+{/* Stackra file contract. Purpose: ADR 0535 (Proposed 2026-11-25, STA-2787): agents and skills are defined by versioned schemas, inherited across company, product, repo and user layers with fixed merge rules, and installed by `stackra agents` into Claude Code's native files. Boundary: decision text only; the design is `.agents/specs/sta-2787-agents-install/plan.md` and the code is `@stackra/mcp` and `@stackra/cli`. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0502; supersedes ADR 0282 decisions 9 and 10 for agent and skill files once accepted. */}
+
+<Note>
+  Proposed 2026-11-25 (STA-2787, spec `.agents/specs/sta-2787-agents-install/`). Nothing may rely on
+  it until it is accepted with the spec's Planned approval. When accepted it supersedes decisions 9
+  and 10 of [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) for agent
+  and skill files, and amends [0016](/adr/0016-agents-source-of-truth) and
+  [0503](/adr/0503-figentra-flow-runs-the-development-workflow).
+</Note>
+
+## Context
+
+The owner retired the Figentra Flow console on 2026-11-25 and asked for `stackra mcp` to install every persona and
+agent, with each product's `.agents/` holding its agents "by our schemas and inheritance". Today agent files are
+hand-kept Markdown per repository: Academorix's `.agents/` and `.claude/agents/` drifted (skill folders under
+`agents/`, untracked role files), the company roster of 30 personas in platform/figentra (`team/roster.yml`) has no
+generator, and Stackra's own agents come from a projection. ADR 0282 decision 9 says a project holds no
+`.claude/agents` or `.claude/skills`, and decision 10 limits `stackra agents sync|check` to `.mcp.json`; both block
+the owner's direction. Claude Code now reads subagents, skills, plugins, settings permissions and MCP servers from
+documented files, so no runtime of our own is needed.
+
+## Decision
+
+1. **Schemas.** Agent, skill, layer and install-manifest definitions follow versioned JSON Schemas with `$id`s under
+   `https://schemas.figentra.com/stackra/agents/<kind>/v<major>.json` (the STA-2784 address scheme). They are generated
+   from the zod schemas `@stackra/mcp` validates with and ship inside that package, so validation never needs the
+   network. A schema is closed per major; additive fields are revisions of the same major; a breaking change is a new
+   major read beside the old one through an upgrade function.
+2. **Layers.** Definitions come from four layers, nearest first: user, repo (`.agents/overrides/`), product (the
+   repository's `.agents/`), base (the company roster of platform/figentra, pinned by a 40-hex commit and read through
+   an adapter). A definition may `extends` one parent; cycles and chains deeper than 16 are refused.
+3. **Merge rules are fixed per field** (replace, append, keyed, deny-wins), listed in the spec's plan. Every deny is a
+   union over the whole chain and stack and cannot be removed below; every allow, permission mode and MCP server is
+   bounded by the ceiling (`policy`) of each layer on the chain; a layer without a policy inherits its parent's.
+4. **Install writes native files only.** `stackra agents install|sync` writes Claude Code's own formats: subagent
+   Markdown in `.claude/agents/`, skill folders in `.claude/skills/`, permission rules in `.claude/settings.json`, MCP
+   servers in `.mcp.yaml` (or `.mcp.json`), a generated guard hook for an agent's own scoped deny rules, or a plugin
+   folder. It records every path and settings entry in `.claude/stackra-agents.json`, is idempotent, refuses to
+   overwrite a hand edit without showing the diff, and uninstalls cleanly.
+5. **Widening needs a person.** Any install that gives an agent more than the last one did needs an interactive
+   confirmation at a terminal, recorded in the manifest (who, when, what). MCP tool calls and non-interactive runs
+   refuse it. A change to the company base is a reviewed pull request in platform/figentra at risk R3.
+6. **Commands and tools.** `stackra agents list|resolve|validate|diff|install|sync|uninstall|check` are CLI commands;
+   all but `check` are served by `stackra mcp` as `agents_list` … `agents_uninstall` (ADR 0282 decision 5, house names).
+7. **A project may hold installed agent files.** For agent and skill files this replaces ADR 0282 decisions 9 and 10:
+   a product repository may commit `.claude/agents/`, `.claude/skills/` and the install manifest, written only by
+   `stackra agents install|sync`. Everything else decisions 9 and 10 say stays in force.
+8. **Workflow tooling by behaviour.** Stackra relies on what its workflow tooling does (the spec gate, the projection,
+   the guard), not on a package name or the retired console; the agent and skill projection moves to
+   `stackra agents sync`.
+
+## Consequences
+
+- One definition of a persona serves every product; a product changes behaviour, not identity, and a fix in the base
+  reaches products when they move their pin.
+- Permission changes become reviewable diffs with a named source per rule; a hand edit is never lost silently.
+- Products depend on platform/figentra by commit, and the roster needs an adapter until it adopts the layer schema.
+- `stackra agents check` joins CI wherever a layer file exists; the Academorix layout is migrated in that repository.
+
+## Enforcement
+
+planned — `@stackra/mcp` validator and resolver (`validateDefinitions`, `resolveAgents`, `planInstall`) with tests;
+`stackra agents check` in `pnpm validate` and CI; the schema drift test beside the generated JSON Schemas; the
+`adr-numbers` check of `stackra check` for this page. Tracked by STA-2787.
+
+## Supersedes and sources
+
+`Supersedes: 0282` decisions 9 and 10, for agent and skill files only, when accepted. Amends 0016 and 0503. Sources:
+the owner's ruling of 2026-11-25; the CTO's six points and rulings R1 to R4 and the leader's rulings R5 to R9 on
+figentra/stackra#1080; `.agents/specs/sta-2787-agents-install/` (spec, plan, tasks); Claude Code's documentation
+(subagents, skills, plugins reference, settings, permissions, MCP), read 2026-11-25.

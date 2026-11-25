@@ -4,11 +4,14 @@
 
 **Created**: 2026-11-25
 
-**Status**: Planned
+**Status**: Clarified — approval requested from the leader
 
-**Tier**: feature
+**Tier**: big
 
-**Approver**: leader (technical-only stop, under the owner's delegation)
+**Approver**: leader (technical-only stops, under the owner's delegation): the Clarified stop now, the Planned stop
+after the leader reads plan.md
+
+**ADR**: [0535](../../../apps/docs/src/docs/adr/0535-agent-schemas-layers-and-native-install.mdx) (Proposed); the tier is big because of the new ADR (CTO ruling R4, 2026-11-25)
 
 <!-- Specs are public on GitHub: no secrets, customer data or details of an unfixed vulnerability (ADR 0120 D17). -->
 
@@ -34,10 +37,12 @@ Academorix and Stackra's own lanes as the first consumers.
   `:` becomes `_` in its name)
 - `packages/developer/cli/src/node/commands/agents-sync.command.ts`, `agents-check.command.ts`,
   `constants/mcp-command.constant.ts`, `functions/install-item.function.ts`, `functions/line-diff.function.ts`
-- `.agents/README.md`, `.agents/models.yaml`, `.agents/agents/*.md` (today projected by `fflow sync`)
+- `.agents/README.md`, `.agents/models.yaml`, `.agents/agents/*.md` (today projected by the workflow tooling's sync,
+  `fflow sync`)
 - ADR 0016 (agents source of truth), 0282 (decisions 5, 9 and 10), 0453 (decision 11), 0502, 0503
 - The company roster: `platform/figentra` `team/roster.yml` on `origin/main` (commit 71349c3, 30 personas,
-  `version: 1`); the four leadership personas are on the unmerged branch `team/leaders-v2-2026-11-23`
+  `version: 1`); the four leadership personas are on the unmerged branch `team/leaders-v2-2026-11-23`, where the
+  Stackra lead is still `tariq` (the canonical name is Tarek)
 - Academorix (read-only): `.agents/agents/` (38 agent files, a README, a status note and 9 skill folders),
   `.agents/models.json` (tiers economy, standard, frontier), `.claude/agents/` (11 files),
   `.claude/stackra-lane-prompts.md` (lanes L1 to L8), `.claude/who-handles-what.md` (the session personas Idris,
@@ -64,22 +69,41 @@ Academorix and Stackra's own lanes as the first consumers.
   fresh repository and running one.
 - **Home**: the existing `stackra mcp`, the house way.
 
-### Defaults applied by the spec writer (ADR 0362 decision 3; the plan's open questions ask to confirm them)
+### Session 2026-11-25 (rulings on the draft's open questions, PR figentra/stackra#1080)
 
-- D1 MCP tool names follow the house rule (`toolsOf`: command `agents:list` is tool `agents_list`); the CTO's dotted
-  names are the capability names.
-- D2 The pure core lives in `@stackra/mcp`, the commands in `@stackra/cli`; no new package (a new package would make
-  this the big tier).
-- D3 The base layer reads `team/roster.yml` as it is today through an adapter; the roster adopts the schema later.
-- D4 A layer source is a local path, an installed package at an exact version, or a git repository at a 40-hex commit.
-- D5 Widening (a new allow rule, a higher permission mode, a new MCP server or a lifted ceiling) needs a person at an
-  interactive terminal; the MCP tools and non-interactive runs refuse it.
-- D6 Install also gets an `agents:uninstall` command, so the clean removal is one call.
-- D7 ADR 0282 decisions 9 and 10 and ADR 0016 are amended by note, not replaced by a new ADR.
+CTO (Idris):
+
+- **R1 fflow boundary**: this work depends on the BEHAVIOUR of Stackra's workflow tooling (the spec gate, the sync
+  that projects `.agents/` into `.claude/`, the guard hooks), never on the retired Flow console and never on the
+  `@figentra-oss` scope or the `fflow` package name. The CTO recommends to the owner that fflow fold into the `stackra`
+  CLI; the owner has not confirmed, so nothing here assumes either outcome.
+- **R2 tool names**: `@stackra/mcp`'s house convention: command `agents:list` is tool `agents_list` (`toolsOf`).
+- **R3 base**: platform/figentra's `team/roster.yml` on `origin/main`. The leaders branch
+  (`team/leaders-v2-2026-11-23`) lands through its own pull request first, and is a dependency of this work. The
+  canonical Stackra lead name is **Tarek**.
+- **R4 ADR**: a new ADR (0535), not amendment notes. It supersedes ADR 0282 decisions 9 and 10 for agent and skill
+  files, with links both ways. This makes the spec the big tier: two stops, after Clarified and after Planned.
+
+Leader:
+
+- **R5 base source**: the base layer is fetched by a 40-hex git commit of platform/figentra and read through the roster
+  adapter (no conversion yet); a published package comes later through the registry, after STA-2784.
+- **R6 schema host**: `$id`s use `https://schemas.figentra.com/stackra/agents/…` (STA-2784's address scheme, whose ADR
+  covers the host); the schemas ship inside `@stackra/mcp`, so validation never needs the network.
+- **R7 widening**: a person confirms at an interactive terminal, and the install manifest records who, when and what
+  widened. A change to the company base itself is a reviewed pull request in platform/figentra (risk R3), which is where
+  the owner's approval sits.
+- **R8 uninstall**: `agents_uninstall` is the seventh tool.
+- **R9 Academorix**: Lukas, Selim and the other session personas install as main-thread agents (`claude --agent`);
+  its 9 skill folders under `.agents/agents/` move to `.agents/skills/`, as a consumer migration task (Academorix is
+  not edited by this work).
+
+Kept from the draft (not questioned): the pure core lives in `@stackra/mcp` and the commands in `@stackra/cli`; a layer
+source is a local path, an installed package at an exact version, or a git repository at a 40-hex commit.
 
 ## Impact
 
-- **Apps touched**: apps/docs (the guide and three ADR amendment notes)
+- **Apps touched**: apps/docs (the guide, the new ADR 0535, a forward note on ADR 0282, the ADR index)
 - **Services touched**: none
 - **Packages touched**: packages/developer/mcp (the schemas, the resolver, the renderers, the install planner, the
   file IO); packages/developer/cli (six commands and the existing `agents:sync` and `agents:check`)
@@ -92,12 +116,14 @@ Academorix and Stackra's own lanes as the first consumers.
   server entries are validated, widening needs a person. Agent and roster files carry no personal data and no secret
   values (names only)
 - **Secrets**: none read or written; an MCP entry names a secret as `${NAME}` only
-- **ADR needed**: amendment notes on ADR 0016, ADR 0282 (decisions 9 and 10) and ADR 0503 (the projection moves)
+- **ADR needed**: yes, a new ADR: 0535 (Proposed; supersedes ADR 0282 decisions 9 and 10 for agent and skill files,
+  amends ADR 0016 and ADR 0503); its number is reserved in `apps/docs/adr/numbers.yaml`
 - **New dependencies**: none (zod and yaml are already the package's)
 - **Deploy modes**: none deployed; developer workstation and CI only
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none (CLI and MCP output)
-- **Docs to update**: a guide `apps/docs/src/docs/agents/agents-install.mdx`, `.agents/README.md`, the three ADRs
+- **Docs to update**: a guide `apps/docs/src/docs/agents/agents-install.mdx`, `.agents/README.md`, ADR 0535, ADR 0282
+  (forward note), ADR 0016 (forward note), the ADR index
 - **Lane**: full
 - **Change risk**: R3 (writes permission configuration that every agent session obeys)
 
@@ -154,8 +180,9 @@ Academorix and Stackra's own lanes as the first consumers.
   and every list element, the layer, file and line it came from.
 - **AC-015**: WHEN an agent's `model` names a tier THE resolver SHALL map it through the nearest layer whose `models`
   map defines that tier, and SHALL refuse an unmapped tier with `unknown_model_tier`.
-- **AC-016**: THE base layer adapter SHALL read the company roster `team/roster.yml` (`version: 1`) as a base layer,
-  one abstract agent per persona, without a change to the roster file.
+- **AC-016**: THE base layer adapter SHALL read the company roster `team/roster.yml` (`version: 1`, platform/figentra
+  at a pinned commit of `origin/main`) as a base layer, one abstract agent per persona, the leadership personas
+  included once their pull request lands, without a change to the roster file.
 
 ### Installing
 
@@ -168,8 +195,9 @@ Academorix and Stackra's own lanes as the first consumers.
 - **AC-018**: WHEN `agents install` runs with the user scope THE command SHALL write the same agent and skill files
   under the Claude Code user folder (`CLAUDE_CONFIG_DIR`, else `~/.claude`) and SHALL NOT write any settings file.
 - **AC-019**: WHEN `agents install` runs twice with the same sources THE second run SHALL write no file and SHALL
-  report every path unchanged; every written file and the manifest SHALL be byte-identical across machines (no time
-  stamp, stable key and list order).
+  report every path unchanged; every written file and the manifest SHALL be byte-identical across machines (stable key
+  and list order, and no time stamp outside the widening records of AC-035, which change only when a person confirms
+  a widening).
 - **AC-020**: THE install SHALL record every written path with its SHA-256, every settings entry with its JSON
   pointer and value, and every layer with its source and digest in the manifest, written last.
 - **AC-021**: IF a path install would change differs from the hash the manifest recorded (a hand edit), or exists
@@ -210,6 +238,10 @@ Academorix and Stackra's own lanes as the first consumers.
   `PreToolUse` hook in the agent's frontmatter that runs the generated guard `.claude/hooks/stackra-agent-guard.mjs`,
   which SHALL deny (or ask) exactly the calls the rules match and SHALL fail closed on an unreadable rule file.
 
+- **AC-035**: WHEN a person confirms a widening THE install SHALL record in the manifest who confirmed it (the git
+  identity of the terminal, as a commit author records it), when (UTC, to the second) and each widening (agent, field,
+  before, after, layer), and SHALL keep earlier records.
+
 ### Tools and consumers
 
 - **AC-032**: THE local MCP (`stackra mcp`) SHALL serve `agents_list`, `agents_resolve`, `agents_validate`,
@@ -219,7 +251,16 @@ Academorix and Stackra's own lanes as the first consumers.
   extends the company base THE repository SHALL hold the product's agents in `.claude/agents/`, and
   `claude --agent <id>` SHALL start that agent (the proof run, recorded in the pull request).
 - **AC-034**: THE Stackra lanes L1 to L8 SHALL be agents in this repository's `.agents/agents/lanes/`, each extending
-  one abstract `stackra-lane` agent that holds their shared rules, and SHALL validate and install.
+  one abstract `stackra-lane` agent that holds their shared rules and extends the base persona `tarek`, and SHALL
+  validate and install.
+- **AC-036**: WHERE a definition is a session persona (`session: true`) THE install SHALL render it so that
+  `claude --agent <id>` starts it as the main session agent, with its `claude.initialPrompt` when it has one.
+- **AC-037**: WHEN Academorix migrates to the schema THE migration SHALL map its 38 agent files to agent definitions
+  of an `academorix` product layer extending the base, move its 9 skill folders from `.agents/agents/` to
+  `.agents/skills/`, install Lukas, Selim and its other session personas as session personas (AC-036), and change
+  nothing in Academorix through this work's pull requests.
+- **AC-038**: THE docs SHALL carry ADR 0535 (agent schemas, layers and the native install), reserved in
+  `apps/docs/adr/numbers.yaml` and listed in the ADR index, and ADR 0282 and ADR 0016 SHALL link forward to it.
 
 ## Out of scope
 
@@ -228,18 +269,32 @@ Academorix and Stackra's own lanes as the first consumers.
 - Layer-level hooks in `settings.json` (agent-level hooks are in scope through the frontmatter).
 - OpenCode, Kiro and Cursor targets (the schema keeps assistant-specific fields under `claude`, so a target can be added
   later without a v2).
-- Hosting `schemas.figentra.com` (the files ship in the npm package; hosting is a follow-up for the leader).
-- Changing the Academorix repository: its migration is a follow-up issue in that repository, built on this.
+- Hosting `schemas.figentra.com`: STA-2784's ADR covers the host; the files ship in `@stackra/mcp`, so validation
+  never needs the network.
+- Changing the Academorix repository: its migration (AC-037) runs in that repository, on its own issue.
+- Publishing the base layer as a package: it comes later through the registry, after STA-2784.
 
 ## Assumptions
 
 - Claude Code's documented formats of 2026-11-25 hold; unknown frontmatter fields are ignored by Claude Code, so a
   newer field never breaks an older Claude Code.
-- `fflow` keeps the spec gates until the leader rules on it (see the plan's open questions); only the agent and skill
-  projection moves to `stackra agents sync`.
+- Claude Code's `claude --agent <id>` starts a project agent as the main session (documented on the subagents page).
+
+## Dependencies
+
+- **The leaders pull request in platform/figentra lands first** (`team/leaders-v2-2026-11-23`, with the Stackra lead
+  renamed from `tariq` to the canonical `tarek`); the base pin then moves to that `origin/main` commit. T007, T013 and
+  T021 wait on it.
+- **Stackra's workflow tooling, by behaviour only** (R1): the spec gate, the sync that projects `.agents/` into
+  `.claude/`, and the guard hooks. This work relies on what they do, not on the `fflow` name, the `@figentra-oss`
+  scope or the retired Flow console; if the owner folds fflow into the `stackra` CLI, only command names in the docs
+  and T022 change.
+- **A change to the company base itself** is a reviewed pull request in platform/figentra at risk R3; the owner's
+  approval sits there, not in this repository.
 
 ## Status history
 
 - 2026-11-25 → Draft (STA-2787 session, from the owner's ruling and the CTO's six points)
-- 2026-11-25 → Clarified (the CTO's binding points; defaults D1 to D7 recorded above)
-- 2026-11-25 → Planned (plan.md) — approval requested from the leader
+- 2026-11-25 → Clarified (the CTO's six points; rulings R1 to R9 on PR figentra/stackra#1080; tier raised to big
+  with the new ADR 0535) — approval requested from the leader
+- plan.md and tasks.md are drafted ahead and wait for the Planned stop, after the leader reads them
