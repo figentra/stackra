@@ -431,3 +431,69 @@ test("bootstrap: a base without the list skips only the shrink comparison, with 
     rmSync(repo.dir, { recursive: true, force: true });
   }
 });
+
+test("a list the base has and HEAD deleted fails the step, never a bootstrap", () => {
+  const repo = gitRepo();
+  try {
+    repo.git("switch", "--quiet", "-c", "drop-list");
+    repo.git("rm", "--quiet", LIST);
+    repo.commit("delete the list");
+    const result = repo.run();
+    assert.equal(result.code, 1);
+    assert.match(
+      result.out,
+      /::error title=Squawk baseline::tools\/scripts\/squawk-baseline\.jsonc is missing at HEAD but the base revision [0-9a-f]{12} \(merge base with main\) has it: the list was deleted, renamed or moved/,
+    );
+    assert.doesNotMatch(result.out, /::notice/);
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("a list the base has and HEAD renamed fails, whichever path the step names", () => {
+  const repo = gitRepo();
+  try {
+    repo.git("switch", "--quiet", "-c", "rename-list");
+    repo.git("mv", LIST, "tools/scripts/squawk-waivers.jsonc");
+    repo.commit("rename the list");
+    const result = repo.run();
+    assert.equal(result.code, 1);
+    assert.match(result.out, /the list was deleted, renamed or moved/);
+    // Pointing the step at the new name does not make it a fresh list.
+    const out = sink();
+    const code = main(
+      [
+        "--baseline",
+        join(repo.dir, "tools/scripts/squawk-waivers.jsonc"),
+        "--root",
+        repo.dir,
+        join(repo.dir, "report.json"),
+      ],
+      { out, err: sink() },
+    );
+    assert.equal(code, 2);
+    assert.match(
+      out.text(),
+      /::error title=Squawk baseline::the list is tools\/scripts\/squawk-baseline\.jsonc, not tools\/scripts\/squawk-waivers\.jsonc/,
+    );
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("neither the base nor HEAD has the list: the bootstrap notice, and nothing is waived", () => {
+  const repo = gitRepo({ list: false });
+  try {
+    const result = repo.run();
+    assert.equal(result.code, 1);
+    assert.match(
+      result.out,
+      /::notice title=Squawk baseline::neither HEAD nor the base revision [0-9a-f]{12} \(merge base with main\) has tools\/scripts\/squawk-baseline\.jsonc: no finding is waived/,
+    );
+    assert.match(result.err, /a_0001_drop\.up\.sql:1: ban-drop-table: m/);
+    repo.report([]);
+    assert.equal(repo.run().code, 0);
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});

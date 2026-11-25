@@ -1,8 +1,8 @@
 # Stackra file contract:
-# Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
-#          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
+# Purpose: the Quality Gate, the one required check on every pull request to main, also run on demand
+#          (workflow_dispatch; there is no merge_group or push trigger, see `on:`): workflow lint, OSV dependency scan,
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
-#          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
+#          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync,
 #          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
 #          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
 #          build run for the members the change affects (turbo `--affected` against the base commit).
@@ -202,7 +202,9 @@ jobs:
       # list only shrinks) and any other finding fail the step. Main's list is the one at the merge base of HEAD and
       # the pull request's base SHA (else origin/main, else main), never HEAD~1; no merge base fails the step (the job
       # checks out with fetch-depth 0). Bootstrap: a merge base without the list (the change that adds it) skips only
-      # the shrink comparison, with a notice; every other check runs.
+      # the shrink comparison, with a notice; every other check runs. A list the merge base has and HEAD lacks
+      # (deleted, renamed or moved) fails the step; the script always runs, so no branch above (no compiled
+      # migrations included) passes without it.
       - name: Migration lint (Squawk)
         env:
           SQUAWK_BASE_SHA: ${{ github.event.pull_request.base.sha }}

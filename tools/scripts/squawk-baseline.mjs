@@ -11,7 +11,9 @@
  *          file is linted in full. The base revision is the merge base of HEAD and `--base-ref` (CI passes the pull
  *          request's base SHA), else of HEAD and `origin/main`, else `main` (`resolveBase`); none resolving fails the
  *          step (exit 2), never skips it. A base that resolves without the list (the change that adds it) skips only the
- *          shrink comparison, with a notice; every other check runs.
+ *          shrink comparison, with a notice; every other check runs. A list the base has and HEAD lacks (deleted,
+ *          renamed or moved) fails the step: bootstrap is only a base without the list; with neither, nothing is
+ *          waived.
  * Boundary: reads the baseline, the base revision's baseline (`git show`, in `--root`), the reports and the listed
  *           files; runs only `git merge-base`, `git cat-file` and `git show`, and writes nothing. Node built-ins
  *           only, so stackra/verify's judge image runs it as main's tool with no install; the baseline is JSONC (`//`
@@ -243,6 +245,9 @@ function git(cwd, args) {
   }
 }
 
+/** The one place the list lives, relative to the repository: a rename never makes a fresh, empty-based list. */
+export const BASELINE_PATH = "tools/scripts/squawk-baseline.jsonc";
+
 /** The refs the base falls back to when no `--base-ref` is given: main's tip on the remote, then locally. */
 export const DEFAULT_BASE_REFS = ["origin/main", "main"];
 
@@ -302,7 +307,6 @@ export function parseArgs(args) {
 export function main(args, { out = process.stdout, err = process.stderr } = {}) {
   try {
     const { baseline, baseRef, root, reports } = parseArgs(args);
-    const entries = parseBaseline(parseJsonc(readFileSync(baseline, "utf8")), baseline);
     // Fail closed: the shrink check needs a base revision; a missing one never skips it.
     const base = resolveBase(root, baseRef);
     if (base === undefined) {
@@ -313,10 +317,32 @@ export function main(args, { out = process.stdout, err = process.stderr } = {}) 
       return 2;
     }
     const listPath = relative(resolve(root), resolve(baseline)).split(sep).join("/");
-    const baseEntries = baselineAt(root, base.commit, listPath);
-    if (baseEntries === undefined)
+    if (listPath !== BASELINE_PATH) {
       out.write(
-        `::notice title=Squawk baseline::the base revision ${base.commit.slice(0, 12)} (merge base with ${base.target}) has no ${listPath}: the shrink comparison is skipped (the change that adds the list); every other check runs\n`,
+        `::error title=Squawk baseline::the list is ${BASELINE_PATH}, not ${listPath}: it is never renamed or moved\n`,
+      );
+      return 2;
+    }
+    const baseEntries = baselineAt(root, base.commit, listPath);
+    const where = `${base.commit.slice(0, 12)} (merge base with ${base.target})`;
+    // A list the base has and HEAD lacks was deleted, renamed or moved: never a bootstrap.
+    if (!existsSync(baseline) && baseEntries !== undefined) {
+      out.write(
+        `::error title=Squawk baseline::${listPath} is missing at HEAD but the base revision ${where} has it: the list was deleted, renamed or moved, and it only shrinks entry by entry; restore it\n`,
+      );
+      return 1;
+    }
+    // Neither has it: every finding is unwaived (the bootstrap with an empty list).
+    const entries = existsSync(baseline)
+      ? parseBaseline(parseJsonc(readFileSync(baseline, "utf8")), baseline)
+      : [];
+    if (!existsSync(baseline))
+      out.write(
+        `::notice title=Squawk baseline::neither HEAD nor the base revision ${where} has ${listPath}: no finding is waived\n`,
+      );
+    else if (baseEntries === undefined)
+      out.write(
+        `::notice title=Squawk baseline::the base revision ${where} has no ${listPath}: the shrink comparison is skipped (the change that adds the list); every other check runs\n`,
       );
     const findings = parseReports(
       reports.map((name) => ({ name, text: readFileSync(name, "utf8") })),
