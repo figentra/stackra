@@ -30,6 +30,9 @@
   branch push, pull request or merge queue trigger, and, in a job with no `environment:`, a deploy credential in its
   env or a `vars.*DEPLOY*` or deploy secret read in a step's env, `with:` or `run:`. Exceptions, with a reason, go
   in `WORKFLOW_TRIGGER_ALLOWED` in `@stackra/repo-checks`; it is empty.
+- No persistent self-hosted runner serves this repository: it is public, and a fork's pull request runs the fork's
+  own workflow file, which can name any runner label. Our machines run its CI only through single-use, per-job runners
+  on hosts that serve nothing else (CTO, 2026-11-25; STA-2785).
 - Third-party actions are pinned to a commit SHA, with the version in a comment.
 - The toolchain comes from `mise.toml`, so CI runs the same versions as a contributor.
 - Turborepo remote cache (STA-1393): every job that runs turbo first decrypts the sops scope `ci/build/turbo`, which
