@@ -198,6 +198,15 @@ document carries the same plan with `diff` strings, so an MCP client shows it as
   agent's rules from the rendered `.claude/hooks/stackra-agent-guard.rules.json`, matches the `PreToolUse` input with
   the documented rule forms (`Tool`, `Tool(prefix *)`, `Tool(exact)`, `mcp__server`, `mcp__server__tool`,
   `mcp__server__*`), answers deny or ask through the hook's JSON output, and denies when its rules cannot be read.
+  Run with `--base` from the `settings.json` hook entry, it applies the base's guard rules (G rows of the deny table):
+  it tokenises the command (splitting compound commands, stripping the documented wrappers and leading assignments,
+  following `cd <dir> &&` and `git -C <dir>`), recognises git's force flags, refspecs and branch deletions in any
+  position, and reads the current branch for `git reset --hard`. Every installed agent's frontmatter hook also runs it
+  with `--base`, so the base rules hold in subagents whether or not a settings hook reaches them.
+- `matchRule(rule, command)`: the one pure matcher of Claude Code's documented Bash rule semantics (everything before
+  the first `*` literal, `*` any text including spaces, a trailing ` *` also matches the bare command, `:*` as a
+  trailing wildcard), shared by the guard and the tests; its fixtures are the rows of the permissions page's own
+  wildcard table.
 
 ## Files and folders
 
@@ -228,6 +237,7 @@ packages/developer/mcp/
   src/core/agents/functions/render-settings-entries.function.ts
   src/core/agents/functions/render-mcp-servers.function.ts
   src/core/agents/functions/render-plugin.function.ts
+  src/core/agents/functions/match-rule.function.ts
   src/core/agents/functions/render-guard.function.ts
   src/core/agents/functions/plan-install.function.ts
   src/core/agents/functions/unified-diff.function.ts
@@ -352,38 +362,72 @@ out.
   `PowerShell`, `REPL`, `Workflow`, `WaitForMcpServers`, `EndConversation`, `SubagentHandback` (no product agent
   needs them today). A product that needs one asks for a base change.
 - **`maxMode`**: `acceptEdits`. `auto` is not in the table, so it is refused; `bypassPermissions` is refused always.
-- **`permissions.allow`** (the rules a product may put in `settings.json`; exact strings):
+- **`permissions.allow`** (the rules a product may put in `settings.json`; exact strings), CTO-narrowed 2026-11-25:
   - from Stackra's shared settings: `Bash(turbo *)`, `Bash(mint *)`, `Bash(docker ps*)`, `Bash(docker logs *)`,
     `Bash(docker compose *)`, `Bash(docker build *)`, `Bash(lefthook *)`, `Bash(gitleaks *)`, `Bash(oxfmt *)`,
-    `Bash(oxlint *)`, `Bash(shfmt *)`, `Bash(jq *)`, `Bash(pnpm *)`, `Bash(infisical *)`, `Bash(mise *)`,
-    `Bash(git *)`, `Bash(cd *)`, `Bash(node *)`, `Bash(npx *)`, `Bash(encore *)`, `Bash(wrangler *)`, `Bash(eas *)`;
-    the MCP rules `mcp__context7`, `mcp__heroui-react`, `mcp__heroui-native`, `mcp__uniwind`, `mcp__expo`,
-    `mcp__encore`, `mcp__encore-cloud`, `mcp__cloudflare-docs`, `mcp__cloudflare-api`, `mcp__resend-docs`,
-    `mcp__aws-knowledge`, `mcp__posthog`, `mcp__playwright`, `mcp__linear__get_*`, `mcp__linear__list_*`,
-    `mcp__linear__search_*`; and `WebFetch(domain:…)` for `code.claude.com`, `docs.anthropic.com`, `opencode.ai`,
-    `turborepo.com`, `pnpm.io`, `heroui.com`, `encore.dev`, `docs.expo.dev`, `mintlify.com`, `infisical.com`,
-    `developers.cloudflare.com`, `vitest.dev`, `github.com`, `raw.githubusercontent.com`, `ai-sdk.dev`, `linear.app`;
-  - from Academorix's shared settings:
-    `Bash(gh pr edit * -R academorix/academorix-legacy --add-label ready-to-merge)`. Flagged for the CTO: the roster
-    keeps high-risk labels with the owner, and `ready-to-merge` is the high-risk merge label, so the CTO decides
-    whether this rule stays in the base.
-  - Broad rules here (`Bash(git *)`, `Bash(infisical *)`, `Bash(npx *)`, `Bash(wrangler *)`) are bounded by the deny
-    table below and by each product's own deny and ask rules, which always win.
+    `Bash(oxlint *)`, `Bash(shfmt *)`, `Bash(jq *)`, `Bash(pnpm *)`, `Bash(mise *)`, `Bash(git *)`, `Bash(cd *)`,
+    `Bash(node *)`, `Bash(encore *)`, `Bash(wrangler *)`, `Bash(eas *)`; the MCP rules `mcp__context7`,
+    `mcp__heroui-react`, `mcp__heroui-native`, `mcp__uniwind`, `mcp__expo`, `mcp__encore`, `mcp__encore-cloud`,
+    `mcp__cloudflare-docs`, `mcp__cloudflare-api`, `mcp__resend-docs`, `mcp__aws-knowledge`, `mcp__posthog`,
+    `mcp__playwright`, `mcp__linear__get_*`, `mcp__linear__list_*`, `mcp__linear__search_*`; and `WebFetch(domain:…)`
+    for `code.claude.com`, `docs.anthropic.com`, `opencode.ai`, `turborepo.com`, `pnpm.io`, `heroui.com`, `encore.dev`,
+    `docs.expo.dev`, `mintlify.com`, `infisical.com`, `developers.cloudflare.com`, `vitest.dev`, `github.com`,
+    `raw.githubusercontent.com`, `ai-sdk.dev`, `linear.app`;
+  - in place of `Bash(npx *)` (arbitrary package execution, dropped): the tools the products' agents and skills
+    actually run through npx, by the lockfile-pinned `pnpm exec` form: `Bash(pnpm exec playwright *)`,
+    `Bash(pnpm exec expo *)`, `Bash(pnpm exec sanity *)` (Playwright and Expo in both repositories' skills, Sanity in
+    Academorix's). These are explicit for a product whose layer does not allow `Bash(pnpm *)`. A one-off tool outside
+    the lockfile is an exact rule in the product's own layer, `npx -y <tool>@<exact version> …`, never a wildcard on
+    the package.
+  - dropped: `Bash(infisical *)` (`infisical run` injects secrets into any command). A product that needs infisical
+    adds the exact command in its own layer, under its own ceiling.
+  - not in the base: `Bash(gh pr edit * -R academorix/academorix-legacy --add-label ready-to-merge)`. It is an
+    Academorix-layer rule (the owner's label rule of 18 Nov lets Academorix agents set `ready-to-merge`, one label per
+    train when it is ready) under Academorix's own ceiling, carried by the migration (T026, AC-037).
+  - Flagged for the CTO: `Bash(pnpm *)` still admits `pnpm dlx <package>`, which, like `npx`, fetches and runs a
+    package. Denying `Bash(pnpm dlx *)` in the base would close it; the table leaves it as ruled until the CTO says.
+  - The broad rules that stay (`Bash(git *)`, `Bash(wrangler *)`, `Bash(pnpm *)`) are bounded by the deny table
+    below and by each product's own deny and ask rules, which always win.
 - **`mcpServers.allow`** (the servers the products configure today): `aws-knowledge`, `betterstack`,
   `cloudflare-api`, `cloudflare-docs`, `context7`, `elevenlabs`, `encore`, `encore-cloud`, `expo`, `figma`, `github`,
   `heroui-native`, `heroui-native-pro`, `heroui-pro`, `heroui-react`, `linear`, `next-devtools`, `playwright`,
   `posthog`, `resend`, `resend-docs`, `sanity`, `sentry`, `stripe`, `uniwind`, and `stackra` (the local developer MCP
   this work serves). A new server needs a base pull request at risk R3.
-- **`policy.deny`** (the deny table; never removable below):
-  - secrets: `Read(//**/.env)`, `Read(//**/.env.*)`, `Read(//**/.dev.vars)`, `Read(//**/*.pem)`, `Read(//**/*.key)`,
-    `Read(~/.ssh/id_*)`, `Read(~/.aws/**)`, `Read(~/.config/gh/**)`, `Read(~/.git-credentials)`, `Read(~/.npmrc)`,
-    `Read(~/.netrc)`, `Bash(printenv*)`, `Bash(env)`, `Bash(infisical export*)`, `Bash(infisical secrets get*)`,
-    `Bash(infisical secrets set*)`, `Bash(infisical token*)`, `Bash(gh secret *)`, `Bash(encore secret set*)`,
-    `Bash(security find-generic-password*)`, `Bash(security find-internet-password*)`, `Bash(security dump-keychain*)`;
-  - production deploys: `Bash(encore deploy*)`;
-  - history rewrites: `Bash(git push --force*)`, `Bash(git push -f*)`, `Bash(git push *--force*)`;
-  - destructive deletes: `Bash(rm -rf /)`, `Bash(rm -rf / *)`, `Bash(rm -rf ~*)`, `Bash(rm -rf $HOME*)`;
-  - skipping the commit hooks: `Bash(LEFTHOOK=0*)`.
+- **`protectedBranches`**: `[main]`, the branches the git rules below protect.
+- **`policy.deny`** (the deny table; never removable below). Each row says where it is enforced:
+  **S** = a `settings.json` `permissions.deny` rule (Claude Code applies it to the main conversation and to
+  subagents); **G** = the generated guard (AC-031, AC-040), run as a `PreToolUse` hook for `Bash` from
+  `settings.json` and from every installed agent's frontmatter, for what a settings rule cannot express.
+  - secrets (S): `Read(//**/.env)`, `Read(//**/.env.*)`, `Read(//**/.dev.vars)`, `Read(//**/*.pem)`,
+    `Read(//**/*.key)`, `Read(~/.ssh/id_*)`, `Read(~/.aws/**)`, `Read(~/.config/gh/**)`, `Read(~/.git-credentials)`,
+    `Read(~/.npmrc)`, `Read(~/.netrc)`, `Bash(printenv*)`, `Bash(env)`, `Bash(infisical export*)`,
+    `Bash(infisical secrets get*)`, `Bash(infisical secrets set*)`, `Bash(infisical token*)`, `Bash(gh secret *)`,
+    `Bash(encore secret set*)`, `Bash(security find-generic-password*)`, `Bash(security find-internet-password*)`,
+    `Bash(security dump-keychain*)`;
+  - production deploys (S): `Bash(encore deploy*)`;
+  - destructive deletes (S): `Bash(rm -rf /)`, `Bash(rm -rf / *)`, `Bash(rm -rf ~*)`, `Bash(rm -rf $HOME*)`;
+  - skipping the commit hooks (S and G): `Bash(LEFTHOOK=0*)`; the guard is the authority, because Claude Code matches
+    rules past a leading variable assignment, and it also refuses `git commit --no-verify` and `-n`;
+  - history rewrites, any branch (S): `Bash(git filter-branch *)`, `Bash(git filter-repo *)` (a trailing ` *` also
+    matches the bare command);
+  - global git configuration (S): `Bash(git config --global *)`;
+  - force pushes to a protected branch (S for the shapes agents write, G for every shape): `Bash(git push --force * main)`,
+    `Bash(git push --force-with-lease * main)`, `Bash(git push -f * main)`, `Bash(git push * main --force)`,
+    `Bash(git push * main --force-with-lease)`, `Bash(git push * main -f)`, `Bash(git push * +main)`. The guard also
+    catches a force flag in any position, combined short flags (`-uf`), `--force-with-lease=<ref>`, `--force-if-includes`,
+    refspecs `HEAD:main`, `+HEAD:main`, `refs/heads/main`, and `git -C <dir>`, `git -c k=v` and wrapper forms;
+  - deleting a protected branch (S for the common shapes, G for all): `Bash(git push * :main)`,
+    `Bash(git push * --delete main)`, `Bash(git push --delete * main)`, `Bash(git push * -d main)`,
+    `Bash(git branch -d main)`, `Bash(git branch -D main)`, `Bash(git branch --delete main)`,
+    `Bash(git branch --delete --force main)`; the guard covers the remaining forms (`:refs/heads/main`, flags after
+    the name, several names);
+  - `git reset --hard` on a protected branch (G only): a settings rule cannot see the current branch, so the guard reads
+    it (`git rev-parse --abbrev-ref HEAD` in the command's effective directory, after `cd <dir> &&` or `-C <dir>`) and
+    denies when it is protected, detached on a protected branch's commit, or unknown (fail closed).
+  - Harmless neighbours stay allowed: `git push origin feature`, `git push --force-with-lease origin feature`,
+    `git push origin main` (no force), `git push --force origin main-backup`, `git branch -d feature`,
+    `git reset --hard` on a feature branch and `git config user.name …` all pass the deny table; the tests list
+    each one.
 
 ### Skill v1 (`.agents/skills/<name>/SKILL.md` plus supporting files)
 
@@ -572,7 +616,10 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
 - **Scoped rules are enforced natively.** Layer rules go to `settings.json` `permissions` (Claude Code applies a
   settings deny to the main conversation and to subagents); an agent's own scoped deny or ask rules become its
   `PreToolUse` hook calling the rendered guard (AC-031), because `disallowedTools` with a specifier removes the whole
-  tool. Note for the reader: a project `allow` waits for workspace trust, so allows never take effect silently.
+  tool. Rules a settings pattern cannot express (a force flag anywhere, the current branch) run in the same guard with
+  `--base`, wired from one `settings.json` `hooks.PreToolUse` entry (manifest-tracked) and from every agent's
+  frontmatter (AC-040). Settings rules are not a boundary around a program invoked another way (`/usr/bin/git`,
+  `sh -c`), as the permissions page says; the guard narrows that gap for git and the product's own rules do the rest. Note for the reader: a project `allow` waits for workspace trust, so allows never take effect silently.
 - **MCP entries** pass the `.mcp.yaml` rules (`unpinned_npx_server`, `secret_in_remote_server`, `secret_without_exec`),
   `https` only for remote hosts other than loopback, no reserved names, `${NAME}` references only, and the layer's
   `policy.mcpServers` list. A new server is a widening.
@@ -591,16 +638,30 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
 - **Resolver** (AC-009 to AC-016, P-002 to P-005, P-012): one test per merge-table row; cycle and depth; provenance
   for scalar, list element and section; tier mapping; disabled; the roster adapter against a copy of `roster.yml`'s
   shape (synthetic personas, no real channel rows).
-- **Base ceiling** (AC-039, P-013): `BASE_POLICY` checked row by row (each tool name is a documented built-in, each rule
-  parses as a Claude Code rule, no allow rule is also denied); a product layer with no policy resolves to the base's
-  explicit ceiling; an allow above it (a tool, a rule, a server, `auto` mode) is `above_ceiling`; a `--from` layer
-  with no parent and a missing ceiling is `no_ceiling`.
+- **Base ceiling** (AC-039, P-013): `BASE_POLICY` checked row by row: each tool name is a documented built-in; each
+  rule parses as a Claude Code rule; no allow rule is also denied, and no allow rule is wholly inside a deny rule
+  (`matchRule` on the allow rule's literal prefix); `Bash(npx *)`, `Bash(infisical *)` and the `ready-to-merge` rule
+  are absent; a product layer with no policy resolves to the base's explicit ceiling; an allow above it (a tool, a
+  rule, a server, `auto` mode) is `above_ceiling`; a `--from` layer with no parent and a missing ceiling is
+  `no_ceiling`.
+- **Deny table, both ways** (AC-039, AC-040): `matchRule` reproduces every row of the permissions page's wildcard
+  table. Each S rule matches its intended commands (`git push --force origin main`, `git push -f origin main`,
+  `git push origin main --force-with-lease`, `git push origin +main`, `git push origin :main`, `git filter-branch`,
+  `git filter-repo --path x`, `git config --global user.email x`) and none of the harmless neighbours
+  (`git push origin feature`, `git push --force-with-lease origin feature`, `git push origin main`,
+  `git push --force origin main-backup`, `git branch -d feature`, `git config user.name x`). The guard with `--base`
+  denies the shapes S misses (`git push origin HEAD:main -uf`, `git -C repo push --force origin main`,
+  `timeout 30 git push -f origin refs/heads/main`, `cd repo && git push --force-with-lease=main origin main`,
+  `git branch feature -D main`, `git commit --no-verify -m x`, `LEFTHOOK=0 git commit -m x`), and for
+  `git reset --hard` reads the branch from a temporary repository: denied on `main`, allowed on `feature`, denied when
+  the branch cannot be read.
 - **Generated cases** (P-002, P-003, P-004, P-013): a seeded generator (no new dependency) builds 500 random four-layer
   stacks; each is resolved in shuffled file order (same digest), with an extra random layer (no deny lost) and checked
   against its ceilings.
 - **Renderers** (AC-017, AC-018, AC-026, AC-031, P-001): golden files for a subagent, a skill with supporting files,
   settings entries merged into an existing file with unrelated keys, `.mcp.yaml` with comments kept, a plugin folder;
-  the guard script run against recorded `PreToolUse` inputs for each rule form and for an unreadable rule file.
+  the guard script run against recorded `PreToolUse` inputs for each rule form and for an unreadable rule file; the
+  `settings.json` guard entry merged and removed with the manifest.
 - **Planner and apply** (AC-019 to AC-025, AC-027, AC-030, P-006 to P-011): temporary git repositories: install twice
   (no write), hand edit then install (refused, nothing written, diff shown), `--keep`, `--overwrite`, `--as-override`
   round trip (the override reproduces the edit), interrupted apply then re-run, uninstall to a byte-identical tree,
@@ -629,7 +690,8 @@ value the validator classed as a secret. Codes: `unknown_field`, `invalid_value`
    names the new command.
 4. Academorix follows in its own repository on its own issue (T026, AC-037): its 38 agent files become an `academorix`
    product layer extending the base, its 9 skill folders move from `.agents/agents/` to `.agents/skills/`, its session
-   personas (Lukas, Selim and the others) become session personas, and its `models.json` tiers become its layer's
+   personas (Lukas, Selim and the others) become session personas, its layer carries the `ready-to-merge` label rule
+   under its own ceiling (not the base), and its `models.json` tiers become its layer's
    `models`.
 5. Minor changesets for `@stackra/mcp` and `@stackra/cli` in the next release; the schemas ship in the package.
 6. ADR 0537 moves from Proposed to Accepted with the Planned approval; the index rows change in that commit.
