@@ -165,38 +165,40 @@ jobs:
 
       # STA-2036: typecheck and the step above ran gen, so a committed contract that differs from what gen writes now
       # is stale: the member's hosts would read old identities from it (and from the package it is published in).
-      # STA-2788: so are the committed compiled migrations, which a deploy applies as committed, so the SQL Squawk lints
-      # below is the SQL that deploys: a changed or missing (untracked) file shows in git status, and a leftover one in
-      # each service's `stackra gen --check` (a turbo cache hit restores gen's files but never deletes one).
+      # STA-2788: so are the committed compiled migrations (a service's stream and its Encore copy, a package's own
+      # SQL, which it ships), which a deploy applies as committed, so the SQL Squawk lints below is the SQL that
+      # deploys: a changed or missing (untracked) file shows in git status, and a leftover one in `stackra gen --check`
+      # of each service and each package with migrations (a turbo cache hit restores gen's files but never deletes one).
       - name: Committed manifests match gen
         run: |
-          paths=('*stackra.manifest.json' '*src/node/entities.gen.ts' '*/.stackra/migrations/*.sql' '*/stackra-encore/*/migrations/*.sql')
+          paths=('*stackra.manifest.json' '*src/node/entities.gen.ts' '*/.stackra/migrations/*.sql' '*/stackra-encore/*/migrations/*.sql' '*/src/node/database/compiled-migrations/*.sql')
           stale=0
           if [ -n "$(git status --porcelain --untracked-files=all -- "${paths[@]}")" ]; then
             git status --short --untracked-files=all -- "${paths[@]}"
             stale=1
           fi
-          cli="$PWD/packages/developer/cli/dist/stackra.mjs"
-          for member in services/*/; do
-            grep -qs '"gen":' "${member}package.json" || continue
-            (cd "$member" && node "$cli" gen --check) || stale=1
-          done
+          export STACKRA_CLI="$PWD/packages/developer/cli/dist/stackra.mjs"
+          {
+            for member in services/*/; do grep -qs '"gen":' "${member}package.json" && echo "$member"; done
+            for member in packages/*/*/; do [ -d "${member}src/node/database/migrations" ] || [ -d "${member}src/node/database/compiled-migrations" ] && echo "$member"; done
+          } | xargs -P 4 -I {} sh -c 'cd "$1" && node "$STACKRA_CLI" gen --check' _ {} || stale=1
           if [ "$stale" -ne 0 ]; then
             echo "::error title=Stale generated files::run pnpm gen and commit the stackra.manifest.json, entities.gen.ts and compiled migration files above"
             exit 1
           fi
 
-      # ADR 0159 d3 (stackra-251): Squawk lints the SQL gen compiled into each service's .stackra/migrations. A file
-      # opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other file
-      # is linted as the runner applies it, inside one. Excluded rules are house decisions: no IF NOT EXISTS (the
+      # ADR 0159 d3 (stackra-251): Squawk lints the committed SQL gen compiled: each service's .stackra/migrations and
+      # each package's src/node/database/compiled-migrations, which a host's stream holds byte for byte (STA-2788). A
+      # file opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other
+      # file is linted as the runner applies it, inside one. Excluded rules are house decisions: no IF NOT EXISTS (the
       # checksummed history never re-runs a file), varchar and char(3) columns, integer counters.
       # 2.0.0 could not parse a schema-qualified GRANT/REVOKE (STA-2117). The runner sets lock and
       # statement timeouts per session (ADR 0159), so the files need no `set lock_timeout`.
       - name: Migration lint (Squawk)
         run: |
-          mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)
+          mapfile -t files < <(find . -path ./node_modules -prune -o \( -path '*/.stackra/migrations/*.up.sql' -o -path '*/src/node/database/compiled-migrations/*.up.sql' \) -print | sort)
           if [ "${#files[@]}" -eq 0 ]; then
-            echo "::notice title=Squawk::no compiled migrations (.stackra/migrations) in this checkout; nothing linted"
+            echo "::notice title=Squawk::no compiled migrations (.stackra/migrations, src/node/database/compiled-migrations) in this checkout; nothing linted"
             exit 0
           fi
           transactional=()
