@@ -19,6 +19,8 @@ project: stackra
 
 # ── Providers ────────────────────────────────────────────────────────────────────────────────────────
 providers:
+  encore:
+    app: stackra-nzk2
   cloudflare:
     # The account of workers/static/wrangler.jsonc (ADR 0284 decision 7).
     accountId: d861f9ac9df28b7f0b1298cc0c89bc9d
