@@ -369,8 +369,9 @@ export abstract class Journal<M extends object> extends Service {
    *
    * @returns `written` false when a pair was already applied; `belowFloor` true when an account would end below its
    *          floor; either way nothing was written.
-   * @throws UnbalancedPostingError when the lines do not sum to zero, are fewer than two, or are not in one currency
-   *         (a model with a currency field: every line names an ISO 4217 code and they all match).
+   * @throws UnbalancedPostingError when the lines do not sum to exactly zero (summed without rounding), are fewer than
+   *         two, or are not in one currency (a model with a currency field: every line names an ISO 4217 code and they
+   *         all match).
    * @throws TypeError when two lines share an (account, reference) pair.
    * @throws RangeError when an amount is not a safe integer.
    * @throws TypeError when a line's `extra` names a field the model's `@Journaled({ extra })` does not list.
@@ -381,14 +382,17 @@ export abstract class Journal<M extends object> extends Service {
     const fields = this.fields();
     for (const line of lines) extraOf(line, fields);
     const currencies = [...new Set(lines.map((line) => currencyOf(line, fields)))];
-    const total = lines.reduce((sum, line) => sum + line.amount, 0);
+    // Summed in BigInt: a floating-point sum of safe integers rounds once it passes 2^53, so lines off by one unit
+    // beside an amount near the limit summed to zero and an unbalanced posting was written (STA-2887).
+    const exact = lines.reduce((sum, line) => sum + BigInt(line.amount), 0n);
+    const total = Number(exact);
     if (currencies.length > 1)
       throw UnbalancedPostingError.create({
         lines: lines.length,
         total,
         currencies: currencies.map(String),
       });
-    if (lines.length < 2 || total !== 0)
+    if (lines.length < 2 || exact !== 0n)
       throw UnbalancedPostingError.create({ lines: lines.length, total });
     const pairs = new Set(lines.map((line) => JSON.stringify([line.account, line.reference])));
     if (pairs.size !== lines.length)
