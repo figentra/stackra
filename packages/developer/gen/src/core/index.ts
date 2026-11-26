@@ -73,6 +73,7 @@ export { emitIsolationTest } from "#core/functions/emit-isolation-test.function"
 export { emitI18n } from "#core/functions/emit-i18n.function";
 export { emitQueues } from "#core/functions/emit-queues.function";
 export { emitMigrations } from "#core/functions/emit-migrations.function";
+export { checkMigrationLock } from "#core/functions/check-migration-lock.function";
 export { emitMemberModule } from "#core/functions/emit-member-module.function";
 export { emitPackageEntries } from "#core/functions/emit-package-entries.function";
 export { emitPrefixes } from "#core/functions/emit-prefixes.function";
@@ -99,6 +100,7 @@ export { formatSchemaDifference } from "#core/functions/format-schema-difference
 export { generateMember } from "#core/functions/generate-member.function";
 export { memberGraphOf } from "#core/functions/member-graph-of.function";
 export { migrationId } from "#core/functions/migration-id.function";
+export { migrationLockOf } from "#core/functions/migration-lock-of.function";
 export { integrationKey } from "#core/functions/integration-key.function";
 export { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 export { modelKey } from "#core/functions/model-key.function";
@@ -148,6 +150,7 @@ export type { GeneratedFile } from "#core/types/generated-file.type";
 export type { ManifestBreak } from "#core/types/manifest-break.type";
 export type { MemberGraph } from "#core/types/member-graph.type";
 export type { MemberIR } from "#core/types/member-ir.type";
+export type { LockedMigration } from "#core/types/locked-migration.type";
 export type { MigrationUnit } from "#core/types/migration-unit.type";
 export type { OpenApiDocument } from "#core/types/open-api-document.type";
 export type { RegexValue } from "#core/types/regex-value.type";
