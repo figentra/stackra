@@ -21,7 +21,7 @@ TypeScript 6 compiler API the doc standard parses with).
 | Phase (`stackra check`) | Runner              | Checks                                                                                                             |
 | ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `config`                | `configFindings`    | JSON vs JSONC vs YAML (`MUST_STAY_JSON`, `MUST_STAY_JSONC`), YAML flow maps, `.stackra/*` ignored                  |
-| `structure`             | `structureFindings` | test placement, workflow triggers, runway schemas and files, imports, raw SQL reasons, Expo form factor, members' manifests and files, public id prefix uniqueness across apps and services |
+| `structure`             | `structureFindings` | test placement, workflow triggers, runway schemas and files, imports, raw SQL reasons, Expo form factor, members' manifests and files, public id prefix uniqueness across apps and services, threat models (constitution SEC10) |
 | `docs`                  | `docsFindings`      | contract headers, TSDoc on exports and members, no types in doc tags (ADR 0007)                                    |
 | `layout` (`--repository`) | `layoutFindings`  | the root against the preset's template (`LAYOUT_TEMPLATES`): no root `src/` or script folder, `apps/` and extras only when declared in package.json `stackra.layout.allow`, `tools/` with a README, no `figentra-flow` path and none with a name the repository lists in package.json `stackra.layout.banned` (ADR 0526, 0528, 0529) |
 | `catalogues`            | `catalogueFindings` | lang catalogues complete per locale, ICU placeholders match `en` (ADR 0403)                                        |
@@ -49,6 +49,15 @@ included: Stackra ships free HeroUI and its own components only (ADR 0469).
 an `.execute(...)` with a literal statement, or a `raw(...)` imported from the ORM or `@stackra/database`, carries a
 `// raw-sql: <why>` comment on its line, inside its statement, or in the comment lines directly above the statement.
 `RAW_SQL_BASELINE` lists the calls that had no reason when the check landed, per file; it only goes down.
+
+`checkThreatModel` (rule `threat-model`, constitution SEC10, STA-316) checks a member's `docs/threat-model.md`: an
+`ASVS level: L1|L2|L3` line (ADR 0207, amendment of 2026-11-26) and a `Reviewed: YYYY-MM-DD` line, then `## Assets`
+(asset, where it lives, class), `## Trust boundaries` (a numbered list) and `## Threats and controls` (threat, control
+today, open work), in that order, each with an entry; a class is `internal`, `confidential`, `pii` or `secret`, and a
+threat whose control today is "None" names its issue. It runs wherever the file exists. In the Stackra repository
+`needsThreatModel` requires one of every member under `THREAT_MODEL.prefixes` (`packages/security/`) and of each of
+`THREAT_MODEL.members`, and `checkThreatModelIndex` (rule `threat-model-index`) requires the platform page
+`THREAT_MODEL.page` to link each by its repository path.
 
 `checkIsolationTier` (rule `isolation-tier`, ADR 0239 decision 1) fails a test that imports `assertRowSecurity` or
 `tenantIsolationOptions` from `@stackra/database/testing` or `@stackra/tenancy/testing` unless it is a `.int.test.ts`.

@@ -109,6 +109,27 @@ describe("phase runners", () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it("structureFindings checks a member's threat model and, in the Stackra repository, the platform page", async () => {
+    const member = {
+      "packages/data/demo/package.json": '{ "name": "@stackra/demo" }',
+      "packages/data/demo/docs/threat-model.md": "# Threat model\n\n## Assets\n",
+    };
+    const product = repo({ "package.json": '{ "name": "product" }', ...member });
+    const findings = await structureFindings(product, { ci: false, warn: vi.fn() });
+    const threat = findings.filter((f) => f.rule === "threat-model");
+    expect(threat.map((f) => f.dir)).toContain("packages/data/demo");
+    expect(threat.map((f) => f.text)).toContain(
+      'packages/data/demo/docs/threat-model.md: no "ASVS level: L1|L2|L3" line (ADR 0207, amendment of 2026-11-26)',
+    );
+    expect(findings.some((f) => f.rule === "threat-model-index")).toBe(false);
+
+    const stackra = repo({ "package.json": '{ "name": "stackra" }', ...member });
+    const own = await structureFindings(stackra, { ci: false, warn: vi.fn() });
+    expect(own.filter((f) => f.rule === "threat-model-index").map((f) => f.text)).toEqual([
+      "apps/docs/src/docs/customers/threat-model.mdx: missing; the platform threat model links every member's model (constitution SEC10)",
+    ]);
+  });
+
   it("readRepoContext lists tracked and untracked files that are not ignored", () => {
     const { root } = repo({ ".gitignore": "ignored.txt\n", "a.txt": "a", "ignored.txt": "i" });
     execFileSync("git", ["init", "-q"], { cwd: root });
