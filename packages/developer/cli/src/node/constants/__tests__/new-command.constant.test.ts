@@ -4,7 +4,9 @@
  *          with its API area, a seed pack with its three profile folders, the product-scoped and `--scope` names with
  *          `catalog:stackra` versions, `--over` (writes only missing files, diffs authored ones, keeps runway.yaml and
  *          CHANGELOG.md), and the refusals of an unknown kind, a bad name or scope, a missing category or area, and
- *          a folder that exists without `--over`; a template kind (`app:docs`) rendered from tools/scaffold/templates.
+ *          a folder that exists without `--over`; a template kind (`app:docs`) rendered from tools/scaffold/templates;
+ *          `--dry-run` for package, service (also into a folder with no workspace, and with `--over`) and seed pack
+ *          writing nothing and listing the files; a standard category's missing folder made (STA-1954, STA-2616).
  *          A service is complete (root module, its test, no tool config, `checkService` clean), `--data` adds the
  *          example module and `test:int`, `--over` never writes or diffs under `src/`, `--repo` into a folder with no
  *          workspace also writes the workspace root (and into an existing one writes none), the next line is
@@ -269,6 +271,68 @@ describe("NEW_COMMAND", () => {
       expect(existsSync(join(root, `seed-packs/commerce/profiles/${profile}/README.md`))).toBe(
         true,
       );
+  });
+
+  it("writes nothing with --dry-run and lists what it would write, for every kind", async () => {
+    const before = filesUnder(root);
+    const pkg = run(["package", "loyalty-kit"], {
+      category: "data",
+      summary: "Rewards.",
+      "dry-run": true,
+    });
+    expect(await pkg.code).toBe(0);
+    expect(pkg.output()).toMatch(/^Would create packages\/data\/loyalty-kit:\n/);
+    expect(pkg.output()).toContain("  packages/data/loyalty-kit/package.json\n");
+    expect(pkg.output()).toContain("  packages/data/loyalty-kit/LICENSE\n");
+    const service = run(["service", "orders"], { area: "app", data: true, "dry-run": true });
+    expect(await service.code).toBe(0);
+    expect(service.output()).toContain("  services/orders/src/orders.module.ts\n");
+    expect(service.output()).toContain(
+      "  services/orders/src/modules/notes/models/note.model.ts\n",
+    );
+    const pack = run(["seed-pack", "commerce"], { "dry-run": true });
+    expect(await pack.code).toBe(0);
+    expect(pack.output()).toContain("  seed-packs/commerce/seed-pack.yaml\n");
+    expect(filesUnder(root)).toEqual(before);
+    expect(existsSync(join(root, "services"))).toBe(false);
+  });
+
+  it("lists the workspace files too with --dry-run --repo into a folder with no workspace", async () => {
+    const empty = join(root, "empty");
+    const { code, output } = run(["service", "orders"], {
+      area: "app",
+      repo: empty,
+      "dry-run": true,
+    });
+    expect(await code).toBe(0);
+    expect(output()).toContain("  pnpm-workspace.yaml\n");
+    expect(output()).toContain("  services/orders/package.json\n");
+    expect(existsSync(empty)).toBe(false);
+  });
+
+  it("lists only the missing files with --dry-run --over, outside src/", async () => {
+    expect(await run(["service", "orders"], { area: "app" }).code).toBe(0);
+    rmSync(join(root, "services/orders/README.md"));
+    rmSync(join(root, "services/orders/src"), { recursive: true });
+    const { code, output } = run(["service", "orders"], {
+      area: "app",
+      over: true,
+      "dry-run": true,
+    });
+    expect(await code).toBe(0);
+    expect(output()).toBe("Would write services/orders:\n  services/orders/README.md\n");
+    expect(existsSync(join(root, "services/orders/README.md"))).toBe(false);
+  });
+
+  it("makes a standard category's folder a fresh app lacks, and refuses an unknown missing one", async () => {
+    rmSync(join(root, "packages"), { recursive: true });
+    const { code, output } = run(["package", "loyalty-kit"], { category: "commerce" });
+    expect(await code).toBe(0);
+    expect(output()).toContain("created packages/commerce/loyalty-kit");
+    expect(existsSync(join(root, "packages/commerce/loyalty-kit/package.json"))).toBe(true);
+    await expect(run(["package", "x"], { category: "nowhere" }).code).rejects.toThrow(
+      /packages\/nowhere does not exist; pick an existing category folder or one of foundation, /,
+    );
   });
 
   it("refuses what it cannot create", async () => {

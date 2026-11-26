@@ -36,6 +36,12 @@
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
   },
+  "dependencies": {
+    "@stackra/config": "workspace:*",
+    "@stackra/container": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
+  },
   "devDependencies": {
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",

@@ -230,10 +230,24 @@ test("a package is the v3 shape: entries by folder, exports naming files, no bar
   assert.equal(pkg.sideEffects, false);
   for (const f of ["dist", "assets", "stackra.manifest.json"])
     assert.ok(pkg.files?.includes(f), `files lacks ${f}`);
+  // Gen writes the build and test configs from the exports (ADR 0295 decision 5); none is authored.
+  for (const config of ["tsdown.config.ts", "vitest.config.ts"])
+    assert.ok(!files.includes(config), `${config} authored`);
+  // The config and the root module are their kinds, with the packages that declare them (STA-1954).
   assert.match(
-    readFileSync(join(dest, "tsdown.config.ts"), "utf8"),
-    /\{ "index": "src\/config\/billing-core\.config\.ts", "node": "src\/node\/billing-core\.module\.ts" \}/,
+    readFileSync(join(dest, "src/config/billing-core.config.ts"), "utf8"),
+    /extends Config\(\{ schema: BillingCoreOptions \}\)/,
   );
+  assert.match(
+    readFileSync(join(dest, "src/node/billing-core.module.ts"), "utf8"),
+    /extends Module\(\{ imports: \[\] \}\)/,
+  );
+  assert.ok(
+    files.includes("src/core/schemas/billing-core-options.schema.ts"),
+    "options schema missing",
+  );
+  for (const dep of ["@stackra/config", "@stackra/container", "@stackra/validation", "zod"])
+    assert.ok(dep in (pkg.dependencies ?? {}), `${dep} undeclared`);
   assert.equal(
     json<Config>(dest, "tsconfig.json").extends,
     "@stackra/typescript-config/decorators",

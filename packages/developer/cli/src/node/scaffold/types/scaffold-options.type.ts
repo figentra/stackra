@@ -15,10 +15,13 @@ export type ScaffoldOptions = {
   /** The kebab-case member name. */
   readonly name: string;
 
-  /** The target repo root; the repo holding the templates by default. */
+  /** The target repo root; `home` by default. */
   readonly root?: string | undefined;
 
-  /** The repo holding `tools/scaffold/templates` and the fallback LICENSE; the workspace around the cwd by default. */
+  /**
+   * The workspace whose own `tools/scaffold/templates` win over the ones `@stackra/cli` ships, and the fallback
+   * LICENSE; the workspace around the cwd by default.
+   */
   readonly home?: string | undefined;
 
   /** The `packages/<category>` folder of a package. */
