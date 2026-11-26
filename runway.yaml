@@ -19,6 +19,10 @@ project: stackra
 
 # ── Providers ────────────────────────────────────────────────────────────────────────────────────────
 providers:
+  encore:
+    # The Encore app id of the reference services (services/example); gen writes it into each service's encore.app so
+    # `stackra dev` and `encore run` find the app. Public, not a secret; no target here deploys to Encore Cloud.
+    app: stackra-nzk2
   cloudflare:
     # The account of workers/static/wrangler.jsonc (ADR 0284 decision 7).
     accountId: d861f9ac9df28b7f0b1298cc0c89bc9d

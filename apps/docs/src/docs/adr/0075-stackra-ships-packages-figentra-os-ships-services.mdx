@@ -8,6 +8,18 @@ description: "Accepted · 2026-10-20"
   [0200](/adr/0200-stackra-and-figentra-os-horizontal-services-private-os-repo).
 </Note>
 
+<Note>
+  Note, 2026-11-26 (STA-2856): `services/example` is no longer a placeholder, and decisions 1 and 2
+  stand unchanged. It is the end-to-end reference a team copies from: a tenant-owned `notes`
+  resource through the actions pipeline (model, migration, actions and queries, permissions,
+  validation, idempotency, integration events), and an `activity` module whose listeners turn those
+  events into a tenant's feed, read over HTTP and as an MCP tool, with a daily per-tenant retention
+  job that the scheduler pushes through the queue. Sign-in, the generated wiring and tenant
+  isolation on Postgres are proven in its tests. It is a programming-model v3 member and breadth
+  enough to prove the packages and the generator, not a product feature; its README says what it
+  contains and nothing that is not there. `services/health` stays a placeholder until STA-2828.
+</Note>
+
 ## Context
 
 [0023](/adr/0023-stackra-is-a-framework) makes Stackra the framework tier with reference members. [0029](/adr/0029-encore-ts-one-app) then put one Encore application under `services/` as if the product backend lived here. The owner has since fixed the product architecture: Figentra OS is a product of 12 to 15 services built on Stackra packages and sold as SaaS, on-prem and air-gapped. Stackra packages are also sold on their own. If product services lived in this repository, every Stackra release would carry a product, and the packages could not be proven independent of it.
