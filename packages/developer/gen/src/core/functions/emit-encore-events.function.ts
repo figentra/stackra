@@ -17,9 +17,14 @@
  *           claims the envelope id, so a redelivery runs nothing twice. Which `EventPublisher` driver runs is runtime
  *           configuration; the topics cost nothing while the in-process driver is used. A relay service gets no typed
  *           subscription for a wire name its relay already hears (the inbox runs the typed listeners from either).
- *           The cross-service topic imports are not yet checked by an Encore build (STA-597).
+ *           The cross-service topic imports are not yet checked by an Encore build (STA-597). Each subscription hands
+ *           the inbox its topic's owning service (`InboxService.receiveFromTopic`), which is the verified producer
+ *           (`ctx.producer`, STA-1792) only when the publishing relay's stamp names the same service: importing a
+ *           producer's events file here registers its topics' publishers in this process too, and its event classes
+ *           are importable, so the topic alone does not prove the sender. The generated boot gives each relay the wire
+ *           names its service publishes, so a relay refuses another service's event before any topic sees it.
  * Runtime: isomorphic
- * Governing contract: ADR 0260 (decision 4: the relay hears every event; typed consumers by the event class); ADR 0141 (decision 2: the envelope, wire
+ * Governing contract: ADR 0509 (decision 7) and ADR 0511 (decision 11: the verified producer); ADR 0260 (decision 4: the relay hears every event; typed consumers by the event class); ADR 0141 (decision 2: the envelope, wire
  *                     names); ADR 0148 (decisions 3 and 6: Encore Pub/Sub in SaaS); ADR 0142 (decision 1: transports
  *                     are drivers); ADR 0078 (decisions 2 to 4: inbox deduplication).
  */
@@ -32,21 +37,10 @@ import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { integrationWireNames } from "#core/functions/integration-wire-names.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
-
-/** The integration event wire names a manifest publishes, sorted. */
-function wireNames(manifest: StackraManifest): string[] {
-  return [
-    ...new Set(
-      (manifest.events ?? [])
-        .filter((event) => event.kind === "integration" && typeof event["name"] === "string")
-        .map((event) => String(event["name"])),
-    ),
-    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-  ].sort();
-}
 
 /** The snake_case stem of a wire name: `orders.order.paid.v1` → `orders_order_paid_v1`. */
 function stem(wire: string): string {
@@ -70,10 +64,10 @@ function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
     ENCORE_APP_IMPORT,
     ...imports,
     "",
-    "/** Hands one delivered envelope to this service's inbox. */",
-    "function receive(message: BrokerMessage): Promise<void> {",
+    "/** Hands one delivered envelope to this service's inbox; the topic's owner is its producer when the relay's stamp agrees. */",
+    "function receive(message: BrokerMessage, owner: string): Promise<void> {",
     "  return app.handlers.run(async (container) => {",
-    "    await container.get(InboxService).receive(message.body as EventEnvelope);",
+    "    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);",
     "  });",
     "}",
     "",
@@ -90,7 +84,7 @@ function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
 export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): GeneratedFile[] {
   if (ir.layout !== "service") return [];
   const files: GeneratedFile[] = [];
-  const own = wireNames(manifest);
+  const own = integrationWireNames(manifest);
   if (own.length > 0) {
     const header = generatedHeader({
       from: "stackra.manifest.json (the integration events)",
@@ -142,20 +136,25 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
     return seen;
   // Own topics from `./events`, each sibling's from its generated events file; first publisher of a wire name wins.
   const sources = [
-    ...(own.length > 0 ? [{ from: "./events", wires: own }] : []),
+    ...(own.length > 0 ? [{ from: "./events", wires: own, producer: ir.member }] : []),
     ...(ir.publishers ?? [])
       .filter((publisher) => publisher.member !== ir.member)
       .map((publisher) => ({
         from: `../../../${publisher.folder}/${encoreServiceFolder(publisher.member)}/events`,
-        wires: wireNames(publisher.manifest),
+        wires: integrationWireNames(publisher.manifest),
+        producer: publisher.member,
       })),
   ];
   const imports: string[] = [];
   const subscribed: string[] = [];
-  for (const { from, wires } of sources) {
+  const producers = new Map<string, string>();
+  for (const { from, wires, producer } of sources) {
     const fresh = wires.filter((wire) => !seen.has(wire));
     if (fresh.length === 0) continue;
-    for (const wire of fresh) seen.add(wire);
+    for (const wire of fresh) {
+      seen.add(wire);
+      producers.set(wire, producer);
+    }
     imports.push(`import { ${fresh.map(topicConst).join(", ")} } from ${JSON.stringify(from)};`);
     subscribed.push(...fresh);
   }
@@ -177,7 +176,7 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
       ...subscribed.flatMap((wire) => [
         `/** Relays \`${wire}\`. */`,
         `export const ${topicConst(wire)}Relay = new Subscription(${topicConst(wire)}, ${JSON.stringify(subscription)}, {`,
-        "  handler: receive,",
+        `  handler: (message) => receive(message, ${JSON.stringify(producers.get(wire) ?? ir.member)}),`,
         "});",
         "",
       ]),
@@ -226,11 +225,15 @@ function emitSubscriptions(
   const seen = new Set<string>();
   const imports: string[] = [];
   const subscribed: string[] = [];
+  const producers = new Map<string, string>();
   for (const [service, wires] of services) {
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const fresh = [...wires].filter((wire) => !seen.has(wire)).sort();
     if (fresh.length === 0) continue;
-    for (const wire of fresh) seen.add(wire);
+    for (const wire of fresh) {
+      seen.add(wire);
+      producers.set(wire, service);
+    }
     const folder =
       ir.services?.find((candidate) => candidate.member === service)?.folder ?? service;
     const from =
@@ -256,7 +259,7 @@ function emitSubscriptions(
       ...subscribed.flatMap((wire) => [
         `/** Delivers \`${wire}\` to this service's typed listeners. */`,
         `export const ${topicConst(wire)}Subscription = new Subscription(${topicConst(wire)}, ${JSON.stringify(`${kebabCase(ir.member)}-${kebabCase(stem(wire))}`)}, {`,
-        "  handler: receive,",
+        `  handler: (message) => receive(message, ${JSON.stringify(producers.get(wire) ?? ir.member)}),`,
         "});",
         "",
       ]),

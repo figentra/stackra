@@ -181,14 +181,16 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
   }
 
   /** Implements `OutboxDriver.rewrite`, documented there. */
-  async rewrite(id: PublicId<"evt">, data: unknown): Promise<void> {
-    // raw-sql: the outbox has no model; one parameterised update of the payload
-    await this.database
+  async rewrite(id: PublicId<"evt">, data: unknown): Promise<boolean> {
+    // raw-sql: the outbox has no model; one parameterised update of the payload, returning the row it changed (none
+    // when row security hides a platform row from a tenant session)
+    const rows = (await this.database
       .em()
-      .execute(`update ${TABLE} set data = ?::jsonb where id = ?`, [
+      .execute(`update ${TABLE} set data = ?::jsonb where id = ? returning id`, [
         JSON.stringify(data ?? null),
         id,
-      ]);
+      ])) as readonly unknown[];
+    return rows.length > 0;
   }
 
   /** Implements `OutboxDriver.deadLetter`, documented there. */

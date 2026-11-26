@@ -128,7 +128,7 @@ function relayOf(bound: readonly (readonly [AnyClass, object])[]) {
     clock,
     buildConfig(OutboxConfig),
   );
-  relay.connect(resolver);
+  relay.connect(resolver, { service: "payments" });
   return { relay, store, publisher };
 }
 

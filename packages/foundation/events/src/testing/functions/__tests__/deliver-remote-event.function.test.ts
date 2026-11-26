@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `deliverRemoteEvent`: it builds the event through its schema, puts it in the current app's
- *          inbox with its metadata (no listener runs until `drainOutbox`), never counts it as published by this app,
- *          and refuses fields its schema refuses.
+ *          inbox with its metadata and producer (no listener runs until `drainOutbox`), never counts it as published
+ *          by this app, and refuses fields its schema refuses.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3); ADR 0260 (decision 3).
@@ -45,6 +45,20 @@ describe(deliverRemoteEvent, () => {
     expect(event.reference).toBe("ord_1");
     expect(currentHarness().inbox).toEqual([{ event, meta: { id: "evt_1", connection: "con_1" } }]);
     expect(app.events.published()).toEqual([]);
+  });
+
+  it("keeps the producer its transport would verify (STA-1792)", async () => {
+    await createTestingModule(FixtureModule).compile();
+    const event = await deliverRemoteEvent(
+      PaymentCaptured,
+      { paymentId: "pay_1", reference: "ord_1" },
+      { id: "evt_1" },
+      "payments",
+    );
+
+    expect(currentHarness().inbox).toEqual([
+      { event, meta: { id: "evt_1" }, producer: "payments" },
+    ]);
   });
 
   it("refuses fields the schema refuses", async () => {

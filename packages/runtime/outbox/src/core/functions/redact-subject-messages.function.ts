@@ -7,12 +7,14 @@
  *           personal is the caller's input (the erasure saga passes every field its `PersonalData` declarations name);
  *           a field of that name is nulled at any depth of a matching payload, a row change's `before` and `after`
  *           included. A message keeps its id, type and delivery state, so a consumer still receives it, without the
- *           values. A message that does not name the subject is left alone, and so is one with no such field.
+ *           values. A message that does not name the subject is left alone, and so is one with no such field. A
+ *           matching message the driver could not rewrite (a platform message, which a tenant's erasure may not change)
+ *           is counted as `unrewritable`, never as rewritten, so the erasure reports it (STA-2629).
  * Runtime: isomorphic
  * Governing contract: ADR 0189 (decision 2: erasure reaches every copy); ADR 0078 (decision 4: the outbox); ADR 0212
  *                     (crypto-shredding); data-layer gap gov6.
  */
-import type { OutboxDriver } from "#contracts/index";
+import type { OutboxDriver, SubjectRedaction } from "#contracts/index";
 
 /** `data` with every field named in `fields` set to null at any depth, and whether anything changed. */
 function nulled(data: unknown, fields: ReadonlySet<string>): { value: unknown; changed: boolean } {
@@ -42,25 +44,26 @@ function nulled(data: unknown, fields: ReadonlySet<string>): { value: unknown; c
  * @param driver - the outbox store.
  * @param subject - the erased subject's public id, as the payloads carry it.
  * @param fields - the personal field names to null (`email`, `phone`).
- * @returns how many messages were rewritten.
+ * @returns how many messages were rewritten, and how many matched but could not be.
  * @throws TypeError when `subject` is empty, which would match nothing useful.
  * @example
- * await redactSubjectMessages(outbox, "usr_1", new Set(["email", "phone"])); // 2
+ * await redactSubjectMessages(outbox, "usr_1", new Set(["email", "phone"])); // { rewritten: 2, unrewritable: 0 }
  */
 export async function redactSubjectMessages(
   driver: OutboxDriver,
   subject: string,
   fields: ReadonlySet<string>,
-): Promise<number> {
+): Promise<SubjectRedaction> {
   if (subject === "")
     throw new TypeError("redactSubjectMessages: the subject's public id is required");
-  if (fields.size === 0) return 0;
   let rewritten = 0;
+  let unrewritable = 0;
+  if (fields.size === 0) return { rewritten, unrewritable };
   for (const message of await driver.holding(subject)) {
     const { value, changed } = nulled(message.data, fields);
     if (!changed) continue;
-    await driver.rewrite(message.id, value);
-    rewritten += 1;
+    if (await driver.rewrite(message.id, value)) rewritten += 1;
+    else unrewritable += 1;
   }
-  return rewritten;
+  return { rewritten, unrewritable };
 }

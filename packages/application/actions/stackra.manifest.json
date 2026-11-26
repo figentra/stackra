@@ -455,6 +455,11 @@
   "roles": [],
   "config": [
     {
+      "key": "actions.approvals",
+      "class": "ApprovalsConfig",
+      "from": "@stackra/actions"
+    },
+    {
       "key": "actions.rate_limit",
       "class": "RateLimitConfig",
       "from": "@stackra/actions"

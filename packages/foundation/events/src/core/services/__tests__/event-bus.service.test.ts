@@ -6,7 +6,8 @@
  *          given is kept and the rest defaulted; subscriptions are kept once; `connect` subscribes the registered
  *          listeners a container binds; `disconnect` removes only those; with a bound `ListenerAuditTrail` every
  *          delivery that ended writes one audit entry with what the listener added through `ctx.audit`, a failed one
- *          none (STA-1715).
+ *          none (STA-1715); `ctx.producer` is the service `deliver` was handed, never a `producer` the metadata
+ *          claims, and none for a dispatched event (STA-1792).
  * Boundary: test only; a fixed clock stands in for the Clock port.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0078 (decisions 1 to 4); ADR 0294 (decision 4).
@@ -95,6 +96,24 @@ describe(EventBus, () => {
     expect(ctx.correlationId).toBe("cor_1");
     expect(ctx.now()).toEqual(NOW);
     expect(await bus.drain()).toEqual([]);
+  });
+
+  it("gives ctx.producer only from deliver's verified producer, never from the metadata (STA-1792)", async () => {
+    const bus = new EventBus(clock);
+    const listener = new RecordingListener();
+    bus.subscribe(StockChanged, listener);
+    const forged = { id: "evt_1", producer: "approvals" } as { id: string };
+    bus.dispatch(new StockLow(), forged);
+    bus.deliver(new StockLow(), { ...forged, id: "evt_2" });
+    const verified = bus.deliver(new StockLow(), { ...forged, id: "evt_3" }, "billing");
+    await bus.drain();
+
+    expect(listener.seen.map(({ ctx }) => ctx.producer)).toEqual([undefined, undefined, "billing"]);
+    expect(listener.seen.every(({ ctx }) => "producer" in ctx === (ctx.eventId === "evt_3"))).toBe(
+      true,
+    );
+    expect(verified.producer).toBe("billing");
+    expect("producer" in verified.meta).toBe(false);
   });
 
   it("skips listeners of another class", async () => {

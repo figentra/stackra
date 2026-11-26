@@ -86,7 +86,7 @@ describe("emitBoot", () => {
         '  else options.signal.addEventListener("abort", disconnect, { once: true });',
         "  if (options.relay !== false) {",
         "    const relay = container.get(OutboxRelayService);",
-        "    relay.connect(container);",
+        '    relay.connect(container, { service: "billing" });',
         "    void relay.work({ signal: options.signal });",
         "  }",
         "}",
@@ -281,6 +281,29 @@ describe("emitBoot", () => {
   });
 });
 
+describe("emitBoot and the relay's identity (STA-1792)", () => {
+  it("gives the relay the wire names the built manifest publishes, so it refuses any other", () => {
+    const manifest = {
+      events: [
+        { kind: "integration", name: "billing.invoice.issued.v1", class: "InvoiceIssued" },
+        {
+          kind: "integration",
+          name: "workflow.service.acked.v1",
+          class: "ServiceAcked",
+          from: "@stackra/workflow",
+        },
+        { kind: "domain", name: "invoice.drafted", class: "InvoiceDrafted" },
+      ],
+    } as unknown as StackraManifest;
+    expect(emitBoot(BILLING_IR, manifest)).toContain(
+      '    relay.connect(container, { service: "billing", publishes: ["billing.invoice.issued.v1","workflow.service.acked.v1"] });',
+    );
+    expect(emitBoot(BILLING_IR, { events: [] } as unknown as StackraManifest)).toContain(
+      '    relay.connect(container, { service: "billing", publishes: [] });',
+    );
+  });
+});
+
 describe("emitBoot and the cross-app relay (STA-1910)", () => {
   it("starts the cross-app relay beside the outbox relay of a producer", () => {
     const boot = emitBoot(PRODUCER_IR) ?? "";
@@ -291,7 +314,7 @@ describe("emitBoot and the cross-app relay (STA-1910)", () => {
       [
         "  if (options.relay !== false) {",
         "    const relay = container.get(OutboxRelayService);",
-        "    relay.connect(container);",
+        '    relay.connect(container, { service: "pay" });',
         "    void relay.work({ signal: options.signal });",
         "    const crossApp = container.get(CrossAppRelayService);",
         "    crossApp.connect(container);",

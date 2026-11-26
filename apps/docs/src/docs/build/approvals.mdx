@@ -71,12 +71,17 @@ A request parked only by the tenant's rules, with no declaration on the action, 
 | `ApprovalBindingStore` | the service's own binding table, shipped by `@stackra/tenancy`                   |
 | `ActorStatusCheck`     | the requester is still active and their sessions are unchanged                   |
 | `IdentityResolver`     | one person with several ids counts once                                          |
-| `ApprovalGrantOrigin`  | the executor acts only on a grant the store's service published                  |
 | `ScopeOwnership`       | the stored actor owns the stored scope                                           |
 | `CallIsolation`        | the binding is read as the tenant's system actor; the call runs as the requester |
 
 A declared stage fails closed when any of the first three is missing, and with `OpenApprovalGateDriver`. Call
 `executor.connect(container)` after boot.
+
+The executor acts only on a grant the store's service published: set `actions.approvals.storeService` in runway to
+the store's member (`tasks`). It compares that with `ctx.producer`, which the inbox takes from what the transport
+verified (the topic's owner when the publishing relay names the same service, or the cross-app signer), never
+from the event; a relay publishes only its own service's events, so another service cannot send a grant as
+`tasks`. Left empty, it acts on no grant.
 
 ## Failure and retry
 

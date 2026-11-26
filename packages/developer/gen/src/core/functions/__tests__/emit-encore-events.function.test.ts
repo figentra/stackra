@@ -129,8 +129,19 @@ describe("emitEncoreEvents", () => {
       'export const eventOrdersOrderPaidV1Relay = new Subscription(eventOrdersOrderPaidV1, "webhooks-relay", {',
     );
     expect(content).toContain(
-      "    await container.get(InboxService).receive(message.body as EventEnvelope);",
+      "    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);",
     );
+    // the topic's owner, the producer when the relay's stamp agrees (STA-1792): commerce's topic says commerce, billing's billing
+    expect(content).toContain(
+      [
+        'export const eventOrdersOrderPaidV1Relay = new Subscription(eventOrdersOrderPaidV1, "webhooks-relay", {',
+        '  handler: (message) => receive(message, "commerce"),',
+      ].join("\n"),
+    );
+    expect(content).toMatch(
+      /Relay = new Subscription\(\w+, "webhooks-relay", \{\n {2}handler: \(message\) => receive\(message, "billing"\),/,
+    );
+    expect(content).not.toContain('receive(message, "copycat")');
     expect(content.match(/new Subscription\(eventOrdersOrderPaidV1,/g)).toHaveLength(1);
   });
 
@@ -142,6 +153,7 @@ describe("emitEncoreEvents", () => {
       "stackra-encore/commerce/relay.ts",
     ]);
     expect(files[1]?.content).toContain('import { eventOrdersOrderPaidV1 } from "./events";');
+    expect(files[1]?.content).toContain('  handler: (message) => receive(message, "commerce"),');
   });
 
   it("subscribes a typed consumer to each consumed event on the producer's topic, once", () => {
@@ -155,8 +167,9 @@ describe("emitEncoreEvents", () => {
       'export const eventOrdersOrderPaidV1Subscription = new Subscription(eventOrdersOrderPaidV1, "shipping-orders-order-paid-v1", {',
     );
     expect(content).toContain(
-      "    await container.get(InboxService).receive(message.body as EventEnvelope);",
+      "    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);",
     );
+    expect(content).toContain('  handler: (message) => receive(message, "commerce"),');
     expect(content.match(/new Subscription\(/g)).toHaveLength(1);
   });
 

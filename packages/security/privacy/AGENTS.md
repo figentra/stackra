@@ -45,6 +45,8 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 - A salt never leaves `SubjectKeyProviderDriver`: never log, export or put it in an event.
 - Erasure reaches every copy: the outbox through the saga's `redact` step (`redactSubjectMessages` of
   @stackra/outbox), search through `UnindexErasedSubjectListener`. A new copy kind adds a step or a listener here.
+  A held message the redaction could not rewrite (a platform message) is reported as the receipt's `unredacted`,
+  never dropped from the count (STA-2629).
   @stackra/search and @stackra/outbox never import this package (search is already below it through
   workflow, rules and ai, so the reverse edge would close a cycle).
 - Receipts and events carry counts and kinds, never row ids or contents. A shape field is typed with a shape class

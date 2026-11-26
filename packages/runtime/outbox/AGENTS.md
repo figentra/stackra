@@ -47,7 +47,20 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   retry time.
 - `holding(value)` and `rewrite(id, data)` exist for erasure only (`redactSubjectMessages`, called by
   @stackra/privacy's saga): `holding` matches a string value at any payload depth, never a key; `rewrite` replaces
-  the payload and keeps the delivery state. Never import @stackra/privacy here (privacy depends on outbox).
+  the payload, keeps the delivery state and answers whether the row changed (a platform row hidden from a tenant
+  session answers `false`, which the redaction counts as `unrewritable`, never as done). Never import
+  @stackra/privacy here (privacy depends on outbox).
+- A platform message (no tenant) is one no erasure can rewrite, so `insertMessages` refuses an event whose class
+  declares a `@Classified` field when the transaction has no tenant (`PlatformPersonalEventError`, STA-2629).
+- The producer is proven, never claimed (STA-1792): the relay stamps `EventEnvelope.producer` from the identity the
+  generated boot passes to `connect` (`{ service: "<member>", publishes: [...] }`), never from the message, and
+  dead-letters unpublished an event message whose wire name is not in `publishes` (`event_not_published`): a
+  consumer imports another service's event class (and its topics), so without that check it could send that
+  service's event on that service's topic. `InboxService.receive`'s second argument is the only source of
+  `ctx.producer`, given by the transport that verified it: the generated subscription calls `receiveFromTopic` with
+  its topic's owner, which counts only when the relay's stamp names the same service; `RelayInboxService` passes the
+  verified signer, the in-process publisher its own relay's stamp. Never read `envelope.producer` or a `producer` in
+  `meta` from a body as proof on its own.
 - `pruneOutbox` is the one prune path (the job of @stackra/data-maintenance calls it, and outbox never depends on
   that add-on). It claims dead letters only (`claimDead`) and deletes each in its owner; never prune a live (due or retrying) message. The inbox prune window
   (`pruneAfterDays`) must outlast every producer's retries, or a late redelivery runs twice.

@@ -10,7 +10,9 @@
  *           tenants and hands back ids and the owning tenant only; every other method runs in the caller's isolation,
  *           so a tenant row is loaded, changed or deleted only in its own tenant's (ADR 0239 amendment, gaps A and C).
  *           One relay runs at a time (it holds a lock), so `claim` reserves nothing. A platform message (no tenant) is
- *           one no tenant's erasure can rewrite, so a platform writer never puts personal data in one. A leaf file: it
+ *           one no tenant's erasure can rewrite, so a platform writer never puts personal data in one: the Postgres
+ *           insert refuses an event declaring a `@Classified` field with no tenant, and `rewrite` answers `false` for
+ *           a row it may not change, which erasure reports (STA-2629). A leaf file: it
  *           imports nothing outside `src/contracts` but the `Port` base.
  * Runtime: isomorphic
  * Governing contract: ADR 0078 (decision 4: the outbox table, relay and inbox); ADR 0239 (2026-11-07 amendment, gaps A
@@ -73,8 +75,10 @@ export abstract class OutboxDriver extends Port {
   abstract holding(value: string): Promise<readonly OutboxMessage[]>;
 
   /**
-   * Replaces the payload of message `id` with `data` (JSON), keeping its delivery state; an unknown id, or one the
-   * caller's isolation may not change (a platform message, for a tenant), is ignored.
+   * Replaces the payload of message `id` with `data` (JSON), keeping its delivery state.
+   *
+   * @returns `true` when the row changed; `false` for an unknown id or one the caller's isolation may not change (a
+   *          platform message, for a tenant), which is left as it was, so erasure can report it (STA-2629).
    */
-  abstract rewrite(id: PublicId<"evt">, data: unknown): Promise<void>;
+  abstract rewrite(id: PublicId<"evt">, data: unknown): Promise<boolean>;
 }

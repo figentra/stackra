@@ -19,7 +19,8 @@
  *           `connectNativeWriteWatcher(writer)` at boot. Each row takes the transaction's tenant (`tenant_id` defaults
  *           to `app.tenant_id`), never one from the event or the model; a write with no tenant is a platform row, which
  *           no tenant's erasure can rewrite, so an event or captured value written outside a tenant must carry no
- *           personal data (ADR 0239 amendment, gap C).
+ *           personal data (ADR 0239 amendment, gap C): `insertMessages` refuses an event whose class declares a
+ *           `@Classified` field there, failing the commit (`PlatformPersonalEventError`, STA-2629).
  * Runtime: node
  * Governing contract: ADR 0078 (decisions 3 and 4: written in the same transaction as the change); ADR 0141 (decisions
  *                     2 and 3); ADR 0294 (decision 27: events are recorded beside the model); ADR 0221 (decision 5);

@@ -17,14 +17,14 @@ import type { BrokerMessage } from "./broker-message";
 import { app } from "../../.stackra/entry/server";
 import { eventShopOrderPaidV1 } from "./events";
 
-/** Hands one delivered envelope to this service's inbox. */
-function receive(message: BrokerMessage): Promise<void> {
+/** Hands one delivered envelope to this service's inbox; the topic's owner is its producer when the relay's stamp agrees. */
+function receive(message: BrokerMessage, owner: string): Promise<void> {
   return app.handlers.run(async (container) => {
-    await container.get(InboxService).receive(message.body as EventEnvelope);
+    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);
   });
 }
 
 /** Delivers `shop.order.paid.v1` to this service's typed listeners. */
 export const eventShopOrderPaidV1Subscription = new Subscription(eventShopOrderPaidV1, "shop-shop-order-paid-v1", {
-  handler: receive,
+  handler: (message) => receive(message, "shop"),
 });

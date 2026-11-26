@@ -11,7 +11,12 @@
  *          live change is published again at the older version, same id, its data run through `down` (stackra-403).
  *          An owned claim is loaded, fanned out and removed (or retried) in its owner through the bound isolation, and
  *          its changes loaded in their owner; an owned claim with no isolation bound, or a claim that does not load,
- *          fails the tick and is never skipped.
+ *          fails the tick and is never skipped. Every envelope names the service `connect` was given as its producer,
+ *          never one the stored message claims, and none without one (STA-1792). Given the wire names its service
+ *          publishes, it dead-letters (and logs) another service's event unpublished, so a consumer that records a
+ *          remote event of another service never reaches that service's topic subscribers as that service; and a
+ *          relay without the list, whose stamp names itself, never makes a topic subscription
+ *          (`InboxService.receiveFromTopic`) hand its listeners the topic owner as the producer.
  * Boundary: test only; the memory store, the memory lock driver, a recording publisher, a stand-in database that
  *           records the scopes it opens, a fixed clock and a map resolver.
  * Runtime: node (vitest)
@@ -34,7 +39,7 @@ import {
 } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
-import { IntegrationEvent } from "@stackra/events";
+import { EventBus, IntegrationEvent, Listener, type ListenerContext } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
 import { Change, registerChanges } from "@stackra/versioning";
@@ -47,6 +52,8 @@ import { MemoryChangeFeedDriver } from "#core/drivers/memory-change-feed.driver"
 import { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 import { registerChangeConsumers } from "#core/functions/register-change-consumers.function";
 import { registerEventNames } from "#core/functions/register-event-names.function";
+import { MemoryInboxDriver } from "#core/drivers/memory-inbox.driver";
+import { InboxService } from "#node/services/inbox.service";
 import { OutboxRelayService } from "#node/services/outbox-relay.service";
 
 const NOON = new Date(Date.UTC(2026, 9, 25, 12));
@@ -148,6 +155,42 @@ registerSchemas([
   [PointsEarnedV1Change, z.object({ memberId: z.string() })],
 ]);
 registerEventNames([{ type: PointsEarned, name: "loyalty.points.earned.v2" }]);
+
+/** `orders.order.paid.v1`, the event of the `orders` service; another service imports its class to listen to it. */
+class OrderPaid extends IntegrationEvent({ name: "order.paid" }) {
+  orderId!: string;
+}
+
+registerSchemas([[OrderPaid, z.object({ orderId: z.string() })]]);
+registerEventNames([{ type: OrderPaid, name: "orders.order.paid.v1" }]);
+
+/** A listener of `OrderPaid` that keeps the producer each delivery names. */
+class ProducerListener extends Listener {
+  readonly producers: (string | undefined)[] = [];
+
+  async handle(_event: OrderPaid, ctx: ListenerContext): Promise<void> {
+    this.producers.push(ctx.producer);
+  }
+}
+
+/**
+ * The `orders` topic as Encore delivers it: whatever relay publishes `orders.order.paid.v1` reaches it (a consumer
+ * imports the topic, registering its publisher), and its generated subscription hands the envelope to the subscribing
+ * service's inbox with `orders`, the topic's owner.
+ */
+class OrdersTopicPublisher extends Driver(EventPublisher) {
+  private readonly inbox: InboxService;
+
+  constructor(inbox: InboxService) {
+    super();
+    this.inbox = inbox;
+  }
+
+  async publish(envelope: EventEnvelope): Promise<void> {
+    if (envelope.type === "orders.order.paid.v1")
+      await this.inbox.receiveFromTopic(envelope, "orders");
+  }
+}
 registerChanges([[PointsEarned, PointsEarnedV1Change]]);
 
 /** An event message due at noon. */
@@ -205,7 +248,30 @@ function relayOf(
     buildConfig(OutboxConfig, { values: { batchWindowSeconds } }),
   );
   relay.connect(resolver);
-  return { relay, store, feed, publisher, logger, consumer, batch, scopes };
+  return { relay, store, feed, publisher, logger, consumer, batch, scopes, resolver };
+}
+
+/** A relay whose publisher is the `orders` topic, subscribed by an inbox with an `OrderPaid` listener. */
+function relayOnOrdersTopic() {
+  const bus = new EventBus(clock);
+  const listener = new ProducerListener();
+  bus.subscribe(OrderPaid, listener);
+  const database = {
+    transaction: async <T>(work: () => Promise<T>) => work(),
+    withScope: async <T>(_scope: unknown, work: () => Promise<T>) => work(),
+  } as unknown as Database;
+  const inbox = new InboxService(new MemoryInboxDriver(), bus, database, clock);
+  const store = new MemoryOutboxDriver();
+  const relay = new OutboxRelayService(
+    store,
+    new MemoryChangeFeedDriver(),
+    new OrdersTopicPublisher(inbox),
+    new Locks(new MemoryLockDriver(clock), clock),
+    database,
+    clock,
+    buildConfig(OutboxConfig, { values: { batchWindowSeconds: 0 } }),
+  );
+  return { relay, store, listener };
 }
 
 /** An updated Order change of `id` writing `field`. */
@@ -229,6 +295,86 @@ describe(OutboxRelayService, () => {
       },
     ]);
     expect(store.stored()).toEqual([]);
+  });
+
+  it("stamps its own service as every envelope's producer, never the stored message's claim (STA-1792)", async () => {
+    const { relay, store, publisher } = relayOf();
+    relay.connect({ has: () => false, get: () => undefined as never }, { service: "orders" });
+    await store.write([
+      eventMessage({
+        meta: { correlationId: "call-1", producer: "approvals" } as OutboxMessage["meta"],
+      }),
+      eventMessage({
+        id: "evt_B",
+        type: "loyalty.points.earned.v2",
+        data: { memberId: "mem_1", tier: "gold" },
+      }),
+    ]);
+    await expect(relay.relay()).resolves.toBe(2);
+    expect(publisher.published.map(({ type, producer }) => [type, producer])).toEqual([
+      ["orders.order.paid.v1", "orders"],
+      ["loyalty.points.earned.v2", "orders"],
+      ["loyalty.points.earned.v1", "orders"],
+    ]);
+  });
+
+  it("dead-letters, unpublished, an event of a wire name its service does not publish, and logs it (STA-1792)", async () => {
+    const { relay, store, publisher, logger, resolver } = relayOf();
+    relay.connect(resolver, { service: "channels", publishes: ["orders.order.paid.v1"] });
+    await store.write([
+      eventMessage(),
+      eventMessage({
+        id: "evt_T",
+        type: "tasks.approval.granted.v1",
+        data: { approvalId: "apr_1" },
+      }),
+    ]);
+    await expect(relay.relay()).resolves.toBe(2);
+    expect(publisher.published.map(({ id, type }) => [id, type])).toEqual([
+      ["evt_A", "orders.order.paid.v1"],
+    ]);
+    expect(store.stored()).toEqual([
+      expect.objectContaining({
+        id: "evt_T",
+        deadAt: NOON,
+        lastError: {
+          code: "event_not_published",
+          message: "tasks.approval.granted.v1 is not an event channels publishes",
+        },
+      }),
+    ]);
+    expect(logger.errors).toEqual(["outbox.message_foreign"]);
+  });
+
+  it("never delivers another service's event, recorded by a consumer, with that service as its producer (STA-1792)", async () => {
+    // a consumer (`channels`) records `orders.order.paid.v1`, whose class it imports to listen to it
+    const unlisted = relayOnOrdersTopic();
+    unlisted.relay.connect(
+      { has: () => false, get: () => undefined as never },
+      { service: "channels" },
+    );
+    await unlisted.store.write([eventMessage()]);
+    await unlisted.relay.relay();
+    expect(unlisted.listener.producers).toEqual([undefined]);
+
+    const listed = relayOnOrdersTopic();
+    listed.relay.connect(
+      { has: () => false, get: () => undefined as never },
+      { service: "channels", publishes: ["channels.channel.published.v1"] },
+    );
+    await listed.store.write([eventMessage()]);
+    await listed.relay.relay();
+    expect(listed.listener.producers).toEqual([]);
+
+    // the owner's own relay is the verified producer
+    const owner = relayOnOrdersTopic();
+    owner.relay.connect(
+      { has: () => false, get: () => undefined as never },
+      { service: "orders", publishes: ["orders.order.paid.v1"] },
+    );
+    await owner.store.write([eventMessage()]);
+    await owner.relay.relay();
+    expect(owner.listener.producers).toEqual(["orders"]);
   });
 
   it("publishes an event again at each older version a live change serves, under the same id", async () => {

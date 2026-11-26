@@ -16,14 +16,14 @@ import type { BrokerMessage } from "./broker-message";
 import { app } from "../../.stackra/entry/server";
 import { eventCatalogueItemPublishedV1 } from "../../../catalogue/stackra-encore/catalogue/events";
 
-/** Hands one delivered envelope to this service's inbox. */
-function receive(message: BrokerMessage): Promise<void> {
+/** Hands one delivered envelope to this service's inbox; the topic's owner is its producer when the relay's stamp agrees. */
+function receive(message: BrokerMessage, owner: string): Promise<void> {
   return app.handlers.run(async (container) => {
-    await container.get(InboxService).receive(message.body as EventEnvelope);
+    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);
   });
 }
 
 /** Delivers `catalogue.item.published.v1` to this service's typed listeners. */
 export const eventCatalogueItemPublishedV1Subscription = new Subscription(eventCatalogueItemPublishedV1, "channels-catalogue-item-published-v1", {
-  handler: receive,
+  handler: (message) => receive(message, "catalogue"),
 });

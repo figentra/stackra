@@ -30,6 +30,12 @@ export interface ErasureReceipt {
   /** True when the subject key's salt was destroyed; false when a hold keeps shredded fields readable or none existed. */
   readonly shredded: boolean;
 
+  /**
+   * Held outbox messages naming the subject that could not be redacted (STA-2629), also listed in `kept` with reason
+   * `unredacted`; above zero the erasure is incomplete. Absent from a receipt recorded before it.
+   */
+  readonly unredacted?: number;
+
   /** When the erasure finished, ISO 8601. */
   readonly at: string;
 }

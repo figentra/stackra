@@ -278,8 +278,9 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
     `granted → executing` by compare-and-set, and runs the whole pipeline as the stored requester under
     `approval:<id>`, so a duplicate delivery runs `handle` once. A refusal settles `failed` with its code; an in-flight
     answer, an identity outage or any other error settles nothing and retries; `executing` 24 hours after the grant
-    settles `unknown`. It acts only on a delivery `ApprovalGrantOrigin` trusts, and the approver's authority is never
-    lent.
+    settles `unknown`. It acts only on a delivery whose verified producer (`ctx.producer`) is the store's service,
+    named by `ApprovalsConfig.storeService` (key `actions.approvals`; empty trusts nothing), and the approver's
+    authority is never lent. The `ApprovalGrantOrigin` port is gone (STA-1792).
   - A request parked only by the tenant's rules keeps resubmission (`on_resubmit`); the executor never runs it.
   - `./testing` ships `MemoryApprovalGateDriver`, `MemoryApprovalBindingStoreDriver`, `MemoryActorStatusCheckDriver` and
     the two port conformance suites; the store itself (votes, sweep) lives in OS tasks-approvals behind `ApprovalGate`.

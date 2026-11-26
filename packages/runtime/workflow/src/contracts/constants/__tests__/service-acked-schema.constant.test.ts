@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `SERVICE_ACKED_SCHEMA`: an ack without `kept` still parses; `kept` takes model keys, a
- *          `hold` or `retention` reason and a whole count, and refuses anything else.
+ *          `hold`, `retention` or `unredacted` (STA-2629) reason and a whole count, and refuses anything else.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0210 (decision 6); STA-1312.
@@ -18,6 +18,14 @@ describe("SERVICE_ACKED_SCHEMA", () => {
   it("parses an ack with and without what was kept", () => {
     expect(SERVICE_ACKED_SCHEMA.parse(ACK)).toEqual(ACK);
     expect(SERVICE_ACKED_SCHEMA.parse({ ...ACK, kept: [KEPT] })).toEqual({ ...ACK, kept: [KEPT] });
+  });
+
+  it("parses copies an erasure could not redact (STA-2629)", () => {
+    const unredacted = { kind: "outbox.message", reason: "unredacted", count: 1 };
+    expect(SERVICE_ACKED_SCHEMA.parse({ ...ACK, kept: [unredacted] })).toEqual({
+      ...ACK,
+      kept: [unredacted],
+    });
   });
 
   it.each([

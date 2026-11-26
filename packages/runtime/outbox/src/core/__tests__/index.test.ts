@@ -31,6 +31,7 @@ describe("@stackra/outbox", () => {
       "OutboxConfig$",
       "OutboxEventOutboxDriver",
       "OutboxOptions",
+      "PlatformPersonalEventError",
       "RelayInboxConfig",
       "RelayInboxOptions",
       "RowIsolationMissingError",

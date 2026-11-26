@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `ApprovalExecutorListener`, the listener in the service that owns a declared action: on `approval.granted` it runs the
  *          parked call as the stored requester, once, and settles the request with how it ended.
- * Boundary: acts only on a delivery `ApprovalGrantOrigin` trusts, for the event's own tenant, and never lets the inbox's
+ * Boundary: acts only on a delivery whose verified producer (`ctx.producer`, set by the inbox from what its transport
+ *           proved, never from the event) is the approval store's service named by `ApprovalsConfig.storeService`
+ *           (unset: none, so it fails closed; STA-1792), for the event's own tenant, and never lets the inbox's
  *           actor reach a call: the binding is read in a `CallIsolation.run` for that tenant as the scope's system actor
  *           (never a platform read, never `BYPASSRLS`), and the call is built only from the binding (actor and chain,
  *           scope, key, assurance); the store supplies status, votes and the input snapshot, and the snapshot must hash to
@@ -20,19 +22,19 @@
  *           listener, on a worker queue with retries. Call `connect(resolver)` once the container is booted.
  * Runtime: node
  * Governing contract: ADR 0509 (decision 7); ADR 0495 (decisions 1 and 2); ADR 0360 (decision 9); ADR 0141;
- *                     STA-1724 FR-011, FR-012.
+ *                     STA-1724 FR-011, FR-012; STA-1792 (the verified producer replaces `ApprovalGrantOrigin`).
  */
 import { Duration, ActorKind } from "@stackra/contracts";
 import type { Actor, Clock, Logger, PublicId } from "@stackra/contracts";
 import { type ListenerContext, Listener } from "@stackra/events";
 import { isRefusal } from "@stackra/errors";
 
+import type { ApprovalsConfig } from "#config/approvals.config";
 import type { ApprovalGranted } from "#contracts/events/approval-granted.event";
 import { ApprovalExecution } from "#contracts/enums/approval-execution.enum";
 import { ApprovalStatus } from "#contracts/enums/approval-status.enum";
 import type { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 import type { ApprovalGate } from "#contracts/ports/approval-gate.port";
-import type { ApprovalGrantOrigin } from "#contracts/ports/approval-grant-origin.port";
 import type { CallIsolation } from "#contracts/ports/call-isolation.port";
 import type { ScopeOwnership } from "#contracts/ports/scope-ownership.port";
 import type { ApprovalBinding } from "#contracts/types/approval-binding.type";
@@ -104,8 +106,8 @@ export class ApprovalExecutorListener extends Listener({
   /** Reads the owning service's bindings. */
   private readonly bindings: ApprovalBindingStore;
 
-  /** Whether a delivery came from the store's service. */
-  private readonly origin: ApprovalGrantOrigin;
+  /** Names the store's service, the one verified producer whose grants it acts on. */
+  private readonly config: ApprovalsConfig;
 
   /** Opens the tenant-scoped read of the binding. */
   private readonly isolation: CallIsolation;
@@ -125,7 +127,7 @@ export class ApprovalExecutorListener extends Listener({
   /**
    * @param gate - the store's port.
    * @param bindings - the owning service's binding store.
-   * @param origin - the check that a delivery came from the store's service.
+   * @param config - names the approval store's service.
    * @param isolation - the isolation port.
    * @param ownership - the scope-owner check.
    * @param clock - the owning service's clock.
@@ -134,7 +136,7 @@ export class ApprovalExecutorListener extends Listener({
   constructor(
     gate: ApprovalGate,
     bindings: ApprovalBindingStore,
-    origin: ApprovalGrantOrigin,
+    config: ApprovalsConfig,
     isolation: CallIsolation,
     ownership: ScopeOwnership,
     clock: Clock,
@@ -143,7 +145,7 @@ export class ApprovalExecutorListener extends Listener({
     super();
     this.gate = gate;
     this.bindings = bindings;
-    this.origin = origin;
+    this.config = config;
     this.isolation = isolation;
     this.ownership = ownership;
     this.clock = clock;
@@ -169,11 +171,7 @@ export class ApprovalExecutorListener extends Listener({
         "ApprovalExecutorListener is not connected: call connect(container) after boot",
       );
     const { approvalId, key } = event;
-    if (
-      !(await this.origin.trusts(ctx)) ||
-      ctx.scopeId === undefined ||
-      ctx.scopeId !== event.scopeId
-    )
+    if (!this.fromStore(ctx) || ctx.scopeId === undefined || ctx.scopeId !== event.scopeId)
       return this.drop(approvalId, "origin");
     const type = this.typeOf(key);
     if (type === undefined) return this.drop(approvalId, "key");
@@ -288,6 +286,12 @@ export class ApprovalExecutorListener extends Listener({
   private typeOf(key: string) {
     for (const [type, registration] of ACTION_REGISTRY) if (registration.key === key) return type;
     return undefined;
+  }
+
+  /** Whether the transport verified the delivery as published by the store's service; none named trusts nothing. */
+  private fromStore(ctx: ListenerContext): boolean {
+    const store = this.config.storeService;
+    return store !== "" && ctx.producer === store;
   }
 
   /** Drops a delivery this service cannot place, logging ids only. */

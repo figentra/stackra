@@ -5,6 +5,8 @@
  *          listeners, drains the bus, and repeats until nothing is left, so a chain of reactions settles. With a delivery
  *          scope registered (`deliverEventsIn`, by `@stackra/database`'s testing entry), each event is delivered on its
  *          own, as the production inbox does: in a transaction, as its actor, in the scope it was written in (STA-1789).
+ *          A remote event carries the producer `deliverRemoteEvent` was given, as the inbox hands on the verified one
+ *          (STA-1792).
  * Boundary: works through the port fake, never `@stackra/outbox`; an app whose `EventOutbox` is another driver is
  *           refused. An occurrence whose id the inbox has already delivered runs no listener. A listener failure is
  *           returned and kept for `app.listeners.failures`, never thrown.
@@ -39,7 +41,7 @@ export async function drainOutbox(): Promise<readonly ListenerDelivery[]> {
   for (;;) {
     const pending = [...outbox.take(), ...inbox.splice(0)];
     let ran = 0;
-    for (const { event, meta } of pending) {
+    for (const { event, meta, producer } of pending) {
       if (!(event instanceof Event))
         throw new TypeError(`The outbox holds ${String(event)}, which is not an event`);
       if (meta.id !== undefined) {
@@ -47,13 +49,13 @@ export async function drainOutbox(): Promise<readonly ListenerDelivery[]> {
         seen.add(meta.id);
       }
       if (within === undefined) {
-        bus.deliver(event, meta);
+        bus.deliver(event, meta, producer);
         continue;
       }
       // As the inbox: one delivery at a time, in its own transaction as the event's actor in its scope (STA-1789).
       const scope = meta.id === undefined ? undefined : scopes.get(meta.id);
       const done = await within(app, meta, scope, () => {
-        bus.deliver(event, meta);
+        bus.deliver(event, meta, producer);
         return bus.drain();
       });
       deliveries.push(...done);

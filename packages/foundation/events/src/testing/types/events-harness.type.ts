@@ -24,8 +24,12 @@ export interface EventsHarness {
   /** The app's clock, the time of an occurrence written to the outbox (`commitEvents`). */
   readonly clock: Clock;
 
-  /** Remote events received and not yet delivered, oldest first. */
-  readonly inbox: { readonly event: Event; readonly meta: Partial<EventMeta> }[];
+  /** Remote events received and not yet delivered, oldest first, each with the producer its transport would verify. */
+  readonly inbox: {
+    readonly event: Event;
+    readonly meta: Partial<EventMeta>;
+    readonly producer?: string;
+  }[];
 
   /** The ids the inbox has delivered, so a redelivery runs no listener. */
   readonly seen: Set<string>;

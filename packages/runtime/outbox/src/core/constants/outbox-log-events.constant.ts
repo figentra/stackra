@@ -11,6 +11,8 @@
 export const OUTBOX_LOG_EVENTS = Object.freeze({
   /** A message failed its last delivery and was dead-lettered. */
   messageDead: "outbox.message_dead",
+  /** An event message of a wire name its service does not publish was dead-lettered unpublished (STA-1792). */
+  messageForeign: "outbox.message_foreign",
   /** A change consumer failed its last attempt; its cursor stalled until it is resumed or replayed. */
   consumerStalled: "outbox.consumer_stalled",
   /** A relay tick failed to read or record messages and paused. */

@@ -36,7 +36,7 @@ own cursor; the inbox runs each received event once.
 | `registerEventNames`                                                   | `.`           | re-exported from @stackra/events (STA-1387), where gen's entry imports it from |
 | `registerRelays`                                                       | `.`           | gen's entry names the relays: listeners whose `handle` takes `EventEnvelope`   |
 | `registerChangeConsumers`                                              | `.`           | watch a model's rows: `[[Product, ProductIndexConsumer]]` (gen writes it)      |
-| `redactSubjectMessages`                                                | `.`           | erasure: nulls named fields in held messages naming a subject (`holding`)      |
+| `redactSubjectMessages`                                                | `.`           | erasure: nulls named fields in held messages naming a subject; counts the ones it could not rewrite |
 | `ConsumesChanges`                                                      | `.`           | `@ConsumesChanges(Product)` on a consumer service; gen registers the pair      |
 | `coalesceChanges`                                                      | `.`           | one change per row of a run, a later change superseding an earlier one         |
 | `MemoryChangeFeedDriver`                                               | `.`           | the change log of a test or a single process                                   |
@@ -72,11 +72,27 @@ they commit with the change or not at all, and a rollback drops them. A domain e
 the in-process dispatch; it never enters the outbox. Each message takes the scope of the transaction (the
 `Database.withScope` settings), and the running action call's actor and id.
 
+A message written with no tenant is the platform's, and no tenant's erasure can rewrite it, so an event whose class
+declares a `@Classified` field is refused there (`PlatformPersonalEventError`, code
+`platform_personal_event`): record it inside the subject's tenant, or leave the personal field out.
+
 A caller that holds recorded events itself writes them through `EventOutbox` (`OutboxEventOutboxDriver`) in its own
 transaction. The wire name is the one gen registered (`orders.order.paid.v1`), else the written name and version
 (`order.paid.v1`).
 
 ## Relaying
+
+Every envelope the relay publishes names its service as `producer`, from the deployment identity the generated boot
+passes (`relay.connect(container, { service: "orders", publishes: ["orders.order.paid.v1"] })`), never from the
+stored message. The relay publishes only the wire names in `publishes` (the service's integration events, hosted
+packages' included): another service's event, which a consumer can record since it imports that service's event
+class to listen to it, is dead-lettered unpublished (`event_not_published`) and logged (`outbox.message_foreign`).
+A consumer never trusts the `producer` of a body on its own: the inbox takes the producer from what its transport
+verified and hands it to listeners as `ctx.producer`. A generated subscription calls
+`inbox.receiveFromTopic(envelope, owner)`, which takes the topic's owner only when the relay's stamp names it too
+(else the event runs with no producer); the cross-app inbox passes the verified signer, the in-process publisher its
+own relay's stamp. A listener that must act on one service's events only (the approval executor) checks
+`ctx.producer`, never `ctx.actor`.
 
 ```ts
 relay.connect(container);

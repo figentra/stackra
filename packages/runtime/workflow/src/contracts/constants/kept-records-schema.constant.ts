@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `KEPT_RECORDS_SCHEMA`, the shipped `KeptRecords$`: one kind of rows a service kept instead of disposing of
- *          them (its model key, `hold` or `retention`, and a count).
+ *          them (its model key, `hold`, `retention` or `unredacted`, and a count).
  * Boundary: shape only, no ids. `ServiceAcked$` lists it, and the `kept` fields of `ServiceAcked`, `AllServicesAcked`
  *           and `ServiceAckSet` name it through their `@Field` hatch.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); STA-1312; STA-344.
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); STA-1312; STA-344; STA-2629
+ *                     (`unredacted`).
  */
 import { z } from "zod";
 
@@ -15,6 +16,6 @@ export const KEPT_RECORDS_SCHEMA = z.object({
     .string()
     .max(255)
     .regex(/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/, "Expected a model key such as orders.order"),
-  reason: z.enum(["hold", "retention"]),
+  reason: z.enum(["hold", "retention", "unredacted"]),
   count: z.number().int().min(0),
 });
