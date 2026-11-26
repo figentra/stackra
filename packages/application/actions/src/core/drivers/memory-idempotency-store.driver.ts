@@ -3,10 +3,12 @@
  * Purpose: `MemoryIdempotencyStoreDriver`, the in-process `IdempotencyStore`: a map of scoped keys to their record and
  *          expiry, for tests, local runs and single-instance memory deployments.
  * Boundary: one process only; a restart forgets every key, so production with more than one instance binds the durable
- *           driver. `claim` is atomic because it never awaits between the read and the write. Expiry follows the
- *           Clock port, so a test moves time instead of waiting.
+ *           driver. `claim` is atomic because it never awaits between the read and the write. A held key lapses after
+ *           its lease (or the replay window once `extend`ed), a done key after its replay window. A held entry keeps its
+ *           call's `holder`, so `extend`, `complete` and `release` never touch a claim another call took after this
+ *           one's lease lapsed. Expiry follows the Clock port, so a test moves time instead of waiting.
  * Runtime: isomorphic
- * Governing contract: ADR 0136 (decision 3); owner decision 2026-10-21 (the store behind a port).
+ * Governing contract: ADR 0136 (decision 3); owner decision 2026-10-21 (the store behind a port); STA-2797 (the lease).
  */
 import { Driver } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -16,15 +18,19 @@ import type { StoredRefusal } from "@stackra/errors";
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";
 
-/** A stored record and when it lapses (epoch milliseconds). */
-type Entry = { readonly record: IdempotencyRecord; readonly expiresAt: number };
+/** A stored record, when it lapses (epoch milliseconds), and the call holding it while not done. */
+type Entry = {
+  readonly record: IdempotencyRecord;
+  readonly expiresAt: number;
+  readonly holder?: string;
+};
 
 /**
  * Keeps Idempotency-Keys in memory.
  *
  * @example
  * const store = new MemoryIdempotencyStoreDriver(clock);
- * await store.claim("orders.order.create@1:t:usr_1:k1", fingerprint, Duration.hours(24)); // undefined: claimed
+ * await store.claim("orders.order.create@1:t:usr_1:k1", fingerprint, Duration.minutes(15), holder); // undefined
  */
 export class MemoryIdempotencyStoreDriver extends Driver(IdempotencyStore) {
   /** Scoped key to its entry. */
@@ -40,29 +46,51 @@ export class MemoryIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     this.clock = clock;
   }
 
-  /** Claims a free or lapsed key, or returns the live record under it untouched. */
+  /** Claims a free or lapsed key for `holder` for `lease`, or returns the live record under it untouched. */
   async claim(
     key: string,
     fingerprint: string,
-    ttl: Duration,
+    lease: Duration,
+    holder: string,
   ): Promise<IdempotencyRecord | undefined> {
     const now = this.clock.now().getTime();
-    const live = this.entries.get(key);
-    if (live !== undefined && live.expiresAt > now) return live.record;
+    const earlier = this.live(key, now);
+    if (earlier !== undefined) return earlier.record;
     this.entries.set(key, {
       record: Object.freeze({ fingerprint, done: false }),
-      expiresAt: now + Duration.toMilliseconds(ttl),
+      expiresAt: now + Duration.toMilliseconds(lease),
+      holder,
     });
     return undefined;
   }
 
-  /** Stores the output of a held key; a key that lapsed or was released meanwhile is left alone. */
-  async complete(key: string, output: unknown): Promise<void> {
-    const held = this.entries.get(key);
-    if (held === undefined || held.record.done) return;
+  /** Keeps a key `holder` holds (or a free one, taken again) held for `ttl`; `false` when the claim was lost. */
+  async extend(key: string, fingerprint: string, ttl: Duration, holder: string): Promise<boolean> {
+    const now = this.clock.now().getTime();
+    const held = this.live(key, now);
+    if (held !== undefined && (held.record.done || held.holder !== holder)) return false;
     this.entries.set(key, {
-      record: Object.freeze({ fingerprint: held.record.fingerprint, done: true, output }),
-      expiresAt: held.expiresAt,
+      record: Object.freeze({ fingerprint, done: false }),
+      expiresAt: now + Duration.toMilliseconds(ttl),
+      holder,
+    });
+    return true;
+  }
+
+  /** Stores the output for `ttl` under a key `holder` holds, or a free one; anything else is left alone. */
+  async complete(
+    key: string,
+    fingerprint: string,
+    output: unknown,
+    ttl: Duration,
+    holder: string,
+  ): Promise<void> {
+    const now = this.clock.now().getTime();
+    const held = this.live(key, now);
+    if (held !== undefined && (held.record.done || held.holder !== holder)) return;
+    this.entries.set(key, {
+      record: Object.freeze({ fingerprint, done: true, output }),
+      expiresAt: now + Duration.toMilliseconds(ttl),
     });
   }
 
@@ -79,8 +107,15 @@ export class MemoryIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     });
   }
 
-  /** Frees a held key; a done key keeps its output. */
-  async release(key: string): Promise<void> {
-    if (this.entries.get(key)?.record.done === false) this.entries.delete(key);
+  /** Frees a key `holder` holds; a done key keeps its output, and another call's claim stays. */
+  async release(key: string, holder: string): Promise<void> {
+    const entry = this.entries.get(key);
+    if (entry?.record.done === false && entry.holder === holder) this.entries.delete(key);
+  }
+
+  /** The entry under `key` that has not lapsed at `now`, if any. */
+  private live(key: string, now: number): Entry | undefined {
+    const entry = this.entries.get(key);
+    return entry !== undefined && entry.expiresAt > now ? entry : undefined;
   }
 }
