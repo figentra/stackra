@@ -39,7 +39,7 @@ and `yaml`.
 | `stackra promote --to <e> [--from <e>] [--sha <sha>]`     | ship what `--from` (default staging) runs to `--to` through runway's providers; `--approved` behind an approval                           |
 | `stackra start`                                           | gen, then `vite preview` of an app's web build                                                                                            |
 | `stackra typecheck`                                       | gen, then `tsc --noEmit`                                                                                                                  |
-| `stackra test [--tier unit\|int\|e2e]`                    | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e) |
+| `stackra test [--tier unit\|int\|e2e\|wiring]`             | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e); `wiring` runs a service's generated Encore wiring suite under `encore test` |
 | `stackra lint`                                            | `oxlint .`                                                                                                                                |
 | `stackra check [flags]`                                   | the quality gate: every check phase in order at the workspace root (see below)                                                            |
 | `stackra validate`                                        | `check --only config,structure,docs,catalogues,spec`                                                                                      |
@@ -116,7 +116,17 @@ eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change),
   from SSM `/imagebuilder/stackra-testbed/ami`.
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
-run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
+run `turbo run <task>` (`test:e2e` for `--tier e2e`, `test:wiring` for `--tier wiring`); each member's script calls
+`stackra <task>` again.
+
+`stackra test --tier wiring` (ADR 0182 decision 3, STA-2838) runs in a service that runs as a generated Encore app.
+It generates, then starts `encore test` in the member with `STACKRA_TEST_TIER=wiring`. Encore provisions the runtime and
+a migrated test database and runs the member's `test` script, which is `stackra test` again: told the tier by the
+variable, and inside Encore (`ENCORE_RUNTIME_CONFIG` or `ENCORE_APP_META` is set), it skips gen and runs Vitest with
+`.stackra/vitest.wiring.config.ts` on the generated `.stackra/tests/encore-wiring.test.ts`. The suite checks the
+wiring only: the Encore service, the boot, every endpoint (a preflight answers 204; a guarded call without a
+credential, or with a bearer token that does not verify, is refused with 401 `request_refused`), every CronJob,
+topic and subscription, and the database with each model table migrated. It needs Encore and Docker.
 
 `stackra dev --surface <surface>` runs at a product root (ADR 0436 decision 6, app-shells section 15 point 2). It reads
 `surfaces.<surface>` (`shell: os/console@3`, `packages`) from the root `runway.yaml`, runs `stackra gen`, writes the
@@ -247,6 +257,7 @@ A service is complete on creation: `stackra new service demo --area app --summar
 `src/<name>.module.ts` and one `createTestingModule` test. `--data` adds the database test peers, `@stackra/testing`, an
 example module (`src/modules/notes/`: model, migration, a PGlite unit test, one `.int.test.ts`) and
 `"test:int": "stackra test --tier int"`; gen writes `.stackra/vitest.int.config.ts` for a member with an int test.
+Every service also gets `"test:wiring": "stackra test --tier wiring"`, the generated Encore wiring suite.
 `--repo <path>` names the workspace for every kind; a service written into a folder with no `pnpm-workspace.yaml` also
 writes a minimal workspace root (`package.json`, `pnpm-workspace.yaml` with the catalogs it names and `stackra` pinned to
 this CLI's version, and an `.npmrc` for the Stackra registry, no token). An existing root is never overwritten.

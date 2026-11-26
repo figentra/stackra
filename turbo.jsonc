@@ -109,6 +109,16 @@
       "passThroughEnv": ["PLAYWRIGHT_*", "DISPLAY", "CI"],
       "outputs": [],
     },
+    // ADR 0182 d3, STA-2838: a service's Encore wiring tier, the generated suite under `encore test`. Never cached: Encore
+    // provisions the runtime and a migrated test database, which no input hash sees. Defined by services that run as a
+    // generated Encore app; not part of `verify`, since it needs Encore and Docker.
+    "test:wiring": {
+      "description": "Run a service's generated Encore wiring suite (.stackra/tests/encore-wiring.test.ts) under `encore test`: `stackra test --tier wiring`. Needs Encore and Docker. Defined only by services. After gen and //#gen:workspace, as test.",
+      "dependsOn": ["^build", "gen", "//#gen:workspace"],
+      "cache": false,
+      "passThroughEnv": ["ENCORE_*", "DOCKER_*"],
+      "outputs": [],
+    },
     // `stackra gen` once at the root (`gen:workspace`) over every member with a stackra.config.ts. One root task, not
     // one per member: its two passes resolve the services' clients against each other's manifests, which a per-member
     // graph cannot (a client cycle between services is allowed). It runs the built CLI, so it waits for @stackra/cli's

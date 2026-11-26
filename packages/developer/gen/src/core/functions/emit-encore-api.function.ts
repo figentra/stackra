@@ -13,7 +13,7 @@
  *          imports its root module (the manifest names the module's file), as the wiring binds them. An action or
  *          query endpoint names its class to the helper as `action`, so `serveGuardedCall` knows whether a forwarded user token may travel a
  *          second hop through it (ADR 0209, amendment of 2026-11-07).
- * Boundary: pure; reads the manifest's actions and the member's classes. The actor comes only from the verified
+ * Boundary: pure; prints the rows `encoreEndpoints` reads from the manifest's actions and the member's classes. The actor comes only from the verified
  *           `Authorization` header (`CallAuthenticator`, inside the helper), never from the body, a path parameter or
  *           another header. An entry may run without one only when its actors list `ActorKind.Anonymous`
  *           (`anonymous` in the manifest, STA-2025); a controller is reachable without a session, since it is raw (its
@@ -30,21 +30,16 @@
  *                     member through `handlers`); STA-2025 (the anonymous opt-in); STA-2063; STA-2577.
  */
 import type { StackraManifest } from "@stackra/contracts";
-import { camelCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreEndpoints } from "#core/functions/encore-endpoints.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
-import { ownClass } from "#core/functions/own-class.function";
-import { shapeOfRef } from "#core/functions/shape-of-ref.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
-
-/** A manifest entry, read loosely: each section's entries are open records. */
-type Entry = Readonly<Record<string, unknown>>;
 
 /** The local names this file always binds, which a member class never takes. */
 const RESERVED = ["ActionPipeline", "answerCall", "api", "app", "requestCallOptions"];
@@ -80,95 +75,41 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
     use(target.from, name === target.name ? name : `${target.name} as ${name}`, typeOnly);
     return name;
   };
-  // A hosted package's module surface, as the wiring binds it: the classes its manifest lists in `services` (with the
-  // entry each is exported from), for a dependency whose root module the host imports (its manifest names the file).
-  const hosted = new Map<string, Entry[]>();
-  for (const { package: name, manifest: dependency } of ir.dependencies) {
-    const root = dependency.modules?.find((candidate) => candidate.key === dependency.member);
-    const listed = dependency["services"];
-    if (typeof root?.["file"] !== "string" || dependency.kind === "app" || !Array.isArray(listed))
-      continue;
-    hosted.set(name, listed as Entry[]);
-  }
-  /** The class of `entry` and the specifier it is imported from: the member's own, or a hosted package's. */
-  const classOf = (entry: Entry): { name: string; importPath: string } | undefined => {
-    if (typeof entry["from"] !== "string") return ownClass(ir, entry["class"], entry["module"]);
-    const row = hosted
-      .get(entry["from"])
-      ?.find((candidate) => candidate["class"] === entry["class"]);
-    return typeof row?.["from"] === "string"
-      ? { name: String(row["class"]), importPath: row["from"] }
-      : undefined;
-  };
   const body: string[] = [];
-  for (const entry of (manifest.actions ?? []) as readonly Entry[]) {
-    const endpoint = entry["endpoint"] as { method?: unknown; path?: unknown } | false | undefined;
-    if (typeof endpoint !== "object") continue;
-    const declared = classOf(entry);
-    if (declared === undefined) continue;
-
-    const key = String(entry["key"]);
-    const method = String(endpoint.method);
-    const path = String(endpoint.path);
-    const type = ref({ name: declared.name, from: declared.importPath }, false);
-    // The input schema class types a GET or DELETE's query string; one the member does not declare coerces nothing.
-    // shortcut: a hosted entry's input class is not known here, so its query string is not coerced; list the hosted
-    // shapes' entries in the manifest when a hosted GET takes a number or a boolean.
-    const shape =
-      entry["input"] === undefined || typeof entry["from"] === "string"
-        ? undefined
-        : shapeOfRef(ir, entry["input"]);
+  for (const endpoint of encoreEndpoints(ir, manifest)) {
+    const type = ref(endpoint.class, false);
+    if (endpoint.kind === "controller") {
+      body.push(
+        `/** ${endpoint.path}: ${endpoint.class.name}, a raw controller, behind the same guards. */`,
+        `export const ${endpoint.name} = api.raw(`,
+        `  { method: "*", path: ${JSON.stringify(endpoint.route)}, expose: true, auth: false },`,
+        "  (req, resp) =>",
+        "    answerCall(req, resp, {",
+        `      path: ${JSON.stringify(endpoint.route)},`,
+        "      anonymous: true,",
+        "      raw: true,",
+        `      execute: (container, _input, _actor, request) => container.get(${type}).handle(request),`,
+        "    }),",
+        ");",
+        "",
+      );
+      continue;
+    }
+    const { method, path } = endpoint;
     const input =
-      shape === undefined
-        ? []
-        : [`      input: ${ref({ name: shape.name, from: shape.importPath }, false)},`];
+      endpoint.input === undefined ? [] : [`      input: ${ref(endpoint.input, false)},`];
     body.push(
-      `/** ${method} ${path}: ${key} through the action pipeline. */`,
-      `export const ${camelCase(key.replace("@", "_v"))} = api.raw(`,
+      `/** ${method} ${path}: ${endpoint.key} through the action pipeline. */`,
+      `export const ${endpoint.name} = api.raw(`,
       `  { method: ${JSON.stringify(method)}, path: ${JSON.stringify(path)}, expose: true, auth: false },`,
       "  (req, resp) =>",
       "    answerCall(req, resp, {",
       `      path: ${JSON.stringify(path)},`,
-      `      anonymous: ${entry["anonymous"] === true},`,
+      `      anonymous: ${endpoint.anonymous},`,
       `      action: ${type},`,
       ...input,
       "      execute: (container, input, actor, request, call) =>",
       `        new ActionPipeline(container).execute(${type}, input as never, { actor, ...requestCallOptions(request), ...call }),`,
-      "    }),",
-      ");",
-      "",
-    );
-  }
-  const controllers = [
-    ...ir.classes
-      .filter((declared) => declared.kind === "controller" && declared.abstract !== true)
-      .map((declared) => ({
-        name: declared.name,
-        from: declared.importPath,
-        path: declared.options["path"],
-      })),
-    ...[...hosted.values()].flat().map((row) => ({
-      name: String(row["class"]),
-      from: String(row["from"]),
-      path: row["path"],
-    })),
-  ];
-  for (const controller of controllers) {
-    const { path } = controller;
-    if (typeof path !== "string") continue;
-    const type = ref({ name: controller.name, from: controller.from }, false);
-    // Encore names a wildcard segment: `/api/auth/*` is `/api/auth/*rest`.
-    const route = path.endsWith("/*") ? `${path}rest` : path;
-    body.push(
-      `/** ${path}: ${controller.name}, a raw controller, behind the same guards. */`,
-      `export const ${camelCase(controller.name)} = api.raw(`,
-      `  { method: "*", path: ${JSON.stringify(route)}, expose: true, auth: false },`,
-      "  (req, resp) =>",
-      "    answerCall(req, resp, {",
-      `      path: ${JSON.stringify(route)},`,
-      "      anonymous: true,",
-      "      raw: true,",
-      `      execute: (container, _input, _actor, request) => container.get(${type}).handle(request),`,
       "    }),",
       ");",
       "",

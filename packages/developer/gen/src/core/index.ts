@@ -26,6 +26,8 @@ export { DOCS_MEMBER_SOURCE } from "#core/constants/docs-member-source.constant"
 export { DOCS_SITE_DIR } from "#core/constants/docs-site-dir.constant";
 export { EFFECT_TAGS } from "#core/constants/effect-tags.constant";
 export { ENCORE_SERVICES_DIR } from "#core/constants/encore-services-dir.constant";
+export { ENCORE_WIRING_CONFIG } from "#core/constants/encore-wiring-config.constant";
+export { ENCORE_WIRING_TEST } from "#core/constants/encore-wiring-test.constant";
 export { GRAPH_NOTICE } from "#core/constants/graph-notice.constant";
 export { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 export { INTEGRATION_ROLES } from "#core/constants/integration-roles.constant";
@@ -68,6 +70,7 @@ export { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 export { emitEncoreQueues } from "#core/functions/emit-encore-queues.function";
 export { emitEntities } from "#core/functions/emit-entities.function";
 export { emitExpoConfig } from "#core/functions/emit-expo-config.function";
+export { emitEncoreWiringTest } from "#core/functions/emit-encore-wiring-test.function";
 export { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
 export { emitI18n } from "#core/functions/emit-i18n.function";
 export { emitQueues } from "#core/functions/emit-queues.function";

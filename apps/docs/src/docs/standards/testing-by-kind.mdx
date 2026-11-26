@@ -28,6 +28,15 @@ member that has `.int.test.ts` files: the member's `vitest.int.config.ts` wraps 
 `.stackra/tests/**/*.int.test.ts` (the tenant-isolation test). Those tests start a Testcontainers Postgres through
 `usePostgres()`, so they need Docker; the Quality Gate runs `pnpm test:int` on every pull request (STA-1570).
 
+`pnpm test:wiring` (turbo task `test:wiring`, never cached; `stackra test --tier wiring` in one service) is the thin
+Encore suite of ADR 0182 decision 3. Gen writes it for every service that runs as a generated Encore app
+(`.stackra/tests/encore-wiring.test.ts` and `.stackra/vitest.wiring.config.ts`, STA-2838), and `encore test` runs it
+with the real Encore runtime and a migrated test database. It checks the wiring only, never logic: the Encore service,
+the boot from the root module, every generated endpoint (each route answers its CORS preflight; a guarded action or
+query refuses a call without a credential and one with a bearer token that does not verify, with 401
+`request_refused`), every CronJob, topic and subscription, and each model table in the service database. No call
+carries a valid credential, so it changes no data. It needs Encore and Docker.
+
 ## File kind to test
 
 | Kind folder    | File suffix  | Required test | Test file for `<subject>`                                                                          |

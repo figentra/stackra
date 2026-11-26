@@ -4,7 +4,7 @@
   "preset": {
     "name": "./packages/developer/flow-preset/preset",
     "version": "0.11.0",
-    "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
+    "digest": "sha256:2f01b839dd8321d7ead38a98afe34c9c92b22d7ff4c11b9fd01a8298e6154c35"
   },
   "profile": "framework",
   "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
@@ -58,7 +58,7 @@
     ".agents/rules/not-built-yet.md": "sha256:70fbc346476d23bb3b461b473cfe7b70d21de51672f9cafcb6f885f0a0514459",
     ".agents/rules/secrets.md": "sha256:11afd53634a2f4679bb83446c25d0f02a0b58e168f97d9316f81334f7f2b25c8",
     ".agents/rules/service-checklist.md": "sha256:9fcde412b327604fdcbe2fac2406379fb8c5673773fefa2831b53906ffa928c6",
-    ".agents/rules/task-vocabulary.md": "sha256:3d45624c18766d6552ee11da53f085ec9770d274496a29e4147b63737c63d87c",
+    ".agents/rules/task-vocabulary.md": "sha256:ca3f00e3fddd707c8a9750c695e03e309a15acfffb2f9f811f4181f323e30d55",
     ".agents/rules/tenancy.md": "sha256:1f4abda4c1b0e5102e574e72f37b57b477a2cfa2d2d541f56d8ff633769c4121",
     ".agents/rules/third-party-sources.md": "sha256:b62ce70f21bf2888f6f49022d3268328e5611037dfa40b251507e685c9b386eb",
     ".agents/rules/versions.md": "sha256:c66b505e4e5077fb3839ef4900738f07d65573c7508e9d77ee1465e964af65ef",

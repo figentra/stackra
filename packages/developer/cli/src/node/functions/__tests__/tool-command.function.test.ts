@@ -3,8 +3,10 @@
  * Purpose: unit tests of `toolCommand`: its usage lists the task's options; in a member it runs gen first (not for
  *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
  *          has nothing to build; at the workspace root it fans out through
- *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
- *          the site and then fails on a broken link, naming the page (STA-2026).
+ *          `turbo run <task>` (`test:e2e` and `test:wiring` for those tiers) and refuses `--target`; a Fumadocs docs site's `lint` builds
+ *          the site and then fails on a broken link, naming the page (STA-2026); `--tier wiring` starts `encore test`
+ *          with the tier in `STACKRA_TEST_TIER`, and the `stackra test` Encore runs reads it there and runs the
+ *          generated suite without generating again (STA-2838).
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule.
@@ -38,6 +40,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -132,6 +135,38 @@ describe("toolCommand", () => {
     expect(await toolCommand("lint", "Lint").run(context())).toBe(0);
   });
 
+  it("starts encore test for a service's wiring tier, and runs the suite from inside without generating (STA-2838)", async () => {
+    writeFileSync(join(root, "stackra.config.ts"), "export default defineService({});\n");
+    mkdirSync(join(root, ".stackra"));
+    writeFileSync(join(root, ".stackra", "vitest.wiring.config.ts"), "");
+    vi.stubEnv("STACKRA_TEST_TIER", "");
+    await toolCommand("test", "Test").run(context({ tier: "wiring" }));
+    expect(gen).toHaveBeenCalledTimes(1);
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "encore", args: ["test"], cwd: root, env: { STACKRA_TEST_TIER: "wiring" } },
+      expect.anything(),
+    );
+    // What `encore test` starts: the member's `test` script, with the tier and Encore's runtime configuration.
+    vi.stubEnv("STACKRA_TEST_TIER", "wiring");
+    vi.stubEnv("ENCORE_RUNTIME_CONFIG", "from-encore");
+    await toolCommand("test", "Test").run(context());
+    expect(gen).toHaveBeenCalledTimes(1);
+    expect(spawn).toHaveBeenLastCalledWith(
+      {
+        command: "vitest",
+        args: ["run", "--config", ".stackra/vitest.wiring.config.ts"],
+        cwd: root,
+      },
+      expect.anything(),
+    );
+    // The tier on the command line wins over the variable.
+    await toolCommand("test", "Test").run(context({ tier: "unit" }));
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "vitest", args: ["run"], cwd: root },
+      expect.anything(),
+    );
+  });
+
   it("fans out through turbo at the workspace root", async () => {
     writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
     await toolCommand("build", "Build").run(context());
@@ -142,6 +177,11 @@ describe("toolCommand", () => {
     await toolCommand("test", "Test").run(context({ tier: "e2e" }));
     expect(spawn).toHaveBeenLastCalledWith(
       { command: "turbo", args: ["run", "test:e2e"], cwd: root },
+      expect.anything(),
+    );
+    await toolCommand("test", "Test").run(context({ tier: "wiring" }));
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "turbo", args: ["run", "test:wiring"], cwd: root },
       expect.anything(),
     );
     await expect(toolCommand("dev", "Dev").run(context({ target: "ios" }))).rejects.toThrow(

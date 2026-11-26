@@ -4,7 +4,8 @@
  *          <name>`, `@figentra/<product>-service-<name>` or `@<scope>/service-<name>`) in the shape of stackra/template's
  *          services: package.json (the `#src`, `#modules`, `#config`, `#contracts`, `#assets` and `#stackra` imports,
  *          the `./assets/*` export, `@stackra/app` and `@stackra/container` for the generated server entry and
- *          Encore app, the other `@stackra/*` at `options.stackraVersion`, scripts that call `stackra <task>`),
+ *          Encore app, the other `@stackra/*` at `options.stackraVersion`, scripts that call `stackra <task>`, and
+ *          `test:wiring` for the generated Encore wiring suite, STA-2838),
  *          tsconfig.json (the `service` preset), turbo.jsonc, `stackra.config.ts` with one `defineService({ area })`,
  *          `runway.yaml` (version 3, nothing required yet), `assets/.gitkeep`, README.md, AGENTS.md and CHANGELOG.md,
  *          the root module `src/<name>.module.ts` and its one passing test (`createTestingModule`). With `data`: the
@@ -120,6 +121,8 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
     scripts: {
       ...Object.fromEntries(tasks.map((task) => [task, `stackra ${task}`])),
       ...(data && { "test:int": "stackra test --tier int" }),
+      // The generated Encore wiring suite, under `encore test` (ADR 0182 decision 3, STA-2838).
+      "test:wiring": "stackra test --tier wiring",
       format: "oxfmt --write .",
       "format:check": "oxfmt --check .",
       clean: "rm -rf dist coverage .turbo .stackra",

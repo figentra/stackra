@@ -1,0 +1,9 @@
+# Tasks: an Encore wiring suite for the generated app
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-2838
+
+- [x] T001 the endpoint rows, read once, with `emitEncoreApi` printing from them, in `packages/developer/gen/src/core/functions/encore-endpoints.function.ts`, `packages/developer/gen/src/core/functions/emit-encore-api.function.ts`, `packages/developer/gen/src/core/types/encore-endpoint.type.ts` and its test — covers: AC-003, P-002 — route: spec-task
+- [x] T002 the suite and its config, written by `generateMember`, in `packages/developer/gen/src/core/functions/emit-encore-wiring-test.function.ts`, `packages/developer/gen/src/core/functions/emit-wiring-tier-config.function.ts`, `packages/developer/gen/src/core/functions/generate-member.function.ts` and their tests — covers: AC-001 to AC-005, P-001 to P-004 — route: spec-task — deps: T001
+- [x] T003 the `wiring` tier in the CLI, the inner run and the `test:wiring` script and turbo task, in `packages/developer/cli/src/node/functions/resolve-tool.function.ts`, `packages/developer/cli/src/node/functions/tool-command.function.ts`, `packages/developer/cli/src/node/functions/inside-encore-test.function.ts`, `packages/developer/cli/src/node/functions/service-template.function.ts`, `turbo.jsonc` and their tests — covers: AC-006, AC-007, P-005 — route: spec-task — deps: T002
+- [x] T004 the docs and the changeset in `packages/developer/cli/README.md`, `apps/docs/src/docs/guides/scaffolding.mdx`, `apps/docs/src/docs/standards/testing-by-kind.mdx`, `.agents/rules/task-vocabulary.md`, `.changeset/encore-wiring-suite.md` — covers: AC-006, AC-007 — route: spec-task — deps: T003
+- [ ] T005 the run under `encore test` on box 2 against a created app on this branch's packages — covers: AC-002 to AC-005 — route: spec-task — deps: T004

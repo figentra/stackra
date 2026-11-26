@@ -12,6 +12,9 @@
  *          A package gen wrote no entry for (a fresh `stackra new package`, nothing under `src/` yet) and with no
  *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown. A
  *          service has nothing to build either: Encore builds it at deploy (ADR 0091).
+ *          `test --tier wiring` (STA-2838) starts `encore test` in a service; Encore runs the member's `test` script,
+ *          this command again, which reads the tier from `STACKRA_TEST_TIER` and, inside Encore, runs the generated
+ *          wiring suite without generating again. At the root it runs `turbo run test:wiring`.
  * Boundary: starts at most one tool (two in sequence for a Mintlify docs app's `lint`); a gen refusal stops before
  *           the tool and exits 1.
  * Runtime: node
@@ -24,9 +27,11 @@ import { join } from "node:path";
 import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
 import { watchDocsSite } from "@stackra/gen/node";
 
+import { TEST_TIER_VARIABLE } from "#node/constants/test-tier-variable.constant";
 import { devSecretEnv } from "#node/dev-secrets/functions/dev-secret-env.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { checkDocsLinks } from "#node/functions/check-docs-links.function";
+import { insideEncoreTest } from "#node/functions/inside-encore-test.function";
 import { readMember } from "#node/functions/read-member.function";
 import { resolveTool } from "#node/functions/resolve-tool.function";
 import { runGen } from "#node/functions/run-gen.function";
@@ -77,20 +82,32 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
     options,
     async run({ cwd, values, io }) {
       const target = typeof values["target"] === "string" ? values["target"] : undefined;
-      const tier = typeof values["tier"] === "string" ? values["tier"] : undefined;
+      // `encore test` runs the member's `test` script with no argument, so the wiring tier reaches it by variable.
+      const fromEncore = task === "test" ? process.env[TEST_TIER_VARIABLE] : undefined;
+      const tier =
+        typeof values["tier"] === "string"
+          ? values["tier"]
+          : fromEncore === undefined || fromEncore === ""
+            ? undefined
+            : fromEncore;
+      const encoreTest = task === "test" && tier === "wiring" && insideEncoreTest(process.env);
 
       if (existsSync(join(cwd, "pnpm-workspace.yaml"))) {
         if (target !== undefined)
           throw new CliUsageError("--target picks one app's target; run it in the app");
-        if (tier !== undefined && tier !== "unit" && tier !== "e2e") {
-          throw new CliUsageError(`unknown tier: ${tier} (expected unit or e2e)`);
+        if (tier !== undefined && tier !== "unit" && tier !== "e2e" && tier !== "wiring") {
+          throw new CliUsageError(`unknown tier: ${tier} (expected unit, e2e or wiring)`);
         }
-        const turboTask = tier === "e2e" ? "test:e2e" : task;
+        const turboTask = tier === "e2e" || tier === "wiring" ? `test:${tier}` : task;
         return runProcess({ command: "turbo", args: ["run", turboTask], cwd }, io);
       }
 
       const docs = existsSync(join(cwd, DOCS_CONFIG_FILE));
-      if (docs || (task !== "lint" && existsSync(join(cwd, "stackra.config.ts")))) {
+      // Inside `encore test` the outer run has generated already, and Encore compiled what it wrote.
+      if (
+        !encoreTest &&
+        (docs || (task !== "lint" && existsSync(join(cwd, "stackra.config.ts"))))
+      ) {
         if (!(await runGen(cwd, { base: cwd }, io))) return 1;
       }
       const member = readMember(cwd);
@@ -102,7 +119,7 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
         io.out(`nothing to build in ${cwd}: Encore builds a service at deploy\n`);
         return 0;
       }
-      const tool = resolveTool(task, member, { target, tier });
+      const tool = resolveTool(task, member, { target, tier, encoreTest });
       if (docs && task === "lint") {
         const code = await runProcess(tool, io);
         if (code !== 0) return code;
