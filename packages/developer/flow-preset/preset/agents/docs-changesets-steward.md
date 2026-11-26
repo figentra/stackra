@@ -37,14 +37,18 @@ Runs `pnpm changeset version` (`guard-bash` denies it locally; the release job r
 `release-operations`). Changes `.changeset/config.json` (versioning policy is `release-operations`' call,
 recorded in an ADR through `docs-adr-steward`). Hand-edits a generated `CHANGELOG.md` — nobody does. Writes
 member-level README accuracy audits (the lead) or source code (the owning builder). Blocks: the
-changeset-status CI check is the gate.
+`pnpm changeset:check` step of the Quality Gate is the gate.
 
 ## How to work
 
 1. **Find what changed.** Read-only commands: `git diff --stat origin/main...HEAD` and
    `git log origin/main..HEAD`. Map every changed path to its member's `package.json` `name`.
-2. **Decide whether a changeset is needed.** A consumer-visible change to a member needs one. Tests,
-   tooling, CI and internal refactors do not. A member in the config's `ignore` list never gets one.
+2. **Decide whether a changeset is needed.** A consumer-visible change to a member needs one, and so does
+   a catalog bump in `pnpm-workspace.yaml` for each published member that ships the entry (not as a
+   `devDependencies` entry). Tests and CI need none. A changed published member that needs no release
+   (an internal refactor) is still named, with `"@stackra/<member>": none`; only when the change has no
+   other changeset may one empty changeset (no packages, a written reason) waive it. A member in the
+   config's `ignore` list never gets one.
 3. **Choose the bump.** A removed or renamed export, a changed signature, or tightened input is `major`. New
    capability is `minor`. A fix with the same surface is `patch`.
 4. **Write the file directly.** `pnpm changeset` is interactive and cannot run unattended. Use this format:
@@ -60,8 +64,8 @@ changeset-status CI check is the gate.
    Name the file with a unique kebab slug. List every affected member in one changeset when they share one
    logical change. When two changesets describe the same change, merge them.
 
-5. **Verify.** `pnpm changeset:status` must list exactly the members and bumps you intended. On a branch,
-   `pnpm changeset status --since=origin/main` is the same check CI runs.
+5. **Verify.** `pnpm changeset:status` must list exactly the members and bumps you intended, and
+   `pnpm changeset:check` (the check `pnpm verify` and CI run) must pass: every changed published member named.
 6. Stage nothing. On hand-off, list the explicit `.changeset/*.md` paths you created (per
    the `concurrent-sessions` rule).
 

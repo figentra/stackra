@@ -20,7 +20,7 @@ icon: "package-check"
 
 ## The rules
 
-- **Every change to a member ships with a changeset.** `pnpm changeset` records it; `pnpm changeset:status` fails when a changed member has none (target: chained into `pnpm verify`).
+- **Every change to a member ships with a changeset.** `pnpm changeset` records it; `pnpm changeset:check` (in `pnpm verify` and the Quality Gate) fails when a changed published member has no changeset naming it, a catalog bump included (each published member that ships the entry as a dependency, peer or optional dependency). A change that needs no release says why in an empty changeset (`pnpm changeset --empty`); beside a changeset that names packages the empty one waives nothing, so name each remaining member with `"<package>": none`. Editing a pending changeset that already names a member covers it. Only `changeset-release/main` from this repository is skipped.
 - **`CHANGELOG.md` files are generated** by changesets and never hand-edited.
 - **Versions are bumped by the release job on `main`**, not on a feature branch. `guard-bash` denies `changeset version` locally for that reason.
 - **Merging the version pull request is the release decision.** Claude prepares it; the owner merges it ([0119](/adr/0119-merge-policy-and-release-authority) D7) and approves the `release` environment.
@@ -141,7 +141,7 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 
 | Rule                                          | Check                                        | State                        |
 | --------------------------------------------- | -------------------------------------------- | ---------------------------- |
-| Changeset per changed member                  | `pnpm changeset:status`                      | Script live; not in `verify` |
+| Changeset per changed member                  | `pnpm changeset:check`                       | Live: `verify`, Quality Gate |
 | No local `changeset version`                  | `guard-bash`                                 | Live                         |
 | Conventional commits and generated changelogs | commitlint, changesets                       | Live                         |
 | Publish only from the release workflow        | registry publisher rows and OIDC claim match | Live                         |

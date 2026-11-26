@@ -44,7 +44,7 @@ Many members, one repository. A member's version must be recorded where the memb
 
 - `.changeset/config.json` is the configuration; `validate-repository.mjs` requires `CHANGELOG.md` and `LICENSE` in every member.
 - `.agents/hooks/guard-bash.mjs` denies running `changeset version` by an agent.
-- Planned: chain `pnpm changeset:status` into `pnpm verify` so a change without a changeset fails.
+- `pnpm changeset:check` (`tools/scripts/changeset-check.mjs`, STA-2604), chained into `pnpm verify` and run by the Quality Gate on every pull request, fails when a changed published member has no changeset naming it; `pnpm changeset --empty` with a written reason waives a change that needs no release.
 
 ## Supersedes and sources
 

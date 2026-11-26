@@ -39,8 +39,10 @@ This is deliberately not a prose checklist. A definition of done is only trustwo
     review responsibility.
   </Step>
   <Step title="A changeset records the change">
-    Every changed member has one (`pnpm changeset`). `pnpm changeset:status` checks it; chaining it
-    into `pnpm verify` is a target. See [Release](/runbooks/release).
+    Every changed published member has one (`pnpm changeset`). `pnpm changeset:check`, part of `pnpm
+    verify`, fails without it (a catalog bump counts for the members that ship the entry). An empty
+    changeset with a reason records that no release is needed when it is the change's only
+    changeset; otherwise name the member with `none`. See [Release](/runbooks/release).
   </Step>
   <Step title="No secret, no literal version, no new dependency by accident">
     gitleaks stays clean, versions come from catalogs, and a new dependency was added to a catalog
@@ -77,10 +79,10 @@ Production-readiness items (SLOs, rollback drills, an incident process) and comp
 
 ## Checks that back this page
 
-| Line                                         | Check                   | State                        |
-| -------------------------------------------- | ----------------------- | ---------------------------- |
-| Gate chain                                   | `pnpm verify`           | Live                         |
-| Required files, catalogs, tier tags, presets | `pnpm validate`         | Live                         |
-| Task vocabulary scripts on every member      | Validator check         | Not built                    |
-| Changeset per changed member                 | `pnpm changeset:status` | Script live; not in `verify` |
-| Secrets                                      | gitleaks, `guard-bash`  | Live                         |
+| Line                                         | Check                  | State     |
+| -------------------------------------------- | ---------------------- | --------- |
+| Gate chain                                   | `pnpm verify`          | Live      |
+| Required files, catalogs, tier tags, presets | `pnpm validate`        | Live      |
+| Task vocabulary scripts on every member      | Validator check        | Not built |
+| Changeset per changed member                 | `pnpm changeset:check` | Live      |
+| Secrets                                      | gitleaks, `guard-bash` | Live      |
