@@ -37,11 +37,13 @@ peers, each loaded only by the entry that needs it.
 | `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                    |
 | `registerContext`                            | `./react`   | a client package names the component of its context key                               |
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
-| `runningEnvironment`, `HostEnvironment`      | `./server`  | `STACKRA_ENVIRONMENT` from Encore's report: a deployed service never runs as `dev` (STA-2798) |
+| `providePlatformEnvironment`                 | `./server`  | the generated Encore `environment.ts` hands it Encore's report; it settles `STACKRA_ENVIRONMENT` through the one reader (STA-2844) |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
-| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) |
+| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) and `drainTimeoutSeconds` (20) |
+| `nodeBodyStream`                             | `./server`  | a Node or Encore raw request's body as a web stream, with backpressure; `Readable.toWeb` crashes on Encore's `RawRequest` (STA-2794) |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                             |
+| `DrainTimeoutError`                          | `./server`  | reported (never thrown) when the drain deadline passes with calls still in flight     |
 | `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)             |
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
 | `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                             |
@@ -100,14 +102,19 @@ its base class, so a package that injects its base gets the host's override. A v
 with `ConfigInvalidError` naming it; a port with no driver fails with `UnresolvedPortError`. The reporter is the bound
 `ErrorReporter`, or the console when none is bound.
 
+The server `createApp` builds the configuration with `STACKRA_ENVIRONMENT` set to the running environment from the one
+reader (`readEnvironment` of `@stackra/config`), given what the platform reported. A service's generated
+`stackra-encore/<member>/environment.ts` hands Encore's `appMeta().environment` to `providePlatformEnvironment` before
+any other generated file loads the app, so a deployed Encore service (which cannot set the variable) runs as
+`preview`, `staging` or `production`, never `dev`; `dev` or `test` declared on a deployment, a misspelt name, or a
+self-hosted image that reports nothing fails the process at boot (STA-2844).
+
 Runway's `config` values are the last layer before the secrets (ADR 0296). Gen writes them per environment into the
 service's `#stackra/runway-config`, the server, seed and console entries pass them as `runway`, and `bootApp` applies
-the values of the environment `STACKRA_ENVIRONMENT` names (`dev` when unset) to each configuration by its key. On a
-deployed Encore service nobody sets the variable, so the generated `stackra-encore/<member>/environment.ts` derives it
-from Encore's `appMeta().environment` with `runningEnvironment`: `production` runs as `production`, a preview
-(`ephemeral`) as `preview`, any other cloud environment as its name or `staging`; `encore run` and `encore test` keep
-the declared value; a deployed environment that declares `dev` or `test`, or a host that reports nothing usable, fails
-boot (STA-2798).
+the values of the running environment, read through the same reader (`readEnvironment`: `dev` when unset, a misspelt
+name fails boot), to each configuration by its key. A runway value for a runtime-only field (one mapped to
+`STACKRA_ENVIRONMENT`, such as `actions.stores.environment`) fails boot, so runway can choose the action stores but
+never the environment that judges them (STA-2798).
 
 ## Wiring sections
 
@@ -133,7 +140,10 @@ root); native `Root` and `hydrateRoute` mount it themselves.
 ## Server
 
 `handlers.run(call)` gives one call a request container and counts it until it settles. `drain()` refuses new calls
-with `AppDrainingError` and waits for those in flight; `close()` drains, then shuts the container down. With `boot`
+with `AppDrainingError` and waits for those in flight, for at most `app.http` `drainTimeoutSeconds` (20 by default):
+at that deadline it reports one `DrainTimeoutError` with the count still running and resolves, so a hung call cannot
+keep the shutdown hooks (the outbox flush among them) from running before the platform's SIGKILL. `close()` drains,
+then shuts the container down. With `boot`
 (the generated `#stackra/boot`), `createApp` awaits it once the container is ready, with a shutdown signal; the boot
 connects with its service's Encore database url, so `createApp` passes no url and never reads `DATABASE_URL`. The migrate
 and seed CLIs connect on their own with `directDatabaseUrl()` of `@stackra/database/node` (`DATABASE_DIRECT_URL`, else

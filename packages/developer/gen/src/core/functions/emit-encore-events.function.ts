@@ -29,7 +29,7 @@ import { camelCase, kebabCase } from "@stackra/support";
 import { BROKER_MESSAGE_IMPORT } from "#core/constants/broker-message-import.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { encoreFirstImports } from "#core/functions/encore-first-imports.function";
+import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
@@ -61,7 +61,7 @@ function topicConst(wire: string): string {
 /** The imports and the `receive` handler of a subscriptions file, into the service's inbox. */
 function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
   return [
-    ...encoreFirstImports(ir),
+    ...encoreSetupImports(ir),
     'import type { EventEnvelope } from "@stackra/outbox/contracts";',
     'import { InboxService } from "@stackra/outbox/node";',
     'import { Subscription } from "encore.dev/pubsub";',

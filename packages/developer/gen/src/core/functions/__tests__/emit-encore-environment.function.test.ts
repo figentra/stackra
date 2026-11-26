@@ -1,52 +1,47 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `emitEncoreEnvironment` and `encoreFirstImports`: a service's Encore environment file sets
- *          `STACKRA_ENVIRONMENT` from Encore's `appMeta().environment` through `runningEnvironment`, and every Encore
- *          file loads it first, before the database and the server app, so a deployed boot sees its environment with
- *          no hand-set variable (STA-2798); a package, an app and a v2 service get none.
- * Boundary: test only; runs on the IR fixtures and the manifests built from them.
+ * Purpose: unit tests of `emitEncoreEnvironment` (STA-2844): a service that runs `@stackra/app` from the generated
+ *          server entry gets `stackra-encore/<member>/environment.ts`, which hands Encore's `appMeta().environment` to
+ *          `providePlatformEnvironment`; a package, an app, a v2 service with an authored main and a service without
+ *          `@stackra/app` get none.
+ * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0091 (decision 2); ADR 0266 (decision 2); STA-2798.
+ * Governing contract: ADR 0022 (test placement); ADR 0091; ADR 0296 (amendment 2026-11-26); STA-2844.
  */
 import { describe, expect, it } from "@stackra/testing";
 
-import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { buildManifest } from "#core/functions/build-manifest.function";
-import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
 import { emitEncoreEnvironment } from "#core/functions/emit-encore-environment.function";
-import { encoreFirstImports } from "#core/functions/encore-first-imports.function";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
+import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
-describe(emitEncoreEnvironment, () => {
-  it("sets STACKRA_ENVIRONMENT from Encore's report before the app boots", () => {
-    const file = emitEncoreEnvironment(COMMERCE_IR);
+/** The commerce service, declaring `@stackra/app`. */
+const SERVED = { ...COMMERCE_IR, packages: ["@stackra/app"] };
+
+describe("emitEncoreEnvironment", () => {
+  it("settles the running environment from Encore's report", () => {
+    const file = emitEncoreEnvironment(SERVED);
     expect(file?.path).toBe("stackra-encore/commerce/environment.ts");
-    const content = file?.content ?? "";
-    expect(content).toContain('import { runningEnvironment } from "@stackra/app/server";');
-    expect(content).toContain('import { appMeta } from "encore.dev";');
-    expect(content).toContain(
-      'const running = runningEnvironment(process.env["STACKRA_ENVIRONMENT"], appMeta().environment);',
-    );
-    expect(content).toContain(
-      'if (running !== undefined) process.env["STACKRA_ENVIRONMENT"] = running;',
-    );
+    const lines = (file?.content ?? "").split("\n");
+    expect(lines).toContain('import { providePlatformEnvironment } from "@stackra/app/server";');
+    expect(lines).toContain('import { appMeta } from "encore.dev";');
+    expect(lines).toContain("providePlatformEnvironment(appMeta().environment);");
+    // The environment is never set here: the one reader decides it.
+    expect(file?.content).not.toMatch(/process\.env/);
   });
 
-  it("is loaded first by every Encore file, ahead of the server app", () => {
-    expect(encoreFirstImports(COMMERCE_IR)[0]).toBe('import "./environment";');
-    const lines = (emitEncoreApi(COMMERCE_IR, buildManifest(COMMERCE_IR).manifest)?.content ?? "")
-      .split("\n")
-      .filter((line) => line.startsWith("import "));
-    expect(lines[0]).toBe('import "./environment";');
-    expect(lines.indexOf('import "./environment";')).toBeLessThan(lines.indexOf(ENCORE_APP_IMPORT));
-  });
-
-  it("writes none for a package, an app or a v2 service, which then import none", () => {
+  it("writes nothing for a package, an app, a v2 service or a service without @stackra/app", () => {
     expect(emitEncoreEnvironment(LOYALTY_KIT_IR)).toBeUndefined();
-    expect(emitEncoreEnvironment({ ...COMMERCE_IR, layout: "app" })).toBeUndefined();
-    const v2 = { ...COMMERCE_IR, authoredMain: true as const };
-    expect(emitEncoreEnvironment(v2)).toBeUndefined();
-    expect(encoreFirstImports(v2)).not.toContain('import "./environment";');
+    expect(emitEncoreEnvironment(WEB_APP_IR)).toBeUndefined();
+    expect(emitEncoreEnvironment({ ...SERVED, authoredMain: true })).toBeUndefined();
+    expect(
+      emitEncoreEnvironment({
+        ...COMMERCE_IR,
+        packages: [],
+        dependencies: COMMERCE_IR.dependencies.filter(
+          (dependency) => dependency.package !== "@stackra/app",
+        ),
+      }),
+    ).toBeUndefined();
   });
 });

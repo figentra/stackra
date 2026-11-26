@@ -18,7 +18,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { encoreFirstImports } from "#core/functions/encore-first-imports.function";
+import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
@@ -101,7 +101,7 @@ export function emitEncoreCronJobs(
     path: `${encoreServiceFolder(ir.member)}/cron.ts`,
     content: [
       header,
-      ...encoreFirstImports(ir),
+      ...encoreSetupImports(ir),
       'import { SchedulerService } from "@stackra/scheduler";',
       'import { api } from "encore.dev/api";',
       'import { CronJob } from "encore.dev/cron";',
