@@ -8309,6 +8309,9 @@ importers:
       '@stackra/i18n':
         specifier: workspace:*
         version: link:../../foundation/i18n
+      '@stackra/scope':
+        specifier: workspace:*
+        version: link:../../security/scope
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing
@@ -9195,6 +9198,12 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
+      '@stackra/locking':
+        specifier: workspace:*
+        version: link:../../runtime/locking
+      '@stackra/outbox':
+        specifier: workspace:*
+        version: link:../../runtime/outbox
       '@stackra/queue':
         specifier: workspace:*
         version: link:../../runtime/queue
