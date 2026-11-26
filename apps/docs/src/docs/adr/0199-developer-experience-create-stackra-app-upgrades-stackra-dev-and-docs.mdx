@@ -45,7 +45,7 @@ A new developer needs one command to start, one command to upgrade, and a dev lo
 
 ## Enforcement
 
-planned — `stackra upgrade` is tested against the codemod fixtures; the dev compose file is checked by the smoke test in CI.
+Decision 2 (2026-11-26, STA-145): `stackra upgrade` (`packages/developer/cli/src/node/commands/upgrade.command.ts`) is tested against the codemod fixtures: `upgrade-codemods.constant.test.ts` runs every source codemod of `UPGRADE_CODEMODS` over its fixture files (expected source, expected findings, a second run changes nothing) and fails when a source codemod has no fixture. Planned: the dev compose file is checked by the smoke test in CI.
 
 ## Supersedes and sources
 

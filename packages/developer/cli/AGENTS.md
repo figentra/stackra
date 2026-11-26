@@ -27,6 +27,7 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
 | A `stackra new` template                   | `src/node/functions/<kind>-template.function.ts`, pure text                |
 | Seed-pack reading and planning             | `src/node/functions/` (`readSeedPack`, `planSeed`), pure                   |
 | Registry item install, lock, publish check | `src/node/functions/` (`installItem`, `readItemsLock`, `checkItemPackage`) |
+| An upgrade codemod (a breaking release)    | `src/node/upgrade/constants/`, then `UPGRADE_CODEMODS`, with a fixture     |
 | Errors and types                           | `src/node/{errors,types}/`                                                 |
 | A test                                     | `__tests__/<name>.<kind>.test.ts` beside it                                |
 

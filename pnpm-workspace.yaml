@@ -107,6 +107,11 @@ catalog:
   # @stackra/console's Completions driver: bash, zsh and fish scripts and Tab answers (same approval). MIT; its cac,
   # citty and commander peers are optional and unused.
   "@bomb.sh/tab": 0.0.22
+  # `stackra upgrade`'s codemods (ADR 0199 decision 2, STA-145): ast-grep finds the files and nodes a codemod
+  # touches, in parallel and natively; ts-morph edits them (imports, references, members). Both are loaded only when
+  # `stackra upgrade` runs. ts-morph carries its own TypeScript 5 API, which TypeScript 7 (native) does not ship. MIT.
+  "@ast-grep/napi": 0.51.2
+  ts-morph: 28.0.0
 
 catalogs:
   # Toolchain that builds TypeScript output — a different risk/cadence than lint/format/test tools.

@@ -20,6 +20,22 @@ Every upgrade is its own pull request, never mixed with feature work, and is mer
 4. Add a changeset for every member whose behaviour or dependencies changed.
 5. If the upgrade changes a rule, update the page that states it in the same pull request, and write an ADR if it reverses a recorded decision.
 
+## Stackra packages in a product repository
+
+A product repository moves between `@stackra/*` releases with `stackra upgrade`
+([0199](/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs) decision 2), run by the CLI of
+the release it moves to, on a clean working tree:
+
+1. `pnpm dlx @stackra/cli@<version> upgrade --dry-run` prints the plan, the upgrade note of every breaking release in
+   between and every diff, and writes nothing.
+2. `pnpm dlx @stackra/cli@<version> upgrade` moves every exact `@stackra/*` pin, runs the codemods (ts-morph moves and
+   renames imports; ast-grep lists the code a person must port), then runs `pnpm install`, each codemod's commands
+   (such as `stackra encore:prepare` in every service) and `stackra gen`.
+3. Change each listed `file:line:column` by hand, then `pnpm verify`, and open the upgrade as its own pull request with
+   the notes in its description.
+
+`stackra upgrade --list` prints every codemod with its release; the full reference is the `@stackra/cli` README.
+
 ## Toolchain: Node, pnpm, gitleaks
 
 - `mise.toml` pins the tool; `packageManager` in `package.json` must carry the same pnpm version (corepack reads that one). A mismatch is a bug.
@@ -75,5 +91,6 @@ Installed by `apps/mobile` ([0310](/adr/0310-stackra-ui-pro-private-heroui-pro-w
 | Versions only in catalogs              | `pnpm validate`                                       | Live      |
 | `mise.toml` and `packageManager` agree | Setup step in CI                                      | Not built |
 | Expo packages compatible               | `expo install --check` (`pnpm run doctor` in the app) | Manual    |
+| `@stackra/*` codemods carry each break | the codemod fixture test of `@stackra/cli`            | Live      |
 
 See also [Renovate](/runbooks/renovate), [Dependencies](/standards/dependencies) and [Release](/runbooks/release).

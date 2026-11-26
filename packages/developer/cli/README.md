@@ -23,6 +23,7 @@ and `yaml`.
 
 | Command                                                   | Does                                                                                                                                      |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `stackra upgrade [--to <v>] [--dry-run]`                  | move every `@stackra/*` pin to a release, print each breaking release's note, run its codemods, then install and gen (below)              |
 | `stackra new <kind> <name>`                               | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                                   |
 | `stackra new <tooling\|app:*> <name>`                     | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                               |
 | `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest; a warning prints and exits 0, a refusal exits 1         |
@@ -133,6 +134,37 @@ packages' `./<surface>` entries from source with the descriptor (`STACKRA_DEV_SU
 needed. `stackra dev --mobile <app> --os <checkout> --device <udid>` prepares `.stackra/mobile/<app>` with Runway's
 `prepareMobileDev`, then `expo prebuild` and a Release `expo run:ios` with no bundler; `stackra dev --product` runs
 them all.
+
+## Upgrading a workspace
+
+`stackra upgrade` moves a consumer workspace between `@stackra/*` releases in one mechanical step (ADR 0199 decision 2,
+STA-145). Run it with the CLI of the release you move to, on a clean working tree:
+
+```bash
+pnpm dlx @stackra/cli@<version> upgrade --dry-run   # the plan, each release note and every diff; writes nothing
+pnpm dlx @stackra/cli@<version> upgrade             # write the edits, then pnpm install, the codemod steps, stackra gen
+```
+
+1. **Plan.** The workspace is on its oldest exact `@stackra/*` pin (`--from` overrides it); the target is the CLI's own
+   version (`--to` overrides it). A pin newer than the target is refused: an upgrade never moves a pin back.
+2. **Notes.** Every codemod whose release is after `from` and at or before `to` prints its upgrade note (ADR 0013
+   decision 5), oldest release first.
+3. **Pins.** Every exact pin in `pnpm-workspace.yaml` (catalogs, overrides) and each member's `package.json` moves to the
+   target, keeping its `^`/`~` prefix and every other byte. `workspace:`, `catalog:` and range specifiers, and
+   `@stackra-pro/*`, are left alone.
+4. **Codemods.** ts-morph rewrites the imports and re-exports of an export a release moved or renamed (uses renamed,
+   aliases and public names kept); ast-grep reports the code only a person can port (a custom driver that must implement
+   a new method), as `file:line:column` findings. `node_modules`, build output and every dot folder are never read.
+5. **Steps.** `pnpm install`, then each codemod's commands (such as `stackra encore:prepare` in every service), then
+   `stackra gen`. The first failure stops the run with exit 1 and prints the commands left.
+
+`--no-install` writes the edits and prints the commands; `--only <ids>` runs only those codemods; `--list` prints every
+codemod with its release; `--allow-dirty` runs on uncommitted changes; `--json` answers the plan, the edits, the
+findings and the runs. Exit 0 when it finished (findings are manual steps), 1 when a command failed, 2 on a usage error.
+
+A release with a breaking change adds its codemod to `UPGRADE_CODEMODS` (`src/node/upgrade/constants/`), with a fixture
+under `__tests__/fixtures/` that the fixture test runs (every source codemod needs one), or a note-only entry when
+nothing in a consumer's code can be found or changed mechanically.
 
 ## A product's CI: build and deploy
 

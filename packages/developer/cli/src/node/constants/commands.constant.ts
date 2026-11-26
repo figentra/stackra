@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `COMMANDS`, every command the `stackra` binary has (native console classes and the `CliCommand`s not yet ported), in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
+ * Purpose: `COMMANDS`, every command the `stackra` binary has (native console classes and the `CliCommand`s not yet ported), in help order: create, upgrade (ADR 0199 decision 2, STA-145), new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy, mobile onboard and
  *          preview serve commands (ADR 0482, STA-1676), the db commands, the seed-pack
@@ -69,6 +69,7 @@ import { SettingsDiffCommand } from "#node/commands/settings-diff.command";
 import { SkillLicencesCommand } from "#node/commands/skill-licences.command";
 import { SmokeCommand } from "#node/commands/smoke.command";
 import { StructureCommand } from "#node/commands/structure.command";
+import { UpgradeCommand } from "#node/commands/upgrade.command";
 import { checkCommand } from "#node/functions/check-command.function";
 import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommands } from "#node/types/cli-commands.type";
@@ -76,6 +77,7 @@ import type { CliCommands } from "#node/types/cli-commands.type";
 /** The commands of `stackra`. */
 export const COMMANDS: CliCommands = [
   CreateCommand,
+  UpgradeCommand,
   NEW_COMMAND,
   GEN_COMMAND,
   CONSOLE_COMMAND,
