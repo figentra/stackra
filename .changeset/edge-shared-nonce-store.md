@@ -10,5 +10,6 @@ reject it, as does the port's default for any other driver. `EdgeNonceStore` gai
 each request id with `Cache.add`, so every instance sharing a `valkey` or `postgres` cache refuses a replay; a region
 with more than one API instance sets `app.edge.nonces: cache`. `EdgeSigningKeys` gains the `secrets` driver, which
 reads the signing keys from the bound `SecretStore` on every check (the secret `app.edge.signingKeysSecret` names,
-`STACKRA_EDGE_SIGNING_KEYS` by default), so a key rotation the store reloads is accepted without a restart. `memory`
-stays the default for both ports (ADR 0437, STA-2803).
+`STACKRA_EDGE_SIGNING_KEYS` by default). `bootApp` still binds the environment the app started with as that store and
+does not reload it, so a key rotation still needs a restart with either `env` or `secrets`; a reloading store is
+STA-2804. `memory` stays the default for both ports (ADR 0437, STA-2803).

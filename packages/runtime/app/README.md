@@ -45,7 +45,7 @@ peers, each loaded only by the entry that needs it.
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
 | `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                             |
 | `MemoryEdgeNonceStoreDriver`                 | `./server`  | the `memory` `EdgeNonceStore` driver (tests, a single instance)                       |
-| `SecretsEdgeSigningKeysDriver`               | `./server`  | the `secrets` `EdgeSigningKeys` driver (the secret store, read on every check)        |
+| `SecretsEdgeSigningKeysDriver`               | `./server`  | the `secrets` `EdgeSigningKeys` driver (the bound secret store, read on every check)  |
 | `CacheEdgeNonceStoreDriver`                  | `./server`  | the `cache` `EdgeNonceStore` driver (every instance, over `Cache.add`)                |
 | `OriginGuard`                                | `./server`  | the second server check: a state-changing request only from an allowed origin         |
 | `CsrfGuard`                                  | `./server`  | the third server check: the CSRF header on a cookie-authenticated state change        |
@@ -180,8 +180,11 @@ authentication or its endpoint's own signature check. Gen binds the guard in eve
 The key provider and the nonce store are ports chosen by `EdgeConfig` (`app.edge`). `keys` is `memory` (tests, local
 runs; empty, so every signed request is refused), `env`, which reads the secret `STACKRA_EDGE_SIGNING_KEYS` once at
 boot (the edge Worker's signing keys, newest first, comma-separated), or `secrets`, which reads the same secret (or the
-one `signingKeysSecret` names) from the bound `SecretStore` on every check, so a rotation the store reloads is
-accepted without a restart. `nonces` is `memory` (one instance: a replay is refused only where it was first seen) or
+one `signingKeysSecret` names) from the bound `SecretStore` on every check. Every shipped target's `bootApp` binds the
+environment the process started with as that store, not the wiring's `secrets.store` driver, and nothing reloads it,
+so today `secrets` answers the same keys as `env` and a key rotation (ADR 0437 decision 4) still needs each API
+instance restarted after the new key is listed first: list both keys, restart every instance, then switch the Worker
+to the new key. A reloading boot store is STA-2804. `nonces` is `memory` (one instance: a replay is refused only where it was first seen) or
 `cache`, which claims each request id with `Cache.add`, the cache's atomic set-if-absent, so every instance that
 shares a `valkey` or `postgres` cache refuses a replay. A region with more than one API instance sets `nonces: cache`
 and a shared cache driver before its edge goes live:
@@ -189,7 +192,7 @@ and a shared cache driver before its edge goes live:
 ```yaml
 # runway.yaml (production)
 config:
-  app: { edge: { keys: secrets, nonces: cache } }
+  app: { edge: { keys: env, nonces: cache } }
   cache: { driver: valkey }
 ```
 

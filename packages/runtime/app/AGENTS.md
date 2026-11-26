@@ -67,7 +67,9 @@ note).
 - The edge-header guard fails closed: no active key, a stale or future timestamp, a seen request id or a missing
   identity header is one `EdgeSignatureInvalidError`, with no detail. Claim the nonce only after the signature holds.
 - Edge signing secrets come only from the bound `EdgeSigningKeys`; never a literal, never logged. The `env` and
-  `secrets` drivers read the secret's text only through `edgeSigningKeysOf`.
+  `secrets` drivers read the secret's text only through `edgeSigningKeysOf`. The `secrets` driver follows the bound
+  `SecretStore`, which `bootApp` sets to the boot environment and never reloads (STA-2804); never document either
+  driver as taking a rotation without a restart until the bound store reloads.
 - A shared nonce store claims only through `Cache.add` (atomic set-if-absent); never a `get` then a `put`. A claim
   that cannot be made (a cache with no atomic `add`) rejects, so the check fails closed.
 - Origins, methods, headers, credentials, max-age and the CSRF header and cookie are `CorsConfig` and `CsrfConfig`

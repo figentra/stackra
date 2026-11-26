@@ -4,7 +4,7 @@
  *          request ids, and the signing keys the `env` driver reads.
  * Boundary: a shape class; it registers this package's own schema (`EDGE_CONFIG_SCHEMA`) for itself when the module
  *           loads. The defaults are `memory` (ADR 0266 decision 2): with no key every signed request is refused, and a
- *           replay is refused per instance only. A deployment behind the edge names `secrets` (or `env`) for the keys
+ *           replay is refused per instance only. A deployment behind the edge names `env` (or `secrets`) for the keys
  *           and `cache` for the nonces in runway, binds a shared `Cache` driver (`valkey` or `postgres`) and sets the
  *           secret. The keys are the `STACKRA_EDGE_SIGNING_KEYS` secret (or the one `signingKeysSecret` names), never a
  *           value.
@@ -35,8 +35,9 @@ export class EdgeOptions extends Schema {
 
   /**
    * Which driver answers the active signing keys: `memory` (tests), `env` (the secret above, read once at boot) or
-   * `secrets` (the secret `signingKeysSecret` names, read from the bound `SecretStore` on every check, so a rotation
-   * the store reloads is taken without a restart).
+   * `secrets` (the secret `signingKeysSecret` names, read from the bound `SecretStore` on every check). `bootApp` binds
+   * the boot environment as that store and does not reload it (STA-2804), so with either driver a rotation needs a
+   * restart today.
    */
   keys: DriverName<EdgeSigningKeys> = "memory";
 

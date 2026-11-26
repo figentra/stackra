@@ -4,8 +4,9 @@
  *          secrets are the `STACKRA_EDGE_SIGNING_KEYS` secret of `EdgeConfig`, comma-separated, newest first, so a
  *          rotation lists the new key before the old one and no deploy has to happen at once on both sides.
  * Boundary: reads only `EdgeConfig.signingKeys`; blanks are dropped, so an unset secret answers no key and every signed
- *           request is refused. The value is the one `bootApp` resolved, so a rotation needs a restart; the `secrets`
- *           driver reads the store on every check instead. Secrets are never logged or returned past the guard.
+ *           request is refused. The value is the one `bootApp` resolved, so a rotation needs a restart (the `secrets`
+ *           driver reads the bound store on every check, which is also the boot environment until STA-2804). Secrets
+ *           are never logged or returned past the guard.
  * Runtime: node
  * Governing contract: ADR 0437 (decision 4: two signing keys); ADR 0173; ADR 0263.
  */

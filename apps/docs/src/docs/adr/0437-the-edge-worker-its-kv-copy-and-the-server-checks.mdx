@@ -145,9 +145,13 @@ probed before any limit applied.
   one of concurrent adds wins (`valkey-cache.driver.int.test.ts`, `edge-nonce-shared.int.test.ts`, the cache-tables
   migration test). A region with more than one API instance sets `app.edge.nonces: cache` over a shared cache before
   its edge goes live; `memory` stays the default for tests and a single instance.
-- built — the signing keys from the secret store (STA-2803): `EdgeSigningKeys`' `secrets` driver reads the secret
-  `app.edge.signingKeysSecret` names (`STACKRA_EDGE_SIGNING_KEYS`) from the bound `SecretStore` on every check, so a
-  rotation the store reloads is accepted without a restart; `env` keeps the value `bootApp` resolved.
+- built — a signing-keys driver over the secret store (STA-2803): `EdgeSigningKeys`' `secrets` driver reads the secret
+  `app.edge.signingKeysSecret` names (`STACKRA_EDGE_SIGNING_KEYS`) from the bound `SecretStore` on every check; `env`
+  keeps the value `bootApp` resolved. `edge-signing-keys-boot.test.ts` pins that a store the caller reloads is followed
+  with no reboot.
+- planned — rotation with no restart (STA-2804): every shipped target's `bootApp` binds the boot environment as the
+  `SecretStore` (never the wiring's `secrets.store` driver) and nothing reloads it, so today a rotation lists both keys,
+  restarts every API instance, then switches the Worker to the new key.
 - built — core's `workers/edge` (`@figentra/worker-edge`, STA-1566) resolves the host from a host-map var, refuses a bad
   JWT by JWKS, strips inbound edge headers and signs with `signEdgeRequest`; its tests cover unknown hosts, header
   stripping and the signing round trip against `EdgeHeaderGuard`.
