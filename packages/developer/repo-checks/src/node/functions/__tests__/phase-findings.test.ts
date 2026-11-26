@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the phase runners over a temporary repository: `configFindings`, `catalogueFindings`,
- *          `docsFindings` and `structureFindings` (with `listMembers` replaced, so no pnpm runs), and
- *          `readRepoContext` over a fresh git repository.
+ * Purpose: unit tests of the phase runners over a temporary repository: `configFindings` (with the ADR index and
+ *          customer ADR link rules, STA-2851), `catalogueFindings`, `docsFindings` and `structureFindings` (with
+ *          `listMembers` replaced, so no pnpm runs), and `readRepoContext` over a fresh git repository.
  * Boundary: test only; writes a temporary folder and runs `git init` there.
  * Runtime: node (vitest)
  * Governing contract: ADR 0282 (decision 3); ADR 0022 (test placement).
@@ -41,19 +41,35 @@ function repo(files: Record<string, string>): { root: string; files: string[] } 
 }
 
 describe("phase runners", () => {
-  it("configFindings reports JSON configs, flow maps, the .gitignore line and the ADR register", () => {
+  it("configFindings reports JSON configs, flow maps, the .gitignore line, the ADR register, index and links", () => {
     const context = repo({
       ".gitignore": "node_modules\n",
       "tools/x.json": "{}",
       "lefthook.yml": "a: { b: c }\n",
-      "apps/docs/src/docs/adr/0001-first.mdx": "",
-      "apps/docs/adr/numbers.yaml": '"0002":\n  slug: second\n',
+      "apps/docs/src/docs/adr/0001-first.mdx": '---\ndescription: "Accepted · 2026-10-19"\n---\n',
+      "apps/docs/adr/numbers.yaml": '"0002":\n  slug: second\n  status: accepted\n',
+      "apps/docs/src/docs/customers/support.mdx": "See [0009](/adr/0009-ghost).\n",
     });
-    expect(configFindings(context).map((f) => f.rule)).toEqual([
-      "json-configs",
-      "yaml-flow-maps",
-      "gitignore-stackra",
-      "adr-numbers",
+    expect(configFindings(context).map((f) => [f.rule, f.text])).toEqual([
+      ["json-configs", expect.any(String)],
+      ["yaml-flow-maps", expect.any(String)],
+      ["gitignore-stackra", expect.any(String)],
+      [
+        "adr-numbers",
+        "apps/docs/src/docs/adr/0001-first.mdx: ADR number 0001 is not in numbers.yaml (pnpm adr:reserve)",
+      ],
+      [
+        "adr-index",
+        "apps/docs/src/docs/adr/index.mdx: missing; every ADR page needs a row there (ADR template)",
+      ],
+      [
+        "adr-index",
+        "apps/docs/adr/numbers.yaml: 0002 is accepted, but there is no page apps/docs/src/docs/adr/0002-second.mdx",
+      ],
+      [
+        "customer-adr-links",
+        "apps/docs/src/docs/customers/support.mdx:1: links /adr/0009-ghost, which is no ADR page",
+      ],
     ]);
   });
 

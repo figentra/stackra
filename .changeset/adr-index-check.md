@@ -1,0 +1,5 @@
+---
+"@stackra/repo-checks": minor
+---
+
+`stackra check` holds the ADR index, the number register and buyer-facing ADR citations to the ADR pages (STA-2851). The config phase gains two rules. `adr-index` reports an ADR page with no row in `apps/docs/src/docs/adr/index.mdx`, a row with no page, a second row, a row linking another page, a row whose status differs from the page's description (including the superseding number), a page whose description opens with no status, and, when `apps/docs/adr/numbers.yaml` exists, a register status that differs from the page, a `reserved` or `external` entry that has a page, any other entry without one, or a status outside the vocabulary (the register gains `external`, for a number another product took). `customer-adr-links` reports a link on a customer page (`apps/docs/src/docs/customers/`) to a superseded or rejected ADR, or to no ADR page. A repository without ADR pages is not checked. New exports from `@stackra/repo-checks/node`: `checkAdrIndex`, `checkCustomerAdrLinks`, `adrStatusOf`, `descriptionOf`, `ADR_PAGE_PATH`, `ADR_INDEX_PATH`, and the types `AdrStatus` and `TextFile`.

@@ -8,6 +8,8 @@
  * Governing contract: ADR 0282 (decision 3: the CLI runs every check); ADR 0294 (decision 15); the STA-347 stand-in
  *                     barrel decision.
  */
+export { ADR_INDEX_PATH } from "#node/constants/adr-index-path.constant";
+export { ADR_PAGE_PATH } from "#node/constants/adr-page-path.constant";
 export { APP_E2E } from "#node/constants/app-e2e.constant";
 export { APP_GROUPS } from "#node/constants/app-groups.constant";
 export { ASSETS } from "#node/constants/assets.constant";
@@ -52,10 +54,13 @@ export { SPEC_STATUSES } from "#node/constants/spec-statuses.constant";
 export { TEST_FILE_PATTERN } from "#node/constants/test-file-pattern.constant";
 export { TEST_TIERS } from "#node/constants/test-tiers.constant";
 export { TOOLING } from "#node/constants/tooling.constant";
+export { adrStatusOf } from "#node/functions/adr-status-of.function";
 export { catalogueFindings } from "#node/functions/catalogue-findings.function";
 export { categoryOf } from "#node/functions/category-of.function";
 export { checkAdrNumbers } from "#node/functions/check-adr-numbers.function";
+export { checkAdrIndex } from "#node/functions/check-adr-index.function";
 export { checkCatalogues } from "#node/functions/check-catalogues.function";
+export { checkCustomerAdrLinks } from "#node/functions/check-customer-adr-links.function";
 export { checkDocFile } from "#node/functions/check-doc-file.function";
 export { checkExports } from "#node/functions/check-exports.function";
 export { checkGitignore } from "#node/functions/check-gitignore.function";
@@ -91,6 +96,7 @@ export { configFindings } from "#node/functions/config-findings.function";
 export { constitutionFindings } from "#node/functions/constitution-findings.function";
 export { expectedConstitution } from "#node/functions/expected-constitution.function";
 export { layoutFindings } from "#node/functions/layout-findings.function";
+export { descriptionOf } from "#node/functions/description-of.function";
 export { docsFindings } from "#node/functions/docs-findings.function";
 export { expectedName } from "#node/functions/expected-name.function";
 export { folderForSuffix } from "#node/functions/folder-for-suffix.function";
@@ -153,6 +159,7 @@ export { tierFor } from "#node/functions/tier-for.function";
 export { turboTagsFor } from "#node/functions/turbo-tags-for.function";
 export { toFinding } from "#node/functions/to-finding.function";
 export { walkRepoFiles } from "#node/functions/walk-repo-files.function";
+export type { AdrStatus } from "#node/types/adr-status.type";
 export type { Finding } from "#node/types/finding.type";
 export type { KindFolder } from "#node/types/kind-folder.type";
 export type { LayoutInput } from "#node/types/layout-input.type";
@@ -165,4 +172,5 @@ export type { SpecFindingsOptions } from "#node/types/spec-findings-options.type
 export type { SpecTask } from "#node/types/spec-task.type";
 export type { SpecTrace } from "#node/types/spec-trace.type";
 export type { StructureGroup } from "#node/types/structure-group.type";
+export type { TextFile } from "#node/types/text-file.type";
 export type { WorkspaceMember } from "#node/types/workspace-member.type";

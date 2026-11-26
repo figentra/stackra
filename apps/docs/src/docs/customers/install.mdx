@@ -4,7 +4,7 @@ description: "Point your package manager at the Stackra registry, install the fr
 icon: "download"
 ---
 
-{/* Stackra file contract: Purpose: the customer guide from zero to an installed package: the registry, the .npmrc, the free and licensed scopes, licence tokens in CI, the answers the registry gives and what is still pending. Boundary: customer-facing documentation only; the decision is ADR 0453 and the registry's behaviour is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 4, 10, 13 and 18); ADR 0461; ADR 0316; ADR 0025 (decision 3); STA-1575. */}
+{/* Stackra file contract: Purpose: the customer guide from zero to an installed package: the registry, the .npmrc, the free and licensed scopes, licence tokens in CI, the answers the registry gives and what is still pending. Boundary: customer-facing documentation only; the decision is ADR 0453 and the registry's behaviour is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 4, 10, 13 and 18); ADR 0461; ADR 0316; ADR 0177 (decision 8, carrying 0025 decision 3 forward); STA-1575, STA-2851. */}
 
 Every Stackra package is served by one npm-compatible registry, `https://npm.stackra.figentra.com/`
 ([ADR 0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)). It
@@ -28,7 +28,7 @@ usual registry.
 
 - Node.js 24 or later (`engines` in every package).
 - npm, pnpm or Yarn. Packages are ESM only (`dist/*.mjs` with `.d.mts` types); there is no CommonJS build
-  ([0025](/adr/0025-packages-publish-to-private-registry) decision 3).
+  ([0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 8).
 
 ## Install the free packages
 

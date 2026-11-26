@@ -4,7 +4,7 @@ description: "How Stackra versions its packages, what 0.x means, how deprecation
 icon: "life-buoy"
 ---
 
-{/* Stackra file contract: Purpose: the customer page on versions, deprecation, dist-tags and support terms; the support terms are owner placeholders. Boundary: customer-facing documentation only; it records decided rules (ADR 0013, 0025, 0177, 0453) and invents no service level. Runtime: docs. Governing contract: ADR 0013; ADR 0025; ADR 0177 (decisions 5 to 7); ADR 0453 (decisions 7 and 18); SECURITY.md; STA-1575, STA-1576. */}
+{/* Stackra file contract: Purpose: the customer page on versions, deprecation, dist-tags and support terms; the support terms are owner placeholders. Boundary: customer-facing documentation only; it records decided rules (ADR 0177, 0453 and the release runbook) and invents no service level; it links no superseded ADR (`stackra check`, rule customer-adr-links). Runtime: docs. Governing contract: ADR 0177 (decisions 5 to 7); the release runbook (apps/docs/src/docs/runbooks/release.mdx, step "Review it"); ADR 0453 (decisions 7 and 18); SECURITY.md; STA-1575, STA-1576, STA-2851. */}
 
 ## Versions
 
@@ -15,7 +15,7 @@ icon: "life-buoy"
 - **Semantic versioning.** A patch fixes, a minor adds, a major breaks.
 - **0.x.** Before `1.0.0`, as semver allows, a minor release may break an API. Every breaking release carries a
   written release note (what changes for you, the steps to take, how to verify and roll back;
-  [0013](/adr/0013-versioning-and-release) decision 5).
+  the [release runbook](/runbooks/release) holds the version pull request until it is written).
 - **A version is never replaced.** A published version is immutable, also after a deprecation, and the registry
   refuses unpublishing. A fix is a new version.
 
