@@ -83,7 +83,8 @@ themselves, where a session-level setting would survive into another tenant's tr
 
 - Services stop writing `set_config`; a hand-rolled one fails `pnpm validate`.
 - Every query now runs in a short read-only transaction, which costs one round trip per call.
-- Every call and unit holds a connection for the length of its transaction, so pools are sized for isolation: STA-1716.
+- Every call and unit holds a connection for the length of its transaction, so pools are sized for isolation: STA-1716,
+  settled by the connection gate of [0473](/adr/0473-connection-pooling-a-managed-proxy-per-cloud-a-pool-budget-per-service-and-a-direct-url-for-session-tools) (note 2026-11-26).
 - A queued unit must carry its actor; producers that enqueue without one get platform isolation, so their tenant
   rows are invisible to the job until they pass the actor.
 
