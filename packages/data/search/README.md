@@ -283,6 +283,12 @@ whose data class says `ai: never`, and the service refuses the same at index tim
 relations, before any text reaches the embedder. The service is `Lifetime.Transient`, so a deployment with no
 semantic model never builds it, nor the `HttpEmbedderDriver` that needs `search.embedder.url`.
 
+A field that rests encrypted (`HasEncryptedFields`, ADR 0465) is never indexed: gen refuses
+`searchable_field_encrypted` when a text, filter, sortable or range path ends at one, and `refuseEncryptedSearchPath`
+refuses the same when a document, a semantic passage or a snippet is built, on the loaded row and through its
+relations, before any opened value is read. Find a row by an encrypted value with a `lookup` field and
+`whereEncrypted` instead.
+
 ## Visibility, Arabizi, snippets and global search
 
 - `search.in(Product).facets(phrase, { paths: ["status"], filters })` counts each filter value over the rows the same

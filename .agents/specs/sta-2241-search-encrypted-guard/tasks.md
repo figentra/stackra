@@ -1,0 +1,7 @@
+# Tasks: a field that rests encrypted is never indexed by search
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-2241
+
+- [x] T001 the runtime guard and its use in documents and snippets, with tests, in `packages/data/search/src/core/functions/refuse-encrypted-search-path.function.ts`, `packages/data/search/src/core/functions/__tests__/refuse-encrypted-search-path.function.test.ts`, `packages/data/search/src/core/functions/search-document-of.function.ts`, `packages/data/search/src/core/values/search-index.value.ts`, `packages/data/search/src/core/values/__tests__/search-index.value.test.ts` — covers: AC-004, AC-005, AC-006, P-005, P-006, P-007, P-008 — route: spec-task
+- [x] T002 the gen refusal `searchable_field_encrypted` in the full pass, with tests, in `packages/developer/gen/src/core/functions/check-searchable-encrypted.function.ts`, `packages/developer/gen/src/core/functions/__tests__/check-searchable-encrypted.function.test.ts`, `packages/developer/gen/src/core/functions/generate-member.function.ts` — covers: AC-001, AC-002, AC-003, P-001, P-002, P-003, P-004 — route: spec-task
+- [x] T003 the docs and the changeset, in `packages/developer/gen/README.md`, `packages/developer/gen/AGENTS.md`, `packages/data/search/README.md`, `packages/data/model/src/core/traits/has-encrypted-fields.trait.ts`, `.changeset/searchable-field-encrypted.md` — covers: AC-001, AC-004 — route: spec-task — deps: T001, T002

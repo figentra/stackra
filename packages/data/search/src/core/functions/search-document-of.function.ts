@@ -9,16 +9,19 @@
  *           factory gave it. A rich-text value gives its `text` leaves. Filters keep strings, numbers and booleans, and
  *           a date as its ISO 8601 string; other values are not filterable and are left out. Sortable and range fields
  *           are stored under `filters` the same way, and `boost` gives each text field's weight tier. The scope is the row's own
- *           `scopeId` and `scopePath` when both are strings, else absent.
+ *           `scopeId` and `scopePath` when both are strings, else absent. Every path is first put through
+ *           `refuseEncryptedSearchPath`, so a field that rests encrypted never reaches a document as plain text.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 1 to 3); ADR 0162 (decision 2: per-locale values); ADR 0294 (decision 6);
- *                     ADR 0089 (decision 6); ADR 0327 (a scope is an id and an `ltree` path); stackra-302 (field kinds).
+ *                     ADR 0089 (decision 6); ADR 0327 (a scope is an id and an `ltree` path); stackra-302 (field kinds);
+ *                     ADR 0465 (decision 5: an encrypted field is never indexed, STA-2241).
  */
 import type { PublicId } from "@stackra/contracts";
 import { Translated } from "@stackra/model";
 import type { SearchableOptions } from "@stackra/model";
 
 import type { SearchDocument, SearchFilterValue } from "#contracts/index";
+import { refuseEncryptedSearchPath } from "#core/functions/refuse-encrypted-search-path.function";
 import { searchValuesAt } from "#core/functions/search-values-at.function";
 import { searchWordsOf } from "#core/functions/search-words-of.function";
 
@@ -75,7 +78,8 @@ function filterValuesOf(values: readonly unknown[]): readonly SearchFilterValue[
  * @param row - a loaded row whose relations on the facet's paths are populated.
  * @param id - the row's primary key.
  * @param facet - the model's `@Searchable` options.
- * @throws TypeError when a relation on a path was not populated, or a translated field holds a bad locale map.
+ * @throws TypeError when a relation on a path was not populated, a translated field holds a bad locale map, or a path
+ *         ends at a field `HasEncryptedFields` keeps sealed (`searchable_field_encrypted`).
  * @example
  * searchDocumentOf(product, product.id, Searchable.on(Product));
  * // { id: "prd_…", fields: [{ en: "linen shirt", ar: "قميص كتان" }, "sku 1"], filters: { status: ["active"] } }
@@ -85,6 +89,10 @@ export function searchDocumentOf(
   id: string,
   facet: SearchableOptions,
 ): SearchDocument {
+  const stored = [
+    ...new Set([...(facet.filters ?? []), ...(facet.sortable ?? []), ...(facet.ranges ?? [])]),
+  ];
+  for (const path of [...facet.text, ...stored]) refuseEncryptedSearchPath(row, path);
   const { scopeId, scopePath } = row as {
     readonly scopeId?: unknown;
     readonly scopePath?: unknown;
@@ -101,9 +109,7 @@ export function searchDocumentOf(
           }),
         }),
     filters: Object.fromEntries(
-      [
-        ...new Set([...(facet.filters ?? []), ...(facet.sortable ?? []), ...(facet.ranges ?? [])]),
-      ].map((path) => [path, filterValuesOf(searchValuesAt(row, path))]),
+      stored.map((path) => [path, filterValuesOf(searchValuesAt(row, path))]),
     ),
     ...(typeof scopeId === "string" && typeof scopePath === "string"
       ? { scope: { id: scopeId as PublicId<"scp">, path: scopePath } }

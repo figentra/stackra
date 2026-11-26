@@ -11,18 +11,27 @@
  *          when the session holds an empty grant), while one on an engine that does carries none; `similar` embeds the folded
  *          phrase and reads by the vector lane alone, a find given an embedder on a semantic index and a fusing driver
  *          carries the vector, and `similar` refuses a non-semantic model or a driver without the lane; `prepare`,
- *          `reindex({ version })` and `swap` rebuild into a version and swap it live, refusing a version outside 2 to 999.
+ *          `reindex({ version })` and `swap` rebuild into a version and swap it live, refusing a version outside 2 to 999;
+ *          a facet over a field `HasEncryptedFields` keeps sealed is refused when indexing and excerpting, and nothing
+ *          reaches the driver (STA-2241).
  * Boundary: test only; the memory driver ranks and a stand-in entity manager answers metadata, populate and find from
  *           a fixed list, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0221 (decisions 1 to 3 and 7); ADR 0404; stackra-301; stackra-303;
- *                     stackra-302 (any-of filters, ranges, sort and `when`); stackra-326 (rules, query log, suggest).
+ *                     stackra-302 (any-of filters, ranges, sort and `when`); stackra-326 (rules, query log, suggest);
+ *                     ADR 0465 (decision 5).
  */
 import { connectVisibilityFilter, Database as DatabasePort } from "@stackra/database";
 import type { Database } from "@stackra/database";
 import { VisibilityFilter } from "@stackra/database/contracts";
 import { isRefusal } from "@stackra/errors";
-import { Classify, Model, PrivilegedDataClass, Searchable } from "@stackra/model";
+import {
+  Classify,
+  HasEncryptedFields,
+  Model,
+  PrivilegedDataClass,
+  Searchable,
+} from "@stackra/model";
 import { MemorySettingValueStoreDriver, SettingsReader } from "@stackra/settings";
 import type { SettingValue } from "@stackra/settings/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
@@ -635,5 +644,34 @@ describe("SearchIndex ranking rules, query log and suggestions", () => {
     expect(await products.suggest("linnen")).toEqual({ completions: [], didYouMean: "linen" });
     expect(await products.suggest("linen")).toEqual({ completions: [] });
     expect(await products.suggest("  ")).toEqual({ completions: [] });
+  });
+});
+
+@Searchable({ text: ["title", "diagnosis"] })
+class Chart extends Model.with(HasEncryptedFields("diagnosis")) {
+  id = "";
+
+  title = "";
+
+  diagnosis = "";
+}
+
+describe("SearchIndex over an encrypted field", () => {
+  const chart = Object.assign(new Chart(), {
+    id: "cht_1",
+    title: "Annual review",
+    diagnosis: "asthma",
+  });
+
+  it("refuses to index or excerpt it, and stores nothing", async () => {
+    const driver = new MemorySearchDriver();
+    const index = vi.spyOn(driver, "index");
+    const { database } = databaseOver([]);
+    const charts = new SearchIndex(driver, database, Chart);
+    await expect(charts.index([chart])).rejects.toThrow(
+      /searchable_field_encrypted: Chart\.diagnosis/,
+    );
+    expect(index).not.toHaveBeenCalled();
+    expect(() => charts.snippets([chart], "asthma")).toThrow(/searchable_field_encrypted/);
   });
 });
