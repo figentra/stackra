@@ -102,53 +102,135 @@ test go through the same reader.
 ## Files and folders
 
 ```text
-packages/foundation/config/
-  README.md
-  stackra.manifest.json
-  src/core/index.ts
-  src/core/__tests__/index.test.ts
-  src/core/constants/{environment-variable,safety-critical-variables}.constant.ts
-  src/core/constants/__tests__/safety-critical-variables.constant.test.ts
-  src/core/constants/env.constant.ts
-  src/core/enums/stackra-environment.enum.ts
-  src/core/enums/__tests__/stackra-environment.enum.test.ts
-  src/core/functions/{read-environment,is-deployed-environment,layer-config,env-value}.function.ts
-  src/core/functions/__tests__/{read-environment,is-deployed-environment,build-config}.function.test.ts
-  src/core/types/platform-environment.type.ts
-packages/runtime/app/
-  README.md
-  src/server/index.ts
-  src/server/__tests__/index.test.ts
-  src/server/constants/platform-environment-host.constant.ts
-  src/server/functions/{provide-platform-environment,create-app}.function.ts
-  src/server/functions/__tests__/{provide-platform-environment.function,create-app.environment}.test.ts
-packages/developer/gen/
-  README.md
-  __golden__/*/expected/services/*/stackra-encore/*/{environment,api,cron,http,subscriptions,inbox}.ts.golden
-  src/core/functions/{emit-encore-environment,encore-setup-imports,generate-member}.function.ts
-  src/core/functions/emit-encore-{api,cron-jobs,events,http,inbox,queues}.function.ts
-  src/core/functions/__tests__/{emit-encore-environment,encore-setup-imports,emit-encore-cron-jobs,generate-member}.function.test.ts
-packages/developer/runway/
-  README.md
-  src/core/index.ts
-  src/core/__tests__/index.test.ts
-  src/core/types/runtime-only-field.type.ts
-  src/core/functions/{runtime-only-fields,check-runtime-only-config}.function.ts
-  src/core/functions/__tests__/{runtime-only-fields,check-runtime-only-config}.function.test.ts
-  src/node/index.ts
-  src/node/__tests__/index.test.ts
-  src/node/functions/{stackra-manifests,runtime-only-fields-of}.function.ts
-  src/node/functions/__tests__/{stackra-manifests,runtime-only-fields-of}.function.test.ts
-  src/node/commands/runway-validate.command.ts
-  src/node/commands/__tests__/runway-validate.command.test.ts
-packages/developer/repo-checks/src/node/
-  functions/{check-runway-files,structure-findings}.function.ts
-  functions/__tests__/repository-checks.test.ts
-  types/{runway-api,runtime-only-field-shape}.type.ts
-packages/runtime/outbox/src/ (tests and fixture only)
-packages/foundation/market-packs/src/core/drivers/__tests__/bundled-resolved-pack-source.driver.test.ts
-apps/docs/src/docs/adr/0296-runway-v3-member-requires-and-root-topology-groups.mdx
 .changeset/one-environment-reader.md
+apps/docs/src/docs/adr/0296-runway-v3-member-requires-and-root-topology-groups.mdx
+packages/developer/gen/README.md
+packages/developer/gen/__golden__/anonymous-route/expected/services/shop/stackra-encore/shop/api.ts.golden
+packages/developer/gen/__golden__/anonymous-route/expected/services/shop/stackra-encore/shop/cron.ts.golden
+packages/developer/gen/__golden__/anonymous-route/expected/services/shop/stackra-encore/shop/environment.ts.golden
+packages/developer/gen/__golden__/anonymous-route/expected/services/shop/stackra-encore/shop/http.ts.golden
+packages/developer/gen/__golden__/anonymous-route/expected/services/shop/stackra-encore/shop/subscriptions.ts.golden
+packages/developer/gen/__golden__/app-clients/expected/services/channels/stackra-encore/channels/api.ts.golden
+packages/developer/gen/__golden__/app-clients/expected/services/channels/stackra-encore/channels/cron.ts.golden
+packages/developer/gen/__golden__/app-clients/expected/services/channels/stackra-encore/channels/environment.ts.golden
+packages/developer/gen/__golden__/app-clients/expected/services/channels/stackra-encore/channels/http.ts.golden
+packages/developer/gen/__golden__/consumer/expected/services/catalogue/stackra-encore/catalogue/api.ts.golden
+packages/developer/gen/__golden__/consumer/expected/services/catalogue/stackra-encore/catalogue/cron.ts.golden
+packages/developer/gen/__golden__/consumer/expected/services/catalogue/stackra-encore/catalogue/environment.ts.golden
+packages/developer/gen/__golden__/consumer/expected/services/catalogue/stackra-encore/catalogue/http.ts.golden
+packages/developer/gen/__golden__/consumer/expected/services/channels/stackra-encore/channels/cron.ts.golden
+packages/developer/gen/__golden__/consumer/expected/services/channels/stackra-encore/channels/environment.ts.golden
+packages/developer/gen/__golden__/consumer/expected/services/channels/stackra-encore/channels/http.ts.golden
+packages/developer/gen/__golden__/consumer/expected/services/channels/stackra-encore/channels/subscriptions.ts.golden
+packages/developer/gen/__golden__/contracts-only-host/expected/services/shop/stackra-encore/shop/api.ts.golden
+packages/developer/gen/__golden__/contracts-only-host/expected/services/shop/stackra-encore/shop/cron.ts.golden
+packages/developer/gen/__golden__/contracts-only-host/expected/services/shop/stackra-encore/shop/environment.ts.golden
+packages/developer/gen/__golden__/contracts-only-host/expected/services/shop/stackra-encore/shop/http.ts.golden
+packages/developer/gen/__golden__/contracts-only-host/expected/services/shop/stackra-encore/shop/subscriptions.ts.golden
+packages/developer/gen/__golden__/contracts-pipeline-port/expected/services/shop/stackra-encore/shop/api.ts.golden
+packages/developer/gen/__golden__/contracts-pipeline-port/expected/services/shop/stackra-encore/shop/cron.ts.golden
+packages/developer/gen/__golden__/contracts-pipeline-port/expected/services/shop/stackra-encore/shop/environment.ts.golden
+packages/developer/gen/__golden__/contracts-pipeline-port/expected/services/shop/stackra-encore/shop/http.ts.golden
+packages/developer/gen/__golden__/contracts-pipeline-port/expected/services/shop/stackra-encore/shop/subscriptions.ts.golden
+packages/developer/gen/__golden__/contracts-port-host/expected/services/shop/stackra-encore/shop/api.ts.golden
+packages/developer/gen/__golden__/contracts-port-host/expected/services/shop/stackra-encore/shop/cron.ts.golden
+packages/developer/gen/__golden__/contracts-port-host/expected/services/shop/stackra-encore/shop/environment.ts.golden
+packages/developer/gen/__golden__/contracts-port-host/expected/services/shop/stackra-encore/shop/http.ts.golden
+packages/developer/gen/__golden__/contracts-port-host/expected/services/shop/stackra-encore/shop/subscriptions.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/catalogue/stackra-encore/catalogue/api.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/catalogue/stackra-encore/catalogue/cron.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/catalogue/stackra-encore/catalogue/environment.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/catalogue/stackra-encore/catalogue/http.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/channels/stackra-encore/channels/cron.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/channels/stackra-encore/channels/environment.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/channels/stackra-encore/channels/http.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/channels/stackra-encore/channels/inbox.ts.golden
+packages/developer/gen/__golden__/cross-app-consumer/expected/services/channels/stackra-encore/channels/subscriptions.ts.golden
+packages/developer/gen/__golden__/cross-app-producer/expected/services/shop/stackra-encore/shop/api.ts.golden
+packages/developer/gen/__golden__/cross-app-producer/expected/services/shop/stackra-encore/shop/cron.ts.golden
+packages/developer/gen/__golden__/cross-app-producer/expected/services/shop/stackra-encore/shop/environment.ts.golden
+packages/developer/gen/__golden__/cross-app-producer/expected/services/shop/stackra-encore/shop/http.ts.golden
+packages/developer/gen/__golden__/cross-app-producer/expected/services/shop/stackra-encore/shop/subscriptions.ts.golden
+packages/developer/gen/__golden__/i18n-consumed-service/expected/services/billing/stackra-encore/billing/cron.ts.golden
+packages/developer/gen/__golden__/i18n-consumed-service/expected/services/billing/stackra-encore/billing/environment.ts.golden
+packages/developer/gen/__golden__/i18n-consumed-service/expected/services/billing/stackra-encore/billing/http.ts.golden
+packages/developer/gen/__golden__/member-module-alias/expected/services/payments/stackra-encore/payments/cron.ts.golden
+packages/developer/gen/__golden__/member-module-alias/expected/services/payments/stackra-encore/payments/environment.ts.golden
+packages/developer/gen/__golden__/member-module-alias/expected/services/payments/stackra-encore/payments/http.ts.golden
+packages/developer/gen/__golden__/pipeline-ports/expected/services/shop/stackra-encore/shop/api.ts.golden
+packages/developer/gen/__golden__/pipeline-ports/expected/services/shop/stackra-encore/shop/cron.ts.golden
+packages/developer/gen/__golden__/pipeline-ports/expected/services/shop/stackra-encore/shop/environment.ts.golden
+packages/developer/gen/__golden__/pipeline-ports/expected/services/shop/stackra-encore/shop/http.ts.golden
+packages/developer/gen/__golden__/pipeline-ports/expected/services/shop/stackra-encore/shop/subscriptions.ts.golden
+packages/developer/gen/__golden__/service/expected/services/shop/stackra-encore/shop/api.ts.golden
+packages/developer/gen/__golden__/service/expected/services/shop/stackra-encore/shop/cron.ts.golden
+packages/developer/gen/__golden__/service/expected/services/shop/stackra-encore/shop/environment.ts.golden
+packages/developer/gen/__golden__/service/expected/services/shop/stackra-encore/shop/http.ts.golden
+packages/developer/gen/__golden__/service/expected/services/shop/stackra-encore/shop/subscriptions.ts.golden
+packages/developer/gen/src/core/functions/__tests__/emit-encore-cron-jobs.function.test.ts
+packages/developer/gen/src/core/functions/__tests__/emit-encore-environment.function.test.ts
+packages/developer/gen/src/core/functions/__tests__/encore-setup-imports.function.test.ts
+packages/developer/gen/src/core/functions/__tests__/generate-member.function.test.ts
+packages/developer/gen/src/core/functions/emit-encore-api.function.ts
+packages/developer/gen/src/core/functions/emit-encore-cron-jobs.function.ts
+packages/developer/gen/src/core/functions/emit-encore-environment.function.ts
+packages/developer/gen/src/core/functions/emit-encore-events.function.ts
+packages/developer/gen/src/core/functions/emit-encore-http.function.ts
+packages/developer/gen/src/core/functions/emit-encore-inbox.function.ts
+packages/developer/gen/src/core/functions/emit-encore-queues.function.ts
+packages/developer/gen/src/core/functions/encore-setup-imports.function.ts
+packages/developer/gen/src/core/functions/generate-member.function.ts
+packages/developer/repo-checks/src/node/functions/__tests__/repository-checks.test.ts
+packages/developer/repo-checks/src/node/functions/check-runway-files.function.ts
+packages/developer/repo-checks/src/node/functions/structure-findings.function.ts
+packages/developer/repo-checks/src/node/types/runtime-only-field-shape.type.ts
+packages/developer/repo-checks/src/node/types/runway-api.type.ts
+packages/developer/runway/README.md
+packages/developer/runway/src/core/__tests__/index.test.ts
+packages/developer/runway/src/core/functions/__tests__/check-runtime-only-config.function.test.ts
+packages/developer/runway/src/core/functions/__tests__/runtime-only-fields.function.test.ts
+packages/developer/runway/src/core/functions/check-runtime-only-config.function.ts
+packages/developer/runway/src/core/functions/runtime-only-fields.function.ts
+packages/developer/runway/src/core/index.ts
+packages/developer/runway/src/core/types/runtime-only-field.type.ts
+packages/developer/runway/src/node/__tests__/index.test.ts
+packages/developer/runway/src/node/commands/__tests__/runway-validate.command.test.ts
+packages/developer/runway/src/node/commands/runway-validate.command.ts
+packages/developer/runway/src/node/functions/__tests__/runtime-only-fields-of.function.test.ts
+packages/developer/runway/src/node/functions/__tests__/stackra-manifests.function.test.ts
+packages/developer/runway/src/node/functions/runtime-only-fields-of.function.ts
+packages/developer/runway/src/node/functions/stackra-manifests.function.ts
+packages/developer/runway/src/node/index.ts
+packages/foundation/config/README.md
+packages/foundation/config/src/core/__tests__/index.test.ts
+packages/foundation/config/src/core/constants/__tests__/safety-critical-variables.constant.test.ts
+packages/foundation/config/src/core/constants/env.constant.ts
+packages/foundation/config/src/core/constants/environment-variable.constant.ts
+packages/foundation/config/src/core/constants/safety-critical-variables.constant.ts
+packages/foundation/config/src/core/enums/__tests__/stackra-environment.enum.test.ts
+packages/foundation/config/src/core/enums/stackra-environment.enum.ts
+packages/foundation/config/src/core/functions/__tests__/build-config.function.test.ts
+packages/foundation/config/src/core/functions/__tests__/is-deployed-environment.function.test.ts
+packages/foundation/config/src/core/functions/__tests__/read-environment.function.test.ts
+packages/foundation/config/src/core/functions/env-value.function.ts
+packages/foundation/config/src/core/functions/is-deployed-environment.function.ts
+packages/foundation/config/src/core/functions/layer-config.function.ts
+packages/foundation/config/src/core/functions/read-environment.function.ts
+packages/foundation/config/src/core/index.ts
+packages/foundation/config/src/core/types/platform-environment.type.ts
+packages/foundation/config/stackra.manifest.json
+packages/foundation/market-packs/src/core/drivers/__tests__/bundled-resolved-pack-source.driver.test.ts
+packages/runtime/app/README.md
+packages/runtime/app/src/server/__tests__/index.test.ts
+packages/runtime/app/src/server/constants/platform-environment-host.constant.ts
+packages/runtime/app/src/server/functions/__tests__/create-app.environment.test.ts
+packages/runtime/app/src/server/functions/__tests__/provide-platform-environment.function.test.ts
+packages/runtime/app/src/server/functions/create-app.function.ts
+packages/runtime/app/src/server/functions/provide-platform-environment.function.ts
+packages/runtime/app/src/server/index.ts
+packages/runtime/outbox/src/config/__tests__/relay-inbox.config.test.ts
+packages/runtime/outbox/src/core/__tests__/fixtures/relay-key.fixture.ts
+packages/runtime/outbox/src/core/drivers/__tests__/contract-inbox-verifier.driver.test.ts
 ```
 
 ## Data models and migrations

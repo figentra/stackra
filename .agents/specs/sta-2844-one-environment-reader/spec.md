@@ -104,17 +104,17 @@ that the safety pull requests rebase onto.
   `dev`, `dev` and `test`.
 - **AC-004**: WHEN a deployed platform reports and the variable is unset THE reader SHALL derive the deployed
   environment, and IF the variable names `dev`, `test` or an environment the platform contradicts THEN it SHALL refuse.
-- **AC-005**: IF the platform is a self-hosted image without metadata (empty name, cloud `local`) and the variable is
-  unset THEN THE reader SHALL refuse instead of answering `dev`.
-- **AC-006**: IF the values layer sets a field mapped to a safety-critical variable THEN `buildConfig` SHALL refuse with
-  `ConfigInvalidError` naming the field and the variable; another field of the same class stays a value.
+- **AC-005**: IF a self-hosted image reports no metadata and the variable is unset THEN THE reader SHALL refuse
+  instead of answering `dev`.
+- **AC-006**: IF the values layer sets a field mapped to a safety-critical variable THEN THE configuration build SHALL
+  refuse it with `ConfigInvalidError` naming the field and the variable, and keep another field of the class a value.
 - **AC-007**: WHEN the server `createApp` boots THE configuration SHALL see `STACKRA_ENVIRONMENT` as the reader's
   answer, given what `providePlatformEnvironment` recorded, and boot SHALL fail on a refusal.
 - **AC-008**: WHEN gen runs for a service that runs `@stackra/app` THE generator SHALL write
   `stackra-encore/<member>/environment.ts` handing `appMeta().environment` to `providePlatformEnvironment`, and every
   generated Encore file SHALL import it first.
 - **AC-009**: IF a runway `config` block sets a field that an installed manifest maps to a safety-critical variable THEN
-  `runway validate` and `stackra validate --repository` SHALL report it with the file and the path.
+  THE runway check SHALL report it with the file and the path, in `runway validate` and `stackra validate --repository`.
 - **AC-010**: THE `isDeployedEnvironment` SHALL be true for `preview`, `staging` and `production` only.
 
 ## Status history
