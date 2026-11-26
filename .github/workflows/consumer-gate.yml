@@ -1,0 +1,131 @@
+# Stackra file contract:
+# Purpose: the consumer gate in CI (STA-2705; spec sta-1813-product-gate FR-008). Builds core, checks out the scaffold
+#          consumer's starter template at the commit `tools/consumer-gate/matrix.yaml` pins, and runs
+#          `stackra consumer-gate --product scaffold`: an app made the way a user makes one (`stackra create` on packed
+#          tarballs of every publishable package, `stackra new service --data`, the fixture), then installed, leak-checked,
+#          generated, typechecked, linted, built and tested against this core. Runs on the "version packages" pull
+#          request (`changeset-release/main`, so a release is checked against a consumer before it publishes), on a
+#          pull request labelled `consumer-gate`, on each push to main that touches a package, by dispatch, and as a
+#          reusable workflow.
+# Boundary: read-only: `contents: read`, and `id-token: write` only for the sops decrypt of the turbo cache scope; no
+#           write token, no secret value. The starter is a public repository. The product consumers (billing, pay,
+#           invoicing, tamo) do not run here: their repositories and overlay manifests are private, so they run by hand
+#           or on the testbed. Summaries and step logs go to the step summary and an artifact.
+# Owner: release-operations
+# Governing contract: ADR 0500 (decision 3: `stackra consumer-gate`); ADR 0166 (CI policy); ADR 0019 (supply chain);
+#                     ADR 0027 (mise); ADR 0525 (sops scopes); spec `.agents/specs/sta-1813-product-gate`; STA-2705.
+name: Consumer gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "tools/consumer-gate/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/consumer-gate.yml"
+  workflow_dispatch:
+  workflow_call:
+
+permissions: {}
+
+concurrency:
+  group: consumer-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scaffold:
+    name: Consumer gate (scaffold)
+    # Every pull request would cost a full build and pack, so only the version packages pull request (the release
+    # blocker) and a pull request labelled `consumer-gate` run it; pushes, dispatch and callers always do.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.head_ref == 'changeset-release/main' ||
+      contains(github.event.pull_request.labels.*.name, 'consumer-gate')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write # ADR 0525: the sops decrypt of ci/build/turbo only
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node pnpm
+
+      # The cache only speeds the build up: without this workflow's grant on ci/build/turbo (figentra/infra
+      # estate/secret-callers.mjs), or on a fork, the gate builds without it.
+      - name: Turborepo remote cache (sops)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        continue-on-error: true
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
+        with:
+          scope: ci/build/turbo
+
+      # As the Quality Gate: the two members that alias `uniwind` to Uniwind Pro are left out (a licensed download).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
+
+      # The gate never builds core; it packs what this builds (every publishable package's dist).
+      - name: Build the packages
+        run: pnpm exec turbo run build --filter='./packages/**'
+
+      # The repository and commit the matrix pins for the scaffold's starter, read by the CLI just built.
+      - name: Starter pin
+        id: pin
+        run: |
+          set -euo pipefail
+          read -r repo ref < <(node packages/developer/cli/dist/stackra.mjs consumer-gate --product scaffold --pin)
+          echo "repo=$repo" >> "$GITHUB_OUTPUT"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout the starter at its pin
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          repository: ${{ steps.pin.outputs.repo }}
+          ref: ${{ steps.pin.outputs.ref }}
+          path: .consumer-gate-starter
+          persist-credentials: false
+
+      # The starter leaves the core tree, and --out sits outside both, as the command requires.
+      - name: Gate
+        run: |
+          set -euo pipefail
+          mv .consumer-gate-starter "$RUNNER_TEMP/starter"
+          node packages/developer/cli/dist/stackra.mjs consumer-gate \
+            --core . --checkout "$RUNNER_TEMP/starter" --product scaffold --out "$RUNNER_TEMP/consumer-gate"
+
+      - name: Step summary
+        if: always()
+        run: |
+          shopt -s nullglob
+          summaries=("$RUNNER_TEMP"/consumer-gate/summary-*.md)
+          if [ "${#summaries[@]}" -eq 0 ]; then
+            echo "No consumer gate summary: the run stopped at setup (see the Gate step)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            cat "${summaries[@]}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the summaries and logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: consumer-gate-scaffold
+          path: |
+            ${{ runner.temp }}/consumer-gate/summary-*
+            ${{ runner.temp }}/consumer-gate/gen-drift-*
+            ${{ runner.temp }}/consumer-gate/logs/
+          if-no-files-found: warn
+          retention-days: 14
