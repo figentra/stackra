@@ -8,12 +8,12 @@
  *          with the tier in `STACKRA_TEST_TIER`, and the `stackra test` Encore runs reads it there and runs the
  *          generated suite without generating again (STA-2838); the variable is refused outside Encore and in a run that
  *          would start `encore test` a second time, and an `encore test` that exits 0 without the suite having
- *          started fails.
+ *          started fails, and the outer `encore test` runs with `encore.app` local-only, gen's file back afterwards.
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule.
  */
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -205,6 +205,22 @@ describe("toolCommand", () => {
       "STACKRA_TEST_TIER is already set",
     );
     expect(spawn).not.toHaveBeenCalled();
+  });
+
+  it("runs the outer encore test local-only, then puts gen's encore.app back (STA-2838)", async () => {
+    wiringService();
+    vi.stubEnv("STACKRA_TEST_TIER", "");
+    const generated = `${JSON.stringify({ id: "acme-platform", lang: "typescript" }, null, 2)}\n`;
+    writeFileSync(join(root, "encore.app"), generated);
+    let during: unknown;
+    spawn.mockImplementation(async () => {
+      during = JSON.parse(readFileSync(join(root, "encore.app"), "utf8"));
+      writeFileSync(marker(), "");
+      return 0;
+    });
+    expect(await toolCommand("test", "Test").run(context({ tier: "wiring" }))).toBe(0);
+    expect(during).toEqual({ id: "", lang: "typescript" });
+    expect(readFileSync(join(root, "encore.app"), "utf8")).toBe(generated);
   });
 
   it("fails an encore test that exits 0 without the wiring suite having started (STA-2838)", async () => {

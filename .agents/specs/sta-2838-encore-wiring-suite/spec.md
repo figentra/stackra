@@ -35,9 +35,9 @@ split out of STA-229 to build it.
 - **Apps touched**: docs (the scaffolding guide, the testing-by-kind standard, an enforcement note in ADR 0182)
 - **Services touched**: none in this repo (its services are placeholders with an authored `src/main.ts`, so gen writes
   them no suite); every service that runs as a generated Encore app gets the suite on its next gen
-- **Packages touched**: gen (`encoreEndpoints`, `emitEncoreWiringTest`, `emitWiringTierConfig`, two constants, three
+- **Packages touched**: gen (`encoreEndpoints`, `emitEncoreWiringTest` (environment and database files first), `emitWiringTierConfig`, two constants, three
   types, `emitEncoreApi` reading its rows from `encoreEndpoints`, `generateMember`, tests); cli (`--tier wiring`,
-  `insideEncoreTest`, `TEST_TIER_VARIABLE`, the `test:wiring` script in `stackra new service`, tests, README); root
+  `insideEncoreTest`, `withLocalEncoreApp`, `TEST_TIER_VARIABLE`, the `test:wiring` script in `stackra new service`, tests, README); root
   `turbo.jsonc` (the `test:wiring` task); flow-preset (the task vocabulary row, rendered into
   `.agents/rules/task-vocabulary.md`, `.flow/lock.json` updated)
 - **Public contract change**: additive. `@stackra/gen` exports `ENCORE_WIRING_TEST`, `ENCORE_WIRING_CONFIG` and
@@ -90,6 +90,11 @@ split out of STA-229 to build it.
   `encore test`, or `encore test` exiting 0 without the inner run having started the suite): a usage error that starts nothing for a tier read from the
   variable with no `--tier` and none of Encore's test variables set, never a second `encore test` from a run that
   already carries the variable, and exit 1 naming why when the marker `.stackra/encore-wiring.ran` is absent.
+- **AC-010**: WHEN `stackra test --tier wiring` starts `encore test` THE CLI SHALL run the app local-only: the id `""`
+  in the member's `encore.app` while Encore runs, gen's file put back when it settles or the process is stopped
+  (unless something else rewrote it meanwhile), so the tier needs no Encore Cloud login.
+- **AC-011**: THE suite SHALL import the service's generated environment and database files (those gen wrote) before
+  the server app, as every generated Encore file does (`encoreSetupImports`, STA-2844).
 - **AC-009**: IF a bearer token is malformed THEN THE `CallAuthenticator` SHALL refuse it as unauthenticated (401)
   before it resolves the key source, so the probe is refused even where no `JsonWebKeys` driver is bound.
 
@@ -101,3 +106,6 @@ split out of STA-229 to build it.
 - 2026-11-26 → Implementing (built in this branch; unit tests and revert checks green on box 2)
 - 2026-11-26 → Implementing (review round 1: AC-003 accepts a guard's refusal, AC-008 stops the recursion and the
   silent pass, AC-009 makes the key source lazy; the `encore test` run, T005, waits for box 2's root disk)
+- 2026-11-27 → Implementing (main merged in; the first run under `encore test` stopped on Encore Cloud secrets for the
+  linked app id, so the outer run is local-only (AC-010); the suite loads the environment file first (AC-011); T005
+  run on box 2: the suite passes on a created app and fails when a guarded adapter is opened)

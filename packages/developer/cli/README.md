@@ -129,7 +129,9 @@ credential, or with a bearer token that does not verify, is refused before it ru
 429 from a rate-limiting guard), every CronJob, topic and subscription, and the database with each model table
 migrated. It needs Encore and Docker. `STACKRA_TEST_TIER` counts only inside `encore test`: anywhere else it is
 refused, a run that carries it never starts a second `encore test`, and an `encore test` that exits 0 without the
-inner run having started the suite (`.stackra/encore-wiring.ran`) fails.
+inner run having started the suite (`.stackra/encore-wiring.ran`) fails. The outer `encore test` runs the app
+local-only: `encore.app` carries the id `""` while it runs and gen's file is put back afterwards, so the tier needs no
+Encore Cloud login (a CI job, a fresh workstation) and each service runs on its own local test cluster.
 
 `stackra dev --surface <surface>` runs at a product root (ADR 0436 decision 6, app-shells section 15 point 2). It reads
 `surfaces.<surface>` (`shell: os/console@3`, `packages`) from the root `runway.yaml`, runs `stackra gen`, writes the

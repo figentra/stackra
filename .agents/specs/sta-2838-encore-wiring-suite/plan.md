@@ -61,6 +61,11 @@ gen and runs Vitest with the generated wiring config.
 - **P-006**: no run starts `encore test` from a tier it read in `STACKRA_TEST_TIER`, and an `encore test` that exits 0
   without the marker is a failure — Validates: AC-008
 - **P-007**: a malformed bearer is refused before `JsonWebKeys` is resolved — Validates: AC-009
+- **P-008**: while the outer `encore test` runs, `encore.app` has the id `""` and every other field gen wrote; after it,
+  gen's file is back byte for byte (also on a throw or a stopping signal), unless something else rewrote it — Validates:
+  AC-010
+- **P-009**: the suite imports the environment and database files gen wrote, in that order, before `../entry/server`,
+  and none gen did not write — Validates: AC-011
 
 ## Architecture overview
 
@@ -75,6 +80,9 @@ Encore's own router is checked when `encore test` compiles the app.
 - `emitEncoreApi`: prints the adapters from those rows (output unchanged).
 - `emitEncoreWiringTest`: the suite; `emitWiringTierConfig`: its Vitest config.
 - `resolveTool` / `toolCommand`: the `wiring` tier, outside and inside `encore test`; `insideEncoreTest` tells which.
+- `withLocalEncoreApp`: runs the outer `encore test` local-only. With the runway's app id in `encore.app`, `encore test`
+  fetches the app's secrets from Encore Cloud first and stops a machine that is not logged in (found by the first run
+  on box 2); the suite needs nothing from Encore Cloud, and a local-only app gets its own local test cluster per service.
 - `serviceTemplate`: the `test:wiring` script; root `turbo.jsonc`: the uncached `test:wiring` task.
 
 ## Files and folders
@@ -88,7 +96,8 @@ packages/developer/gen/src/core/
   types/encore-endpoint.type.ts, types/encore-call-endpoint.type.ts, types/encore-controller-endpoint.type.ts
   functions/__tests__/{encore-endpoints,emit-encore-wiring-test,emit-wiring-tier-config,generate-member}.function.test.ts
 packages/developer/cli/src/node/
-  constants/test-tier-variable.constant.ts, functions/inside-encore-test.function.ts
+  constants/test-tier-variable.constant.ts, functions/inside-encore-test.function.ts,
+  functions/local-encore-app.function.ts and its test
   functions/{resolve-tool,tool-command,service-template}.function.ts and their tests
 packages/developer/cli/src/node/constants/wiring-ran-marker.constant.ts
 packages/runtime/app/src/server/services/call-authenticator.service.ts

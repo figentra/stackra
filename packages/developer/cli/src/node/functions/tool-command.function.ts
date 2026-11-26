@@ -17,7 +17,8 @@
  *          wiring suite without generating again. At the root it runs `turbo run test:wiring`. The variable counts only
  *          inside `encore test` (anywhere else it is refused, so a leaked or exported value never starts `encore test`
  *          again), a run that already carries it never starts another `encore test`, and an `encore test` that exits 0
- *          without the inner run having started the suite (`WIRING_RAN_MARKER`) fails.
+ *          without the inner run having started the suite (`WIRING_RAN_MARKER`) fails. The outer `encore test` runs the
+ *          app local-only (`withLocalEncoreApp`), so it needs no Encore Cloud login.
  * Boundary: starts at most one tool (two in sequence for a Mintlify docs app's `lint`); a gen refusal stops before
  *           the tool and exits 1.
  * Runtime: node
@@ -36,6 +37,7 @@ import { devSecretEnv } from "#node/dev-secrets/functions/dev-secret-env.functio
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { checkDocsLinks } from "#node/functions/check-docs-links.function";
 import { insideEncoreTest } from "#node/functions/inside-encore-test.function";
+import { withLocalEncoreApp } from "#node/functions/local-encore-app.function";
 import { readMember } from "#node/functions/read-member.function";
 import { resolveTool } from "#node/functions/resolve-tool.function";
 import { runGen } from "#node/functions/run-gen.function";
@@ -94,7 +96,8 @@ async function runWiring(
     );
   }
   rmSync(marker, { force: true });
-  const code = await runProcess(tool, io);
+  // Local-only: the suite needs nothing from Encore Cloud, and a linked id stops a machine that is not logged in.
+  const code = await withLocalEncoreApp(cwd, () => runProcess(tool, io));
   if (code !== 0) return code;
   if (!existsSync(marker)) {
     io.err(
