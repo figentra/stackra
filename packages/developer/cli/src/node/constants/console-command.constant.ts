@@ -27,7 +27,6 @@ interface ConsoleEntry {
 /** The `stackra console` command. */
 export const CONSOLE_COMMAND: CliCommand = {
   name: "console",
-  group: "Develop",
   summary: "Run a member's console: its commands and those of its hosted packages",
   usage: "stackra console <member> [command] [args...] [-- <flags>]",
   positionals: true,

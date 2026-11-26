@@ -47,8 +47,6 @@ const CHECK = checkCommand(
 /** The `stackra validate` command. */
 export const VALIDATE_COMMAND: CliCommand = {
   ...CHECK,
-  group: "Quality",
-  hidden: true,
   usage: `${CHECK.usage} [--repository]`,
   options: { ...CHECK.options, repository: { type: "boolean" } },
   async run(context) {

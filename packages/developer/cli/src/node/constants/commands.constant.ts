@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `COMMANDS`, every command the `stackra` binary has (native console classes and the `CliCommand`s not yet ported), in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
+ * Purpose: `COMMANDS`, every command the `stackra` binary has, each a native console command class (no passthrough command is
+ *          left, ADR 0500 decision 7; `runway` mounts Runway's own console by design), in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy, mobile onboard and
  *          preview serve commands (ADR 0482, STA-1676), the db commands, the seed-pack
@@ -19,23 +20,31 @@
  *           (ADR 0529 decision 4, STA-2214).
  * Runtime: node
  * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows); ADR 0506;
- *                     STA-1966; STA-2872 spec FR-001 and FR-002.
+ *                     STA-1966; STA-2872 spec FR-001 and FR-002; STA-2883.
  */
-import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
-import { DB_DIFF_COMMAND } from "#node/constants/db-diff-command.constant";
-import { DB_SEED_COMMAND } from "#node/constants/db-seed-command.constant";
-import { GEN_COMMAND } from "#node/constants/gen-command.constant";
-import { MCP_COMMAND } from "#node/constants/mcp-command.constant";
-import { MCP_EXEC_COMMAND } from "#node/constants/mcp-exec-command.constant";
-import { NEW_COMMAND } from "#node/constants/new-command.constant";
-import { SEED_PACK_COMMAND } from "#node/constants/seed-pack-command.constant";
-import { TESTBED_COMMAND } from "#node/constants/testbed-command.constant";
-import { VALIDATE_COMMAND } from "#node/constants/validate-command.constant";
-import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
-import { EAS_PREFLIGHT_COMMAND } from "#node/eas-preflight/constants/eas-preflight-command.constant";
-import { BUILD_COMMAND } from "#node/product/constants/build-command.constant";
-import { DEPLOY_COMMAND } from "#node/product/constants/deploy-command.constant";
-import { PREVIEW_SERVE_COMMAND } from "#node/product/constants/preview-serve-command.constant";
+import { BuildCommand } from "#node/commands/build.command";
+import { CheckCommand } from "#node/commands/check.command";
+import { CodeCheckCommand } from "#node/commands/code-check.command";
+import { CodeFixCommand } from "#node/commands/code-fix.command";
+import { ConsoleCommand } from "#node/commands/console.command";
+import { DbDiffCommand } from "#node/commands/db-diff.command";
+import { DbSeedCommand } from "#node/commands/db-seed.command";
+import { DeployCommand } from "#node/commands/deploy.command";
+import { DevCommand } from "#node/commands/dev.command";
+import { EasPreflightCommand } from "#node/commands/eas-preflight.command";
+import { GenCommand } from "#node/commands/gen.command";
+import { LintCommand } from "#node/commands/lint.command";
+import { McpCommand } from "#node/commands/mcp.command";
+import { McpExecCommand } from "#node/commands/mcp-exec.command";
+import { NewCommand } from "#node/commands/new.command";
+import { PreviewServeCommand } from "#node/commands/preview-serve.command";
+import { SeedPackCommand } from "#node/commands/seed-pack.command";
+import { StartCommand } from "#node/commands/start.command";
+import { TestCommand } from "#node/commands/test.command";
+import { TestbedCommand } from "#node/commands/testbed.command";
+import { TypecheckCommand } from "#node/commands/typecheck.command";
+import { ValidateCommand } from "#node/commands/validate.command";
+import { VerifyCommand } from "#node/commands/verify.command";
 import { AddCommand } from "#node/commands/add.command";
 import { AgentsCheckCommand } from "#node/commands/agents-check.command";
 import { AgentsSyncCommand } from "#node/commands/agents-sync.command";
@@ -71,97 +80,55 @@ import { SettingsDiffCommand } from "#node/commands/settings-diff.command";
 import { SkillLicencesCommand } from "#node/commands/skill-licences.command";
 import { SmokeCommand } from "#node/commands/smoke.command";
 import { StructureCommand } from "#node/commands/structure.command";
-import { checkCommand } from "#node/functions/check-command.function";
-import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommands } from "#node/types/cli-commands.type";
 
 /** The commands of `stackra`. */
 export const COMMANDS: CliCommands = [
   CreateCommand,
-  NEW_COMMAND,
-  GEN_COMMAND,
-  CONSOLE_COMMAND,
-  DEV_COMMAND,
-  BUILD_COMMAND,
-  { ...toolCommand("start", "Generate, then preview an app's web build"), group: "Develop" },
-  { ...toolCommand("typecheck", "Generate, then type-check the member"), group: "Quality" },
-  {
-    ...toolCommand("test", "Generate, then run the member's tests (--tier unit, int or e2e)"),
-    group: "Quality",
-  },
-  { ...toolCommand("lint", "Lint the member with oxlint"), group: "Quality" },
-  {
-    ...checkCommand(
-      "check",
-      "Run the quality gate (config, format, secrets, docs, lint, gen, …); validate, verify, code:check, code:fix are presets",
-    ),
-    group: "Quality",
-  },
-  VALIDATE_COMMAND,
-  {
-    ...checkCommand(
-      "verify",
-      "Run every check phase, tests included (`stackra check --with-tests`)",
-      {
-        withTests: true,
-      },
-    ),
-    group: "Quality",
-    hidden: true,
-  },
-  {
-    ...checkCommand(
-      "code:check",
-      "Check formatting and lint (`stackra check --only format,lint`)",
-      {
-        only: ["format", "lint"],
-      },
-    ),
-    group: "Quality",
-    hidden: true,
-  },
-  {
-    ...checkCommand(
-      "code:fix",
-      "Format and apply lint fixes (`stackra check --only format,lint --fix`)",
-      {
-        only: ["format", "lint"],
-        fix: true,
-      },
-    ),
-    group: "Quality",
-    hidden: true,
-  },
+  NewCommand,
+  GenCommand,
+  ConsoleCommand,
+  DevCommand,
+  BuildCommand,
+  StartCommand,
+  TypecheckCommand,
+  TestCommand,
+  LintCommand,
+  CheckCommand,
+  ValidateCommand,
+  VerifyCommand,
+  CodeCheckCommand,
+  CodeFixCommand,
   DbMigrateCommand,
   DbRollbackCommand,
   DevSecretsInitCommand,
-  DB_SEED_COMMAND,
-  DB_DIFF_COMMAND,
-  SEED_PACK_COMMAND,
+  DbSeedCommand,
+  DbDiffCommand,
+  SeedPackCommand,
   SettingsDiffCommand,
   SettingsApplyCommand,
   SearchReindexCommand,
   SearchStatusCommand,
   AuditVerifyCommand,
-  DEPLOY_COMMAND,
+  DeployCommand,
   PromoteCommand,
   RunwayCommand,
   MobileOnboardCommand,
   SmokeCommand,
-  PREVIEW_SERVE_COMMAND,
+  PreviewServeCommand,
   OpsBootstrapOperatorCommand,
   LsCommand,
-  TESTBED_COMMAND,
+  TestbedCommand,
   ConsumerGateCommand,
-  MCP_COMMAND,
+  McpCommand,
   McpSyncCommand,
-  MCP_EXEC_COMMAND,
+  McpExecCommand,
   AgentsSyncCommand,
   AgentsCheckCommand,
   AddCommand,
   PublishCommand,
   DoctorCommand,
-  EAS_PREFLIGHT_COMMAND,
+  EasPreflightCommand,
   StructureCommand,
   ArchitectureMapCommand,
   ConstitutionCommand,

@@ -96,6 +96,16 @@
       "entry": "node"
     },
     {
+      "name": "build",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "BuildCommand",
+      "file": "src/node/commands/build.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "catalogue-completeness",
       "aliases": [],
       "hidden": false,
@@ -103,6 +113,46 @@
       "bin": true,
       "class": "CatalogueCompletenessCommand",
       "file": "src/node/commands/catalogue-completeness.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "check",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "CheckCommand",
+      "file": "src/node/commands/check.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "code:check",
+      "aliases": [],
+      "hidden": true,
+      "audit": false,
+      "bin": true,
+      "class": "CodeCheckCommand",
+      "file": "src/node/commands/code-check.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "code:fix",
+      "aliases": [],
+      "hidden": true,
+      "audit": false,
+      "bin": true,
+      "class": "CodeFixCommand",
+      "file": "src/node/commands/code-fix.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "console",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "ConsoleCommand",
+      "file": "src/node/commands/console.command.ts",
       "entry": "node"
     },
     {
@@ -146,6 +196,16 @@
       "entry": "node"
     },
     {
+      "name": "db:diff",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DbDiffCommand",
+      "file": "src/node/commands/db-diff.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "db:migrate",
       "aliases": [],
       "hidden": false,
@@ -166,6 +226,26 @@
       "entry": "node"
     },
     {
+      "name": "db:seed",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DbSeedCommand",
+      "file": "src/node/commands/db-seed.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "deploy",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DeployCommand",
+      "file": "src/node/commands/deploy.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "dev:secrets:init",
       "aliases": [],
       "hidden": false,
@@ -173,6 +253,16 @@
       "bin": true,
       "class": "DevSecretsInitCommand",
       "file": "src/node/commands/dev-secrets-init.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "dev",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DevCommand",
+      "file": "src/node/commands/dev.command.ts",
       "entry": "node"
     },
     {
@@ -216,6 +306,16 @@
       "entry": "node"
     },
     {
+      "name": "eas-preflight",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "EasPreflightCommand",
+      "file": "src/node/commands/eas-preflight.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "encore:prepare",
       "aliases": [],
       "hidden": false,
@@ -223,6 +323,26 @@
       "bin": true,
       "class": "EncorePrepareCommand",
       "file": "src/node/commands/encore-prepare.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "gen",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "GenCommand",
+      "file": "src/node/commands/gen.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "lint",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "LintCommand",
+      "file": "src/node/commands/lint.command.ts",
       "entry": "node"
     },
     {
@@ -236,6 +356,16 @@
       "entry": "node"
     },
     {
+      "name": "mcp:exec",
+      "aliases": [],
+      "hidden": true,
+      "audit": false,
+      "bin": true,
+      "class": "McpExecCommand",
+      "file": "src/node/commands/mcp-exec.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "mcp:sync",
       "aliases": [],
       "hidden": true,
@@ -243,6 +373,16 @@
       "bin": true,
       "class": "McpSyncCommand",
       "file": "src/node/commands/mcp-sync.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "mcp",
+      "aliases": [],
+      "hidden": true,
+      "audit": false,
+      "bin": true,
+      "class": "McpCommand",
+      "file": "src/node/commands/mcp.command.ts",
       "entry": "node"
     },
     {
@@ -256,6 +396,16 @@
       "entry": "node"
     },
     {
+      "name": "new",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "NewCommand",
+      "file": "src/node/commands/new.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "ops:bootstrap-operator",
       "aliases": [],
       "hidden": false,
@@ -263,6 +413,16 @@
       "bin": true,
       "class": "OpsBootstrapOperatorCommand",
       "file": "src/node/commands/ops-bootstrap-operator.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "preview:serve",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "PreviewServeCommand",
+      "file": "src/node/commands/preview-serve.command.ts",
       "entry": "node"
     },
     {
@@ -326,6 +486,16 @@
       "entry": "node"
     },
     {
+      "name": "seed-pack",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "SeedPackCommand",
+      "file": "src/node/commands/seed-pack.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "settings:apply",
       "aliases": [],
       "hidden": false,
@@ -366,6 +536,16 @@
       "entry": "node"
     },
     {
+      "name": "start",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "StartCommand",
+      "file": "src/node/commands/start.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "structure",
       "aliases": [],
       "hidden": false,
@@ -373,6 +553,56 @@
       "bin": true,
       "class": "StructureCommand",
       "file": "src/node/commands/structure.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "test",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "TestCommand",
+      "file": "src/node/commands/test.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "testbed",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "TestbedCommand",
+      "file": "src/node/commands/testbed.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "typecheck",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "TypecheckCommand",
+      "file": "src/node/commands/typecheck.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "validate",
+      "aliases": [],
+      "hidden": true,
+      "audit": false,
+      "bin": true,
+      "class": "ValidateCommand",
+      "file": "src/node/commands/validate.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "verify",
+      "aliases": [],
+      "hidden": true,
+      "audit": false,
+      "bin": true,
+      "class": "VerifyCommand",
+      "file": "src/node/commands/verify.command.ts",
       "entry": "node"
     }
   ],

@@ -16,8 +16,6 @@ import type { CliCommand } from "#node/types/cli-command.type";
 /** `stackra mcp exec`. */
 export const MCP_EXEC_COMMAND: CliCommand = {
   name: "mcp exec",
-  group: "Develop",
-  hidden: true,
   summary: "Start an MCP server with its secrets (stackra mcp exec -- <command>)",
   usage: "stackra mcp exec -- <command> [args…]",
   options: {},

@@ -4,31 +4,49 @@
  *          registry item commands add and publish, ADR 0453), no
  *          Figentra-internal operation is present, every command has help text, every command sits under one of the
  *          `COMMAND_GROUPS` headings (the repository checks under Repository), the hidden ones are exactly the check
- *          presets and the commands a script or agent client runs, and every `COMMAND_FITS` key is a command.
- * Boundary: test only.
+ *          presets and the commands a script or agent client runs, and every `COMMAND_FITS` key is a command. Each
+ *          ported command (a class with a `body`) declares every option its body reads as a described field, and a
+ *          run with every field given hands each of them to the body.
+ * Boundary: test only; the bodies are stubbed, so no command runs a tool.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 4 and the packed-tarball enforcement);
- *                     STA-2872 spec FR-001 and FR-002.
+ *                     STA-2872 spec FR-001 and FR-002; STA-2883 spec FR-001 and FR-002.
  */
 import { readCommand } from "@stackra/console";
+import type { CommandField } from "@stackra/console/contracts";
+import { runCommandForTest } from "@stackra/console/testing";
 import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { COMMAND_FITS } from "#node/constants/command-fits.constant";
 import { COMMAND_GROUPS } from "#node/constants/command-groups.constant";
 import { COMMANDS } from "#node/constants/commands.constant";
-import { legacyCommand } from "#node/functions/legacy-command.function";
+import type { CliCommand } from "#node/types/cli-command.type";
 
-/** A command class's own name, or a legacy command's words joined with `:` as the console names them. */
-const names = COMMANDS.map((command) =>
-  typeof command === "function" ? readCommand(command).name : command.name.replaceAll(" ", ":"),
-);
+/** Every command as the console reads it: name, group, hidden flag and fields. */
+const structures = COMMANDS.map((command) => readCommand(command));
 
-/** Every command as the console reads it: name, group and hidden flag. */
-const structures = COMMANDS.map((command) =>
-  readCommand(
-    typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
-  ),
-);
+/** Each command's name (`mcp:sync` for `stackra mcp sync`). */
+const names = structures.map((structure) => structure.name);
+
+/** The commands ported from a passthrough body (STA-2883): the class and the body it runs. */
+const ported = COMMANDS.flatMap((command) => {
+  const body = (command as { readonly body?: CliCommand }).body;
+  return body === undefined ? [] : [{ command, body, structure: readCommand(command) }];
+});
+
+/** The tokens that give `field` a value its checks accept. */
+function tokensFor(field: CommandField): string[] {
+  const value = field.choices?.[0] ?? (field.kind === "string" ? "x" : "1");
+  if (field.role === "argument") return [value];
+  if (field.kind !== "boolean") return [`--${field.flag}`, value];
+  // A flag on by default is given by its negation (`--no-wait`), as a person turns it off.
+  return [field.default === true ? `--no-${field.flag}` : `--${field.flag}`];
+}
+
+/** The body options `field` answers: its flag, or `no-<flag>` for a flag on by default. */
+const answers = (field: CommandField) =>
+  field.kind === "boolean" && field.default === true ? `no-${field.flag}` : field.flag;
 
 /** The names under `group`, sorted. */
 const namesIn = (group: string) =>
@@ -100,12 +118,81 @@ describe("COMMANDS", () => {
     }
   });
 
-  it("has unique names, each with a summary and a usage that starts with its name", () => {
+  it("has unique names, each with a description", () => {
     expect(new Set(names).size).toBe(names.length);
-    for (const command of COMMANDS) {
-      if (typeof command === "function") continue;
-      expect(command.summary.length).toBeGreaterThan(0);
-      expect(command.usage.startsWith(`stackra ${command.name}`)).toBe(true);
+    for (const structure of structures)
+      expect(structure.description.length, structure.name).toBeGreaterThan(0);
+  });
+
+  // @covers sta-2883:FR-001
+  it("ports the day-one commands from their passthrough bodies, each usage naming the command", () => {
+    expect(ported.map(({ structure }) => structure.name).toSorted()).toEqual(
+      [
+        "build",
+        "check",
+        "code:check",
+        "code:fix",
+        "console",
+        "db:diff",
+        "db:seed",
+        "deploy",
+        "dev",
+        "eas-preflight",
+        "gen",
+        "lint",
+        "mcp",
+        "mcp:exec",
+        "new",
+        "preview:serve",
+        "seed-pack",
+        "start",
+        "test",
+        "testbed",
+        "typecheck",
+        "validate",
+        "verify",
+      ].toSorted(),
+    );
+    for (const { body, structure } of ported) {
+      expect(body.name.replaceAll(" ", ":"), structure.name).toBe(structure.name);
+      expect(body.usage.startsWith(`stackra ${body.name}`), structure.name).toBe(true);
+    }
+  });
+
+  // @covers sta-2883:FR-002
+  it("declares every option a body reads as a described field of its command", () => {
+    for (const { body, structure } of ported) {
+      const fields = [...structure.arguments, ...structure.options];
+      for (const field of fields)
+        expect(field.description ?? "", `${structure.name} ${field.flag}`).not.toBe("");
+      const declared = new Set(structure.options.map(answers));
+      for (const option of Object.keys(body.options ?? {}))
+        // `json` is the console's own --json, which the class hands on (`testbed`).
+        if (option !== "json") expect(declared, `${structure.name} --${option}`).toContain(option);
+    }
+  });
+
+  // @covers sta-2883:FR-001
+  it("hands every option and argument the line gives to the body", async () => {
+    for (const { command, body, structure } of ported) {
+      const run = vi.spyOn(body, "run").mockResolvedValue(0);
+      const argv = [
+        structure.name,
+        ...structure.arguments.flatMap(tokensFor),
+        ...structure.options.flatMap(tokensFor),
+      ];
+      const result = await runCommandForTest([command], argv, { cwd: "/work" });
+      expect(`${result.exitCode} ${result.stderr}`, argv.join(" ")).toBe("0 ");
+      const context = run.mock.calls[0]?.[0];
+      run.mockRestore();
+      expect(context, argv.join(" ")).toBeDefined();
+      for (const option of Object.keys(body.options ?? {}))
+        if (option !== "json")
+          expect(context?.values[option], `${structure.name} --${option}`).toBeDefined();
+      const given = structure.arguments.flatMap(tokensFor);
+      expect([...(context?.positionals ?? []), ...(context?.rest ?? [])], structure.name).toEqual(
+        given,
+      );
     }
   });
 

@@ -68,7 +68,6 @@ const KEEP_OVER = new Set(["CHANGELOG.md", "runway.yaml"]);
 /** The `stackra new` command. */
 export const NEW_COMMAND: CliCommand = {
   name: "new",
-  group: "Create",
   summary:
     "Create a package, service, seed pack, tooling preset or app in the v3 shape, or regenerate one with --over",
   usage:

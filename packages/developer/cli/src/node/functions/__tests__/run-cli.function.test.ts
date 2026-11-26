@@ -1,16 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `runCli` on `@stackra/console`: a legacy command runs byte-identical and exits as before
- *          (usage error 2, failure 1), `--help` and `help <command>` never run a command, an unknown command exits 2
- *          naming the closest, the version, spaced command names, `cli` in the context running another command, and the
- *          list of commands still on passthrough pinned.
+ * Purpose: unit tests of `runCli` on `@stackra/console`: a command class running its body prints byte-identical and
+ *          exits as before (usage error 2 with the body's usage, failure 1), `--help` and `help <command>` never run
+ *          a command, an unknown command exits 2 naming the closest, the version, spaced command names, `cli` in the
+ *          context running another command from the same folder, the run's runtime reaching the body (a capture never
+ *          takes the terminal), and no command left on passthrough (ADR 0500 decision 7).
  * Boundary: test only; runs fake commands, never a tool.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5); ADR 0500 (decision 7); STA-1966.
+ * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5); ADR 0500 (decision 7); STA-1966;
+ *                     STA-2883.
  */
-import { readCommand } from "@stackra/console";
+import { Argument, Command, Option, readCommand, type CommandIo } from "@stackra/console";
 import { passthroughCommands } from "@stackra/console/testing";
 import { describe, expect, it } from "@stackra/testing";
+import { List } from "@stackra/validation";
 import { vi } from "vitest";
 
 import { RunwayCommand } from "#node/commands/runway.command";
@@ -18,15 +21,16 @@ import { COMMANDS } from "#node/constants/commands.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { captureIo } from "#node/functions/capture-io.function";
 import { cliVersion } from "#node/functions/cli-version.function";
-import { legacyCommand } from "#node/functions/legacy-command.function";
+import { runBody } from "#node/functions/run-body.function";
 import { runCli } from "#node/functions/run-cli.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 import type { CliContext } from "#node/types/cli-context.type";
 
-const echo: CliCommand = {
+/** A body that prints what it got. */
+const ECHO: CliCommand = {
   name: "echo",
   summary: "Echo the input",
-  usage: "stackra echo [--loud] [words…] [-- rest…]",
+  usage: "stackra echo [--loud] [words…]",
   options: { loud: { type: "boolean" } },
   positionals: true,
   run: async ({ values, positionals, rest, io }) => {
@@ -35,25 +39,56 @@ const echo: CliCommand = {
   },
 };
 
-const failing: CliCommand = {
+/** Echoes its words. */
+class EchoCommand extends Command({
+  name: "echo",
+  description: ECHO.summary,
+}) {
+  @Option({ description: "Shout" })
+  loud = false;
+
+  @Argument({ description: "The words" })
+  @List
+  words: string[] = [];
+
+  handle(io: CommandIo): Promise<number> {
+    return runBody(io, ECHO, {
+      values: { loud: this.loud },
+      positionals: this.words,
+    });
+  }
+}
+
+/** A class over `body` with no fields. */
+const bare = (name: string, body: CliCommand) =>
+  class extends Command({
+    name,
+    description: body.summary,
+  }) {
+    handle(io: CommandIo): Promise<number> {
+      return runBody(io, body, { values: {} });
+    }
+  };
+
+const FailCommand = bare("fail", {
   name: "fail",
   summary: "Fail",
   usage: "stackra fail",
   run: async () => {
     throw new Error("boom");
   },
-};
+});
 
-const misused: CliCommand = {
+const MisuseCommand = bare("misuse", {
   name: "misuse",
   summary: "Misuse",
   usage: "stackra misuse",
   run: async () => {
     throw new CliUsageError("bad line");
   },
-};
+});
 
-const spaced: CliCommand = {
+const SyncCommand = bare("mcp:sync", {
   name: "mcp sync",
   summary: "Sync",
   usage: "stackra mcp sync",
@@ -61,9 +96,9 @@ const spaced: CliCommand = {
     io.out("synced\n");
     return 5;
   },
-};
+});
 
-const commands = [echo, failing, misused, spaced];
+const commands = [EchoCommand, FailCommand, MisuseCommand, SyncCommand];
 
 const run = async (args: readonly string[], cwd = "/repo") => {
   const { io, output } = captureIo();
@@ -72,20 +107,23 @@ const run = async (args: readonly string[], cwd = "/repo") => {
 };
 
 describe("runCli", () => {
-  it("runs a legacy command byte-identical: options, positionals and everything after --", async () => {
+  // @covers sta-2883:FR-007
+  it("runs a command's body byte-identical: options, positionals and the words after --", async () => {
     const { code, output } = await run(["echo", "--loud", "a", "--", "--x", "b"]);
     expect(code).toBe(0);
-    expect(output).toBe('{"loud":true,"positionals":["a"],"rest":["--x","b"]}\n');
+    expect(output).toBe('{"loud":true,"positionals":["a","--x","b"],"rest":[]}\n');
   });
 
   it("runs a spaced command by its words and keeps its own exit code", async () => {
     expect(await run(["mcp", "sync"])).toEqual({ code: 5, output: "synced\n" });
   });
 
+  // @covers sta-2883:FR-007
   it("exits 2 with the usage for an unknown option or a CliUsageError, and 1 for a failure", async () => {
-    const unknown = await run(["echo", "--quiet"]);
+    // `--quiet` is the console's own global option, so the unknown one is a flag nothing declares.
+    const unknown = await run(["echo", "--whisper"]);
     expect(unknown.code).toBe(2);
-    expect(unknown.output).toContain("Usage: stackra echo");
+    expect(unknown.output).toContain("--whisper");
     const misuse = await run(["misuse"]);
     expect(misuse.code).toBe(2);
     expect(misuse.output).toContain("bad line");
@@ -95,19 +133,22 @@ describe("runCli", () => {
     expect(failure.output).toContain("boom");
   });
 
-  it("prints help for --help and help <command> and never runs the command", async () => {
-    const spy = vi.fn(async () => 0);
-    const guarded: CliCommand = { ...echo, run: spy };
+  // @covers sta-2883:FR-002
+  it("prints help with each option for --help and help <command>, and never runs the command", async () => {
+    const spy = vi.spyOn(ECHO, "run");
     for (const args of [
       ["echo", "--help"],
       ["help", "echo"],
       ["echo", "-h"],
     ]) {
-      const { io, output } = captureIo();
-      expect(await runCli(args, io, { cwd: "/repo", commands: [guarded] })).toBe(0);
-      expect(output()).toContain("Echo the input");
+      const { code, output } = await run(args);
+      expect(code).toBe(0);
+      expect(output).toContain("Echo the input");
+      expect(output).toContain("--loud");
+      expect(output).toContain("Shout");
     }
     expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 
   it("lists the commands for no command and for --help", async () => {
@@ -132,9 +173,9 @@ describe("runCli", () => {
     expect(output).toContain("echo");
   });
 
-  it("gives commands the cwd and a cli that runs another command with the same commands", async () => {
+  it("gives a body the cwd and a cli that runs another command from the same folder", async () => {
     const seen = vi.fn<(context: CliContext) => void>();
-    const outer: CliCommand = {
+    const OuterCommand = bare("outer", {
       name: "outer",
       summary: "Outer",
       usage: "stackra outer",
@@ -145,59 +186,64 @@ describe("runCli", () => {
         context.io.out(inner.output());
         return code;
       },
-    };
+    });
     const { io, output } = captureIo();
-    expect(await runCli(["outer"], io, { cwd: "/somewhere", commands: [echo, outer] })).toBe(0);
+    expect(
+      await runCli(["outer"], io, { cwd: "/somewhere", commands: [EchoCommand, OuterCommand] }),
+    ).toBe(0);
     expect(seen.mock.calls[0]?.[0].cwd).toBe("/somewhere");
     expect(JSON.parse(output())).toEqual({ loud: false, positionals: ["x"], rest: [] });
   });
 
-  it("names a legacy command by its words joined with a colon", () => {
-    expect(readCommand(legacyCommand(spaced, async () => 0, false)).name).toBe("mcp:sync");
+  // @covers sta-2883:FR-007
+  it("lets a body's tools take the terminal only when the caller has one", async () => {
+    const inherits: boolean[] = [];
+    const ToolCommand = bare("tool", {
+      name: "tool",
+      summary: "Tool",
+      usage: "stackra tool",
+      run: async ({ io }) => {
+        inherits.push(io.inherit);
+        return 0;
+      },
+    });
+    const captured = captureIo();
+    await runCli(["tool"], captured.io, { cwd: "/repo", commands: [ToolCommand] });
+    await runCli(
+      ["tool"],
+      { ...captured.io, inherit: true },
+      { cwd: "/repo", commands: [ToolCommand] },
+    );
+    await runCli(
+      ["tool", "--json"],
+      { ...captured.io, inherit: true },
+      {
+        cwd: "/repo",
+        commands: [ToolCommand],
+      },
+    );
+    expect(inherits).toEqual([false, true, false]);
+  });
+
+  it("names a command class by its words joined with a colon", () => {
+    expect(readCommand(SyncCommand).name).toBe("mcp:sync");
   });
 });
 
 describe("COMMANDS on the console", () => {
-  it("lists every command, native or legacy, in its help", async () => {
+  it("lists the day-one commands in its help", async () => {
     const { io, output } = captureIo();
     expect(await runCli(["--help"], io)).toBe(0);
-    expect(output()).toContain("doctor");
-    expect(output()).toContain("create");
+    for (const name of ["create", "new", "gen", "dev", "test", "check"])
+      expect(output()).toContain(name);
   });
 
-  it("still has these commands on passthrough; the list only goes down (ADR 0500 decision 7)", () => {
+  // @covers sta-2883:FR-001
+  it("has no command left on passthrough (ADR 0500 decision 7)", () => {
     // `stackra runway` mounts Runway's own console (ADR 0529 decision 4): a passthrough by design, not a legacy command.
-    const classes = COMMANDS.filter((command) => command !== RunwayCommand).map((command) =>
-      typeof command === "function" ? command : legacyCommand(command, async () => 0, false),
+    expect(passthroughCommands(COMMANDS)).toEqual(["runway"]);
+    expect(passthroughCommands(COMMANDS.filter((command) => command !== RunwayCommand))).toEqual(
+      [],
     );
-    // 23 today: every CliCommand not yet a class. Remove a name when its command is converted; never add one.
-    expect(passthroughCommands(classes)).toEqual(PASSTHROUGH);
   });
 });
-
-/** The legacy commands, sorted: each leaves this list when it becomes a console command class. */
-const PASSTHROUGH: string[] = [
-  "build",
-  "check",
-  "code:check",
-  "code:fix",
-  "console",
-  "db:diff",
-  "db:seed",
-  "deploy",
-  "dev",
-  "eas-preflight",
-  "gen",
-  "lint",
-  "mcp",
-  "mcp:exec",
-  "new",
-  "preview:serve",
-  "seed-pack",
-  "start",
-  "test",
-  "testbed",
-  "typecheck",
-  "validate",
-  "verify",
-];

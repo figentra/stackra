@@ -7,12 +7,14 @@ Purpose: the package's reader guide: the `stackra` binary, its commands (gen's t
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0294; ADR 0260; ADR 0349 (member names); ADR 0453 (add,
-                    publish); STA-2872 (the command list).
+                    publish); STA-2872 (the command list); STA-2883 (native commands: asking, help, --json).
 -->
 
 The `stackra` binary (ADR 0083, ADR 0282 decision 3). It runs gen, runs each member's tools against the configs gen
-writes, lists what a committed manifest locks, and wires the local developer MCP. It folds the old `console` CLI
-framework (ADR 0127, 2026-10-24 note): a command is data plus one `run` function, parsed with `node:util`.
+writes, lists what a committed manifest locks, and wires the local developer MCP. Every command is a
+`@stackra/console` command class (ADR 0506): its arguments and options are declared fields, so `--help` explains each
+one, a terminal is asked for what the line left out, and `--json` writes one document. No command is left on the
+console's passthrough (ADR 0500 decision 7); `stackra runway` mounts Runway's own console by design.
 
 **Tier:** `tier:lib` (`packages/developer/cli`). No code entry: the package ships the `bin` only, and its `exports` map
 holds `./package.json` alone, so `import "@stackra/cli"` is refused by Node and by bundlers. Depends on
@@ -150,6 +152,22 @@ The list is kept short for the workspace it runs in (STA-2872):
 
 Every left-out command still runs by name, and `stackra list --all` lists them all. A new app from `stackra create`
 lists 25 commands; a test keeps it at 25 or fewer, and every new command must name a group.
+
+## Help, questions and --json
+
+Each command is a console class over its body (the `CliCommand` that does the work, unchanged). The class declares
+every option the body reads, with a description, so `stackra <command> --help` lists the arguments, the options and
+examples; an unknown option or a bad choice (`gen --backend tsc`) exits 2 before anything runs (STA-2883).
+
+- **Questions**: `stackra new` in a terminal asks what the line left out: the kind, the name, a service's API area, a
+  package's category (from the folders under `packages/`), and a template kind's description and summary. Without a
+  terminal (CI, a pipe, `--json`, `--no-interaction`) it asks nothing and exits 2 naming the flag to pass.
+- **`--json`**: every command writes one document, `{"ok": …, "data": …}`, or `{"ok": false, "error": {code, message,
+  why, fix}}`. The text a command prints moves to standard error. `stackra gen --json` reports each member's outcome and
+  every refusal and warning with its `code`, `file` (from the working directory), `line`, `column`, `subject`, `message`
+  and `fix`; `stackra db diff --json` the differences; `stackra check --json` the phases and findings; a command with
+  no data of its own reports its exit code and output lines.
+- **Exit codes**: 0 success, 1 failure, 2 a line that cannot run as written (the error names the flag or the usage).
 
 ## A product's CI: build and deploy
 

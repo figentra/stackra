@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `DEV_COMMAND`: it is the registered `dev`, surface flags need `--surface`, and a surface run
+ * Purpose: unit tests of `DEV_COMMAND`: it is the body of the registered `dev` (`DevCommand`), surface flags need `--surface`, and a surface run
  *          stops with a usage error before gen when the surface is bad.
  * Boundary: test only; runs `runCli` against a temporary product root; no tool process starts.
  * Runtime: node (vitest)
@@ -12,6 +12,7 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { DevCommand } from "#node/commands/dev.command";
 import { COMMANDS } from "#node/constants/commands.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
 import { captureIo } from "#node/functions/capture-io.function";
@@ -33,7 +34,8 @@ afterEach(() => {
 
 describe("DEV_COMMAND", () => {
   it("is the registered dev command and documents the surface mode", () => {
-    expect(COMMANDS.find((command) => command.name === "dev")).toBe(DEV_COMMAND);
+    expect(COMMANDS).toContain(DevCommand);
+    expect(DevCommand.body).toBe(DEV_COMMAND);
     expect(DEV_COMMAND.usage).toContain("--surface <surface>");
   });
 

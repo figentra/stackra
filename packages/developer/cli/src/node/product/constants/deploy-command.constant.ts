@@ -23,7 +23,6 @@ import type { CliCommand } from "#node/types/cli-command.type";
 /** The `stackra deploy` command definition. */
 export const DEPLOY_COMMAND: CliCommand = {
   name: "deploy",
-  group: "Deploy",
   summary:
     "Deploy a commit to an environment's runway targets, or (--product) a built product's surfaces and mobile builds",
   usage:
