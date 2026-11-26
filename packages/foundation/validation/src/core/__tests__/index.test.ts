@@ -56,6 +56,7 @@ describe("@stackra/validation", () => {
       "AddressFormat$",
       "Classified",
       "CursorInput",
+      "Deprecated",
       "Field",
       "Hidden",
       "IdentifierCheck",

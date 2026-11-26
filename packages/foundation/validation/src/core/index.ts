@@ -25,6 +25,7 @@ export { SCOPE_REF_SCHEMA as ScopeRef$ } from "#core/constants/scope-ref-schema.
 export { SIGNATURE_SCHEMA as Signature$ } from "#core/constants/signature-schema.constant";
 export { SIGNER_PUBLIC_KEY_SCHEMA as SignerPublicKey$ } from "#core/constants/signer-public-key-schema.constant";
 export { Classified } from "#core/decorators/classified.decorator";
+export { Deprecated } from "#core/decorators/deprecated.decorator";
 export { Field } from "#core/decorators/field.decorator";
 export { Hidden } from "#core/decorators/hidden.decorator";
 export { ShownOnce } from "#core/decorators/shown-once.decorator";

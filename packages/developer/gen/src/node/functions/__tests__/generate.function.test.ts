@@ -13,7 +13,9 @@
  *          config is `shim_authored`, and the shim gen wrote is not (STA-768); a v2 service (authored `src/main.ts`)
  *          gets no entry, tool config or encore.app and passes, while the same service in the v3 shape is still
  *          `generated_dependency_missing` (STA-344); a `.stackra/gen/blueprint.ts` left after the last own macro is gone
- *          is reported by a check run and deleted by a write run (STA-2062).
+ *          is reported by a check run and deleted by a write run (STA-2062); a `@Deprecated` service and field land in
+ *          the manifest's `deprecations` and the field's schema, and the action injecting the service is warned
+ *          `deprecated_use` while the run still writes (STA-2836).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -125,6 +127,61 @@ describe("generate", () => {
     const result = await generate(root);
     expect(result.errors.map((error) => error.code)).toEqual(["identity_changed"]);
     expect(result.changed).toEqual([]);
+  });
+
+  it("records @Deprecated in the manifest and warns where the member uses it, still writing (STA-2836)", async () => {
+    const service = "src/core/services/shop.service.ts";
+    const input = "src/node/schemas/cancel-order-input.schema.ts";
+    const root = writeFixtureMember("shop", {
+      ...SHOP_SOURCES,
+      [service]: (SHOP_SOURCES[service] ?? "")
+        .replace(
+          'import { Clock } from "@stackra/contracts";',
+          'import { Clock } from "@stackra/contracts";\nimport { Deprecated } from "@stackra/validation";',
+        )
+        .replace(
+          "@Lifetime(Lifetime.Request)",
+          '@Lifetime(Lifetime.Request)\n@Deprecated({ since: "1.0.0", sunset: "2.0.0", replacement: "OrderService" })',
+        ),
+      [input]: (SHOP_SOURCES[input] ?? "")
+        .replace("import { Int, Schema,", "import { Deprecated, Int, Schema,")
+        .replace("  @Trim\n", '  @Deprecated({ since: "1.0.0", sunset: "2.0.0" })\n  @Trim\n'),
+    });
+    const result = await generate(root);
+    expect(result.errors).toEqual([]);
+    expect(
+      result.warnings?.map((warning) => [warning.code, warning.subject, warning.fix]),
+    ).toContainEqual([
+      "deprecated_use",
+      "CancelOrderAction",
+      "use OrderService instead of ShopService (a service of this member) before 2.0.0, when it is removed",
+    ]);
+    const manifest = JSON.parse(readFileSync(join(root, "stackra.manifest.json"), "utf8")) as {
+      deprecations: unknown[];
+      schemas: Record<string, { properties: Record<string, unknown> }>;
+    };
+    expect(manifest.deprecations).toEqual([
+      {
+        kind: "field",
+        name: "CancelOrderInput",
+        member: "reason",
+        module: "shop",
+        since: "1.0.0",
+        sunset: "2.0.0",
+      },
+      {
+        kind: "service",
+        name: "ShopService",
+        module: "shop",
+        since: "1.0.0",
+        sunset: "2.0.0",
+        replacement: "OrderService",
+      },
+    ]);
+    expect(manifest.schemas["shop.CancelOrderInput"]?.properties["reason"]).toMatchObject({
+      deprecated: true,
+      "x-stackra-sunset": "2.0.0",
+    });
   });
 });
 

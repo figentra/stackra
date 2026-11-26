@@ -15,6 +15,7 @@ import type { Json, StackraManifest } from "@stackra/contracts";
 import type { AnchorIR } from "#core/types/anchor-ir.type";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
+import type { DeprecatedTraitIR } from "#core/types/deprecated-trait-ir.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
 import type { GenError } from "#core/types/gen-error.type";
@@ -85,6 +86,9 @@ export interface MemberIR {
 
   /** The exports of each source file. */
   readonly files: readonly FileExports[];
+
+  /** The traits the member deprecates through `createTrait`'s `deprecated` option; absent when none (STA-2836). */
+  readonly deprecatedTraits?: readonly DeprecatedTraitIR[];
 
   /** Every exported `defineSlot` the member declares (a shell package). Absent when none (ADR 0438). */
   readonly slots?: readonly SlotIR[];

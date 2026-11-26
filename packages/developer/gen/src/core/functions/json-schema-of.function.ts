@@ -6,7 +6,8 @@
  *          A `Translated` field is a locale-to-text map (`@Str` rules on each text) and an `Upload<Bucket>` field the
  *          token object `{ id: "upl_…" }`, each marked with `x-stackra-type` (and the bucket with `x-stackra-bucket`). A field typed with a package's shipped
  *          `X$` is `{ "x-stackra-schema": "<specifier>#X$" }` (STA-1290).
- * Boundary: pure. A `@Hidden` field is left out (stackra-260). A config's shape is never passed here (ADR 0305 rule 34: a schema bound to a Config never reaches a
+ * Boundary: pure. A `@Hidden` field is left out (stackra-260); a `@Deprecated` one carries `deprecated: true` and
+ *           `x-stackra-sunset` (STA-2836). A config's shape is never passed here (ADR 0305 rule 34: a schema bound to a Config never reaches a
  *           wire surface); `buildManifest` leaves configs out.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10 and 26; amendment 2026-10-26: a bare `PublicId` is any prefix, a union
@@ -200,6 +201,15 @@ function fieldSchema(field: FieldIR): JsonObject {
 }
 
 /**
+ * `schema` marked deprecated, with its sunset as `x-stackra-sunset`. Beside a `$ref` too: JSON Schema 2020-12 and
+ * OpenAPI 3.1 read sibling keywords of a reference.
+ */
+function withDeprecated(schema: Json, sunset: string): Json {
+  if (typeof schema !== "object" || schema === null || Array.isArray(schema)) return schema;
+  return { ...schema, deprecated: true, "x-stackra-sunset": sunset };
+}
+
+/**
  * The JSON Schema of `shape`.
  *
  * @param shape - the shape to describe.
@@ -228,7 +238,10 @@ export function jsonSchemaOf(shape: ShapeIR, shapes: readonly ShapeIR[]): Json {
   const properties: JsonObject = {};
   const required: string[] = [];
   for (const field of fields.values()) {
-    properties[field.name] = fieldSchema(field);
+    const schema = fieldSchema(field);
+    // A `@Deprecated` field is marked with the JSON Schema `deprecated` keyword, which openapi.json carries (STA-2836).
+    properties[field.name] =
+      field.deprecated === undefined ? schema : withDeprecated(schema, field.deprecated.sunset);
     if (!field.optional && field.default === undefined) required.push(field.name);
   }
   return {

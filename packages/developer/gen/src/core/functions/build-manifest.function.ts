@@ -56,7 +56,9 @@
  *          It lists each own settings class in `settings` (`settingsOf`: group key, class, module,
  *          file and keys with path, type, options and earlier paths) with `settings_unsupported_type`,
  *          `settings_too_deep`, `settings_scope_widened`, `settings_group_key_empty` and `settings_group_conflict`
- *          (ADR 0496, STA-2056).
+ *          (ADR 0496, STA-2056). It lists what the member deprecates in `deprecations` (`deprecationsOf`) and
+ *          marks a `@Deprecated` action's and event's entry `deprecated` with its terms (ADR 0131 decision 4,
+ *          STA-2836).
  * Boundary: pure. A config's schema never reaches the manifest (ADR 0305 rule 34). Sections owned by later targets
  *           (migrations, infra, ...) are written by those targets when they land.
  * Runtime: isomorphic
@@ -89,6 +91,7 @@ import { checkCallShape } from "#core/functions/check-call-shape.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { connectionOf } from "#core/functions/connection-of.function";
 import { cronJobId } from "#core/functions/cron-job-id.function";
+import { deprecationsOf } from "#core/functions/deprecations-of.function";
 import { deriveEndpoint } from "#core/functions/derive-endpoint.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { egressOf } from "#core/functions/egress-of.function";
@@ -320,6 +323,7 @@ export function buildManifest(ir: MemberIR): {
       class: declared.name,
       file: declared.file,
       kind: integration ? "integration" : "domain",
+      ...(declared.deprecated !== undefined ? { deprecated: { ...declared.deprecated } } : {}),
     });
   }
 
@@ -630,6 +634,8 @@ export function buildManifest(ir: MemberIR): {
     if (refusals.length > 0) entry["refusals"] = [...new Set(refusals)];
     for (const facet of declared.facets.filter((candidate) => candidate.target === "class"))
       entry[camelCase(facet.kind)] = facet.options === undefined ? true : jsonOf(facet.options);
+    // `@Deprecated` on the action, which openapi.json and a consumer's client read (STA-2836).
+    if (declared.deprecated !== undefined) entry["deprecated"] = { ...declared.deprecated };
     actions.push(entry);
   }
 
@@ -1236,6 +1242,18 @@ export function buildManifest(ir: MemberIR): {
       }
   }
 
+  // What the member deprecates, before the hosted packages' entries merge in: those stay in their own manifests.
+  const deprecations = deprecationsOf(
+    ir,
+    new Map([
+      ...actions.map((entry): [string, string] => [String(entry["class"]), String(entry["key"])]),
+      ...eventEntries.map((entry): [string, string] => [
+        String(entry["class"]),
+        String(entry["name"]),
+      ]),
+    ]),
+  );
+
   const sections: Record<(typeof MERGED_SECTIONS)[number], Entry[]> = {
     actions,
     events: eventEntries,
@@ -1484,6 +1502,7 @@ export function buildManifest(ir: MemberIR): {
     ...(facets.size > 0 ? { facets: [...facets.values()] } : {}),
     ...(replaces.length > 0 ? { replaces } : {}),
     ...sections,
+    ...(deprecations.length > 0 ? { deprecations } : {}),
     ...(webhookEvents.length > 0 ? { webhookEvents } : {}),
     ...(configs.length > 0 ? { config: configs } : {}),
     ...(env.length > 0 ? { env } : {}),

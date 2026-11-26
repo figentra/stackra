@@ -43,7 +43,9 @@ options, derives:
 What gen writes lives under the member's `.stackra/`, which is never committed and never edited. What gen locks lives
 in two committed files at the member root: `stackra.manifest.json`, every identity with its version, and
 `openapi.json`, the manifest's projection to the HTTP surface. A change that would alter a locked identity fails
-`stackra gen --check` unless the class or field carries `@Renamed(old)`, which keeps the old name answering.
+`stackra gen --check` unless the class or field carries `@Renamed(old)`, which keeps the old name answering. A class
+or field on its way out carries `@Deprecated({ since, sunset, replacement })`: gen records it in the manifest and warns
+every member that still uses it ([Deprecation policy](/customers/deprecation)).
 
 ```sh
 stackra gen            # write .stackra/ and the two committed files

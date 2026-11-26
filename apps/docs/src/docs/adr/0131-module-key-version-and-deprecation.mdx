@@ -49,8 +49,18 @@ is the package semver").
 
 ## Enforcement
 
-planned — gen fails on a duplicate `key` across the manifest and warns on deprecated use. The module authoring guide
-(`guides/structure.mdx`) gets a section when the rule lands (register: docs to change).
+Decision 4 (STA-2836): `@Deprecated` from `@stackra/validation` marks a class or a field, and `createTrait`'s
+`deprecated` option a trait. The decorator and gen check the terms with `deprecationProblem` from `@stackra/contracts`
+(`deprecation_invalid`, `deprecation_window_short` against the windows of 0136 decision 4 and 0177 decision 6; gen
+also refuses `deprecation_not_constant`). Gen records each deprecation in the manifest's `deprecations` section, on the
+action's and event's entry, in the field's JSON Schema and in `openapi.json`, writes a `@deprecated` line in each
+consumer's generated client, and warns `deprecated_use` where a member injects, listens to, extends or composes a
+deprecated thing and `deprecation_past_sunset` when the member's version reaches its own sunset
+(`checkDeprecations`). The authoring rule is stated in the programming model and the policy on
+[Deprecation policy](/customers/deprecation), not in `guides/structure.mdx`, which covers the repository layout.
+
+planned — gen failing on a duplicate module `key` across the manifest (decision 1), and metering deprecated use at
+runtime and showing it to app owners (0136 decision 4).
 
 ## Alternatives
 

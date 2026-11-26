@@ -46,6 +46,9 @@ The whole package is one `.` entry, so its enums, ports and types sit under `src
   (`@stackra/access-log`'s `t.dataClassification`) list them literally.
 - `Duration` values are canonical ISO 8601 strings; keep `Duration.*` pure, because gen evaluates them in defaults.
   `Duration.parse` also reads the short form (`"200ms"`, `"6h"`); no package declares another interval string.
+- `earliestSunset`, `deprecationProblem` and `sunsetReached` are the one deprecation window (ADR 0131 decision 4,
+  0136 decision 4, 0177 decision 6; STA-2836): `@Deprecated` and gen both call them. A new window rule changes them,
+  never a copy.
 - `RetryPolicy` and `backoffDelay` are the one retry shape and formula (stackra-223). A package keeps its defaults as
   a frozen constant and passes them in; it never declares another policy type or backoff formula. `Backoff` codes are
   stored on jobs and automation documents: append, never rename.

@@ -4,12 +4,14 @@
  *          per action or query that has an endpoint (path parameters from `:name` segments, query parameters for a
  *          GET, the input as the JSON body otherwise, the output, `text/event-stream` for a stream action, or 204, and the shared refusal response with the
  *          ADR 0140 envelope), the manifest's shapes as components, and `x-stackra-*` extensions for the key,
- *          permission, risk, idempotency, cache and refusal codes.
+ *          permission, risk, idempotency, cache and refusal codes; a `@Deprecated` action is `deprecated: true` with
+ *          `x-stackra-sunset` and `x-stackra-replacement` (STA-2836).
  * Boundary: pure and deterministic: paths and operations follow the manifest's order, so projecting the committed
  *           manifest reproduces the committed `openapi.json` byte for byte. Never a source for clients (ADR 0158).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 10: openapi.json beside the manifest); ADR 0158; ADR 0140 (the error
- *                     envelope and statuses); ADR 0082 (an anonymous-callable call is public; STA-2025).
+ *                     envelope and statuses); ADR 0082 (an anonymous-callable call is public; STA-2025); ADR 0131
+ *                     (decision 4: deprecations).
  */
 import type { Json, StackraManifest } from "@stackra/contracts";
 
@@ -120,6 +122,14 @@ export function openApiOf(manifest: StackraManifest): OpenApiDocument {
     if (Array.isArray(action["refusals"]))
       operation["x-stackra-refusals"] = action["refusals"].map(String);
     if (action["anonymous"] === true) operation["security"] = [];
+    // `@Deprecated` on the action: OpenAPI's own flag, and the sunset and replacement a client reads (STA-2836).
+    const deprecated = action["deprecated"];
+    if (isObject(deprecated) && typeof deprecated["sunset"] === "string") {
+      operation["deprecated"] = true;
+      operation["x-stackra-sunset"] = deprecated["sunset"];
+      if (typeof deprecated["replacement"] === "string")
+        operation["x-stackra-replacement"] = deprecated["replacement"];
+    }
     if (parameters.length > 0) operation["parameters"] = parameters;
     if (method !== "get" && action["input"] !== undefined)
       operation["requestBody"] = {

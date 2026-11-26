@@ -5,8 +5,10 @@
  * Boundary: a type only. Relations (model fields with a relation decorator) are not fields here: they belong to the
  *           entity emitter of the data wave.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 4 and 26); ADR 0134 (classification).
+ * Governing contract: ADR 0294 (decisions 4 and 26); ADR 0134 (classification); ADR 0131 (decision 4: `@Deprecated`).
  */
+import type { Deprecation } from "@stackra/contracts";
+
 import type { FieldDefault } from "#core/types/field-default.type";
 import type { FieldRule } from "#core/types/field-rule.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
@@ -33,6 +35,9 @@ export interface FieldIR {
 
   /** The previous field name `@Renamed(old)` records, when the field was renamed. */
   readonly renamed?: string;
+
+  /** The deprecation `@Deprecated({ since, sunset, replacement })` records on the field (STA-2836). */
+  readonly deprecated?: Deprecation;
 
   /** The `DataClassification` code `@Classified(...)` gives the field (`personal`), when it has one (stackra-262). */
   readonly classified?: string;

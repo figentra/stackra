@@ -32,6 +32,7 @@ import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { pairSubclassConnections } from "#core/functions/pair-subclass-connections.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
+import type { DeprecatedTraitIR } from "#core/types/deprecated-trait-ir.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -128,12 +129,14 @@ export async function discoverMember(
     const files: FileExports[] = [];
     const slots: SlotIR[] = [];
     const fills: SlotFillIR[] = [];
+    const deprecatedTraits: DeprecatedTraitIR[] = [];
     for (const file of reader.sources) {
       read.push(...reader.classes(file));
       slots.push(...reader.slots(file));
       fills.push(...reader.fills(file));
       shapes.push(...reader.shapes(file));
       enums.push(...reader.enums(file));
+      deprecatedTraits.push(...reader.deprecatedTraits(file));
       files.push(reader.exports(file));
     }
     // A subclassed connection takes its same-stem integration, else its base's, once every class is read.
@@ -298,6 +301,7 @@ export async function discoverMember(
       shapes: filled,
       enums,
       files,
+      ...(deprecatedTraits.length > 0 ? { deprecatedTraits } : {}),
       ...(slots.length > 0 ? { slots } : {}),
       ...(fills.length > 0 ? { fills } : {}),
       packages: declaredPackages,

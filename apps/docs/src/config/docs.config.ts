@@ -92,6 +92,7 @@ export class StackraDocsConfig extends DocsConfig {
           pages: [
             "customers/install",
             "customers/support",
+            "customers/deprecation",
             "customers/security",
             "customers/residency",
             "customers/changelog",

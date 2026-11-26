@@ -9,7 +9,9 @@
  *          type node first and the checker second, with rules and constant defaults; each model's entity facts
  *          (`[OptionalProps]` keys, relations with their target, inverse and options, getters); each `Enum.of` in
  *          source order; each file's exports; and the services any own file (tests included) imports from
- *          `#stackra/clients/<service>`.
+ *          `#stackra/clients/<service>`. `@Deprecated` on a class or a field, and a trait's `createTrait` `deprecated`
+ *          option, read as their terms, refused by `deprecationProblem`'s codes or `deprecation_not_constant`
+ *          (ADR 0131 decision 4, STA-2836).
  * Boundary: syntax-first and backend-neutral: every question goes through `TsHost`. Only the member's own source
  *           files under `src/` are read as declarations; a dependency is read only to resolve a kind, an inherited
  *           field or a constant, and its options never (ADR 0294 decision 25). A `@Field(zod)` hatch carries the named imports its source uses. Every refusal is collected with its
@@ -50,7 +52,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import type { StackraManifest } from "@stackra/contracts";
+import { deprecationProblem, earliestSunset } from "@stackra/contracts";
+import type { Deprecation, StackraManifest } from "@stackra/contracts";
 import { refusalCode } from "@stackra/errors";
 import { pascalCase, snakeCase } from "@stackra/support";
 
@@ -70,6 +73,7 @@ import { shippedSpecifier } from "#core/functions/shipped-specifier.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
+import type { DeprecatedTraitIR } from "#core/types/deprecated-trait-ir.type";
 import type { EntityIR } from "#core/types/entity-ir.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FacetUse } from "#core/types/facet-use.type";
@@ -915,6 +919,49 @@ export function createSourceReader(
       from: refOf(use.local, symbol).from,
       ...(rest.length > 0 && !rest.some(hasNonConstant) ? { rest } : {}),
     };
+  };
+
+  /**
+   * The deprecation that `@Deprecated(options)`, or a trait's `deprecated` option, records (ADR 0131 decision 4,
+   * STA-2836): `undefined` with a refusal when it is not constant, malformed or its sunset is inside the window
+   * (`deprecationProblem`, the rule the decorator throws on at import).
+   */
+  const deprecationOf = (
+    node: TsNode,
+    argument: TsNode | undefined,
+    subject: string,
+    quiet: boolean,
+  ): Deprecation | undefined => {
+    const value = argument === undefined ? undefined : constant(argument);
+    if (hasNonConstant(value)) {
+      if (!quiet)
+        fail(
+          node,
+          subject,
+          "deprecation_not_constant",
+          `gen cannot read the deprecation of ${subject} without running it`,
+          'write literals: `@Deprecated({ since: "0.34.0", sunset: "0.35.0", replacement: "<what to use>" })`',
+        );
+      return undefined;
+    }
+    const problem = deprecationProblem(value);
+    if (problem !== undefined) {
+      const since =
+        isPlainObject(value) && typeof value["since"] === "string" ? value["since"] : "";
+      if (!quiet)
+        fail(
+          node,
+          subject,
+          problem.code,
+          problem.message,
+          problem.code === "deprecation_window_short"
+            ? `move the sunset to ${earliestSunset(since) ?? "the end of the window"} or later`
+            : 'write `{ since: "<the release that deprecates it>", sunset: "<the release that removes it>", replacement: "<what to use>" }`, both release versions or both dates',
+        );
+      return undefined;
+    }
+    const { since, sunset, replacement } = value as Deprecation;
+    return { since, sunset, ...(replacement !== undefined ? { replacement } : {}) };
   };
 
   /**
@@ -1823,6 +1870,11 @@ export function createSourceReader(
     }
     const renamed = decorators.find((use) => use.name === "Renamed");
     const renamedTo = renamed === undefined ? undefined : constant(renamed.args[0]);
+    const deprecatedUse = decorators.find((use) => use.name === "Deprecated");
+    const deprecated =
+      deprecatedUse === undefined
+        ? undefined
+        : deprecationOf(deprecatedUse.node, deprecatedUse.args[0], subject, quiet);
     // `@Secret` always names its secret, as a SCREAMING_SNAKE literal (ADR 0294 amendment 2, STA-1306).
     const secret = decorators.find((use) => use.name === "Secret");
     const secretName = secret?.args[0] === undefined ? undefined : constant(secret.args[0]);
@@ -1879,6 +1931,7 @@ export function createSourceReader(
       rules,
       ...(initial !== undefined ? { default: initial } : {}),
       ...(typeof renamedTo === "string" ? { renamed: renamedTo } : {}),
+      ...(deprecated === undefined ? {} : { deprecated }),
       ...(classified === undefined ? {} : { classified }),
       ...(typeof secretName === "string" && SECRET_NAME.test(secretName)
         ? { secret: { name: secretName, ...secretOptionsOf(secret?.args[1]) } }
@@ -2770,7 +2823,10 @@ export function createSourceReader(
     const facets: FacetUse[] = [];
     let lifetime: string | undefined;
     let renamed: string | undefined;
+    let deprecated: Deprecation | undefined;
     for (const use of decoratorsOf(node)) {
+      if (use.name === "Deprecated")
+        deprecated = deprecationOf(use.node, use.args[0], name, !isOwn(host.fileName(node)));
       if (use.name === "Lifetime") {
         const value = constant(use.args[0]);
         if (typeof value === "string") lifetime = value;
@@ -2892,6 +2948,7 @@ export function createSourceReader(
       statics,
       traits,
       ...(renamed !== undefined ? { renamed } : {}),
+      ...(deprecated !== undefined ? { deprecated } : {}),
       ...(isAbstract ? { abstract: true as const } : {}),
       // `Model.global(...)`: global by design (stackra-258).
       ...(direct && info.kind === "model" && heritage.method === "global"
@@ -3093,6 +3150,56 @@ export function createSourceReader(
               file: rel(path),
               values: described.values,
             });
+        }
+      }
+      return found;
+    },
+    deprecatedTraits: (file) => {
+      const path = file.fileName ?? "";
+      const found: DeprecatedTraitIR[] = [];
+      // `createTrait` from @stackra/model, or the model package's own file.
+      const from = importsOf(path).get("createTrait");
+      if (from !== "@stackra/model" && from?.endsWith("/create-trait.function") !== true)
+        return found;
+      for (const statement of file.statements ?? []) {
+        if (host.kind(statement) !== "VariableStatement" || !has(statement, "ExportKeyword"))
+          continue;
+        for (const declaration of statement.declarationList?.declarations ?? []) {
+          const call = declaration.initializer;
+          if (
+            call === undefined ||
+            declaration.name === undefined ||
+            host.kind(call) !== "CallExpression" ||
+            call.expression === undefined ||
+            host.text(call.expression) !== "createTrait"
+          )
+            continue;
+          const options = call.arguments?.[2];
+          if (options === undefined || host.kind(options) !== "ObjectLiteralExpression") continue;
+          const property = (options.properties ?? []).find(
+            (candidate) => nameOf(candidate.name) === "deprecated",
+          );
+          if (property === undefined) continue;
+          const name = nameOf(declaration.name);
+          const deprecated = deprecationOf(
+            property,
+            property.initializer ?? property.name,
+            name,
+            false,
+          );
+          const code = constant(call.arguments?.[0]);
+          if (deprecated === undefined || typeof code !== "string") continue;
+          const { line, column } = host.position(declaration);
+          found.push({
+            name,
+            code,
+            module: moduleOf(path),
+            file: rel(path),
+            importPath: importPathOf(path),
+            line,
+            column,
+            deprecated,
+          });
         }
       }
       return found;

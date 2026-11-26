@@ -1,0 +1,107 @@
+---
+title: "Deprecation policy"
+description: "How long a deprecated Stackra API keeps working, how it is marked, and what warns you before it goes."
+icon: "calendar-clock"
+---
+
+{/* Stackra file contract: Purpose: the one deprecation policy page: the windows, what can be deprecated, how it is marked (`@Deprecated`, a trait's `deprecated` option), what gen records and warns, and how removal runs. Boundary: customer-facing documentation only; it gathers decided rules (ADR 0131 decision 4, ADR 0136 decision 4, ADR 0177 decision 6) and the behaviour STA-2836 built, and invents no support term. Runtime: docs. Governing contract: ADR 0131 (decision 4); ADR 0136 (decision 4); ADR 0177 (decision 6); ADR 0013 (decision 5); STA-2836; STA-1576. */}
+
+A deprecated API keeps working until its **sunset**, the release (or, for a public wire API, the date) that removes it.
+Before then, every place that uses it is told, with what to use instead. This page gathers the rules of
+[0131](/adr/0131-module-key-version-and-deprecation) decision 4,
+[0136](/adr/0136-action-runtime-contract) decision 4 and
+[0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 6.
+
+## How long a deprecation lasts
+
+| What is deprecated                                                                 | It keeps working at least until              | Written as                                         |
+| ---------------------------------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------- |
+| A `@stackra/*` API, before `1.0.0`                                                 | the next minor release (`0.34.x` → `0.35.0`) | versions: `since: "0.34.0", sunset: "0.35.0"`      |
+| A `@stackra/*` API, from `1.0.0`                                                   | the next major release (`1.4.x` → `2.0.0`)   | versions: `since: "1.4.0", sunset: "2.0.0"`        |
+| A public wire API of your app (an action, query or event over REST, MCP or events) | six months after the date it was deprecated  | dates: `since: "2026-11-26", sunset: "2027-05-26"` |
+
+`since` and `sunset` are both release versions or both dates. A sunset inside the window is refused: the decorator
+throws when the file is imported, and `stackra gen` refuses it. Long-term support starts at the first on-prem contract
+(0177 decision 6); its terms, and which versions receive fixes, are on [Support](/customers/support).
+
+## What can be deprecated
+
+- An **action or query**, an **event** (integration or domain), and any other class whose identity the manifest locks
+  (a model, a refusal, a permission set, a report, a route, ...).
+- A **field** of a schema, an event or another shape, and a **setting** (a field of a settings group) or a whole
+  **settings group**.
+- A **service** other classes inject.
+- A model **trait**.
+
+## How a deprecation is marked
+
+A class or a field carries `@Deprecated` from `@stackra/validation`:
+
+```ts
+import { Deprecated } from "@stackra/validation";
+
+@Deprecated({
+  since: "0.34.0",
+  sunset: "0.35.0",
+  replacement: "orders.order.cancel@2",
+})
+export class CancelOrderAction extends Action({ key: "orders.order.cancel" }) {
+  // ...
+}
+
+export class OrderView extends Schema {
+  @Deprecated({
+    since: "0.34.0",
+    sunset: "0.35.0",
+    replacement: "OrderView.total",
+  })
+  amount = 0;
+
+  total = 0;
+}
+```
+
+A trait is a value, not a class, so it takes the same terms as its `deprecated` option:
+
+```ts
+export const Discontinued = createTrait("discontinued", (base) => class extends base {}, {
+  deprecated: { since: "0.34.0", sunset: "0.35.0", replacement: "Archivable" },
+});
+```
+
+`replacement` says what to use instead, as a reader would write it; leave it out when nothing replaces the API.
+`@Deprecated` records only: the API behaves exactly as before until it is removed.
+
+## What gen does with it
+
+`stackra gen` records every deprecation in the member's committed `stackra.manifest.json`, under `deprecations` (kind,
+name, field, module, locked identity, since, sunset, replacement). A deprecated action's and event's own entry carries
+its terms as `deprecated`, a deprecated field's JSON Schema carries `deprecated: true` and `x-stackra-sunset`, and
+`openapi.json` marks the operation `deprecated` with `x-stackra-sunset` and `x-stackra-replacement`. A consumer's
+generated client (`#stackra/clients/<service>`) puts a `@deprecated` line on the action's descriptor and client member
+and on the event class, so the editor and lint flag each call.
+
+| Code                       | Kind    | When                                                                                                           |
+| -------------------------- | ------- | -------------------------------------------------------------------------------------------------------------- |
+| `deprecated_use`           | warning | a class of the member injects, listens to, extends or composes something deprecated, its own or a dependency's |
+| `deprecation_past_sunset`  | warning | the member's version has reached the sunset release of its own deprecation: remove it in this release          |
+| `deprecation_invalid`      | refusal | the terms are not `{ since, sunset, replacement? }` in one form                                                |
+| `deprecation_window_short` | refusal | the sunset is inside the window above; the fix names the earliest sunset                                       |
+| `deprecation_not_constant` | refusal | gen cannot read the terms without running the code: write literals                                             |
+
+A warning prints and never stops `stackra gen` or `stackra gen --check`; a refusal writes nothing. A class that is
+deprecated itself is not warned for what it uses, since both go together. A dated sunset is not compared with the
+clock by gen; it is the wire API's own calendar.
+
+## When the sunset comes
+
+The release that reaches a sunset removes the API, with a changeset and a release note that names it, its replacement
+and the steps to move ([0013](/adr/0013-versioning-and-release) decision 5). A whole package version that must not be
+installed is deprecated on the registry, and npm shows the warning with the version to move to. When a response
+changes shape while older clients still need the old one, `@stackra/versioning` keeps the old version answering with
+`Deprecation` and `Sunset` headers.
+
+<Note>
+  The supported-versions table (which release lines receive fixes, and until when) waits on the
+  owner's support terms (STA-1576). Until it is published, only the windows above are promised.
+</Note>

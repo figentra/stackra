@@ -11,6 +11,8 @@
  *          alone despite another refusal; a service only imported by a file (an app's route) and the refusal of a
  *          client importing an undeclared `@stackra/*` package (STA-1293); a client module per producer module and a
  *          permission set per Permissions class, named from the manifest or derived from the key (STA-1296).
+ *          A producer's deprecated action and event carry a `@deprecated` TSDoc line on the descriptor, the client member
+ *          and the event class (STA-2836).
  * Boundary: test only; the producer is the commerce IR fixture's manifest, the consumer a one-class service IR.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0260 (decisions 2 to 6); ADR 0263 (a class is its own token).
@@ -24,6 +26,7 @@ import { generateMember } from "#core/functions/generate-member.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { DEPRECATED_COMMERCE_IR } from "#core/__tests__/fixtures/deprecated-commerce-ir.fixture";
 
 const PRODUCER = buildManifest(COMMERCE_IR).manifest;
 
@@ -353,5 +356,27 @@ describe("emitClients for a service read from a contract package (STA-1820)", ()
       consumer({ services: [], dependencies: [{ package: "@acme/commerce", manifest: PRODUCER }] }),
     );
     expect(refused.errors.map((error) => error.code)).toEqual(["client_service_unknown"]);
+  });
+});
+
+describe("emitClients for a producer's deprecations (STA-2836)", () => {
+  it("marks a producer's deprecated action and event with a @deprecated line (STA-2836)", () => {
+    const deprecated = emitClients(
+      consumer({
+        services: [
+          { member: "commerce", manifest: buildManifest(DEPRECATED_COMMERCE_IR).manifest },
+        ],
+      }),
+    );
+    const text = deprecated.files[0]?.content ?? "";
+    const line =
+      "/** @deprecated use orders.order.cancel@2; deprecated since 1.2.0, removed at 2.0.0. */";
+    expect(text).toContain(`${line}\nexport const CancelOrderAction = remoteAction(`);
+    expect(text).toContain(`    ${line}\n    cancel: this.member(CancelOrderAction),`);
+    expect(text).toContain(
+      "/** @deprecated deprecated since 1.2.0, removed at 2.0.0. */\nexport class OrderPaid extends remoteEvent(",
+    );
+    expect(text).toContain("    list: this.member(ListOrdersQuery),");
+    expect(emitClients(consumer()).files[0]?.content).not.toContain("@deprecated");
   });
 });
