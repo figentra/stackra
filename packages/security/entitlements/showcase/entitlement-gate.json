@@ -1,0 +1,21 @@
+{
+  "slug": "entitlement-gate",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/entitlements",
+  "exportName": "EntitlementGate",
+  "parts": ["EntitlementGate"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 160
+    }
+  ],
+  "related": ["free/can", "free/empty-state", "free/button"],
+  "tokens": ["color.surface"],
+  "keywords": ["entitlement", "plan", "feature", "upgrade", "paywall", "show or hide", "kit"],
+  "status": "new"
+}

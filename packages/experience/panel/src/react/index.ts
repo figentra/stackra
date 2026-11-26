@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./react` entry of @stackra/panel (the panel shell, the dashboard and its tile, the
  *          action runner, the route pages it gives navigation, the generic resource pages and relation manager, the
- *          plan-catalogue admin, the onboarding checklist, the Cmd+K search palette, and the SDUI kit: `ActionButton`,
+ *          plan-catalogue admin, the onboarding checklist, the Cmd+K search palette, the chat's action form, and the SDUI kit: `ActionButton`,
  *          `RowActions` and `BulkActions`)
  *          until `stackra gen` writes the entry barrels
  *          (STA-339).
@@ -21,6 +21,8 @@ export type { ActionRunner } from "#react/action-runner/action-runner.type";
 export { useActionRunner } from "#react/action-runner/use-action-runner";
 export { BulkActions } from "#react/bulk-actions/bulk-actions";
 export type { BulkActionsProps } from "#react/bulk-actions/bulk-actions.props";
+export { ChatFormPart } from "#react/chat-form-part/chat-form-part";
+export type { ChatFormPartProps } from "#react/chat-form-part/chat-form-part.props";
 export { Dashboard } from "#react/dashboard/dashboard";
 export type { DashboardProps } from "#react/dashboard/dashboard.props";
 export { PanelShell } from "#react/panel-shell/panel-shell";

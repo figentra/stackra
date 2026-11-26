@@ -425,7 +425,7 @@ export class NativeWorkflowRunnerDriver extends Driver(WorkflowRunner) {
     if (instance === undefined || typeof (instance as { output?: unknown }).output !== "function")
       return { run, output: null };
     try {
-      return { run, output: toJson(invoke(instance, "output", [viewOf(run)])) ?? null };
+      return { run, output: toJson(await invoke(instance, "output", [viewOf(run)])) ?? null };
     } catch {
       // an output that reads a result the run has not reached yet
       return { run, output: null };

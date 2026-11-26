@@ -13,6 +13,10 @@
     "not_saved": "This setting was not saved. Try again."
   },
   "enums": {
+    "calendar_system": {
+      "gregory": "Gregorian",
+      "islamic-umalqura": "Hijri (Umm al-Qura)"
+    },
     "setting_environment": {
       "live": "Live",
       "sandbox": "Sandbox",
@@ -48,6 +52,15 @@
     "settings_mode": {
       "developer": "Developer",
       "normal": "Normal"
+    }
+  },
+  "settings": {
+    "display": {
+      "title": "Display",
+      "calendar": {
+        "label": "Calendar",
+        "help": "The calendar dates are shown in: in messages, booking pages and boards."
+      }
     }
   }
 }

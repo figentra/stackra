@@ -89,6 +89,36 @@ Sidekiq) leaves both out and may name `healthCommand`, which runs in the contain
 healthy when it exits 0. On AWS such a task gets no port mapping and the command as its container health check; it is
 still registered in the private namespace. Found by INFRA-CODE planning self-hosted Chatwoot for Notify.
 
+## Amendment, 2026-11-09: a workload's migrate task runs before each rollout
+
+A workload may name `migrate: { command, timeoutMinutes? }`: a one-off task with the workload's own image, env, secrets
+and resources, run once before the service rolls to a new revision, so two web tasks never race a schema change
+(Chatwoot's `db:chatwoot_prepare`). On AWS it is a second task definition, the same container with the migration's
+arguments and no port, and a Pulumi dynamic resource that runs it on Fargate in the workload's subnets and security
+group, waits for it, and fails the apply unless the container exits 0; the service depends on it, so a failed or
+timed-out migration (stopped at `timeoutMinutes`, 15 by default, an hour at most) leaves the running revision serving.
+It runs again only for a new revision of its task definition: a new image, command, env or secret name. ECS has no
+pre-deploy hook, so the dynamic resource calls ECS through `@aws-sdk/client-ecs` with the deploy job's credentials,
+and the stacks repository lists that package beside `@pulumi/aws`. Found by INFRA-CODE planning self-hosted Chatwoot.
+
+## Amendment, 2026-11-09: the gotenberg resource (one PDF engine per environment)
+
+`@stackra/documents`' PdfEngine renders through Gotenberg. A root runway may declare one resource of kind `gotenberg`
+(a second is refused), and members `uses` it. Runway runs it as an internal workload:
+
+- Gotenberg 8's Chromium image, pinned by digest and pulled through the account's ECR pull-through cache for Docker
+  Hub (`shared.network.registry`, never Docker Hub directly);
+- port 3000, with no load balancer and no public address;
+- basic auth on, webhooks and downloads off, and Chromium allowed to load only the request's own files;
+- its own security group, admitting the consumers on 3000 and letting out tcp/443 only;
+- half a vCPU and 1 GiB at `small` (about $18 a month per task), one task, or one to two in production;
+- FARGATE_SPOT outside production.
+
+The deploy job generates the basic-auth password once and writes it blind (`ensureGotenbergCredentials`). Every
+consumer reads DocumentsConfig's own names, `DOCUMENTS_GOTENBERG_URL` and `DOCUMENTS_GOTENBERG_AUTHORIZATION`. VPC
+interface endpoints (ECR, logs) would let egress close entirely, but they're an owner cost decision for production
+and aren't part of this.
+
 ## Supersedes and sources
 
 `Supersedes: none`. Amends

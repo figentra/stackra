@@ -1,0 +1,21 @@
+{
+  "slug": "appearance-toggle",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/theming",
+  "exportName": "AppearanceToggle",
+  "parts": ["AppearanceToggle"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 200
+    }
+  ],
+  "related": ["free/segmented-control", "free/switch", "free/dropdown"],
+  "tokens": ["color.surface", "color.accent"],
+  "keywords": ["theme", "dark mode", "light mode", "color scheme", "appearance", "kit"],
+  "status": "new"
+}

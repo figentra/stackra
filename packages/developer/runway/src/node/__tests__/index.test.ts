@@ -115,9 +115,11 @@ describe("@stackra/runway/node", () => {
       "secretSyncPlan",
       "shellReleaseOf",
       "smokePreview",
+      "startWhiteLabelJob",
       "syncSecrets",
       "toolVersionOf",
       "uploadBundle",
+      "whiteLabelVariantOf",
       "workspacePackages",
       "writeDevFacts",
     ]);

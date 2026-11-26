@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: `githubPlan(root)`, the repository as code from the root runway: the org, repository and visibility in
- *          `providers.github`; the repository Actions variables (the Infisical domain and project from
- *          `providers.infisical`, which the CI login reads, plus the block's own); one deployment environment per
- *          runway environment that deploys (`environments.<env>.deploy`) and per environment the block names, each
- *          with its reviewers, the refs that may deploy to it and its variables; and the CI secret names.
+ * Purpose: `githubPlan(root)`, the repository as code from the root runway: the org, repository, visibility,
+ *          description, topics and homepage in `providers.github`; the repository Actions variables (the Infisical
+ *          domain and project from `providers.infisical`, which the CI login reads, plus the block's own); one
+ *          deployment environment per runway environment that deploys (`environments.<env>.deploy`) and per
+ *          environment the block names, each with its reviewers, the refs that may deploy to it and its variables;
+ *          and the CI secret names.
  * Boundary: pure: a parsed root runway in, a plan out. A `ref:` value stays a ref; the Pulumi slice (`./node`)
  *           resolves it. Reports every failure at once. Reads no file and calls no cloud.
  * Runtime: isomorphic
@@ -135,6 +136,9 @@ export function githubPlan(root: RootRunway): GithubPlan {
     org: github.org,
     repo: github.repo,
     visibility: github.visibility,
+    ...(github.description === undefined ? {} : { description: github.description }),
+    ...(github.topics === undefined ? {} : { topics: [...github.topics] }),
+    ...(github.homepage === undefined ? {} : { homepage: github.homepage }),
     variables,
     environments,
     ciSecrets: [...(root.secrets?.ci ?? [])],

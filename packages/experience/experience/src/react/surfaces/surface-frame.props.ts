@@ -15,6 +15,7 @@
  * <SurfaceFrame surface={{ id: "phone-ar", kind: "phone", title: "Phone", button: "إلغاء الطلب", lang: "ar" }} />
  */
 export interface SurfaceFrameProps {
+  /** The surface the frame draws. */
   readonly surface: {
     /** The surface's name in the machine's pipes; unique in its list. */
     readonly id: string;

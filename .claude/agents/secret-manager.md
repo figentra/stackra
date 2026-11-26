@@ -5,7 +5,7 @@ tools: Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/secret-manager.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/secret-manager.md by fflow sync — edit the source, not this file -->
 
 # secret-manager
 

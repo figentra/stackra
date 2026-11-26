@@ -135,7 +135,7 @@ components:
   - id: lib-communication
     type: database
     label: communication
-    sublabel: isomorphic, node
+    sublabel: isomorphic, node, react-native
     tag: 4 packages
     row: 3
     col: 2

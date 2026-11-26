@@ -13,6 +13,8 @@
 export type MobileVariant = {
   /** The scope id the build is for. */
   readonly scope: string;
+  /** The entitlements the scope holds, from the OS; the build needs `whiteLabel.entitlement` among them when set. */
+  readonly entitlements?: readonly string[];
   /** The identity that replaces the runway entry's, key by key. */
   readonly identity: {
     readonly name?: Readonly<Record<string, string>>;

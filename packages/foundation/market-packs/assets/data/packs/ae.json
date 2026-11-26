@@ -1,6 +1,6 @@
 {
   "market": "ae",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "status": "draft",
   "entries": [
     {
@@ -46,6 +46,20 @@
         }
       ],
       "from": "2026-11-01"
+    },
+    {
+      "key": "fiscal.invoice",
+      "value": {
+        "driver": "peppol",
+        "options": {
+          "customizationId": "urn:peppol:pint:billing-1@ae-1",
+          "profileId": "urn:peppol:bis:billing",
+          "timeZone": "Asia/Dubai"
+        },
+        "reportingWindowHours": null,
+        "retentionYears": 5
+      },
+      "from": "2027-01-01"
     }
   ],
   "reviews": [],

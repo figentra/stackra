@@ -303,7 +303,7 @@ describe("parseRunway", () => {
     ).toEqual(["targets.mintlify.adminKey"]);
   });
 
-  it("closes the edge, release, observability and GitHub blocks, refusing a misspelt key", () => {
+  it("closes the edge, release, observability and GitHub blocks (repository metadata included), refusing a misspelt key", () => {
     const sections = {
       edge: {
         proxy: "all",
@@ -328,6 +328,9 @@ describe("parseRunway", () => {
         github: {
           org: "acme",
           repo: "platform",
+          description: "Acme Platform: the services every Acme product runs on.",
+          topics: ["acme", "typescript"],
+          homepage: "https://docs.acme.example",
           environments: { production: { reviewers: ["acme/owners"] } },
         },
       },
@@ -346,6 +349,23 @@ describe("parseRunway", () => {
         }),
       ).sort(),
     ).toEqual(["edge.tls", "observability", "providers.github", "release.gate"]);
+  });
+
+  it("refuses an upper-case or repeated GitHub topic, more than 20 topics, and a relative homepage", () => {
+    for (const metadata of [
+      { topics: ["TypeScript"] },
+      { topics: ["acme", "acme"] },
+      { topics: Array.from({ length: 21 }, (_, i) => `t${i}`) },
+      { homepage: "docs.acme.example" },
+    ])
+      expect(
+        issuePaths(() =>
+          parseRunway("root", {
+            ...ROOT,
+            providers: { github: { org: "acme", repo: "platform", ...metadata } },
+          }),
+        ).some((path) => path.startsWith("providers.github")),
+      ).toBe(true);
   });
 
   it("refuses root keys in a member runway", () => {

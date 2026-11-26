@@ -12,8 +12,10 @@ import type { SurfaceKind } from "#core/enums/surface-kind.enum";
 
 /** A surface and its button. */
 export interface Surface {
+  /** The surface's id, unique in its machine. */
   readonly id: string;
 
+  /** A web or desktop window, or a phone. */
   readonly kind: SurfaceKind;
 
   /** The window's title. */

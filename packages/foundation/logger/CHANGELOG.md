@@ -1,5 +1,49 @@
 # @stackra/logger
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- be86617: `LoggingConfig` has a `reporter` field that picks the `LogReporter` driver: `console` by default, or `otlp`. Before, no config field selected one, so any member that injected `Logger` failed to boot with `UnresolvedPortError: No driver is bound to LogReporter` (BILLING-A), in production too.
+  
+  A deployment that sends logs to a collector sets `reporter: otlp` in its runway values, next to `OtlpConfig`.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Patch Changes

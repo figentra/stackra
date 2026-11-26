@@ -108,7 +108,7 @@ const repositories: string[] = [];
 function repository(encore: boolean): string {
   const root = mkdtempSync(join(tmpdir(), "runway-secrets-"));
   repositories.push(root);
-  if (encore) mkdirSync(join(root, ".stackra/encore"), { recursive: true });
+  if (encore) mkdirSync(join(root, "stackra-encore"), { recursive: true });
   return root;
 }
 
@@ -162,7 +162,7 @@ describe("secretSyncPlan gateway", () => {
   it("adds the generated gateway's names as one Encore entry when a service makes an Encore app", () => {
     expect(secretSyncPlan("staging", withGateway).at(-1)).toEqual({
       member: "gateway",
-      folder: ".stackra/encore (generated API gateway)",
+      folder: "stackra-encore (generated API gateway)",
       names: ["GATEWAY_VISITOR_SIGNING_KEY"],
       scope: "products/acme/staging",
       writer: "encore",

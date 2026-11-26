@@ -221,6 +221,7 @@ import { FREE_SANKEY_CHART } from "#src/registry/components/free/sankey-chart";
 import { FREE_SAVE_BAR } from "#src/registry/components/free/save-bar";
 import { FREE_SCATTER_CHART } from "#src/registry/components/free/scatter-chart";
 import { FREE_SCHEDULER } from "#src/registry/components/free/scheduler";
+import { FREE_SCHEDULING_BOARD } from "#src/registry/components/free/scheduling-board";
 import { FREE_SCHEMATIC } from "#src/registry/components/free/schematic";
 import { FREE_SCREEN } from "#src/registry/components/free/screen";
 import { FREE_SCROLL_AREA } from "#src/registry/components/free/scroll-area";
@@ -414,6 +415,7 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
   FREE_RANGE_CALENDAR,
   FREE_RECURRENCE_EDITOR,
   FREE_SCHEDULER,
+  FREE_SCHEDULING_BOARD,
   FREE_TIME_CLOCK,
   FREE_TIME_FIELD,
   FREE_TIME_PICKER,
@@ -643,6 +645,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["action", "modal", "dialog", "input", "confirm", "panel", "kit"],
     status: "new",
   },
+  // KIT_APPEARANCE_TOGGLE: @stackra/theming, from its showcase/appearance-toggle.json
+  {
+    slug: "appearance-toggle",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/theming",
+    exportName: "AppearanceToggle",
+    parts: ["AppearanceToggle"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 200 }],
+    related: ["free/segmented-control", "free/switch", "free/dropdown"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["theme", "dark mode", "light mode", "color scheme", "appearance", "kit"],
+    status: "new",
+  },
   // KIT_ASK_AI: @stackra/experience, from its showcase/ask-ai.json
   {
     slug: "ask-ai",
@@ -673,6 +691,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/bento-card", "free/feature-section", "free/dither-art"],
     tokens: ["radius.lg", "color.surface", "color.border"],
     keywords: ["bento", "grid", "cards", "marketing", "landing", "kit"],
+    status: "new",
+  },
+  // KIT_BRAND_LOGO: @stackra/theming, from its showcase/brand-logo.json
+  {
+    slug: "brand-logo",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react", "native"],
+    packageName: "@stackra/theming",
+    exportName: "BrandLogo",
+    parts: ["BrandLogo"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 160 }],
+    related: ["free/thumbnail", "free/image"],
+    tokens: ["color.surface"],
+    keywords: ["logo", "brand", "wordmark", "dark mode", "theme", "kit"],
     status: "new",
   },
   // KIT_BULK_ACTIONS: @stackra/panel, from its showcase/bulk-actions.json
@@ -812,6 +846,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["call to action", "cta", "newsletter", "subscribe", "marketing", "kit"],
     status: "new",
   },
+  // KIT_ENTITLEMENT_GATE: @stackra/entitlements, from its showcase/entitlement-gate.json
+  {
+    slug: "entitlement-gate",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/entitlements",
+    exportName: "EntitlementGate",
+    parts: ["EntitlementGate"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 160 }],
+    related: ["free/can", "free/empty-state", "free/button"],
+    tokens: ["color.surface"],
+    keywords: ["entitlement", "plan", "feature", "upgrade", "paywall", "show or hide", "kit"],
+    status: "new",
+  },
   // KIT_FEATURE_SECTION: @stackra/experience, from its showcase/feature-section.json
   {
     slug: "feature-section",
@@ -842,6 +892,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/blueprint-section", "free/schematic", "free/cta-row"],
     tokens: ["color.core", "color.accent", "color.background"],
     keywords: ["hero", "landing", "blueprint", "schematic", "marketing", "headline", "kit"],
+    status: "new",
+  },
+  // KIT_I18N_LOCALE_SWITCHER: @stackra/i18n, from its showcase/i18n-locale-switcher.json
+  {
+    slug: "i18n-locale-switcher",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/i18n",
+    exportName: "LocaleSwitcher",
+    parts: ["LocaleSwitcher"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 200 }],
+    related: ["free/locale-switcher", "free/select"],
+    tokens: ["color.field"],
+    keywords: ["language", "locale", "switcher", "translation", "right-to-left", "kit"],
     status: "new",
   },
   // KIT_MEMBER_PICKER: @stackra/tenancy, from its showcase/member-picker.json
@@ -906,6 +972,38 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/dither-art", "free/heading", "free/footer"],
     tokens: ["font.mono", "color.core", "color.background"],
     keywords: ["wordmark", "display", "mono", "closing", "glyphs", "landing", "kit"],
+    status: "new",
+  },
+  // KIT_NOTIFICATION_INBOX: @stackra/notifications, from its showcase/notification-inbox.json
+  {
+    slug: "notification-inbox",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react", "native"],
+    packageName: "@stackra/notifications",
+    exportName: "NotificationInbox",
+    parts: ["NotificationInbox"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 480 }],
+    related: ["free/notifications-panel", "free/badge", "free/popover"],
+    tokens: ["color.surface", "color.danger"],
+    keywords: ["notifications", "inbox", "bell", "unread", "in-app", "kit"],
+    status: "new",
+  },
+  // KIT_NOTIFICATION_PREFERENCES: @stackra/notifications, from its showcase/notification-preferences.json
+  {
+    slug: "notification-preferences",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/notifications",
+    exportName: "NotificationPreferences",
+    parts: ["NotificationPreferences"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 560 }],
+    related: ["free/setting-row", "free/switch", "free/form-section"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["notifications", "preferences", "settings", "email", "push", "subscribe", "kit"],
     status: "new",
   },
   // KIT_ORGANIZATION_PAGE: @stackra/tenancy, from its showcase/organization-page.json
@@ -1004,6 +1102,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     keywords: ["products", "built on", "brands", "themes", "grid", "strip", "landing", "kit"],
     status: "new",
   },
+  // KIT_PUSH_PRIMER: @stackra/notifications, from its showcase/push-primer.json
+  {
+    slug: "push-primer",
+    tier: "free",
+    category: "blocks",
+    platforms: ["native"],
+    packageName: "@stackra/notifications",
+    exportName: "PushPrimer",
+    parts: ["PushPrimer"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 420 }],
+    related: ["free/card", "free/button", "free/alert"],
+    tokens: ["color.surface", "color.accent"],
+    keywords: ["push", "notifications", "permission", "onboarding", "opt in", "kit"],
+    status: "new",
+  },
   // KIT_RESOURCE_FORM_PAGE: @stackra/panel, from its showcase/resource-form-page.json
   {
     slug: "resource-form-page",
@@ -1098,6 +1212,22 @@ export const COMPONENTS: readonly ComponentEntry[] = Object.freeze([
     related: ["free/action-menu", "free/data-table", "free/icon-button"],
     tokens: ["color.surface", "color.danger"],
     keywords: ["row", "actions", "menu", "sdui", "overflow", "kit"],
+    status: "new",
+  },
+  // KIT_SCOPE_PICKER: @stackra/scope, from its showcase/scope-picker.json
+  {
+    slug: "scope-picker",
+    tier: "free",
+    category: "blocks",
+    platforms: ["react"],
+    packageName: "@stackra/scope",
+    exportName: "ScopePicker",
+    parts: ["ScopePicker"],
+    hero: {},
+    examples: [{ id: "basics", card: true, minHeight: 320 }],
+    related: ["free/tree-select", "free/entity-picker", "free/breadcrumbs"],
+    tokens: ["color.field", "color.accent"],
+    keywords: ["scope", "branch", "hierarchy", "switcher", "picker", "field", "kit"],
     status: "new",
   },
   // KIT_SECURITY_PAGE: @stackra/identity, from its showcase/security-page.json

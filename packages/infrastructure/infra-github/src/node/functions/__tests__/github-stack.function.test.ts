@@ -37,6 +37,9 @@ const PLAN: GithubPlan = {
   org: "acme",
   repo: "acme-platform",
   visibility: "public",
+  description: "Acme Platform: the services every Acme product runs on.",
+  topics: ["acme", "typescript", "multi-tenant"],
+  homepage: "https://docs.acme.example",
   variables: {
     STACKRA_SAMPLE_URL: "https://example.com",
     STACKRA_SAMPLE_ID: "ref:ids.workspace",
@@ -156,10 +159,13 @@ describe("githubStack", () => {
     expect(resource("github", "acme-platform").inputs).toMatchObject({ owner: "acme" });
   });
 
-  it("sets the repository's merge, branch and secret scanning settings", () => {
+  it("sets the repository's metadata, merge, branch and secret scanning settings", () => {
     expect(resource("Repository", "acme-platform").inputs).toMatchObject({
       name: "acme-platform",
       visibility: "public",
+      description: "Acme Platform: the services every Acme product runs on.",
+      topics: ["acme", "typescript", "multi-tenant"],
+      homepageUrl: "https://docs.acme.example",
       allowMergeCommit: false,
       allowRebaseMerge: false,
       allowSquashMerge: true,

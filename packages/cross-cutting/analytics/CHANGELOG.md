@@ -1,5 +1,81 @@
 # @stackra/analytics
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/contracts@0.33.1
+  - @stackra/storage@0.33.1
+  - @stackra/iam@0.33.1
+  - @stackra/privacy@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/platform@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/consent@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/iam@0.33.0
+  - @stackra/consent@0.33.0
+  - @stackra/privacy@0.33.0
+  - @stackra/platform@0.33.0
+  - @stackra/storage@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/platform@0.32.0
+  - @stackra/consent@0.32.0
+  - @stackra/privacy@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/storage@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/consent@0.31.0
+  - @stackra/iam@0.31.0
+  - @stackra/privacy@0.31.0
+  - @stackra/storage@0.31.0
+  - @stackra/platform@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

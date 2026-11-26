@@ -1,6 +1,6 @@
 {
   "market": "sa",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "status": "draft",
   "entries": [
     {
@@ -57,6 +57,30 @@
         }
       ],
       "from": "2026-11-01"
+    },
+    {
+      "key": "fiscal.invoice",
+      "value": {
+        "driver": "zatca",
+        "options": {
+          "reportingUrl": "https://gw-fatoora.zatca.gov.sa/e-invoicing/core/invoices/reporting/single",
+          "clearanceUrl": "https://gw-fatoora.zatca.gov.sa/e-invoicing/core/invoices/clearance/single",
+          "complianceCsidUrl": "https://gw-fatoora.zatca.gov.sa/e-invoicing/core/compliance",
+          "complianceInvoicesUrl": "https://gw-fatoora.zatca.gov.sa/e-invoicing/core/compliance/invoices",
+          "productionCsidUrl": "https://gw-fatoora.zatca.gov.sa/e-invoicing/core/production/csids",
+          "apiVersion": "V2",
+          "profileId": "reporting:1.0",
+          "taxCurrency": "SAR",
+          "paymentMeans": {
+            "cash": "10",
+            "card": "48"
+          },
+          "timeZone": "Asia/Riyadh"
+        },
+        "reportingWindowHours": 24,
+        "retentionYears": 6
+      },
+      "from": "2023-01-01"
     }
   ],
   "reviews": [],

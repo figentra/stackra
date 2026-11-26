@@ -131,6 +131,15 @@ describe("FiscalService#seal", () => {
     expect(first?.sealedAt).toEqual(new Date("2026-03-01T10:00:00Z"));
   });
 
+  it("hands the driver the unit's own options under the pack's, which win on a shared key", async () => {
+    const { service, tillDriver } = setup();
+    await service.seal(fiscalDocument(), {
+      ...till,
+      options: { activityCode: "4620", sample: false },
+    });
+    expect(tillDriver.sealed[0]?.options).toEqual({ activityCode: "4620", sample: true });
+  });
+
   it("reads the pack on the document's issue date", async () => {
     const { service, packs } = setup();
     await service.seal(fiscalDocument(), till);

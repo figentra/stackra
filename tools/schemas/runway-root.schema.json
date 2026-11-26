@@ -314,6 +314,27 @@
             "visibility": {
               "enum": ["private", "public", "internal"]
             },
+            "description": {
+              "description": "The repository's one-sentence GitHub description (ADR 0534).",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 350
+            },
+            "topics": {
+              "description": "The repository's GitHub topics: the base set for its type first, then its domain topics (ADR 0534).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,49}$"
+              },
+              "maxItems": 20,
+              "uniqueItems": true
+            },
+            "homepage": {
+              "description": "The repository's homepage: the live docs site, else the live product site (ADR 0534).",
+              "type": "string",
+              "format": "uri"
+            },
             "variables": {
               "type": "object",
               "propertyNames": {
@@ -2196,9 +2217,9 @@
       "properties": {
         "entitlement": {
           "type": "string",
-          "minLength": 1,
-          "examples": ["entitlement:academorix:white-label"],
-          "description": "Not read yet (STA-2002). The entitlement that turns white-labelling on for a tenant."
+          "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$",
+          "examples": ["storefront.white_label"],
+          "description": "The entitlement key (`<module>.<name>`, snake_case) a scope must hold for a white-label build; the mobile job refuses the build without it."
         },
         "modes": {
           "type": "array",
@@ -2374,7 +2395,7 @@
       "required": ["kind"],
       "properties": {
         "kind": {
-          "enum": ["postgres", "queue", "topic", "cache", "bucket"]
+          "enum": ["postgres", "queue", "topic", "cache", "bucket", "gotenberg"]
         },
         "engine": {
           "enum": ["rds", "aurora"],
@@ -2444,6 +2465,30 @@
             "minLength": 1
           },
           "examples": [["start-from-init", "--masterkeyFromEnv", "--tlsMode", "external"]]
+        },
+        "migrate": {
+          "type": "object",
+          "description": "A one-off task run with the same image, env, secrets and resources before each rollout; the rollout waits for it and stops when it fails.",
+          "additionalProperties": false,
+          "required": ["command"],
+          "properties": {
+            "command": {
+              "type": "array",
+              "description": "The migration task's arguments, replacing the image's default command.",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "examples": [["bundle", "exec", "rails", "db:chatwoot_prepare"]]
+            },
+            "timeoutMinutes": {
+              "type": "integer",
+              "description": "How long the rollout waits for the task; 15 when absent.",
+              "minimum": 1,
+              "maximum": 60
+            }
+          }
         },
         "expose": {
           "enum": ["internal", "public"],

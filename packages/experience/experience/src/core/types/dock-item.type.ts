@@ -13,7 +13,9 @@ export interface DockItem {
   /** The section's id, the link's `#id`. */
   readonly id: string;
 
+  /** The link's words. */
   readonly label: LocalizedText;
 
+  /** The line the dock shows while this section is current. */
   readonly status?: LocalizedText;
 }

@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: haiku
 ---
 
-<!-- generated from .agents/agents/code-standards-steward.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/code-standards-steward.md by fflow sync — edit the source, not this file -->
 
 # code-standards-steward
 
@@ -17,7 +17,7 @@ own the package shape.
 
 ## Must read
 
-`apps/docs/src/docs/standards/code-style.mdx`, `apps/docs/src/docs/standards/packages.mdx`, ADRs 0006 (naming, exports, imports),
+[standards/code-style](https://docs.stackra.figentra.com/standards/code-style), [standards/packages](https://docs.stackra.figentra.com/standards/packages), ADRs 0006 (naming, exports, imports),
 0007 (docblocks), 0126 (member shapes and entries), 0128 (enums, classes, components, kind folders), 0129 (house lint
 plugin), 0231 (naming and casing), 0232 (errors), 0233 (`#` aliases only), and the skill `code-naming-and-casing`.
 

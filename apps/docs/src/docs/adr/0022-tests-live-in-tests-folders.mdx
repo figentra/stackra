@@ -44,6 +44,24 @@ Decision 4 is amended by [0269](/adr/0269-stackra-testing-package-entries-and-he
 that are generic (factories, fakes for the clock and ids, matchers with no domain type) live in `@stackra/testing`. Domain
 helpers stay in the `./testing` entry of the package that owns the contract. Decisions 1 to 3 and 5 to 6 are unchanged.
 
+## Amendment of 2026-11-09: a package may have an end-to-end tier
+
+A UI package may run end-to-end tests in a real browser, through one harness in `@stackra/testing/e2e`. App e2e stays in
+the app (decision 3); this adds the package case and changes nothing else.
+
+- **Two files, both directly in `__tests__/`.** `<name>.e2e.page.tsx` default-exports the React component to render (the
+  component in its providers, with the package's testing fakes). `<name>.e2e.test.ts` is a Playwright spec that imports
+  `test` and `expect` from `@stackra/testing/e2e`, opens `/<name>` and checks the page. A page outside `__tests__/` is
+  refused like a misplaced test.
+- **Gen writes the rest.** For a package with at least one `.e2e.page.tsx`, `stackra gen` writes `.stackra/e2e/` (a small
+  Vite app that renders the page named by the URL path) and `.stackra/playwright.e2e.config.ts`. `stackra test --tier e2e`
+  runs it. A service or a worker still has no e2e tier.
+- **Console errors fail a spec by default.** A page that logs `console.error` or throws is not live, so the `test` of
+  `@stackra/testing/e2e` fails the test. A file opts out with `test.use({ consoleErrors: "allow" })`. This applies to app
+  e2e specs too.
+- **Two locales.** Every spec runs in Chromium and in Chromium with the `ar-SA` locale, which renders the page right to
+  left. Firefox and WebKit are opt-in.
+
 ## Supersedes and sources
 
 Supersedes: [0008](/adr/0008-test-placement). Sources: basalt `adr/0034-test-file-placement`.

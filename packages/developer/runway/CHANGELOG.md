@@ -1,5 +1,101 @@
 # @stackra/runway
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/app@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 0f7448f: A root runway can declare one `gotenberg` resource, the PDF engine `@stackra/documents` renders through. Runway runs it
+  as an internal Fargate workload:
+  
+  - the Chromium image pinned by digest and pulled through the ECR pull-through registry named in
+    `shared.network.registry`;
+  - basic auth on, no URL fetching;
+  - its own 443-only egress group;
+  - FARGATE_SPOT outside production.
+  
+  `ensureGotenbergCredentials` writes the password once and hands every consumer `DOCUMENTS_GOTENBERG_URL` and
+  `DOCUMENTS_GOTENBERG_AUTHORIZATION`.
+- c7144a0: The white-label job starter (ADR 0439 decision 8, STA-2074). `startWhiteLabelJob(request)` turns the OS event
+  `white_label.build.requested.v1` into the mobile job's variant and runs `runMobileJob` for the event's app.
+  `whiteLabelVariantOf(event)` carries the scope, the entitlement keys and the identity parts the scope sets; a null,
+  empty or blank part is dropped, so the runway entry's stays. An event with no scope or app is refused before the job
+  runs. `WhiteLabelBuildRequested` and `WhiteLabelJobRequest` are exported.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/app@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [33f61e5]
+- Updated dependencies [9ddce28]
+  - @stackra/app@0.32.0
+  - @stackra/config@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 5585893: `providers.github` takes the repository metadata: `description` (one sentence, at most 350 characters), `topics`
+  (lower-case GitHub topics, each once, at most 20) and `homepage` (an absolute URL). `githubPlan` carries them and
+  `githubStack` sets them on the repository (`description`, `topics`, `homepageUrl`), so a `preview` of the github
+  stack shows a repository whose metadata drifted from its runway. `@stackra/runway`'s closed `providers.github`
+  schema takes the same three keys, so `parseRunway` accepts them.
+- ebfd942: `runMobileJob` reads mobile `whiteLabel.entitlement`: a scope-started white-label build is refused unless the
+  variant's new `entitlements` list holds it. The field leaves `RUNWAY_UNREAD_FIELDS` and its schema description no longer
+  says "Not read yet".
+- 670f75c: A workload can name `migrate: { command, timeoutMinutes? }`: a one-off task with the workload's image, env, secrets
+  and resources that runs once per new revision before the service rolls, and stops the apply when it fails or times
+  out (15 minutes by default). On AWS it is a second Fargate task definition run by a Pulumi dynamic resource through
+  `@aws-sdk/client-ecs`, which the stacks repository must list beside `@pulumi/aws`.
+
+### Patch Changes
+
+- @stackra/app@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

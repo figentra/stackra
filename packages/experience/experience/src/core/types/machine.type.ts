@@ -16,7 +16,9 @@ export interface Machine {
   /** The group's spoken name ("One action, every surface"); the action's file name is only its window's title. */
   readonly label: LocalizedText;
 
+  /** The action window at the top of the machine. */
   readonly action: MachineAction;
 
+  /** The surfaces the action is piped into, one frame each, in order. */
   readonly surfaces: Surface[];
 }

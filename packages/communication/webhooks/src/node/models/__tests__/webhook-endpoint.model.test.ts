@@ -31,6 +31,7 @@ describe("WebhookEndpoint", () => {
       "has_public_id",
       "belongs_to_tenant",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(WebhookEndpoint)[0]?.options).toEqual({ prefix: "whe" });
     expect(new WebhookEndpoint().id).toMatch(/^whe_[0-9a-z]{26}$/);

@@ -1,5 +1,63 @@
 # @stackra/infra-aws
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+  - @stackra/runway@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 9458426: The account's first environment creates ECR's pull-through cache for Docker Hub: a rule serving
+  `<account>.dkr.ecr.<region>.amazonaws.com/docker-hub/<image>` from `registry-1.docker.io`, and the
+  `ecr-pullthroughcache/docker-hub` secret it authenticates with, created empty for the owner to fill. The baseline
+  outputs `dockerHubCacheSecretArn`. Runway workloads (Gotenberg, Chatwoot) pull third-party images through it.
+
+### Patch Changes
+
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0f7448f]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/runway@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [5585893]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+  - @stackra/runway@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Patch Changes

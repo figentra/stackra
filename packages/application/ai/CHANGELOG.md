@@ -1,5 +1,98 @@
 # @stackra/ai
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/search@0.33.1
+  - @stackra/outbox@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- df6f577: The ChatSurface draws a `data-tamo-artifact` part by default: an `AttachmentCard` of the file Tamo made (its name with the kind as extension, and its size). Opening or downloading it calls the host's new `onOpenArtifact` or `onDownloadArtifact` with the artifact's id and version; the part never carries a link. `TamoArtifactPart` gains an optional `bytes`, and its `kind` is the file extension.
+- 54aa1e7: `AgentRuntime.stream`'s `uiStream` is safe to send to a person: with a guardrail layer bound (`AgentStream.guarded`), it holds the text and reasoning deltas and sends the reply's guarded text once the run settles, before `finish`; tool and approval chunks still stream at once, and a blocked answer is one `error` chunk naming `guardrail_blocked`. `textStream` stays unguarded.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/actions@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/search@0.33.0
+  - @stackra/outbox@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [54db249]
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/search@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/outbox@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 7179d1a: `ChatFormPart` (`@stackra/panel/react`) draws an action's form in a chat turn from its JSON Schema input: one field per key, drawn as a screen draws it, prefilled by the assistant, with uploads through the host's `upload`, and sent as the person's answer. `useZodFormHandle` (`@stackra/ui/form`) runs a form over a zod schema with no class, and `useSchemaFormHandle` now builds on it. `TamoFormPart` gains `id`, which the host answers with the sent values, as a question's.
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [7179d1a]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/search@0.31.0
+  - @stackra/outbox@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

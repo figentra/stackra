@@ -1,5 +1,97 @@
 # @stackra/app
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/contracts@0.33.1
+  - @stackra/settings@0.33.1
+  - @stackra/identity@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/clients@0.33.1
+  - @stackra/navigation@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/csp@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 54aa1e7: An action may declare `stream: true`: its `handle` answers a `ReadableStream` of JSON chunks, sent to the one caller as server-sent events (`data:` per chunk, `data: [DONE]` at the end, a `: ping` after 15 s quiet, `no-store`, no compression, no proxy buffering). The call's transaction commits when `handle` returns the stream, so the stream's writes run in `ctx.detach()` steps. The caller's forwardable token is held until the stream ends or the caller goes away, never longer. A stream action takes no `job`, `offline` or `tool`, and only `Idempotency.Never` (`stream_not_replayable`); the call descriptor carries `stream: true`.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [628b60d]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/i18n@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/settings@0.33.0
+  - @stackra/clients@0.33.0
+  - @stackra/identity@0.33.0
+  - @stackra/navigation@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/csp@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Minor Changes
+
+- 33f61e5: Every app shows dates in the tenant's calendar with no wiring of its own: `Contexts`' `i18n` context reads the
+  tenant's `DisplaySettings.calendar` (`@stackra/settings`) through the container's `SettingsReader` and passes it to
+  `I18nProvider`, so `useDateTime` writes Hijri dates for a tenant on the Umm al-Qura calendar. Gregorian until the read
+  answers, and where no reader is bound.
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/clients@0.32.0
+  - @stackra/navigation@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/csp@0.32.0
+  - @stackra/identity@0.32.0
+  - @stackra/settings@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [0f05f60]
+  - @stackra/actions@0.31.0
+  - @stackra/i18n@0.31.0
+  - @stackra/clients@0.31.0
+  - @stackra/identity@0.31.0
+  - @stackra/navigation@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+  - @stackra/csp@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

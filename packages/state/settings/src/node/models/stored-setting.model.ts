@@ -14,7 +14,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenantOrPlatform } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 
@@ -27,6 +27,7 @@ export class StoredSetting extends Model.with(
   HasPublicId("sst"),
   BelongsToTenantOrPlatform,
   Timestamps,
+  MovesWithScope,
 ) {
   /** The holder's values by path in the group. */
   // reason: SettingValue is a union of scalars, which no shape type states

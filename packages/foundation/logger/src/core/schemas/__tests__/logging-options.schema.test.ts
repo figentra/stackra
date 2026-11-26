@@ -27,6 +27,7 @@ describe("LoggingOptions", () => {
   it("has the schema's defaults as its initializers", () => {
     expect({ ...new LoggingOptions() }).toEqual(LOGGING_CONFIG_SCHEMA.parse({}));
     expect(LOGGING_CONFIG_SCHEMA.parse({})).toEqual({
+      reporter: "console",
       level: "info",
       channels: {},
       sampleRate: 1,
@@ -50,6 +51,8 @@ describe("LoggingOptions", () => {
   it("takes the LogLevel codes and refuses anything else", () => {
     expect(LOGGING_CONFIG_SCHEMA.shape.level.unwrap().options).toEqual(Enum.values(LogLevel));
     expect(LOGGING_CONFIG_SCHEMA.safeParse({ level: "trace" }).success).toBe(false);
+    expect(LOGGING_CONFIG_SCHEMA.safeParse({ reporter: "otlp" }).success).toBe(true);
+    expect(LOGGING_CONFIG_SCHEMA.safeParse({ reporter: "syslog" }).success).toBe(false);
     expect(LOGGING_CONFIG_SCHEMA.safeParse({ channels: { orders: "loud" } }).success).toBe(false);
     expect(LOGGING_CONFIG_SCHEMA.safeParse({ sampleRate: 1.5 }).success).toBe(false);
     expect(LOGGING_CONFIG_SCHEMA.safeParse({ sampleRate: -0.1 }).success).toBe(false);

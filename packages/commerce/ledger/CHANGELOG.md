@@ -1,5 +1,60 @@
 # @stackra/ledger
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/locking@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/locking@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/container@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/locking@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [6473cf1]
+  - @stackra/database@0.31.0
+  - @stackra/locking@0.31.0
+  - @stackra/money@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+
 ## 0.30.0
 
 ### Patch Changes

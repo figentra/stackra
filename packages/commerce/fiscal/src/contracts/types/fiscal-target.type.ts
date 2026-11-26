@@ -16,4 +16,10 @@ export type FiscalTarget = {
   readonly channel: FiscalChannel;
   /** The till or invoicing unit; one hash chain and one credential per unit. */
   readonly unitId: string;
+  /**
+   * The unit's own driver options, which no market pack can hold: ETA's `activityCode` (the issuer's registered
+   * activity), Peppol's `accessPointUrl` (the tenant's own provider). Merged under the pack's options, so a key the
+   * pack holds always keeps the pack's value and a unit never redirects a market fact (`submitUrl`).
+   */
+  readonly options?: Readonly<Record<string, unknown>>;
 };

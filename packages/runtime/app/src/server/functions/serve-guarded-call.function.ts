@@ -9,13 +9,15 @@
  *          carries its key's call options to the call; an anonymous call acts in the tenant the edge signed, and a
  *          credential whose tenant differs from it is 403), parse the input (JSON body, or the query string for
  *          GET and DELETE typed by the input schema, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
- *          kind's status with its envelope.
+ *          kind's status with its envelope, and a `stream: true` action's stream as server-sent events
+ *          (`eventStreamResponse`), which still carries the visitor's token.
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
  *           nothing about which check failed; it never logs or echoes the body, the signature or the credential. A
  *           `RateLimitedError`, any non-refusal error and an authenticator outage propagate, for `answerHttp` (429) and
  *           Encore (500). A refusal of the call is mapped by `Enum.meta(ErrorKind, kind).httpStatus`. The call runs
  *           inside `holdCallerToken`, so its service-to-service calls forward the user's token only as ADR 0209's
- *           amendment allows (a first hop, or a second into an action that declares it), never past the call.
+ *           amendment allows (a first hop, or a second into an action that declares it), never past the call; a
+ *           streamed call ends when its stream does.
  * Runtime: node
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order and the
  *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098.
@@ -32,6 +34,7 @@ import {
 
 import { VERIFIED_EDGE_SCOPE } from "#server/constants/verified-edge-scope.constant";
 import { coerceQueryInput } from "#server/functions/coerce-query-input.function";
+import { eventStreamResponse } from "#server/functions/event-stream-response.function";
 import { holdCallerToken } from "#server/functions/hold-caller-token.function";
 import { pathParamsOf } from "#server/functions/path-params-of.function";
 import { readCappedBody } from "#server/functions/read-capped-body.function";
@@ -188,5 +191,12 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
       visitor,
     );
   }
+  // a `stream: true` action answers its stream as server-sent events (holdCallerToken already wrapped its end)
+  if (
+    output instanceof ReadableStream &&
+    options.action !== undefined &&
+    kindOf(options.action)?.options["stream"] === true
+  )
+    return carry(eventStreamResponse(output), visitor);
   return carry(output instanceof Response ? output : Response.json(output ?? null), visitor);
 }

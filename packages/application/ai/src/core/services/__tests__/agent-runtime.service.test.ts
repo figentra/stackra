@@ -12,7 +12,9 @@
  *          `client_result_invalid`, `expireClientTool` with `client_unavailable`, a repeat answer is refused with
  *          `client_tool_not_pending`, and a timer is armed while parked and cleared once answered; `uiStream` carries the
  *          text and reasoning deltas in order, a tool call's input then output, a parked call as a
- *          `tool-approval-request` with the approval id, and closes with `abort` when the call is aborted.
+ *          `tool-approval-request` with the approval id, and closes with `abort` when the call is aborted; with a
+ *          guardrail layer bound, `uiStream` sends no text delta before the run settles, then the redacted text, and a
+ *          blocked answer as an `error` chunk with no text of it.
  * Boundary: test only; the model is AI SDK's `MockLanguageModelV4`, the stores are the memory drivers, and the
  *           dispatcher, models, instructions, queue, outbox, discovery and guardrail layers are stand-ins.
  * Runtime: node (vitest)
@@ -409,6 +411,44 @@ describe(AgentRuntime, () => {
     ).toEqual(["reasoning-delta:Think", "text-delta:Hel", "text-delta:lo"]);
     expect(JSON.stringify(chunks)).not.toContain("You help with matters.");
     expect(await streaming.reply).toMatchObject({ status: RunStatus.Completed, text: "Hello" });
+  });
+
+  /** A person never sees text an output layer would redact: it waits for the settled, guarded reply. */
+  it("holds a guarded stream's text and sends the redacted reply before finish", async () => {
+    const { runtime } = setup(
+      new MockLanguageModelV4({ doStream: streamedText("The secret is out.") }),
+      [censor],
+    );
+    const streaming = await runtime.stream(agent, "Hi", { actor });
+    expect(streaming.guarded).toBe(true);
+    const chunks = await chunksOf(streaming.uiStream);
+    expect(JSON.stringify(chunks)).not.toContain("secret");
+    const deltas = chunks.flatMap((chunk) => (chunk.type === "text-delta" ? [chunk.delta] : []));
+    expect(deltas).toEqual(["The [redacted] is out."]);
+    expect(chunks.at(-1)).toMatchObject({ type: "finish" });
+    expect(await streaming.reply).toMatchObject({ text: "The [redacted] is out." });
+  });
+
+  /** A blocked answer reaches the person as an error chunk naming the code, never as its text. */
+  it("ends a guarded stream whose answer is blocked with an error chunk", async () => {
+    const { runtime } = setup(
+      new MockLanguageModelV4({ doStream: streamedText("This is blocked.") }),
+      [censor],
+    );
+    const streaming = await runtime.stream(agent, "Hi", { actor });
+    const chunks = await chunksOf(streaming.uiStream);
+    expect(chunks).toContainEqual({ type: "error", errorText: "guardrail_blocked" });
+    expect(JSON.stringify(chunks)).not.toContain("This is blocked");
+    await expect(streaming.reply).rejects.toBeInstanceOf(GuardrailBlockedError);
+  });
+
+  /** With no layer bound the stream is live, as before. */
+  it("streams live when no guardrail layer is bound", async () => {
+    const { runtime } = setup(new MockLanguageModelV4({ doStream: streamedText("Hi there") }));
+    const streaming = await runtime.stream(agent, "Hi", { actor });
+    expect(streaming.guarded).toBe(false);
+    const chunks = await chunksOf(streaming.uiStream);
+    expect(chunks).toContainEqual({ type: "text-delta", id: "t1", delta: "Hi there" });
   });
 
   it("streams a tool call that runs as its input, then the output the model saw", async () => {

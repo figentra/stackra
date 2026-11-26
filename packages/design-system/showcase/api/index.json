@@ -1079,6 +1079,11 @@
     "propsCount": 66,
     "react": true
   },
+  "free/pdf-preview": {
+    "partsCount": 1,
+    "propsCount": 4,
+    "react": true
+  },
   "free/period-picker": {
     "native": true,
     "partsCount": 1,
@@ -1320,6 +1325,12 @@
     "native": true,
     "partsCount": 2,
     "propsCount": 20,
+    "react": true
+  },
+  "free/scheduling-board": {
+    "native": true,
+    "partsCount": 6,
+    "propsCount": 54,
     "react": true
   },
   "free/schematic": {

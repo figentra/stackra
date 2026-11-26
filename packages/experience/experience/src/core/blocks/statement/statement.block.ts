@@ -21,5 +21,6 @@ export class StatementBlock extends Block({
   /** Words between two `*` are drawn in steel. */
   text!: LocalizedText;
 
+  /** The facts listed under the paragraph. */
   facts?: LocalizedText[];
 }

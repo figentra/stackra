@@ -1,0 +1,11 @@
+{
+  "strata": {
+    "caption": "Strata, the primary pattern: it drifts for a few seconds, then holds."
+  },
+  "core": {
+    "caption": "Core: the champagne glow where the engine sits, faded toward the edges."
+  },
+  "glyphs": {
+    "caption": "Glyphs: the same field drawn as code characters in the mono font."
+  }
+}

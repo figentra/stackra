@@ -1,5 +1,76 @@
 # @stackra/ui
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/shortcuts@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/icons@0.33.1
+  - @stackra/tokens@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 22493bf: `PdfPreview` (`@stackra/ui/react`) shows a PDF in the browser's own viewer: a sandboxed frame that sends no referrer, with a download button as the fallback where the browser shows no PDF in a page (many mobile WebViews). No PDF library is added. A cross-origin link (the signed object-storage URL it is meant for) may run the viewer's scripts in its own origin; a same-origin link gets no scripts, so the frame can never lift its sandbox.
+
+### Patch Changes
+
+- 41a5ff0: `Alert` gets the first package e2e proof: a page and a Playwright spec that check, in a real browser, that each tone announces itself, that there are no console errors, and that the `ar` project lays the document out right to left. Adds the `test:e2e` script.
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/i18n@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/icons@0.33.0
+  - @stackra/tokens@0.33.0
+  - @stackra/shortcuts@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- 54db249: `CalendarSystem` (`@stackra/ui/contracts`) is now the list of `@stackra/i18n`'s `CalendarSystem`, the one source the date
+  formatting and a tenant's `DisplaySettings.calendar` read. Same values and the same frozen list, so nothing that uses it
+  changes.
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/icons@0.32.0
+  - @stackra/tokens@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/shortcuts@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 7179d1a: `ChatFormPart` (`@stackra/panel/react`) draws an action's form in a chat turn from its JSON Schema input: one field per key, drawn as a screen draws it, prefilled by the assistant, with uploads through the host's `upload`, and sent as the person's answer. `useZodFormHandle` (`@stackra/ui/form`) runs a form over a zod schema with no class, and `useSchemaFormHandle` now builds on it. `TamoFormPart` gains `id`, which the host answers with the sent values, as a question's.
+
+### Patch Changes
+
+- Updated dependencies [0f05f60]
+  - @stackra/i18n@0.31.0
+  - @stackra/icons@0.31.0
+  - @stackra/tokens@0.31.0
+  - @stackra/shortcuts@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

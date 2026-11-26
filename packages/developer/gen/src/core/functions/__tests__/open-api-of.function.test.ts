@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `openApiOf`: one operation per endpoint with its path and query parameters, body, responses,
  *          refusal reference and `x-stackra-*` extensions, `auth: false` as an empty security list, the manifest's
- *          shapes as components with rewritten references, and a deterministic projection.
+ *          shapes as components with rewritten references, a stream action as `text/event-stream`, and a deterministic
+ *          projection.
  * Boundary: test only; projects the manifest built from the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 10); ADR 0158; ADR 0140.
@@ -89,6 +90,19 @@ describe("openApiOf", () => {
       actions: (manifest.actions ?? []).map((action) => ({ ...action, anonymous: true })),
     });
     expect(open.paths["/app/orders"]?.["get"]).toMatchObject({ security: [] });
+  });
+
+  it("answers a stream action as text/event-stream (G1b)", () => {
+    const streamed = {
+      ...manifest,
+      actions: (manifest.actions ?? []).map((action) =>
+        action["key"] === "orders.order.cancel@1" ? { ...action, stream: true } : action,
+      ),
+    };
+    const operation = openApiOf(streamed).paths["/app/orders/{orderId}/cancel"]?.["put"] as {
+      readonly responses: Record<string, { readonly content?: Record<string, unknown> }>;
+    };
+    expect(Object.keys(operation.responses["200"]?.content ?? {})).toEqual(["text/event-stream"]);
   });
 
   it("is deterministic", () => {

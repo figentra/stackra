@@ -1,5 +1,72 @@
 # @stackra/vite-plugin
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [d60f9d5]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+  - @stackra/gen@0.33.1
+  - @stackra/runway@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/i18n@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [4937622]
+- Updated dependencies [93d63bb]
+- Updated dependencies [6186329]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [3c47a3a]
+- Updated dependencies [2e3e323]
+- Updated dependencies [93d63bb]
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4bf092e]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [0f7448f]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/i18n@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/gen@0.33.0
+  - @stackra/runway@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [597e3e8]
+  - @stackra/gen@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/contracts@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [0f05f60]
+- Updated dependencies [73ea174]
+- Updated dependencies [5585893]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+- Updated dependencies [137a7f9]
+  - @stackra/i18n@0.31.0
+  - @stackra/gen@0.31.0
+  - @stackra/runway@0.31.0
+  - @stackra/contracts@0.31.0
+
 ## 0.30.0
 
 ### Patch Changes

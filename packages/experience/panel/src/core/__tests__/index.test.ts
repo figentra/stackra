@@ -12,6 +12,7 @@ import type { z } from "zod";
 
 import { COUNT_METRIC_SCHEMA } from "#core/constants/count-metric-schema.constant";
 import { MONEY_METRIC_SCHEMA } from "#core/constants/money-metric-schema.constant";
+import { PERCENT_METRIC_SCHEMA } from "#core/constants/percent-metric-schema.constant";
 import { SAVED_VIEW_GROUP_SCHEMA } from "#core/constants/saved-view-group-schema.constant";
 import { SAVED_VIEW_SCHEMA } from "#core/constants/saved-view-schema.constant";
 import { SAVED_VIEW_SORT_SCHEMA } from "#core/constants/saved-view-sort-schema.constant";
@@ -30,7 +31,9 @@ import type {
   Views,
 } from "#core/index";
 
+/** The `.` entry as consumers import it. */
 describe("@stackra/panel", () => {
+  /** Every public value is exported and nothing else is. */
   it("exports exactly its values", () => {
     expect(Object.keys(panel).sort()).toEqual([
       "ActionPlace",
@@ -55,9 +58,12 @@ describe("@stackra/panel", () => {
       "FormField",
       "FormStep",
       "ImportMode",
+      "MetricFormat",
       "MoneyMetric",
       "MoneyMetric$",
       "Panel",
+      "PercentMetric",
+      "PercentMetric$",
       "Place",
       "Placement",
       "PlacementLayer",
@@ -106,9 +112,11 @@ describe("@stackra/panel", () => {
     ]);
   });
 
+  /** Each `$` name is the very schema the class registers. */
   it("exports the shipped schemas under their generated names", () => {
     expect(panel.CountMetric$).toBe(COUNT_METRIC_SCHEMA);
     expect(panel.MoneyMetric$).toBe(MONEY_METRIC_SCHEMA);
+    expect(panel.PercentMetric$).toBe(PERCENT_METRIC_SCHEMA);
     expect(panel.SavedView$).toBe(SAVED_VIEW_SCHEMA);
     expect(panel.SavedViewGroup$).toBe(SAVED_VIEW_GROUP_SCHEMA);
     expect(panel.SavedViewSort$).toBe(SAVED_VIEW_SORT_SCHEMA);
@@ -116,6 +124,7 @@ describe("@stackra/panel", () => {
     expect(panel.TimeRangeInput$).toBe(TIME_RANGE_INPUT_SCHEMA);
   });
 
+  /** The builder types the template names resolve to their members. */
   it("resolves the builder types the template names", () => {
     expectTypeOf<Table<{ id: string }>>().toHaveProperty("columns");
     expectTypeOf<Views<{ id: string }>>().toHaveProperty("view");

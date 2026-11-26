@@ -13,6 +13,10 @@
     "not_saved": "لم يُحفظ هذا الإعداد. حاول مرة أخرى."
   },
   "enums": {
+    "calendar_system": {
+      "gregory": "ميلادي",
+      "islamic-umalqura": "هجري (أم القرى)"
+    },
     "setting_environment": {
       "live": "البيئة الفعلية",
       "sandbox": "بيئة التجربة",
@@ -48,6 +52,15 @@
     "settings_mode": {
       "developer": "المطوِّر",
       "normal": "عادي"
+    }
+  },
+  "settings": {
+    "display": {
+      "title": "العرض",
+      "calendar": {
+        "label": "التقويم",
+        "help": "التقويم الذي تظهر به التواريخ في الرسائل وصفحات الحجز واللوحات."
+      }
     }
   }
 }

@@ -1,6 +1,6 @@
 # Agents
 
-Canonical agent definitions for Stackra. `pnpm agents:sync` renders them into `.claude/agents` and
+Canonical agent definitions for Stackra. `pnpm spec:sync` (`fflow sync`) renders them into `.claude/agents` and
 `.opencode/agents`; edit the source here, never the generated copies.
 
 Every agent is defined here; no plugin supplies roles to this repository (ADR 0121 D3). The roster is ADR 0258
@@ -35,7 +35,7 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
 5. Tier to model lives in `models.yaml`; change a model there, not in an agent. OpenCode has rows only for the
    steward and executor tiers, so reviewers, guardians and the lead are never projected there; add
    `assistants: [claude]` to keep an executor or steward off OpenCode too (ADR 0258).
-6. Run `pnpm exec figentra agents sync --lint`, then `pnpm agents:sync`.
+6. Run `pnpm spec:sync`; `pnpm validate` lints the source.
 
 ## Roster in this folder
 

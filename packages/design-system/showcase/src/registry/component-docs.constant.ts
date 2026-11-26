@@ -287,6 +287,15 @@ export const COMPONENT_DOCS: Readonly<Record<string, ComponentDoc>> = {
     alternatives: ["free/calendar", "free/timeline-chart"],
     rules: TWO,
   },
+  "free/scheduling-board": {
+    keyboard: [
+      { keys: ["Tab"], action: "move_focus" },
+      { keys: ["Space", "Enter"], action: "activate" },
+    ],
+    anatomy: ["header", "actions", "row", "item"],
+    alternatives: ["free/scheduler", "free/timeline-chart"],
+    rules: TWO,
+  },
   "free/alert": {
     anatomy: ["icon", "title", "description", "actions"],
     alternatives: ["free/toast", "free/system-banner"],

@@ -1,0 +1,101 @@
+# Stackra file contract:
+# Purpose: regen, step 2 of 2. When "Regen" finishes on a pull request, apply its patch to the pull request's branch
+#          and push one commit as stackra-bot, so CI runs again on the new head (a GITHUB_TOKEN push would not start
+#          it). It refuses a patch that touches anything but generated files, a pull request whose head moved since the
+#          patch was made, a fork, and main.
+# Boundary: runs in main's context (workflow_run) and never runs the pull request's code: it only reads the patch,
+#           checks its paths and applies it. The App token is scoped to contents write on this repository.
+# Owner: release-operations
+# Governing contract: ADR 0019 (supply chain), ADR 0294 R10 (committed contracts).
+name: Regen (push)
+
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows: [Regen]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  push:
+    name: Regen (push the patch)
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch != 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # the patch artifact of the Regen run
+      pull-requests: read # the pull request's current head
+    steps:
+      # A Regen run whose job was skipped (no `regen` label) uploaded nothing: then there is nothing to push.
+      - name: Download the patch
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: regen
+          path: ${{ runner.temp }}/regen
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      # Only generated files, and only onto the head the patch was made from.
+      - name: Check the patch
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/regen"
+          if [ ! -s "$dir/regen.patch" ]; then
+            echo "::notice title=Regen::nothing to push"
+            exit 0
+          fi
+          pr=$(cat "$dir/pr")
+          head=$(cat "$dir/head")
+          case "$pr" in '' | *[!0-9]*) echo "::error title=Regen::bad pull request number"; exit 1 ;; esac
+          now=$(gh api "repos/$REPO/pulls/$pr" --jq '.head.sha + " " + .head.ref')
+          if [ "$now" != "$head $BRANCH" ]; then
+            echo "::error title=Regen::the pull request moved since the patch was made; label it again"
+            exit 1
+          fi
+          generated='^(pnpm-lock\.yaml|(.+/)?stackra\.manifest\.json|(.+/)?openapi\.json|.+/src/node/entities\.gen\.ts)$'
+          bad=$(git apply --numstat "$dir/regen.patch" | cut -f3 | grep -vE "$generated" || true)
+          if [ -n "$bad" ]; then
+            echo "::error title=Regen::the patch touches files that are not generated:"
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          echo "push=true" >> "$GITHUB_OUTPUT"
+
+      - name: App token
+        id: bot
+        if: steps.check.outputs.push == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout the pull request's branch
+        if: steps.check.outputs.push == 'true'
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          token: ${{ steps.bot.outputs.token }}
+          persist-credentials: true # zizmor: ignore[artipacked]
+          submodules: false
+
+      - name: Apply and push
+        if: steps.check.outputs.push == 'true'
+        env:
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          git apply --index "$RUNNER_TEMP/regen/regen.patch"
+          git -c user.name="stackra-bot[bot]" -c user.email="stackra-bot[bot]@users.noreply.github.com" \
+            commit -m "chore(regen): the lockfile and gen output, from CI"
+          git push origin "HEAD:refs/heads/$BRANCH"

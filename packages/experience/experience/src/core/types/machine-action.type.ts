@@ -11,5 +11,6 @@ export interface MachineAction {
   /** The window's title (`cancel-order.action.ts`). */
   readonly filename: string;
 
+  /** The action's code, shown as text. */
   readonly code: string;
 }

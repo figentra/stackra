@@ -55,6 +55,16 @@ describe("resolveTool", () => {
     }
   });
 
+  it("type-checks a service on gen's tsconfig without paths once gen wrote it", () => {
+    generated("tsconfig.typecheck.json");
+    expect(resolveTool("typecheck", member("service"), {})).toEqual({
+      command: "tsc",
+      args: ["--noEmit", "-p", ".stackra/tsconfig.typecheck.json"],
+      cwd: root,
+    });
+    expect(resolveTool("typecheck", member("package"), {}).args).toEqual(["--noEmit"]);
+  });
+
   it("passes the generated config when gen wrote one, and none otherwise", () => {
     expect(resolveTool("test", member("package"), {}).args).toEqual(["run"]);
     generated("vitest.config.ts");
@@ -115,6 +125,21 @@ describe("resolveTool", () => {
     });
   });
 
+  it("runs a package's e2e tier with the Playwright config gen wrote, and refuses without one", () => {
+    expect(() => resolveTool("test", member("package"), { tier: "e2e" })).toThrow(
+      "gen wrote no .stackra/playwright.e2e.config.ts",
+    );
+    generated("playwright.e2e.config.ts");
+    expect(resolveTool("test", member("package"), { tier: "e2e" })).toEqual({
+      command: "playwright",
+      args: ["test", "--config", ".stackra/playwright.e2e.config.ts"],
+      cwd: root,
+    });
+    expect(() => resolveTool("test", member("service"), { tier: "e2e" })).toThrow(
+      "e2e tests run in an app or a package",
+    );
+  });
+
   it("builds a package with tsdown and serves and dry-runs a worker with Wrangler", () => {
     expect(resolveTool("build", member("package"), {})).toEqual({
       command: "tsdown",
@@ -140,13 +165,13 @@ describe("resolveTool", () => {
     ]);
   });
 
-  it("runs a service's generated Encore app, and refuses before gen wrote it", () => {
-    expect(() => resolveTool("dev", member("service"), {})).toThrow(/\.stackra\/encore/);
-    mkdirSync(join(root, ".stackra", "encore"), { recursive: true });
+  it("runs a service's generated Encore app in the member root, and refuses before gen wrote it", () => {
+    expect(() => resolveTool("dev", member("service"), {})).toThrow(/stackra-encore/);
+    mkdirSync(join(root, "stackra-encore"), { recursive: true });
     expect(resolveTool("dev", member("service"), {})).toEqual({
       command: "encore",
       args: ["run"],
-      cwd: join(root, ".stackra", "encore"),
+      cwd: root,
     });
   });
 

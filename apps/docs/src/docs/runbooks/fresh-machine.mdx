@@ -17,7 +17,7 @@ A new machine needs only this repository, a few logins and the commands below. N
    - Clone `figentra/secrets` to `~/.stackra/secrets` (or set `STACKRA_SECRETS_DIR`). It holds encrypted files only.
    - Add a `bedrock` profile to `~/.aws/config`, then `aws sso login --profile bedrock`. OpenCode reaches Kimi K3 on Amazon Bedrock through it.
    - Sign in to Claude Code.
-6. **MCP servers:** `pnpm agents:sync` renders the gitignored `.mcp.json` from the committed `.mcp.yaml` (`pnpm install` does it too). Tokens come from the `agents` scope through `tools/scripts/mcp.sh` and `tools/scripts/secrets-exec.mjs`, decrypted in memory, never from a file.
+6. **MCP servers:** `pnpm spec:sync` renders the gitignored `.mcp.json` from the committed `.mcp.yaml` (`pnpm install` does it too). Tokens come from the `agents` scope through `tools/scripts/mcp.sh` and `tools/scripts/secrets-exec.mjs`, decrypted in memory, never from a file.
 7. **Check:** `pnpm doctor`.
 
 ## What `pnpm doctor` checks
@@ -30,7 +30,7 @@ A new machine needs only this repository, a few logins and the commands below. N
 | a `figentra/secrets` clone with an `agents` folder        | clone it to `~/.stackra/secrets`                        |
 | `aws sts get-caller-identity --profile bedrock` works     | `aws sso login --profile bedrock`                       |
 | `claude` and `opencode` on `PATH`                         | install them (step 4)                                   |
-| `pnpm agents:check` clean                                 | `pnpm agents:sync`                                      |
+| `pnpm exec fflow check` clean                             | `pnpm spec:sync`                                        |
 | `.mcp.json` present (warning only)                        | step 6                                                  |
 
 Doctor prints a ✔ / ✖ / ! line per check with the fix beneath each failure, and exits 1 if any required check fails. It runs only non-secret status commands and never prints a value.

@@ -16,6 +16,7 @@ import { Int, Str } from "@stackra/validation";
 import * as entry from "#core/index";
 import {
   AppendOnly,
+  MovesWithScope,
   Collection,
   HasPublicId,
   Index,
@@ -103,6 +104,10 @@ class LoyaltyAccount extends Model.with(HasPublicId("lac"), SoftDeletes) {
   memberId!: string;
 }
 
+class ScopedTicket extends Model.with(HasPublicId("tkt"), MovesWithScope) {
+  scopePath = "platform.acme";
+}
+
 class LedgerEntry extends Model.with(HasPublicId("lpe"), AppendOnly) {
   @ManyToOne(() => LoyaltyAccount)
   account: Ref<LoyaltyAccount> | null = null;
@@ -142,6 +147,7 @@ describe("@stackra/model", () => {
       "Model",
       "ModelAddition",
       "MoneySchema",
+      "MovesWithScope",
       "OnDelete",
       "OneToMany",
       "OneToOne",
@@ -192,6 +198,7 @@ describe("@stackra/model", () => {
     expect(Searchable.on(Product)?.filters).toEqual(["status", "collections.slug"]);
     expect(ManyToOne.members(OrderLine).get("variant")?.target()).toBe(Variant);
     expect(entry.traitsOf(LedgerEntry).map((trait) => trait.name)).toContain("append_only");
+    expect(entry.traitsOf(ScopedTicket).map((trait) => trait.name)).toContain("moves_with_scope");
     expect(new LedgerEntry().account).toBeNull();
     expect(new LoyaltyAccount().deletedAt).toBeNull();
     expect(new ProductCollection()).toBeInstanceOf(Model);

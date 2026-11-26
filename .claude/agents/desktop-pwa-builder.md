@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/desktop-pwa-builder.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/desktop-pwa-builder.md by fflow sync — edit the source, not this file -->
 
 # desktop-pwa-builder
 

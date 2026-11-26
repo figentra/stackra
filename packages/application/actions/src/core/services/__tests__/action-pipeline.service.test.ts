@@ -32,7 +32,12 @@
  *          bound `CallIsolation` a branch user's descriptor and context carry the tenant the isolation runs as as
  *          `scopeId`, and its approval binding and draft are written under it, with the branch on `branchScopeId`;
  *          a tenant-level user, a job and a system actor keep their tenant in both, a platform call has neither, and
- *          with no isolation bound the branch stays the `scopeId`.
+ *          with no isolation bound the branch stays the `scopeId`. And `ctx.detach()`: each step after the call is a new
+ *          writable isolation with the call's actor and scope that commits or rolls back alone, `RequestContext.detached()`
+ *          answers only inside the detached run, another store's value stays readable, a branch user's steps run as the
+ *          settled tenant, each `DETACHED_RUNS` wrapper is entered around a run and a lone step (never again for a step
+ *          inside a run), and with no isolation bound a step runs as it is. And `ctx.attempt`: a queued job's attempt from
+ *          the call options, none on a direct call.
  * Boundary: test only; every port is a stand-in driver in a map resolver, so each step is observed directly; the
  *           offline stores are the memory drivers.
  * Runtime: node (vitest)
@@ -40,6 +45,8 @@
  *                     (rule 24); ADR 0217 (decision 2); ADR 0327 (decision 6); ADR 0338 (decisions 1, 3 and 5); ADR
  *                     0337 (decisions 4 and 5); ADR 0456 (decisions 1 and 2).
  */
+import { AsyncLocalStorage } from "node:async_hooks";
+
 import { Cache } from "@stackra/cache/contracts";
 import type { CacheKey } from "@stackra/cache";
 import { type AnyClass, Driver } from "@stackra/container";
@@ -164,6 +171,9 @@ import { RequestContext } from "#core/services/request-context.service";
 import type { RuleEvaluation } from "#core/types/rule-evaluation.type";
 import type { RuleEvaluator } from "#core/types/rule-evaluator.type";
 import type { ActionContext } from "#core/types/action-context.type";
+import type { DetachedCall } from "#core/types/detached-call.type";
+import { DETACHED_RUNS } from "#contracts/constants/detached-runs.constant";
+import type { DetachedRun } from "#contracts/types/detached-run.type";
 import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
 import type { QueryContext } from "#core/types/query-context.type";
 import type { ReplicaPage } from "#core/types/replica-page.type";
@@ -3992,5 +4002,171 @@ describe("ActionPipeline tree tenant (STA-2561)", () => {
       scopeId: TREE_BRANCH.id,
       branchScopeId: TREE_BRANCH.id,
     });
+  });
+});
+
+/** An action that answers which attempt of a job it runs as. */
+class AttemptAction extends Action({
+  key: "order.attempt",
+  actors: [ActorKind.User, ActorKind.Job],
+}) {
+  async handle(_input: object, ctx: ActionContext): Promise<object> {
+    return { attempt: ctx.attempt ?? null };
+  }
+}
+
+describe("ActionPipeline job attempt (ctx.attempt)", () => {
+  it("hands a queued job's attempt to the context, and none to a direct call", async () => {
+    const { pipeline } = setup([[AttemptAction, new AttemptAction()]]);
+    await expect(
+      pipeline.execute(AttemptAction, {}, { actor: customer, attempt: { number: 3, last: true } }),
+    ).resolves.toEqual({ attempt: { number: 3, last: true } });
+    await expect(pipeline.execute(AttemptAction, {}, { actor: customer })).resolves.toEqual({
+      attempt: null,
+    });
+  });
+});
+
+/** An action that holds its call's isolation past its transaction, as a stream or a long agent loop does. */
+class StreamAction extends Action({
+  key: "order.stream",
+  actors: [ActorKind.User],
+}) {
+  /** Where the call's context is read, as a service below the action reads it. */
+  readonly request: RequestContext;
+
+  /** What `ctx.detach()` returned, held past the call. */
+  held: DetachedCall | undefined;
+
+  /** What `RequestContext.detached()` answered inside `handle`. */
+  inside: DetachedCall | undefined;
+
+  constructor(request: RequestContext) {
+    super();
+    this.request = request;
+  }
+
+  async handle(_input: object, ctx: ActionContext): Promise<string> {
+    this.held = ctx.detach();
+    this.inside = this.request.detached();
+    return "streaming";
+  }
+}
+
+describe("ActionPipeline detached call (ctx.detach)", () => {
+  const scope: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.acme" };
+
+  /** A pipeline with `StreamAction` over one storage, and the detached call its run left. */
+  async function streamed(isolation?: CallIsolation, actor: Actor = customer, at = scope) {
+    const storage = new AsyncContextStorageDriver();
+    const request = new RequestContext(storage);
+    const action = new StreamAction(request);
+    const { pipeline } = setup([
+      [ContextStorage, storage],
+      [StreamAction, action],
+      ...(isolation === undefined ? [] : [[CallIsolation, isolation] as const]),
+    ]);
+    await pipeline.execute(StreamAction, {}, { actor, scope: at });
+    if (action.held === undefined) throw new Error("handle did not detach");
+    return { detached: action.held, inside: action.inside, request };
+  }
+
+  it("runs each step after the call as a new writable isolation with the call's actor and scope", async () => {
+    const isolation = new LoggingIsolation();
+    const { detached } = await streamed(isolation);
+    expect(isolation.runs).toEqual([["usr_1", scope, false]]);
+    log = [];
+    await expect(detached.isolated(async () => "step 1")).resolves.toBe("step 1");
+    await expect(detached.isolated(async () => "step 2")).resolves.toBe("step 2");
+    expect(isolation.runs.slice(1)).toEqual([
+      ["usr_1", scope, false],
+      ["usr_1", scope, false],
+    ]);
+    expect(log).toEqual([
+      "isolation:write",
+      "isolation:commit",
+      "isolation:write",
+      "isolation:commit",
+    ]);
+    expect(detached).toMatchObject({ actor: customer, scope });
+    expect(Object.isFrozen(detached)).toBe(true);
+  });
+
+  it("rolls a step back when its work throws, and the next step still runs", async () => {
+    const isolation = new LoggingIsolation();
+    const { detached } = await streamed(isolation);
+    log = [];
+    await expect(
+      detached.isolated(async () => {
+        throw new Error("model down");
+      }),
+    ).rejects.toThrow("model down");
+    await detached.isolated(async () => undefined);
+    expect(log).toEqual([
+      "isolation:write",
+      "isolation:rollback",
+      "isolation:write",
+      "isolation:commit",
+    ]);
+  });
+
+  it("answers RequestContext inside run and each step, and never inside the call's own transaction", async () => {
+    const { detached, inside, request } = await streamed(new LoggingIsolation());
+    expect(inside).toBeUndefined();
+    expect(request.detached()).toBeUndefined();
+    const seen = await detached.run(async () => {
+      await Promise.resolve();
+      const step = await detached.isolated(async () => [request.detached(), request.current().key]);
+      return [request.detached(), ...step];
+    });
+    expect(seen).toEqual([detached, detached, "order.stream"]);
+  });
+
+  it("keeps a value another store holds around the loop readable inside each step", async () => {
+    const { detached } = await streamed(new LoggingIsolation());
+    const token = new AsyncLocalStorage<string>();
+    const read = await token.run("held-caller-token", () =>
+      detached.run(() => detached.isolated(async () => token.getStore())),
+    );
+    expect(read).toBe("held-caller-token");
+  });
+
+  it("runs a branch user's steps as the tenant the isolation settled", async () => {
+    const branchUser: Actor = {
+      kind: ActorKind.User,
+      id: "usr_7",
+      realm: Realm.Customer,
+      scopeId: TREE_BRANCH.id,
+    };
+    const { detached, request } = await streamed(new TreeIsolation(), branchUser, TREE_BRANCH);
+    expect(detached).toMatchObject({ actor: branchUser, scope: TREE_BRANCH });
+    const scopeId = await detached.isolated(async () => request.current().scopeId);
+    expect(scopeId).toBe(TREE_TOP);
+  });
+
+  it("enters each DETACHED_RUNS wrapper around run and a lone step, never again for a step inside run", async () => {
+    const entered: string[] = [];
+    const wrapper: DetachedRun = async (step, work) => {
+      entered.push("enter");
+      expect(typeof step).toBe("function");
+      return work();
+    };
+    DETACHED_RUNS.add(wrapper);
+    try {
+      const { detached } = await streamed(new LoggingIsolation());
+      await detached.run(() => detached.isolated(async () => undefined));
+      expect(entered).toEqual(["enter"]);
+      await detached.isolated(async () => undefined);
+      expect(entered).toEqual(["enter", "enter"]);
+    } finally {
+      DETACHED_RUNS.delete(wrapper);
+    }
+  });
+
+  it("runs a step as it is when no isolation is bound", async () => {
+    const { detached } = await streamed();
+    log = [];
+    await expect(detached.isolated(async () => "plain")).resolves.toBe("plain");
+    expect(log).toEqual([]);
   });
 });

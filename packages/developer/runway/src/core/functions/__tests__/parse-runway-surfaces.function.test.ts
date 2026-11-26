@@ -60,6 +60,9 @@ function issuePaths(run: () => unknown): string[] {
 
 const withSurfaces = (surfaces: unknown) => () => parseRunway("root", { ...ROOT, surfaces });
 const withMobile = (mobile: unknown) => () => parseRunway("root", { ...ROOT, mobile });
+/** A staff app whose white-label build needs `entitlement`. */
+const whiteLabel = (entitlement: string) =>
+  withMobile({ staff: { ...STAFF, whiteLabel: { entitlement } } });
 
 /** Parses the staff app offering `providers` for social sign-in. */
 const social = (providers: string[]) =>
@@ -95,7 +98,7 @@ describe("parseRunway surfaces and mobile", () => {
           assets: "assets/mobile/academorix",
           tablet: true,
           whiteLabel: {
-            entitlement: "entitlement:academorix:white-label",
+            entitlement: "academy.white_label",
             modes: ["managed", "bring-your-own"],
           },
         },
@@ -105,6 +108,17 @@ describe("parseRunway surfaces and mobile", () => {
       "managed",
       "bring-your-own",
     ]);
+  });
+
+  it("refuses a white-label entitlement that is not an entitlement key, at config load", () => {
+    for (const malformed of [
+      "entitlement:academorix:white-label",
+      "storefront",
+      "Storefront.WhiteLabel",
+      "storefront.white-label",
+    ])
+      expect(issuePaths(whiteLabel(malformed))).toEqual(["mobile.staff.whiteLabel.entitlement"]);
+    expect(whiteLabel("storefront.white_label")).not.toThrow();
   });
 
   it("accepts a declarative ops contribution over registered blocks", () => {

@@ -1,0 +1,9 @@
+{
+  "basics": {
+    "brand_label": "Brand colour",
+    "brand_hint": "Type a hex code, or step it with the arrow keys.",
+    "accent_label": "Invoice accent",
+    "value": "Saved as {value}",
+    "cleared": "nothing yet"
+  }
+}

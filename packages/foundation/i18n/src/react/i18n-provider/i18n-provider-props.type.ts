@@ -7,6 +7,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0080, ADR 0295 (decision 7: createApp mounts the contexts), ADR 0297 (decision 4).
  */
+import type { CalendarSystem } from "#core/enums/calendar-system.enum";
 import type { ReactNode } from "react";
 
 import type { Locale } from "#core/enums/locale.enum";
@@ -34,6 +35,12 @@ export interface I18nProviderProps {
    * allows a scope to choose; omitted, the configured default applies.
    */
   readonly numerals?: NumberingSystem | undefined;
+
+  /**
+   * The calendar dates are written in: the tenant's `DisplaySettings.calendar`, read at run time. Omitted, Gregorian
+   * (ADR 0192 decision 3).
+   */
+  readonly calendar?: CalendarSystem | undefined;
 
   /**
    * A native app's region formats (`regionFormat`): the phone's region, clock, week start and time zone, which replace

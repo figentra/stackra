@@ -1,5 +1,73 @@
 # @stackra/branding
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/settings@0.33.1
+  - @stackra/filesystem@0.33.1
+  - @stackra/media@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/tokens@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [4937622]
+- Updated dependencies [93d63bb]
+- Updated dependencies [628b60d]
+- Updated dependencies [03da426]
+- Updated dependencies [93d63bb]
+  - @stackra/i18n@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/settings@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/media@0.33.0
+  - @stackra/filesystem@0.33.0
+  - @stackra/tokens@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/filesystem@0.32.0
+  - @stackra/media@0.32.0
+  - @stackra/tokens@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/settings@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [0f05f60]
+  - @stackra/i18n@0.31.0
+  - @stackra/settings@0.31.0
+  - @stackra/media@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/filesystem@0.31.0
+  - @stackra/tokens@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes

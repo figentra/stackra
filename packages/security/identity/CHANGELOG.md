@@ -1,5 +1,139 @@
 # @stackra/identity
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: A service no longer refuses to boot with "its drivers are X, Y, and no config field selects one" for six ports: each now has a config field that picks its driver, with a default. `DatabaseConfig.driver` selects `Database` (`postgres`; `memory` stays the testing driver a test picks with `useDrivers`). The new `SettingsConfig` (key `settings`) holds `store` for `SettingValueStore` and `floors` for `SettingFloorSource`, both `memory`. The new `StorageConfig` (key `storage`) holds `driver` for `Storage` (`memory`; an app still gets `web` or `native` from gen's per-runtime defaults, which come first). `IdentityConfig` gains `sessionStore` for `SessionStore` and `approvalChallenges` for `AppApprovalChallenges`, both `memory`. The ports `Database`, `Storage` and `AppApprovalChallenges` declare their keys, so `DriverName<…>` narrows to their drivers. Production sets `settings.store`, `settings.floors`, `storage.driver` and `identity.approval_challenges` in config to choose its own drivers.
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/storage@0.33.1
+  - @stackra/scheduler@0.33.1
+  - @stackra/outbox@0.33.1
+  - @stackra/queue@0.33.1
+  - @stackra/iam@0.33.1
+  - @stackra/privacy@0.33.1
+  - @stackra/scope@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/clients@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/market-packs@0.33.1
+  - @stackra/transport@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/query@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [7c34d68]
+- Updated dependencies [26a2d54]
+- Updated dependencies [7c34d68]
+- Updated dependencies [7c34d68]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/actions@0.33.0
+  - @stackra/scope@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/iam@0.33.0
+  - @stackra/queue@0.33.0
+  - @stackra/market-packs@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/clients@0.33.0
+  - @stackra/outbox@0.33.0
+  - @stackra/scheduler@0.33.0
+  - @stackra/privacy@0.33.0
+  - @stackra/query@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/storage@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/transport@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [2c6be3c]
+- Updated dependencies [54db249]
+  - @stackra/config@0.32.0
+  - @stackra/scope@0.32.0
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/clients@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/market-packs@0.32.0
+  - @stackra/outbox@0.32.0
+  - @stackra/queue@0.32.0
+  - @stackra/scheduler@0.32.0
+  - @stackra/privacy@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/query@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/transport@0.32.0
+  - @stackra/storage@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [7179d1a]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/clients@0.31.0
+  - @stackra/outbox@0.31.0
+  - @stackra/queue@0.31.0
+  - @stackra/scheduler@0.31.0
+  - @stackra/iam@0.31.0
+  - @stackra/privacy@0.31.0
+  - @stackra/scope@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/query@0.31.0
+  - @stackra/storage@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/market-packs@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/transport@0.31.0
+  - @stackra/validation@0.31.0
+
 ## 0.30.0
 
 ### Minor Changes
