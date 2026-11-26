@@ -1,14 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: `MailTools`, what `useMail()` returns to a mail body: translation, money formatting and asset URLs in the
- *          recipient's locale, plus the locale and its direction for `<Html lang dir>`.
- * Boundary: type only; every member is safe to destructure (`const { t, money, locale, dir } = this.mail`).
+ *          recipient's locale, the locale and its direction for `<Html lang dir>`, and `richText` for tenant or client
+ *          rich-text HTML, sanitized.
+ * Boundary: type only; every member is safe to destructure (`const { t, money, locale, dir } = this.mail`). `richText`
+ *           is the only way a mail body puts HTML it did not write into a mail (`react/no-danger` holds in `*.mail.tsx`).
  * Runtime: isomorphic
  * Governing contract: ADR 0080 (i18n keys), ADR 0192 (digits), ADR 0220 (money in minor units), ADR 0234 (assets by
- *                     key), ADR 0305 (class components: hooks as fields).
+ *                     key), ADR 0305 (class components: hooks as fields); STA-2582 (`sanitizeHtml` on mailed HTML).
  */
 import type { AssetEntry } from "@stackra/assets";
+import type { HtmlPolicy } from "@stackra/csp";
 import type { I18nKey, Locale } from "@stackra/i18n";
+import type { ReactElement } from "react";
 
 /** The recipient-side helpers of one mail render. */
 export interface MailTools {
@@ -34,4 +38,13 @@ export interface MailTools {
 
   /** The public URL of a module asset (`asset(Assets.orders.public.logo_svg)`). */
   readonly asset: (entry: AssetEntry) => string;
+
+  /**
+   * Tenant or client rich-text `html` (a branch's welcome note, an editor's message) as a `<div>` holding only what
+   * `sanitizeHtml` keeps under the rich-text default (`RICH_TEXT_HTML_POLICY`): no script, style, event handler,
+   * `style` attribute, image or non-http(s)/mailto link. `policy` can only narrow that default: it is intersected with
+   * it (`narrowHtmlPolicy`), so a tag or attribute the default refuses (an `img` and its `src`, a link `target`) is
+   * dropped whatever `policy` allows.
+   */
+  readonly richText: (html: string, policy?: HtmlPolicy) => ReactElement;
 }
