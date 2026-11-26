@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: entry test of `@stackra/i18n/react`: it exports exactly the template's six hooks plus the provider the
- *          generated `Contexts` mounts, and the hook signatures match how the template calls them.
+ * Purpose: entry test of `@stackra/i18n/react`: it exports exactly the template's six hooks, the provider the
+ *          generated `Contexts` mounts and the kit's `LocaleSwitcher`, and the hook signatures match how the template
+ *          calls them.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 15).
@@ -16,6 +17,7 @@ describe("@stackra/i18n/react", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(react).sort()).toEqual([
       "I18nProvider",
+      "LocaleSwitcher",
       "useDateTime",
       "useLocale",
       "useLocaleChoice",

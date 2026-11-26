@@ -5,7 +5,8 @@
  *          naming the table's count, and changes nothing; on clean data it applies, each of `award_kinds` and `awards`
  *          has `tenant_id` NOT NULL, `pol_<table>_tenant_id` as its one permissive policy and the scope path
  *          restrictive, and `assertRowSecurity` proves one tenant never sees, nor moves a row to, another's, with no
- *          warning for these tables.
+ *          warning for these tables; `award_verifications`, which has no row-level security by design (ADR 0368 decision
+ *          5), is listed as a platform table, as the strict audit requires.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. The tests share one database and run in order.
  *           The container's superuser writes the null row, as row-level security never restricts it.
  * Runtime: node (vitest)
@@ -104,7 +105,12 @@ describe("ContractAchievementsTenancyMigration on Postgres", () => {
   it("isolates each tenant's rows under assertRowSecurity, with no warning for these tables", async () => {
     const warnings = await assertRowSecurity(postgres.database, {
       ...tenantIsolationOptions(),
-      strict: false,
+      platform: new Map([
+        [
+          "achievements.award_verifications",
+          "ADR 0368 decision 5: a token hash, an award id and a scope, read before any tenant is known",
+        ],
+      ]),
     });
     expect(
       warnings.filter((warning) =>

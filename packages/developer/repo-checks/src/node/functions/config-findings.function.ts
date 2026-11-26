@@ -54,7 +54,10 @@ export function configFindings(context: RepoContext): RawFinding[] {
       ),
     ...of(
       "gitignore-stackra",
-      checkGitignore(existsSync(gitignore) ? readFileSync(gitignore, "utf8") : undefined),
+      checkGitignore(
+        existsSync(gitignore) ? readFileSync(gitignore, "utf8") : undefined,
+        context.files.some((file) => /^services\/[^/]+\/package\.json$/.test(file)),
+      ),
     ),
     ...ignoredGoldenFindings(context),
     ...constitutionFindings(context),

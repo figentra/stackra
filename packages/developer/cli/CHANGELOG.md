@@ -1,5 +1,231 @@
 # @stackra/cli
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: `stackra dev --surface` and `stackra dev --product` go on when `stackra gen` refuses a member. gen already runs every
+  member and writes what it can before it exits 1, so one member's refusal no longer stops every surface: dev names the
+  refusal on stderr and serves with what gen wrote. Any other gen failure still stops dev, and a surface whose own
+  config gen did not write still stops as before. `stackra build` and `stackra gen --check` keep stopping on a refusal.
+- e885a38: A service whose configuration reads a required `@Secret` at boot starts under a local `stackra dev`. New command:
+  `stackra dev secrets init [--rotate] [--from <file>]` writes a random dev value for each required secret the
+  workspace's running members declare, and for each name a member's runway lists under `environments.dev.secrets`
+  (optional in the configuration or not), to `.stackra/dev-secrets.json` (gitignored, mode 600). It prints names, never a
+  value, and lists the names a random value would break (a connection string, the events relay's key pair) as needing
+  a value. An existing file only gains its missing names unless `--rotate`; `--from` copies a name shared with another
+  repository. `stackra dev` adds the file's values for a member's own declared names to its tool run. The testbed upload
+  excludes the file (ADR 0525, amendment of 2026-11-10).
+- d60f9d5: A service's Encore app resolves its `#` imports, and its typecheck no longer resolves a compiled workspace package's
+  `#` imports into the service. Encore honours only the first `./` target of a tsconfig `paths` key, so
+  `stackra encore:prepare` writes, and `stackra validate --repository` expects, each package.json `imports` key with its
+  first target only (`pathsOfImports`). And because tsc applies `paths` to every package a service compiles, gen writes
+  the service's `.stackra/tsconfig.typecheck.json` (its tsconfig without `paths`), and `stackra typecheck` runs on it in a
+  service. After upgrading, run `stackra encore:prepare` in each service and regenerate (ADR 0091, rule 4 as corrected
+  2026-11-10).
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- Updated dependencies [d60f9d5]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+  - @stackra/repo-checks@0.33.1
+  - @stackra/gen@0.33.1
+  - @stackra/runway@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/mcp@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/skills@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 41a5ff0: `stackra test --tier e2e` runs in a package too: it uses the `.stackra/playwright.e2e.config.ts` gen writes for a package that has a `.e2e.page.tsx`, and refuses with a hint when there is none. A service or a worker still refuses.
+
+### Patch Changes
+
+- 0ed69c1: The duplicate-export check now exempts five names that two packages each declare for a different concept: `FooterLink`, `RawBody`, `Surface`, `SurfaceKind` and `settingsKeyOf`. Each entry gives its reason. `validate` on main no longer reports them.
+- 89253a8: `stackra duplicate-exports` allows five names that today's kit blocks share with older exports, each with its reason:
+  
+  - `CalendarSystem`: ui derives its picker list from i18n's enum.
+  - `LocaleSwitcher` and `LocaleSwitcherProps`: ui's drawn switcher, and i18n's headless kit block that binds it.
+  - `PushPermission` and `PushRegistration`: notifications' registration port and its answer, and platform's push address and permission hook.
+  
+  Main's `validate --repository` reported them.
+- 6186329: A service's tsconfig no longer needs `baseUrl` for Encore. TypeScript 7 removed `baseUrl` (TS5102), so the rule from 0.30.0 broke typecheck in a TS 7 repository (INVOICING).
+  
+  - **The service check:** it now requires only `compilerOptions.paths` equal to package.json `imports`, which resolve from the tsconfig's folder. It refuses a `baseUrl`.
+  - **`stackra encore:prepare`:**
+    - it removes an existing `baseUrl`;
+    - it writes package.json and tsconfig.json with gen's `formatJson`, now exported from `@stackra/gen`, in the repository formatter's layout, so the format check passes after it.
+  
+  Bump step: run `stackra encore:prepare` in each service, or delete `"baseUrl": "."` from its tsconfig.
+  
+  `stackra encore:prepare` also keeps a tsconfig's file contract written inside the braces (NOTIFY's services). Before, it kept only the `//` lines above the object, so the contract was dropped and the format check failed. `encore.dev` stays the literal catalog version (ADR 0091 rule 3): Encore rewrites `catalog:` to `^<version>`, which breaks the frozen install.
+- 6186329: The `encore.dev` version a service pins can live in the root package.json as `stackra.encore`, so a repository whose
+  services pin the literal keeps no unused catalog entry for it. `encoreReferenceVersion` (exported from
+  `@stackra/repo-checks/node`) reads `stackra.encore` first and falls back to the default catalog's `encore.dev`; the
+  service check and `stackra encore:prepare` use it. A repository that keeps the version in its catalog needs no change.
+- 03da426: `runAsTenant` (`@stackra/tenancy/testing`) now sets `app.tenant_id` transaction-locally in every transaction that starts inside it on a connected database (a factory's flush, a `database.transaction`), so a test's setup rows pass the tenant policy under a role without `BYPASSRLS`, instead of being refused by row-level security. It still opens no transaction itself, sets no scope setting and proves nothing about isolation (`asTenant` does). The session-setting check allows this one testing path.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [6186329]
+- Updated dependencies [6186329]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [3c47a3a]
+- Updated dependencies [2e3e323]
+- Updated dependencies [93d63bb]
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4bf092e]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [93d63bb]
+- Updated dependencies [7d0e16f]
+- Updated dependencies [6186329]
+- Updated dependencies [52d2593]
+- Updated dependencies [0f7448f]
+- Updated dependencies [89253a8]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/repo-checks@0.33.0
+  - @stackra/gen@0.33.0
+  - @stackra/runway@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/mcp@0.33.0
+  - @stackra/skills@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [597e3e8]
+- Updated dependencies [ba6eed7]
+  - @stackra/config@0.32.0
+  - @stackra/gen@0.32.0
+  - @stackra/repo-checks@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/mcp@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/skills@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [73ea174]
+- Updated dependencies [5585893]
+- Updated dependencies [2ba26cd]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+- Updated dependencies [137a7f9]
+  - @stackra/gen@0.31.0
+  - @stackra/runway@0.31.0
+  - @stackra/repo-checks@0.31.0
+  - @stackra/mcp@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/skills@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 5b064da: New `stackra encore:prepare`: in a service, pins `encore.dev` to the default catalog's version and writes tsconfig `baseUrl` and `paths` from package.json `imports`, the two things Encore needs to build the app at the member root. Run `pnpm install` after a pin change.
+- 0765ecc: Runway publishes a pull request's preview (STA-1907, ADR 0289 decision 7).
+  
+  - `publishProduct({ environment: "preview", pullRequest: n })` uploads the console bundle and writes
+    `host:<product>-pr-<n>.figentra.cloud` and `release:<product>:console:pr-<n>`, both expiring after 7 days, with no canary; the
+    answer carries `host`. A host row another product holds is refused before any upload. `pullRequestPreviewHost(product, n)` and `PULL_REQUEST_PREVIEW_SETTINGS` are exported.
+  - `EdgeKvWriter.put(key, value, ttlSeconds?)` takes an optional expiry; `WranglerEdgeKvDriver` passes it as `--ttl`.
+  - `EdgeKvWriter.read(key)` answers the row or `null`; every driver implements it (wrangler's `kv key get --text`,
+    where the API's 404 is `null`).
+  - The product command takes `--pr <n>` (or `STACKRA_PULL_REQUEST`) with `--env preview` (digits only), and prints the host.
+
+### Patch Changes
+
+- be079e7: `stackra testbed run` gives every health and slot probe a 60 s deadline, as `testbed` does since figentra/testbed#22.
+  One box that keeps its SSH session open without answering (still booting, or a wedged Session Manager session) no
+  longer stalls a waiting run forever: that box counts as unhealthy for one look, and the next look tries it again.
+- c8e7592: `StoredSetting` and `StoredSettingRevision` are owned: both take `BelongsToTenantOrPlatform`, so a row's `tenant_id` is the running `withTenant` call's tenant, or NULL in a platform call. `@stackra/settings` now depends on `@stackra/tenancy`. The `settings:diff` and `settings:apply` runner writes through `TenantIsolationService.withTenant` as a system actor inside its `withScope` transaction, at a tenant node as that tenant and at the root or a product node as the platform, and no longer sets `app.tenant_id` itself. `@stackra/cli` drops the runner from `SESSION_SETTING_ALLOWED`.
+- 11def65: The settings tables are tenant-owned in the platform form (migration `settings.0004_contract_settings_tenancy`):
+  `stored_settings` and `stored_setting_revisions` get a nullable `tenant_id`, filled from `app.tenant_id` by default (a
+  NULL row is the platform's), forced row-level security and the platform policies. The migration backfills a row at a
+  tenant node (`nlevel(scope_path) = 3`) from its scope and keeps a row at the root or a product node as a platform row.
+  A user's row is now keyed `(tenant_id, group_key, user_id)` (NULLs not distinct), and every user lookup names the
+  session's own owner. New system function `settings.claim_due_revisions` (no runtime caller yet).
+  
+  The `settings:diff` and `settings:apply` runner (`openSettingsSession`) now sets `app.tenant_id` by the same rule: a
+  tenant node is its own owner, the root and a product node are the platform's, and a node below a tenant node is refused
+  (the runner cannot read its tenant without the scope tree yet). `@stackra/cli`'s session-settings check allows that one
+  write.
+  
+  Upgrade: the migration refuses, changing nothing, while a setting or revision sits below a tenant node or belongs to a
+  user (a user row names no scope, so its tenant cannot be read, and as a platform row every tenant could read it).
+  Record those values, delete the rows (`nlevel(scope_path) > 3`, or `user_id is not null`) from both tables, migrate,
+  then write the values again from a session in each node's or user's tenant.
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [04d04e4]
+- Updated dependencies [0bf0a7f]
+- Updated dependencies [7d60f82]
+- Updated dependencies [418e195]
+- Updated dependencies [e1e95d1]
+- Updated dependencies [5b064da]
+- Updated dependencies [dab9009]
+- Updated dependencies [e1e1b5e]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+- Updated dependencies [5b064da]
+- Updated dependencies [a3a3190]
+- Updated dependencies [0765ecc]
+- Updated dependencies [f4df473]
+- Updated dependencies [cd2496b]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+  - @stackra/gen@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/repo-checks@0.30.0
+  - @stackra/runway@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/mcp@0.30.0
+  - @stackra/skills@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/support@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

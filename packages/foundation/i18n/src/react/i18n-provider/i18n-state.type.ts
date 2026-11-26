@@ -8,6 +8,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0080, ADR 0192.
  */
+import type { CalendarSystem } from "#core/enums/calendar-system.enum";
 import type { I18nConfig } from "#config/i18n.config";
 import type { Locale } from "#core/enums/locale.enum";
 import type { NumberingSystem } from "#core/enums/numbering-system.enum";
@@ -24,6 +25,9 @@ export interface I18nState {
 
   /** The digits every formatter writes: the customer's setting where allowed, else `I18nConfig.numerals`. */
   readonly numerals: NumberingSystem;
+
+  /** The calendar every date formatter writes in: the tenant's display setting, else Gregorian. */
+  readonly calendar: CalendarSystem;
 
   /** The active locale's week start and clock: its defaults with the configured override (a date picker reads it). */
   readonly format: LocaleFormat;

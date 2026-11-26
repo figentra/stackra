@@ -13,6 +13,7 @@
 export { awsRuntime } from "#node/functions/aws-runtime.function";
 export { awsRuntimeStack } from "#node/functions/aws-runtime-stack.function";
 export { ensureDatabasePasswords } from "#node/functions/ensure-database-passwords.function";
+export { ensureGotenbergCredentials } from "#node/functions/ensure-gotenberg-credentials.function";
 export { publishResourceSecrets } from "#node/functions/publish-resource-secrets.function";
 export { readRuntimePlan } from "#node/functions/read-runtime-plan.function";
 export type { AwsRuntime } from "#node/types/aws-runtime.type";

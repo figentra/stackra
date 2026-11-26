@@ -8,7 +8,7 @@
  *          `EmptyStateSpec`, `RowActionsSpec`, `BulkActionsSpec`, `FormFieldSpec`, `FilterSpec`, `TableColumnSpec`) with their
  *          `FieldControl` and `FilterKind` enums, `pageContextOf` (the AI page context a panel page publishes), and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
- *           (`CountMetric$`, `MoneyMetric$`, `SavedView$` with its `SavedViewSort$`, `SavedViewGroup$` and
+ *           (`CountMetric$`, `MoneyMetric$`, `PercentMetric$`, `SavedView$` with its `SavedViewSort$`, `SavedViewGroup$` and
  *           `SavedViewTotal$`, `TimeRangeInput$`), folding the old `./schemas` entry into `.` so no
  *           symbol is exported from two entries. The builder records, the widget and resource registries, the panel's own i18n keys
  *           and the renderers' helpers are internal: the `./react` and `./native` entries import them by path. The
@@ -36,6 +36,7 @@ export { Filter } from "#core/constants/filter.constant";
 export { FormField } from "#core/constants/form-field.constant";
 export { FormStep } from "#core/constants/form-step.constant";
 export { MONEY_METRIC_SCHEMA as MoneyMetric$ } from "#core/constants/money-metric-schema.constant";
+export { PERCENT_METRIC_SCHEMA as PercentMetric$ } from "#core/constants/percent-metric-schema.constant";
 export { Placement } from "#core/constants/placement.constant";
 export { Relation } from "#core/constants/relation.constant";
 export { SAVED_VIEW_GROUP_SCHEMA as SavedViewGroup$ } from "#core/constants/saved-view-group-schema.constant";
@@ -50,6 +51,7 @@ export { ActionPlace } from "#core/enums/action-place.enum";
 export { Aggregate } from "#core/enums/aggregate.enum";
 export { Count } from "#core/enums/count.enum";
 export { DisplayKind } from "#core/enums/display-kind.enum";
+export { MetricFormat } from "#core/enums/metric-format.enum";
 export { DocumentLayout } from "#core/enums/document-layout.enum";
 export { ExportFormat } from "#core/enums/export-format.enum";
 export { FieldControl } from "#core/enums/field-control.enum";
@@ -69,6 +71,7 @@ export { describeResource } from "#core/functions/describe-resource.function";
 export { defineSlot } from "#core/functions/define-slot.function";
 export { describeWidget } from "#core/functions/describe-widget.function";
 export { document } from "#core/functions/document.function";
+export { fieldKindOf } from "#core/functions/field-kind-of.function";
 export { fillSlot } from "#core/functions/fill-slot.function";
 export { groupRows } from "#core/functions/group-rows.function";
 export { lineEditorOf } from "#core/functions/line-editor-of.function";
@@ -85,6 +88,7 @@ export { widget } from "#core/functions/widget.function";
 export { ViewStore } from "#core/ports/view-store.port";
 export { CountMetric } from "#core/schemas/count-metric.schema";
 export { MoneyMetric } from "#core/schemas/money-metric.schema";
+export { PercentMetric } from "#core/schemas/percent-metric.schema";
 export { SavedViewGroup } from "#core/schemas/saved-view-group.schema";
 export { SavedViewSort } from "#core/schemas/saved-view-sort.schema";
 export { SavedViewTotal } from "#core/schemas/saved-view-total.schema";
@@ -94,6 +98,7 @@ export type { Actions } from "#core/types/actions.type";
 export type { ActionButtonSpec } from "#core/types/action-button-spec.type";
 export type { BulkActionsSpec } from "#core/types/bulk-actions-spec.type";
 export type { BindRef } from "#core/types/bind-ref.type";
+export type { FieldKind } from "#core/types/field-kind.type";
 export type { PanelBlockNode } from "#core/types/panel-block-node.type";
 export type { Built } from "#core/types/built.type";
 export type { ColumnBuilder } from "#core/types/column-builder.type";

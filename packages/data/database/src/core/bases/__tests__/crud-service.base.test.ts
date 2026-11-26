@@ -629,10 +629,19 @@ describe("CrudService.repath", () => {
     expect(model).toBe(Order);
     // the raw condition is a symbol key described as `raw('<sql>')`
     expect(Object.getOwnPropertySymbols(where)[0]?.description).toContain(
-      '"scope_path" <@ ?::ltree',
+      '"scope_path"::ltree <@ ?::ltree',
     );
-    expect(data.scopePath.sql).toBe('?::ltree || subpath("scope_path", nlevel(?::ltree))');
-    expect(data.scopePath.params).toEqual(["platform.b.c", "platform.a"]);
+    // the moved node's own row takes the new path itself; the rows below keep their tail
+    expect(data.scopePath.sql).toBe(
+      'case when "scope_path"::ltree = ?::ltree then ?::ltree ' +
+        'else ?::ltree || subpath("scope_path"::ltree, nlevel(?::ltree)) end',
+    );
+    expect(data.scopePath.params).toEqual([
+      "platform.a",
+      "platform.b.c",
+      "platform.b.c",
+      "platform.a",
+    ]);
   });
 
   it("moves nothing when the paths are the same", async () => {
@@ -694,11 +703,13 @@ describe("CrudService tree (HasTree)", () => {
     ];
     expect(model).toBe(Category);
     expect(Object.getOwnPropertySymbols(where)[0]?.description).toContain(
-      '"tree_path" <@ ?::ltree',
+      '"tree_path"::ltree <@ ?::ltree',
     );
     expect(data["treePath"]).toMatchObject({
-      sql: '?::ltree || subpath("tree_path", nlevel(?::ltree))',
-      params: ["cat_c.cat_b", "cat_a.cat_b"],
+      sql:
+        'case when "tree_path"::ltree = ?::ltree then ?::ltree ' +
+        'else ?::ltree || subpath("tree_path"::ltree, nlevel(?::ltree)) end',
+      params: ["cat_a.cat_b", "cat_c.cat_b", "cat_c.cat_b", "cat_a.cat_b"],
     });
     expect(data["parentId"]).toMatchObject({
       sql: 'case when "id" = ? then ? else "parent_id" end',
@@ -706,7 +717,7 @@ describe("CrudService tree (HasTree)", () => {
     });
     await new CategoryService().move("cat_b", null);
     expect(em.nativeUpdate.mock.calls[1]?.[2]).toMatchObject({
-      treePath: { params: ["cat_b", "cat_a.cat_b"] },
+      treePath: { params: ["cat_a.cat_b", "cat_b", "cat_b", "cat_a.cat_b"] },
     });
   });
 

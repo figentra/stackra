@@ -13,7 +13,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 
@@ -21,7 +21,12 @@ import { type ChecklistTemplate, ChecklistTemplate$ } from "#core/index";
 
 /** A scope's checklist. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Checklist extends Model.with(HasPublicId("wfc"), BelongsToTenant, Timestamps) {
+export class Checklist extends Model.with(
+  HasPublicId("wfc"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The template as last seeded. */
   // reason: ChecklistTemplate is the output of this package's shipped ChecklistTemplate$, so the hatch names that schema
   @Field(ChecklistTemplate$)

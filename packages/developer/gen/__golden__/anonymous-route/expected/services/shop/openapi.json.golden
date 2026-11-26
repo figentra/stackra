@@ -7,7 +7,7 @@
     "x-stackra-member": "shop"
   },
   "paths": {
-    "/app/orders/{orderId}/cancel": {
+    "/public/orders/{orderId}/cancel": {
       "put": {
         "operationId": "shop_order_cancel",
         "summary": "CancelOrderAction",

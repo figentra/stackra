@@ -77,4 +77,7 @@ export interface CallDescriptor {
 
   /** What an API key must hold to call this operation; absent when the operation is not `public`. */
   readonly public?: CallPublic;
+
+  /** `true` when the action answers a stream (`stream: true`), so audit and access see a streamed call; else absent. */
+  readonly stream?: true;
 }

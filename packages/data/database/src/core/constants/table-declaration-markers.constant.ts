@@ -16,8 +16,12 @@
 
 /** The comment prefix of each declaration in a compiled migration. */
 export const TABLE_DECLARATION_MARKERS = {
+  /** The marker `t.platformTable(reason)` writes. */
   platformTable: "-- stackra:platform-table",
+  /** The marker `t.reviewedPolicy(reason, policies)` writes. */
   reviewedPolicy: "-- stackra:reviewed-policy",
+  /** The marker `t.systemAccess(options)` writes. */
   systemAccess: "-- stackra:system-access",
+  /** The marker `schema.systemFunction(options)` writes. */
   systemFunction: "-- stackra:system-function",
 } as const;

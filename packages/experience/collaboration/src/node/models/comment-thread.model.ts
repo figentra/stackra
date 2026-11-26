@@ -12,14 +12,19 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 
 import type { ThreadStatus } from "#contracts/enums/thread-status.enum";
 
 /** A comment thread. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class CommentThread extends Model.with(HasPublicId("cth"), BelongsToTenant, Timestamps) {
+export class CommentThread extends Model.with(
+  HasPublicId("cth"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The scope node the record belongs to. */
   scopeId!: PublicId<"scp">;
 

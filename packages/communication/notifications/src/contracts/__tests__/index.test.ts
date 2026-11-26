@@ -3,7 +3,8 @@
  * Purpose: the consumer contract of the `./contracts` entry: the channel ports (the template's `MailTransport`
  *          among them) and the inbound `WhatsAppInbound` port are exported as values, nothing else is, and the types they exchange
  *          resolve (`ContentFreeData` among them, STA-964; `NotificationDeliveryEvent` with its exact keys and statuses,
- *          stackra-207; the `PreferenceStore` port, `MailAttachment` and `MailFeature`, stackra-218).
+ *          stackra-207; the `PreferenceStore` port, `MailAttachment` and `MailFeature`, stackra-218; the
+ *          `NotificationPreferencesClient` and `PushRegistration` client ports, STA-1983).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -19,9 +20,11 @@ import type {
   MailAttachment,
   MailFeature,
   NotificationDeliveryEvent,
+  NotificationPreferenceRow,
   OutboundChatMessage,
   OutboundMail,
   OutboundSms,
+  PushPermission,
 } from "#contracts/index";
 
 describe("@stackra/notifications/contracts", () => {
@@ -31,7 +34,9 @@ describe("@stackra/notifications/contracts", () => {
       "InAppStore",
       "MailTransport",
       "NotificationChannel",
+      "NotificationPreferencesClient",
       "PreferenceStore",
+      "PushRegistration",
       "PushTokenStore",
       "PushTransport",
       "SendLog",
@@ -63,5 +68,7 @@ describe("@stackra/notifications/contracts", () => {
     expectTypeOf<NotificationDeliveryEvent["status"]>().toEqualTypeOf<
       "sent" | "delivered" | "failed" | "revoked"
     >();
+    expectTypeOf<NotificationPreferenceRow["topic"]>().toEqualTypeOf<string>();
+    expectTypeOf<PushPermission>().toEqualTypeOf<"granted" | "denied" | "prompt">();
   });
 });

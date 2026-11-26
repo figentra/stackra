@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/compiler-engineer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/compiler-engineer.md by fflow sync — edit the source, not this file -->
 
 # compiler-engineer
 
@@ -27,7 +27,7 @@ must produce Encore code.
 
 ## Owns
 
-`packages/developer` (the `cli` and `gen` packages, ADR 0258 decision 8), the IR and registry manifest code, gen
+core's developer packages (`@stackra/cli` and `@stackra/gen`, ADR 0258 decision 8), the IR and registry manifest code, gen
 fixtures, golden files and the gen/Explorer conformance tests.
 
 ## Checks

@@ -56,6 +56,7 @@ export { TranslatedType } from "#core/orm/translated.type";
 export { SubjectCipherResolver } from "#core/ports/subject-cipher-resolver.port";
 export { EncryptedFieldsResealService } from "#core/services/encrypted-fields-reseal.service";
 export { AppendOnly } from "#core/traits/append-only.trait";
+export { MovesWithScope } from "#core/traits/moves-with-scope.trait";
 export { Cached } from "#core/traits/cached.trait";
 export { CapturesChanges } from "#core/traits/captures-changes.trait";
 export { Commentable } from "#core/traits/commentable.trait";

@@ -96,6 +96,7 @@ export async function deployProduct(request: ProductDeployRequest): Promise<Prod
           served: request.served,
           ...(request.canaryScopes === undefined ? {} : { canaryScopes: request.canaryScopes }),
           ...(request.firstRelease === undefined ? {} : { firstRelease: request.firstRelease }),
+          ...(request.pullRequest === undefined ? {} : { pullRequest: request.pullRequest }),
           ...(request.region === undefined ? {} : { region: request.region }),
           ...(request.appLinks === undefined ? {} : { appLinks: request.appLinks }),
           ...(request.review === undefined ? {} : { review: request.review }),

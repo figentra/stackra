@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `QueueWorkerService`, the runtime of a job: it reserves due jobs, runs each attempt through the action
  *          pipeline as the job's actor inside the job's scope session (and with it as the call's scope, so the handler
- *          reads `ctx.scope`) with its timeout, then removes the job, retries it after its backoff, dead-letters it
+ *          reads `ctx.scope`) with its timeout and its attempt (`ctx.attempt`: the number, and whether no retry
+ *          follows), then removes the job, retries it after its backoff, dead-letters it
  *          (and calls the action's `onDeadLetter` method once), or drops it.
  * Boundary: a platform service over the `QueueDriver` port and the `Clock`; `connect(container)` gives it the
  *           container whose pipeline runs the actions (the runtime and the testing module call it, as they call
@@ -348,6 +349,8 @@ export class QueueWorkerService extends Service {
       ...(job.scope === undefined ? {} : { scope: job.scope }),
       ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
       abortSignal: controller.signal,
+      // the attempt counts this one; past the plan's retries a failure dead-letters the job
+      attempt: { number: job.attempts, last: job.attempts > plan.retries },
     });
     // A call that outlives its timeout settles unobserved.
     call.catch(() => undefined);

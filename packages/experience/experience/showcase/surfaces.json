@@ -14,7 +14,7 @@
       "minHeight": 420
     }
   ],
-  "related": ["free/frame", "free/button", "free/hero-machine", "free/station"],
+  "related": ["free/frame", "free/button", "free/hero-machine"],
   "tokens": ["color.surface", "color.border", "color.accent"],
   "keywords": ["surfaces", "web", "desktop", "phone", "rtl", "frames", "landing", "kit"],
   "status": "new"

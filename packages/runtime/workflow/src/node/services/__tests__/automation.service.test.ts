@@ -5,7 +5,10 @@
  *          `dryRun` reports and records the revision; `publish` refuses a revision without a dry run or past the
  *          publisher's access and otherwise stamps it with the trigger, principal and publisher; `revision` reads the
  *          published one; `triggered` lists the published automations of a block with their documents and pauses one
- *          whose publisher lost access; `recheck` pauses the same; `pause` pauses for a host's reason once and refuses
+ *          whose publisher lost access, and checks each against its scope's `AutomationQuota` (allowed starts; exceeded
+ *          skips with `quota_exceeded`; unavailable, unreachable or unknown skips with
+ *          `quota_unavailable` and never throws, for an event or a schedule start; with `last: false` an event start's
+ *          unreadable quota throws a retryable refusal instead, while an exceeded one and a schedule start still record); `recheck` pauses the same; `pause` pauses for a host's reason once and refuses
  *          a reason that is not a code; `seed` creates, skips, keeps a tenant's edit and updates; `seedPack` seeds each
  *          template.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
@@ -30,11 +33,16 @@ import {
   AutomationInvalidError,
   AutomationNotDryRunError,
   AutomationPrincipalMismatchError,
+  AutomationQuota,
+  AutomationQuotaAnswer,
+  AutomationQuotaUnavailableError,
+  AutomationStart,
   BlockKind,
   DryRunOutcome,
   MemoryPublisherAccessDriver,
   registerBlocks,
   SeedResult,
+  UnlimitedAutomationQuotaDriver,
 } from "#core/index";
 import { Automation } from "#node/models/automation.model";
 import { AutomationService } from "#node/services/automation.service";
@@ -148,9 +156,9 @@ const resolverOf = (bound: readonly object[] = []) => {
   };
 };
 
-/** A connected service that binds no `ScopeOwnership`, as a member without tenancy is. */
-const serviceOf = () => {
-  const service = new AutomationService(new RevisionRepository(), access);
+/** A connected service that binds no `ScopeOwnership`, as a member without tenancy is; every run allowed unless `quota` says. */
+const serviceOf = (quota: AutomationQuota = new UnlimitedAutomationQuotaDriver()) => {
+  const service = new AutomationService(new RevisionRepository(), access, quota);
   service.connect(resolverOf());
   return service;
 };
@@ -241,7 +249,11 @@ describe(AutomationService, () => {
 
     it("refuses to publish when the service was never connected", async () => {
       const automation = ready();
-      const service = new AutomationService(new RevisionRepository(), access);
+      const service = new AutomationService(
+        new RevisionRepository(),
+        access,
+        new UnlimitedAutomationQuotaDriver(),
+      );
       await expect(service.publish(automation.id, 1, PRINCIPAL, PUBLISHER)).rejects.toThrow(
         /AutomationService is not connected/,
       );
@@ -265,7 +277,11 @@ describe(AutomationService, () => {
 
     it("lets a matching principal through and refuses a mismatched one when the port is bound", async () => {
       const automation = ready();
-      const service = new AutomationService(new RevisionRepository(), access);
+      const service = new AutomationService(
+        new RevisionRepository(),
+        access,
+        new UnlimitedAutomationQuotaDriver(),
+      );
       service.connect(resolverOf([new OwnsAcme()]));
       const refused = await service
         .publish(automation.id, 1, stranger, PUBLISHER)
@@ -368,5 +384,132 @@ describe(AutomationService, () => {
     expect(await serviceOf().seedPack(SCOPE, pack, PRINCIPAL)).toEqual({
       "commerce.thanks": SeedResult.Created,
     });
+  });
+});
+
+/** One published automation of the scope, connected, with its `record` spied. */
+const published = () => {
+  const automation = storedAutomation({
+    publishedRevision: 1,
+    principal: PRINCIPAL,
+    publisher: PUBLISHER,
+    trigger: "orders.order_paid",
+  });
+  connect([automation], [storedRevision(automation, 1, { document: { ...DOCUMENT, version: 1 } })]);
+  return { automation, record: vi.spyOn(automation, "record") };
+};
+
+describe("AutomationService automation quota", () => {
+  /** A quota that gives `answer`, or throws when it is an `Error`, recording what it was asked. */
+  class FixedQuota extends Driver(AutomationQuota) {
+    readonly asked: [ScopeRef, string][] = [];
+
+    readonly answer: AutomationQuotaAnswer | Error;
+
+    constructor(answer: AutomationQuotaAnswer | Error) {
+      super();
+      this.answer = answer;
+    }
+
+    async check(scope: ScopeRef, automationId: string): Promise<AutomationQuotaAnswer> {
+      this.asked.push([scope, automationId]);
+      if (this.answer instanceof Error) throw this.answer;
+      return this.answer;
+    }
+  }
+
+  for (const startedBy of [AutomationStart.Event, AutomationStart.Schedule])
+    it(`starts the run when the tenant's quota allows it (${startedBy})`, async () => {
+      const { automation, record } = published();
+      const quota = new FixedQuota(AutomationQuotaAnswer.Allow);
+      const started = await serviceOf(quota).triggered("orders.order_paid", startedBy);
+      expect(started.map((one) => one.automationId)).toEqual([automation.id]);
+      expect(quota.asked).toEqual([[SCOPE, automation.id]]);
+      expect(record).not.toHaveBeenCalled();
+    });
+
+  for (const startedBy of [AutomationStart.Event, AutomationStart.Schedule])
+    it(`skips the run over the quota and records quota_exceeded, never a failure (${startedBy})`, async () => {
+      const { automation, record } = published();
+      const started = await serviceOf(new FixedQuota(AutomationQuotaAnswer.Exceeded)).triggered(
+        "orders.order_paid",
+        startedBy,
+      );
+      expect(started).toEqual([]);
+      expect(record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          automationId: automation.id,
+          key: DOCUMENT.key,
+          reason: "quota_exceeded",
+          startedBy,
+        }),
+      );
+      expect(automation.pausedAt ?? null).toBeNull();
+    });
+
+  for (const startedBy of [AutomationStart.Event, AutomationStart.Schedule])
+    it(`skips the run when the quota is unavailable, unreachable or unknown, recording quota_unavailable and never throwing (${startedBy})`, async () => {
+      const unknown = "maybe" as unknown as AutomationQuotaAnswer;
+      for (const answer of [
+        AutomationQuotaAnswer.Unavailable,
+        new Error("usage service unreachable"),
+        unknown,
+      ]) {
+        const { automation, record } = published();
+        const started = await serviceOf(new FixedQuota(answer)).triggered(
+          "orders.order_paid",
+          startedBy,
+        );
+        expect(started).toEqual([]);
+        expect(record).toHaveBeenCalledWith(
+          expect.objectContaining({
+            automationId: automation.id,
+            reason: "quota_unavailable",
+            startedBy,
+          }),
+        );
+      }
+    });
+
+  it("throws a retryable refusal for an unreadable quota on an event start a retry follows, and records nothing", async () => {
+    const { record } = published();
+    const refused = await serviceOf(new FixedQuota(AutomationQuotaAnswer.Unavailable))
+      .triggered("orders.order_paid", AutomationStart.Event, { last: false })
+      .catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(AutomationQuotaUnavailableError);
+    expect(isRefusal(refused) && refused.retryable).toBe(true);
+    expect(record).not.toHaveBeenCalled();
+  });
+
+  it("still records an exceeded quota, and a schedule start's unreadable one, when a retry follows", async () => {
+    const exceeded = published();
+    await expect(
+      serviceOf(new FixedQuota(AutomationQuotaAnswer.Exceeded)).triggered(
+        "orders.order_paid",
+        AutomationStart.Event,
+        { last: false },
+      ),
+    ).resolves.toEqual([]);
+    expect(exceeded.record).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "quota_exceeded" }),
+    );
+    const scheduled = published();
+    await expect(
+      serviceOf(new FixedQuota(AutomationQuotaAnswer.Unavailable)).triggered(
+        "orders.order_paid",
+        AutomationStart.Schedule,
+        { last: false },
+      ),
+    ).resolves.toEqual([]);
+    expect(scheduled.record).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "quota_unavailable" }),
+    );
+  });
+
+  it("allows every run with the unlimited driver a host picks on purpose", async () => {
+    const quota: AutomationQuota = new UnlimitedAutomationQuotaDriver();
+    await expect(quota.check(SCOPE, "wfa_01j9z3k4m5n6p7q8r9s0t1v2w3")).resolves.toBe(
+      AutomationQuotaAnswer.Allow,
+    );
   });
 });

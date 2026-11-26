@@ -46,6 +46,8 @@ const PLAN: RuntimePlan = {
       storageGb: 100,
       backupDays: 14,
       consumers: ["identity", "zitadel"],
+      extensions: [],
+      preloadLibraries: [],
       tags: { env: "production", service: "main-db" },
     },
   ],

@@ -10,11 +10,14 @@
     // rendered by `fflow sync`; .flow/lock.json pins their bytes (`fflow gate ci` fails on a reformatted file)
     ".agents/skills/**",
     ".agents/agents/**",
+    // projected from .agents/agents by `fflow sync` (projection: true); `fflow check` names a hand edit
+    ".claude/agents/**",
+    ".opencode/agents/**",
     ".agents/rules/**",
     ".github/workflows/fflow-approve.yml",
     ".github/workflows/fflow-baseline.yml",
     "README.md",
-    // also rendered by `fflow sync` 0.5.0 and digest-locked; AGENTS.md ends with agents-sync's rules block
+    // also rendered by `fflow sync` 0.5.0 and digest-locked
     "AGENTS.md",
     "CLAUDE.md",
     ".agents/hooks/fflow-guard.mjs",
@@ -36,7 +39,7 @@
     "pnpm-lock.yaml",
     // archify's rendering (stackra architecture-map); its browser check ran on these exact bytes
     "apps/docs/src/assets/architecture-map.html",
-    // rendered locally from .mcp.yaml by agents-sync (gitignored); never hand-formatted
+    // rendered locally from .mcp.yaml by `fflow sync` (gitignored); never hand-formatted
     ".mcp.json",
     // `encore gen client` output; compared byte-for-byte in CI
     "packages/*/api-client/src/generated/**",
@@ -54,7 +57,7 @@
     // fenced upstream Encore skills, read only by compiler-engineer (ADR 0258)
     ".agents/reference/**",
     ".claude/skills/**",
-    // Figentra Flow output (lock, README) and the constitution agents-sync generates from the docs laws
+    // Figentra Flow output (lock, README) and the constitution
     ".flow/**",
     ".opencode/commands/**",
     // @stackra/flow-preset's content, kept byte for byte as moved from figentra/flow (STA-2097), which never

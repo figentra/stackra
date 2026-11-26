@@ -29,6 +29,10 @@ sync engine stays deferred (ADR 0011).
 | `./react`     | `usePrefs`                     | the `prefs` area of the nearest container                                     |
 | `./testing`   | `fakeStorage`                  | a fresh in-memory `Storage` for one test                                      |
 
+`StorageConfig.driver` (key `storage`, exported with `StorageConfig$` and `StorageOptions` from `.`) picks the `Storage`
+driver: `memory` unless config says otherwise. An app takes `web` or `native` from gen's per-runtime defaults, which
+come before the selector, so the default lands where gen gives none, such as a service.
+
 ## Using it
 
 ```ts

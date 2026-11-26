@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `Extension`, the Postgres extensions a migration may create with `schema.createExtension(...)`: exactly
- *          the five ADR 0160 approves plus PostGIS (ADR 0314) and pg_stat_statements (ADR 0160 note, stackra-282), by
- *          their SQL names.
+ *          the five ADR 0160 approves plus PostGIS (ADR 0314), pg_stat_statements (ADR 0160 note, stackra-282) and
+ *          btree_gist (ADR 0160 note of 2026-11-03, stackra-283), by their SQL names; the same list as
+ *          @stackra/runway's `PostgresExtension`, which a service runway names.
  * Boundary: an `Enum.of` value plus the type of the same name. Adding another extension needs an ADR (or an ADR 0160
  *           amendment) first; the migration compiler refuses any other name at run time too.
  * Runtime: isomorphic
  * Governing contract: ADR 0160 (decision 2: the approved extensions); ADR 0314 (decision 1: PostGIS); ADR 0160 2026-10-29 note
- *                     (pg_stat_statements); ADR 0294 (decision 16: Enum).
+ *                     (pg_stat_statements) and 2026-11-03 note (btree_gist); ADR 0294 (decision 16: Enum).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -27,6 +28,8 @@ export const Extension = Enum.of({
   Postgis: "postgis",
   /** Statement statistics: normalised statements with their call counts and times (ADR 0160 note of 2026-10-29). */
   PgStatStatements: "pg_stat_statements",
+  /** B-tree operator classes for GiST: exclusion constraints over ranges plus equality (ADR 0160 note of 2026-11-03). */
+  BtreeGist: "btree_gist",
 });
 
 /** One of the codes above. */

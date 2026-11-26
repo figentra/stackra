@@ -23,6 +23,8 @@ export type EdgeHostRow = {
   readonly realm: string;
   /** The host search engines index; the same for every host of the surface. */
   readonly canonical: string;
+  /** The pull request a preview host serves (ADR 0289 decision 7); the router reads `release:<product>:<surface>:pr-<n>`. */
+  readonly pullRequest?: number;
   /** The shell preset the surface runs (`portal`, ADR 0436 decision 10); absent for the shell's own default. */
   readonly preset?: string;
 };

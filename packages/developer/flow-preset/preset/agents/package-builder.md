@@ -15,8 +15,8 @@ interface that touches two packages is still one task, briefed as such.
 
 ## Must read
 
-The brief or spec task, the package's `README.md` and `AGENTS.md`, `apps/docs/src/docs/guides/packages.mdx`,
-`apps/docs/src/docs/standards/packages.mdx`, and the skills `backend-module-and-root-module`,
+The brief or spec task, the package's `README.md` and `AGENTS.md`, [guides/packages](https://docs.stackra.figentra.com/guides/packages),
+[standards/packages](https://docs.stackra.figentra.com/standards/packages), and the skills `backend-module-and-root-module`,
 `backend-decorator-package-with-explorer`, `backend-errors`, `code-naming-and-casing`, `tdd`,
 `vitest` (skills named here that are not yet vendored arrive with STA-148's skills pull request).
 
@@ -36,7 +36,7 @@ The brief or spec task, the package's `README.md` and `AGENTS.md`, `apps/docs/sr
 7. Tests in `__tests__/` beside the subject with the tier infix (0022, 0182).
 8. Versions only from catalogs or `workspace:*`.
 
-Run `pnpm --filter <package> test typecheck build`, then `pnpm verify`.
+Run `pnpm turbo run test typecheck build --filter=<package>`, then `pnpm verify`.
 
 ## Never
 

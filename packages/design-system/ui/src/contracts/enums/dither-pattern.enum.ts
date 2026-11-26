@@ -8,6 +8,7 @@
  * Governing contract: ADR 0302 (decision 3); brand rules §40; STA-2041.
  */
 
+/** Every brand dither pattern, as a frozen list. */
 // shortcut: a frozen tuple until @stackra/contracts ships Enum.of (ADR 0128); the patterns are brand names, never shown as words.
 export const DitherPattern = Object.freeze([
   "strata",

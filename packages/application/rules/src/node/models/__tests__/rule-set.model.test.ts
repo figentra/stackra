@@ -20,6 +20,7 @@ describe("RuleSet", () => {
       "belongs_to_tenant",
       "timestamps",
       "has_revisions",
+      "moves_with_scope",
     ]);
     expect(traitsOf(RuleSet)[0]?.options).toEqual({ prefix: "rset" });
   });

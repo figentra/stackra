@@ -382,6 +382,10 @@ test("checkTestPlacement: test files must sit directly in __tests__/", () => {
     checkTestPlacement(["src/__tests__/x.int.test.ts", "src/__tests__/x.e2e.test.ts"]),
     [],
   );
+  assert.deepEqual(checkTestPlacement(["packages/a/b/src/__tests__/x.e2e.page.tsx"]), []);
+  assert.deepEqual(checkTestPlacement(["packages/a/b/src/x.e2e.page.tsx"]), [
+    "packages/a/b/src/x.e2e.page.tsx: an e2e page goes in a __tests__/ folder (ADR 0022)",
+  ]);
   assert.deepEqual(checkTestPlacement(["src/x/x.stories.tsx"]), [
     "src/x/x.stories.tsx: no Storybook; test the component in __tests__/",
   ]);
@@ -406,11 +410,15 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/mobile/capabilities.json",
       "workers/edge/edge.json",
       "apps/docs/src/docs.json",
+      "docs/content/meta.json",
+      "docs/content/guides/advanced/meta.json",
+      "packages/developer/gen/schema/docs.json",
       ".claude/settings.json",
       ".changeset/config.json",
       "assets/landing/index.json",
       "services/billing/assets/seeds/plans/price-levels.json",
       "assets/seeds/credits.json",
+      "services/orders/assets/ai/orders/explain-order.eval.json",
       "brand.json",
       "apps/mobile/brand.json",
       "apps/playground/src/constants/brand-themes/jute.json",
@@ -431,6 +439,8 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     ".agents/models.json",
     "packages/x/brand.json",
     "packages/x/fixtures/order.json",
+    "docs/content/guides/nav.json",
+    "services/orders/assets/ai/orders/notes.json",
   ];
   assert.deepEqual(
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),

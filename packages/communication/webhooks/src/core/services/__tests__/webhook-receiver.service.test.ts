@@ -75,6 +75,31 @@ class InboxConnection extends Connection<InboxIntegration> {
   }
 }
 
+/**
+ * A hosted connector package's Integration and Connection, as a host's registrations import them from the package's
+ * public entry: the receiver only ever sees the registered row, so the row's `connection` is what makes the URL route.
+ */
+class HostedInboxIntegration extends Integration({
+  provider: "hosted_inbox",
+  category: IntegrationCategory.Email,
+  levels: [ConnectionLevel.Scope],
+  auth: { type: AuthType.None },
+  webhooks: WEBHOOKS,
+}) {
+  @Secret("HOSTED_INBOX_WEBHOOK_SECRET")
+  webhookSecret!: string;
+}
+
+/** The hosted package's Connection, paired with its Integration by the package manifest. */
+class HostedInboxConnection extends Connection<HostedInboxIntegration> {
+  @Secret("HOSTED_INBOX_CONNECTION_WEBHOOK_SECRET")
+  webhookSecret!: string;
+
+  async check(): Promise<ConnectedAccount> {
+    return ConnectedAccount.create({ id: "test-hosted-account" });
+  }
+}
+
 class StatusIntegration extends Integration({
   provider: "status",
   category: IntegrationCategory.Other,
@@ -241,12 +266,20 @@ class MailArrived extends WebhookEvent<InboxIntegration>({ type: "mail.arrived" 
   mailId!: string;
 }
 
+/** A hosted package's event, as its manifest lists it with its Integration and Connection. */
+class HostedMailArrived extends WebhookEvent<HostedInboxIntegration>({ type: "mail.arrived" }) {
+  event!: { name: string };
+
+  mailId!: string;
+}
+
 class StatusChanged extends WebhookEvent<StatusIntegration>({ type: "status.changed" }) {
   event!: { name: string };
 }
 
 registerSchemas([
   [MailArrived, z.object({ event: z.object({ name: z.string() }), mailId: z.string() })],
+  [HostedMailArrived, z.object({ event: z.object({ name: z.string() }), mailId: z.string() })],
   [StatusChanged, z.object({ event: z.object({ name: z.string() }) })],
   [PaymentSucceeded, z.object({ id: z.string(), type: z.string() })],
   [SealedPaid, z.object({ type: z.string(), payload: z.object({ id: z.number() }) })],
@@ -263,6 +296,12 @@ registerSchemas([
 ]);
 registerWebhookEvents([
   { event: MailArrived, integration: InboxIntegration, connection: InboxConnection },
+  // the row gen writes from a hosted package's manifest `webhookEvents`
+  {
+    event: HostedMailArrived,
+    integration: HostedInboxIntegration,
+    connection: HostedInboxConnection,
+  },
   { event: StatusChanged, integration: StatusIntegration },
   { event: PaymentSucceeded, integration: GatewayIntegration },
   { event: SealedPaid, integration: SealedIntegration },
@@ -630,6 +669,21 @@ describe(WebhookReceiver, () => {
         ...(await delivery("mail.arrived", CONNECTION_SECRET)),
       }),
     ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  /** The 404 a hosted Connection used to get: its row now carries the Connection, so its connection URL routes. */
+  it("routes a connection URL of a hosted package's Integration through its registered Connection", async () => {
+    const { receiver, outbox, connections } = setup();
+    const event = await receiver.receive({
+      integration: HostedInboxIntegration,
+      connectionId: CONNECTION_ID,
+      ...(await delivery("mail.arrived", CONNECTION_SECRET)),
+    });
+    expect(event).toBeInstanceOf(HostedMailArrived);
+    expect(connections.byId).toHaveBeenCalledWith(HostedInboxConnection, CONNECTION_ID);
+    expect(outbox.write).toHaveBeenCalledWith([
+      { event, meta: { id: "msg_1", occurredAt: SENT, connection: CONNECTION_ID } },
+    ]);
   });
 
   it("refuses an Integration with no registered webhook event", async () => {

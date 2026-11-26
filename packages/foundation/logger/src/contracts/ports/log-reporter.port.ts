@@ -15,6 +15,9 @@ import type { LogRecord } from "#contracts/types/log-record.type";
 
 /** Writes redacted log records somewhere. */
 export abstract class LogReporter extends Port {
+  /** Type-only port key, so `DriverName<LogReporter>` narrows to this port's drivers. */
+  declare readonly "~key": "logger.LogReporter";
+
   /** Hands one record to the destination; synchronous, so a line written just before a crash is not lost. */
   abstract report(record: LogRecord): void;
 }

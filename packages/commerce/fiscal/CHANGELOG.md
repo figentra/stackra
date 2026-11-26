@@ -1,5 +1,96 @@
 # @stackra/fiscal
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/market-packs@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/testing@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 0a8f6b2: `FiscalTarget` gains an optional `options` field for driver options that are a unit's own rather than the market's. Examples are ETA's `activityCode` (the issuer's registered activity) and Peppol's `accessPointUrl` (the tenant's own provider). The host fills it from its unit and connection.
+  
+  `FiscalService` merges these options under the pack's options for seal, submit, poll and journal export. The pack wins on a key both hold, so a unit can never redirect a market fact such as `submitUrl`. A field that neither the pack nor the unit holds is still refused with `fiscal_options_invalid`, which names the field.
+  
+  Market packs carry market facts only.
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [7c34d68]
+- Updated dependencies [26a2d54]
+- Updated dependencies [7c34d68]
+- Updated dependencies [7c34d68]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/market-packs@0.33.0
+  - @stackra/testing@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/errors@0.32.0
+  - @stackra/market-packs@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- 2b1dac5: `EtaDriver` now reads a rejected submission's reference from `submissionUUID`, the name ETA's SDK uses, and falls back to `submissionId`. Before this, a real ETA answer left the reference empty.
+- @stackra/money@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/market-packs@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- c6c1d21: `CadesSignerDriver`, the `FiscalSigner` for ETA's detached CAdES-BES: a CMS `SignedData` over the request's digest
+  with the content type, message digest, `ESSCertIDv2` and signing time as signed attributes and the certificate
+  inside, signed by the host's `FiscalSigningKey` (RSA or EC, as the certificate says), so a token, an HSM or a cloud
+  e-seal provider signs and the private key never reaches the package. `EtaDriver` now passes the sealing time as
+  `signedAt`, so ETA's signature carries it.
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/money@0.30.0
+  - @stackra/market-packs@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/testing@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

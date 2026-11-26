@@ -69,7 +69,7 @@ on:
         type: string
         default: ""
       core-ref:
-        description: The ref of figentra/stackra whose store tooling runs.
+        description: The ref of stackra-inc/stackra whose store tooling runs.
         type: string
         default: main
       scope:
@@ -104,16 +104,16 @@ jobs:
       CAPTURES_DIR: ${{ inputs.captures-dir }}
     steps:
       - name: Checkout product
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: main
           persist-credentials: false
           submodules: false
 
       - name: Checkout store tooling (core)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          repository: figentra/stackra
+          repository: stackra-inc/stackra
           ref: ${{ inputs.core-ref }}
           path: .stackra/core
           persist-credentials: false
@@ -142,7 +142,7 @@ jobs:
 
       - name: Store keys (sops)
         if: inputs.live
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ${{ inputs.scope }}
 

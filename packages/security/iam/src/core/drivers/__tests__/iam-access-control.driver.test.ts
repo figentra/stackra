@@ -5,7 +5,8 @@
  *          otherwise (and for an unknown node); `authorize` runs the policy
  *          method named after the verb (deny refuses, abstain and a missing method pass), refuses a matching
  *          conditional deny through the model's fact source and fails closed without one, and errors on an
- *          unconnected policy or an answer that is not a `Decision`; the driver runs as the permission step and
+ *          unconnected policy or an answer that is not a `Decision`; for an `api_client` (an API key) a tenant deny rule
+ *          refuses even a breakable one and a principal with no snapshot is refused; the driver runs as the permission step and
  *          `ctx.authorize` of the real `ActionPipeline`.
  * Boundary: test only; the source is `MemoryPolicySourceDriver`, the tree `MemoryScopeTreeDriver`, the resolver a map.
  *           Every registry is cleared before each test.
@@ -258,6 +259,47 @@ describe("IamAccessControlDriver", () => {
       },
     ]);
     registerPolicies([{ model: Order, policy: OrderPolicy }]);
+  });
+
+  describe("an api_client call (an API key)", () => {
+    /** A key of Acme holding `orders.order.cancel`, calling the public cancel. */
+    const merchant: Actor = { kind: ActorKind.ApiClient, id: "prn_key", scopeId: ACME.id };
+    const keyCall = (): CallDescriptor => ({
+      ...callOf(merchant, "orders.order.cancel", ACME),
+      credential: {
+        kind: "api_key",
+        id: "key_1",
+        scopes: ["orders.order.cancel"],
+        publishable: false,
+      },
+      public: { scopes: ["orders.order.cancel"], exactOnly: true },
+    });
+
+    it("passes a key that covers the operation when no deny rule matches", async () => {
+      const { driver } = driverOver({ grants: [] });
+      await expect(driver.require(keyCall())).resolves.toBeUndefined();
+    });
+
+    it("refuses a key call a tenant deny rule covers, even a breakable one", async () => {
+      const { driver } = driverOver({
+        grants: [],
+        denies: [{ permission: "orders.order.cancel", breakable: true }],
+      });
+      await expect(driver.require(keyCall())).rejects.toBeInstanceOf(ForbiddenError);
+      await expect(driver.authorize(keyCall(), new Order("cus_1"))).rejects.toBeInstanceOf(
+        ForbiddenError,
+      );
+    });
+
+    it("refuses a key whose principal has no published snapshot (fail closed)", async () => {
+      const source = new MemoryPolicySourceDriver();
+      const pdp = new PolicyDecisionPointService(source, new FixedClockDriver());
+      const driver = new IamAccessControlDriver(
+        pdp,
+        new MemoryScopeTreeDriver().seed([{ ...ACME, level: "product", name: "Acme" }]),
+      );
+      await expect(driver.require(keyCall())).rejects.toBeInstanceOf(ForbiddenError);
+    });
   });
 
   describe("require", () => {

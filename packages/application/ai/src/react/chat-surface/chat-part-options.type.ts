@@ -17,6 +17,13 @@ export interface ChatPartOptions {
   readonly onApprovalResponse?: ((approvalId: string, approved: boolean) => void) | undefined;
   /** Called with a question part's id and the person's answer, keyed by field; left out, a question is read-only. */
   readonly onAnswer?: ((questionId: string, values: Record<string, unknown>) => void) | undefined;
+  /**
+   * Called with an artifact part's id and version when the person opens it; the host fetches a download link then,
+   * since a part never carries one. Left out, the artifact's name is plain text.
+   */
+  readonly onOpenArtifact?: ((artifactId: string, version: number) => void) | undefined;
+  /** As `onOpenArtifact`, for the download button; left out, there is none. */
+  readonly onDownloadArtifact?: ((artifactId: string, version: number) => void) | undefined;
   /** Called with the text of a suggestion the person picks; left out, suggestions cannot be picked. */
   readonly onSend?: ((text: string) => void) | undefined;
   /** Each tool name to the label an approval card shows; a tool left out shows its name. */

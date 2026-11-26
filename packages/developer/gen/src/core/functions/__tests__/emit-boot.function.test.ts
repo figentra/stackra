@@ -34,8 +34,8 @@ describe("emitBoot", () => {
     expect(boot).toContain(
       'import { AppendOnlySubscriber, connectHoldRegistry, connectNativeWriteWatcher, connectSequenceTimeZone, connectVisibilityFilter, DatabaseConfig, HoldSubscriber, StampSubscriber } from "@stackra/database";',
     );
-    // The service program never reaches `.stackra/encore` (STA-1652).
-    expect(boot).not.toContain("../encore/");
+    // The service program never reaches the generated Encore services (STA-1652).
+    expect(boot).not.toContain("stackra-encore");
     expect(boot).toContain(
       'import { HoldRegistry, SequenceTimeZone } from "@stackra/database/contracts";',
     );

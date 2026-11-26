@@ -9,5 +9,35 @@
 # Owner: release-operations · Secrets: forbidden
 platformTable: {}
 reviewedPolicy: {}
-systemAccess: {}
-systemFunction: {}
+systemAccess:
+  "packages/data/search/src/node/database/migrations/0010-contract-search-index-tenancy.migration.ts#indexes": "search:status reads every tenant's index states and counts"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#changes": "the relay and the warehouse sink claim committed changes across tenants by position"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#changes_default": "the change log's retention claims expired rows of the default partition across tenants"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#deliveries": "the cross-app relay leases due deliveries and the operator lists them across tenants"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#messages": "the relay claims due messages and the prune claims dead letters across tenants"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#replica_changes": "an append numbers a replica partition shared across tenants from its global head"
+  "packages/runtime/queue/src/node/database/migrations/0003-contract-queue-tenancy.migration.ts#jobs": "the worker leases due jobs and the operator claims dead letters across tenants; a redrive checks unique keys"
+  "packages/runtime/scheduler/src/node/database/migrations/0002-contract-scheduler-tenancy.migration.ts#schedules": "the tick claims every tenant's schedules under its lock to work out their due runs"
+  "packages/runtime/workflow/src/node/database/migrations/0012-contract-journal-tenancy.migration.ts#runs": "the worker's tick claims the due runs of every tenant, then advances each in its tenant"
+  "packages/runtime/workflow/src/node/database/migrations/0012-contract-journal-tenancy.migration.ts#signals": "the tick's claims match held signals to waiting runs and find lapsed ones across tenants"
+  "packages/runtime/workflow/src/node/database/migrations/0012-contract-journal-tenancy.migration.ts#steps": "the tick's claim finds the waiting runs whose wait passed or whose signal is held"
+  "packages/security/privacy/src/node/database/migrations/0003-contract-privacy-tenancy.migration.ts#legal_holds": "a system run's hold check (retention, partition upkeep) claims live holds across tenants"
+  "packages/state/settings/src/node/database/migrations/0004-contract-settings-tenancy.migration.ts#stored_setting_revisions": "the scheduler claims due settings revisions across tenants"
+systemFunction:
+  "packages/data/search/src/node/database/migrations/0010-contract-search-index-tenancy.migration.ts#index_statuses": "search:status lists the index registry of every tenant: states and counts, never row data"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#change_position_at": "a replay moves a cursor to an instant of the whole log, every tenant's entries included"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#claim_changes": "the relay and the warehouse sink claim committed changes of every tenant, then load them per tenant"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#claim_dead_messages": "the prune claims old dead letters of every tenant, then deletes each in its tenant"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#claim_due_messages": "the relay claims due messages of every tenant under its lock, then loads each in its tenant"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#claim_expired_changes": "the change log's retention claims expired default-partition rows of every tenant, then deletes per tenant"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#lease_due_deliveries": "the cross-app relay leases due deliveries of every tenant under its lock, then loads each in its tenant"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#list_deliveries": "the platform operator's delivery commands list and replay deliveries of every tenant"
+  "packages/runtime/outbox/src/node/database/migrations/0006-contract-outbox-tenancy.migration.ts#replica_bounds": "a replica partition's head and oldest position span every tenant's rows; positions stay global"
+  "packages/runtime/queue/src/node/database/migrations/0003-contract-queue-tenancy.migration.ts#claim_dead_jobs": "the platform operator's queue commands list and redrive dead letters of every tenant, each in its tenant"
+  "packages/runtime/queue/src/node/database/migrations/0003-contract-queue-tenancy.migration.ts#reserve_job": "the worker leases the next due job of every tenant fairly, then loads and settles it in its tenant"
+  "packages/runtime/queue/src/node/database/migrations/0003-contract-queue-tenancy.migration.ts#unique_key_holders": "a redrive must not revive a unique job while a live job of any tenant holds its key (the index is global)"
+  "packages/runtime/scheduler/src/node/database/migrations/0002-contract-scheduler-tenancy.migration.ts#claim_schedules": "the tick claims every tenant's schedules under its lock, then loads and pushes each due one in its tenant"
+  "packages/runtime/workflow/src/node/database/migrations/0012-contract-journal-tenancy.migration.ts#claim_due_runs": "the worker's tick claims the due runs of every tenant, then loads and advances each in its tenant"
+  "packages/runtime/workflow/src/node/database/migrations/0012-contract-journal-tenancy.migration.ts#claim_expired_signals": "the tick claims lapsed held signals of every tenant, then removes them per tenant"
+  "packages/security/privacy/src/node/database/migrations/0003-contract-privacy-tenancy.migration.ts#claim_live_holds": "a system run claims the live holds of every tenant on its records, then checks and logs each tenant's in it"
+  "packages/state/settings/src/node/database/migrations/0004-contract-settings-tenancy.migration.ts#claim_due_revisions": "the scheduler claims due revisions of every tenant, then applies each in its tenant"

@@ -4,9 +4,11 @@
  *          the same answer as AI SDK UI message chunks, and the reply once the run settles (stored, parked or failed).
  * Boundary: a type only. Read `textStream` or `uiStream` to the end, or await `reply`, so the run settles; all share
  *           one model call. `uiStream` holds what the reply holds: the tool outputs the model saw, never the
- *           instructions, and a parked call as a `tool-approval-request` chunk with the run's approval id. Both
- *           streams are UNGUARDED: an output guardrail (redact or block) applies to `reply` only, after the deltas
- *           were sent, so a host must never stream to a person for an agent that has one; serve the reply instead.
+ *           instructions, and a parked call as a `tool-approval-request` chunk with the run's approval id.
+ *           `textStream` is UNGUARDED: an output guardrail (redact or block) applies to the settled text only, so a
+ *           host never sends it to a person while a layer is bound. `uiStream` is safe to send: with a layer bound
+ *           (`guarded`) it holds the text and sends the reply's guarded text once the run settles, and a blocked
+ *           answer is an `error` chunk.
  * Runtime: isomorphic
  * Governing contract: ADR 0100 (decision 2: `stream`); STA-781; STA-2608.
  */
@@ -27,6 +29,9 @@ export interface AgentStream {
 
   /** The AI SDK v7 UI message chunks, `start` (message id: the run id) to `finish`, or `abort` when aborted. */
   readonly uiStream: ReadableStream<UIMessageChunk>;
+
+  /** True when a guardrail layer checks the answer, so `uiStream` sends the text only once it settled. */
+  readonly guarded: boolean;
 
   /** The settled reply. */
   readonly reply: Promise<AgentReply>;

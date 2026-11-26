@@ -1,0 +1,76 @@
+---
+title: "وثائق التجربة"
+description: "الكتل، والوثائق، والمصيِّر، والتصيير على الحافة، وعدّة الهبوط؛ وكيف يكتب المنتج assets/landing/*.json."
+icon: "layout-template"
+---
+
+{/* Stackra file contract: Purpose: the Arabic twin of /experience, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same claims as the English page. Runtime: docs. Governing contract: ADR 0110; ADR 0440; ADR 0504; STA-2676. */}
+
+الصفحة التي يعرضها المنتج للعموم، موقعَ هبوط كانت أو واجهة متجر، ليست ترميزًا: إنها **وثيقة تجربة**، بياناتٌ تسمّي
+كتلًا وخصائصها، يرسمها مصيِّر يحلّ كل كتلة إلى كود مسجَّل
+([القرار 0110](/adr/0110-experience-is-the-sdui-service-at-l2)). كلمات الصفحة تسكن الوثيقة؛ والكود الذي يرسمها يسكن
+مرة واحدة في كتلة.
+
+## الكتل
+
+الكتلة صنف ومكوّن. يعلن الصنف الخصائص التي يجوز للوثيقة إعطاؤها، بـ`LocalizedText` لكل كلمة؛ ويرسمها المكوّن على
+هدف واحد:
+
+```ts packages/experience/experience/src/core/blocks/statement/statement.block.ts
+export class StatementBlock extends Block({ category: BlockCategory.Marketing, icon: … }) {
+  text!: LocalizedText;
+  facts?: LocalizedText[];
+}
+```
+
+تمنح قاعدةُ المفتاح في gen الصنفَ مفتاحه، `<member>.<snake(folder)>`: أي `experience.statement`. ويسجّل الهدف
+الكتل التي يستطيع رسمها بـ`registerBlocks`، وتُرفض الوثيقة التي تسمّي كتلة لم يسجّلها أحد كاملةً، فلا تُشحن صفحة
+فيها ثغرة.
+
+## الوثائق
+
+الوثيقة قائمة عُقد، كلٌّ منها `{ id, block, props, children }`، وكل نص فيها `{ "en": …, "ar": … }`:
+
+```json assets/landing/index.json
+[
+  {
+    "id": "hero",
+    "block": "experience.hero_machine",
+    "props": {
+      "title": {
+        "en": "One backend, every surface.",
+        "ar": "بنية واحدة. وتجربة متّسقة على كل شاشة."
+      },
+      "primary": { "label": { "en": "Read the docs", "ar": "اقرأ التوثيق" }, "href": "/docs" }
+    }
+  }
+]
+```
+
+يتحقق `resolveDocument` من الوثيقة كلها أولًا: الكتلة موجودة، والخصائص تجتاز مخطط الكتلة المولَّد، وكل
+`LocalizedText` يُقرأ باللغة المطلوبة. ثم يرسمها `DocumentRenderer` الويب في المتصفح، ونظيره الأصلي على الهاتف،
+ويكتب التصيير على الحافة (`./edge`، بلا React) الصفحةَ المنشورة إلى HTML في Worker لزواحف البحث والرسم الأول
+([القرار 0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge)).
+
+## عدّة الهبوط
+
+خمس عشرة كتلة هبوط على `@stackra/ui` تصنع موقعًا تسويقيًا
+([القرار 0504](/adr/0504-module-ui-kits-domain-blocks-live-in-their-module-and-gen-aggregates-them-into-the-showcase)):
+`site_header` و`hero_machine` و`cta_row` و`statement` و`chapter_title` و`station` و`step_switcher` و`surfaces`
+و`bento_grid` و`terminal_stage` و`mono_display` و`ask_ai` و`product_cards` و`site_footer` و`page_dock`، ومعها
+`capability_matrix`. لكلٍّ صنفُ `Block` في المدخل الجذري ومكوّنها في `./react`؛ وتقرأ `statement` النص `*word*`
+كلمةً فولاذية، وترسم `product_cards` كل منتج بسِمة علامته، وترسم كل كتلة في الشريط المسطَّر نفسه فيمتدّ العمود غير
+منقطع من البطل إلى التذييل.
+
+## موقع هبوط المنتج
+
+يعلن المنتج موقع هبوطه في `runway.yaml` الجذري (`surfaces.landing`: خط الهيكل `os/landing@1`،
+و`content: assets/landing`، ومضيفه)، ويكتب وثيقة لكل صفحة تحت `assets/landing/<page>.json`، والصور بجانبها.
+يستورد Runway وثائق البذرة مرة واحدة إلى خدمة التجربة في أو إس لمستأجر المنتج؛ وبعدها يحرّر التسويق الصفحات في
+المنشئ، ويرسمها هيكل الهبوط في أو إس على مضيف المنتج. وتُرفض عند الاستيراد بذرةٌ تسمّي كتلة غير مسجّلة.
+
+## اقرأ بعد ذلك
+
+- `@stackra/experience`: ملف README الحزمة، ومعه مصيِّر الخادم لقوالب البريد ووثائق الطباعة.
+- [نظام التصميم](/design-system): المكوّنات التي تؤلّفها كتل الهبوط.
+- [Runway](/runway): `surfaces` والمضيفون ونشر موقع الهبوط.

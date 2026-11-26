@@ -1,5 +1,176 @@
 # @stackra/tenancy
 
+## 0.33.1
+
+### Patch Changes
+
+- bf2c6ea: A product can ship its own `KeyProvider` driver. `@stackra/tenancy` declared a closed `DriverRegistry` entry for the
+  port (`"ephemeral" | "kms"`), so a member's generated wiring that also names a product's driver failed with TS2717,
+  and the shipped `TenantKeysConfig$` refused the name at config parse.
+  
+  - The `KeyProvider` port has no `~key` brand, and tenancy declares no registry entry for it: the member's generated
+    wiring declares the names it has, as for identity's `AppApprovalChallenges`.
+  - `TenantKeysConfig$.driver` takes any non-empty driver name (default `ephemeral`); the container refuses a name no
+    driver has when it resolves the port.
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/scheduler@0.33.1
+  - @stackra/scope@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 03da426: `runAsTenant` (`@stackra/tenancy/testing`) now sets `app.tenant_id` transaction-locally in every transaction that starts inside it on a connected database (a factory's flush, a `database.transaction`), so a test's setup rows pass the tenant policy under a role without `BYPASSRLS`, instead of being refused by row-level security. It still opens no transaction itself, sets no scope setting and proves nothing about isolation (`asTenant` does). The session-setting check allows this one testing path.
+- 93d63bb: Tenancy ships the per-tenant `KeyProvider` (ADR 0188 decision 2, amendment 2026-11-09). `TenantKeysConfig` (`tenancy.tenant_keys`) picks the driver: `ephemeral` (the default, random keys per tenant in memory, for dev and tests) or `kms`, which keeps each tenant's data keys wrapped by a regional AWS KMS key under the encryption context of tenant and key id, mints `k1` on a tenant's first seal, rotates to `k<n+1>` and never retires an old key, so data sealed earlier still opens. The wrapped keys live behind the new `TenantDataKeyStore` port: `memory`, or `postgres` in the append-only, tenant-owned `tenancy.tenant_data_keys` (row-level security on `tenant_id`), and each mint records `TenantDataKeyMinted`. Both drivers refuse a platform call: a tenant data key needs `withTenant`. Unwrapped keys are cached per tenant (`cacheSeconds`, `cacheTenants`). Contracts gives `KeyProvider` its driver key and exports `kmsKeyContext`.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/actions@0.33.0
+  - @stackra/scope@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/scheduler@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [2c6be3c]
+- Updated dependencies [54db249]
+  - @stackra/scope@0.32.0
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/scheduler@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [7179d1a]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/scheduler@0.31.0
+  - @stackra/scope@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- d5a7d0a: **Breaking route change.** Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
+  action's or query's `area`, else the service's own `defineService({ area })`, else `app` (`PUT
+  /app/orders/:orderId/cancel`). Every manifest action entry records its `area`, so the committed manifests,
+  `openapi.json` and the SDKs move to the prefixed paths.
+  
+  Gen also refuses, in its full pass (STA-340):
+  
+  - `endpoint_collision`: two calls on one method and path once parameter names are erased (`GET /app/orders/:orderId`
+    and `GET /app/orders/:id`). Until now `openapi.json` silently kept only one of them.
+  - `endpoint_versioned`: a `v<digits>` path segment (paths stay unversioned; API versions are dates).
+  - `endpoint_area_mismatch`: an `endpoint: { method, path }` override outside its area's prefix.
+  - `endpoint_method_mismatch`: a query not on `GET`, an action on `GET`, or a transition overridden away from `PUT`.
+  - `job_without_system_actor`: a `job` without the `system` or `job` actor.
+  - `cron_input_invalid`: a `job.cron.input` property the input schema does not have, a required one it omits, or a
+    value of another JSON type.
+  - `intent_phrases_missing`: `intent: true` without a non-empty `actions.<key>.intents` list in a base-language
+    catalogue.
+  
+  The routes outside their area move under it: loyalty-kit's five overrides to `/app/loyalty/...`, the award
+  verification to `GET /public/awards/verify`, `CONSENT_SNAPSHOT_PATH` to `/public/consent/snapshots`,
+  `ANALYTICS_INGEST_PATH` to `/public/analytics/batches`, `DEVICE_ORDER.acknowledgedPath` to
+  `/app/devices/acknowledged` and `CLIENT_RESULT_ACTION.path` to `/app/runs/:runId/client-result`. The committed
+  `stackra.manifest.json` of every package with a route (access-log, collaboration, data-maintenance, devices, identity,
+  media, privacy, segments, tenancy, webhooks and the packages above) records each entry's `area` and its prefixed path.
+  
+  The identity lock accepts this move once: an endpoint whose new route is exactly `/<its own area>` plus the locked
+  path, with the same method, keeps its identity without `@Renamed`. A move to another area, a method change, or a route
+  that already started with an area moving again is still refused with `identity_changed`.
+  
+  What a product does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and
+  `openapi.json` of each member. Nothing else; no `@Renamed`. Clients regenerate from the new manifests, so a caller
+  pinned to an old path (none before launch) would need the prefixed one.
+
+### Patch Changes
+
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [85cd1b5]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [98a8940]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [15dba8d]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/actions@0.30.0
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/scheduler@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/scope@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/validation@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

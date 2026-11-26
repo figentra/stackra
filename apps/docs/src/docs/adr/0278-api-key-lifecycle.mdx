@@ -90,6 +90,29 @@ not know is never cached. A revoke takes effect at once when identity's `princip
 service (`evictPrincipal`); **the worst case is the cache window**, 30 seconds by default, when the event has not
 arrived. The listener that calls `evictPrincipal` is bound with the gateway path (B3).
 
+## Amendment, 2026-11-09: a tenant's deny rules bind an API key (STA-2646)
+
+An `api_client` call's grants are its key's scopes, so it skips the grant search of the decision point, but its
+tenant's deny rules still bind it: after the scopes pass, `PolicyDecisionPointService.denied` checks the deny rules of
+the key principal's own snapshot against the operation's permission and every scope the key had to cover, in `require`
+and against the record in `authorize`. A breakable deny counts too, since a key has no break-glass. A key whose
+principal has no published snapshot (version 0) is refused: fail closed. The access service publishes each API-key
+principal's snapshot (its tenant's deny rules, no grants); the gateway path (B3) goes live only once it does.
+
+## Amendment, 2026-11-09: the gateway path (STA-2646 B3)
+
+`CallAuthenticator` tells a key from a token by the bearer's prefix (`parseApiKey` under `IdentityConfig`) and verifies
+it with `ApiKeyVerifierService`, reading the request's `Origin` for a publishable key. The call runs as the key's
+principal, an `api_client` actor in the key's tenant, and carries the key's call options to the action pipeline: the
+key as `CallOptions.credential` (its public id, scopes, kind and version pin), `origin` an API key by the key's public
+id, and `sandbox` for a test key. A key never acts for a user: a `Stackra-On-Behalf-Of` token beside it is refused. A
+host that binds no verifier refuses every key, and a key store that cannot be reached is an outage, not a refusal. The
+key is never held for forwarding, so a key call's own service calls go as the service.
+
+Eviction follows the snapshot-intake pattern: a service that answers key calls binds `ServiceApiKeyStoreDriver` and
+writes its own listener on identity's generated `principals.api_key.revoked.v1`, calling `evictPrincipal`. Nothing reads
+the version pin yet; dated versioning picks it up when it is switched on.
+
 ## Supersedes and sources
 
 Supersedes: none. Amends: [0207](/adr/0207-authentication-assurance-and-machine-identities) decision 2,

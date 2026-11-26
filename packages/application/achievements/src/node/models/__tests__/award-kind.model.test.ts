@@ -19,6 +19,7 @@ describe("AwardKind", () => {
       "has_public_id",
       "belongs_to_tenant",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(AwardKind)[0]?.options).toEqual({ prefix: "awk" });
     expect(new AwardKind().id).toMatch(/^awk_[0-9a-z]{26}$/);

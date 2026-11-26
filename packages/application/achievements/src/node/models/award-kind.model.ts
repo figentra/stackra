@@ -14,12 +14,17 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** An award kind. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class AwardKind extends Model.with(HasPublicId("awk"), BelongsToTenant, Timestamps) {
+export class AwardKind extends Model.with(
+  HasPublicId("awk"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The scope node the kind belongs to. */
   scopeId!: PublicId<"scp">;
 

@@ -29,6 +29,7 @@ brand.logo?.variants.print.url; // 600 px wide; `email` is 400 px wide, `mark` 5
 brand.mark; // the square mark, or the logo when no mark is set
 brand.primary; // { color: "#1D4ED8", onColor: "#FFFFFF" } or null
 brand.accent; // the accent and its on-colour, or null
+brand.logo && (await this.brand.bytes(brand.logo)); // the original's bytes from the disk, for a PDF; never fetch the URL
 
 // uploading a logo: media's signed upload into the brand bucket, then a claim by server code
 const pending = await media.createUpload(BrandAssetsBucket, { mediaType: MediaType.Png, size });

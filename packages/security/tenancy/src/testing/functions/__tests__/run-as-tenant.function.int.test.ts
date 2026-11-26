@@ -1,11 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: integration tests of the flush check of `runAsTenant` on real Postgres: inside `runAsTenant(A)` a factory
+ * Purpose: integration tests of `runAsTenant` on real Postgres. The flush check: inside `runAsTenant(A)` a factory
  *          whose `definition()` sets `tenantId` refuses the flush with the message that names it, the same factory
  *          without that line saves the row in A, `create({ tenantId: A })` saves, and `create({ tenantId: B })` or a
- *          direct entity-manager insert of B refuses; outside `runAsTenant` nothing is checked.
+ *          direct entity-manager insert of B refuses; outside `runAsTenant` nothing is checked. The tenant setting: a
+ *          factory's own flush transaction inside `runAsTenant(A)` carries `app.tenant_id = A` (a trigger records it),
+ *          none outside; and a role without `BYPASSRLS` writes A's row in a transaction started inside
+ *          `runAsTenant(A)` and is refused the same write outside it.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers. The rows are written as the container's
- *           superuser, which row security never restricts, so only the check refuses a row.
+ *           superuser, which row security never restricts, so only the check refuses a row; the policy case switches
+ *           to `member_writer` (`set local role`), which has no `BYPASSRLS` and does not own the table.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0182 (integration tier); ADR 0269; ADR 0239.
  */
@@ -74,6 +78,9 @@ registerModelPartners([
   [MemberFactory, Member],
 ]);
 
+/** The role the policy case writes as: no `BYPASSRLS`, not the table's owner. */
+const ROLE = "member_writer";
+
 usePostgres({
   entities: [MemberSchema],
   migrations: [
@@ -82,6 +89,26 @@ usePostgres({
       createsSchema: true,
       macros: [BelongsToTenantMacro],
     }),
+    {
+      after: [],
+      steps: [
+        {
+          transactional: true,
+          inverse: false,
+          sql: [
+            // the tenant setting each insert's transaction carried, recorded by a trigger
+            `alter table presence.members add column seen_tenant text`,
+            `create function presence.record_seen_tenant() returns trigger language plpgsql as $$
+              begin new.seen_tenant := nullif(current_setting('app.tenant_id', true), ''); return new; end $$`,
+            `create trigger members_seen_tenant before insert on presence.members
+              for each row execute function presence.record_seen_tenant()`,
+            `create role ${ROLE} nologin nobypassrls`,
+            `grant usage on schema presence to ${ROLE}`,
+            `grant select, insert on presence.members to ${ROLE}`,
+          ],
+        },
+      ],
+    },
   ],
 });
 
@@ -93,6 +120,25 @@ const REFUSED = new RegExp(
   `^Member was created in runAsTenant\\(${A}\\) with tenantId scp_\\w+: does its factory definition\\(\\) set ` +
     "tenantId\\? Leave it to runAsTenant\\.$",
 );
+
+/** The tenant setting the insert of the row `id` ran with, as the trigger recorded it. */
+async function seenTenant(id: string): Promise<string | null | undefined> {
+  const rows = (await Database.current()
+    .em()
+    .execute('select seen_tenant from "presence"."members" where id = ?', [id])) as {
+    seen_tenant: string | null;
+  }[];
+  return rows[0]?.seen_tenant;
+}
+
+/** Creates a member as `ROLE` in a transaction of its own. */
+function createAsWriter(): Promise<Member> {
+  const database = Database.current();
+  return database.transaction(async () => {
+    await database.em().execute(`set local role ${ROLE}`);
+    return MemberFactory.new().create();
+  });
+}
 
 /** The stored tenant of the row `id`. */
 async function storedTenant(id: string): Promise<string | undefined> {
@@ -140,5 +186,20 @@ describe("runAsTenant flush check on Postgres", () => {
     await expect(storedTenant(member.id)).resolves.toBe(member.tenantId);
     const other = await MemberFactory.new().create({ tenantId: B });
     await expect(storedTenant(other.id)).resolves.toBe(B);
+  });
+});
+
+describe("runAsTenant tenant setting on Postgres", () => {
+  it("sets app.tenant_id in a factory's own flush transaction, and nothing outside runAsTenant", async () => {
+    const inside = await runAsTenant(A, () => MemberFactory.new().create());
+    await expect(seenTenant(inside.id)).resolves.toBe(A);
+    const outside = await MemberFactory.new().create({ tenantId: B });
+    await expect(seenTenant(outside.id)).resolves.toBeNull();
+  });
+
+  it("lets a role without BYPASSRLS write the tenant's row inside runAsTenant, and refuses it outside", async () => {
+    const member = await runAsTenant(A, () => createAsWriter());
+    await expect(storedTenant(member.id)).resolves.toBe(A);
+    await expect(createAsWriter()).rejects.toThrow();
   });
 });

@@ -22,6 +22,9 @@ strategy, the unit of work and scope sessions, gapless `Sequence` numbers, `Proj
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts`, `src/contracts/index.ts`, `src/node/index.ts` and `src/testing/index.ts` are stand-in barrels.
 
+`DatabaseConfig.driver` (key `database`) picks the `Database` driver: `postgres` unless config says otherwise, so a
+service boots with no database config. `memory` stays the testing driver, which a test picks with `useDrivers`.
+
 ## A module service
 
 ```ts
@@ -810,9 +813,9 @@ named, with its reason, in `PLATFORM_TABLES` (the framework's: the migration led
 `rate_limit_buckets`, `cache.entries` and `set_members`, `locking.lock_tokens`, and the platform-list tables of ADR
 0239's group (c)), in the caller's `platform` map, or by a `t.platformTable(reason)` of the compiled migrations in
 `migrationsDirectory`; any
-other is returned as a warning naming its group (an ancestor `scope_path` table awaiting the contract step, a
-`scope_id` table whose policy reads `setting`, a system table with no row-level security awaiting its ADR decision, or
-unclassified) until 0.20, and is a gap with `strict: true` or `STACKRA_GEN_STRICT=1`. The
+other is a gap naming its group (an ancestor `scope_path` table awaiting the contract step, a `scope_id` table whose
+policy reads `setting`, a system table with no row-level security awaiting its ADR decision, or unclassified); only the
+audit's own tests pass `strict: false` to read the groups back as warnings. The
 tables in `ISOLATION_SCOPE_TABLES` (the sequence and projection tables, group (b) by name) are audited by their own
 owner column, `isolation_scope_id`, in place of `column`, and a table whose `pol_<table>_scope_id` is exactly the
 `equals` or `equalsOrUnset` policy `t.rowLevelSecurity` writes on `setting` by `scope_id` (group (b) by shape: the

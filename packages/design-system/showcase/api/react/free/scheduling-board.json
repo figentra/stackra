@@ -1,0 +1,418 @@
+{
+  "generatedFrom": {
+    "hash": "ea020cbd310cca79",
+    "propsFiles": [
+      "ui/src/react/scheduling-board/scheduling-board-block.props.ts",
+      "ui/src/react/scheduling-board/scheduling-board-grid.props.ts",
+      "ui/src/react/scheduling-board/scheduling-board-preview.props.ts",
+      "ui/src/react/scheduling-board/scheduling-board-row.props.ts",
+      "ui/src/react/scheduling-board/scheduling-board-time-header.props.ts",
+      "ui/src/react/scheduling-board/scheduling-board.props.ts"
+    ]
+  },
+  "importLine": "import { SchedulingBoard } from \"@stackra/ui/react\";",
+  "key": "free/scheduling-board",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called with each view chosen.",
+          "name": "onViewChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(view: \"timeline\" | \"day\" | \"week\") => void"
+        },
+        {
+          "description": "Called with the day the view holds after previous, next or Today.",
+          "name": "onDateChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(date: CalendarDate) => void"
+        },
+        {
+          "description": "Called with an empty range selected, by dragging across slots or from the keyboard.",
+          "name": "onSelectRange",
+          "required": false,
+          "source": "stackra",
+          "type": "(range: SchedulingBoardRange) => void"
+        },
+        {
+          "description": "Called when an item is moved or resized. A promise holds the item where it was dropped, pending, until it settles;\n`false` puts it back. Anything else is taken as accepted: the screen passes the new items.",
+          "name": "onItemChange",
+          "required": false,
+          "source": "stackra",
+          "type": "(change: SchedulingBoardChange) => void | Promise<boolean>"
+        },
+        {
+          "description": "Called when an item is pressed, for example to open its register.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => void"
+        }
+      ],
+      "name": "SchedulingBoard",
+      "props": [
+        {
+          "description": "The spoken name of the board, for example \"Branch schedule\".",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The rows, in order within their group.",
+          "name": "resources",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardResource[]"
+        },
+        {
+          "description": "The blocks; those that overlap on a row lie side by side.",
+          "name": "items",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardItem[]"
+        },
+        {
+          "description": "The view, for a controlled board.",
+          "name": "view",
+          "required": false,
+          "source": "stackra",
+          "type": "\"timeline\" | \"day\" | \"week\""
+        },
+        {
+          "description": "The starting view, for an uncontrolled one; `day` by default.",
+          "name": "defaultView",
+          "required": false,
+          "source": "stackra",
+          "type": "\"timeline\" | \"day\" | \"week\""
+        },
+        {
+          "description": "The day the view holds, for a controlled board.",
+          "name": "date",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The starting day, for an uncontrolled one; today by default.",
+          "name": "defaultDate",
+          "required": false,
+          "source": "stackra",
+          "type": "CalendarDate"
+        },
+        {
+          "description": "The days the timeline view spans, 1 to 62; 14 by default.",
+          "name": "timelineDays",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The IANA time zone of the node the board shows; the device's by default.",
+          "name": "timeZone",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The length of a slot in minutes, the step every drag snaps to: 5 to 60, a divisor of 60; 15 by default.",
+          "name": "slotMinutes",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The first hour the day and week views show, 0 to 23; 0 by default.",
+          "name": "startHour",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The hour the day and week views end at, 1 to 24; 24 by default.",
+          "name": "endHour",
+          "required": false,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "Working time, expanded for the range shown; time outside a row's stretches is shaded. None shades nothing.",
+          "name": "workingTime",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardInterval[]"
+        },
+        {
+          "description": "Each day's standing, for the header; a rest day or holiday is shaded.",
+          "name": "dayMarks",
+          "required": false,
+          "source": "stackra",
+          "type": "readonly SchedulingBoardDayMark[]"
+        },
+        {
+          "description": "The calendar the headers write dates in; `islamic-umalqura` for Hijri. Gregorian by default.",
+          "name": "calendar",
+          "required": false,
+          "source": "stackra",
+          "type": "\"gregory\" | \"islamic-umalqura\""
+        },
+        {
+          "description": "The moment taken as now, for the current-time line, Today and the past's shading; the clock at mount by default.",
+          "name": "now",
+          "required": false,
+          "source": "stackra",
+          "type": "Date"
+        },
+        {
+          "description": "True to let nothing be selected, moved or resized; items stay pressable.",
+          "name": "readOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True to show a skeleton instead of the rows.",
+          "name": "isLoading",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A screen's own conflicts for a drag's would-be result, merged with the board's; called as the preview moves.",
+          "name": "conflictsOf",
+          "required": false,
+          "source": "stackra",
+          "type": "(draft: SchedulingBoardDraft) => readonly SchedulingBoardConflict[]"
+        },
+        {
+          "description": "A block's content; the title, the time, the fill and a hold's countdown by default.",
+          "name": "renderItem",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => ReactNode"
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called when it is pressed.",
+          "name": "onPress",
+          "required": true,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => void"
+        }
+      ],
+      "name": "SchedulingBoard.Block",
+      "props": [
+        {
+          "description": "The item as placed on this row.",
+          "name": "placed",
+          "required": true,
+          "source": "stackra",
+          "type": "PlacedSchedulingItem"
+        },
+        {
+          "description": "The row's resource, for the spoken name.",
+          "name": "resource",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardResource"
+        },
+        {
+          "description": "The row's parents, for an inherited item's \"From\" words.",
+          "name": "ancestors",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly string[]"
+        },
+        {
+          "description": "The shared state.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardState"
+        },
+        {
+          "description": "Its focus stop's key.",
+          "name": "stopKey",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True when it is the one stop Tab reaches.",
+          "name": "isTabStop",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "True while a drag carries it; it stays behind, dimmed.",
+          "name": "isLifted",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Its content; the title, time, fill and countdown by default.",
+          "name": "renderItem",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => ReactNode"
+        }
+      ]
+    },
+    {
+      "events": [
+        {
+          "description": "Called when an item is pressed.",
+          "name": "onItemPress",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => void"
+        }
+      ],
+      "name": "SchedulingBoard.Grid",
+      "props": [
+        {
+          "description": "The shared state.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardState"
+        },
+        {
+          "description": "The grid's spoken name.",
+          "name": "label",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The IANA time zone the columns are read in, for the hour labels.",
+          "name": "timeZone",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The BCP 47 locale, for the words announced while dragging.",
+          "name": "locale",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True when an empty slot is a button that selects.",
+          "name": "selectable",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A block's content; the default when left out.",
+          "name": "renderItem",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => ReactNode"
+        }
+      ]
+    },
+    {
+      "name": "SchedulingBoard.Preview",
+      "props": [
+        {
+          "description": "The shared state.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardState"
+        },
+        {
+          "description": "The drag in progress; the preview is drawn on its draft's row.",
+          "name": "drag",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardDrag"
+        }
+      ]
+    },
+    {
+      "name": "SchedulingBoard.Row",
+      "props": [
+        {
+          "description": "The row, laid out.",
+          "name": "lane",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardLane"
+        },
+        {
+          "description": "The shared state.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardState"
+        },
+        {
+          "description": "The grid's input, without the grid's own callback ref.",
+          "name": "input",
+          "required": true,
+          "source": "stackra",
+          "type": "Omit<SchedulingBoardInput, \"attach\">"
+        },
+        {
+          "description": "Each column's leading edge: a day's border, an hour's lighter one, or none.",
+          "name": "edges",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly (\"none\" | \"day\" | \"hour\")[]"
+        },
+        {
+          "description": "True when an empty slot is a button that selects.",
+          "name": "selectable",
+          "required": true,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "A block's content; the default when left out.",
+          "name": "renderItem",
+          "required": false,
+          "source": "stackra",
+          "type": "(item: SchedulingBoardItem) => ReactNode"
+        }
+      ]
+    },
+    {
+      "name": "SchedulingBoard.TimeHeader",
+      "props": [
+        {
+          "description": "The shared state.",
+          "name": "state",
+          "required": true,
+          "source": "stackra",
+          "type": "SchedulingBoardState"
+        },
+        {
+          "description": "Each column's leading edge: a day's border, an hour's lighter one (with its label), or none.",
+          "name": "edges",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly (\"none\" | \"day\" | \"hour\")[]"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

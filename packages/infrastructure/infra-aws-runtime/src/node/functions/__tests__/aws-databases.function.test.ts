@@ -4,10 +4,13 @@
  *          plan, throwaway (no deletion protection, no final snapshot) and admits port 5432 only from the runtime's
  *          security groups; a production Aurora database gets two instances, deletion protection and a final
  *          snapshot; each gets RDS Proxy with TLS required, logging in through a Secrets Manager secret; the proxy
- *          endpoint is returned; a plan with a database but no VPC or no password input is refused.
+ *          endpoint is returned; a database that preloads extensions gets a parameter group (a cluster one on Aurora)
+ *          of its engine's family setting `shared_preload_libraries` at the next reboot; a plan with a database but no
+ *          VPC or no password input is refused.
  * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 2 and 4); ADR 0473; ADR 0186; spec sta-1640.
+ * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 2 and 4); ADR 0473; ADR 0186; spec sta-1640;
+ *                     ADR 0160 (note of 2026-11-03).
  */
 import * as pulumi from "@pulumi/pulumi";
 import { beforeAll, describe, expect, it } from "@stackra/testing";
@@ -38,6 +41,8 @@ function database(environment: string, engine: "rds" | "aurora", multiAz: boolea
     storageGb: 20,
     backupDays: 14,
     consumers: ["identity"],
+    extensions: ["pg_stat_statements", "vector"],
+    preloadLibraries: ["pg_stat_statements"],
     tags: { env: environment, service: "main-db" },
   };
 }
@@ -157,6 +162,34 @@ describe("awsDatabases", () => {
       requireTls: true,
     });
     expect(endpoint).toBe("academorix-dev-main-db-proxy.proxy.mock");
+  });
+
+  it("preloads pg_stat_statements through a parameter group of the engine's family", () => {
+    const preload = {
+      parameters: [
+        {
+          name: "shared_preload_libraries",
+          value: "pg_stat_statements",
+          applyMethod: "pending-reboot",
+        },
+      ],
+    };
+    expect(resource("ParameterGroup", "academorix-dev-main-db").inputs).toMatchObject({
+      family: "postgres18",
+      ...preload,
+    });
+    expect(resource("Instance", "academorix-dev-main-db").inputs).toMatchObject({
+      parameterGroupName: "academorix-dev-main-db",
+    });
+    expect(resource("ClusterParameterGroup", "academorix-production-main-db").inputs).toMatchObject(
+      {
+        family: "aurora-postgresql18",
+        ...preload,
+      },
+    );
+    expect(resource("Cluster", "academorix-production-main-db").inputs).toMatchObject({
+      dbClusterParameterGroupName: "academorix-production-main-db",
+    });
   });
 
   // @covers sta-1640:FR-010

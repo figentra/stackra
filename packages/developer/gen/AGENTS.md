@@ -261,6 +261,11 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   takes goes through `raw`.
 - `DocsConfig` lives here (`.` entry) because only gen reads it; no runtime package carries it.
 - The asset check covers media extensions only, so a brand `NOTICE` under `src/assets/` is copied, never refused.
+- A docs member (`"stackra": { "kind": "docs" }`, ADR 0514 amendment of 2026-11-09) takes the same run: `readDocsMember`
+  maps `content/` onto the docs app layout, `navigationOfMeta` builds the tabs from `meta.json`, `readDocsYaml` reads
+  `docs.yaml`, and `emitDocsSite` names the paths of `input.source` in every message. Keep a docs app's output byte
+  for byte (`DOCS_APP_SOURCE` is the default), and keep `tools/schemas/docs.schema.json`, `schema/docs.json` and the
+  shape in `readDocsYaml` in step.
 
 ## Quality-gate refusals (STA-1306)
 
@@ -308,7 +313,7 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   - `approval_condition_dependency`: an `ApprovalCondition` with any constructor dependency.
   - `approval_condition_reads_unmarked`: a condition `reads` key that is not a setting marked `approval`.
 - `checkModelScope` (core, full pass only, stackra-258): `model_tenancy_missing` for a service running
-  `@stackra/tenancy` and for every package (a warning until 0.20: drop the `shortcut:` map in the function), minus
+  `@stackra/tenancy` and for every package (an error in both since the tenancy contract step), minus
   the ADR-named tables of `MODEL_SCOPE_EXEMPTIONS`; `model_tenancy_migration_missing` (staged) over
   `MemberIR.migrationTables` (`readMigrationTables`) for an owned model whose table never gets `t.belongsToTenant()`. `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.

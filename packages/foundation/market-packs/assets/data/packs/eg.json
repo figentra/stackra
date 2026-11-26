@@ -1,6 +1,6 @@
 {
   "market": "eg",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "status": "draft",
   "entries": [
     {
@@ -53,6 +53,39 @@
         }
       ],
       "from": "2026-11-01"
+    },
+    {
+      "key": "fiscal.invoice",
+      "value": {
+        "driver": "eta",
+        "options": {
+          "submitUrl": "https://api.invoicing.eta.gov.eg/api/v1.0/documentsubmissions/",
+          "statusUrl": "https://api.invoicing.eta.gov.eg/api/v1.0/documents/{uuid}/details",
+          "documentTypeVersion": "1.0",
+          "reportingCurrency": "EGP",
+          "taxTypes": {
+            "S": {
+              "taxType": "T1",
+              "subType": "V009"
+            },
+            "Z": {
+              "taxType": "T1",
+              "subType": "V001"
+            },
+            "E": {
+              "taxType": "T1",
+              "subType": "V003"
+            },
+            "O": {
+              "taxType": "T1",
+              "subType": "V004"
+            }
+          }
+        },
+        "reportingWindowHours": 24,
+        "retentionYears": 5
+      },
+      "from": "2020-11-15"
     }
   ],
   "reviews": [],
