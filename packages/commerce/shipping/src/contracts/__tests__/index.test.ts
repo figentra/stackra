@@ -18,7 +18,9 @@ import type {
   CarrierCapability as CarrierCapabilityCode,
   CarrierEvent,
   CarrierGateway,
+  CustomsId,
   CustomsItem,
+  Incoterm as IncotermCode,
   LabelDocument,
   LabelGateway,
   LabelRequest,
@@ -47,7 +49,8 @@ import type {
   TravelMatrixRequest,
 } from "#contracts/index";
 
-const { CarrierCapability, LabelFormat, PickupPointKind, TrackingState } = entry;
+const { CarrierCapability, CustomsIdKind, Incoterm, LabelFormat, PickupPointKind, TrackingState } =
+  entry;
 
 const address: ShippingAddress = { lines: ["Line 1"], locality: "City", country: "ZZ" };
 const party: ShippingParty = { name: "Name", address };
@@ -59,7 +62,9 @@ describe("@stackra/shipping/contracts", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "CarrierCapability",
       "CarrierGateways",
+      "CustomsIdKind",
       "DistanceMatrix",
+      "Incoterm",
       "LabelFormat",
       "PickupPointKind",
       "RouteSolver",
@@ -134,6 +139,43 @@ describe("@stackra/shipping/contracts", () => {
     // @ts-expect-error -- a label request names its format
     const formatless: LabelRequest = { ...request, format: undefined };
     expect(formatless.reference).toBe("ful_1");
+  });
+
+  it("carries the Incoterm and the shipper's customs ids across a border", () => {
+    const ids: CustomsId[] = [
+      { kind: CustomsIdKind.Eori, value: "DE123456789012345" },
+      { kind: CustomsIdKind.Vat, value: "GB123456789", country: "GB" },
+    ];
+    const rates: RateRequest = {
+      origin: address,
+      destination: { ...address, country: "YY" },
+      parcels: [parcel],
+      incoterm: Incoterm.Ddp,
+    };
+    const quote: RateQuote = {
+      service: "INT",
+      name: "International",
+      amount: Money.ofMinor(5000, "EUR"),
+      incoterm: Incoterm.Ddp,
+    };
+    const request: LabelRequest = {
+      reference: "shm_1",
+      service: quote.service,
+      shipper: party,
+      recipient: party,
+      parcels: [parcel],
+      format: LabelFormat.Pdf,
+      incoterm: Incoterm.Ddp,
+      customsIds: ids,
+    };
+
+    expect([
+      rates.incoterm,
+      request.incoterm,
+      quote.incoterm,
+      request.customsIds?.[1]?.country,
+    ]).toEqual(["ddp", "ddp", "ddp", "GB"]);
+    expectTypeOf<RateRequest["incoterm"]>().toEqualTypeOf<IncotermCode | undefined>();
   });
 
   it("lets an aggregator name the carrier that delivers a quote and a shipment", () => {

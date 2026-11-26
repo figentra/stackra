@@ -8,6 +8,8 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { CarrierCapability } from "#contracts/enums/carrier-capability.enum";
+export { CustomsIdKind } from "#contracts/enums/customs-id-kind.enum";
+export { Incoterm } from "#contracts/enums/incoterm.enum";
 export { LabelFormat } from "#contracts/enums/label-format.enum";
 export { PickupPointKind } from "#contracts/enums/pickup-point-kind.enum";
 export { TrackingState } from "#contracts/enums/tracking-state.enum";
@@ -17,6 +19,7 @@ export { RouteSolver } from "#contracts/ports/route-solver.port";
 export type { CarrierCapabilityGateways } from "#contracts/types/carrier-capability-gateways.type";
 export type { CarrierEvent } from "#contracts/types/carrier-event.type";
 export type { CarrierGateway } from "#contracts/types/carrier-gateway.type";
+export type { CustomsId } from "#contracts/types/customs-id.type";
 export type { CustomsItem } from "#contracts/types/customs-item.type";
 export type { LabelDocument } from "#contracts/types/label-document.type";
 export type { LabelGateway } from "#contracts/types/label-gateway.type";

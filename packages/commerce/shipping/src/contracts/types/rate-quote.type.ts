@@ -9,6 +9,8 @@
  */
 import type { Money } from "@stackra/money";
 
+import type { Incoterm } from "#contracts/enums/incoterm.enum";
+
 /**
  * One offered service.
  *
@@ -36,4 +38,7 @@ export interface RateQuote {
    * the aggregator's name for it. The connection's own `provider` stays the aggregator's. Left out by a direct carrier.
    */
   readonly carrier?: string;
+
+  /** The terms the price is for, when the carrier quoted a cross-border shipment: DDP includes the duties. */
+  readonly incoterm?: Incoterm;
 }
