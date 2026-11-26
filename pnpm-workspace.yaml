@@ -129,7 +129,7 @@ catalogs:
     oxlint: 1.86.0
     oxfmt: 0.71.0
     vitest: 5.0.5
-    "@vitest/coverage-v8": 5.0.3
+    "@vitest/coverage-v8": 5.0.5
     knip: 6.41.0
     # Copy-paste detector behind `stackra duplication`, the per-member ratchet of `pnpm validate` (rule-gap
     # B-9, stackra-235). 5.x is the Rust engine (platform binaries as optional dependencies); MIT.
