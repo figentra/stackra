@@ -92,4 +92,5 @@ the order in which the pipeline calls it. It implements the ADR 0495 note of 202
 
 - 2026-11-26 → Clarified (the duplicate-write path and the 24-hour stuck key, from the STA-2797 report)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md; built in the same branch, stackra#1092)
