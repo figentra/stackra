@@ -82,6 +82,7 @@
     "@stackra/vitest-config": "workspace:*",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:quality",
+    "fast-check": "catalog:quality",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
     "tsdown": "catalog:build",
