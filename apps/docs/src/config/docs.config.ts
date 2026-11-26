@@ -64,14 +64,19 @@ export class StackraDocsConfig extends DocsConfig {
           ],
         },
         {
-          // Task guides for teams building an app on Stackra (STA-2843): each page's TypeScript blocks are copied from
-          // the tested examples in scripts/guides/<page>/, and scripts/guides/__tests__ fails when one drifts.
+          // Task guides for teams building an app on Stackra (STA-2843, STA-2852): each page's TypeScript blocks are
+          // copied from the tested examples in scripts/guides/<page>/, and scripts/guides/__tests__ fails when one drifts.
           group: "Build an app",
           pages: [
             "build-an-app/models-and-migrations",
             "build-an-app/tenancy",
             "build-an-app/files",
             "build-an-app/search",
+            "build-an-app/sign-in-and-permissions",
+            "build-an-app/events-and-jobs",
+            "build-an-app/notifications",
+            "build-an-app/settings-and-flags",
+            "build-an-app/observability",
           ],
         },
         {

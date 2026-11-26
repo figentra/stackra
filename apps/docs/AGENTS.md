@@ -41,6 +41,16 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
   for what `stackra gen` writes in an app (entity metadata, partners, bucket keys); keep it in gen's shape.
 - A tenancy proof runs as the service role (`support/as-service-role.ts`): the PGlite session user is a superuser,
   which row-level security never restricts.
+- The second set (sign-in and permissions, events and jobs, notifications, settings and flags, observability;
+  STA-2852) needs no database: its tests run the real action pipeline, testing app, OTLP drivers and `createApp`
+  over memory drivers and a stubbed `fetch`. Each `__tests__/*.wiring.ts`, `*.access.ts`, `*.schemas.ts` and
+  `*.settings-keys.ts` stands in for gen's output, and `i18n.ts`, `queues.ts` and `flags.ts` beside the examples for
+  `#stackra/i18n`, `#stackra/queues` and `#stackra/flags`; keep them in gen's shape. A secret in a test is a fixed
+  dummy passed through `MemorySecretStoreDriver`, never a real value.
+- Typecheck the examples with `pnpm exec tsc --noEmit -p tsconfig.json` and read the `scripts/` lines: under this
+  member's `node` preset (no DOM lib, no JSX, erasable syntax only) the sources of `@stackra/app`, `@stackra/identity`,
+  `@stackra/clients`, `@stackra/notifications` and `@stackra/tenancy/react` report errors their own presets do not
+  (STA-2852).
 - Change an example, run `pnpm test`, then copy the changed lines into the page. A new page needs its folder, its
   schema in the drift test's `SCHEMAS`, and an entry in the "Build an app" group of `src/config/docs.config.ts`.
 

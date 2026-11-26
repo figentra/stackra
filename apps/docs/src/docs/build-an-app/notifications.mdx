@@ -1,0 +1,170 @@
+---
+title: "Notifications"
+description: "Tell a person what happened, on the channels they keep on, from a template in their language, and test what was sent."
+icon: "bell"
+---
+
+A notification is a message to a person about something that happened: a receipt, an answer, an alert. You declare
+who hears it and what it says; the platform picks the provider, the language and the channels the person keeps on.
+This guide tells a customer their support ticket was answered. The code is copied from
+`apps/docs/scripts/guides/notifications`, which the docs site's tests run.
+
+Read [Events and background jobs](/build-an-app/events-and-jobs) first: a notification is triggered by an event. The
+module also depends on `@stackra/notifications`.
+
+## How it works
+
+1. A notification class sits beside the model it is about. The type of `recipients(event)`'s parameter is its
+   **trigger**: gen writes a listener that calls the `Notifier` port once per event id, after the commit.
+2. Its **category** decides what the person may switch off: `transactional` (a receipt, a password reset) can never
+   be muted, `activity` is on until muted, `marketing` is off until the person opts in.
+3. Each **channel** is a method the class declares (`mail`, and the others the package lists). The mail body is a
+   `.mail.tsx` component of the same name, compiled by gen and rendered in the recipient's language. Strings are i18n
+   keys, never literals.
+4. Products declare channels, never providers. The provider behind a channel is the tenant's own connection or the
+   market's, chosen at send time (Resend or SES for mail, local providers for SMS and WhatsApp, Expo and Web Push).
+
+## 1. Declare the notification
+
+```ts src/modules/support/resources/ticket/ticket-answered.notification.ts
+/** Tells a customer their ticket was answered. */
+export class TicketAnsweredNotification extends Notification({
+  category: NotificationCategory.Activity, // the customer may mute it
+}) {
+  /** Reads the ticket the mail shows. */
+  private readonly tickets: TicketService;
+
+  /**
+   * @param tickets - reads the ticket the mail shows.
+   */
+  constructor(tickets: TicketService) {
+    super();
+    this.tickets = tickets;
+  }
+
+  /** The customer who opened the ticket. */
+  recipients(event: TicketAnswered): Recipient[] {
+    return [Recipient.principal(event.customerId)];
+  }
+
+  /** Read once per event, after the recipients are known. */
+  async data(event: TicketAnswered): Promise<TicketAnsweredData> {
+    const ticket = await this.tickets.get(event.ticketId);
+    return { ticketId: ticket.id, subject: ticket.subject };
+  }
+
+  /** The mail channel: its subject, in the recipient's language. */
+  mail(data: TicketAnsweredData, mail: MailMessage): MailMessage {
+    return mail.subject(I18n.support.ticket_answered.mail.subject, { subject: data.subject });
+  }
+}
+```
+
+- Gen derives the key (`support.ticket_answered`), the trigger (`TicketAnswered`), the channels (the methods present)
+  and the queue (`notifications`).
+- `Recipient.principal(id)` names a person by their account. Their address stays with identity: your code never
+  holds it. `Recipient.address(email)` is only for someone with no account yet, such as an invitation.
+- A person named twice gets one delivery, and with no recipient `data` is never read.
+- `I18n` comes from `#stackra/i18n`, which gen writes from your lang files. The subject's English text, for example
+  `Your ticket "{subject}" was answered`, lives in `assets/lang/en/support.json`.
+
+## 2. Write the mail body
+
+The body is `ticket-answered.mail.tsx`, a component that receives what `data` returned. `useMail()` gives it `t`,
+`money`, `asset`, the recipient's `locale` and the text direction, so an Arabic recipient gets a right-to-left mail
+from the same component. Gen compiles it at build time; there is no template engine at run time. The
+`@stackra/notifications` README, "A mail body", shows one, and `renderMail(Body, data, { locale })` from
+`@stackra/notifications/testing` renders it in a test.
+
+## 3. Test what was sent
+
+`MemoryNotifierDriver` is the `memory` driver, the default outside production: it prepares a notification exactly as
+a sending driver does and keeps the deliveries instead of sending them. Call it as gen's listener does:
+
+```ts
+const notifier = new MemoryNotifierDriver();
+const answered = TicketAnswered.create({ ticketId: TICKET, customerId: ADA });
+
+await notifier.notify(new TicketAnsweredNotification(desk.service), answered);
+
+const [delivery, ...others] = notifier.sent(TicketAnsweredNotification);
+expect(others).toEqual([]);
+expect(delivery?.recipient).toEqual(Recipient.principal(ADA));
+expect(delivery?.category).toBe(NotificationCategory.Activity);
+expect(delivery?.mail?.subjectKey).toBe("support::ticket_answered.mail.subject");
+expect(delivery?.mail?.subjectValues).toEqual({ subject: "Invoice shows the wrong VAT" });
+```
+
+In a module test, read the same deliveries from the app: `(app.get(Notifier) as MemoryNotifier).sent(...)`.
+
+## 4. Respect what the person chose
+
+The notifications service checks the person's choice per category and channel before it sends. `PreferenceStore`
+holds it, and every driver answers the same way: a category that cannot be muted is always allowed, a recorded choice
+wins otherwise, and with none, marketing is off and the rest on:
+
+```ts
+const preferences = new MemoryPreferenceStoreDriver(config);
+const activity = NotificationCategory.Activity;
+
+expect(await preferences.allows(ADA, activity, NotificationChannel.Mail)).toBe(true);
+await preferences.set(ADA, activity, NotificationChannel.Mail, false);
+expect(await preferences.allows(ADA, activity, NotificationChannel.Mail)).toBe(false);
+expect(await preferences.allows(ADA, activity, NotificationChannel.Push)).toBe(true);
+
+const transactional = NotificationCategory.Transactional;
+expect(canMute(transactional, config.mandatoryCategories)).toBe(false);
+expect(await preferences.set(ADA, transactional, NotificationChannel.Mail, false)).toBe(false);
+expect(await preferences.allows(ADA, transactional, NotificationChannel.Mail)).toBe(true);
+```
+
+A market pack can make more categories mandatory (`NotificationsConfig.mandatoryCategories`), and quiet hours hold a
+mutable category until the window ends (`sendAfter`); both are data, never code.
+
+## 5. One-click unsubscribe
+
+Bulk mail (any category a person may mute) carries the RFC 8058 headers, so a mail client shows "Unsubscribe". The
+link holds a signed token over the person and the category; the key is the `NOTIFICATIONS_UNSUBSCRIBE_KEY` secret and
+the endpoint `unsubscribeUrl`:
+
+```ts
+const link = await unsubscribeLink({
+  recipient: ADA,
+  category: NotificationCategory.Activity,
+  key: config.unsubscribeKey,
+  url: config.unsubscribeUrl,
+});
+expect(listUnsubscribeHeaders(NotificationCategory.Activity, [], link)).toEqual({
+  "List-Unsubscribe": `<${link}>`,
+  "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+});
+expect(listUnsubscribeHeaders(NotificationCategory.Transactional, [], link)).toEqual({});
+
+const token = new URL(link).searchParams.get("token") ?? "";
+expect(await verifyUnsubscribeToken(token, config.unsubscribeKey)).toEqual({
+  recipient: ADA,
+  category: NotificationCategory.Activity,
+});
+expect(await verifyUnsubscribeToken(`${token}x`, config.unsubscribeKey)).toBeUndefined();
+```
+
+The endpoint's `POST` handler verifies the token and records the choice with `preferences.set(..., false)`. A forged
+token verifies to nothing.
+
+## Going live
+
+`NotificationsConfig.driver` picks the `Notifier`: `memory` keeps deliveries in the process, `notifications` renders
+the mail and queues it on the notifications service, which owns delivery, preferences, the delivery log and the inbox.
+Runway sets it per environment. The service records each outcome as a `notifications.delivery.recorded.v1` event (ids
+and codes only), so a bounce or a failed SMS is visible without reading anyone's message.
+
+## Rules
+
+- Name people by account (`Recipient.principal`), never by address, so identity keeps the address.
+- Every string is an i18n key; the recipient's language is theirs, not the sender's.
+- Choose the category honestly: only what a person must receive is `transactional`.
+- Never put a person's data in an event payload; read it in `data(event)` once the recipients are known.
+- A record of a restricted class (medical, safeguarding, a privileged matter) uses the content-free template: the
+  message says only that there is an update and links to it after sign-in.
+
+Next: [Settings and feature flags](/build-an-app/settings-and-flags) lets each tenant tune the app.

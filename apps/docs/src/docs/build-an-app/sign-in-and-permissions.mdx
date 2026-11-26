@@ -1,0 +1,227 @@
+---
+title: "Sign-in and permissions"
+description: "Turn a signed token into the caller, declare who may do what, add a rule per record, and prove each refusal in a test."
+icon: "key-round"
+---
+
+Every call to your app's API answers two questions before your code runs: who is calling, and may they do this here.
+Stackra answers both outside your handlers. This guide closes a support ticket: an agent may close any ticket of their
+tenant, a customer only their own, and nobody else at all. The code is copied from
+`apps/docs/scripts/guides/sign-in-and-permissions`, which the docs site's tests run.
+
+Read [Models and migrations](/build-an-app/models-and-migrations) and [Tenancy in an app](/build-an-app/tenancy)
+first. The module also depends on `@stackra/iam`; the server side of sign-in is in `@stackra/app` and
+`@stackra/identity`.
+
+## How it works
+
+1. **Sign-in happens at the identity provider** (ZITADEL), on its hosted page. Stackra builds no login form. The web
+   app keeps the session in an HttpOnly cookie through its backend-for-frontend; desktop and mobile apps use the
+   authorization-code flow with PKCE. Either way, every API call then carries `Authorization: Bearer <token>`.
+2. **The server verifies the token** before any action runs: signature against the provider's published keys (JWKS),
+   issuer, audience and expiry. The generated auth handler does it through `CallAuthenticator` and turns the claims
+   into the caller, an `Actor`. A bad token is one `unauthenticated` answer with no detail.
+3. **The action pipeline checks the permission** the action's key derives (`support.ticket.close`) against the
+   caller's grants where the call acts, before validation and before `handle`. Grants live in IAM as data, never in
+   code.
+4. **Your handler checks the record** with `ctx.authorize(record)`, which runs the model's policy. That is where "only
+   their own" lives.
+
+Configure the token check with the provider's issuer and your API's audience, `STACKRA_BEARER_ISSUER` and
+`STACKRA_BEARER_AUDIENCE` (or the runway's values), and bind the `oidc` `JsonWebKeys` driver, which reads the issuer's
+discovery document and caches its keys. Neither value is a secret.
+
+## 1. Know who is calling
+
+A token issued at sign-in carries the user's public id, realm (staff or customer) and the scope it was issued for:
+
+```ts
+function claimsOf(user: PublicId<"usr">, realm: Realm): Record<string, unknown> {
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    iss: ISSUER,
+    aud: AUDIENCE,
+    exp: now + 300,
+    sub: `zitadel-${user}`,
+    [IDENTITY_CLAIMS.userId]: user,
+    [IDENTITY_CLAIMS.realm]: realm,
+    [IDENTITY_CLAIMS.scopePath]: ACME.path,
+    [IDENTITY_CLAIMS.memberships]: [{ scopeId: ACME.id, path: ACME.path, name: "Acme", roles: [] }],
+  };
+}
+```
+
+On ZITADEL the identity service's action adds the `urn:stackra:*` claims. The server turns a verified token into the
+caller, in the tenant the token was issued for:
+
+```ts
+const token = await issue(claimsOf(AGENT, Realm.Staff));
+const caller = await authenticate(`Bearer ${token}`);
+expect(caller).toEqual({
+  kind: ActorKind.User,
+  id: AGENT,
+  realm: Realm.Staff,
+  scopeId: ACME.id,
+});
+```
+
+In a handler the caller is `ctx.actor`. It never comes from the request body, a query string or a header your code
+reads. No token, an expired one and one issued for another API are all refused the same way:
+
+```ts
+const expired = await issue({ ...claimsOf(AGENT, Realm.Staff), exp: 1_700_000_000 });
+const foreign = await issue({ ...claimsOf(AGENT, Realm.Staff), aud: "another-api" });
+
+await expect(authenticate()).rejects.toSatisfy(isUnauthenticated);
+await expect(authenticate(`Bearer ${expired}`)).rejects.toSatisfy(isUnauthenticated);
+await expect(authenticate(`Bearer ${foreign}`)).rejects.toSatisfy(isUnauthenticated);
+```
+
+## 2. Declare the permissions
+
+One `Permissions` class per model. Each static is a verb, and its value is the risk, `L0` (read) to `L4`:
+
+```ts src/modules/support/access/ticket.permissions.ts
+import { Permission, Permissions } from "@stackra/iam";
+
+/** Who may read, answer and close support tickets. */
+export class TicketPermissions extends Permissions {
+  /** Read a ticket. */
+  static readonly read = Permission.L0;
+
+  /** Answer a ticket. */
+  static readonly reply = Permission.L1;
+
+  /** Close a ticket. */
+  static readonly close = Permission.L2;
+}
+```
+
+Gen derives the keys from the module, the class and the static: `support.ticket.read`, `support.ticket.reply`,
+`support.ticket.close`. You never write a key by hand. An action takes its risk from its permission.
+
+## 3. Bundle them in roles
+
+A module role names the permissions it grants. Who holds it, and where, is data an admin manages in IAM:
+
+```ts src/modules/support/access/support-agent.role.ts
+import { Role } from "@stackra/iam";
+
+import { TicketPermissions } from "./ticket.permissions";
+
+/** Staff who work the support queue. */
+export class SupportAgentRole extends Role({
+  grants: [TicketPermissions.read, TicketPermissions.reply, TicketPermissions.close],
+}) {}
+```
+
+The guide's `TicketRequesterRole` grants `read` and `close` to customers the same way. The keys are
+`support.support_agent` and `support.ticket_requester`.
+
+## 4. Add the record rule
+
+A permission says a customer may close tickets. Which tickets is a rule about the record, so it lives in the model's
+policy, one method per verb:
+
+```ts src/modules/support/access/ticket.policy.ts
+import { type Actor, Realm } from "@stackra/contracts";
+import { Decision, Policy } from "@stackra/iam";
+
+import type { Ticket } from "./ticket.model";
+
+/** Record rules for tickets. */
+export class TicketPolicy extends Policy<Ticket> {
+  /** A customer closes only their own ticket; anyone else is left to their grants. */
+  close(actor: Actor, ticket: Ticket): Decision {
+    const subject = actor.onBehalfOf ?? actor;
+    if (subject.realm !== Realm.Customer) return Decision.Abstain;
+    return ticket.customerId === subject.id ? Decision.Abstain : Decision.Deny;
+  }
+}
+```
+
+`Deny` refuses; `Abstain` leaves the decision to the grants. A policy never grants what no role holds. `onBehalfOf`
+covers a service or an agent acting for the customer: the rule reads the person, not the caller.
+
+## 5. Write the action
+
+The action declares who may call it and asks the policy about the ticket it loaded:
+
+```ts src/modules/support/actions/close-ticket.action.ts
+/** Closes a ticket for a signed-in user who may. */
+export class CloseTicketAction extends Action({
+  key: "ticket.close",
+  actors: [ActorKind.User],
+}) {
+  /** Reads and closes the ticket. */
+  private readonly tickets: TicketService;
+
+  /**
+   * @param tickets - reads and closes the ticket.
+   */
+  constructor(tickets: TicketService) {
+    super();
+    this.tickets = tickets;
+  }
+
+  /** Closes the ticket once the policy allows this caller to close this ticket. */
+  async handle(input: { ticketId: Ticket["id"] }, ctx: ActionContext): Promise<{ status: string }> {
+    const ticket = await this.tickets.get(input.ticketId);
+    await ctx.authorize(ticket);
+    const closed = await this.tickets.close(ticket.id);
+    return { status: closed.status };
+  }
+}
+```
+
+There is no permission check in `handle`: the pipeline ran it before. `ctx.authorize(ticket)` runs the policy method
+named after the verb, then the permission check again with the record. A call the pipeline was never told about has no
+permission and is refused: the step fails closed.
+
+## 6. Prove it
+
+In a test, the grants are loaded into the memory policy source, as the IAM service publishes them in production. Each
+grant names a role and the scope node it holds at; it counts there and below:
+
+```ts
+const policy = new MemoryPolicySourceDriver();
+policy.load({
+  grants: [
+    { principal: AGENT, role: "support.support_agent", scope: ACME },
+    { principal: ADA, role: "support.ticket_requester", scope: ACME },
+    { principal: BEN, role: "support.ticket_requester", scope: ACME },
+    { principal: GLOBEX_AGENT, role: "support.support_agent", scope: GLOBEX },
+  ],
+});
+```
+
+Then every call goes through the real pipeline with IAM's access control, acting in Acme:
+
+```ts
+const close = (actor: Actor, ticket: Ticket) =>
+  pipeline.execute(CloseTicketAction, { ticketId: ticket.id }, { actor, scope: ACME });
+
+expect(await close(ada, desk.adas)).toEqual({ status: "closed" });
+expect(await close(agent, desk.bens)).toEqual({ status: "closed" });
+
+await expect(close(ada, desk.bens)).rejects.toSatisfy(isForbidden); // the policy: not hers
+await expect(close(drew, desk.adas)).rejects.toSatisfy(isForbidden); // no role at all
+await expect(close(globexAgent, desk.adas)).rejects.toSatisfy(isForbidden); // another tenant's agent
+```
+
+The same test checks that nothing closed on a refusal, and that with no grant loaded every caller is refused. In a
+module's own tests, `import { actors } from "@stackra/iam/testing"` opens a memory policy where everyone is owner, so
+handler tests need no grants; load exact grants, as above, when the test is about access.
+
+## Rules
+
+- The caller comes from the verified token, never from input. Never pass a user id or a tenant id in a request to say
+  who is acting.
+- Declare permissions per model, bundle them in roles, and keep who holds what in IAM. Never check a role name in code.
+- A rule about which records belongs in the model's policy, called with `ctx.authorize(record)`.
+- Hiding a button is presentation only. On the client, `usePermission()` reads the session's permission keys to hide
+  what the caller cannot do; the server checks every call regardless.
+- For a risky action, declare `stepUp: AssuranceLevel.Aal2` on it: the pipeline then asks a fresh, stronger sign-in
+  (`step_up_required`), and the client calls `session.signIn(stepUpSignIn())`.
+
+Next: [Events and background jobs](/build-an-app/events-and-jobs) reacts to what an action did.
