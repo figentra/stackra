@@ -102,7 +102,10 @@ packages/developer/cli/
   README.md
 packages/runtime/realtime/src/node/drivers/__tests__/lan-realtime-local-relay.driver.test.ts
 packages/developer/flow-preset/preset/agents/test-engineer.md
-.agents/agents/test-engineer.md, .claude/agents/test-engineer.md, .opencode/agents/test-engineer.md, .flow/lock.json
+.agents/agents/test-engineer.md
+.claude/agents/test-engineer.md
+.opencode/agents/test-engineer.md
+.flow/lock.json
 tools/scripts/test-markers.yaml
 apps/docs/src/docs/standards/testing.mdx
 .changeset/cli-test-marker-quarantine.md

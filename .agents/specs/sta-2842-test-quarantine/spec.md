@@ -56,25 +56,14 @@ relay test binds ports 47913 and 47914 (STA-2777) and the promote and deploy tes
 
 ## Acceptance criteria
 
-- **AC-001**: WHEN a test file holds a `skip`, `todo`, `fixme`, `fails`, `skipIf` or `runIf` marker (also `xit`,
-  `xdescribe`, member chains such as `it.concurrent.skip` and `it.skip.each`, and node:test `{ skip }` / `{ todo }`
-  options) that `tools/scripts/test-markers.yaml` does not list THE `validate --repository` command SHALL report it
-  with its file, line and title and exit 1.
-- **AC-002**: WHEN a marker is listed under `gates` THE command SHALL accept it only if it is a `skipIf` or `runIf`
-  marker and its entry gives a reason.
-- **AC-003**: WHEN a marker is listed under `quarantine` THE command SHALL accept it only with a Linear issue key, a
-  reason and an `until` date no earlier than today and at most `QUARANTINE_MAX_DAYS` (30) days out.
-- **AC-004**: WHEN a test file holds a committed `.only`, a marker names no title, a marker is listed under both
-  sections, a listed entry matches no marker, or the list does not parse THE command SHALL report it.
-- **AC-005**: WHEN a test binds a literal port, declares a fixed `*_PORT` constant, or writes to a fixed `/tmp` path, a
-  fixed name under `tmpdir()` or the real home folder THE command SHALL report it, unless the line or the line above
-  carries `// shared-box: <reason>`.
-- **AC-006**: THE marker and shared-box readers SHALL ignore text inside comments, strings, template text and regular
-  expressions.
-- **AC-007**: THE LAN relay test SHALL take its ports from the operating system, and the promote and deploy tests SHALL
-  take a stand-in deploy lock, so that two runs on one host do not fail each other.
-- **AC-008**: THE shipped list SHALL list every marker of this checkout, and this checkout SHALL have no shared-box
-  findings.
+- **AC-001**: WHEN a test file holds a `skip`, `todo`, `fixme`, `fails`, `skipIf` or `runIf` marker (also `xit`, `xdescribe`, member chains such as `it.concurrent.skip` and `it.skip.each`, and node:test `{ skip }` / `{ todo }` options) that `tools/scripts/test-markers.yaml` does not list THE `validate --repository` command SHALL report it with its file, line and title and exit 1.
+- **AC-002**: WHEN a marker is listed under `gates` THE command SHALL accept it only if it is a `skipIf` or `runIf` marker and its entry gives a reason.
+- **AC-003**: WHEN a marker is listed under `quarantine` THE command SHALL accept it only with a Linear issue key, a reason and an `until` date no earlier than today and at most `QUARANTINE_MAX_DAYS` (30) days out.
+- **AC-004**: WHEN a test file holds a committed `.only`, a marker names no title, a marker is listed under both sections, a listed entry matches no marker, or the list does not parse THE command SHALL report it.
+- **AC-005**: WHEN a test binds a literal port, declares a fixed `*_PORT` constant, or writes to a fixed `/tmp` path, a fixed name under `tmpdir()` or the real home folder THE command SHALL report it, unless the line or the line above carries `// shared-box: <reason>`.
+- **AC-006**: THE marker and shared-box readers SHALL ignore text inside comments, strings, template text and regular expressions.
+- **AC-007**: THE LAN relay test SHALL take its ports from the operating system, and the promote and deploy tests SHALL take a stand-in deploy lock, so that two runs on one host do not fail each other.
+- **AC-008**: THE shipped list SHALL list every marker of this checkout, and this checkout SHALL have no shared-box findings.
 
 ## Status history
 
