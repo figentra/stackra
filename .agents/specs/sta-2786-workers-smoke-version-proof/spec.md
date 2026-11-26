@@ -87,4 +87,5 @@ None.
 
 - 2026-11-26 → Clarified (the cause is Cloudflare's override rule, reproduced by the fake Cloudflare in the tests)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md; built in the same branch)

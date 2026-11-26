@@ -7,6 +7,11 @@
 1. **Give every Worker member at least one smoke check** (`targets.cloudflare-workers.members.<key>.smoke`). A member with none is now refused before anything ships.
 2. **Make every Worker name its version.** Give it a `version_metadata` binding (`CF_VERSION_METADATA`) and send its id in `x-stackra-version` on every answer. For an assets-only Worker, add a script that answers only `GET /-/version` with `{ "version": "<id>" }` and the same header (`run_worker_first: ["/-/version"]`), and set `versionProof: route` on the member. A Worker whose answers name no version fails every deploy step.
 
+### Breaking
+
+- A Worker member with no smoke check is refused before anything ships.
+- A smoke answer with no version proof fails the step: no `x-stackra-version` header naming the version under test, or, with `versionProof: route`, no `/-/version` route answering it.
+
 **What changed.** The `cloudflare-workers` provider's smoke now proves which Worker version answered, so a deploy can no longer pass its smoke on the old version. Before, it smoked a new version through `Cloudflare-Workers-Version-Overrides` while that version was in no deployment. Cloudflare honours an override only for a version in the current deployment and routes any other request as usual, so the "0% smoke" checked the version already serving and passed even when the new one was broken.
 
 - **0% stage first.** The provider adds the new version to the deployment at 0% (`wrangler versions deploy <serving>@100 <new>@0`), smokes it there by override, and only then moves traffic in the member's `rollout` steps (10/50/100 for an `api` member in production), smoking after every step, the 100% one included. A failed 0% smoke takes the version out again and moves no traffic; a failed later step puts the previous version back.
