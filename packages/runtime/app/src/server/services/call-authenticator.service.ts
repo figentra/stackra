@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `CallAuthenticator`, the authentication of one inbound API call: the `Authorization: Bearer` token verified
- *          by `verifyBearerToken` under `BearerConfig` and the bound `JsonWebKeys`, then mapped to its `Actor` by
+ *          by `verifyCallToken` under `BearerConfig` and the bound `JsonWebKeys` (or, under `stackra dev` only, the dev
+ *          issuer's keys, STA-2795), then mapped to its `Actor` by
  *          @stackra/identity's `actorOf`: a user, or the service whose ZITADEL service account signed it (ADR 0209
  *          decision 3). A service that calls for a user also forwards the user's own access token in
  *          `Stackra-On-Behalf-Of`; the call is then that service with `onBehalfOf` the user (ADR 0209, amendment of
@@ -24,7 +25,7 @@
  *           its own error (an outage, not a bad token). No token is ever logged or put in an error.
  * Runtime: node
  * Governing contract: ADR 0209 (decision 3 and its 2026-11-07 amendment, point 5: one auth handler); ADR 0206
- *                     (decision 8: tokens verified by JWKS); ADR 0098 (the actor from the credential); ADR 0278 (as
+ *                     (decision 8: tokens verified by JWKS; amendment of 2026-11-26: the dev issuer); ADR 0098 (the actor from the credential); ADR 0278 (as
  *                     amended: the gateway path, STA-2646 B3).
  */
 import { CallOriginKind } from "@stackra/actions/contracts";
@@ -45,8 +46,8 @@ import { ApiKeyMode, ServicePrincipals } from "@stackra/identity/contracts";
 
 import { BearerConfig } from "#config/bearer.config";
 import { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
-import { verifyBearerToken } from "#core/functions/verify-bearer-token.function";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
+import { verifyCallToken } from "#server/functions/verify-call-token.function";
 import type { CallAuthData } from "#server/types/call-auth-data.type";
 import type { CallCredentials } from "#server/types/call-credentials.type";
 
@@ -151,15 +152,11 @@ export class CallAuthenticator {
    * @throws BearerTokenInvalidError when the token does not verify or maps to no actor.
    */
   private async actorOfToken(token: string): Promise<Actor> {
-    const config = this.container.get(BearerConfig);
-    const keys = this.container.get(JsonWebKeys);
-    const claims = await verifyBearerToken(token, {
-      issuer: config.issuer,
-      audience: config.audience,
-      leewaySeconds: config.leewaySeconds,
-      now: new Date(),
-      keys: (kid) => keys.find(kid),
-    });
+    const claims = await verifyCallToken(
+      token,
+      this.container.get(BearerConfig),
+      this.container.get(JsonWebKeys),
+    );
     if (claims === undefined) throw BearerTokenInvalidError.create();
     // No bound driver knows no service: an empty store refuses every service token.
     const principals = this.container.has(ServicePrincipals)

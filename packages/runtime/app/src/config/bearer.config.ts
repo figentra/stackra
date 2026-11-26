@@ -7,7 +7,8 @@
  *           `STACKRA_BEARER_AUDIENCE` or runway, since they are deployment data (public values, never a secret). A host
  *           overrides it as `class BearerConfig extends BaseBearerConfig` with `override` members only.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 19 and 20); ADR 0306; ADR 0206 (decision 8).
+ * Governing contract: ADR 0294 (decisions 19 and 20); ADR 0306; ADR 0206 (decision 8 and its amendment of
+ *                     2026-11-26: the dev issuer).
  */
 import { Config } from "@stackra/config";
 
@@ -25,5 +26,10 @@ import { BearerOptions } from "#core/schemas/bearer-options.schema";
  */
 export class BearerConfig extends Config({
   schema: BearerOptions,
-  env: { issuer: "STACKRA_BEARER_ISSUER", audience: "STACKRA_BEARER_AUDIENCE" },
+  env: {
+    issuer: "STACKRA_BEARER_ISSUER",
+    audience: "STACKRA_BEARER_AUDIENCE",
+    devKeys: "STACKRA_DEV_ISSUER_KEYS",
+    environment: "STACKRA_ENVIRONMENT",
+  },
 }) {}

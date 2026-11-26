@@ -4372,6 +4372,9 @@ importers:
 
   packages/developer/cli:
     dependencies:
+      '@stackra/app':
+        specifier: workspace:*
+        version: link:../../runtime/app
       '@stackra/config':
         specifier: workspace:*
         version: link:../../foundation/config

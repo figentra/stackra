@@ -3,16 +3,20 @@
  * Purpose: unit tests of `BearerTokenGuard`: it runs after the edge, origin and CSRF guards (order -50); it lets a
  *          valid bearer token through and puts its claims on the request's `VerifiedToken`; it lets a request with no
  *          token through only on a public path; it refuses a missing token off a public path, a non-bearer scheme, an
- *          invalid token (wrong audience), a token whose key is unknown, and every token while the issuer is unset.
+ *          invalid token (wrong audience), a token whose key is unknown, and every token while the issuer is unset; it
+ *          lets a dev token through under `stackra dev` only (STA-2795).
  * Boundary: test only; a real Web Crypto RS256 key pair, the memory key driver and `buildConfig`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0206 (decision 8); ADR 0437 (decision 8); ADR 0457.
  */
 import { buildConfig } from "@stackra/config";
 import { isRefusal } from "@stackra/errors";
+import { Realm } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { BearerConfig } from "#config/bearer.config";
+import { createDevIssuerKey } from "#core/functions/create-dev-issuer-key.function";
+import { mintDevToken } from "#core/functions/mint-dev-token.function";
 import { MemoryJsonWebKeysDriver } from "#server/drivers/memory-json-web-keys.driver";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 import { BearerTokenGuard } from "#server/services/bearer-token.guard";
@@ -124,5 +128,18 @@ describe("BearerTokenGuard", () => {
   it("refuses every token while the issuer is unset", async () => {
     const { guard } = await setup({ STACKRA_BEARER_ISSUER: "" });
     await refuses(guard.check(request("/orders", `Bearer ${await token(claims)}`)));
+  });
+
+  it("lets a dev token through under stackra dev only", async () => {
+    const key = await createDevIssuerKey();
+    const dev = `Bearer ${await mintDevToken(key.privateKey, { userId: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3", realm: Realm.Staff })}`;
+    const on = await setup({
+      STACKRA_DEV_ISSUER_KEYS: JSON.stringify({ keys: [key.publicKey] }),
+      STACKRA_ENVIRONMENT: "dev",
+    });
+    await on.guard.check(request("/orders", dev));
+    expect(on.verified.claims).toMatchObject({ sub: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3" });
+    const off = await setup({ STACKRA_ENVIRONMENT: "dev" });
+    await refuses(off.guard.check(request("/orders", dev)));
   });
 });

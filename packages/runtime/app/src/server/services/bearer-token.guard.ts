@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `BearerTokenGuard`, the authentication check of ADR 0437's server-check order for an API that runs without
  *          the OS edge Worker: a `RequestGuard` that lets a request through only with an `Authorization: Bearer` JWT
- *          that `verifyBearerToken` accepts under `BearerConfig` (issuer, audience, leeway) and the bound `JsonWebKeys`,
+ *          that `verifyCallToken` accepts under `BearerConfig` (issuer, audience, leeway) and the bound `JsonWebKeys`
+ *          (or the dev issuer's keys under `stackra dev` only, STA-2795),
  *          and puts the verified claims on the request's `VerifiedToken` for the checks after it.
  * Boundary: `Lifetime.Request`, so it writes the `VerifiedToken` of its own request. A request with no bearer token
  *           reaches only a public path. Every failure is one `BearerTokenInvalidError`; an issuer that cannot be
@@ -16,9 +17,9 @@ import { Lifetime } from "@stackra/container";
 
 import type { BearerConfig } from "#config/bearer.config";
 import type { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
-import { verifyBearerToken } from "#core/functions/verify-bearer-token.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
+import { verifyCallToken } from "#server/functions/verify-call-token.function";
 import type { VerifiedToken } from "#server/services/verified-token.service";
 
 /** `Bearer <token>`, any case of the scheme (RFC 7235). */
@@ -80,13 +81,7 @@ export class BearerTokenGuard extends RequestGuard {
     }
     const token = BEARER.exec(header.trim())?.[1];
     if (token === undefined) throw BearerTokenInvalidError.create();
-    const claims = await verifyBearerToken(token, {
-      issuer: this.config.issuer,
-      audience: this.config.audience,
-      leewaySeconds: this.config.leewaySeconds,
-      now: new Date(),
-      keys: (kid) => this.keys.find(kid),
-    });
+    const claims = await verifyCallToken(token, this.config, this.keys);
     if (claims === undefined) throw BearerTokenInvalidError.create();
     this.verified.claims = claims;
   }

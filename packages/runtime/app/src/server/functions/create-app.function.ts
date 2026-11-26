@@ -13,22 +13,26 @@
  *          `health` indicators plus every `HealthIndicator` the container binds (each package's health driver),
  *          resolved once after boot.
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
- *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
+ *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process; so do dev
+ *           sign-in keys (`STACKRA_DEV_ISSUER_KEYS`) outside `STACKRA_ENVIRONMENT=dev` (`devIssuerKeys`, STA-2795). The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
  * Runtime: node
  * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263 (decisions 1, 5 and 12); ADR 0124; ADR 0143 as amended
  *                     by 0263 (lifecycle); ADR 0014 (decision 5: the runtime provides the connection); ADR 0260
  *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards);
- *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here).
+ *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here);
+ *                     ADR 0206 (amendment of 2026-11-26: the dev issuer never boots in a deployed environment).
  */
 import type { AnyClass, ModuleClass } from "@stackra/container";
 import { HealthIndicator, Tracer } from "@stackra/contracts";
 import type { TraceCarrier } from "@stackra/contracts";
 
+import { BearerConfig } from "#config/bearer.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { bootApp } from "#core/functions/boot-app.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { answerProbe } from "#server/functions/answer-probe.function";
+import { devIssuerKeys } from "#server/functions/dev-issuer-keys.function";
 import { AppDrainingError } from "#server/errors/app-draining.error";
 import type { ServerApp } from "#server/types/server-app.type";
 import type { ServerAppOptions } from "#server/types/server-app-options.type";
@@ -49,6 +53,15 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
     roots: [root],
     env: process.env,
   });
+  // Dev sign-in keys outside `stackra dev` fail boot here, so a deployment never answers a dev token (STA-2795).
+  if (container.has(BearerConfig)) {
+    try {
+      devIssuerKeys(container.get(BearerConfig));
+    } catch (error) {
+      await container.close();
+      throw error;
+    }
+  }
   const shutdown = new AbortController();
   await options.boot?.(container, { signal: shutdown.signal });
 

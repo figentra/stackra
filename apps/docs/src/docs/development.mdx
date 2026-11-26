@@ -52,6 +52,21 @@ The mobile app needs more only when you run it on a device or simulator: Xcode w
 
 Day-to-day development needs no secret. The only tokens are for MCP servers (`.mcp.json`), and they come from the sops `agents` scope (`figentra/secrets`, ADR 0525) through `stackra mcp exec`. There is no `.env` file. See [Secrets](/runbooks/secrets).
 
+### Sign in during development
+
+A service run by `stackra dev` accepts dev tokens, so you can call a protected route with no identity provider
+running. `stackra dev token` prints one for the workspace's seeded dev user; the first `stackra dev` makes the key
+pair and the user in `.stackra/dev-issuer.json` (git-ignored, mode 600).
+
+```bash
+TOKEN=$(stackra dev token)                       # --scope <path> --scope-id <scp_…>, --permission, --ttl
+curl -H "authorization: Bearer $TOKEN" http://localhost:4000/<your-route>
+```
+
+Dev tokens count only under `stackra dev` (`STACKRA_ENVIRONMENT=dev`). A deployed service that carries the dev key
+refuses to start, and one without it refuses every dev token ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral),
+amendment of 2026-11-26).
+
 ### Encore
 
 Services are plain TypeScript workspace members under `services/<name>` with no Encore files. Encore is the generated runtime target: `stackra gen` will emit the Encore app into the gitignored `.stackra/encore/` ([0091](/adr/0091-generated-encore-app-in-stackra-folder), [0124](/adr/0124-encore-is-the-generated-runtime-target)). The generator is not built yet, so there is no Encore app to run today.

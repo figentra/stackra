@@ -11,7 +11,8 @@
  *          accessibility check is the app's e2e tier).
  *          A package gen wrote no entry for (a fresh `stackra new package`, nothing under `src/` yet) and with no
  *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown. A
- *          service has nothing to build either: Encore builds it at deploy (ADR 0091).
+ *          service has nothing to build either: Encore builds it at deploy (ADR 0091). `dev` adds the workspace's dev
+ *          secret values and, in a service, the dev sign-in variables (`devIssuerEnv`, STA-2795).
  * Boundary: starts at most one tool (two in sequence for a Mintlify docs app's `lint`); a gen refusal stops before
  *           the tool and exits 1.
  * Runtime: node
@@ -24,6 +25,7 @@ import { join } from "node:path";
 import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
 import { watchDocsSite } from "@stackra/gen/node";
 
+import { devIssuerEnv } from "#node/dev-issuer/functions/dev-issuer-env.function";
 import { devSecretEnv } from "#node/dev-secrets/functions/dev-secret-env.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { checkDocsLinks } from "#node/functions/check-docs-links.function";
@@ -128,9 +130,20 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
           watcher.close();
         }
       }
-      // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679).
+      // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679) and,
+      // in a service, the dev sign-in: the dev issuer's public key and STACKRA_ENVIRONMENT=dev (STA-2795).
       if (task === "dev")
-        return runProcess({ ...tool, env: { ...tool.env, ...devSecretEnv(cwd) } }, io);
+        return runProcess(
+          {
+            ...tool,
+            env: {
+              ...tool.env,
+              ...devSecretEnv(cwd),
+              ...(await devIssuerEnv(cwd, member.layout, { ...process.env, ...tool.env })),
+            },
+          },
+          io,
+        );
       return runProcess(tool, io);
     },
   };

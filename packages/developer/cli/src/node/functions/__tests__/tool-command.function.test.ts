@@ -4,7 +4,9 @@
  *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
  *          has nothing to build; at the workspace root it fans out through
  *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
- *          the site and then fails on a broken link, naming the page (STA-2026).
+ *          the site and then fails on a broken link, naming the page (STA-2026); `dev` in a service hands Encore the dev
+ *          sign-in (the dev issuer's public key and `STACKRA_ENVIRONMENT=dev`), never the private key, and nothing when
+ *          the developer runs under another environment or in an app (STA-2795).
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule.
@@ -13,6 +15,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { DEV_ISSUER } from "@stackra/app";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -104,6 +107,28 @@ describe("toolCommand", () => {
     await toolCommand("test", "Test").run(context());
     expect(gen).not.toHaveBeenCalled();
     expect(spawn).toHaveBeenCalledTimes(2);
+  });
+
+  it("hands a service's dev run the dev sign-in, never the private key (STA-2795)", async () => {
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - services/*\n");
+    const service = join(root, "services", "notes");
+    mkdirSync(join(service, "stackra-encore"), { recursive: true });
+    writeFileSync(join(service, "stackra.config.ts"), "export default defineService({});\n");
+    vi.stubEnv("STACKRA_ENVIRONMENT", undefined);
+    try {
+      expect(await toolCommand("dev", "Serve").run({ ...context(), cwd: service })).toBe(0);
+      const env = spawn.mock.calls[0]?.[0].env ?? {};
+      expect(env["STACKRA_ENVIRONMENT"]).toBe("dev");
+      const keys = JSON.parse(env[DEV_ISSUER.keysVariable] ?? "{}") as { keys: JsonWebKey[] };
+      expect(keys.keys).toHaveLength(1);
+      expect(keys.keys[0]).not.toHaveProperty("d");
+      // under another environment the service gets no dev keys, so it boots as configured
+      vi.stubEnv("STACKRA_ENVIRONMENT", "staging");
+      await toolCommand("dev", "Serve").run({ ...context(), cwd: service });
+      expect(spawn.mock.calls[1]?.[0].env ?? {}).not.toHaveProperty(DEV_ISSUER.keysVariable);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("returns the tool's exit code", async () => {

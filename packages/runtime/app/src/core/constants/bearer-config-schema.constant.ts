@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `BEARER_CONFIG_SCHEMA`, the zod schema this package ships for `BearerConfig` (exported as `BearerConfig$`):
  *          the issuer whose keys sign the access tokens, the audience they must name, the clock leeway on `exp` and
- *          `nbf`, and how long the issuer's key set is cached.
+ *          `nbf`, how long the issuer's key set is cached, and the dev sign-in's public key set and running environment.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default and there is no object-level
  *          refinement, so `.parse({})` gives the full defaults. An empty issuer or audience is allowed here and makes
  *          the bearer-token guard refuse every token (fail closed). The defaults equal `BearerOptions`' initializers
@@ -20,4 +20,6 @@ export const BEARER_CONFIG_SCHEMA = z.object({
   audience: z.string().default(""),
   leewaySeconds: z.number().int().min(0).max(300).default(60),
   keysSeconds: z.number().int().min(60).max(86_400).default(3600),
+  devKeys: z.string().default(""),
+  environment: z.string().default(""),
 });

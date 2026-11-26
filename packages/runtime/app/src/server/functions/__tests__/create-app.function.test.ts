@@ -7,7 +7,9 @@
  *          shutdown), `guard` runs the contributed `RequestGuard`s by order and stops at the first refusal, and
  *          `/readyz` runs the given indicators and every bound `HealthIndicator`, failing with the down one named; with
  *          a bound `Tracer`, each call runs in `continueTrace` with a carrier `guard` fills (once the guards pass) from
- *          the request's `traceparent` and edge request id.
+ *          the request's `traceparent` and edge request id. Dev sign-in keys (`STACKRA_DEV_ISSUER_KEYS`) fail boot
+ *          outside `STACKRA_ENVIRONMENT=dev`, before the generated boot runs and with the container shut down, and
+ *          boot under it (STA-2795).
  * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0457.
@@ -16,10 +18,12 @@ import { Driver, Module, Service } from "@stackra/container";
 import type { Container, Wiring } from "@stackra/container";
 import { HealthIndicator, HealthStatus, Tracer } from "@stackra/contracts";
 import type { HealthReport, TraceAttributes, TraceCarrier, TraceSpan } from "@stackra/contracts";
+import { ConfigInvalidError } from "@stackra/config";
 import { isRefusal } from "@stackra/errors";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { BearerConfig } from "#config/bearer.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { AppDrainingError } from "#server/errors/app-draining.error";
@@ -171,6 +175,43 @@ describe("createApp (server)", () => {
     await app.close();
     expect(seen.signal?.aborted).toBe(true);
     vi.unstubAllEnvs();
+  });
+
+  describe("dev sign-in keys (STA-2795)", () => {
+    const SET = JSON.stringify({
+      keys: [{ kty: "EC", crv: "P-256", x: "x", y: "y", kid: "stackra-dev-1" }],
+    });
+    const bearerWiring: Wiring = {
+      ...wiring,
+      config: [{ key: "app.bearer", provide: BearerConfig }],
+    };
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it.each(["preview", "staging", "production", undefined])(
+      "never boots with them in STACKRA_ENVIRONMENT=%s, and never runs the generated boot",
+      async (environment) => {
+        vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", SET);
+        vi.stubEnv("STACKRA_ENVIRONMENT", environment);
+        const boot = vi.fn(async () => {});
+        await expect(createApp(OrdersModule, { wiring: bearerWiring, boot })).rejects.toThrow(
+          ConfigInvalidError,
+        );
+        expect(boot).not.toHaveBeenCalled();
+        expect(LedgerService.closed).toBe(1);
+      },
+    );
+
+    it("boots with them under stackra dev, and with none anywhere", async () => {
+      vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", SET);
+      vi.stubEnv("STACKRA_ENVIRONMENT", "dev");
+      await (await createApp(OrdersModule, { wiring: bearerWiring })).close();
+      vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", undefined);
+      vi.stubEnv("STACKRA_ENVIRONMENT", "production");
+      await (await createApp(OrdersModule, { wiring: bearerWiring })).close();
+    });
   });
 
   it("rejects when the boot fails", async () => {

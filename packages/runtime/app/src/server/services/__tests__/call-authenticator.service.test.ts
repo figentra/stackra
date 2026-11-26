@@ -9,7 +9,10 @@
  *          each one `BearerTokenInvalidError`, and so are an expired forward, a forward for another audience, a
  *          forwarded service token, a forward with no service bearer and a forward beside a user bearer; a forward for
  *          another scope than the principal's passes here, since only `CallIsolationDriver` reads the tree; no refusal carries a token; a key source that cannot reach the issuer
- *          throws its own error.
+ *          throws its own error. The dev sign-in (STA-2795): under `stackra dev` (`STACKRA_DEV_ISSUER_KEYS` and
+ *          `STACKRA_ENVIRONMENT=dev`) a minted dev token is its user actor, in its scope; with no dev keys a dev token
+ *          is refused; and a deployment that carries the dev keys (preview, staging, production or no environment)
+ *          never boots.
  * Boundary: test only; a real Web Crypto RS256 key pair, a host wiring with the memory key and principal drivers, and
  *           the bearer settings from the environment.
  * Runtime: node (vitest)
@@ -17,6 +20,7 @@
  */
 import { Module } from "@stackra/container";
 import type { Wiring } from "@stackra/container";
+import { ConfigInvalidError } from "@stackra/config";
 import { ActorKind, Realm } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { IDENTITY_CLAIMS, MemoryServicePrincipalsDriver } from "@stackra/identity";
@@ -26,6 +30,8 @@ import { vi } from "vitest";
 
 import { BearerConfig } from "#config/bearer.config";
 import { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
+import { createDevIssuerKey } from "#core/functions/create-dev-issuer-key.function";
+import { mintDevToken } from "#core/functions/mint-dev-token.function";
 import { MemoryJsonWebKeysDriver } from "#server/drivers/memory-json-web-keys.driver";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 import { createApp } from "#server/functions/create-app.function";
@@ -305,4 +311,69 @@ describe(CallAuthenticator, () => {
       authenticate({ authorization: await bearer(userClaims) }, { keys: UnreachableKeys }),
     ).rejects.toThrow("issuer unreachable");
   });
+});
+
+describe("CallAuthenticator dev sign-in (STA-2795)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const DEV_SCOPE_ID = "scp_01j9z3k4m5n6p7q8r9s0t1v2w8";
+
+  /** A dev token for the staff user in Acme. */
+  const devBearer = async (
+    privateKey: Awaited<ReturnType<typeof createDevIssuerKey>>["privateKey"],
+  ) =>
+    `Bearer ${await mintDevToken(privateKey, {
+      userId: USER_ID,
+      realm: Realm.Staff,
+      scopePath: "platform.acme",
+      memberships: [
+        { scopeId: DEV_SCOPE_ID, path: "platform.acme", name: "Acme", roles: ["owner"] },
+      ],
+    })}`;
+
+  it("authenticates a dev token as its user, in its scope, under stackra dev", async () => {
+    const key = await createDevIssuerKey();
+    vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", JSON.stringify({ keys: [key.publicKey] }));
+    vi.stubEnv("STACKRA_ENVIRONMENT", "dev");
+    expect(await authenticate({ authorization: await devBearer(key.privateKey) })).toEqual({
+      userID: USER_ID,
+      actor: { kind: ActorKind.User, id: USER_ID, realm: Realm.Staff, scopeId: DEV_SCOPE_ID },
+    });
+    // the configured issuer's tokens still pass beside it
+    expect(await authenticate({ authorization: await bearer(userClaims) })).toMatchObject({
+      userID: USER_ID,
+    });
+  });
+
+  it("refuses a dev token where stackra dev set no dev keys", async () => {
+    const key = await createDevIssuerKey();
+    vi.stubEnv("STACKRA_ENVIRONMENT", "dev");
+    await refuses({ authorization: await devBearer(key.privateKey) });
+  });
+
+  it("refuses a dev token signed by a key other than the one stackra dev set", async () => {
+    const [key, other] = await Promise.all([createDevIssuerKey(), createDevIssuerKey()]);
+    vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", JSON.stringify({ keys: [key.publicKey] }));
+    vi.stubEnv("STACKRA_ENVIRONMENT", "dev");
+    await refuses({
+      authorization: await devBearer({ ...other.privateKey, kid: key.privateKey.kid }),
+    });
+  });
+
+  it.each(["preview", "staging", "production", undefined])(
+    "never boots a deployment that carries the dev keys (STACKRA_ENVIRONMENT=%s)",
+    async (environment) => {
+      const key = await createDevIssuerKey();
+      vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", JSON.stringify({ keys: [key.publicKey] }));
+      vi.stubEnv("STACKRA_ENVIRONMENT", environment);
+      const failure = await authenticate({ authorization: await devBearer(key.privateKey) }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect(failure).toBeInstanceOf(ConfigInvalidError);
+      expect((failure as ConfigInvalidError).issues[0]?.path).toBe("STACKRA_DEV_ISSUER_KEYS");
+    },
+  );
 });

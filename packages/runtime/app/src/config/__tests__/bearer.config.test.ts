@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `BearerConfig`: keyed `app.bearer`, built with its defaults (no issuer, no audience, 60-second
- *          leeway, one-hour key cache), the issuer and audience from the environment, a host override, and refusing
+ *          leeway, one-hour key cache, no dev keys), the issuer and audience and the dev sign-in's key set and
+ *          environment from the environment, a host override, and refusing
  *          an issuer that is not a URL or a leeway above five minutes; the shipped schema's defaults equal
  *          `BearerOptions`' initializers.
  * Boundary: test only.
@@ -42,6 +43,17 @@ describe("BearerConfig", () => {
     });
     expect(config.issuer).toBe("https://auth.figentra.com");
     expect(config.audience).toBe("project-1");
+  });
+
+  it("reads the dev sign-in key set and the running environment from the environment", () => {
+    const config = buildConfig(BaseBearerConfig, {
+      env: { STACKRA_DEV_ISSUER_KEYS: '{"keys":[]}', STACKRA_ENVIRONMENT: "dev" },
+    });
+    expect(config.devKeys).toBe('{"keys":[]}');
+    expect(config.environment).toBe("dev");
+    // off by default: no dev keys and no environment
+    expect(buildConfig(BaseBearerConfig).devKeys).toBe("");
+    expect(buildConfig(BaseBearerConfig).environment).toBe("");
   });
 
   it("takes a host's override", () => {
