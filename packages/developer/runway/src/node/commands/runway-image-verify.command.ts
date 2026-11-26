@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `RunwayImageVerifyCommand`, `runway image:verify <image>@sha256:<digest> [--key <kms>] [--repository
- *          owner/repo] [--identity <pattern>]`: the check a deploy job runs before it uses an image (`verifyImage`):
- *          the cosign signature and the CycloneDX SBOM attestation, against the KMS key or the keyless signer.
+ *          owner/repo] [--ref <caller ref>] [--identity <pattern>] [--trusted-root <file>]`: the check a deploy job runs
+ *          before it uses an image (`verifyImage`): the cosign signature and the CycloneDX SBOM attestation, against the
+ *          KMS key (air-gapped, no transparency log unless `--trusted-root` names a private Sigstore) or the keyless
+ *          signer called from the caller's `--ref` (default `refs/heads/main`).
  * Boundary: parses and prints; the work is `verifyImage`'s. The keyless repository defaults to the job's
  *           `GITHUB_REPOSITORY`. Exits non-zero on a refusal, so the deploy job stops before anything ships.
  * Runtime: node
@@ -24,6 +26,7 @@ export class RunwayImageVerifyCommand extends Command({
   examples: [
     "runway image:verify 123.dkr.ecr.me-central-1.amazonaws.com/acme-core@sha256:<digest> --repository acme/app",
     "runway image:verify registry.local/acme-core@sha256:<digest> --key awskms:///alias/acme-images",
+    "runway image:verify registry.local/acme-core@sha256:<digest> --repository acme/app --trusted-root trusted_root.json",
   ],
 }) {
   /** The image reference by digest. */
@@ -39,6 +42,22 @@ export class RunwayImageVerifyCommand extends Command({
   @Option({ description: "owner/repo whose job signed it (default: GITHUB_REPOSITORY)" })
   @Str
   repository?: string;
+
+  /** The caller's git ref the keyless certificate must name. */
+  @Option({
+    description:
+      "The full git ref the signing job ran on (keyless; default refs/heads/main): a signature from another ref is refused",
+  })
+  @Str
+  ref?: string;
+
+  /** A Sigstore trusted root file. */
+  @Option({
+    description:
+      "A Sigstore trusted root JSON (a private Sigstore, or the public one fetched ahead for an offline verify)",
+  })
+  @Str
+  trustedRoot?: string;
 
   /** The keyless signer identity pattern. */
   @Option({
@@ -62,7 +81,9 @@ export class RunwayImageVerifyCommand extends Command({
         this.key === undefined
           ? (this.repository ?? (this.env["GITHUB_REPOSITORY"] || undefined))
           : undefined,
+      callerRef: this.key === undefined ? this.ref : undefined,
       identity: this.identity,
+      trustedRoot: this.trustedRoot,
       run: runProgram,
     });
     io.output.success(`${this.reference}: signature and SBOM attestation verified`);

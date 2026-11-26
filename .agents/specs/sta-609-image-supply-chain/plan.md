@@ -39,21 +39,25 @@ image:verify`), and the reusable workflow `runway-image.yml` runs it in a deploy
 
 ## Deploy modes
 
-| Mode       | Behaviour                                                                    |
-| ---------- | ---------------------------------------------------------------------------- |
-| SaaS       | ECR image in the shared account, keyless signature, verified at deploy       |
-| On-prem    | the same signed image and SBOM; verified with cosign against the same signer |
-| Air-gapped | signed and verified with a KMS cosign key (`kms-key`, `--key`)               |
+| Mode       | Behaviour                                                                           |
+| ---------- | ----------------------------------------------------------------------------------- |
+| SaaS       | ECR image in the shared account, keyless signature, verified at deploy              |
+| On-prem    | the same signed image and SBOM; verified with cosign against the same signer        |
+| Air-gapped | signed and verified with a KMS cosign key (`kms-key`, `--key`), no Sigstore service |
 
 ## Correctness properties
 
 - **P-001**: the build runs in the deploy tree with `--skip-config` and the pinned base — Validates: AC-001
 - **P-002**: a failed scan is followed by no push, SBOM or cosign call — Validates: AC-002
 - **P-003**: every syft and cosign argument after the push names the registry's digest, never a tag — Validates: AC-003
-- **P-004**: keyless verify pins identity, issuer and repository; a key file never reaches cosign — Validates: AC-004
+- **P-004**: keyless verify pins identity (commit, tag or main signer), issuer, repository and caller ref; a signature
+  from another caller ref or a branch signer is refused; a key file never reaches cosign — Validates: AC-004
 - **P-005**: verify refuses a tag before cosign and refuses on either cosign failure — Validates: AC-005
 - **P-006**: no tool runs for a refused input — Validates: AC-006
 - **P-007**: the record equals the answered publication and holds no key reference — Validates: AC-007
+- **P-008**: a KMS sign and attest name the offline signing config (no log, no TSA) unless one is given, and a KMS
+  verify skips the log unless a trusted root is given — Validates: AC-009
+- **P-009**: a keyless publish in a job on another ref runs no tool — Validates: AC-010
 
 ## Architecture overview
 
@@ -83,7 +87,7 @@ packages/developer/runway/
   src/node/constants/image-supply-chain-settings.constant.ts
   src/node/functions/{publish-image,verify-image,image-trust-arguments}.function.ts
   src/node/functions/encore-deploy-tree.function.ts (answers `dir`)
-  src/node/types/{image-publish-request,image-publication,image-verify-request,encore-deploy-tree}.type.ts
+  src/node/types/{image-publish-request,image-publication,image-verify-request,image-trust,encore-deploy-tree}.type.ts
   src/node/commands/runway-image-{publish,verify}.command.ts
   src/node/constants/runway-commands.constant.ts, src/node/index.ts, src/core/index.ts
   README.md, AGENTS.md
@@ -109,14 +113,22 @@ and the tool's message. The checkout is disposed even when the build fails.
 
 ## Security and tenancy
 
-No credential is an argument. The keyless certificate is pinned to Runway's workflow and the caller repository, so an
-image signed by another workflow or repository fails the verify.
+No credential is an argument. The keyless certificate is pinned to Runway's workflow (at a commit, `runway-v<n>` tag or
+Stackra's main), the caller repository and the caller's ref (`refs/heads/main` by default), so an image signed by
+another workflow, repository or branch fails the verify: a collaborator's branch workflow that calls an impostor copy
+of `runway-image.yml` without the gate is refused. A KMS signature is air-gapped: no transparency log or timestamp
+authority, so no private image digest or key reaches the public Rekor log, and the verify needs no Sigstore trusted
+root; a private Sigstore is named by its signing config and trusted root instead.
 
 ## Testing strategy
 
 - AC-001, AC-003, AC-007: `publish-image.function.test.ts` asserts the exact ordered calls, the tree, the record.
 - AC-002, AC-006: the same file, the scan failure and the refused inputs.
-- AC-004, AC-005: `image-trust-arguments.function.test.ts`, `verify-image.function.test.ts`.
+- AC-004, AC-005: `image-trust-arguments.function.test.ts`, `verify-image.function.test.ts` (a fake cosign that checks
+  a certificate's claims with the flags given refuses a branch caller and a branch signer).
+- AC-009: `publish-image.function.test.ts` (the offline signing config's content at sign time, removed afterwards),
+  `verify-image.function.test.ts`; a real run on box 2 against a `hashivault://` key with Sigstore unreachable.
+- AC-010: `runway-image-publish.command.test.ts`.
 - Commands: `runway-image-publish.command.test.ts`, `runway-image-verify.command.test.ts`.
 - AC-008: actionlint and zizmor; the real run on box 2 (encore, Trivy, local registry, syft, cosign).
 

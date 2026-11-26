@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `IMAGE_SUPPLY_CHAIN_SETTINGS`, the data Runway's image step runs with (`publishImage`, `verifyImage`): the
  *          `encore build docker` arguments, the Trivy gate, the syft SBOM format, the cosign attestation type, the
- *          keyless signer every verify pins (Runway's own `runway-image.yml` on GitHub's OIDC issuer), the KMS key
- *          schemes an air-gapped signer may name, and the record and SBOM file names.
+ *          keyless signer every verify pins (Runway's own `runway-image.yml` at a commit or release tag, on GitHub's
+ *          OIDC issuer, called from the caller repository's main), the KMS key schemes an air-gapped signer may name,
+ *          the offline transparency-log policy of a KMS signature, and the record and SBOM file names.
  * Boundary: data only; no tool version (the workflow pins each with `mise exec <tool>@<version>`) and no credential:
  *           cosign, docker and the registry read their own login (GitHub OIDC, the job's registry login, a KMS role).
  * Runtime: node
@@ -45,10 +46,36 @@ export const IMAGE_SUPPLY_CHAIN_SETTINGS = Object.freeze({
   oidcIssuer: "https://token.actions.githubusercontent.com",
   /**
    * The keyless signer a verify accepts: the certificate's identity is the reusable workflow that signed
-   * (`job_workflow_ref`), Runway's `runway-image.yml` at any ref. The caller repository is pinned separately.
+   * (`job_workflow_ref`), Runway's `runway-image.yml` called by a full commit id (ADR 0019 decision 1), a `runway-v<n>`
+   * release tag or Stackra's protected main (Stackra's own local call), never another branch. The caller repository
+   * and the caller's ref are pinned separately; a verifier pins a released commit exactly with its own identity.
    */
   signerIdentity:
-    "^https://github\\.com/stackra-inc/stackra/\\.github/workflows/runway-image\\.yml@",
+    "^https://github\\.com/stackra-inc/stackra/\\.github/workflows/runway-image\\.yml@(?:[0-9a-f]{40}|refs/tags/runway-v[0-9]+|refs/heads/main)$",
+  /**
+   * The caller's git ref a keyless verify pins by default (the certificate's GitHub workflow ref: the `ref` claim of
+   * the job that signed): main, the protected branch whose workflow files are reviewed. A workflow pushed to any other
+   * branch can call a copy of `runway-image.yml` with the main-only check and the Trivy gate removed (an impostor
+   * commit of the signer), so a signature made from another ref is refused unless the verifier names that ref.
+   */
+  callerRef: "refs/heads/main",
+  /** A caller ref a verify may pin instead: a full branch or tag ref. */
+  callerRefPattern: /^refs\/(?:heads|tags)\/[A-Za-z0-9._/-]+$/,
+  /**
+   * The air-gapped policy of a KMS signature (ADR 0174 decision 2) when no private Sigstore is named: no transparency
+   * log and no timestamp authority. Signing passes this Sigstore signing config (`cosign signing-config create` with no
+   * service writes the same), so it reaches only the KMS and the registry and no image digest or public key goes to
+   * the public Rekor log; the verify skips the log check to match and needs no Sigstore trusted root.
+   */
+  kmsOffline: Object.freeze({
+    signingConfig: Object.freeze({
+      mediaType: "application/vnd.dev.sigstore.signingconfig.v0.2+json",
+      rekorTlogConfig: Object.freeze({}),
+      tsaConfig: Object.freeze({}),
+    }),
+    signingConfigFile: "cosign-signing-config.offline.json",
+    verifyArgs: Object.freeze(["--insecure-ignore-tlog=true"]),
+  }),
   /** The cosign key references an air-gapped signer may name: KMS keys only, never a key file (ADR 0174 decision 2). */
   kmsSchemes: Object.freeze(["awskms://", "gcpkms://", "azurekms://", "hashivault://"]),
   /** An image repository: registry host (and port) and at least one lower-case path segment, no tag or digest. */

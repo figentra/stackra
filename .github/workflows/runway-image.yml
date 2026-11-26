@@ -8,6 +8,8 @@
 #          digest with cosign (keyless with this job's GitHub OIDC identity, or `kms-key` for an air-gapped signer),
 #          attests the SBOM to it and verifies both. The record and the SBOM are uploaded as the `runway-image` artifact;
 #          `reference` (image@digest) is what the caller's deploy pins and checks with `stackra runway image:verify`.
+#          Keyless, the verify pins the caller's ref to refs/heads/main, so a caller job on another ref is refused before
+#          the build; a KMS signature writes no transparency-log entry (air-gapped).
 # Secrets: none in the repository. The registry login is the job's own: ECR through GitHub OIDC (`aws-role`, an ARN,
 #          not a secret), GHCR through this job's GITHUB_TOKEN. A keyless signature needs no key; a KMS key is used by
 #          reference through the job's cloud identity. A product caller reads STACKRA_REGISTRY_TOKEN from the sops
@@ -56,8 +58,8 @@ on:
         default: ""
       kms-key:
         description: >-
-          A KMS key reference (`awskms://…`, `gcpkms://…`) for an air-gapped signer (ADR 0174 decision 2); empty signs
-          keyless with this job's GitHub OIDC identity (Sigstore).
+          A KMS key reference (`awskms://…`, `gcpkms://…`) for an air-gapped signer (ADR 0174 decision 2), signed with no
+          transparency log; empty signs keyless with this job's GitHub OIDC identity (Sigstore), from main only.
         type: string
         default: ""
       install-args:

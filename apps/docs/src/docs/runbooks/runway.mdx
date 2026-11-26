@@ -84,14 +84,37 @@ is keyless unless `kms-key` names a KMS key (air-gapped installs). The deploy jo
 stackra runway image:verify "$REFERENCE" --repository <owner>/<repo>
 ```
 
-Anyone can check a published image the same way with cosign alone:
+A keyless verify pins the caller's ref as well as its repository: the job that signed must have run on
+`refs/heads/main` (the certificate's GitHub workflow ref). A workflow pushed to any other branch could call a copy of
+`runway-image.yml` with the main-only check and the Trivy gate removed, and its certificate would still name Runway's
+workflow and the caller repository, so its signature is refused. The signer must be `runway-image.yml` called by a full
+commit, a `runway-v<n>` tag or Stackra's main, never another branch. A caller that signs from another ref passes `--ref
+
+<full ref>` to the image step and to every verify; to pin one released commit exactly, pass `--identity` with that
+commit. Anyone can check a published image the same way with cosign alone:
 
 ```bash
 cosign verify-attestation --type cyclonedx \
-  --certificate-identity-regexp '^https://github\.com/stackra-inc/stackra/\.github/workflows/runway-image\.yml@' \
+  --certificate-identity-regexp '^https://github\.com/stackra-inc/stackra/\.github/workflows/runway-image\.yml@(?:[0-9a-f]{40}|refs/tags/runway-v[0-9]+|refs/heads/main)$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-github-workflow-repository <owner>/<repo> <image>@sha256:<digest>
+  --certificate-github-workflow-repository <owner>/<repo> \
+  --certificate-github-workflow-ref refs/heads/main <image>@sha256:<digest>
 ```
+
+**Air-gapped (KMS key).** A KMS signature writes no transparency-log entry and uses no timestamp authority: the image
+step signs with a Sigstore signing config that names no service, so signing reaches only the KMS and the registry, and
+no image digest or public key goes to the public Rekor log. The verifier at the site needs the registry, the KMS key's
+public half through its own KMS role (or `hashivault://` against its Vault), and nothing from Sigstore:
+
+```bash
+stackra runway image:verify "$REFERENCE" --key awskms:///alias/<key>
+# the same with cosign alone
+cosign verify-attestation --type cyclonedx --key awskms:///alias/<key> --insecure-ignore-tlog=true <image>@sha256:<digest>
+```
+
+A site that runs its own Sigstore passes its signing config to the image step (`--signing-config`) and its trusted
+root to both the step and the verify (`--trusted-root`); the log entry is then written to its Rekor and checked. A
+verifier with no network that checks a keyless image passes the public trusted root fetched ahead (`--trusted-root`).
 
 ### Calling a provider from another repository
 

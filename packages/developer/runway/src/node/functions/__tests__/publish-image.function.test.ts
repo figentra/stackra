@@ -3,8 +3,10 @@
  * Purpose: unit tests of `publishImage`: the image is built by `encore build docker` from the deploy commit's tree
  *          (generated app at the root, no `.git` link, the installed `node_modules` linked in), with the pinned base and no infra
  *          config; Trivy gates it before the push; the digest the registry answered is what syft describes, cosign
- *          signs and attests and the verify checks; the record names it; the checkout is removed. A failed scan pushes
- *          nothing, a missing digest signs nothing, a KMS key signs with the key, and bad inputs stop before the build.
+ *          signs and attests and the verify checks (pinning the caller's main); the record names it; the checkout is
+ *          removed. A failed scan pushes nothing, a missing digest signs nothing, a KMS key signs with the key and the
+ *          offline signing config (no transparency log) unless a private Sigstore is named and verifies with the log
+ *          check skipped, and bad inputs stop before the build.
  * Boundary: test only; a temporary git repository with the real `git` (`runProgram`) and a recording fake for encore,
  *           trivy, docker, syft and cosign, so no image is built, pushed or signed.
  * Runtime: node (vitest)
@@ -26,6 +28,7 @@ import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { RunwayImageRejectedError } from "#core/errors/runway-image-rejected.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
+import { IMAGE_SUPPLY_CHAIN_SETTINGS } from "#node/constants/image-supply-chain-settings.constant";
 import { publishImage } from "#node/functions/publish-image.function";
 import { runProgram } from "#node/functions/run-program.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
@@ -55,7 +58,13 @@ type Call = { command: string; args: readonly string[]; cwd?: string | undefined
  */
 function fake(options: { fail?: string; digests?: readonly string[] } = {}) {
   const calls: Call[] = [];
-  const seen: { app?: boolean; git?: boolean; rootModules?: boolean; memberModules?: boolean } = {};
+  const seen: {
+    app?: boolean;
+    git?: boolean;
+    rootModules?: boolean;
+    memberModules?: boolean;
+    signingConfig?: unknown;
+  } = {};
   const run: CommandRunner = async (command, args, opts) => {
     if (command === "git") return runProgram(command, args, opts);
     calls.push({ command, args, cwd: opts.cwd });
@@ -64,6 +73,11 @@ function fake(options: { fail?: string; digests?: readonly string[] } = {}) {
       seen.git = existsSync(join(opts.cwd, ".git"));
       seen.rootModules = lstatSync(join(opts.cwd, "node_modules")).isSymbolicLink();
       seen.memberModules = lstatSync(join(opts.cwd, "services/core/node_modules")).isSymbolicLink();
+    }
+    const config = args.indexOf("--signing-config");
+    if (command === "cosign" && args[0] === "sign" && config !== -1) {
+      const file = args[config + 1] as string;
+      seen.signingConfig = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : "missing";
     }
     const name = `${command} ${args[0] ?? ""}`;
     if (options.fail !== undefined && (name === options.fail || command === options.fail))
@@ -135,11 +149,13 @@ describe("publishImage", () => {
     const sbom = join(out, "sbom-acme-core.cdx.json");
     const identity = [
       "--certificate-identity-regexp",
-      "^https://github\\.com/stackra-inc/stackra/\\.github/workflows/runway-image\\.yml@",
+      IMAGE_SUPPLY_CHAIN_SETTINGS.signerIdentity,
       "--certificate-oidc-issuer",
       "https://token.actions.githubusercontent.com",
       "--certificate-github-workflow-repository",
       "acme/app",
+      "--certificate-github-workflow-ref",
+      "refs/heads/main",
     ];
 
     expect(calls.map(({ command, args }) => [command, ...args])).toEqual([
@@ -221,20 +237,101 @@ describe("publishImage", () => {
     expect(existsSync(join(out, "runway-image-acme-core.json"))).toBe(false);
   });
 
-  /** The air-gapped signer: the KMS key signs, attests and verifies; no keyless identity is asked for. */
-  it("signs, attests and verifies with a KMS key", async () => {
-    const { run, calls } = fake();
+  /**
+   * The air-gapped signer: the KMS key signs and attests with a signing config that names no transparency log or
+   * timestamp authority (so no Sigstore service is reached and the digest never reaches the public log), and the verify
+   * skips the log check to match; no keyless identity is asked for. The config is removed afterwards.
+   */
+  it("signs, attests and verifies with a KMS key and no transparency log", async () => {
+    const { run, calls, seen } = fake();
     const key = "awskms:///alias/acme-images";
     const publication = await publishImage(
       request(run, { key, sourceRepository: undefined, arch: "arm64" }),
     );
     const cosign = calls.filter(({ command }) => command === "cosign").map(({ args }) => args);
+    const config = cosign[0]?.[cosign[0].indexOf("--signing-config") + 1] as string;
+    const reference = `${IMAGE}@${DIGEST}`;
+    const sbom = join(out, "sbom-acme-core.cdx.json");
 
     expect(publication.signing).toBe("kms");
     expect(publication.arch).toBe("arm64");
     expect(calls[0]?.args).toContain("arm64");
-    for (const args of cosign) expect(args.join(" ")).toContain(`--key ${key}`);
-    expect(cosign.flat()).not.toContain("--certificate-identity-regexp");
+    expect(cosign).toEqual([
+      ["sign", "--yes", "--key", key, "--signing-config", config, reference],
+      [
+        "attest",
+        "--yes",
+        "--key",
+        key,
+        "--signing-config",
+        config,
+        "--type",
+        "cyclonedx",
+        "--predicate",
+        sbom,
+        reference,
+      ],
+      ["verify", "--key", key, "--insecure-ignore-tlog=true", reference],
+      [
+        "verify-attestation",
+        "--type",
+        "cyclonedx",
+        "--key",
+        key,
+        "--insecure-ignore-tlog=true",
+        reference,
+      ],
+    ]);
+    expect(seen.signingConfig).toEqual({
+      mediaType: "application/vnd.dev.sigstore.signingconfig.v0.2+json",
+      rekorTlogConfig: {},
+      tsaConfig: {},
+    });
+    expect(config.startsWith(out)).toBe(false);
+    expect(existsSync(config)).toBe(false);
+  });
+
+  /** A private Sigstore: its signing config signs, its trusted root checks the log entry, nothing is written. */
+  it("signs and verifies with a KMS key against a private Sigstore", async () => {
+    const { run, calls } = fake();
+    const key = "hashivault://acme-images";
+    await publishImage(
+      request(run, {
+        key,
+        sourceRepository: undefined,
+        signingConfig: "/etc/sigstore/signing_config.json",
+        trustedRoot: "/etc/sigstore/trusted_root.json",
+      }),
+    );
+    const cosign = calls.filter(({ command }) => command === "cosign").map(({ args }) => args);
+    const trust = ["--trusted-root", "/etc/sigstore/trusted_root.json"];
+
+    expect(cosign[0]).toEqual([
+      "sign",
+      "--yes",
+      "--key",
+      key,
+      "--signing-config",
+      "/etc/sigstore/signing_config.json",
+      ...trust,
+      `${IMAGE}@${DIGEST}`,
+    ]);
+    expect(cosign[2]).toEqual(["verify", "--key", key, ...trust, `${IMAGE}@${DIGEST}`]);
+    expect(cosign.flat()).not.toContain("--insecure-ignore-tlog=true");
+  });
+
+  /** The verify after signing pins the caller ref the job runs on when it is not main. */
+  it("pins the caller ref given in the verify after a keyless signature", async () => {
+    const { run, calls } = fake();
+    await publishImage(request(run, { callerRef: "refs/tags/v2.0.0" }));
+    const verify = calls.find(({ command, args }) => command === "cosign" && args[0] === "verify");
+
+    expect(verify?.args.join(" ")).toContain("--certificate-github-workflow-ref refs/tags/v2.0.0");
+    expect(calls.find(({ args }) => args[0] === "sign")?.args).toEqual([
+      "sign",
+      "--yes",
+      `${IMAGE}@${DIGEST}`,
+    ]);
   });
 
   /** Every input is checked before anything is built. */
@@ -246,6 +343,9 @@ describe("publishImage", () => {
     ["a short commit", { sha: "abc1234" }],
     ["a key file", { key: "cosign.key" }],
     ["keyless with no repository", { sourceRepository: undefined }],
+    ["a caller ref that is not a full ref", { callerRef: "main" }],
+    ["a trusted root read as a flag", { trustedRoot: "--insecure-ignore-tlog" }],
+    ["a signing config read as a flag", { key: "hashivault://k", signingConfig: "-x" }],
   ])("refuses %s before the build", async (_name, extra: Partial<ImagePublishRequest>) => {
     const { run, calls } = fake();
 

@@ -123,6 +123,7 @@ export type { GithubJobClaims } from "#node/types/github-job-claims.type";
 export type { ImagePublication } from "#node/types/image-publication.type";
 export type { ImagePublishRequest } from "#node/types/image-publish-request.type";
 export type { ImageVerifyRequest } from "#node/types/image-verify-request.type";
+export type { ImageTrust } from "#node/types/image-trust.type";
 export type { CanaryPromotionRequest } from "#node/types/canary-promotion-request.type";
 export type { CanarySample } from "#node/types/canary-sample.type";
 export type { CanarySettings } from "#node/types/canary-settings.type";

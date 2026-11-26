@@ -2,8 +2,10 @@
  * Stackra file contract:
  * Purpose: unit tests of `RunwayImagePublishCommand` on the console: it passes the repository root, the image, the
  *          pinned base, the commit, the architecture, the key and the keyless repository (from GITHUB_REPOSITORY when
- *          `--repository` is absent) to the image step, writes under `--out` relative to the working folder, prints
- *          the reference, and refuses a missing `--image`, `--base`, `--sha` or an unknown `--arch` before the step.
+ *          `--repository` is absent), the caller ref, the signing config and the trusted root to the image step, writes
+ *          under `--out` relative to the working folder, prints the reference, and refuses a missing `--image`,
+ *          `--base`, `--sha`, an unknown `--arch`, or a keyless job whose GITHUB_REF is not the caller ref, before the
+ *          step.
  * Boundary: test only; the image step and the job's environment are replaced through their fields, so no tool runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0174; ADR 0506 (decision 8); STA-609.
@@ -77,7 +79,10 @@ describe(RunwayImagePublishCommand, () => {
         base: BASE,
         arch: "amd64",
         key: undefined,
+        signingConfig: undefined,
+        trustedRoot: undefined,
         sourceRepository: "acme/app",
+        callerRef: undefined,
         out: join(cwd, "out"),
       },
     ]);
@@ -112,6 +117,51 @@ describe(RunwayImagePublishCommand, () => {
       key: "awskms:///alias/acme",
       sourceRepository: "acme/other",
       out: "/abs/out",
+    });
+  });
+
+  /** Signed keyless from a branch, the image would be pushed and signed, then refused by every verify. */
+  it("refuses a keyless job on a ref that is not the caller ref before the image step", async () => {
+    const { cwd } = repository();
+    const argv = ["--image", IMAGE, "--base", BASE, "--sha", SHA];
+    const env = { GITHUB_REPOSITORY: "acme/app", GITHUB_REF: "refs/heads/try-image" };
+    const branch = await run(argv, env, cwd);
+    const named = await run([...argv, "--ref", "refs/heads/try-image"], env, cwd);
+    const kms = await run([...argv, "--key", "hashivault://images"], env, cwd);
+    const main = await run(argv, { ...env, GITHUB_REF: "refs/heads/main" }, cwd);
+
+    expect(branch.result.exitCode).toBe(2);
+    expect(branch.result.stderr).toContain("this job runs on refs/heads/try-image");
+    expect(branch.requests).toEqual([]);
+    expect(named.requests[0]).toMatchObject({ callerRef: "refs/heads/try-image" });
+    expect(kms.requests[0]).toMatchObject({ key: "hashivault://images", callerRef: undefined });
+    expect(main.requests[0]).toMatchObject({ callerRef: undefined });
+  });
+
+  it("passes a private Sigstore's signing config and trusted root", async () => {
+    const { cwd } = repository();
+    const { requests } = await run(
+      [
+        "--image",
+        IMAGE,
+        "--base",
+        BASE,
+        "--sha",
+        SHA,
+        "--key",
+        "hashivault://images",
+        "--signing-config",
+        "signing_config.json",
+        "--trusted-root",
+        "trusted_root.json",
+      ],
+      {},
+      cwd,
+    );
+
+    expect(requests[0]).toMatchObject({
+      signingConfig: "signing_config.json",
+      trustedRoot: "trusted_root.json",
     });
   });
 

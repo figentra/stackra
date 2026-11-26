@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `RunwayImageVerifyCommand` on the console: it verifies the reference keyless against the
- *          job's GITHUB_REPOSITORY (or `--repository`, `--identity`), or against `--key` with no repository, prints
- *          the verified reference, and exits non-zero when the verify refuses the image.
+ *          job's GITHUB_REPOSITORY (or `--repository`, `--identity`) and the caller ref `--ref` (the verify's main by
+ *          default), or against `--key` with no repository or caller ref, passes `--trusted-root`, prints the verified
+ *          reference, and exits non-zero when the verify refuses the image.
  * Boundary: test only; the verify and the job's environment are replaced through their fields, so cosign never runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0174 (cosign verification at deploy); ADR 0506 (decision 8);
@@ -43,7 +44,14 @@ describe(RunwayImageVerifyCommand, () => {
 
     expect(result.exitCode).toBe(0);
     expect(requests).toEqual([
-      { reference: REFERENCE, key: undefined, sourceRepository: "acme/app", identity: undefined },
+      {
+        reference: REFERENCE,
+        key: undefined,
+        sourceRepository: "acme/app",
+        callerRef: undefined,
+        identity: undefined,
+        trustedRoot: undefined,
+      },
     ]);
     expect(result.stdout + result.stderr).toContain(
       `${REFERENCE}: signature and SBOM attestation verified`,
@@ -62,6 +70,35 @@ describe(RunwayImageVerifyCommand, () => {
     expect(kms.requests[0]).toMatchObject({
       key: "awskms:///alias/a",
       sourceRepository: undefined,
+    });
+  });
+
+  it("passes the caller ref and the trusted root; a KMS key pins no caller ref", async () => {
+    const keyless = await run(
+      [REFERENCE, "--ref", "refs/tags/v1.2.0", "--trusted-root", "trusted_root.json"],
+      { GITHUB_REPOSITORY: "acme/app" },
+    );
+    const kms = await run(
+      [
+        REFERENCE,
+        "--key",
+        "hashivault://images",
+        "--ref",
+        "refs/heads/x",
+        "--trusted-root",
+        "r.json",
+      ],
+      {},
+    );
+
+    expect(keyless.requests[0]).toMatchObject({
+      callerRef: "refs/tags/v1.2.0",
+      trustedRoot: "trusted_root.json",
+    });
+    expect(kms.requests[0]).toMatchObject({
+      key: "hashivault://images",
+      callerRef: undefined,
+      trustedRoot: "r.json",
     });
   });
 

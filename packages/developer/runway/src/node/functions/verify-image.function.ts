@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: `verifyImage(request)`, the check a deploy runs before it uses an image and the last step of `publishImage`:
  *          `cosign verify` of the image's signature and `cosign verify-attestation` of its CycloneDX SBOM, both against
- *          the reference by digest and one trust root: the KMS key that signed it, or the keyless signer (Runway's
- *          `runway-image.yml` on GitHub's OIDC issuer) for the caller repository named.
+ *          the reference by digest and one trust root (`imageTrustArguments`): the KMS key that signed it (the log check
+ *          skipped, as an air-gapped KMS signature writes none, unless a private Sigstore's trusted root is named), or
+ *          the keyless signer (Runway's `runway-image.yml` on GitHub's OIDC issuer) for the caller repository and the
+ *          caller's git ref named (main by default).
  * Boundary: runs `cosign` through the given runner and reads nothing else; a reference without a digest, a key that is
- *           not a KMS reference, or a keyless check with no repository to pin is refused before cosign runs. Never
- *           pulls or runs the image.
+ *           not a KMS reference, a keyless check with no repository or caller ref to pin, or a trusted root that is
+ *           not a plain path is refused before cosign runs. Never pulls or runs the image.
  * Runtime: node
  * Governing contract: ADR 0174 (decision 2 and its enforcement: cosign verification at deploy); STA-609.
  */
@@ -31,7 +33,7 @@ export async function verifyImage(request: ImageVerifyRequest): Promise<void> {
     throw new RunwayUnresolvedError(
       `${reference} is not pinned by digest: verify and deploy <registry>/<repository>@sha256:<digest>, never a tag`,
     );
-  const trust = imageTrustArguments(request.key, request.sourceRepository, request.identity);
+  const trust = imageTrustArguments(request, "verify");
   const check = async (args: readonly string[]): Promise<void> => {
     try {
       await run("cosign", [...args, ...trust, reference], {});

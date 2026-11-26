@@ -480,8 +480,8 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 | `runway secrets decrypt --scope <s> [--dir <d>] [--names A,B]` | One figentra/secrets scope (ADR 0525), decrypted with the job's own Cloud KMS identity from the ciphertext `.github/actions/secrets-decrypt` downloads, masked and exported into `GITHUB_ENV`; names only on output, and it refuses to run without `GITHUB_ENV` | 0; throws on a bad scope, a missing name or a refused key |
 | `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, the `names:` of a `secrets-decrypt` step) has a sops scope (`products/<project>/<dev\|staging\|production>`; a preview reads dev's); a raw read of an undeclared name warns. Names only, no login | 1 on an error |
 | `runway env check --values --env <env>` | CI only: each declared name of `<env>`, read from the job's environment after `secrets-decrypt`, checked against its rules; prints names, the scope, pass or the broken rule and a SHA-256 prefix, never a value | 1 on an error |
-| `runway image:publish --image <registry>/<path> --base <image>@sha256:<d> --sha <sha> [--arch] [--key <kms>] [--repository o/r] [--out <d>]` | CI only (a deploy or release job, ADR 0168 decision 2): builds the generated Encore app as one image from its deploy commit, Trivy gate before the push, push, syft CycloneDX SBOM, cosign signature and SBOM attestation of the digest (keyless, or a KMS key), verify, and the record `runway-image-<name>.json` ([The image step](#the-image-step)) | 0; 1 when a step refuses the image |
-| `runway image:verify <image>@sha256:<d> [--key <kms>] [--repository o/r] [--identity <re>]` | The check a deploy runs before it uses an image: the cosign signature and the CycloneDX attestation against the KMS key or the keyless signer; a tag is refused | 0; 1 when refused |
+| `runway image:publish --image <registry>/<path> --base <image>@sha256:<d> --sha <sha> [--arch] [--key <kms>] [--signing-config <f>] [--trusted-root <f>] [--repository o/r] [--ref <ref>] [--out <d>]` | CI only (a deploy or release job, ADR 0168 decision 2): builds the generated Encore app as one image from its deploy commit, Trivy gate before the push, push, syft CycloneDX SBOM, cosign signature and SBOM attestation of the digest (keyless, or a KMS key with no transparency log), verify, and the record `runway-image-<name>.json` ([The image step](#the-image-step)); keyless, a job whose `GITHUB_REF` is not `--ref` (default `refs/heads/main`) is refused first | 0; 1 when a step refuses the image; 2 on a usage error |
+| `runway image:verify <image>@sha256:<d> [--key <kms>] [--repository o/r] [--ref <ref>] [--identity <re>] [--trusted-root <f>]` | The check a deploy runs before it uses an image: the cosign signature and the CycloneDX attestation against the KMS key (log check skipped unless `--trusted-root`) or the keyless signer called from `--ref` (default `refs/heads/main`); a tag is refused | 0; 1 when refused |
 | `runway env orphans <env> [--dir <d>]` | CI only: warns on each name in `<env>`'s sops scope (its ciphertext file names under `<d>`, default `.secrets`) that no code declares; decrypts nothing | 0 |
 
 Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
@@ -507,10 +507,16 @@ decisions 1 and 2):
 4. **SBOM.** `syft` writes `sbom-<name>.cdx.json` (CycloneDX JSON).
 5. **Sign** and **attest**: `cosign sign` and `cosign attest --type cyclonedx` of the digest, keyless with the job's
    GitHub OIDC identity, or with a KMS key (`awskms://`, `gcpkms://`, `azurekms://`, `hashivault://`) for an
-   air-gapped signer; a key file is refused.
+   air-gapped signer; a key file is refused. A KMS signature is signed with a Sigstore signing config that names no
+   transparency log or timestamp authority (`IMAGE_SUPPLY_CHAIN_SETTINGS.kmsOffline`, written to a temporary folder),
+   so it needs no Sigstore service and nothing reaches the public Rekor log, unless `signingConfig` names a private
+   Sigstore.
 6. **Verify** (`verifyImage`, also `runway image:verify`): `cosign verify` and `cosign verify-attestation`. Keyless, the
-   certificate must name Runway's `runway-image.yml` (`IMAGE_SUPPLY_CHAIN_SETTINGS.signerIdentity`), GitHub's issuer
-   and the caller repository.
+   certificate must name Runway's `runway-image.yml` called by a commit, a `runway-v<n>` tag or Stackra's main
+   (`IMAGE_SUPPLY_CHAIN_SETTINGS.signerIdentity`), GitHub's issuer, the caller repository and the caller's ref
+   (`callerRef`, default `refs/heads/main`): a workflow on another branch of the caller could call a copy of the
+   workflow with the gate removed, so its signature is refused. With a KMS key the log check is skipped (no entry was
+   written) unless `trustedRoot` names the private Sigstore that holds it.
 
 The record `runway-image-<name>.json` (`runway.image/v1`: image, tag, digest, reference, source and deploy commits,
 base, architecture, SBOM file, signing) and the SBOM are the workflow's `runway-image-<arch>` artifact; its

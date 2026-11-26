@@ -4,11 +4,13 @@
  *          the product's generated Encore app as one image with `encore build docker` from its deploy commit
  *          (`encoreDeployTree`, the same tree Encore Cloud builds, unlinked from git), scans it with Trivy before anything leaves the job,
  *          pushes it, reads the digest the registry answered, writes a syft CycloneDX SBOM, signs the digest with cosign
- *          (keyless with the job's GitHub OIDC identity, or a KMS key), attests the SBOM to it, verifies both
- *          (`verifyImage`) and writes the record a deploy pins (`runway-image-<name>.json`).
+ *          (keyless with the job's GitHub OIDC identity, or a KMS key with no transparency log unless a private
+ *          Sigstore's signing config is named), attests the SBOM to it, verifies both (`verifyImage`, pinning the
+ *          caller's ref for keyless) and writes the record a deploy pins (`runway-image-<name>.json`).
  * Boundary: runs git, encore, trivy, docker, syft and cosign through the given runner, each with its own login (the
  *           registry login, GitHub OIDC, the KMS role); no credential is an argument or written. Writes only the SBOM
- *           and the record under `out`, and the temporary checkout `encoreDeployTree` removes. Every input is checked
+ *           and the record under `out`, the temporary checkout `encoreDeployTree` removes and, for a KMS signature
+ *           with no signing config named, the offline signing config in a temporary folder it removes. Every input is checked
  *           before the build: a tagged or upper-case image, a base not pinned by digest, a key file. A failed scan
  *           pushes nothing.
  * Runtime: node
@@ -16,7 +18,8 @@
  *                     fixable critical finding, KMS key for air-gapped installs); ADR 0168 (decision 2: `encore build
  *                     docker` only in deploy and release jobs); ADR 0091 (decision 2: the generated Encore app); STA-609.
  */
-import { existsSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 
 import { RunwayImageRejectedError } from "#core/errors/runway-image-rejected.error";
@@ -83,7 +86,7 @@ async function step<T>(name: ImageStep, image: string, work: () => Promise<T>): 
  * image.reference; // "123.dkr.ecr.me-central-1.amazonaws.com/acme-core@sha256:…"
  */
 export async function publishImage(request: ImagePublishRequest): Promise<ImagePublication> {
-  const { repository, sha, image, base, key, sourceRepository, out, run } = request;
+  const { repository, sha, image, base, key, out, run } = request;
   const arch = request.arch ?? "amd64";
   const settings = IMAGE_SUPPLY_CHAIN_SETTINGS;
   if (!COMMIT.test(sha))
@@ -97,8 +100,8 @@ export async function publishImage(request: ImagePublishRequest): Promise<ImageP
       `${base} is not pinned by digest: pass the base image as <name>@sha256:<digest>`,
     );
   // Checked before the build, so a wrong trust root never leaves a pushed, unsigned image behind.
-  const signer = key === undefined ? [] : imageTrustArguments(key, undefined);
-  if (key === undefined) imageTrustArguments(undefined, sourceRepository);
+  imageTrustArguments(request, "verify");
+  imageTrustArguments(request, "sign");
 
   const tree = await encoreDeployTree({ repository, sha, run });
   if (tree === undefined)
@@ -144,24 +147,47 @@ export async function publishImage(request: ImagePublishRequest): Promise<ImageP
       {},
     ),
   );
-  await step("sign", reference, () => run("cosign", ["sign", "--yes", ...signer, reference], {}));
-  await step("attest", reference, () =>
-    run(
-      "cosign",
-      [
-        "attest",
-        "--yes",
-        ...signer,
-        "--type",
-        settings.attestationType,
-        "--predicate",
-        join(out, sbom),
-        reference,
-      ],
-      {},
-    ),
-  );
-  await verifyImage({ reference, key, sourceRepository, run });
+  // Air-gapped: a KMS signature names no transparency log or timestamp authority unless a private Sigstore is given,
+  // so signing needs no Sigstore service and the digest never reaches the public Rekor log.
+  const offline =
+    key !== undefined && request.signingConfig === undefined
+      ? mkdtempSync(join(tmpdir(), "runway-image-signing-"))
+      : undefined;
+  try {
+    let signingConfig = request.signingConfig;
+    if (offline !== undefined) {
+      signingConfig = join(offline, settings.kmsOffline.signingConfigFile);
+      writeFileSync(signingConfig, `${JSON.stringify(settings.kmsOffline.signingConfig)}\n`);
+    }
+    const signer = imageTrustArguments({ ...request, signingConfig }, "sign");
+    await step("sign", reference, () => run("cosign", ["sign", "--yes", ...signer, reference], {}));
+    await step("attest", reference, () =>
+      run(
+        "cosign",
+        [
+          "attest",
+          "--yes",
+          ...signer,
+          "--type",
+          settings.attestationType,
+          "--predicate",
+          join(out, sbom),
+          reference,
+        ],
+        {},
+      ),
+    );
+  } finally {
+    if (offline !== undefined) rmSync(offline, { recursive: true, force: true });
+  }
+  await verifyImage({
+    reference,
+    key,
+    sourceRepository: request.sourceRepository,
+    callerRef: request.callerRef,
+    trustedRoot: request.trustedRoot,
+    run,
+  });
 
   const publication: ImagePublication = {
     schema: settings.recordSchema,
