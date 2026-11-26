@@ -125,8 +125,11 @@ a migrated test database and runs the member's `test` script, which is `stackra 
 variable, and inside Encore (`ENCORE_RUNTIME_CONFIG` or `ENCORE_APP_META` is set), it skips gen and runs Vitest with
 `.stackra/vitest.wiring.config.ts` on the generated `.stackra/tests/encore-wiring.test.ts`. The suite checks the
 wiring only: the Encore service, the boot, every endpoint (a preflight answers 204; a guarded call without a
-credential, or with a bearer token that does not verify, is refused with 401 `request_refused`), every CronJob,
-topic and subscription, and the database with each model table migrated. It needs Encore and Docker.
+credential, or with a bearer token that does not verify, is refused before it runs: 401 or 403 `request_refused`, or
+429 from a rate-limiting guard), every CronJob, topic and subscription, and the database with each model table
+migrated. It needs Encore and Docker. `STACKRA_TEST_TIER` counts only inside `encore test`: anywhere else it is
+refused, a run that carries it never starts a second `encore test`, and an `encore test` that exits 0 without the
+inner run having started the suite (`.stackra/encore-wiring.ran`) fails.
 
 `stackra dev --surface <surface>` runs at a product root (ADR 0436 decision 6, app-shells section 15 point 2). It reads
 `surfaces.<surface>` (`shell: os/console@3`, `packages`) from the root `runway.yaml`, runs `stackra gen`, writes the
