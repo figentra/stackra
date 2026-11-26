@@ -550,7 +550,7 @@ export function buildManifest(ir: MemberIR): {
     for (const option of ["idempotency", "rateLimit", "cache"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     entry["area"] = area;
-    for (const option of ["job", "reads"])
+    for (const option of ["job", "reads", "maxLag"])
       if (declared.options[option] !== undefined) entry[option] = jsonOf(declared.options[option]);
     // The meter it feeds and the entitlements it names, so a quota or an entitlement gates it (STA-2059).
     const meter = declared.options["meter"];

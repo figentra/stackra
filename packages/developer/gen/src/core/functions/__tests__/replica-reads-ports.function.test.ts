@@ -3,10 +3,11 @@
  * Purpose: unit tests of `replicaReadsPorts`: a service with a `reads: "replica"` query reaches `ReplicaReads`, and its
  *          wiring then writes the port's driver table from `@stackra/database`'s manifest with the `DatabaseConfig`
  *          row; a hosted package whose manifest records a `reads: "replica"` query reaches it too, and `buildManifest`
- *          records `reads`; a service without one, and a package, reach nothing.
+ *          records `reads` and `maxLag`; a service that declares `@stackra/database` and has any query reaches it (so
+ *          configuration can place a query on a replica); a service without either, and a package, reach nothing.
  * Boundary: test only; runs on the commerce IR fixture with a hand-built database manifest.
  * Runtime: node
- * Governing contract: ADR 0022 (test placement); ADR 0057 (decision 6); STA-1504.
+ * Governing contract: ADR 0022 (test placement); ADR 0057 (decision 6); STA-1504; STA-1464.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -78,6 +79,37 @@ describe("replicaReadsPorts", () => {
     expect(replicaReadsPorts({ ...REPLICA, layout: "package" })).toEqual([]);
   });
 
+  it("reaches ReplicaReads for a service that declares the database and has a query, for configuration (STA-1464)", () => {
+    expect(replicaReadsPorts({ ...COMMERCE_IR, dependencies: [DATABASE] })).toEqual([
+      { class: { name: "ReplicaReads", from: "@stackra/actions/contracts" } },
+    ]);
+    const noQuery: MemberIR = {
+      ...COMMERCE_IR,
+      classes: COMMERCE_IR.classes.filter((declared) => declared.kind !== "query"),
+      dependencies: [DATABASE],
+    };
+    expect(replicaReadsPorts(noQuery)).toEqual([]);
+    expect(
+      replicaReadsPorts({ ...COMMERCE_IR, dependencies: [DATABASE], layout: "package" }),
+    ).toEqual([]);
+  });
+
+  it("records a query's maxLag in the manifest (STA-1464)", () => {
+    const lagging: MemberIR = {
+      ...REPLICA,
+      classes: REPLICA.classes.map((declared) =>
+        declared.kind === "query"
+          ? { ...declared, options: { ...declared.options, maxLag: "2s" } }
+          : declared,
+      ),
+    };
+    const queries = (buildManifest(lagging).manifest.actions ?? []).filter(
+      (action) => action.kind === "query",
+    );
+    expect(queries.length).toBeGreaterThan(0);
+    for (const query of queries) expect(query).toMatchObject({ reads: "replica", maxLag: "2s" });
+  });
+
   it("makes the service wiring write the database's ReplicaReads table", () => {
     const content = emitWiring({ ...REPLICA, dependencies: [DATABASE] });
     for (const line of [
@@ -87,6 +119,11 @@ describe("replicaReadsPorts", () => {
       '      deps: { "database": [DatabaseConfig] },',
     ])
       expect(content).toContain(line);
-    expect(emitWiring({ ...COMMERCE_IR, dependencies: [DATABASE] })).not.toContain("ReplicaReads");
+    const withoutQueries: MemberIR = {
+      ...COMMERCE_IR,
+      classes: COMMERCE_IR.classes.filter((declared) => declared.kind !== "query"),
+      dependencies: [DATABASE],
+    };
+    expect(emitWiring(withoutQueries)).not.toContain("ReplicaReads");
   });
 });

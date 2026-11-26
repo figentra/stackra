@@ -165,7 +165,10 @@ The approval stage (ADR 0509, STA-1724; `checkApproval`, full pass only) has sev
 A service with a `reads: "replica"` query (STA-1504), its own or one a hosted package's manifest records (`buildManifest`
 writes a query's `reads`), reaches the `ReplicaReads` port (`replicaReadsPorts`), which the
 pipeline resolves optionally, so its wiring writes the port's table from the declared packages' manifests:
-`@stackra/database`'s `DatabaseReplicaReadsDriver` (`database`) with the `DatabaseConfig` row (`readYourWrites`).
+`@stackra/database`'s `DatabaseReplicaReadsDriver` (`database`) with the `DatabaseConfig` row (`readYourWrites`). A
+service that declares `@stackra/database` and has any query reaches it too, so configuration can place a query on a
+replica (`DatabaseConfig.replicaReads`, STA-1464); `buildManifest` also writes a query's `maxLag`, and the boot hands
+`replicaReads.probeEvery` to `connect` as `replicaProbe`.
 
 The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
 `HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without

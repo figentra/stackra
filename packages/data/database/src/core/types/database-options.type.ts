@@ -11,6 +11,7 @@
  *                     ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool).
  */
 import type { EntitySchema, EventSubscriber } from "@mikro-orm/core";
+import type { Duration } from "@stackra/contracts";
 
 import type { QueryObserver } from "#contracts/ports/query-observer.port";
 import type { DatabasePool } from "#core/types/database-pool.type";
@@ -23,6 +24,12 @@ export interface DatabaseOptions {
 
   /** The connection strings of the read replicas of that database; none when absent, and every read is primary. */
   readonly replicas?: readonly string[];
+
+  /**
+   * How long one reading of a replica's lag is reused by the lag guard (`Database.onReplica` with a freshness), from
+   * `DatabaseConfig.replicaReads.probeEvery`; one second when absent.
+   */
+  readonly replicaProbe?: Duration;
 
   /**
    * The timeouts every session (primary and replicas) starts with, from `DatabaseConfig.timeouts`; Postgres's own

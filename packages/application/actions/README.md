@@ -233,6 +233,13 @@ and neither does any query with no `ReplicaReads` bound. Read-your-writes: each 
 write as `CallOptions.lastWriteAt` (a short-lived cookie or header set on a committed action's answer). A forged value
 only costs a replica read. `reads` is not the offline `replica` option.
 
+Configuration has the last word on where a query reads: the port's `reads(query)` answers from the query's key, its API
+area and its declaration (`DatabaseConfig.replicaReads.queries` and `.areas` in `@stackra/database`), so an operator can
+move a query to a replica, or back to the primary, without a code change; an action is never asked. `maxLag` (`"2s"`)
+is the most replica lag a query tolerates whenever it reads a replica (`replicaReads.maxLag`, 5 seconds, when it names
+none): the replica visit carries it with the caller's last write, and the driver reads the primary instead of a replica
+lagging more, or one that has not replayed that write yet (the lag guard, STA-1464).
+
 `queryBudget` (on `Action` and `Query`) is the most database statements one call's `handle` may run. When a
 `QueryBudget` is bound (`DatabaseQueryBudgetDriver` of `@stackra/database`) the pipeline runs `handle` inside it: a call
 over its budget, or one that runs one statement shape more than the configured repeats (an N+1 loop), is reported with

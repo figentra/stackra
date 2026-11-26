@@ -158,6 +158,8 @@ export type { TableFilter } from "#core/types/table-filter.type";
 export type { TableQuery } from "#core/types/table-query.type";
 export type { DatabasePool } from "#core/types/database-pool.type";
 export type { SessionTimeouts } from "#core/types/session-timeouts.type";
+export type { ReplicaFreshness } from "#core/types/replica-freshness.type";
+export type { ReplicaReadsSettings } from "#core/types/replica-reads-settings.type";
 export type { TableSort } from "#core/types/table-sort.type";
 export type { TransactionOptions } from "#core/types/transaction-options.type";
 export type { UpdateOptions } from "#core/types/update-options.type";

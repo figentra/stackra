@@ -8,7 +8,7 @@
  *          resolver (`connectVisibilityFilter`, so reads AND the bound `VisibilityFilter`'s conditions, writes stamp
  *          the call's actor and the call's time zone is read; ADR 0333 decision 4, STA-2044),
  *          `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
- *          `database` provides (`emitEncoreDatabase`; boot never imports `stackra-encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
+ *          `database` provides (`emitEncoreDatabase`; boot never imports `stackra-encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset) with the lag guard's reading reuse (`DatabaseConfig.replicaReads.probeEvery`, STA-1464),
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
  *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
  *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` and, when bound, the `KeyProvider` its blind indexes need (when a model, own or a declared package's, has
@@ -184,7 +184,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "    // The seed entry passes the direct url (STA-1709); a server reads the one Encore provided (STA-1652).",
       "    url: options.url ?? databaseUrl(),",
       "    replicas,",
-      "    ...(config === undefined ? {} : { timeouts: config.timeouts }),",
+      "    ...(config === undefined ? {} : { timeouts: config.timeouts, replicaProbe: config.replicaReads.probeEvery }),",
       "    pool: { ...config?.pool, ...(Number.isInteger(poolMax) && poolMax > 0 ? { max: poolMax } : {}) },",
       `    subscribers: [new HoldSubscriber(), new StampSubscriber(), new AppendOnlySubscriber()${traits.map((name) => `, new ${name}()`).join("")}${encrypted ? ", new EncryptedFieldsSubscriber(container.get(FieldCipher), undefined, container.has(KeyProvider) ? container.get(KeyProvider) : undefined)" : ""}${outbox ? ", container.get(OutboxWriterService)" : ""}],`,
       "  });",

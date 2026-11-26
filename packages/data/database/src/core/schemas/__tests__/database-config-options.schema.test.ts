@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit and type tests of `DatabaseConfigOptions`: its initializers equal the shipped schema's defaults (a two
- *          second, critical probe, the pg pool defaults, a five-second read-your-writes window, no region, the query guard), its fields match the schema's output type exactly, and it registers that schema.
+ *          second, critical probe, the pg pool defaults, a five-second read-your-writes window, no region, the query guard, five seconds of replica lag read once a second with
+ *          no overrides), reads the replica overrides and refuses an unknown area or place, its fields match the schema's output type exactly, and it registers that schema.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 26); ADR 0473.
@@ -35,7 +36,31 @@ describe("DatabaseConfigOptions", () => {
       readYourWrites: "PT5S",
       region: "",
       queries: { slow: "PT0.5S", repeats: 10, strict: false },
+      replicaReads: { maxLag: "PT5S", probeEvery: "PT1S", queries: {}, areas: {} },
     });
+  });
+
+  it("reads the replica overrides and refuses an unknown area or place (STA-1464)", () => {
+    expect(
+      DATABASE_CONFIG_SCHEMA.parse({
+        replicaReads: {
+          maxLag: "2s",
+          queries: { "visit.list": "primary" },
+          areas: { admin: "replica" },
+        },
+      }).replicaReads,
+    ).toEqual({
+      maxLag: "PT2S",
+      probeEvery: "PT1S",
+      queries: { "visit.list": "primary" },
+      areas: { admin: "replica" },
+    });
+    for (const replicaReads of [
+      { areas: { partner: "replica" } },
+      { queries: { "visit.list": "secondary" } },
+      { maxLag: "a while" },
+    ])
+      expect(DATABASE_CONFIG_SCHEMA.safeParse({ replicaReads }).success).toBe(false);
   });
 
   it("matches its schema's output type exactly", () => {

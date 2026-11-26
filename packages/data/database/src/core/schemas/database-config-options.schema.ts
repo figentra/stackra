@@ -9,12 +9,15 @@
  *          `region` is the runway region key (`eu`, `me`) of the deployment the database serves, which the tenancy
  *          `RegionGuardDriver` compares a tenant's placement with. `queries` is the query guard: the slow-statement
  *          threshold, the repeat limit of one statement shape per call and the strict switch (stackra-282).
+ *          `replicaReads` is how replica queries read: the lag they tolerate by default, how long a lag reading is
+ *          reused, and where queries read by key or by area whatever their code declares (STA-1464).
  * Boundary: a shape class; it registers this package's own schema (`DATABASE_CONFIG_SCHEMA`) for itself when the
  *           module loads, so `buildConfig(DatabaseConfig)` validates with no generated file. No credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); registry gap R-27; gap analysis devx-ops "Health checks" (P0,
  *                     owner D10); ADR 0473 (decision 2: the pool); STA-1504 (the read-your-writes window); ADR
- *                     0172 (decision 3: the tenant region) and ADR 0353 (decision 1: region keys), stackra-310.
+ *                     0172 (decision 3: the tenant region) and ADR 0353 (decision 1: region keys), stackra-310; ADR
+ *                     0057 (decision 6: read replica), STA-1464 (replica reads by configuration, the lag guard).
  */
 import "#core/types/database-driver-names.type";
 
@@ -26,6 +29,7 @@ import { DATABASE_CONFIG_SCHEMA } from "#core/constants/database-config-schema.c
 import type { Database } from "#core/ports/database.port";
 import type { DatabasePool } from "#core/types/database-pool.type";
 import type { QueryGuard } from "#core/types/query-guard.type";
+import type { ReplicaReadsSettings } from "#core/types/replica-reads-settings.type";
 import type { SessionTimeouts } from "#core/types/session-timeouts.type";
 
 /**
@@ -85,6 +89,21 @@ export class DatabaseConfigOptions extends Schema {
   // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
   @Field(DATABASE_CONFIG_SCHEMA.shape.queries)
   queries: QueryGuard = { slow: Duration.seconds(0.5), repeats: 10, strict: false };
+
+  /**
+   * How replica queries read (`DatabaseReplicaReadsDriver`): a replica further behind than `maxLag` (a query's own
+   * `maxLag` when it declares one) is skipped for the primary, one lag reading of a replica is reused for `probeEvery`,
+   * and `queries` (by key) and `areas` (by API area) move a query to the replica or back to the primary whatever its
+   * `reads` says.
+   */
+  // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
+  @Field(DATABASE_CONFIG_SCHEMA.shape.replicaReads)
+  replicaReads: ReplicaReadsSettings = {
+    maxLag: Duration.seconds(5),
+    probeEvery: Duration.seconds(1),
+    queries: {},
+    areas: {},
+  };
 
   /**
    * Which `Database` driver runs: `postgres` (the connected MikroORM database, the default) or `memory`, the testing

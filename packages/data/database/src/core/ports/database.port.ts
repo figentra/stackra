@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the `Database` port: the connected MikroORM database of a service. It hands out the entity manager of the
  *          running context, runs work in a transaction, runs work inside a scope (the application layer of
- *          row-level isolation), runs read-only work on a read replica, runs a detached call's work outside the call's
+ *          row-level isolation), runs read-only work on a read replica (skipping one that is not fresh enough for the
+ *          read's `ReplicaFreshness`), runs a detached call's work outside the call's
  *          finished transaction while keeping its step (`Database.detached()`), and closes.
  * Boundary: the ORM itself is MikroORM, which only this package imports (ADR 0097). `Database.current()` is the
  *           connected driver for code that cannot inject it; everything else injects `Database`. A scope is a
@@ -12,7 +13,8 @@
  *           other packages import it from `.`, and contracts holds only ports, enums and types that never import core.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097 (decision 2); ADR 0238; ADR 0239; ADR 0327 (decisions 2, 3, 5, 8 and 9);
- *                     ADR 0057 (decision 6: read replica); `.agents/rules/tenancy.md` (two layers).
+ *                     ADR 0057 (decision 6: read replica), STA-1464 (the lag guard); `.agents/rules/tenancy.md` (two
+ *                     layers).
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
 import type { DetachedStep } from "@stackra/actions/contracts";
@@ -20,6 +22,7 @@ import { Port } from "@stackra/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
+import type { ReplicaFreshness } from "#core/types/replica-freshness.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
 
 /**
@@ -101,12 +104,16 @@ export abstract class Database extends Port {
    * Runs read-only `work` on a read replica, in its own read-only transaction carrying the running transaction's
    * `app.*` settings (the scope and tenant the row-level-security policies read), so isolation holds there too. The
    * replica lags the primary and never sees the running transaction's uncommitted writes; a write inside `work` fails.
-   * A driver with no replica runs `work` as it is, in the running context, which is what this default does.
+   * With `freshness`, a replica lagging more than its `maxLag`, or not yet replayed through its `after`, is not used:
+   * `work` runs as it is, on the primary (the lag guard). A driver with no replica runs `work` as it is, in the running
+   * context, which is what this default does.
    *
    * @example
-   * const rows = await database.onReplica(() => this.visits.find({ day: { $gte: from } }));
+   * const rows = await database.onReplica(() => this.visits.find({ day: { $gte: from } }), {
+   *   maxLag: Duration.seconds(2),
+   * });
    */
-  onReplica<T>(work: () => Promise<T>): Promise<T> {
+  onReplica<T>(work: () => Promise<T>, _freshness?: ReplicaFreshness): Promise<T> {
     return work();
   }
 

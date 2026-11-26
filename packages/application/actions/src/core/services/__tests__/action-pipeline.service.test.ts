@@ -57,6 +57,7 @@ import { type AnyClass, Driver } from "@stackra/container";
 import {
   type Actor,
   ActorKind,
+  ApiArea,
   type Email,
   ApprovalSettingsSource,
   AssuranceLevel,
@@ -137,6 +138,8 @@ import type {
   CallDescriptor,
   CallOrigin,
   RateLimitBucket,
+  ReplicaQuery,
+  ReplicaVisit,
 } from "#contracts/index";
 import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
@@ -2905,14 +2908,29 @@ describe("ActionPipeline tracing (ADR 0147, STA-1513)", () => {
   });
 });
 
-/** Replica reads in memory: records where each read ran and keeps a 5-second window per writer. */
+/**
+ * Replica reads in memory: records where each read ran and the visit it got, keeps a 5-second window per writer, and
+ * moves queries by a configured override per key (`overrides`).
+ */
 class RecordingReplicaReads extends Driver(ReplicaReads) {
   readonly writes = new Map<string, number>();
 
-  readonly reads: string[] = [];
+  readonly ran: string[] = [];
 
-  async onReplica<T>(work: () => Promise<T>): Promise<T> {
-    this.reads.push("replica");
+  readonly visits: (ReplicaVisit | undefined)[] = [];
+
+  readonly asked: ReplicaQuery[] = [];
+
+  readonly overrides = new Map<string, "primary" | "replica">();
+
+  override reads(query: ReplicaQuery): "primary" | "replica" {
+    this.asked.push(query);
+    return this.overrides.get(query.key) ?? super.reads(query);
+  }
+
+  async onReplica<T>(work: () => Promise<T>, visit?: ReplicaVisit): Promise<T> {
+    this.ran.push("replica");
+    this.visits.push(visit);
     return work();
   }
 
@@ -2940,12 +2958,25 @@ class VisitsQuery extends Query({
   }
 }
 
-/** A pipeline with recording replica reads and the replica query bound. */
+/** A replica query that tolerates two seconds of lag. */
+class RecentVisitsQuery extends Query({
+  key: "visit.recent",
+  actors: [ActorKind.User],
+  reads: "replica",
+  maxLag: "2s",
+}) {
+  async handle(): Promise<string> {
+    return "recent";
+  }
+}
+
+/** A pipeline with recording replica reads and the replica queries bound. */
 function withReplicaReads() {
   const reads = new RecordingReplicaReads();
   const { pipeline, shop } = setup([
     [ReplicaReads, reads],
     [VisitsQuery, new VisitsQuery()],
+    [RecentVisitsQuery, new RecentVisitsQuery()],
   ]);
   return { pipeline, reads, shop };
 }
@@ -2954,13 +2985,13 @@ describe("ActionPipeline replica reads (STA-1504)", () => {
   it("runs a reads: replica query on the replica", async () => {
     const { pipeline, reads } = withReplicaReads();
     await expect(pipeline.execute(VisitsQuery, {}, { actor: customer })).resolves.toBe("visits");
-    expect(reads.reads).toEqual(["replica"]);
+    expect(reads.ran).toEqual(["replica"]);
   });
 
   it("keeps a primary query on the primary", async () => {
     const { pipeline, reads } = withReplicaReads();
     await pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer });
-    expect(reads.reads).toEqual([]);
+    expect(reads.ran).toEqual([]);
   });
 
   it("pins the caller to the primary after its own committed write, in its scope", async () => {
@@ -2972,9 +3003,9 @@ describe("ActionPipeline replica reads (STA-1504)", () => {
     );
     expect([...reads.writes.keys()]).toEqual([`${SCOPE.id}:usr_1`]);
     await pipeline.execute(VisitsQuery, {}, { actor: customer, scope: SCOPE });
-    expect(reads.reads).toEqual([]);
+    expect(reads.ran).toEqual([]);
     await pipeline.execute(VisitsQuery, {}, { actor: { ...customer, id: "usr_2" }, scope: SCOPE });
-    expect(reads.reads).toEqual(["replica"]);
+    expect(reads.ran).toEqual(["replica"]);
   });
 
   it("opens no window for a refused write", async () => {
@@ -2997,18 +3028,74 @@ describe("ActionPipeline replica reads (STA-1504)", () => {
       {},
       { actor: customer, lastWriteAt: new Date(NOW.getTime() - 1000) },
     );
-    expect(reads.reads).toEqual([]);
+    expect(reads.ran).toEqual([]);
     await pipeline.execute(
       VisitsQuery,
       {},
       { actor: customer, lastWriteAt: new Date(NOW.getTime() - 60_000) },
     );
-    expect(reads.reads).toEqual(["replica"]);
+    expect(reads.ran).toEqual(["replica"]);
   });
 
   it("reads the primary when no ReplicaReads is bound", async () => {
     const { pipeline } = setup([[VisitsQuery, new VisitsQuery()]]);
     await expect(pipeline.execute(VisitsQuery, {}, { actor: customer })).resolves.toBe("visits");
+  });
+});
+
+describe("ActionPipeline replica reads by declaration and the lag guard (STA-1464)", () => {
+  it("hands the replica the query's key, area, declaration, maxLag, writer, time and carried last write", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    const lastWriteAt = new Date(NOW.getTime() - 60_000);
+    await pipeline.execute(RecentVisitsQuery, {}, { actor: customer, scope: SCOPE, lastWriteAt });
+    expect(reads.visits).toEqual([
+      {
+        key: "visit.recent",
+        area: ApiArea.App,
+        declared: "replica",
+        maxLag: Duration.seconds(2),
+        writer: `${SCOPE.id}:usr_1`,
+        at: NOW,
+        lastWriteAt,
+      },
+    ]);
+  });
+
+  it("leaves maxLag to the driver when the query declares none", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    await pipeline.execute(VisitsQuery, {}, { actor: customer });
+    expect(reads.visits).toHaveLength(1);
+    expect(reads.visits[0]).not.toHaveProperty("maxLag");
+    expect(reads.visits[0]).not.toHaveProperty("lastWriteAt");
+  });
+
+  it("moves a primary query to the replica when configuration says so", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    reads.overrides.set("order.get", "replica");
+    await pipeline.execute(GetOrderQuery, { orderId: "ord_1" }, { actor: customer });
+    expect(reads.asked.map((query) => [query.key, query.declared])).toEqual([
+      ["order.get", "primary"],
+    ]);
+    expect(reads.ran).toEqual(["replica"]);
+  });
+
+  it("keeps a replica query on the primary when configuration says so", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    reads.overrides.set("visit.list", "primary");
+    await expect(pipeline.execute(VisitsQuery, {}, { actor: customer })).resolves.toBe("visits");
+    expect(reads.ran).toEqual([]);
+  });
+
+  it("never asks about an action, which always runs on the primary", async () => {
+    const { pipeline, reads } = withReplicaReads();
+    reads.overrides.set("order.create", "replica");
+    await pipeline.execute(
+      CreateOrderAction,
+      { quantity: 1 },
+      { actor: customer, idempotencyKey: "k" },
+    );
+    expect(reads.asked).toEqual([]);
+    expect(reads.ran).toEqual([]);
   });
 });
 

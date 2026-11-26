@@ -145,7 +145,9 @@ for long lists and `page` only where a pager needs page numbers.
 ### Reads on a replica
 
 ```ts
-const visits = await database.onReplica(() => this.visits.find({ day: { $gte: from } }));
+const visits = await database.onReplica(() => this.visits.find({ day: { $gte: from } }), {
+  maxLag: Duration.seconds(2),
+});
 ```
 
 - The primary's url comes from the runtime through `provideDatabaseUrl(url)`: the generated Encore
@@ -162,6 +164,30 @@ const visits = await database.onReplica(() => this.visits.find({ day: { $gte: fr
   replica queries read the primary for `DatabaseConfig.readYourWrites` (5 seconds by default), keyed by scope and
   actor. The driver remembers writes per instance; the transport carries the last write to other instances as
   `CallOptions.lastWriteAt`.
+- The lag guard (STA-1464): `onReplica(work, { maxLag, after })` measures the replica it is about to use
+  (`pg_is_in_recovery`, its replayed WAL against the primary's `pg_current_wal_insert_lsn` read just before,
+  `pg_last_xact_replay_timestamp`) and runs `work` on the primary when that replica lags more than `maxLag` or has not
+  replayed through `after`. A replica is caught up only once it has replayed through the primary's position, never
+  through the WAL it received itself: a standby whose WAL receiver stopped (partition, crash, slot or auth error, a
+  failover that left it behind) replays all it received and would otherwise look current forever; it is judged by its
+  growing lag instead. Both readings need no privilege beyond connecting. A reading is reused for
+  `DatabaseConfig.replicaReads.probeEvery` (1 second; the boot passes it as `replicaProbe`), and one that fails only
+  because it aged is taken again once. Without a freshness `onReplica` reads the replica unmeasured (reports).
+  `DatabaseReplicaReadsDriver` always demands the query's `maxLag`, else `replicaReads.maxLag` (5 seconds), and the
+  writer's last write as `after`.
+- Configuration places queries: `DatabaseConfig.replicaReads.queries` (by query key) and `.areas` (by API area) say
+  `primary` or `replica` whatever the query's `reads` declares; the key wins over the area.
+
+  ```ts
+  export class DatabaseConfig extends BaseDatabaseConfig {
+    override replicaReads = {
+      maxLag: Duration.seconds(5),
+      probeEvery: Duration.seconds(1),
+      queries: { "visit.list": "replica" as const },
+      areas: { admin: "replica" as const },
+    };
+  }
+  ```
 
 ## A migration
 

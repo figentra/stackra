@@ -146,6 +146,9 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   transaction; MikroORM's `preferReadReplicas` stays off, because a read outside that transaction carries no scope.
 - `DatabaseReplicaReadsDriver` keeps the read-your-writes window in instance memory (writer keys only, swept once
   1000 are held); a `lastWriteAt` may only keep reads on the primary, never move them off it.
+- The lag guard measures the same replica connection the read then uses (never one replica for the reading and another
+  for the read) and a replica that is not fresh sends the read to the primary, never to an error. A reading errs early
+  (`measuredAt` is taken before the probe), so a replica is never judged fresher than it was (STA-1464).
 - Faker, Testcontainers (`@testcontainers/postgresql`, `testcontainers`), `@electric-sql/pglite`,
   `@electric-sql/pglite-pgvector` and `@mikro-orm/pglite` are imported by `./testing` only.
 - `usePostgres()` defaults to the image `POSTGRES_TEST_IMAGE` describes (stackra-284); when an extension joins

@@ -72,6 +72,8 @@ export type { OfflineCapUsage } from "#contracts/types/offline-cap-usage.type";
 export type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 export type { RateLimitDecision } from "#contracts/types/rate-limit-decision.type";
 export type { ReplicaChange } from "#contracts/types/replica-change.type";
+export type { ReplicaQuery } from "#contracts/types/replica-query.type";
 export type { ReplicaRead } from "#contracts/types/replica-read.type";
 export type { ReplicaRow } from "#contracts/types/replica-row.type";
+export type { ReplicaVisit } from "#contracts/types/replica-visit.type";
 export type { ReviewItem } from "#contracts/types/review-item.type";
