@@ -3,7 +3,8 @@
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
 #          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
-#          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
+#          plus `Dependency Review` on pull requests, and the non-required `Design system tests` (vitest of the design-system
+#          packages; STA-2705). The Quality Gate runs no tests: unit, integration (`test:int`) and e2e run on the box
 #          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
 #          build run for the members the change affects (turbo `--affected` against the base commit).
 #          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
@@ -22,6 +23,9 @@ on:
     # ready_for_review re-runs the gate when a draft PR is marked ready, so the Tasked rule applies.
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+  # The nightly run of `Design system tests` on main; every other job skips a scheduled run.
+  schedule:
+    - cron: "17 2 * * *"
 
 # ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job holds an OIDC token for the
 # sops decrypt of ci/build/turbo (ADR 0525), and the Mobile apps job one for its licence token from ci/build (ADR 0310).
@@ -34,6 +38,7 @@ jobs:
   # build and tests (2026-11-09).
   dependency-scan:
     name: Dependency scan (OSV-Scanner)
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -61,6 +66,7 @@ jobs:
 
   gate:
     name: Quality Gate
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -234,6 +240,7 @@ jobs:
   # only when a change can reach them, and its tarball cache means one licensed download per cache entry.
   mobile:
     name: Mobile apps (Uniwind Pro)
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -351,6 +358,58 @@ jobs:
         run: >-
           pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground
           --continue=dependencies-successful
+
+  # STA-2705 (owner, 20 Nov, "go"): tests in CI in a light form. Not required (O5: required after three green runs, the
+  # owner changes the ruleset). GitHub-hosted, no secret, so a fork pull request runs it. It runs the vitest suites of the
+  # design-system packages when `packages/design-system/**`, `apps/playground/**` or this workflow changes (every
+  # pull request starts it; the steps skip otherwise), on `workflow_dispatch`, and nightly on main.
+  # The playground's Playwright and axe run is a separate job once its Uniwind Pro install has a no-secret path.
+  design-system-tests:
+    name: Design system tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 2 # a PR checks out its merge into main, so HEAD~1 is main and the diff is the PR's own
+          persist-credentials: false
+          submodules: false
+
+      - name: Scope
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" != "pull_request" ] || git diff --name-only HEAD~1 HEAD |
+            grep -qE '^(packages/design-system/|apps/playground/|\.github/workflows/ci\.yml$)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=Design system tests::no design-system file changed; nothing to run"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Toolchain (mise)
+        if: steps.scope.outputs.run == 'true'
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node pnpm
+
+      # As the gate installs: every member but the two Uniwind Pro ones (licensed install, a secret). A narrower install
+      # fails: turbo's `test` waits on `//#gen:workspace`, which builds members the five packages do not depend on
+      # (`tsdown: not found`, exit 127, seen on box 1).
+      - name: Install dependencies
+        if: steps.scope.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
+
+      - name: Test
+        if: steps.scope.outputs.run == 'true'
+        run: >-
+          pnpm exec turbo run test --filter=@stackra/tokens --filter=@stackra/ui --filter=@stackra/icons
+          --filter=@stackra/branding --filter=@stackra/showcase --continue=dependencies-successful --concurrency=2
 
   dependency-review:
     name: Dependency Review
