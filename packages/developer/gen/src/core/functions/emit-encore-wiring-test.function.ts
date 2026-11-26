@@ -21,13 +21,15 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0182 (decision 3: the thin Encore test suite for the wiring); ADR 0091 (decision 2: the
  *                     generated Encore app); ADR 0437 (the server-check order); ADR 0098 (the actor from the
- *                     credential); ADR 0295 (generated output in `.stackra/`); STA-2838.
+ *                     credential); ADR 0295 (generated output in `.stackra/`); ADR 0296 (amendment 2026-11-26: the
+ *                     environment file loads first, as in every generated Encore file); STA-2844; STA-2838.
  */
 import type { StackraManifest } from "@stackra/contracts";
 
 import { ENCORE_WIRING_TEST } from "#core/constants/encore-wiring-test.constant";
 import { encoreEndpoints } from "#core/functions/encore-endpoints.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
+import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -132,6 +134,11 @@ export function emitEncoreWiringTest(
     .map((model) => (model as { table?: unknown }).table)
     .filter((table): table is string => typeof table === "string");
 
+  // The service's environment and database load first, as in every generated Encore file (`encoreSetupImports`), so
+  // STACKRA_ENVIRONMENT is settled and the database URL provided before the server app is built; only the ones gen wrote.
+  const setup = encoreSetupImports(ir)
+    .map((line) => `${folder}/${line.replace(/^import "\.\/(.+)";$/, "$1")}.ts`)
+    .filter((path) => files.some((file) => file.path === path));
   const byModule = new Map<string, string[]>();
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts a copy made here; toSorted is ES2023 and the base lib is ES2022
   for (const type of [...classes].sort()) {
@@ -156,6 +163,7 @@ export function emitEncoreWiringTest(
     ),
     'import { Service } from "encore.dev/service";',
     "",
+    ...setup.map((path) => `import ${JSON.stringify(specifierOf(path))};`),
     'import { app } from "../entry/server";',
     `import service from ${JSON.stringify(specifierOf(serviceFile))};`,
     ...imports,

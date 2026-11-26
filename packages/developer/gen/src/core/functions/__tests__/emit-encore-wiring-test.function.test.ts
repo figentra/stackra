@@ -214,6 +214,33 @@ describe(emitEncoreWiringTest, () => {
     expect(text).toContain('  ["ordersPurge1Job", encore0.ordersPurge1Job, CronJob],');
   });
 
+  it("loads the environment and the database gen wrote before the server app, as every generated Encore file does", () => {
+    const withApp: MemberIR = { ...IR, packages: [...(IR.packages ?? []), "@stackra/app"] };
+    const environment: GeneratedFile = {
+      path: "stackra-encore/commerce/environment.ts",
+      content: "providePlatformEnvironment(appMeta().environment);\n",
+    };
+    const text = emitEncoreWiringTest(withApp, MANIFEST, [...FILES, environment])?.content ?? "";
+    const order = [
+      'import "../../stackra-encore/commerce/environment";',
+      'import "../../stackra-encore/commerce/database";',
+      'import { app } from "../entry/server";',
+    ].map((line) => text.indexOf(line));
+    expect(order.every((at) => at > 0)).toBe(true);
+    expect(order[0]).toBeLessThan(order[1] ?? 0);
+    expect(order[1]).toBeLessThan(order[2] ?? 0);
+    // A setup file gen did not write is not imported.
+    expect(content).not.toContain('import "../../stackra-encore/commerce/environment";');
+    const noDatabase =
+      emitEncoreWiringTest(
+        withApp,
+        MANIFEST,
+        [...FILES, environment].filter((file) => !file.path.endsWith("/database.ts")),
+      )?.content ?? "";
+    expect(noDatabase).toContain('import "../../stackra-encore/commerce/environment";');
+    expect(noDatabase).not.toContain("commerce/database");
+  });
+
   it("writes none for a package, an authored entry, a service without Vitest or without its Encore service", () => {
     expect(emitEncoreWiringTest({ ...IR, layout: "package" }, MANIFEST, FILES)).toBeUndefined();
     expect(emitEncoreWiringTest({ ...IR, authoredMain: true }, MANIFEST, FILES)).toBeUndefined();
