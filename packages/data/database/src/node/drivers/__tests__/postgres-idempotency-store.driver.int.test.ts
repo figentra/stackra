@@ -4,8 +4,9 @@
  *          concurrent claim sees it held, a completed key replays its output, a released key may run again, an
  *          expired key is claimed afresh, and a key claimed and completed inside an outer transaction whose commit
  *          fails is gone, so the retry runs again instead of replaying; a held key lapses after its lease while a
- *          completed one keeps its window, and a late completion lands on a lapsed key but never over another call's
- *          claim. Through the action pipeline (STA-2797), with and without a call isolation: a completion that fails
+ *          completed one keeps its window, a late completion lands on a lapsed key but never over another call's
+ *          claim, and `extend` keeps a held key for the window, takes a lapsed one again and refuses another body or a
+ *          done key. Through the action pipeline (STA-2797), with and without a call isolation: a completion that fails
  *          rolls the action's row back with it, and a failure after the commit leaves the key done, so the retry
  *          replays and the row is written once.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0002 migration creates the table.
@@ -165,6 +166,27 @@ describe("PostgresIdempotencyStoreDriver lease and window (STA-2797)", () => {
     expect(await store().claim("a:-:usr_1:l4", "other", Duration.minutes(15))).toMatchObject({
       done: true,
       output: 3,
+    });
+  });
+
+  it("extends a held key past its lease, takes a lapsed one again, and refuses another body or a done key", async () => {
+    await store().claim("a:-:usr_1:e1", "f", Duration.seconds(0.05));
+    expect(await store().extend("a:-:usr_1:e1", "f", Duration.hours(24))).toBe(true);
+    await pause(120);
+    expect(await store().claim("a:-:usr_1:e1", "f", Duration.minutes(15))).toEqual({
+      fingerprint: "f",
+      done: false,
+    });
+    await store().claim("a:-:usr_1:e2", "f", Duration.seconds(0.05));
+    await pause(120);
+    expect(await store().extend("a:-:usr_1:e2", "f", Duration.hours(24))).toBe(true);
+    await store().claim("a:-:usr_1:e3", "other", Duration.minutes(15));
+    expect(await store().extend("a:-:usr_1:e3", "f", Duration.hours(24))).toBe(false);
+    await store().complete("a:-:usr_1:e3", "other", 1, Duration.hours(24));
+    expect(await store().extend("a:-:usr_1:e3", "other", Duration.hours(24))).toBe(false);
+    expect(await store().claim("a:-:usr_1:e3", "other", Duration.minutes(15))).toMatchObject({
+      done: true,
+      output: 1,
     });
   });
 });

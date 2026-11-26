@@ -117,19 +117,34 @@ left the key in progress for the whole 24-hour window. Now (STA-2797):
 1. A store that joins transactions is completed inside the call's transaction, after the interceptors, so the kept
    output commits or rolls back with the writes. With no `CallIsolation` bound, the pipeline opens one `UnitOfWork`
    transaction around a keyed call on such a store, and the action's own unit of work becomes a savepoint of it.
-2. A store that cannot join (Valkey, memory) is still completed after the commit, and first, before anything else that
-   runs after it. Once a call has committed, its key is never released: a failed completion is logged
-   (`actions.idempotency_store_failed`), the caller still gets its output, and the key stays held until its lease ends.
-3. A claim holds its key for a short lease (`IDEMPOTENCY_LEASE`, 15 minutes, never longer than the replay window);
-   `complete` keeps the output for the replay window (24 hours unless shortened). A call that never finished frees its
-   key after the lease.
-4. The Valkey store marks each held claim with a holder token and frees or completes a key only while it still holds
-   that claim, so a late release never deletes a done record or another call's claim.
+2. A store that cannot join (Valkey, memory) is re-confirmed as the last step before the call's commit:
+   `IdempotencyStore.extend` keeps the claim held, not done, for the whole replay window, and answers false when the
+   claim was lost (the call outran its lease and another call took the key). A lost claim throws
+   `idempotency_key_in_progress` inside the transaction, so the writes roll back and the caller's retry replays the
+   other call's answer; a store that cannot be reached there fails the call the same way. Inside a `CallIsolation`
+   the step runs after the interceptors, before the isolation commits; with none it is the last step of the action's
+   own unit of work. The store is then completed after the commit, first, before anything else that runs after it.
+3. Once a call has committed, its key is never released: a failed completion is logged
+   (`actions.idempotency_store_failed`), the caller still gets its output, and the key stays held (extended in step 2)
+   for the replay window, so a retry is told `idempotency_key_in_progress` instead of repeating the write.
+4. A claim holds its key for a short lease (`IDEMPOTENCY_LEASE`, 15 minutes, never longer than the replay window);
+   `complete` keeps the output for the replay window (24 hours unless shortened). A call whose process died before step
+   2 committed nothing, and frees its key after the lease instead of after a day.
+5. Every claim carries a holder token unique to the call (`claim`, `extend`, `complete` and `release` take it). The
+   memory and Valkey stores act on a key only while it still holds that call's claim, or, for `extend` and `complete`,
+   while it is free, so a late release never deletes a done record or another call's claim, and two calls in one
+   process are told apart. The Postgres store keeps no holder: its claim row never commits before its call does.
 
-With Valkey or memory, a crash between the commit and the completion still lets a retry after the lease run the write
-again: bind the Postgres store wherever a repeated write is not acceptable. Tests:
-`action-pipeline.service.test.ts` (STA-2797 block) and `postgres-idempotency-store.driver.int.test.ts` (the pipeline on
-real Postgres, with and without an isolation).
+Before this note a Valkey or memory claim was held for the full 24 hours, so a crash after the commit left the key in
+progress for a day (no second write) and a call that never finished blocked its key as long. The lease alone (without
+step 2) would have traded that for a new duplicate-write path on Valkey and memory: a crash between the commit and the
+completion, or a call running longer than its lease, would have let a retry after the lease run the write again. Step 2
+closes both: the only remaining window is a crash after step 2 and before the commit, which leaves a key held for the
+window with nothing written (a retry answers `idempotency_key_in_progress` until the window ends, as before this
+note), never a duplicate. Tests: `action-pipeline.service.test.ts` (STA-2797 block: a crash after the commit, an
+interceptor that fails after it, a call that outran its lease with and without a retry overtaking it, a store
+unreachable at the re-confirmation, each with and without an isolation), the memory and Valkey driver tests, and
+`postgres-idempotency-store.driver.int.test.ts` (the pipeline on real Postgres, with and without an isolation).
 
 ## Note 2026-11-01: a job's tenant comes from its platform-written scope (decision 2)
 

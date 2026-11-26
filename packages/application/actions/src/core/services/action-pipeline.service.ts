@@ -32,8 +32,11 @@
  *          propagation: its `timeout` and its rollback hold, and it is not `requiresNew`), so a call commits once, when
  *          the isolation transaction ends. The idempotency `complete` of a store that joins transactions is written inside it,
  *          after the interceptors, so the kept output commits with the writes (STA-2797); with no isolation bound, a
- *          keyed call on such a store runs its steps in one `UnitOfWork` transaction for the same reason. What waits
- *          for that commit runs after it: the `complete` of a store that cannot join (Valkey, memory), the offline cap
+ *          keyed call on such a store runs its steps in one `UnitOfWork` transaction for the same reason. A store that
+ *          cannot join (Valkey, memory) is `extend`ed to the replay window as the last step before the commit, and a
+ *          claim lost meanwhile (another call took the key after this one's lease lapsed) rolls the call back with
+ *          `idempotency_key_in_progress`, so it never writes twice. What waits
+ *          for that commit runs after it: the `complete` of a store that cannot join, the offline cap
  *          record, the read-your-writes mark and `ctx.afterCommit` work; once the call committed, its key is never
  *          freed, and a failed completion is logged (`IDEMPOTENCY_STORE_FAILED`) while the caller gets its output. The audit's refusal entries and a
  *          query's analytics event are written outside it, and with none bound a call runs as before. An action that
@@ -264,6 +267,17 @@ const UNCREDENTIALED: readonly (keyof CallOptions)[] = [
   "consentSnapshot",
 ];
 
+/** An Idempotency-Key a call claimed: the scoped key, its body's fingerprint, replay window and holder token. */
+interface HeldClaim {
+  readonly held: string;
+  readonly fingerprint: string;
+  readonly ttl: Duration;
+  /** The token this call holds the key under, so no store write of it touches another call's claim. */
+  readonly holder: string;
+  /** Whether the key is the caller's own, not derived from the input. */
+  readonly sent: boolean;
+}
+
 /** What one call accumulates while it runs. */
 interface CallState {
   idempotencyKey: string | undefined;
@@ -277,6 +291,11 @@ interface CallState {
   enclosed: boolean;
   /** Set once the action's own unit of work committed with nothing enclosing it: its writes can no longer roll back. */
   committed: boolean;
+  /**
+   * The call's held claim on a store that cannot join the transaction, re-confirmed (`IdempotencyStore.extend`) as the
+   * last step before the call's writes commit.
+   */
+  lease: HeldClaim | undefined;
   /** Set when a device resends a sequence at or below its last settled one: only a replay may answer; that last one. */
   replayOnly: number | undefined;
   /** A replica query's change cursor: the validated input's `cursor`. */
@@ -501,6 +520,7 @@ export class ActionPipeline {
       joined: false,
       enclosed: false,
       committed: false,
+      lease: undefined,
       replayOnly: undefined,
       replicaCursor: undefined,
       afterCommit: [],
@@ -520,8 +540,9 @@ export class ActionPipeline {
    * The steps, in the fixed order: the tenancy check, then (inside `CallIsolation` when bound) permission to `handle`,
    * then what waits for the isolation transaction's commit. A store that joins transactions is completed inside the
    * transaction that commits the call's writes, so the output commits with them; any other store is completed after
-   * that commit. Once the call committed its key is never freed: a failed completion is logged and the key stays held
-   * until its lease ends, so a retry cannot repeat the write (STA-2797).
+   * that commit, its claim `extend`ed to the replay window first, inside that transaction (`confirmed`). Once the call
+   * committed its key is never freed: a failed completion is logged and the key stays held for the replay window, so
+   * a retry cannot repeat the write (STA-2797).
    */
   private async steps(call: Call, raw: unknown): Promise<unknown> {
     const { kind } = call;
@@ -550,6 +571,7 @@ export class ActionPipeline {
           if (kind === "action") await this.approved(call, input);
           taken.claim = kind === "action" ? await this.claim(call, input) : undefined;
           if (taken.claim !== undefined && "replay" in taken.claim) return taken.claim.replay;
+          if (taken.claim !== undefined && !atomic) call.state.lease = taken.claim;
           if (call.state.replayOnly !== undefined)
             throw DeviceSequenceOutOfOrderError.create({ acknowledged: call.state.replayOnly });
           taken.amount = await this.capped(call, input);
@@ -557,32 +579,36 @@ export class ActionPipeline {
           const result = await this.intercepted(call, input);
           // after the interceptors, so the kept output is the caller's; a failure here rolls the writes back with it
           if (atomic && taken.claim !== undefined) {
-            const { held, fingerprint, ttl } = taken.claim;
+            const { held, fingerprint, ttl, holder } = taken.claim;
             await this.required(IdempotencyStore, "").complete(
               held,
               fingerprint,
               keptOutput(call.registration?.output, result),
               ttl,
+              holder,
             );
             taken.completed = true;
           }
+          // the isolation's commit is the call's: re-confirm the claim of a store outside it last, before that commit
+          if (call.state.enclosed) await this.confirmed(call);
           return result;
         },
         wrap,
       );
     } catch (error) {
       if (taken.claim !== undefined && "held" in taken.claim) {
-        const { held, fingerprint, ttl, sent } = taken.claim;
+        const { held, fingerprint, ttl, sent, holder } = taken.claim;
         // a refusal that retrying cannot change is the call's answer; it is written after the rollback, which
         // took the claim row with it (a joined store). Anything else frees the key for a retry, unless the call's
-        // own unit of work already committed (an interceptor failed after it): then the key stays held for its lease.
+        // own unit of work already committed (an interceptor failed after it): then the key stays held, extended to
+        // the replay window before that commit.
         // only a key the caller sent: an input-derived key would replay the refusal to every later identical call
         if (sent && isRefusal(error) && !error.retryable)
           await this.storeSafely(call, "complete_refused", (store) =>
             store.completeRefused(held, fingerprint, storedRefusal(error), ttl),
           );
         else if (!call.state.committed)
-          await this.storeSafely(call, "release", (store) => store.release(held));
+          await this.storeSafely(call, "release", (store) => store.release(held, holder));
       }
       // a parked request is a write the refusal's rollback would undo, so it is written after the transaction ends
       const failure = call.state.parking === undefined ? error : await this.parked(call, error);
@@ -601,6 +627,7 @@ export class ActionPipeline {
           claim.fingerprint,
           keptOutput(call.registration?.output, output),
           claim.ttl,
+          claim.holder,
         ),
       );
     if (kind === "action")
@@ -635,8 +662,27 @@ export class ActionPipeline {
   }
 
   /**
+   * Re-confirms the call's claim on a store that cannot join the transaction (`IdempotencyStore.extend`), as the last
+   * step before the call's writes commit: the key stays held for the replay window, so a crash after the commit leaves
+   * the retry `idempotency_key_in_progress` instead of a second write. When the claim was lost (the call outran its
+   * lease and another call took the key) it throws `IdempotencyKeyInProgressError`, which rolls the writes back; the
+   * caller's retry then replays the other call's answer. A store failure throws too, for the same rollback. Without a
+   * held claim, or on a store completed inside the transaction, it does nothing (STA-2797).
+   *
+   * @throws IdempotencyKeyInProgressError when another call holds the key.
+   */
+  private async confirmed(call: Call): Promise<void> {
+    const lease = call.state.lease;
+    if (lease === undefined) return;
+    const { held, fingerprint, ttl, holder } = lease;
+    if (!(await this.required(IdempotencyStore, "").extend(held, fingerprint, ttl, holder)))
+      throw IdempotencyKeyInProgressError.create();
+  }
+
+  /**
    * Runs one idempotency store write whose failure must not change the call's answer: it is logged
-   * (`IDEMPOTENCY_STORE_FAILED`) and the key is left as the store has it, held at most until its lease ends.
+   * (`IDEMPOTENCY_STORE_FAILED`) and the key is left as the store has it: after a commit, held for the replay window
+   * (`confirmed` extended it before the commit); after a failed call, held at most until its lease ends.
    */
   private async storeSafely(
     call: Call,
@@ -1075,17 +1121,7 @@ export class ActionPipeline {
   private async claim(
     call: Call,
     input: unknown,
-  ): Promise<
-    | {
-        readonly held: string;
-        readonly fingerprint: string;
-        readonly ttl: Duration;
-        /** Whether the key is the caller's own, not derived from the input. */
-        readonly sent: boolean;
-      }
-    | { readonly replay: unknown }
-    | undefined
-  > {
+  ): Promise<HeldClaim | { readonly replay: unknown } | undefined> {
     const policy = call.options.idempotency ?? Idempotency.Optional;
     // its output must never be kept (a credential): a sent key is ignored, so nothing is stored or replayed
     if (policy === Idempotency.Never) return undefined;
@@ -1142,8 +1178,9 @@ export class ActionPipeline {
       Duration.toMilliseconds(IDEMPOTENCY_LEASE) < Duration.toMilliseconds(ttl)
         ? IDEMPOTENCY_LEASE
         : ttl;
-    const earlier = await store.claim(scoped, fingerprint, lease);
-    if (earlier === undefined) return { held: scoped, fingerprint, ttl, sent: !derived };
+    const holder = globalThis.crypto.randomUUID();
+    const earlier = await store.claim(scoped, fingerprint, lease, holder);
+    if (earlier === undefined) return { held: scoped, fingerprint, ttl, holder, sent: !derived };
     if (earlier.fingerprint !== fingerprint) throw IdempotencyKeyReusedError.create();
     if (!earlier.done) throw IdempotencyKeyInProgressError.create();
     if ("refusal" in earlier) throw refusalFromStored(earlier.refusal);
@@ -1265,10 +1302,16 @@ export class ActionPipeline {
         ? () => {
             const unit = this.optional(UnitOfWork);
             const timeout = call.options.timeout;
+            // the unit of work's commit is the call's when nothing encloses it: re-confirm the claim last, inside it
+            const confirmedRun = async () => {
+              const output = await run();
+              if (!call.state.enclosed) await this.confirmed(call);
+              return output;
+            };
             const commit = async () => {
               const output = await (unit === undefined
-                ? run()
-                : unit.transaction(run, timeout === undefined ? undefined : { timeout }));
+                ? confirmedRun()
+                : unit.transaction(confirmedRun, timeout === undefined ? undefined : { timeout }));
               // nothing encloses this unit of work: its writes are committed and no later failure undoes them
               if (!call.state.enclosed) call.state.committed = true;
               return output;

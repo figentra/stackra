@@ -13,7 +13,11 @@
  *           its key for the lease; `complete` is one upsert that marks the held key (or a lapsed one) done for the
  *           replay window, and the pipeline runs it inside the call's transaction, so the output commits with the
  *           writes and a crash after the commit leaves no key in progress (STA-2797). `release` frees a held key a
- *           failed call leaves when its transaction still commits; a done key is never freed.
+ *           failed call leaves when its transaction still commits; a done key is never freed. The table keeps no
+ *           holder: a claim row never commits before its call does (the pipeline runs the steps of a keyed call in one
+ *           transaction whenever a `UnitOfWork` is bound, which this package binds), so no other call can take it over
+ *           while it runs. `extend`, which the pipeline asks only of a store completed after the commit, therefore
+ *           checks the fingerprint, not a holder.
  *           The output must be JSON-serialisable, as every action output is. Each claim also sweeps up to 100 expired
  *           keys, so the table stays bounded without a job. Raw SQL with every value bound (ADR 0160).
  * Runtime: node
@@ -105,6 +109,28 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
       }
     }
     throw new Error(`The idempotency key ${key} changed hands three times while it was claimed`);
+  }
+
+  /**
+   * Implements `IdempotencyStore.extend`, documented there: one upsert that keeps a held key with `fingerprint` (or
+   * takes a free or expired one) held for `ttl`; `false` when the key is done or held for another body. The table keeps
+   * no holder (see the file contract), so `holder` is not compared.
+   */
+  async extend(key: string, fingerprint: string, ttl: Duration): Promise<boolean> {
+    const ms = Math.max(1, Math.ceil(Duration.toMilliseconds(ttl)));
+    return this.run(async (em) => {
+      // raw-sql: a held (or lapsed) key stays held, not done, for the replay window
+      const kept = (await em.execute(
+        `insert into ${KEYS} (key, fingerprint, done, output, refusal, expires_at) ` +
+          "values (?, ?, false, null, null, now() + (? * interval '1 millisecond')) " +
+          "on conflict (key) do update set fingerprint = excluded.fingerprint, done = false, output = null, " +
+          "refusal = null, expires_at = excluded.expires_at, updated_at = now() " +
+          `where (${KEYS}.done = false and ${KEYS}.fingerprint = excluded.fingerprint) or ${KEYS}.expires_at <= now() ` +
+          "returning key",
+        [key, fingerprint, ms],
+      )) as unknown as readonly unknown[];
+      return kept.length > 0;
+    });
   }
 
   /**
