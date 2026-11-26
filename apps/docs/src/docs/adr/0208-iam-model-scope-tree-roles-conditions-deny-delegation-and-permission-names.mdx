@@ -88,7 +88,10 @@ scope-tree tier was first written as Pro and later changed to free code with pla
 
 ## Enforcement
 
-planned — the IAM test suite checks deny-overrides-allow and the delegation bound; the depth limit is checked against the plan entitlement.
+- built — the policy decision point's tests (`@stackra/iam`, `policy-decision-point.service.test.ts`) check that a deny
+  beats an allow and that delegation stays at or below a held role's node (`canDelegate`), for unexpired roles only.
+- planned — the depth limit: `ScopeDepthEntitlement` (`@stackra/scope`) declares the plan right, but adding a node does
+  not check it yet ([0240](/adr/0240-scope-tree-is-free-code-with-depth-by-plan)).
 
 ## Supersedes and sources
 

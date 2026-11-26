@@ -34,7 +34,12 @@ description: "Accepted, amended by OS 0061 · 2026-10-20"
 
 ## Enforcement
 
-planned — `stackra audit:verify` in CI against a sample tenant; the outbox test covers the same-transaction rule.
+- built — the same-transaction rule: the action pipeline's test (`@stackra/actions`, "writes a successful call's audit
+  entry inside the unit of work, a refusal's after the rollback"), with `OutboxAuditTrailDriver` writing each entry to
+  the outbox.
+- built — `stackra audit:verify` (`@stackra/cli`) checks a proof bundle's chain and its signed checkpoints offline (its
+  tests); `AwsKmsSignerDriver` (`@stackra/contracts`) signs a checkpoint with a KMS key.
+- planned — `stackra audit:verify` in CI against a sample tenant, and the job that writes the daily checkpoint.
 
 ## Open questions
 

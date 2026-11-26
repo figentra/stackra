@@ -72,7 +72,12 @@ description: "Accepted, amended by 0272, 0275, 0327, 0343 · 2026-10-20 · amend
 
 ## Enforcement
 
-planned — the isolation tests run the tree cases; the lifecycle state machine is the one in ADR 0161.
+- built — the isolation tests isolate any two tenants: the two-tenant probe of `assertRowSecurity` in every service's
+  generated isolation test, and `withTenant` on real Postgres (`tenant-isolation.service.int.test.ts`), which leaves
+  one tenant context per call and none behind it.
+- planned — the tree cases: a parent tenant reads a child's rows only through an explicit, audited operator grant.
+- planned — the lifecycle state machine, the one in ADR 0161. Core holds no tenant states yet; the pipeline's first
+  step, the `TenancyCheck` port of `@stackra/actions`, is where a suspended tenant's refusal plugs in.
 
 ## Supersedes and sources
 

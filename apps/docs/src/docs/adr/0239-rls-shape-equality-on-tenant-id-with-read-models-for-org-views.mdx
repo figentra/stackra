@@ -48,7 +48,18 @@ Each tenant owns its rows, and an organisation needs views across its children: 
 
 ## Enforcement
 
-planned — the RLS catalogue audit: every table with `tenant_id` has enable, force and an equality policy (the rule `tenancy` and the constitution's tenancy page).
+built — the RLS catalogue audit: `assertRowSecurity` (`@stackra/database/testing`) fails every table with `tenant_id`
+that lacks enable, force or its one equality policy, and a service role that bypasses row-level security, then probes
+two tenants as that role. Gen writes it into every service with tenant-owned models of its own or in a package it
+hosts (`.stackra/tests/tenant-isolation.int.test.ts`, `emitIsolationTest`), over the service's and its hosted
+packages' compiled migrations; its own cases are in `assert-row-security.function.int.test.ts` (the rule `tenancy` and
+the constitution's tenancy page).
+
+built — the migration tests of most core packages with tenant tables run it too (for example payments, webhooks,
+content, rules, segments, achievements, ai, outbox, queue, workflow, settings).
+
+planned (STA-2850) — the migration tests of access-log, iam, identity, scope, loyalty-kit, panel and data-maintenance
+do not run it yet; until they do, the generated service test is their only catalogue audit.
 
 ## Supersedes and sources
 
