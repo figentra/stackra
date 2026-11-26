@@ -92,8 +92,13 @@ event and its success audit entry, all inside the `LimitReservation` when one is
 transaction whose `app.scope_*` and `app.tenant_id` settings are set transaction-locally from the verified actor and
 the call's scope, an action writable and a query read-only. The action's `UnitOfWork` is then a savepoint of that
 transaction (not `requiresNew`), so its `timeout` and its rollback hold and the call commits once, when the isolation
-ends; the idempotency completion, the offline cap record, the read-your-writes mark and the `afterCommit` work run
-after that commit. A refused query's usage event and the audit's refusal entries are written outside it. With no
+ends. The idempotency completion of a store that joins transactions (Postgres) is written inside it, after the
+interceptors, so the kept output commits with the writes; the completion of a Valkey or memory store, the offline cap
+record, the read-your-writes mark and the `afterCommit` work run after that commit; such a store's claim is first
+extended to the replay window as the last step inside the transaction, and a claim lost meanwhile (another call took
+the key after this one's lease lapsed) rolls the call back with `idempotency_key_in_progress`. Once a call has committed
+its key is never freed: a failed completion is logged (`actions.idempotency_store_failed`), the caller still gets its
+output, and a retry is told the key is in progress, never run again. A refused query's usage event and the audit's refusal entries are written outside it. With no
 `CallIsolation` bound a call runs as before, and a model with a tenant policy fails closed. The queue worker, outbox
 relay and inbox and workflow runner run each unit through the same port as the actor stored with it. A step whose port nobody binds is skipped,
 except permission, which fails closed. Approval runs only when an `ApprovalGate` is bound; an action that declares
@@ -138,7 +143,10 @@ group (`rate_limit.<area>PerMinute`, `rate_limit.<area>Burst`, `rate_limit.actio
 The idempotency window is 24 hours (ADR 0136). When an `IdempotencyRetentionSource` (`@stackra/contracts`) is bound,
 the step uses its answer instead, never more than 24 hours; `@stackra/settings` binds
 `SettingsIdempotencyRetentionSourceDriver` over `idempotency.retentionHours` (1 to 24). An action's own shorter
-`idempotencyTtl` still wins, and a failed read fails the call.
+`idempotencyTtl` still wins, and a failed read fails the call. While its first call runs, a key is held only for a
+15-minute lease (never longer than the window), so a call whose process died before its commit frees its key after the
+lease; right before the commit the claim is extended to the whole window, and a done key replays for the whole window
+(STA-2797).
 
 A refusal is `RateLimitedError` with the refusing bucket's `retryAfterMs` (absent when it never refills), `limit` and
 `remaining`, which travel as the envelope's `details` (the MCP answer) and become `Retry-After` and `RateLimit-*`
