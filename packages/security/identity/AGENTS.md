@@ -3,7 +3,8 @@
 Identity, provider-neutral over ZITADEL: the sign-in flows (BFF on the web, PKCE on devices), the client's session and
 the claims mapping (ADR 0206, 0241, 0277). Member at `packages/security/identity` (`tier:lib`), in the programming
 model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./native`, `./node`, `./react`,
-`./testing`.
+`./react/session`, `./testing`. `./react/session` is `useSession` and `SessionGate` alone, with no `@stackra/ui`, for a
+lean app; `./react` re-exports them beside the kit's blocks (STA-2832).
 
 ## Where code goes
 

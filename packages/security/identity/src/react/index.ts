@@ -6,7 +6,8 @@
  *          `PasswordPolicyChecklist`, `SessionGate`, `AccountMenu`, `StepUpDialog` and `SecurityPage`) until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` only. `useSession` serves React DOM and React
- *           Native alike; the app's approve sheet hook is `./native`'s.
+ *           Native alike; the app's approve sheet hook is `./native`'s. The kit's blocks load `@stackra/ui/react`; an
+ *           app without it imports `useSession` and `SessionGate` from `./react/session` (STA-2832).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
