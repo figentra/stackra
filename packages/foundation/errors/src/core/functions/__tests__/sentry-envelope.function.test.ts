@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `sentryEnvelope`: three newline-separated JSON lines (envelope header, item header, event);
  *          the event carries the error's name, message and frames innermost last, the tags, environment and release
- *          only when set, a refusal's code, only the type of a thrown non-Error, and a message with its secret shapes
- *          masked (STA-1588).
+ *          only when set, a refusal's code, the call's correlation id as `correlation_id`, only the type of a thrown
+ *          non-Error, and a message with its secret shapes masked (STA-1588).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0184 (decisions 5 and 6); ADR 0147 (decision 1).
@@ -81,6 +81,17 @@ describe("sentryEnvelope", () => {
       release: "1.2.3",
       tags: { code: "forbidden" },
     });
+  });
+
+  it("tags the event with the correlation id its call answered with", () => {
+    const [, , plain] = lines(
+      sentryEnvelope(new Error("boom"), { ...REPORT, correlationId: "req-7f3a" }),
+    );
+    expect(plain).toMatchObject({ tags: { correlation_id: "req-7f3a" } });
+    const [, , refusal] = lines(
+      sentryEnvelope(ForbiddenError.create(), { ...REPORT, correlationId: "req-7f3a" }),
+    );
+    expect(refusal).toMatchObject({ tags: { code: "forbidden", correlation_id: "req-7f3a" } });
   });
 
   it("masks secret shapes in the message before it leaves", () => {

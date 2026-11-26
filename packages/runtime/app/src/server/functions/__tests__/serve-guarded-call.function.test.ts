@@ -5,7 +5,9 @@
  *          401 and never reaches the call; an unsigned request is refused; an oversized body is 413 before any guard; a
  *          GET with no body works; a request that fails a guard never reaches the authenticator; a bad `Authorization`
  *          header on an anonymous-allowing call is refused, not downgraded; a call with no header is anonymous only
- *          where it lists the anonymous actor; a refusal of the call is its kind's status; the refusal bodies do not
+ *          where it lists the anonymous actor; a refusal of the call is its kind's status with the call's correlation id
+ *          (the adapter's, else the edge's request id); a guard's rate limit is 429 with its back-off headers; a
+ *          non-refusal error propagates for the adapter's `answerFailure`; the generic refusal bodies do not
  *          say which check failed. Through the adapter, a call forwards a user's token only as ADR 0209's amendment
  *          allows: a user's bearer on a first hop, a service's forwarded token only into an action that declares
  *          `onBehalfOf: { secondHop: true }`, never through a controller, never anything into an action that declares
@@ -28,7 +30,12 @@ import { ClientsConfig, HttpClientTransportDriver } from "@stackra/clients";
 import { buildConfig } from "@stackra/config";
 import { ActorKind, HttpMethod, Realm } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
-import { ErrorKind, IdempotencyKeyInProgressError, Refusal } from "@stackra/errors";
+import {
+  ErrorKind,
+  IdempotencyKeyInProgressError,
+  RateLimitedError,
+  Refusal,
+} from "@stackra/errors";
 import { MemoryServiceTokensDriver } from "@stackra/identity";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -446,13 +453,62 @@ describe(serveGuardedCall, () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it("answers a refusal of the call with its kind's status and envelope", async () => {
+  it("answers a refusal of the call with its kind's status, envelope and the edge's request id", async () => {
     const { serve } = call({ throws: OrderLockedError.create() });
-    const response = await serve(
-      await forwarded("GET", "/orders/ord_1", "", "", { authorization: "Bearer t" }),
-    );
+    const request = await forwarded("GET", "/orders/ord_1", "", "", { authorization: "Bearer t" });
+    const requestId = request.headers.get(EdgeHeader.RequestId);
+    const response = await serve(request);
     expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ code: "order_locked", category: "conflict" });
+    expect(await response.json()).toEqual({
+      code: "order_locked",
+      category: "conflict",
+      retryable: false,
+      correlationId: requestId,
+    });
+  });
+
+  it("puts the adapter's correlation id on a refused call's envelope", async () => {
+    const guard = edgeGuard();
+    const response = await serveGuardedCall({
+      request: await forwarded("GET", "/orders/ord_1", "", "", { authorization: "Bearer t" }),
+      path: "/orders/:orderId",
+      maxBodyBytes: 1024,
+      anonymous: false,
+      correlationId: "encore-trace-1",
+      guard: (guarded) => guard.check(guarded),
+      authenticate: async () => ({ actor: USER }),
+      execute: async () => {
+        throw OrderLockedError.create();
+      },
+    });
+    expect(await response.json()).toMatchObject({ correlationId: "encore-trace-1" });
+  });
+
+  it("answers a guard's rate limit with 429 and its back-off headers, never reaching the call", async () => {
+    const execute = vi.fn(async () => ({}));
+    const response = await serveGuardedCall({
+      request: new Request("https://api.example.test/orders/ord_1"),
+      path: "/orders/:orderId",
+      maxBodyBytes: 1024,
+      anonymous: true,
+      correlationId: "req-9",
+      guard: async () => {
+        throw RateLimitedError.create({ retryAfterMs: 1500, limit: 5, remaining: 0 });
+      },
+      authenticate: async () => ({ actor: USER }),
+      execute,
+    });
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("2");
+    expect(await response.json()).toMatchObject({ code: "rate_limited", correlationId: "req-9" });
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("lets a non-refusal error of the call propagate for the adapter's answer", async () => {
+    const { serve } = call({ throws: new Error("AccessControl is not bound") });
+    await expect(
+      serve(await forwarded("GET", "/orders/ord_1", "", "", { authorization: "Bearer t" })),
+    ).rejects.toThrow("AccessControl is not bound");
   });
 
   it("asks to retry in a second when the first call with the key is still running", async () => {

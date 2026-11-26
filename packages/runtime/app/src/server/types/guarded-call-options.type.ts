@@ -2,12 +2,12 @@
  * Stackra file contract:
  * Purpose: `GuardedCallOptions`, what `serveGuardedCall` needs to answer one inbound HTTP call: the request (body
  *          unread), the body cap, the route template, whether the call lists the anonymous actor, the action it runs,
- *          whether it is raw,
+ *          whether it is raw, the call's correlation id,
  *          and the three seams the generated adapter fills (`guard`, `authenticate`, `execute`).
  * Boundary: a type only. The seams are functions, so the library depends on neither `@stackra/actions` nor Encore.
  * Runtime: node
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order);
- *                     ADR 0457 (request guards); ADR 0098 (the actor from the credential).
+ *                     ADR 0457 (request guards); ADR 0098 (the actor from the credential); ADR 0140 (`correlationId`).
  */
 import type { AnyClass } from "@stackra/container";
 import type { Actor } from "@stackra/contracts";
@@ -42,6 +42,12 @@ export interface GuardedCallOptions {
 
   /** True for a hand-written controller: the body is not parsed and `execute` answers a `Response` itself. */
   readonly raw?: boolean;
+
+  /**
+   * The call's correlation id (`correlationIdOf`, computed once by the adapter), put on a refusal's envelope. Absent,
+   * it is read from the request.
+   */
+  readonly correlationId?: string | undefined;
 
   /** Runs every request guard on the request carrying the exact body bytes (`app.handlers.guard`). */
   readonly guard: (request: Request) => Promise<void>;

@@ -189,9 +189,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   `SERVER_CONTRIBUTIONS` (package, class, constructor tokens, config rows), gated on the declared package; add a new
   one there, never a branch in `emitWiring`. Their config rows come after the packages' own rows, so a manifest's
   row or a host override wins. `emitEncoreHttp` writes the CORS adapter (`answerHttp`) and `answerCall`, the bridge every raw action, query and controller endpoint of `emitEncoreApi` goes through (`serveGuardedCall`: capped body, guards over the exact bytes, `CallAuthenticator`; no typed `api()`, no `auth.ts`, STA-2577); headers come only from
-  `corsHeaders` over the bound `CorsConfig` and `apiCacheControl` (ADR 0325 rule 22); with `@stackra/errors` declared
-  it also answers a `RateLimitedError` as 429 with `rateLimitHeaders` (the one source of the rate-limit headers;
-  STA-1477).
+  `corsHeaders` over the bound `CorsConfig` and `apiCacheControl` (ADR 0325 rule 22). Every error `answerHttp` is
+  handed, and a refused run, goes to `answerFailure` of `@stackra/app/server` with `app.reporter` and the request's
+  `correlationIdOf` (STA-2048): never write an error status, an envelope or a `throw error` into the adapter, and never
+  let an error reach Encore's own 500.
 - Resource trees: the browser route table registers `ui.resources` from the declared manifests and lists the
   derived label keys (`resourceLabelKeys`, the panel's `resourceLabel` rule). Keep the two leaf rules equal.
 - The shape vocabulary is `TypeDesc` (`src/core/types/type-desc.type.ts`). A new platform field type is one

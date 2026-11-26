@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the Sentry driver of the `ErrorReporter` port (driver name `sentry`): each reported error becomes one
- *          Sentry envelope POSTed to the project of the DSN secret, sampled by `SentryConfig.sampleRate`.
+ *          Sentry envelope POSTed to the project of the DSN secret, sampled by `SentryConfig.sampleRate`, tagged with
+ *          the correlation id its call answered with (`correlation_id`), when the caller gave one.
  * Boundary: no vendor SDK (ADR 0147 decision 1): web-standard `fetch` and `crypto` only, so it runs in a service, a
  *           Worker and a browser. The DSN is read once through the `SecretStore` port by the name `dsnSecret`; with
  *           no value, or a malformed one, nothing is sent. `report` never throws and never awaits: a failed send is
@@ -17,6 +18,7 @@ import type { Clock } from "@stackra/contracts";
 
 import type { SentryConfig } from "#config/sentry.config";
 import { ErrorReporter } from "#contracts/ports/error-reporter.port";
+import type { ErrorReportContext } from "#contracts/types/error-report-context.type";
 import { sentryEnvelope } from "#core/functions/sentry-envelope.function";
 import { sentryTarget } from "#core/functions/sentry-target.function";
 import type { SentryTarget } from "#core/types/sentry-target.type";
@@ -56,8 +58,8 @@ export class SentryErrorReporterDriver extends Driver(ErrorReporter) {
     this.clock = clock;
   }
 
-  /** Sends `error` to Sentry when the DSN is set and the sample keeps it. */
-  report(error: unknown): void {
+  /** Sends `error` to Sentry when the DSN is set and the sample keeps it, tagged with `context`'s correlation id. */
+  report(error: unknown, context?: ErrorReportContext): void {
     try {
       const target = this.resolve();
       if (target === null || Math.random() >= this.config.sampleRate) return;
@@ -68,6 +70,7 @@ export class SentryErrorReporterDriver extends Driver(ErrorReporter) {
         dsn: target.dsn,
         environment: this.config.environment,
         release: this.config.release,
+        ...(context?.correlationId === undefined ? {} : { correlationId: context.correlationId }),
       });
       const sent = globalThis
         .fetch(target.endpoint, {

@@ -36,11 +36,12 @@ peers, each loaded only by the entry that needs it.
 | `verifyBearerToken`, `jwksKeySource`         | `.`         | Web Crypto JWT check (RS256, ES256) and an issuer's cached keys; Worker and API share |
 | `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                    |
 | `registerContext`                            | `./react`   | a client package names the component of its context key                               |
-| `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
+| `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`, `reporter`; `/healthz`, `/readyz` |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
 | `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                             |
+| `answerRefusal`, `answerFailure`, `correlationIdOf` | `./server` | the error answers of every generated adapter (ADR 0140): a refusal's kind status and envelope; anything else reported once to `ErrorReporter` and answered 500 `internal`; one `correlationId` per request, on the envelope and the report |
 | `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)             |
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
 | `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                             |
@@ -98,6 +99,18 @@ bindings, `import.meta.env`), resolves `@Secret` fields by name from the same so
 its base class, so a package that injects its base gets the host's override. A value that breaks its rule fails boot
 with `ConfigInvalidError` naming it; a port with no driver fails with `UnresolvedPortError`. The reporter is the bound
 `ErrorReporter`, or the console when none is bound.
+
+## Error answers (ADR 0140, STA-2048)
+
+Every generated HTTP adapter answers what a call throws instead of letting it reach Encore. A refusal answers its
+kind's status from `Enum.meta(ErrorKind, kind).httpStatus`, the one table (validation 400, unauthenticated 401,
+entitlement_required 402, forbidden 403, not_found 404, conflict 409, precondition_failed 412, rate_limited 429 with
+`Retry-After` and `RateLimit-*`, unavailable 503, internal 500), with its envelope. Anything else is reported once to
+`ServerApp.reporter` (the bound `ErrorReporter`, Sentry in production) and answered
+`500 { code: "internal", category: "internal", retryable: false, correlationId }`, never the message. Both carry the
+request's one `correlationId` (`correlationIdOf`: the edge's request id, else the `traceparent` trace id, else Encore's
+trace id, else a fresh `req_` id), and the report carries the same id (Sentry tag `correlation_id`), so a client's
+error names its report.
 
 ## Wiring sections
 

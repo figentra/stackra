@@ -6,11 +6,13 @@
  *          `VerifiedToken`, `CallAuthenticator` (the generated auth handler's check), `ServiceClientSessionDriver`
  *          (the tokens a service call sends), the origin and CSRF guards with
  *          their configuration and refusals,
- *          `apiCacheControl` and `corsHeaders` are exported, nothing else is, and `createApp` resolves to a `ServerApp`.
+ *          `apiCacheControl`, `corsHeaders` and the error answers (`answerRefusal`, `answerFailure`, `correlationIdOf`)
+ *          are exported, nothing else is, and `createApp` resolves to a `ServerApp` carrying its `ErrorReporter`.
  * Boundary: test only; imports the stand-in barrel through its `#server` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 8); ADR 0127 2026-10-24 note; ADR 0437.
  */
+import type { ErrorReporter } from "@stackra/errors/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as server from "#server/index";
@@ -45,7 +47,10 @@ describe("@stackra/app/server", () => {
       "VerifiedToken",
       "VisitorConfig",
       "VisitorIdentityService",
+      "answerFailure",
+      "answerRefusal",
       "apiCacheControl",
+      "correlationIdOf",
       "corsHeaders",
       "createApp",
       "serveGuardedCall",
@@ -55,5 +60,6 @@ describe("@stackra/app/server", () => {
   it("resolves createApp to a ServerApp", () => {
     expectTypeOf(server.createApp).returns.resolves.toEqualTypeOf<ServerApp>();
     expectTypeOf<ServerApp["handlers"]>().toEqualTypeOf<ServerHandlers>();
+    expectTypeOf<ServerApp["reporter"]>().toEqualTypeOf<ErrorReporter>();
   });
 });

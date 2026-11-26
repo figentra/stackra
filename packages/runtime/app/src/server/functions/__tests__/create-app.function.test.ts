@@ -7,7 +7,8 @@
  *          shutdown), `guard` runs the contributed `RequestGuard`s by order and stops at the first refusal, and
  *          `/readyz` runs the given indicators and every bound `HealthIndicator`, failing with the down one named; with
  *          a bound `Tracer`, each call runs in `continueTrace` with a carrier `guard` fills (once the guards pass) from
- *          the request's `traceparent` and edge request id.
+ *          the request's `traceparent` and edge request id; the app carries the bound `ErrorReporter`, else the console
+ *          reporter, for the adapters' `answerFailure`.
  * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0457.
@@ -16,11 +17,13 @@ import { Driver, Module, Service } from "@stackra/container";
 import type { Container, Wiring } from "@stackra/container";
 import { HealthIndicator, HealthStatus, Tracer } from "@stackra/contracts";
 import type { HealthReport, TraceAttributes, TraceCarrier, TraceSpan } from "@stackra/contracts";
-import { isRefusal } from "@stackra/errors";
+import { isRefusal, MemoryErrorReporterDriver } from "@stackra/errors";
+import { ErrorReporter } from "@stackra/errors/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
+import { ConsoleErrorReporterDriver } from "#core/drivers/console-error-reporter.driver";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { AppDrainingError } from "#server/errors/app-draining.error";
 import { createApp } from "#server/functions/create-app.function";
@@ -61,6 +64,25 @@ describe("createApp (server)", () => {
     expect(app.handlers.byKind.get("action")).toEqual([CancelOrderAction]);
     expect(app.handlers.byKind.get("service")).toEqual([LedgerService]);
     await app.close();
+  });
+
+  it("carries the bound ErrorReporter for the adapters, else the console reporter", async () => {
+    const fallback = await createApp(OrdersModule, { wiring });
+    expect(fallback.reporter).toBeInstanceOf(ConsoleErrorReporterDriver);
+    await fallback.close();
+    const bound = await createApp(OrdersModule, {
+      wiring: {
+        ...wiring,
+        drivers: [
+          {
+            port: ErrorReporter,
+            candidates: { memory: () => Promise.resolve(MemoryErrorReporterDriver) },
+          },
+        ],
+      },
+    });
+    expect(bound.reporter).toBeInstanceOf(MemoryErrorReporterDriver);
+    await bound.close();
   });
 
   it("answers the health routes through probe, with the given indicators", async () => {

@@ -3,13 +3,14 @@
  * Purpose: `ConsoleErrorReporterDriver`, the reporter `bootApp` falls back to when the wiring binds no `ErrorReporter`
  *          driver (or when boot itself failed), so an unexpected error is still written somewhere a developer looks.
  * Boundary: built by `bootApp` and the target runtimes only, never listed in a wiring; not exported. Writes the error
- *           as it is to `console.error` and never throws.
+ *           as it is to `console.error`, after the call's correlation id when the caller gave one, and never throws.
  *           The dev fallback this package uses itself; `internal`, so no host selects it (ADR 0266 2026-10-28 note).
  * Runtime: isomorphic
  * Governing contract: ADR 0232 (decision 8); ADR 0294 (decision 16 Driver row).
  */
 import { Driver } from "@stackra/container";
 import { ErrorReporter } from "@stackra/errors/contracts";
+import type { ErrorReportContext } from "@stackra/errors/contracts";
 
 /**
  * Writes each reported error to the console.
@@ -19,10 +20,12 @@ import { ErrorReporter } from "@stackra/errors/contracts";
  */
 export class ConsoleErrorReporterDriver extends Driver(ErrorReporter, { internal: true }) {
   /** Writes `error` to `console.error`; a failing console is ignored, so reporting never adds a second failure. */
-  report(error: unknown): void {
+  report(error: unknown, context?: ErrorReportContext): void {
     try {
       // oxlint-disable-next-line no-console -- reason: the fallback reporter's one job is the console
-      console.error(error);
+      if (context?.correlationId === undefined) console.error(error);
+      // oxlint-disable-next-line no-console -- reason: the same, naming the call the client was answered for
+      else console.error(`correlationId ${context.correlationId}:`, error);
     } catch {
       // nowhere left to report to
     }

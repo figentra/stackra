@@ -7,3 +7,4 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { ErrorReporter } from "#contracts/ports/error-reporter.port";
+export type { ErrorReportContext } from "#contracts/types/error-report-context.type";

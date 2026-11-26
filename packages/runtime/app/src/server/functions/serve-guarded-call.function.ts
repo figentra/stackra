@@ -9,12 +9,13 @@
  *          carries its key's call options to the call; an anonymous call acts in the tenant the edge signed, and a
  *          credential whose tenant differs from it is 403), parse the input (JSON body, or the query string for
  *          GET and DELETE typed by the input schema, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
- *          kind's status with its envelope, and a `stream: true` action's stream as server-sent events
- *          (`eventStreamResponse`), which still carries the visitor's token.
+ *          kind's status with its envelope and the call's `correlationId` (`answerRefusal`), and a `stream: true`
+ *          action's stream as server-sent events (`eventStreamResponse`), which still carries the visitor's token.
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
  *           nothing about which check failed; it never logs or echoes the body, the signature or the credential. A
- *           `RateLimitedError`, any non-refusal error and an authenticator outage propagate, for `answerHttp` (429) and
- *           Encore (500). A refusal of the call is mapped by `Enum.meta(ErrorKind, kind).httpStatus`. The call runs
+ *           guard's `RateLimitedError` is answered 429 with its back-off headers. Any non-refusal error, and an
+ *           authenticator outage, propagate, for the adapter's `answerFailure` (reported, 500 `internal`). A refusal of
+ *           the call is mapped by `Enum.meta(ErrorKind, kind).httpStatus`. The call runs
  *           inside `holdCallerToken`, so its service-to-service calls forward the user's token only as ADR 0209's
  *           amendment allows (a first hop, or a second into an action that declares it), never past the call; a
  *           streamed call ends when its stream does.
@@ -23,17 +24,14 @@
  *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098.
  */
 import { kindOf } from "@stackra/container";
-import { ActorKind, actingScopeId, Enum, mintPublicId } from "@stackra/contracts";
+import { ActorKind, actingScopeId, mintPublicId } from "@stackra/contracts";
 import type { Actor } from "@stackra/contracts";
-import {
-  ErrorKind,
-  IdempotencyKeyInProgressError,
-  isRefusal,
-  RateLimitedError,
-} from "@stackra/errors";
+import { ErrorKind, isRefusal, RateLimitedError } from "@stackra/errors";
 
 import { VERIFIED_EDGE_SCOPE } from "#server/constants/verified-edge-scope.constant";
+import { answerRefusal } from "#server/functions/answer-refusal.function";
 import { coerceQueryInput } from "#server/functions/coerce-query-input.function";
+import { correlationIdOf } from "#server/functions/correlation-id-of.function";
 import { eventStreamResponse } from "#server/functions/event-stream-response.function";
 import { holdCallerToken } from "#server/functions/hold-caller-token.function";
 import { pathParamsOf } from "#server/functions/path-params-of.function";
@@ -78,7 +76,7 @@ function carry(response: Response, visitor: VisitorIdentity | undefined): Respon
 /**
  * Answers one inbound call through the guards, the authenticator and the call itself.
  *
- * @throws RateLimitedError, a non-refusal error or an authenticator outage (as a rejection), for the adapter's answer.
+ * @throws a non-refusal error or an authenticator outage (as a rejection), for the adapter's `answerFailure`.
  * @example
  * return serveGuardedCall({ request, path: "/orders/:orderId", maxBodyBytes, anonymous: false, guard, authenticate, execute });
  */
@@ -103,7 +101,10 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
   try {
     await options.guard(guarded);
   } catch (error) {
-    if (isRefusal(error, RateLimitedError) || !isRefusal(error)) throw error;
+    if (!isRefusal(error)) throw error;
+    // a guard's rate limit is no secret: answer it with its back-off headers, so the client waits
+    if (isRefusal(error, RateLimitedError))
+      return answerRefusal(error, options.correlationId ?? correlationIdOf(guarded));
     return refused(error.kind === ErrorKind.Unauthenticated ? 401 : 403);
   }
 
@@ -179,17 +180,8 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
       options.execute(input, actor, guarded, call),
     );
   } catch (error) {
-    if (!isRefusal(error) || isRefusal(error, RateLimitedError)) throw error;
-    return carry(
-      Response.json(error.toEnvelope(), {
-        status: Enum.meta(ErrorKind, error.kind).httpStatus,
-        // the first call with this key is still running: ask the client to retry shortly
-        ...(isRefusal(error, IdempotencyKeyInProgressError)
-          ? { headers: { "Retry-After": "1" } }
-          : {}),
-      }),
-      visitor,
-    );
+    if (!isRefusal(error)) throw error;
+    return carry(answerRefusal(error, options.correlationId ?? correlationIdOf(guarded)), visitor);
   }
   // a `stream: true` action answers its stream as server-sent events (holdCallerToken already wrapped its end)
   if (

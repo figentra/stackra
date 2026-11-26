@@ -1,12 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `ServerApp`, what `createApp` from `@stackra/app/server` resolves to and the generated Encore app imports:
- *          the member key, readiness, the health probe, drain, close and the handlers.
+ *          the member key, readiness, the health probe, drain, close, the handlers and the error reporter the adapters
+ *          report an unexpected error to.
  * Boundary: a type only. Whether the member runs alone, in a group or in a monolith is root runway topology, never a
  *           field here (ADR 0295 decision 9).
  * Runtime: node
- * Governing contract: ADR 0295 (decisions 7 to 9).
+ * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0232 (decision 8: report what was not handled, once).
  */
+import type { ErrorReporter } from "@stackra/errors/contracts";
+
 import type { ProbeAnswer } from "#server/types/probe-answer.type";
 import type { ServerHandlers } from "#server/types/server-handlers.type";
 
@@ -29,4 +32,10 @@ export interface ServerApp {
 
   /** What the generated adapters call. */
   readonly handlers: ServerHandlers;
+
+  /**
+   * The bound `ErrorReporter` (Sentry in production), or the console reporter when the wiring binds none: where the
+   * generated adapter's `answerFailure` reports a call's unexpected error.
+   */
+  readonly reporter: ErrorReporter;
 }

@@ -667,9 +667,13 @@ A service that declares `@stackra/app` gets `.stackra/encore/<member>/http.ts`: 
 every generated raw endpoint answers through inside `app.handlers.run`. An `OPTIONS` preflight gets 204 and
 `corsHeaders(request, CorsConfig)`; every other answer gets the same headers (`Vary` appended), and
 `Cache-Control: private, no-store` when `apiCacheControl` forces it (ADR 0325 rule 22: a signed-in request or an
-answer that sets a cookie). When the service also declares `@stackra/errors`, a `RateLimitedError` from `handle`
-answers 429 with its envelope and `rateLimitHeaders` (`Retry-After`, `RateLimit-Limit`, `RateLimit-Remaining`,
-`RateLimit-Reset`; ADR 0217, STA-1477); other errors propagate. The wiring of such a
+answer that sets a cookie). Whatever `handle` throws, and a run refused because the app is draining, is answered by
+`answerFailure` (`@stackra/app/server`, STA-2048): a refusal with its kind's status and ADR 0140 envelope (a
+`RateLimitedError` as 429 with `rateLimitHeaders`: `Retry-After`, `RateLimit-Limit`, `RateLimit-Remaining`,
+`RateLimit-Reset`; ADR 0217, STA-1477), anything else reported once to `app.reporter` and answered
+`500 { code: "internal", category: "internal", retryable: false, correlationId }`. The request's one `correlationId`
+(`correlationIdOf`, over Encore's trace id) is on every error answer and on the report; no error reaches Encore's own
+500. The wiring of such a
 service binds `OriginGuard` and `CsrfGuard` with the `app.cors` and `app.csrf` config rows, and one binding per
 `HealthIndicator` driver of a declared package (`@stackra/database/node`, `@stackra/cache`, `@stackra/queue`,
 `@stackra/realtime`, `@stackra/filesystem`, `@stackra/search`) with its package config row, so `/readyz` checks them
@@ -698,8 +702,9 @@ anonymous actor `{ kind: ActorKind.Anonymous, id: mintPublicId("anon") }` only f
 `ActorKind.Anonymous` (manifest `anonymous: true`, STA-2025), else 401; the input is parsed (the JSON body, or the query
 string for GET and DELETE, then the path parameters, which win); the call runs as `new ActionPipeline(container)
 .execute(<class>, input, { actor })`, which validates the input. A guard or authentication failure is one generic 401 or
-403 (`request_refused`) naming no check; a refusal of the call is its kind's status with its envelope; a rate limit is
-429 through `answerHttp`. A controller skips input parsing, runs `container.get(<class>).handle(request)` and is
+403 (`request_refused`) naming no check; a refusal of the call is its kind's status with its envelope and correlation
+id; a rate limit is 429 with its back-off headers; any other error is reported and answered 500 `internal` through
+`answerHttp`. A controller skips input parsing, runs `container.get(<class>).handle(request)` and is
 reachable without a credential (it is raw: its own login or callback logic), behind the same guards. No adapter is
 written for an entry with no endpoint or a hosted package's entry (its manifest does not name the files of its schemas,
 the limit `registerActions` has). The manifest build refuses a route whose path parameter is no field of the input

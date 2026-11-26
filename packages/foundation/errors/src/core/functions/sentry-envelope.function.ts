@@ -1,16 +1,16 @@
 /**
  * Stackra file contract:
  * Purpose: `sentryEnvelope(error, report)`, the body of one Sentry envelope carrying one error event: the envelope
- *          header, the item header and the event with the error's type, message and stack frames, the refusal code as a
- *          tag, and the environment and release.
+ *          header, the item header and the event with the error's type, message and stack frames, the refusal code and
+ *          the call's correlation id as tags (`code`, `correlation_id`), and the environment and release.
  * Boundary: pure. It sends no request context, user, input or breadcrumbs (ADR 0184: telemetry carries no personal
  *           data); a non-Error value is reported by its type only, never its contents. The message passes
  *           `@stackra/logger`'s `redact` first, so a secret shape in it (bearer token, JWT, API key, URL credentials)
  *           is masked like in a log line (STA-1588). Frames are read from V8 and
  *           Firefox stack lines, innermost last, as Sentry expects; an unparsable stack sends no frames.
  * Runtime: isomorphic
- * Governing contract: ADR 0184 (decisions 5 and 6); ADR 0147 (decision 1: secret detection); the Sentry envelope
- *                     protocol.
+ * Governing contract: ADR 0184 (decisions 5 and 6); ADR 0147 (decision 1: secret detection); ADR 0140 (decision 1:
+ *                     `correlationId`); the Sentry envelope protocol.
  */
 import { redact } from "@stackra/logger";
 
@@ -24,6 +24,8 @@ interface Report {
   readonly dsn: string;
   readonly environment: string;
   readonly release: string;
+  /** The envelope's `correlationId` the failed call answered with, sent as the `correlation_id` tag. */
+  readonly correlationId?: string;
 }
 
 /** A stack frame as Sentry reads it. */
@@ -63,6 +65,10 @@ function framesOf(stack: string | undefined): readonly Frame[] {
 export function sentryEnvelope(error: unknown, report: Report): string {
   const known = error instanceof Error;
   const frames = known ? framesOf(error.stack) : [];
+  const tags = {
+    ...(isRefusal(error) ? { code: error.code } : {}),
+    ...(report.correlationId === undefined ? {} : { correlation_id: report.correlationId }),
+  };
   const event = {
     event_id: report.eventId,
     timestamp: report.at.getTime() / 1000,
@@ -70,7 +76,7 @@ export function sentryEnvelope(error: unknown, report: Report): string {
     level: "error",
     ...(report.environment === "" ? {} : { environment: report.environment }),
     ...(report.release === "" ? {} : { release: report.release }),
-    ...(isRefusal(error) ? { tags: { code: error.code } } : {}),
+    ...(Object.keys(tags).length === 0 ? {} : { tags }),
     exception: {
       values: [
         {

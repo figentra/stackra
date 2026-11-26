@@ -56,7 +56,10 @@ note).
   the drain and before `container.close()`; the bus, inbox and relay stop there. It passes the boot only that signal:
   the boot connects with its service's Encore database url (STA-1401), and the migrate and seed CLIs use
   `directDatabaseUrl()` of `@stackra/database/node` (ADR 0473), so nothing here reads `DATABASE_URL`.
-- Report each unexpected error once through the `ErrorReporter`; never report a refusal.
+- Report each unexpected error once through the `ErrorReporter`; never report a refusal. A server call's error answer
+  is `answerRefusal` / `answerFailure` only (ADR 0140, STA-2048): status from `Enum.meta(ErrorKind, kind).httpStatus`,
+  the envelope with the request's `correlationIdOf`, and the same id on the report; never a hand-written status or an
+  error message in a body.
 - No rate-limit code here: the area bucket per tenant lives in the `@stackra/actions` pipeline (`RateLimitBudget`);
   this package only forwards the verified tenant from the signed edge headers.
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).

@@ -11,7 +11,8 @@
  *          request's W3C `traceparent` and the edge's request id), so the call's spans join the caller's trace and
  *          carry `requestId` (ADR 0184 decision 1, STA-1572). `/readyz` runs the given
  *          `health` indicators plus every `HealthIndicator` the container binds (each package's health driver),
- *          resolved once after boot.
+ *          resolved once after boot. The app carries boot's `reporter`, so the generated adapter reports a call's
+ *          unexpected error where shutdown failures go.
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
@@ -137,5 +138,6 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
     drain,
     close,
     handlers,
+    reporter,
   };
 }
