@@ -17,11 +17,13 @@
  *           `scaffold` (was `tools/scripts/scaffold.mjs`, `pnpm new`): `--description` and `--summary` required,
  *           `--keywords`, `--title`, `--port`, `--repo <path>` and `--dry-run`, then oxfmt formats the member. A
  *           package given `--entries` or `--data` (optional react/native entries, database folders) renders the same
- *           way.
+ *           way. The feature kinds (`module`, `model`, `migration`, `action`, `query`) add a piece of a feature inside a
+ *           service through `scaffoldFeature` (`--member`, `--module`, `--model`, `--fields`, `--prefix`, `--global`,
+ *           `--table`, `--dry-run`): new files only, plus the Permissions class, model and package.json they extend.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 3 and consequences: `new` moves in from `tools/scripts`); ADR 0294 (rule
  *                     R12); ADR 0295; ADR 0082 (API areas); config-model section 6 (seed packs); ADR 0349 (decision 2: product package
- *                     names); STA-1210 (`--scope`, `--over`).
+ *                     names); STA-1210 (`--scope`, `--over`); STA-2855 (the feature kinds; ADR 0294, 0305, 0159).
  */
 import {
   copyFileSync,
@@ -40,6 +42,8 @@ import { lineDiff } from "#node/functions/line-diff.function";
 import { memberNaming } from "#node/functions/member-naming.function";
 import { packageTemplate } from "#node/functions/package-template.function";
 import { seedPackTemplate } from "#node/functions/seed-pack-template.function";
+import { FEATURE_KINDS } from "#node/feature-scaffold/constants/feature-kinds.constant";
+import { scaffoldFeature } from "#node/feature-scaffold/functions/scaffold-feature.function";
 import { cliVersion } from "#node/functions/cli-version.function";
 import { serviceTemplate } from "#node/functions/service-template.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
@@ -69,9 +73,9 @@ const KEEP_OVER = new Set(["CHANGELOG.md", "runway.yaml"]);
 export const NEW_COMMAND: CliCommand = {
   name: "new",
   summary:
-    "Create a package, service, seed pack, tooling preset or app in the v3 shape, or regenerate one with --over",
+    "Create a package, service, seed pack, tooling preset or app in the v3 shape (or regenerate one with --over), or add a module, model, migration, action or query to a service",
   usage:
-    "stackra new <package|service|seed-pack|tooling|app:console|app:mobile|app:desktop|app:docs> <name> [--category <c>] [--area <a>] [--description <text>] [--summary <text>] [--scope <product|@npm-scope>] [--over] [--keywords a,b] [--title <t>] [--port <n>] [--repo <path>] [--dry-run] [--entries react,native|none] [--data]  (a service takes --area, --summary, --repo and --data)",
+    "stackra new <package|service|seed-pack|tooling|app:console|app:mobile|app:desktop|app:docs> <name> [--category <c>] [--area <a>] [--description <text>] [--summary <text>] [--scope <product|@npm-scope>] [--over] [--keywords a,b] [--title <t>] [--port <n>] [--repo <path>] [--dry-run] [--entries react,native|none] [--data]  (a service takes --area, --summary, --repo and --data)\n       stackra new <module|model|migration|action|query> <name> [--module <key>] [--model <name>] [--fields name:type[?],...] [--prefix <abc>] [--global] [--table <t>] [--member <path>] [--dry-run]  (inside a service: module <key>, model <name>, migration <add-...> --fields, action <verb>-<model>, query <verb>-<model>)",
   options: {
     category: { type: "string" },
     area: { type: "string" },
@@ -86,10 +90,46 @@ export const NEW_COMMAND: CliCommand = {
     "dry-run": { type: "boolean" },
     entries: { type: "string" },
     data: { type: "boolean" },
+    member: { type: "string" },
+    module: { type: "string" },
+    model: { type: "string" },
+    fields: { type: "string" },
+    prefix: { type: "string" },
+    global: { type: "boolean" },
+    table: { type: "string" },
   },
   positionals: true,
   async run({ cwd, positionals, values, io }) {
     const [kind, name, ...extra] = positionals;
+    if (kind !== undefined && FEATURE_KINDS.includes(kind)) {
+      if (name === undefined || extra.length > 0)
+        throw new CliUsageError(`name the ${kind}: stackra new ${kind} <name>`);
+      const dryRun = values["dry-run"] === true;
+      const made = scaffoldFeature({
+        kind,
+        name,
+        cwd,
+        member: text(values["member"]),
+        module: text(values["module"]),
+        model: text(values["model"]),
+        fields: text(values["fields"]),
+        prefix: text(values["prefix"]),
+        global: values["global"] === true,
+        table: text(values["table"]),
+        dryRun,
+      });
+      const where = relative(workspaceRoot(made.member), made.member) || ".";
+      io.out(`${dryRun ? "Would create" : "Created"} in ${where}:\n`);
+      for (const file of made.created) io.out(`  ${file}\n`);
+      if (made.changed.length > 0) io.out(`${dryRun ? "Would change" : "Changed"}:\n`);
+      for (const change of made.changed) io.out(`  ${change}\n`);
+      for (const note of made.notes) io.out(`Note: ${note}\n`);
+      if (!dryRun)
+        io.out(
+          `next, in ${where}: \`${made.dependencies.length > 0 ? "pnpm install && " : ""}stackra gen && stackra test\`\n`,
+        );
+      return 0;
+    }
     const templated =
       kind === "package" && (values["entries"] !== undefined || values["data"] === true);
     if (kind !== undefined && (TEMPLATE_KINDS.includes(kind) || templated)) {
@@ -124,7 +164,9 @@ export const NEW_COMMAND: CliCommand = {
       }
     }
     if (kind === undefined || !KINDS.includes(kind))
-      throw new CliUsageError(`name the kind: ${[...KINDS, ...TEMPLATE_KINDS].join(", ")}`);
+      throw new CliUsageError(
+        `name the kind: ${[...KINDS, ...TEMPLATE_KINDS, ...FEATURE_KINDS].join(", ")}`,
+      );
     if (name === undefined || !KEBAB.test(name))
       throw new CliUsageError("name it in kebab-case, such as loyalty-kit");
     if (extra.length > 0) throw new CliUsageError(`unexpected argument: ${extra[0]}`);

@@ -1,0 +1,11 @@
+# Tasks: stackra new adds the pieces of a feature (module, model, migration, action, query)
+
+**Spec**: spec.md · **Plan**: plan.md · **Linear**: STA-2855
+
+- [x] T001 the kinds, field types, options and result in `packages/developer/cli/src/node/feature-scaffold/constants/feature-kinds.constant.ts`, `packages/developer/cli/src/node/feature-scaffold/constants/field-types.constant.ts`, `packages/developer/cli/src/node/feature-scaffold/types/` — covers: AC-001, AC-002 — route: spec-task
+- [x] T002 names, prefix, fields and service lookup in `packages/developer/cli/src/node/feature-scaffold/functions/model-names.function.ts`, `derive-prefix.function.ts`, `parse-fields.function.ts`, `resolve-member.function.ts`, `singular.function.ts`, `next-migration-number.function.ts` — covers: AC-002, AC-008 — route: spec-task — deps: T001
+- [x] T003 the builders in `packages/developer/cli/src/node/feature-scaffold/functions/model-files.function.ts`, `migration-files.function.ts`, `action-files.function.ts`, `query-files.function.ts`, `property-lines.function.ts`, `decorator-names.function.ts`, `sample-value.function.ts`, `contract-header.function.ts` — covers: AC-002, AC-003, AC-004, AC-005, AC-006 — route: spec-task — deps: T002
+- [x] T004 reading and extending authored files in `packages/developer/cli/src/node/feature-scaffold/functions/read-model.function.ts`, `append-members.function.ts`, `ensure-import.function.ts` — covers: AC-004, AC-006 — route: spec-task
+- [x] T005 orchestration, declared packages and formatting in `packages/developer/cli/src/node/feature-scaffold/functions/scaffold-feature.function.ts`, and the command in `packages/developer/cli/src/node/constants/new-command.constant.ts` — covers: AC-001, AC-007, AC-008, AC-009 — route: spec-task — deps: T003, T004
+- [x] T006 the tests in `packages/developer/cli/src/node/feature-scaffold/functions/__tests__/` and `packages/developer/cli/src/node/constants/__tests__/new-command.constant.test.ts` — covers: AC-001 to AC-009 — route: spec-task — deps: T005
+- [x] T007 the changeset and docs in `.changeset/stackra-new-feature-pieces.md`, `packages/developer/cli/README.md`, `apps/docs/src/docs/cli.mdx`, `apps/docs/src/docs/guides/scaffolding.mdx` — covers: AC-001 to AC-006 — route: spec-task — deps: T005
