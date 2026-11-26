@@ -221,6 +221,8 @@
  *   its own container; nothing it writes reaches another step). That is what review is for.
  *   Go-live, before the ruleset swap: the ruleset swap to stackra/verify waits until STA-2781 (replace
  *   buffers@0.1.1) has merged and main's licence-policy step passes. No buffers exception (CTO ruling 2026-11-24).
+ *   pr-merge's conditions 5 and 6 stay off (VERIFY_ENFORCED false) until then: the go-live PR flips VERIFY_ENFORCED
+ *   with risk:R3 and the owner's approval, together with the ruleset swap, never before this list is done.
  *   The OSV canary's first real run (the daemon's first database refresh in the verify user's Docker) passes and is
  *   recorded in #1043 before the ruleset swap.
  *   When STA-2788 (#1079) lands, ci.yml's "Committed manifests match gen" step changes (git status --porcelain and gen
