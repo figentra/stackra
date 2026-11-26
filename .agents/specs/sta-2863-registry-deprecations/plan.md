@@ -54,6 +54,9 @@ owner approves. The runbook and the registry README describe it, and the file na
 - **P-004**: `apply` exits 0 only when a fresh plan after the writes is empty — Validates: FR-004
 - **P-005**: no token value appears in any output line except its `::add-mask::` line, which comes first — Validates: FR-004
 - **P-006**: `scan` exits 0 only when every uninstallable version is deprecated or planned — Validates: FR-005
+- **P-007**: for every `release.yml` run, the `registry-maintenance` job (the only one with `id-token: write` on that path) runs only when `registry_maintenance` is `apply` and the ref is `refs/heads/main`, and `gate`, `release` and `prerelease` run only when it is empty or `none` — Validates: FR-006
+- **P-008**: for every version the actions file deprecates, the registry plan against the live registry has no problem, and every uninstallable `@stackra` version is deprecated or planned — Validates: FR-007
+- **P-009**: `checkJsonConfigs` returns no finding for `tools/release/registry-actions.json` — Validates: FR-008
 
 ## Architecture overview
 

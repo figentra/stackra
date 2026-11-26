@@ -168,6 +168,9 @@ read the full and the install packument and the audit log.
 - **AC-004**: IF the plan has a problem THEN THE script SHALL write nothing and exit 1.
 - **AC-005**: WHEN a write is accepted but not visible THE script SHALL exit 1 naming the pending action.
 - **AC-006**: THE actions file SHALL name 0.10.0, 0.28.0 and 0.33.1 and move `latest` back to 0.33.0.
+- **AC-007**: WHEN `release.yml` is dispatched with `registry_maintenance` THE workflow SHALL run the read-only plan
+  job, run the write job only for `apply` on `main` in the `release` environment, and run neither release job.
+- **AC-008**: THE repository check SHALL accept `tools/release/registry-actions.json` as strict JSON.
 
 ## Success Criteria _(mandatory)_
 
