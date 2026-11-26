@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `parseMcpConfig`: the template's `.mcp.yaml` server shapes pass unchanged; an unknown key, a
+ * Purpose: unit tests of `parseMcpConfig`: the template's `.mcp.yaml` server shapes (secrets named with
+ *          `stackra mcp exec --env`, none on a command line; STA-1617) pass unchanged; an unknown key, a
  *          non-kebab server name, a remote server without a URL and a broken rule each fail as
  *          `McpConfigInvalidError` naming the path and a snake_case code.
  * Boundary: test only; pure values, no file.
@@ -26,12 +27,12 @@ const TEMPLATE = {
         "stackra",
         "mcp",
         "exec",
+        "--env",
+        "CONTEXT7_API_KEY",
         "--",
         "npx",
         "-y",
         "@upstash/context7-mcp@4.2.0",
-        "--api-key",
-        "$CONTEXT7_API_KEY",
       ],
     },
     "heroui-pro": {
@@ -41,13 +42,15 @@ const TEMPLATE = {
         "stackra",
         "mcp",
         "exec",
+        "--env",
+        "HEROUI_PERSONAL_TOKEN",
         "--",
         "npx",
         "-y",
-        "mcp-remote@0.14.3",
+        "mcp-remote@0.17.1",
         "https://mcp.heroui.pro/mcp",
-        "--header",
-        "x-heroui-personal-token:$HEROUI_PERSONAL_TOKEN",
+        "--header-file",
+        "mcp/heroui-pro.headers",
       ],
     },
     posthog: { type: "http", url: "https://mcp.posthog.com/mcp?readonly=true" },

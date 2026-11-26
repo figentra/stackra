@@ -55,7 +55,7 @@ and `yaml`.
 | `stackra ls [section]`                                    | the identities a committed `stackra.manifest.json` locks (actions, events, permissions…)                                                  |
 | `stackra mcp`                                             | the local developer MCP over stdio; its tools run these commands in-process                                                               |
 | `stackra mcp sync`                                        | render `.mcp.json` from `.mcp.yaml` (the template's `prepare`)                                                                            |
-| `stackra mcp exec --`                                     | start an MCP server with its secrets, decrypted by `sops exec-env` from the figentra/secrets clone, expanded by its own shell              |
+| `stackra mcp exec --env NAME --`                          | start an MCP server with the named secrets in its environment, decrypted by `sops exec-env`; never on its argv (STA-1617)                 |
 | `stackra agents sync`                                     | write the project's generated agent files (`.mcp.json`)                                                                                   |
 | `stackra agents check`                                    | fail when `.mcp.json` drifted from `.mcp.yaml`                                                                                            |
 | `stackra add <kind> <name>[@version]`                     | install a registry skill, agent, MCP server, plugin or package (see below)                                                                |

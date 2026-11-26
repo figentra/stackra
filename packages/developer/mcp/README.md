@@ -14,8 +14,8 @@ Stackra repository. `@stackra/cli` wires it to `stackra mcp`, `stackra mcp sync`
 | -------- | --------------------------------------------- | ------------------------------------------------------------------------ |
 | `.`      | `parseMcpConfig(document, source?)`           | check a parsed `.mcp.yaml`: its shape, then the rules below              |
 | `.`      | `renderMcpJson(config)`                       | the exact `.mcp.json` text Claude Code reads                             |
-| `.`      | `mcpExecCommand(argv, options?)`              | the command `stackra mcp exec -- <argv>` starts                          |
-| `.`      | `shellCommandLine(argv)`, `secretNamesOf`     | the quoted `sh -c` line and the `$NAME` references it expands            |
+| `.`      | `mcpExecCommand(argv, options?)`              | the command `stackra mcp exec --env A -- <argv>` starts                  |
+| `.`      | `shellCommandLine(argv)`, `secretNamesOf`     | the quoted `sh -c` line, and the `$NAME` references a check refuses      |
 | `.`      | `mcpConfigJsonSchema()`                       | the JSON Schema served at `static.stackra.figentra.com/schemas/mcp.json` |
 | `.`      | `McpConfigInvalidError`                       | a `.mcp.yaml` that cannot be used, with every issue                      |
 | `.`      | `toolTable(manifests)`                        | the hosted server's tools, from committed manifests                      |
@@ -27,7 +27,7 @@ Stackra repository. `@stackra/cli` wires it to `stackra mcp`, `stackra mcp sync`
 | `./node` | `syncMcpConfig(root?)`                        | `stackra mcp sync` (the template's `prepare`): write `.mcp.json`         |
 | `./node` | `checkMcpConfig(root?)`                       | `stackra agents check`: is `.mcp.json` what `.mcp.yaml` renders to?      |
 | `./node` | `readMcpConfig(file)`                         | read, YAML-parse and check one `.mcp.yaml`                               |
-| `./node` | `execWithSecrets(argv, options?)`             | `stackra mcp exec --`: start a server with its secrets                   |
+| `./node` | `execWithSecrets(argv, options?)`             | `stackra mcp exec`: start a server with its secrets in its environment   |
 | `./node` | `serveLocalMcp(options)`                      | `stackra mcp`: the local stdio server                                    |
 | `./node` | `McpProtocolError`                            | a JSON-RPC error on the connection                                       |
 
@@ -36,23 +36,40 @@ Stackra repository. `@stackra/cli` wires it to `stackra mcp`, `stackra mcp sync`
 The shape is Claude Code's `.mcp.json`: `mcpServers` keyed by a kebab-case name, each a local server (`command`,
 `args`, `env`) or a remote one (`type: http | sse`, `url`, `headers`). On top of the shape:
 
-- `secret_without_exec`: a `$NAME` reference reaches a local server only as an argument after
-  `stackra mcp exec --`; never in `env` or before the launcher, where it would be passed literally.
-- `secret_in_remote_server`: a remote server signs in with OAuth; a `$NAME` in its URL or headers is refused.
+- `secret_on_argv`: a `$NAME` reference anywhere on a local server's command line is refused. Expanded, the value
+  would sit on the server's argv, where any process listing shows it (STA-1617); name it with
+  `stackra mcp exec --env NAME --` instead.
+- `secret_without_exec`: a `$NAME` reference in a local server's `env` is refused: Claude Code passes it literally.
+- `secret_in_remote_server`: a remote server signs in with OAuth; a `$NAME` in its URL or headers is refused. A server
+  that needs a header token runs mcp-remote through `stackra mcp exec --env NAME --` with a `--header-file` whose
+  header holds a `${NAME}` placeholder, which mcp-remote fills from its environment.
 - `unpinned_npx_server`: an npx package names an exact version (`name@1.2.3`), never `@latest` or a range.
 
 ## Secrets
 
-`stackra mcp exec -- <argv>` starts `argv` unchanged when it names no secret. Otherwise it runs
-`sops exec-env <clone>/agents/<NAME>.enc.yaml 'exec <line>'`, one nested `sops exec-env` per named secret, from a local
+`stackra mcp exec [--env NAME[,NAME…]] -- <argv>` starts `argv` unchanged when it names no secret. Otherwise it runs
+`sops exec-env <clone>/agents/<NAME>.enc.yaml 'exec <line>'`, one nested `sops exec-env` per `--env` name, from a local
 clone of figentra/secrets (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`; ADR 0525): sops puts the values into
-that one process's environment, and the line, every literal single-quoted, expands each `$NAME` there and fails naming
-an unset one. No value passes through the Stackra process, its output or its arguments.
+that one process's environment, and the line runs `argv` with every part single-quoted. The server reads each value
+from its environment; none is ever on an argv, where any process listing would show it (STA-1617). A `$NAME` in `argv`
+is refused, and so is an `--env` name that is not SCREAMING_SNAKE (without echoing it). No value passes through the
+Stackra process, its output or its arguments.
+
+```yaml
+# .mcp.yaml
+context7:
+  command: pnpm
+  args: [exec, stackra, mcp, exec, --env, CONTEXT7_API_KEY, --, npx, -y, "@upstash/context7-mcp@4.2.0"]
+heroui-pro: # a header token: mcp-remote fills `${HEROUI_PERSONAL_TOKEN}` in the file from its environment
+  command: pnpm
+  args: [exec, stackra, mcp, exec, --env, HEROUI_PERSONAL_TOKEN, --, npx, -y, mcp-remote@0.17.1,
+         "https://mcp.heroui.pro/mcp", --header-file, mcp/heroui-pro.headers]
+```
 
 ```ts
 import { execWithSecrets } from "@stackra/mcp/node";
 
-process.exitCode = await execWithSecrets(argv); // or { secretsDir: "/path/to/figentra-secrets" }
+process.exitCode = await execWithSecrets(argv, { secrets: ["CONTEXT7_API_KEY"] }); // secretsDir optional
 ```
 
 ## The local server

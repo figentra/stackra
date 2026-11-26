@@ -106,7 +106,7 @@
   "mcp": {
     "context7": {
       "command": "./tools/scripts/mcp.sh",
-      "args": ["npx", "-y", "@upstash/context7-mcp@latest", "--api-key", "$CONTEXT7_API_KEY"]
+      "args": ["--env", "CONTEXT7_API_KEY", "--", "npx", "-y", "@upstash/context7-mcp@4.9.0"]
     },
     "sanity": {
       "type": "http",
@@ -115,21 +115,24 @@
     "github": {
       "command": "./tools/scripts/mcp.sh",
       "args": [
+        "--env",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "--",
         "npx",
         "-y",
-        "mcp-remote@latest",
+        "mcp-remote@0.17.1",
         "https://api.githubcopilot.com/mcp/",
-        "--header",
-        "Authorization:Bearer $GITHUB_PERSONAL_ACCESS_TOKEN"
+        "--header-file",
+        "tools/scripts/mcp-github.headers"
       ]
     },
     "stripe": {
       "command": "./tools/scripts/mcp.sh",
-      "args": ["npx", "-y", "@stripe/mcp", "--api-key=$STRIPE_SECRET_KEY"]
+      "args": ["--env", "STRIPE_SECRET_KEY", "--", "npx", "-y", "@stripe/mcp@0.3.4"]
     },
     "resend": {
       "command": "./tools/scripts/mcp.sh",
-      "args": ["npx", "-y", "resend-mcp@latest"]
+      "args": ["--env", "RESEND_API_KEY", "--", "npx", "-y", "resend-mcp@2.30.0"]
     },
     "elevenlabs": {
       "type": "http",

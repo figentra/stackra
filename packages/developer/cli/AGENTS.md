@@ -59,7 +59,7 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
   tool (typecheck: turbo, else `tsc --noEmit -p <member>`) rather than reporting one opaque `exit` finding.
 - Every command writes through its `CliIo`, never `console` or `process.stdout`: `stackra mcp` runs commands with a
   capturing io because standard output carries the protocol.
-- Tools start without a shell; a secret value never passes through this process (`mcp exec` names a location only).
+- Tools start without a shell; a secret value never passes through this process (`mcp exec` names secrets and a location only, and the server gets each value in its environment, never its argv).
   The one exception is `ops bootstrap-operator`: it reads the environment's bootstrap token from `STACKRA_OPS_TOKEN`
   and sends it only as the bearer token of its one call; never print it, log it or pass it as an argument.
 - A seed pack, a template or a command never holds a business value (a price, a rate, a country rule): those are rows

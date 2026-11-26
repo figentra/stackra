@@ -10,14 +10,13 @@
  *   action, never with this.
  * Runtime: node
  * Governing contract: ADR 0525; ADR 0267 (the model never sees a secret); ADR 0257.
- * Input: `--names A,B[,…] [--expand-args] -- <command> [args…]`. A named secret with no file is skipped, so a
- *   command that takes one of several credentials (Linear's app token or personal key) gets whichever exists.
- *   `--expand-args` (mcp.sh only) replaces `$NAME` and `${NAME}` of a named secret in the arguments, for an MCP
- *   server that takes its token as a flag (a referenced name with no file is then a refusal); without it the
- *   arguments pass through untouched, so a `$NAME` an agent types never becomes a value.
+ * Input: `--names A,B[,…] -- <command> [args…]`. A named secret with no file is skipped, so a command that takes
+ *   one of several credentials (Linear's app token or personal key) gets whichever exists. The arguments pass through
+ *   untouched, so a `$NAME` an agent types never becomes a value (STA-1617 removed the `--expand-args` mode that
+ *   expanded `.mcp.yaml` references into MCP server flags; a server now reads its token from its environment).
  * Output: the child's own stdio and exit code; on a refusal, one value-free line on stderr and exit 1.
- * Secrets: values exist only in this process's memory and the child's environment (and, with `--expand-args`, the
- *   child's argv). This script never prints, logs or writes one, and puts none on any other argv.
+ * Secrets: values exist only in this process's memory and the child's environment, never on any argv. This script
+ *   never prints, logs or writes one.
  */
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -26,31 +25,23 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { NAME_RX, Refusal, cliRunner, decryptFile, secretFile } from "./secrets-sops.mjs";
 
-export const USAGE = "usage: secrets-exec.mjs --names A,B[,…] [--expand-args] -- <command> [args…]";
+export const USAGE = "usage: secrets-exec.mjs --names A,B[,…] -- <command> [args…]";
 
-/** Expand `$NAME` and `${NAME}` from `vars`; a name `vars` lacks is left as written. */
-export const expandArg = (arg, vars) =>
-  arg.replaceAll(/\$\{([A-Z_][A-Z0-9_]*)\}|\$([A-Z_][A-Z0-9_]*)/g, (m, a, b) =>
-    Object.hasOwn(vars, a ?? b) ? vars[a ?? b] : m,
-  );
-
-/** `{ names, expand, command }` from argv, or a Refusal. Never echoes an argument. */
+/** `{ names, command }` from argv, or a Refusal. Never echoes an argument. */
 export function parseExecArgs(argv) {
   const sep = argv.indexOf("--");
   const opts = sep === -1 ? argv : argv.slice(0, sep);
   const command = sep === -1 ? [] : argv.slice(sep + 1);
   let names = [];
-  let expand = false;
   for (let i = 0; i < opts.length; i++)
     if (opts[i] === "--names")
       names = String(opts[++i] ?? "")
         .split(",")
         .filter(Boolean);
-    else if (opts[i] === "--expand-args") expand = true;
     else throw new Refusal(USAGE);
   if (!names.length || !command.length || !names.every((n) => NAME_RX.test(n)))
     throw new Refusal(USAGE);
-  return { names: [...new Set(names)], expand, command };
+  return { names: [...new Set(names)], command };
 }
 
 /** The named `agents` values of a clone, decrypted in memory: `{ NAME: value }`. A name with no file is skipped. */
@@ -78,7 +69,7 @@ export function main(
   } = {},
 ) {
   try {
-    const { names, expand, command } = parseExecArgs(argv);
+    const { names, command } = parseExecArgs(argv);
     const dir = env.STACKRA_SECRETS_DIR ?? join(home, ".stackra", "secrets");
     if (!existsSync(join(dir, "agents")))
       throw new Refusal(
@@ -87,15 +78,8 @@ export function main(
     // Best effort: an offline machine runs with the clone it has.
     run("git", ["-C", dir, "pull", "--ff-only", "--quiet"]);
     const vars = agentVars(dir, names, { run });
-    if (expand) {
-      // A server that takes its token as a flag would start with the literal `$NAME`; fail here, by name.
-      const absent = names.filter(
-        (n) => !Object.hasOwn(vars, n) && command.some((a) => expandArg(a, { [n]: "" }) !== a),
-      );
-      if (absent.length)
-        throw new Refusal(`not in the agents scope of ${dir}: ${absent.join(", ")}`);
-    }
-    const [cmd, ...args] = expand ? command.map((a) => expandArg(a, vars)) : command;
+    // The arguments go through as given: a value reaches the child through its environment only (STA-1617).
+    const [cmd, ...args] = command;
     return spawnChild(cmd, args, { stdio: "inherit", env: { ...env, ...vars } });
   } catch (error) {
     write(

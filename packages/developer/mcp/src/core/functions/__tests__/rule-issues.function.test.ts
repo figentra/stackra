@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ruleIssues`: a secret reference must sit after `stackra mcp exec --` in a local server and
- *          never in env, a URL or a header; npx packages must be pinned to an exact version.
+ * Purpose: unit tests of `ruleIssues`: a local server names its secrets with `stackra mcp exec --env` and holds no
+ *          secret reference on its command line (STA-1617) or in env, nor a remote one in a URL or a header; npx
+ *          packages must be pinned to an exact version.
  * Boundary: test only; pure values.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 9); ADR 0173.
@@ -15,11 +16,11 @@ const codesOf = (server: Parameters<typeof ruleIssues>[0]["mcpServers"][string])
   ruleIssues({ mcpServers: { one: server } }).map((issue) => issue.code);
 
 describe("ruleIssues", () => {
-  it("accepts a secret after the launcher and pinned npx packages", () => {
+  it("accepts a secret named with --env and pinned npx packages", () => {
     expect(
       codesOf({
         command: "stackra",
-        args: ["mcp", "exec", "--", "npx", "-y", "@scope/tool@1.2.3", "$TOKEN"],
+        args: ["mcp", "exec", "--env", "TOKEN", "--", "npx", "-y", "@scope/tool@1.2.3"],
       }),
     ).toEqual([]);
     expect(codesOf({ command: "npx", args: ["-y", "tool@1.2.3-beta.1"] })).toEqual([]);
@@ -29,16 +30,42 @@ describe("ruleIssues", () => {
     expect(codesOf({ type: "http", url: "https://mcp.linear.app/mcp" })).toEqual([]);
   });
 
-  it("refuses a secret without the launcher, before it or in env", () => {
+  it("refuses a secret reference anywhere on a local server's command line (STA-1617)", () => {
     expect(codesOf({ command: "npx", args: ["-y", "tool@1.0.0", "--key", "$API_KEY"] })).toEqual([
-      "secret_without_exec",
+      "secret_on_argv",
     ]);
     expect(
       codesOf({
         command: "pnpm",
         args: ["--key=$API_KEY", "exec", "stackra", "mcp", "exec", "--", "tool"],
       }),
-    ).toEqual(["secret_without_exec"]);
+    ).toEqual(["secret_on_argv"]);
+    const after = ruleIssues({
+      mcpServers: {
+        context7: {
+          command: "pnpm",
+          args: [
+            "exec",
+            "stackra",
+            "mcp",
+            "exec",
+            "--",
+            "npx",
+            "-y",
+            "ctx@4.2.0",
+            "--api-key",
+            "$CONTEXT7_API_KEY",
+          ],
+        },
+      },
+    });
+    expect(after).toEqual([
+      expect.objectContaining({ path: "mcpServers.context7", code: "secret_on_argv" }),
+    ]);
+    expect(after[0]?.message).toContain("stackra mcp exec --env CONTEXT7_API_KEY --");
+  });
+
+  it("refuses a secret reference in env, which Claude Code passes literally", () => {
     expect(
       codesOf({
         command: "pnpm",

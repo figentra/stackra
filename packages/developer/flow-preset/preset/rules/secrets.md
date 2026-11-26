@@ -79,7 +79,8 @@ an Encore app (ADR 0468 decision 6).
 
 **MCP servers:**
 Token-based MCP servers launch through `tools/scripts/mcp.sh`, which runs `secrets-exec.mjs` with only the names the
-server needs. This is a convention; no hook enforces it.
+server needs, into its environment and never its arguments: a value on a command line shows in every process listing
+(STA-1617). This is a convention; no hook enforces it.
 
 ### Required Secrets
 

@@ -1,19 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: `ruleIssues(config)`, the `.mcp.yaml` rules a shape cannot say: a `$NAME` reference in a local server that
- *          does not start through `stackra mcp exec --` (Claude Code would pass it literally), a `$NAME` reference in a
- *          remote server (those sign in with OAuth), and an npx package not pinned to an exact version.
+ * Purpose: `ruleIssues(config)`, the `.mcp.yaml` rules a shape cannot say: a `$NAME` reference in a local server's
+ *          command or arguments (expanded, the value would sit on its argv where any process listing shows it;
+ *          STA-1617), a `$NAME` reference in a local server's `env` (Claude Code passes it literally), a `$NAME`
+ *          reference in a remote server (those sign in with OAuth), and an npx package not pinned to an exact version.
  * Boundary: reads a shape-valid document; returns issues and throws nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0282 (decisions 9 and 10); ADR 0173 (secret values never in files); the template's
- *                     `.mcp.yaml` contract (npx servers pinned, no @latest).
+ *                     `.mcp.yaml` contract (npx servers pinned, no @latest); STA-1617 (no secret on argv).
  */
 import { secretNamesOf } from "#core/functions/secret-names-of.function";
 import type { McpConfig } from "#core/types/mcp-config.type";
 import type { McpIssue } from "#core/types/mcp-issue.type";
-
-/** `stackra mcp exec --`, the launcher that injects secret values. */
-const EXEC = ["stackra", "mcp", "exec", "--"];
 
 /** An npx package spec pinned to an exact version (`name@1.2.3`, `@scope/name@1.2.3-beta.1`). */
 const PINNED = /^(?:@[^/@]+\/)?[^@]+@\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/;
@@ -36,24 +34,26 @@ export function ruleIssues(config: McpConfig): McpIssue[] {
         issues.push({
           path,
           code: "secret_in_remote_server",
-          message: `${names.join(", ")} in a remote server: sign in with OAuth, or run mcp-remote through \`stackra mcp exec --\``,
+          message: `${names.join(", ")} in a remote server: sign in with OAuth, or run mcp-remote through \`stackra mcp exec --env NAME --\` with a \`--header-file\` whose header holds \`\${NAME}\``,
         });
       continue;
     }
     const argv = [server.command, ...(server.args ?? [])];
-    const execAt = argv.findIndex((_, index) =>
-      EXEC.every((word, offset) => argv[index + offset] === word),
-    );
-    // Only arguments after the launcher are expanded; env values and earlier arguments reach the server literally.
-    const names = secretNamesOf([
-      ...(execAt === -1 ? argv : argv.slice(0, execAt)),
-      ...Object.values(server.env ?? {}),
-    ]);
-    if (names.length > 0)
+    // A reference on the command line either reaches the server literally or, expanded, sits on its argv (STA-1617).
+    const onArgv = secretNamesOf(argv);
+    if (onArgv.length > 0)
+      issues.push({
+        path,
+        code: "secret_on_argv",
+        message: `${onArgv.join(", ")} on the command line would show in every process listing: name it with \`stackra mcp exec --env ${onArgv.join(",")} --\` and let the server read its environment`,
+      });
+    // Claude Code passes env values literally, so a reference there never becomes the value.
+    const inEnv = secretNamesOf(Object.values(server.env ?? {}));
+    if (inEnv.length > 0)
       issues.push({
         path,
         code: "secret_without_exec",
-        message: `${names.join(", ")} must reach the server through \`stackra mcp exec --\` arguments, never env or a literal`,
+        message: `${inEnv.join(", ")} must reach the server through \`stackra mcp exec --env ${inEnv.join(",")} --\`, never env or a literal`,
       });
     const npxAt = argv.indexOf("npx");
     if (npxAt === -1) continue;

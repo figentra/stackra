@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: hold `secrets-exec.mjs` to its contract (ADR 0525): only the named `agents` secrets are decrypted, they
- *          reach only the child's environment, `$NAME` in the arguments expands only with `--expand-args`, and no
- *          canary value reaches stdout, stderr, the runner's output or any argv but an expanded MCP argument.
+ *          reach only the child's environment, `$NAME` in the arguments never expands (STA-1617 removed
+ *          `--expand-args`), and no canary value reaches stdout, stderr, the runner's output or any argv.
  * Boundary: a throwaway clone directory, a fake sops and git runner, a fake spawn, and one real run of the script
  *           with a fake `sops` on PATH; no real repository, key or vault.
  * Runtime: node
@@ -15,7 +15,7 @@ import { randomBytes } from "node:crypto";
 import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { USAGE, agentVars, expandArg, main, parseExecArgs } from "../secrets-exec.mjs";
+import { USAGE, agentVars, main, parseExecArgs } from "../secrets-exec.mjs";
 
 const script = new URL("../secrets-exec.mjs", import.meta.url).pathname;
 const canary = () => `fake-${randomBytes(12).toString("hex")}`;
@@ -80,50 +80,44 @@ test("exec: only the named agents files are decrypted, into the child's environm
   assert.equal(child.env.LINEAR_API_KEY, a);
   assert.equal(child.env.OTHER_TOKEN, undefined, "an unnamed secret is never decrypted");
   assert.equal(child.env.LINEAR_AGENT_TOKEN, undefined, "a named secret with no file is skipped");
-  assert.deepEqual(
-    child.args,
-    ["linear.mjs", "$LINEAR_API_KEY"],
-    "no expansion without --expand-args",
-  );
+  assert.deepEqual(child.args, ["linear.mjs", "$LINEAR_API_KEY"], "a reference never expands");
   const decrypted = c.calls.filter((call) => call[0] === "sops").map((call) => call.at(-1));
   assert.deepEqual(decrypted, ["agents/LINEAR_API_KEY.enc.yaml"]);
   assertNoLeak(a, r, c);
   assertNoLeak(b, r, c);
 });
 
-test("exec --expand-args: $NAME and ${NAME} expand for mcp.sh; a referenced name with no file is refused", () => {
+test("exec: --expand-args is gone (STA-1617); a reference reaches no argv as a value", () => {
   const v = canary();
   const c = clone({ CONTEXT7_API_KEY: v });
+  assert.throws(
+    () => parseExecArgs(["--names", "CONTEXT7_API_KEY", "--expand-args", "--", "npx"]),
+    {
+      message: USAGE,
+    },
+  );
+  const refused = exec(
+    ["--names", "CONTEXT7_API_KEY", "--expand-args", "--", "npx", "--api-key", "$CONTEXT7_API_KEY"],
+    c,
+  );
+  assert.equal(refused.child, null);
+  assert.equal(refused.spawned.length, 0, "nothing starts");
+  assert.equal(refused.out, `secrets-exec: ${USAGE}\n`);
   const r = exec(
     [
       "--names",
       "CONTEXT7_API_KEY",
-      "--expand-args",
       "--",
       "npx",
       "x-token:$CONTEXT7_API_KEY",
-      "${HOME}",
+      "${CONTEXT7_API_KEY}",
     ],
     c,
   );
-  assert.deepEqual(r.spawned[0].args, [`x-token:${v}`, "${HOME}"], "only a named secret expands");
-  assert.equal(expandArg("${CONTEXT7_API_KEY}/$MISSING", { CONTEXT7_API_KEY: v }), `${v}/$MISSING`);
-
-  const missing = exec(
-    [
-      "--names",
-      "CONTEXT7_API_KEY,STRIPE_SECRET_KEY",
-      "--expand-args",
-      "--",
-      "npx",
-      "--api-key=$STRIPE_SECRET_KEY",
-    ],
-    c,
-  );
-  assert.equal(missing.child, null);
-  assert.equal(missing.spawned.length, 0);
-  assert.match(missing.out, /not in the agents scope of .*: STRIPE_SECRET_KEY\n$/);
-  assertNoLeak(v, missing, c);
+  assert.deepEqual(r.spawned[0].args, ["x-token:$CONTEXT7_API_KEY", "${CONTEXT7_API_KEY}"]);
+  assert.equal(r.spawned[0].env.CONTEXT7_API_KEY, v, "the value is in the environment");
+  assertNoLeak(v, r, c);
+  assertNoLeak(v, refused, c);
 });
 
 test("exec: usage, bad names and a missing clone are value-free refusals; nothing starts", () => {

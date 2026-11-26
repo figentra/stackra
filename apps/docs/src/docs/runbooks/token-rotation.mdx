@@ -30,10 +30,9 @@ allowed on their own. The guard is an accident guard, not a boundary, so the rul
 A value belongs in a child's environment or stdin, never on its argv, where any `ps` shows it. The bot wrappers
 (`figentra bot gh`, `figentra pr merge`) pass the token as `GH_TOKEN` in the child's environment, `figentra linear`
 reads its token from the environment, and `pnpm secrets:put`, `secrets:generate` and `secrets:import` hand each value
-to `sops` on stdin. The exception today is `mcp.sh`: through `secrets-exec.mjs --expand-args` it expands `$NAME`
-references from `.mcp.yaml` into the MCP server's arguments (`--api-key`, header values), so
-those servers carry a token on argv for as long as they run (STA-303 audit; STA-1617 moves them to environment
-variables).
+to `sops` on stdin. `mcp.sh` does the same for MCP servers: each `--env` name goes into the server's environment,
+and a header value into a `--header-file` placeholder the server fills itself, so no server carries a token on argv
+(STA-303 audit, fixed by STA-1617; `tools/scripts/__tests__/mcp-sh.test.mjs` fails if one would).
 
 ## When a token was printed
 
