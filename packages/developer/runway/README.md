@@ -398,7 +398,7 @@ Each port is the host port, written in the runway so `checkPorts` sees it, moved
 | Kind        | Ports                             | A member's run gets                                                                    |
 | ----------- | --------------------------------- | -------------------------------------------------------------------------------------- |
 | `valkey`    | `port` (6379)                     | `CACHE_`, `LOCKING_`, `QUEUE_BROKER_`, `REALTIME_` and `ACTIONS_VALKEY_URL`            |
-| `seaweedfs` | `port` (8333); `buckets` made     | `AWS_ENDPOINT_URL_S3` and a placeholder key pair the store ignores, for the `s3` disk |
+| `seaweedfs` | `port` (8333); `buckets` made     | `AWS_ENDPOINT_URL_S3`, for the `s3` disk; a placeholder key pair only without an AWS credential |
 | `mailpit`   | `smtpPort` (1025), `uiPort` (8025) | `SMTP_HOST`, `SMTP_PORT`; the inbox at the `uiPort`                                   |
 | `clamav`    | `port` (3310); one for every lane | nothing: `MediaConfig.clamav` already reads 127.0.0.1:3310                             |
 | `otel-lgtm` | `grpcPort`, `httpPort`, `uiPort`  | `OTEL_EXPORTER_OTLP_ENDPOINT`                                                          |
@@ -416,7 +416,9 @@ environments:
 
 A missing image or port, an unknown kind, a bad bucket name or two blocks that give one variable is a `DevInfraIssue`,
 and nothing is planned; an image without a digest is a warning. Object storage is SeaweedFS because MinIO publishes no
-community image any more. `writeDevFacts` writes the gateway's and each container's address into the dev facts, so a
+community image any more. It has no identity configured, so it takes any signature: a developer's own AWS credential
+(a profile, SSO) signs for it, and its placeholder key pair is returned apart as `fallbackCredentials`, never in `env`,
+so a global `AWS_ACCESS_KEY_ID` never shadows that credential for the run's other AWS clients. `writeDevFacts` writes the gateway's and each container's address into the dev facts, so a
 `from-port: valkey` var resolves.
 
 ## Regions and clouds

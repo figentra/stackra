@@ -99,6 +99,7 @@ export type { ComposeDocument } from "#core/types/compose-document.type";
 export type { ComposeService } from "#core/types/compose-service.type";
 export type { DevComposeInput } from "#core/types/dev-compose-input.type";
 export type { DevComposePlan } from "#core/types/dev-compose-plan.type";
+export type { DevCredentialFallback } from "#core/types/dev-credential-fallback.type";
 export type { DevInfraHealthcheck } from "#core/types/dev-infra-healthcheck.type";
 export type { DevInfraIssue } from "#core/types/dev-infra-issue.type";
 export type { DevInfraKind } from "#core/types/dev-infra-kind.type";

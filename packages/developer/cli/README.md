@@ -123,7 +123,11 @@ In a member or at the root, `stackra dev` first starts the dev compose of the ro
 (and `.stackra/dev/compose.shared.yaml` for the `perLane: false` ones, ClamAV by default) and runs
 `docker compose -f <file> up --detach --wait`, so each container is healthy before the member starts. The member's run
 gets the containers' variables (`CACHE_VALKEY_URL`, `AWS_ENDPOINT_URL_S3`, `SMTP_PORT`, …) unless the shell or
-`.stackra/dev-secrets.json` sets them. `--infra <name>[,<name>]` also starts `when: opt-in` blocks; `--no-infra` skips
+`.stackra/dev-secrets.json` sets them. SeaweedFS's placeholder `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` pair is
+added only when the run has no AWS credential of its own (no key variable, `AWS_PROFILE`, web identity token,
+container endpoint, `~/.aws/credentials` or `~/.aws/config`): the store takes any signature, so a profile keeps signing
+for S3 and for the run's other AWS clients alike. On a host whose only credential is an instance role, an empty
+`~/.aws/config` keeps the pair out. `--infra <name>[,<name>]` also starts `when: opt-in` blocks; `--no-infra` skips
 the step. The containers keep running after `stackra dev` stops; `docker compose -f .stackra/dev/compose.yaml down`
 stops them. A member run turbo starts from the root leaves the step to the root run.
 

@@ -130,12 +130,13 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
         }
       }
       // A local run gets the dev compose's addresses (STA-2664), then the workspace's generated dev values for the
-      // secrets this member declares (STA-2679), which win over them.
-      if (task === "dev")
-        return runProcess(
-          { ...tool, env: { ...tool.env, ...devInfraEnv(cwd), ...devSecretEnv(cwd) } },
-          io,
-        );
+      // secrets this member declares (STA-2679), which win over them. The compose sees the run's whole environment,
+      // so its placeholder AWS keys stay out when the run has a credential of its own.
+      if (task === "dev") {
+        const secrets = devSecretEnv(cwd);
+        const infra = devInfraEnv(cwd, { ...process.env, ...tool.env, ...secrets });
+        return runProcess({ ...tool, env: { ...tool.env, ...infra, ...secrets } }, io);
+      }
       return runProcess(tool, io);
     },
   };

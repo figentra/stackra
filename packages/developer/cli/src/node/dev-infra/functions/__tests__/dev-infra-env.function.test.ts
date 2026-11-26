@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `devInfraEnv` and `readDevInfraState`: a member's run gets nothing until `stackra dev` started
  *          the dev compose, then the containers' variables for the recorded lane and opt-ins; a value already in the
- *          environment is kept; a refused runway or a broken state file gives nothing.
+ *          environment is kept; SeaweedFS's placeholder AWS keys only reach a run with no AWS credential of its own
+ *          (a profile, a shared credentials or config file), so the developer's other AWS clients keep signing with
+ *          theirs; a refused runway or a broken state file gives nothing.
  * Boundary: test only; a temporary workspace with one member folder.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0199 (decision 3); STA-2664 (item 6).
@@ -18,6 +20,8 @@ import { readDevInfraState } from "#node/dev-infra/functions/read-dev-infra-stat
 
 let root = "";
 let member = "";
+/** A home folder with no `.aws` folder, unless a test writes one. */
+let home = "";
 
 /** A digest-pinned image of `name`. */
 const pinned = (name: string): string => `"${name}@sha256:${"a".repeat(64)}"`;
@@ -32,6 +36,8 @@ beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "stackra-dev-infra-env-"));
   member = join(root, "services", "orders");
   mkdirSync(member, { recursive: true });
+  home = join(root, "home");
+  mkdirSync(home);
   writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - services/*\n");
   writeFileSync(
     join(root, "runway.yaml"),
@@ -56,12 +62,12 @@ afterEach(() => {
 
 describe("devInfraEnv", () => {
   it("gives nothing until stackra dev started the dev compose", () => {
-    expect(devInfraEnv(member, {})).toEqual({});
+    expect(devInfraEnv(member, {}, home)).toEqual({});
   });
 
   it("gives the containers' variables for the recorded lane and opt-ins", () => {
     state('{ "lane": 2, "optIn": ["otel-lgtm"] }');
-    expect(devInfraEnv(member, {})).toEqual({
+    expect(devInfraEnv(member, {}, home)).toEqual({
       CACHE_VALKEY_URL: "redis://127.0.0.1:6579",
       LOCKING_VALKEY_URL: "redis://127.0.0.1:6579",
       QUEUE_BROKER_VALKEY_URL: "redis://127.0.0.1:6579",
@@ -76,19 +82,44 @@ describe("devInfraEnv", () => {
 
   it("keeps a variable the environment already sets", () => {
     state('{ "lane": 0, "optIn": [] }');
-    const env = devInfraEnv(member, {
-      CACHE_VALKEY_URL: "redis://cache.example.test:6379",
-      AWS_ACCESS_KEY_ID: "mine",
-    });
+    const env = devInfraEnv(
+      member,
+      {
+        CACHE_VALKEY_URL: "redis://cache.example.test:6379",
+        AWS_ACCESS_KEY_ID: "mine",
+      },
+      home,
+    );
     expect(env["CACHE_VALKEY_URL"]).toBeUndefined();
     expect(env["AWS_ACCESS_KEY_ID"]).toBeUndefined();
     expect(env["LOCKING_VALKEY_URL"]).toBe("redis://127.0.0.1:6379");
     expect(env["OTEL_EXPORTER_OTLP_ENDPOINT"]).toBeUndefined();
   });
 
+  it("leaves the placeholder AWS keys out for a developer with a profile and no key variables", () => {
+    state('{ "lane": 0, "optIn": [] }');
+    const env = devInfraEnv(member, { AWS_PROFILE: "dev" }, home);
+    expect(env["AWS_ENDPOINT_URL_S3"]).toBe("http://127.0.0.1:8333");
+    expect(env).not.toHaveProperty("AWS_ACCESS_KEY_ID");
+    expect(env).not.toHaveProperty("AWS_SECRET_ACCESS_KEY");
+  });
+
+  it("leaves the placeholder AWS keys out for a default profile in ~/.aws/credentials or ~/.aws/config", () => {
+    state('{ "lane": 0, "optIn": [] }');
+    mkdirSync(join(home, ".aws"));
+    for (const file of ["credentials", "config"]) {
+      writeFileSync(join(home, ".aws", file), "[default]\n");
+      const env = devInfraEnv(member, {}, home);
+      expect(env["AWS_ENDPOINT_URL_S3"]).toBe("http://127.0.0.1:8333");
+      expect(env).not.toHaveProperty("AWS_ACCESS_KEY_ID");
+      expect(env).not.toHaveProperty("AWS_SECRET_ACCESS_KEY");
+      rmSync(join(home, ".aws", file));
+    }
+  });
+
   it("gives nothing for a runway the plan refuses", () => {
     state('{ "lane": 0, "optIn": ["valkey"] }');
-    expect(devInfraEnv(member, {})).toEqual({});
+    expect(devInfraEnv(member, {}, home)).toEqual({});
   });
 });
 

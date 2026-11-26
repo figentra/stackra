@@ -146,11 +146,24 @@ describe("devComposeOf", () => {
       "--spider",
       "http://127.0.0.1:8333/acme-media",
     ]);
-    expect(result.env).toEqual({
-      AWS_ENDPOINT_URL_S3: "http://127.0.0.1:8333",
-      AWS_ACCESS_KEY_ID: "stackra-dev",
-      AWS_SECRET_ACCESS_KEY: "stackra-dev",
-    });
+    expect(result.env).toEqual({ AWS_ENDPOINT_URL_S3: "http://127.0.0.1:8333" });
+  });
+
+  it("keeps the SeaweedFS placeholder AWS keys out of env, as a fallback for a run with no AWS credential", () => {
+    const result = plan({ seaweedfs: SEAWEED });
+    expect(result.env).not.toHaveProperty("AWS_ACCESS_KEY_ID");
+    expect(result.env).not.toHaveProperty("AWS_SECRET_ACCESS_KEY");
+    expect(result.fallbackCredentials).toEqual([
+      {
+        chain: "aws",
+        env: { AWS_ACCESS_KEY_ID: "stackra-dev", AWS_SECRET_ACCESS_KEY: "stackra-dev" },
+      },
+    ]);
+    expect(result.provides).toEqual(
+      expect.arrayContaining(["AWS_ACCESS_KEY_ID", "AWS_ENDPOINT_URL_S3", "AWS_SECRET_ACCESS_KEY"]),
+    );
+    const idle = plan({ seaweedfs: { ...SEAWEED, when: "opt-in" } });
+    expect(idle.fallbackCredentials).toEqual([]);
   });
 
   it("waits for SeaweedFS's own health when no bucket is named", () => {

@@ -7,11 +7,13 @@
  *          gets to reach it.
  * Boundary: type only. Strings in `memberEnv` are templates: `{host}` (127.0.0.1), `{port}` (the address port) and
  *           `{port:<field>}` (a named port), each the host port after the lane shift; `{bucket}` in a bucket probe is
- *           the last bucket named. No credential: every kind here runs on the loopback interface without one.
+ *           the last bucket named. No credential: every kind here runs on the loopback interface without one, and a
+ *           client that must sign gets placeholders (`fallbackCredentials`) only when it has no credential of its own.
  * Runtime: isomorphic
  * Governing contract: ADR 0199 (decision 3: `stackra dev` runs a small compose file); ADR 0296 (decision 1);
  *                     STA-2664 (item 6).
  */
+import type { DevCredentialFallback } from "#core/types/dev-credential-fallback.type";
 import type { DevInfraHealthcheck } from "#core/types/dev-infra-healthcheck.type";
 
 /** One kind of dev infra container. */
@@ -36,4 +38,6 @@ export type DevInfraKind = {
   readonly buckets?: { readonly argument: string; readonly probe: readonly string[] };
   /** The variables a member's local run gets, as templates. */
   readonly memberEnv?: Readonly<Record<string, string>>;
+  /** Placeholder credentials a member's client signs with, only when it has none of its own on that chain. */
+  readonly fallbackCredentials?: DevCredentialFallback;
 };

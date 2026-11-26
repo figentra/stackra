@@ -8,8 +8,10 @@
  *          `postgres` are Encore's own (`encore run` starts them), so they are not here.
  * Boundary: data only. Images are not here: the root runway pins each by digest (`image`), the one place a version is
  *           written. SeaweedFS rather than MinIO: MinIO publishes no community image any more. Every container runs
- *           without a credential, published on 127.0.0.1 only; the SeaweedFS store accepts any signature, so its
- *           placeholder keys are no secret. The health checks are the images' own commands (`valkey-cli`, `weed`'s
+ *           without a credential, published on 127.0.0.1 only. The SeaweedFS store has no identity configured, so it
+ *           accepts any signature (checked for PutObject, GetObject and a presigned GET on 2026-11-26): the AWS
+ *           credential a developer already has signs for it, and its placeholder pair (`fallbackCredentials`, no
+ *           secret) is given only to a run with none, never over a profile the other AWS clients need. The health checks are the images' own commands (`valkey-cli`, `weed`'s
  *           `wget`, `/mailpit readyz`, `clamdcheck.sh`), checked against the pinned images on 2026-11-26.
  * Runtime: isomorphic
  * Governing contract: ADR 0199 (decision 3: `stackra dev` runs a small compose file); ADR 0222 (decision 1: an
@@ -62,9 +64,12 @@ export const DEV_INFRA_KINDS: Readonly<Record<string, DevInfraKind>> = {
     },
     memberEnv: {
       AWS_ENDPOINT_URL_S3: "http://{host}:{port}",
-      // The store checks no signature; the SDK only needs a key pair to sign with. Not a secret.
-      AWS_ACCESS_KEY_ID: "stackra-dev",
-      AWS_SECRET_ACCESS_KEY: "stackra-dev",
+    },
+    // With no identity configured the store takes any signature, so a developer's own AWS credential (a profile, SSO)
+    // signs for it too; this pair is only for a run with no AWS credential at all. Not a secret.
+    fallbackCredentials: {
+      chain: "aws",
+      env: { AWS_ACCESS_KEY_ID: "stackra-dev", AWS_SECRET_ACCESS_KEY: "stackra-dev" },
     },
   },
   mailpit: {

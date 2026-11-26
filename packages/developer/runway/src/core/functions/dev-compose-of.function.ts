@@ -8,7 +8,8 @@
  *          returns the variables a member's local run gets to reach them (`*_VALKEY_URL`, `AWS_ENDPOINT_URL_S3`, …).
  * Boundary: pure. Every port is written in the runway (a missing one is refused, so `checkPorts` sees them all) and
  *           every image is the runway's; an image without a digest is a warning, not a refusal. Any refusal returns no
- *           file. No credential is planned: every kind runs without one on the loopback interface.
+ *           file. No credential is planned: every kind runs without one on the loopback interface; a kind's placeholder
+ *           credentials (SeaweedFS's AWS pair) are returned apart, as `fallbackCredentials`, never in `env`.
  * Runtime: isomorphic
  * Governing contract: ADR 0199 (decision 3: `stackra dev` runs gen, `encore run` and a small compose file); ADR 0296
  *                     (decision 1: dev ports and lanes); ADR 0170 (a port is written once); STA-2664 (item 6).
@@ -18,6 +19,7 @@ import type { ComposeDocument } from "#core/types/compose-document.type";
 import type { ComposeService } from "#core/types/compose-service.type";
 import type { DevComposeInput } from "#core/types/dev-compose-input.type";
 import type { DevComposePlan } from "#core/types/dev-compose-plan.type";
+import type { DevCredentialFallback } from "#core/types/dev-credential-fallback.type";
 import type { DevInfraIssue } from "#core/types/dev-infra-issue.type";
 import type { DevInfraKind } from "#core/types/dev-infra-kind.type";
 import type { DevInfraService } from "#core/types/dev-infra-service.type";
@@ -118,6 +120,7 @@ export function devComposeOf(input: DevComposeInput): DevComposePlan {
   const warnings: string[] = [];
   const services: DevInfraService[] = [];
   const env: Record<string, string> = {};
+  const fallbackCredentials: DevCredentialFallback[] = [];
   const owners = new Map<string, string>();
   const optIns = new Set<string>();
   const lane: Files = { services: {}, volumes: {} };
@@ -254,7 +257,11 @@ export function devComposeOf(input: DevComposeInput): DevComposePlan {
     };
     if (kind.volume !== undefined) files.volumes[volume] = {};
 
-    for (const [variable, template] of Object.entries(kind.memberEnv ?? {})) {
+    const fallback = kind.fallbackCredentials;
+    for (const [variable, template] of [
+      ...Object.entries(kind.memberEnv ?? {}),
+      ...Object.entries(fallback?.env ?? {}),
+    ]) {
       const first = owners.get(variable);
       if (first !== undefined) {
         refuse(
@@ -264,8 +271,10 @@ export function devComposeOf(input: DevComposeInput): DevComposePlan {
         continue;
       }
       owners.set(variable, name);
-      if (!optIn || asked.has(name)) env[variable] = fill(template, ports, kind.primary);
+      if ((!optIn || asked.has(name)) && !(fallback !== undefined && variable in fallback.env))
+        env[variable] = fill(template, ports, kind.primary);
     }
+    if (fallback !== undefined && (!optIn || asked.has(name))) fallbackCredentials.push(fallback);
     if (kindName === "clamav" && ports["port"] !== DEV_INFRA_KINDS["clamav"]?.ports["port"])
       warnings.push(
         `${name}: clamd answers on ${HOST}:${ports["port"]}, and MediaConfig's \`clamav.port\` defaults to 3310: set it to ${ports["port"]} in the member's media config`,
@@ -282,7 +291,8 @@ export function devComposeOf(input: DevComposeInput): DevComposePlan {
 
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   const provides = [...owners.keys()].sort();
-  if (issues.length > 0) return { services, env: {}, provides, issues, warnings };
+  if (issues.length > 0)
+    return { services, env: {}, fallbackCredentials: [], provides, issues, warnings };
   const base = projectName(input.project);
   return {
     ...(Object.keys(lane.services).length === 0
@@ -293,6 +303,7 @@ export function devComposeOf(input: DevComposeInput): DevComposePlan {
       : { shared: documentOf(`${base}-dev-shared`, shared) }),
     services,
     env,
+    fallbackCredentials,
     provides,
     issues,
     warnings,
