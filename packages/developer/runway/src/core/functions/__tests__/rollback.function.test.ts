@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `rollback`: every production target returns to its own earlier record in release order; a
- *          target with no earlier record refuses before anything changes; a down target stops the rollback.
+ *          target with no earlier record refuses before anything changes; a down target does not stop the rollback:
+ *          every target goes back, then one error names each down target.
  * Boundary: test only; the providers are fakes.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0170 (rollback), ADR 0352 (decision 3).
@@ -48,13 +49,22 @@ describe("rollback", () => {
     expect(encore.calls).toEqual([]);
   });
 
-  it("stops at a target that is down", async () => {
+  it("rolls every target back before it throws, naming each target that is down", async () => {
     const encore = new FakeProvider("encore-cloud");
     const eas = new FakeProvider("eas");
     encore.statuses.set("production/services/ksa", HealthStatus.Down);
-    await expect(rollback(DEPLOY_ROOT, "production", PREVIOUS, [encore, eas])).rejects.toThrow(
-      RunwayDeployFailedError,
-    );
-    expect(encore.calls).toHaveLength(1);
+    eas.statuses.set("production/mobile/ksa", HealthStatus.Down);
+    const failure = rollback(DEPLOY_ROOT, "production", PREVIOUS, [encore, eas]);
+    await expect(failure).rejects.toThrow(RunwayDeployFailedError);
+    await expect(failure).rejects.toMatchObject({
+      target: "production/services/ksa, production/mobile/ksa",
+      results: PREVIOUS.map((record) => ({ record })),
+    });
+    // The first target is down, and the ones after it are still rolled back.
+    expect(encore.calls).toEqual([
+      `rollback production/services/ksa ${OLD}`,
+      `rollback production/services/ksa/dedicated:firm ${OLD}`,
+    ]);
+    expect(eas.calls).toEqual([`rollback production/mobile/ksa ${OLD}`]);
   });
 });

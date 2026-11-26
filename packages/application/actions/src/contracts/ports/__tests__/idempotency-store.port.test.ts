@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `IdempotencyStore` port: it is an abstract `Port` (its own token, never built directly) and
- *          a driver claims, completes and releases keys.
+ *          a driver claims, extends, completes and releases keys.
  * Boundary: test only; the driver here is a stand-in for the implementing package's.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0263 (ports).
@@ -28,10 +28,16 @@ class MapDriver extends Driver(IdempotencyStore) {
     return undefined;
   }
 
-  async complete(key: string, output: unknown): Promise<void> {
+  async extend(key: string, fingerprint: string): Promise<boolean> {
     const known = this.records.get(key);
-    if (known !== undefined)
-      this.records.set(key, { fingerprint: known.fingerprint, done: true, output });
+    if (known?.done === true || (known !== undefined && known.fingerprint !== fingerprint))
+      return false;
+    this.records.set(key, { fingerprint, done: false });
+    return true;
+  }
+
+  async complete(key: string, fingerprint: string, output: unknown): Promise<void> {
+    this.records.set(key, { fingerprint, done: true, output });
   }
 
   async completeRefused(
@@ -54,19 +60,21 @@ describe("IdempotencyStore", () => {
   });
 
   it("is implemented by a driver", async () => {
-    const driver = new MapDriver();
-    expect(await driver.claim("k", "f", Duration.hours(24))).toBeUndefined();
-    expect(await driver.claim("k", "f", Duration.hours(24))).toEqual({
+    const driver: IdempotencyStore = new MapDriver();
+    expect(await driver.claim("k", "f", Duration.hours(24), "h")).toBeUndefined();
+    expect(await driver.claim("k", "f", Duration.hours(24), "h")).toEqual({
       fingerprint: "f",
       done: false,
     });
-    await driver.complete("k", { orderId: "ord_1" });
-    expect(await driver.claim("k", "f", Duration.hours(24))).toEqual({
+    expect(await driver.extend("k", "f", Duration.hours(24), "h")).toBe(true);
+    await driver.complete("k", "f", { orderId: "ord_1" }, Duration.hours(24), "h");
+    expect(await driver.extend("k", "f", Duration.hours(24), "h")).toBe(false);
+    expect(await driver.claim("k", "f", Duration.hours(24), "h")).toEqual({
       fingerprint: "f",
       done: true,
       output: { orderId: "ord_1" },
     });
-    await driver.release("k");
-    expect(await driver.claim("k", "g", Duration.hours(24))).toBeUndefined();
+    await driver.release("k", "h");
+    expect(await driver.claim("k", "g", Duration.hours(24), "h")).toBeUndefined();
   });
 });
