@@ -55,16 +55,16 @@ policy per tenant; ASVS 4.0.3 V2 at L2 expects MFA to be enforceable.
 
 ## Acceptance criteria
 
-- **AC-001**: WHEN a caller holding `identity.login_policy.set` with a fresh `aal2` step-up sets a policy at the
-  tenant's root scope THE action SHALL push it to that scope's identity provider organisation and answer the policy now
-  in force.
+- **AC-001**: WHEN an administrator sets a login policy THE action SHALL push it to the scope's organisation and
+  answer the policy now in force, for a caller holding `identity.login_policy.set` with a fresh `aal2` step-up at the
+  tenant's root scope.
 - **AC-002**: THE set action SHALL audit the policy before and the one attempted, before any provider write, with the
   rules and provider-side ids only.
-- **AC-003**: WHEN the call has no scope, the scope has no organisation, or the scope is not the node the organisation
-  belongs to (a descendant) THE query and the action SHALL refuse with `NotFoundError`.
-- **AC-004**: WHEN a policy leaves no sign-in method, forces a second factor while none is offered, or names a provider
-  outside `IdentityConfig.externalProviders` THE action SHALL refuse with `LoginPolicyRejectedError` before any
-  provider write.
+- **AC-003**: WHEN the call's scope is not an organisation's own node THE query and the action SHALL refuse with
+  `NotFoundError`: a call with no scope (a platform call), a scope with no organisation, or a descendant of the node.
+- **AC-004**: WHEN a policy would lock everyone out THE action SHALL refuse with `LoginPolicyRejectedError` before any
+  provider write: no sign-in method left, a second factor forced with none offered, or a provider outside
+  `IdentityConfig.externalProviders`.
 - **AC-005**: THE query SHALL answer the policy the organisation applies now (its own or the inherited default), with
   the providers and second factors it offers, for a caller holding `identity.login_policy.read`.
 - **AC-006**: THE ZITADEL driver SHALL write the rules, factors and providers in an order where a failure part way

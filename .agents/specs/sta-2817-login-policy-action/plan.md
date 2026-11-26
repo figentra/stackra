@@ -82,6 +82,9 @@ packages/security/identity/src/core/{drivers,errors,functions}/…
 packages/security/identity/src/node/{access,actions,queries,schemas}/…
 packages/security/identity/assets/lang/*/identity.json
 packages/security/identity/stackra.manifest.json
+packages/security/identity/README.md
+packages/security/identity/AGENTS.md
+packages/security/identity/docs/threat-model.md
 .changeset/identity-tenant-login-policy.md
 ```
 
