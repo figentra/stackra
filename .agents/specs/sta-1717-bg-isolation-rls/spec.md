@@ -43,7 +43,11 @@ executor and an automation's release could refuse a requester or principal of th
 - **Public contract change**: `TenantScopeOwnershipDriver`'s constructor takes `(tree: ScopeTree, database: Database)`
   instead of `(tree)`. The tenancy manifest's `ScopeOwnership` entry lists `Database` (`@stackra/database`) as its
   second dependency, so `stackra gen` wires it. The `ScopeOwnership` port and `holds(actor, scope)` are unchanged.
-  `readTreeAtRoot` is internal to `@stackra/tenancy` (not exported).
+  `readTreeAtRoot` is internal to `@stackra/tenancy` (not exported). A required constructor argument breaks a
+  hand-built driver and stale generated wiring, so `@stackra/tenancy` ships it as a **minor** (the package is 0.x and
+  every `@stackra/*` package shares one fixed version), with a compatibility note in the changeset: before and after,
+  `stackra gen` for generated wiring, the `Database` binding the member needs, and what a member that ships stale wiring
+  sees (it fails closed). `@stackra/workflow` stays a patch (tests and a dev dependency only).
 - **Cross-service events**: none (inbox receipts from a tenant user are now trusted in their tenant instead of being
   downgraded to the platform actor)
 - **Tenancy and data**: the tree read runs in a scope session over the root label of the scope's path, inside a
@@ -59,6 +63,7 @@ executor and an automation's release could refuse a requester or principal of th
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none
 - **Docs to update**: `packages/security/tenancy/AGENTS.md` (the ownership driver paragraph); the changeset
+  `.changeset/scope-ownership-reads-tree-at-root.md` (minor, with the compatibility note)
 - **Lane**: full
 - **Change risk**: R2 (a shipped driver's constructor and a manifest wiring entry; security-relevant behaviour)
 
@@ -71,6 +76,13 @@ executor and an automation's release could refuse a requester or principal of th
 - Q: Who constructs the driver by hand? → A: Nobody in this repository outside tests; members get it from generated
   wiring, which reads the manifest. The changeset names the hand-built migration
   (`new TenantScopeOwnershipDriver(tree, database)`).
+- Q: Patch or minor? → A: Minor, with a compatibility note (CTO review of stackra#1113, 2026-11-26): a required
+  constructor argument breaks consumers that build the driver by hand or ship stale wiring, so it must not arrive on a
+  patch upgrade.
+- Q: What does a member see if it upgrades without regenerating? → A: Generated wiring lists dependencies as tokens,
+  so nothing fails to type-check there; `stackra gen --check` (the template's `gen:check`, in its hook and CI) reports
+  the wiring stale. A member that ships it anyway constructs the driver without a database, and `holds` throws for
+  every tenant actor: it fails closed, never trusting one wrongly. Answered from `emit-wiring` and the driver.
 - Q: Why read at the root label rather than the caller's session? → A: The same reason `CallIsolationDriver` already
   does: row security hides a branch's tenant ancestor from the branch's own session and shows nothing outside one.
   The shared function keeps both readers identical.
@@ -86,6 +98,8 @@ executor and an automation's release could refuse a requester or principal of th
 - **AC-007**: IF a job is queued in tenant A's call for B's scope or a receipt from a user of B arrives in A's scope THEN THE runtime SHALL refuse it before its handler or listener runs.
 - **AC-008**: WHEN a workflow step runs at start or is resumed by the tick THE step SHALL see only its run's tenant, and IF a run's stored origin names a user of B in A's scope THEN THE engine SHALL never run its step.
 - **AC-009**: WHEN a unit of work has finished THE pooled connection it used SHALL carry no `app.*` setting and no extra role.
+- **AC-010**: IF the driver is constructed without a database (stale generated wiring) THEN THE driver SHALL throw from `holds` for every tenant actor, never answering held, and answer held for a platform actor.
+- **AC-011**: THE `@stackra/tenancy` changeset SHALL be a minor bump with a compatibility note naming the constructor before and after, `stackra gen`, the `Database` binding and the stale-wiring behaviour.
 
 ## Out of scope
 
@@ -111,3 +125,4 @@ None.
 - 2026-11-26 → Clarified (questions answered from the code)
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md)
+- 2026-11-26 → Tasked (T007 added: the minor release with its compatibility note, from the CTO's review of stackra#1113)

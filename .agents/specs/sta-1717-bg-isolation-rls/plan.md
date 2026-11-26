@@ -22,20 +22,20 @@ on real Postgres row security.
 
 ## Constitution Check
 
-| Law                                   | Result | Note                                                                   |
-| ------------------------------------- | ------ | ---------------------------------------------------------------------- |
-| Boundaries (tier direction, ADR 0003) | PASS   | tenancy already depends on `@stackra/database`; dev dependencies only  |
-| Secrets (ADR 0009)                    | N/A    | no secret is read or named                                             |
-| Security                              | PASS   | ownership answers per ADR 0495 decision 2 under row security           |
-| HTTP and events                       | N/A    | no endpoint or event shape changes                                     |
-| Tenancy                               | PASS   | tree read rolled back; isolation proven on real row security (rule 8) |
-| Delegation                            | PASS   | one session, two members                                               |
-| Not built yet (ADR 0011)              | N/A    | nothing from the table                                                 |
-| Test placement (ADR 0022)             | PASS   | tests in `__tests__/` beside their subjects                            |
-| Versions and catalogs                 | PASS   | patch changesets for tenancy and workflow; workspace dev dependencies  |
-| Deploy modes (ADR 0076)               | PASS   | same in all three                                                      |
-| Licence tier (ADR 0077)               | PASS   | free, MIT                                                              |
-| Docs and ADRs                         | PASS   | tenancy AGENTS.md paragraph; implements ADR 0495, no new ADR           |
+| Law                                   | Result | Note                                                                        |
+| ------------------------------------- | ------ | --------------------------------------------------------------------------- |
+| Boundaries (tier direction, ADR 0003) | PASS   | tenancy already depends on `@stackra/database`; dev dependencies only       |
+| Secrets (ADR 0009)                    | N/A    | no secret is read or named                                                  |
+| Security                              | PASS   | ownership answers per ADR 0495 decision 2 under row security                |
+| HTTP and events                       | N/A    | no endpoint or event shape changes                                          |
+| Tenancy                               | PASS   | tree read rolled back; isolation proven on real row security (rule 8)       |
+| Delegation                            | PASS   | one session, two members                                                    |
+| Not built yet (ADR 0011)              | N/A    | nothing from the table                                                      |
+| Test placement (ADR 0022)             | PASS   | tests in `__tests__/` beside their subjects                                 |
+| Versions and catalogs                 | PASS   | tenancy minor with a compatibility note; workflow patch; workspace dev deps |
+| Deploy modes (ADR 0076)               | PASS   | same in all three                                                           |
+| Licence tier (ADR 0077)               | PASS   | free, MIT                                                                   |
+| Docs and ADRs                         | PASS   | tenancy AGENTS.md paragraph; implements ADR 0495, no new ADR                |
 
 ## Deploy modes
 
@@ -112,7 +112,7 @@ pnpm-lock.yaml
   `packages/security/tenancy/src/node/drivers/__tests__/fixtures/background-postgres.fixture.ts` (new),
   `packages/runtime/workflow/src/node/__tests__/step-isolation.int.test.ts` (new),
   `packages/runtime/workflow/src/node/__tests__/fixtures/owner-postgres.fixture.ts` (change)
-- `.changeset/scope-ownership-reads-tree-at-root.md` (tenancy and workflow patch)
+- `.changeset/scope-ownership-reads-tree-at-root.md` (tenancy minor with the compatibility note, workflow patch)
 
 ## Data models and migrations
 
@@ -133,9 +133,11 @@ none. The integration fixtures create throwaway databases and apply the shipped 
 - Manifest `ScopeOwnership` entry `deps`: `[ScopeTree (@stackra/scope/contracts), Database (@stackra/database)]`.
 - `ScopeOwnership.holds(actor, scope): Promise<boolean>`: unchanged signature; the answer for a tenant actor is now
   correct under row security.
-- Compatibility: generated wiring picks up the new dependency on the next `stackra gen`; a hand-built driver fails to
-  type-check until it passes the database (named in the changeset). Released as a patch: the class is wired, not
-  constructed by consumers.
+- Compatibility: generated wiring picks up the new dependency on the next `stackra gen`; until then
+  `stackra gen --check` reports it stale, and a member that ships the stale wiring fails closed (`holds` throws for
+  every tenant actor, AC-010). A hand-built driver fails to type-check until it passes the database. Released as a
+  **minor** with a compatibility note in the changeset (AC-011): a required constructor argument must not arrive on a
+  patch upgrade (CTO review of stackra#1113).
 
 ## Error handling
 
@@ -162,12 +164,18 @@ answer remains ADR 0495 decision 2: a tenant actor holds only its own tenant's s
   steps see only their tenant; a B-user origin in A's scope never runs its step.
 - Revert checks (from the PR): the ownership driver as on main turns 2 int tests and 1 unit test red; a session-level
   tenant never put back turns 7 of 11 tenancy tests red; row security off on the tickets turns 5 red.
+- AC-010: `tenant-scope-ownership.driver.test.ts` builds the driver without a database and expects `holds` to reject for
+  a tenant actor and answer held for a platform actor. Revert check: a driver that falls back to reading the tree in
+  the caller's session when the database is missing turns that test red.
+- AC-011: `changeset status --since=origin/main` reports `@stackra/tenancy` (and the fixed group) as a minor.
 - Touched packages' tests, typecheck, oxlint and oxfmt.
 
 ## Rollout
 
-No flag. Patch changesets for `@stackra/tenancy` and `@stackra/workflow`. Members regenerate wiring on upgrade; until
-then the old wiring fails to type-check rather than running with a wrong answer.
+No flag. A minor changeset for `@stackra/tenancy` with the compatibility note (before and after, `stackra gen`, the
+`Database` binding, the stale-wiring behaviour) and a patch for `@stackra/workflow` (tests only); the fixed `@stackra/*`
+group makes the release a minor. Members regenerate wiring on upgrade; `stackra gen --check` reports stale wiring, and
+wiring shipped stale fails closed rather than running with a wrong answer.
 
 ## Delegation and risk plan
 
