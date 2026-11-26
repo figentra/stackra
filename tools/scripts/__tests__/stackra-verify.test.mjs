@@ -485,7 +485,7 @@ test("verify: the tested tree is unpacked again over /work and committed (the ga
   const check = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR });
   assert.match(
     check.at(-1),
-    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; planted\(\) \{[\s\S]*; exit 3; fi; rm -rf \.git; git init -q; git fetch -q --no-tags \/in\/history\.bundle .*; git update-ref HEAD "\$commit"; git reset -q; bash \/in\/gate\.sh$/,
+    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; pt=\$\(mktemp -d "\$\{TMPDIR:-\/tmp\}\/stackra-planted\.XXXXXX"\)\nplanted\(\) \{[\s\S]*; exit 3; fi\nrm -rf -- "\$pt"; rm -rf \.git; git init -q; git fetch -q --no-tags \/in\/history\.bundle .*; git update-ref HEAD "\$commit"; git reset -q; bash \/in\/gate\.sh$/,
   );
   const mobile = verifyArgs(S, {
     name: "v",
@@ -497,7 +497,7 @@ test("verify: the tested tree is unpacked again over /work and committed (the ga
   });
   assert.match(
     mobile.at(-1),
-    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; planted\(\) \{[\s\S]*; exit 3; fi; rm -rf \.git; git init -q; git add -A; .* commit -qm tested --no-verify; bash \/in\/mobile\.sh$/,
+    /^set -e; tar -xf \/in\/src\.tar -C \/work; cd \/work; pt=\$\(mktemp -d "\$\{TMPDIR:-\/tmp\}\/stackra-planted\.XXXXXX"\)\nplanted\(\) \{[\s\S]*; exit 3; fi\nrm -rf -- "\$pt"; rm -rf \.git; git init -q; git add -A; .* commit -qm tested --no-verify; bash \/in\/mobile\.sh$/,
   );
 });
 
@@ -2335,7 +2335,7 @@ function gateFixture(facts = PR_FACTS) {
   git("init", "-q");
   git("add", "-A");
   git("commit", "-qm", "fixture");
-  return { dir, work, input, bin };
+  return { dir, work, input, bin, git };
 }
 
 /** Runs the gate script in a fixture; `fail` is a shell glob of the stub call to fail. */
@@ -2480,8 +2480,16 @@ test(
       lint.calls("migration-lint").map((c) => c.call),
       STEP_CASES["migration-lint"].calls,
     );
-    // what main's gen writes in its own container is never what squawk reads: without the tree's SQL, nothing is linted
+    // compiled SQL the tree tracks but no longer has is stale: manifests-match-gen names it (proof 1, box 1)
     rmSync(join(fixture.work, "services/a/.stackra"), { recursive: true, force: true });
+    const stale = runGate(fixture, "__never__", gateScript, ["--step", "manifests-match-gen"]);
+    assert.equal(stale.status, 1, stale.stdout);
+    assert.match(stale.stdout, /services\/a\/\.stackra\/migrations\/0001\.up\.sql/);
+    assert.match(stale.stdout, /::error title=Stale manifests::commit the compiled migration SQL/);
+    // what main's gen writes in its own container is never what squawk reads: in a tree that has no compiled SQL
+    // (the removal committed, as every tested tree is), gen leaves nothing behind and nothing is linted
+    assert.equal(fixture.git("rm", "-rq", "--cached", "services/a/.stackra").status, 0);
+    assert.equal(fixture.git("commit", "-qm", "no compiled SQL").status, 0);
     const gen = runGate(fixture, "__never__", gateScript, ["--step", "manifests-match-gen"]);
     assert.equal(gen.status, 0, gen.stdout);
     const none = runGate(fixture, "__never__", gateScript, ["--step", "migration-lint"]);
@@ -6760,8 +6768,19 @@ test(
       "packages/a/node_modules/.bin/oxlint": "PR oxlint\n",
       "packages/new/node_modules/.bin/tsc": "PR tsc\n",
     });
-    const r = spawnSync(BASH, ["-c", judgeViewScript(root, tree)], { encoding: "utf8" });
-    assert.equal(r.status, 0, r.stderr);
+    // the knip (pr) view: every member with a node_modules is a lockfile importer; no dependency is locked here
+    const inDir = join(dir, "in");
+    putFiles(inDir, { importers: ".\npackages/a\npackages/new\n", "node-modules.tsv": "" });
+    const view = (...mode) =>
+      spawnSync(BASH, ["-c", judgeViewScript(root, tree, inDir), "judge-view.sh", ...mode], {
+        encoding: "utf8",
+      });
+    // a mode is required
+    const usage = view();
+    assert.equal(usage.status, 2, usage.stdout);
+    assert.match(usage.stdout, /usage: judge-view\.sh main\|pr/);
+    const r = view("pr");
+    assert.equal(r.status, 0, r.stdout + r.stderr);
     const read = (p) => readFileSync(join(tree, p), "utf8");
     assert.equal(read("packages/a/.stackra/vitest.config.mts"), "main gen a\n");
     // never main's compiled migrations: migration-lint reads only the SQL the tree itself has
@@ -6997,8 +7016,8 @@ function installFixture() {
   writeFileSync(
     join(dir, "node-modules.tsv"),
     nodeModulesPlan({
-      ".": { turbo: "2.11.9", "@stackra/a": "link:packages/a" },
-      "packages/a": { zod: "4.0.0" },
+      ".": { devDependencies: { turbo: "2.11.9", "@stackra/a": "link:packages/a" } },
+      "packages/a": { dependencies: { zod: "4.0.0", zod3: "zod@3.25.0" } },
     })
       .entries.map((line) => `${line}\n`)
       .join(""),
@@ -7007,6 +7026,7 @@ function installFixture() {
     putFiles(work, {
       "node_modules/.pnpm/turbo@2.11.9/node_modules/turbo/package.json": '{"where":"PR"}',
       "node_modules/.pnpm/zod@4.0.0/node_modules/zod/package.json": '{"where":"PR"}',
+      "node_modules/.pnpm/zod@3.25.0/node_modules/zod/package.json": '{"where":"PR"}',
       "node_modules/.pnpm/@turbo+darwin-64@2.11.9/node_modules/@turbo/darwin-64/package.json": "{}",
       "node_modules/.modules.yaml": "x\n",
       "node_modules/.bin/turbo": "#!/bin/sh\n",
@@ -7022,6 +7042,12 @@ function installFixture() {
       work,
       "packages/a/node_modules/zod",
       join(work, "node_modules/.pnpm/zod@4.0.0/node_modules/zod"),
+    );
+    // an npm: alias (typescript6 on main): the link carries the alias, the store directory the package's own name
+    linkAt(
+      work,
+      "packages/a/node_modules/zod3",
+      join(work, "node_modules/.pnpm/zod@3.25.0/node_modules/zod"),
     );
   };
   /** A fresh work directory: the tree unpacked over `setup(work)`; then prepare's check in it (bash). */
@@ -7094,6 +7120,19 @@ test("round 7 R6-H1: prepare accepts exactly what pnpm writes for the lockfile, 
           putFiles(w, { "node_modules/.pnpm/evil/node_modules/zod/node_modules/turbo/x": "" });
         },
         "node_modules/turbo (not a link to node_modules/.pnpm/<id>/node_modules/turbo)",
+      ],
+      [
+        "an alias linked to a store directory of its own name",
+        (w) => {
+          rmSync(join(w, "packages/a/node_modules/zod3"));
+          putFiles(w, { "node_modules/.pnpm/zod3@1.0.0/node_modules/zod3/index.js": "" });
+          linkAt(
+            w,
+            "packages/a/node_modules/zod3",
+            join(w, "node_modules/.pnpm/zod3@1.0.0/node_modules/zod3"),
+          );
+        },
+        "packages/a/node_modules/zod3 (not a link to node_modules/.pnpm/<id>/node_modules/zod)",
       ],
       [
         "a dependency the lockfile does not name",
@@ -7171,37 +7210,88 @@ test("round 7 R6-H1: prepare accepts exactly what pnpm writes for the lockfile, 
 test("round 7: the lockfile plan names each member's direct dependencies, registry or the member a link names", () => {
   assert.deepEqual(
     nodeModulesPlan({
-      ".": { turbo: "2.11.9(x@1)", "@stackra/a": "link:packages/a" },
-      "packages/b": { "@stackra/a": "link:../a", zod: "4.0.0" },
+      ".": {
+        dependencies: { turbo: "2.11.9(x@1)" },
+        devDependencies: { "@stackra/a": "link:packages/a" },
+      },
+      "packages/b": {
+        dependencies: { "@stackra/a": "link:../a" },
+        optionalDependencies: { zod: "4.0.0" },
+        devDependencies: { ts6: "typescript@6.0.3", "@x/y": "@scope/z@1.0.0(p@1)" },
+      },
     }),
     {
       importers: [".", "packages/b"],
       entries: [
         ".\t@stackra/a\tpackages/a",
-        ".\tturbo\tregistry",
+        ".\tturbo\tregistry\tturbo",
         "packages/b\t@stackra/a\tpackages/a",
-        "packages/b\tzod\tregistry",
+        "packages/b\t@x/y\tregistry\t@scope/z",
+        "packages/b\tts6\tregistry\ttypescript",
+        "packages/b\tzod\tregistry\tzod",
       ],
     },
   );
   assert.throws(
-    () => nodeModulesPlan({ "a\tb": {}, ".": { "x\ty": "1" } }),
+    () => nodeModulesPlan({ ".": { dependencies: { "x\ty": "1" } } }),
     /not a lockfile importer entry/,
   );
+  assert.throws(() => nodeModulesPlan({ "a\nb": {} }), /not a lockfile importer entry/);
   // round 8 (NIT): an importer and a workspace link stay inside the workspace, in normal form
   for (const dir of ["../x", "/abs", "packages/../x", "packages//a", "packages/a/"])
     assert.throws(
-      () => nodeModulesPlan({ [dir]: {}, ".": { y: "1" } }),
+      () => nodeModulesPlan({ [dir]: {}, ".": { dependencies: { y: "1" } } }),
       /not a workspace member directory/,
       dir,
     );
   assert.throws(
-    () => nodeModulesPlan({ "packages/a": { b: "link:../../../out" } }),
+    () => nodeModulesPlan({ "packages/a": { dependencies: { b: "link:../../../out" } } }),
     /a link outside the workspace/,
   );
-  assert.deepEqual(nodeModulesPlan({ "packages/a": { b: "link:../b" } }).entries, [
-    "packages/a\tb\tpackages/b",
-  ]);
+  assert.deepEqual(
+    nodeModulesPlan({ "packages/a": { dependencies: { b: "link:../b" } } }).entries,
+    ["packages/a\tb\tpackages/b"],
+  );
+  // lockfileGraph's shape only: a flat map, another section or a name two sections lock differently is refused
+  assert.throws(
+    () => nodeModulesPlan({ ".": { zod: "4.0.0" } }),
+    /not a lockfile importer section/,
+  );
+  assert.throws(
+    () =>
+      nodeModulesPlan({
+        ".": { dependencies: { zod: "4.0.0" }, devDependencies: { zod: "3.0.0" } },
+      }),
+    /locked twice, differently/,
+  );
+});
+
+test("proof B1: the plan reads lockfileGraph's importers from main's real lockfile, aliases and workspace links included", () => {
+  const graph = lockfileGraph(readFileSync(join(CODE_DIR, "pnpm-lock.yaml"), "utf8"));
+  assert.deepEqual(graph.problems, []);
+  const plan = nodeModulesPlan(graph.importers);
+  assert.deepEqual(plan.importers, Object.keys(graph.importers).toSorted());
+  assert.ok(plan.importers.includes("packages/developer/cli"));
+  const rows = plan.entries.map((line) => line.split("\t"));
+  for (const row of rows) {
+    assert.ok(row.length === 3 || (row.length === 4 && row[2] === "registry"), row.join(" "));
+    assert.ok(row[2] === "registry" || plan.importers.includes(row[2]), row.join(" "));
+  }
+  // every importer dependency of every section has its row
+  const count = Object.values(graph.importers).reduce(
+    (n, sections) =>
+      n + Object.values(sections).reduce((m, deps) => m + Object.keys(deps).length, 0),
+    0,
+  );
+  assert.equal(rows.length, count);
+  const row = (dir, name) => rows.find((r) => r[0] === dir && r[1] === name);
+  // the aliases main locks (box 1, proof 3): typescript6 -> typescript, uniwind -> uniwind-pro
+  const ts6 = rows.filter((r) => r[1] === "typescript6");
+  assert.ok(ts6.length > 0);
+  for (const r of ts6) assert.deepEqual(r.slice(2), ["registry", "typescript"]);
+  for (const { dir } of MOBILE_MEMBERS)
+    assert.deepEqual(row(dir, "uniwind")?.slice(2), ["registry", "uniwind-pro"], dir);
+  assert.deepEqual(row("apps/docs", "@stackra/cli")?.slice(2), ["packages/developer/cli"]);
 });
 
 /** The judge image's side of a view test: main's node_modules for the root and packages/a. */
