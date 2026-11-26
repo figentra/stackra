@@ -185,8 +185,8 @@ with a type the bucket does not take.
   and leave nothing under `uploads/` for it.
 - **AC-003**: IF a creation names an unknown, started, expired or resized upload THEN THE `TusHookController` SHALL make
   tusd reject it with 404, 409, 410 or 400.
-- **AC-004**: IF a hook call lacks the hook password, or the password is unset, THEN THE `TusHookController` SHALL
-  answer 401 and admit nothing.
+- **AC-004**: IF a hook call does not carry the hook password THEN THE `TusHookController` SHALL answer 401 and admit
+  nothing, also while the password is unset.
 - **AC-005**: WHEN an upload is admitted THE `TusHookController` SHALL make tusd store it under the server's id and media
   type whatever metadata the client sent.
 - **AC-006**: WHEN a tus upload still short of its size is claimed THE `MediaLibrary` SHALL refuse it as incomplete and

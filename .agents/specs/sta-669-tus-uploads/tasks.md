@@ -12,8 +12,8 @@ description: "Tasks for STA-669: resumable tus uploads into a media bucket"
 
 **Goal**: `MediaConfig` carries the tus settings and the hook secret; the record knows a tus upload.
 
-- [x] T001 Test first: the tus defaults, bounds and the `tus` driver name in `packages/data/media/src/core/constants/__tests__/media-config-schema.constant.test.ts` and `packages/data/media/src/core/schemas/__tests__/media-options.schema.test.ts` — covers: FR-005, FR-006 — route: tests
-- [x] T002 Add `resumableUploadEndpoint`, `tus`, `tusHookSecret` and the `tus` uploader in `packages/data/media/src/core/schemas/media-options.schema.ts`, `packages/data/media/src/core/constants/media-config-schema.constant.ts` and `packages/data/media/src/core/constants/media-uploaders.constant.ts` — covers: FR-005, FR-006 — route: package — deps: T001
+- [x] T001 Test first: the tus defaults, bounds and the `tus` driver name in `packages/data/media/src/core/constants/__tests__/media-config-schema.constant.test.ts` and `packages/data/media/src/core/schemas/__tests__/media-options.schema.test.ts` — covers: FR-005, FR-006, AC-001 — route: tests
+- [x] T002 Add `resumableUploadEndpoint`, `tus`, `tusHookSecret` and the `tus` uploader in `packages/data/media/src/core/schemas/media-options.schema.ts`, `packages/data/media/src/core/constants/media-config-schema.constant.ts` and `packages/data/media/src/core/constants/media-uploaders.constant.ts`, with the driver name type in `packages/data/media/src/core/types/media-driver-names.type.ts` and the protocol version in `packages/data/media/src/core/constants/tus-version.constant.ts` — covers: FR-005, FR-006, AC-001 — route: package — deps: T001
 
 ## Phase 2: User Story 2 - Only uploads the server opened can start (Priority: P1)
 
@@ -22,7 +22,7 @@ description: "Tasks for STA-669: resumable tus uploads into a media bucket"
 **Independent Test**: `MediaLibrary` over the memory disk.
 
 - [x] T003 [US2] Test first: createResumableUpload and admitResumableUpload in `packages/data/media/src/core/services/__tests__/media-library.service.test.ts` — covers: FR-001, FR-002, P-001, EC-01, EC-02, EC-03, AC-003 — route: tests — deps: T002
-- [x] T004 [US2] Add `createResumableUpload`, `admitResumableUpload` and the tus record in `packages/data/media/src/core/services/media-library.service.ts` with `packages/data/media/src/core/types/resumable-upload.type.ts` and `packages/data/media/src/core/types/admitted-upload.type.ts` — covers: FR-001, FR-002, P-001, AC-003 — route: package — deps: T003
+- [x] T004 [US2] Add `createResumableUpload`, `admitResumableUpload` and the tus record in `packages/data/media/src/core/services/media-library.service.ts` with `packages/data/media/src/core/types/resumable-upload.type.ts` and `packages/data/media/src/core/types/admitted-upload.type.ts`, the `started` reason in `packages/data/media/src/core/errors/upload-rejected.error.ts` and the exports in `packages/data/media/src/core/index.ts` — covers: FR-001, FR-002, P-001, P-006, AC-003 — route: package — deps: T003
 
 ## Phase 3: User Story 3 - The hook endpoint answers only tusd (Priority: P1)
 
@@ -31,12 +31,12 @@ description: "Tasks for STA-669: resumable tus uploads into a media bucket"
 
 ## Phase 4: User Story 1 - A large upload survives a dropped connection (Priority: P1)
 
-- [x] T007 [US1] Test first: ask, start, chunks, resume, retries and refusals in `packages/data/media/src/core/drivers/__tests__/tus-uploader.driver.test.ts`, and the action in `packages/data/media/src/node/actions/__tests__/create-resumable-upload.action.test.ts` — covers: FR-005, FR-006, FR-008, P-004, EC-05, AC-001 — route: tests — deps: T004
-- [x] T008 [US1] Add `TusUploaderDriver` in `packages/data/media/src/core/drivers/tus-uploader.driver.ts`, `CreateResumableUploadAction` in `packages/data/media/src/node/actions/create-resumable-upload.action.ts` with its output and permission, export them, and run `stackra gen` for `packages/data/media/stackra.manifest.json` — covers: FR-005, FR-006, FR-008, P-004, AC-001 — route: package — deps: T007
+- [x] T007 [US1] Test first: ask, start, chunks, resume, retries and refusals in `packages/data/media/src/core/drivers/__tests__/tus-uploader.driver.test.ts`, and the action in `packages/data/media/src/node/actions/__tests__/create-resumable-upload.action.test.ts` — covers: FR-005, FR-006, FR-008, P-004, P-007, P-008, EC-05, AC-001 — route: tests — deps: T004
+- [x] T008 [US1] Add `TusUploaderDriver` in `packages/data/media/src/core/drivers/tus-uploader.driver.ts`, `CreateResumableUploadAction` in `packages/data/media/src/node/actions/create-resumable-upload.action.ts` with its output in `packages/data/media/src/node/schemas/create-resumable-upload-output.schema.ts` and `packages/data/media/src/node/constants/create-resumable-upload-output-schema.constant.ts`, its permission in `packages/data/media/src/node/access/upload.permissions.ts`, the exports in `packages/data/media/src/node/index.ts`, and run `stackra gen` for `packages/data/media/stackra.manifest.json` — covers: FR-005, FR-006, FR-008, P-004, P-007, P-008, AC-001 — route: package — deps: T007
 
 ## Phase 5: User Story 4 - A claim does not destroy an upload still arriving (Priority: P2)
 
-- [x] T009 [US4] Test and implement the tus-aware claim (recorded type, short upload kept, larger refused, `.info` dropped) in `packages/data/media/src/core/services/__tests__/media-library.service.test.ts` and `packages/data/media/src/core/services/media-library.service.ts` — covers: FR-007, P-005, EC-08, AC-002, AC-006 — route: package — deps: T004
+- [x] T009 [US4] Test and implement the tus-aware claim (recorded type, short upload kept, larger refused, tusd's info file dropped) in `packages/data/media/src/core/services/__tests__/media-library.service.test.ts` and `packages/data/media/src/core/services/media-library.service.ts` — covers: FR-007, P-005, EC-08, AC-002, AC-006 — route: package — deps: T004
 
 ## Phase 6: Proof and polish
 

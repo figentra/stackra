@@ -55,6 +55,9 @@ a short upload kept, tusd's `.info` dropped.
 - **P-003**: for every hook call, admission happens only when the basic password equals a non-empty secret — Validates: FR-003
 - **P-004**: for every failed `PATCH`, the next `PATCH` starts at the offset tusd reported, never at a guessed one — Validates: FR-006
 - **P-005**: a claim never deletes a tus upload still short of its recorded size — Validates: FR-007
+- **P-006**: for every created tus upload, its record holds the bucket, media type, size and expiry the creation checked and `started: false` before any byte moves — Validates: FR-001
+- **P-007**: for every file, the uploader's `PATCH`es carry at most `tus.chunkBytes` each, in offset order, and the creation `POST` is sent once — Validates: FR-005
+- **P-008**: for every call of `media.upload.create_resumable@1`, an upload is recorded only into a registered bucket that takes its media type and size — Validates: FR-008
 
 ## Architecture overview
 
@@ -87,6 +90,7 @@ packages/data/media/
 ├── vitest.int.config.ts
 └── src/
     ├── core/
+    │   ├── index.ts
     │   ├── constants/{media-config-schema,media-uploaders,tus-version}.constant.ts
     │   ├── drivers/tus-uploader.driver.ts
     │   ├── errors/upload-rejected.error.ts
@@ -94,6 +98,7 @@ packages/data/media/
     │   ├── services/media-library.service.ts
     │   └── types/{admitted-upload,resumable-upload,media-driver-names}.type.ts
     └── node/
+        ├── index.ts
         ├── access/upload.permissions.ts
         ├── actions/create-resumable-upload.action.ts
         ├── constants/create-resumable-upload-output-schema.constant.ts
