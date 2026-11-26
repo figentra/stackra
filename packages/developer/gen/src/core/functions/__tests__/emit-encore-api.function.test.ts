@@ -5,7 +5,9 @@
  *          path, typed by its input and output schemas, answered by the `answerCall` helper (`api.raw`, `auth: false` to Encore, the pipeline run with the
  *          verified actor); only an anonymous entry opens to a call with no credential; a controller is a raw `*`
  *          endpoint; an entry with no endpoint gets no adapter, nor a hosted entry unless the host imports its package's root
- *          module, when its actions and controllers get the same adapters; a package, an app and a service with no such entry get no file.
+ *          module, when its actions and controllers get the same adapters; a service that receives webhooks gets two
+ *          adapters per Integration path (own and hosted) around `InboundWebhooksController`, anonymous and reading no
+ *          credential, even with no action of its own (STA-1955); a package, an app and a service with no such entry get no file.
  * Boundary: test only; runs on the commerce IR fixture and the manifest `buildManifest` derives from it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 21); ADR 0098; STA-2025; STA-2063 (FR-002 to
@@ -19,6 +21,7 @@ import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
+import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
 /** The entry import of a generated stackra-encore/<service>/ file; a constant so validate does not read it as this test's own import. */
@@ -54,6 +57,24 @@ function shape(name: string, module: string, stem: string): ShapeIR {
     fields: [],
     relations: [],
   };
+}
+
+/** The two webhook adapters' shared text: `name` on `path`, for `who`'s deliveries to `integration` (STA-1955). */
+function webhookAdapter(name: string, path: string, integration: string, who: string): string {
+  return [
+    `/** ${path}: ${who} webhooks of ${integration}, received raw by InboundWebhooksController. */`,
+    `export const ${name} = api.raw(`,
+    `  { method: "*", path: "${path}", expose: true, auth: false },`,
+    "  (req, resp) =>",
+    "    answerCall(req, resp, {",
+    `      path: "${path}",`,
+    "      anonymous: true,",
+    "      raw: true,",
+    '      credentials: "ignore",',
+    "      execute: (container, _input, _actor, request) => container.get(InboundWebhooksController).handle(request),",
+    "    }),",
+    ");",
+  ].join("\n");
 }
 
 describe(emitEncoreApi, () => {
@@ -235,6 +256,85 @@ describe(emitEncoreApi, () => {
     expect(content.match(/^ {6}action: \w+,$/gm)).toHaveLength(
       content.match(/new ActionPipeline\(/g)?.length ?? -1,
     );
+  });
+
+  describe("the inbound webhook route (STA-1955)", () => {
+    // BILLING_IR's StripeIntegration declares `webhooks`; a hosted package adds Resend's.
+    const hosting: MemberIR = {
+      ...BILLING_IR,
+      dependencies: [
+        ...BILLING_IR.dependencies,
+        {
+          package: "@stackra/messages",
+          manifest: {
+            member: "messages",
+            package: "@stackra/messages",
+            version: "0.1.0",
+            integrations: [
+              {
+                key: "messages.resend",
+                class: "ResendIntegration",
+                file: "src/node/integrations/resend.integration.ts",
+                webhookPath: "/webhooks/messages/resend/:connectionId",
+              },
+            ],
+          },
+        },
+      ],
+    };
+    // No action, query or controller of its own: the webhook route alone writes the file.
+    const text =
+      emitEncoreApi(hosting, { ...buildManifest(hosting).manifest, actions: [] })?.content ?? "";
+
+    it("writes two raw adapters per webhook Integration, own and hosted, around the generated controller", () => {
+      expect(text).toContain('import { InboundWebhooksController } from "#stackra/webhooks";');
+      expect(text).toContain('import { answerCall } from "./http";');
+      for (const [name, path, integration, who] of [
+        [
+          "webhooksBillingStripe",
+          "/webhooks/billing/stripe",
+          "StripeIntegration",
+          "the platform account's",
+        ],
+        [
+          "webhooksBillingStripeByConnection",
+          "/webhooks/billing/stripe/:connectionId",
+          "StripeIntegration",
+          "a connection's",
+        ],
+        [
+          "webhooksMessagesResend",
+          "/webhooks/messages/resend",
+          "ResendIntegration",
+          "the platform account's",
+        ],
+        [
+          "webhooksMessagesResendByConnection",
+          "/webhooks/messages/resend/:connectionId",
+          "ResendIntegration",
+          "a connection's",
+        ],
+      ] as const)
+        expect(text).toContain(webhookAdapter(name, path, integration, who));
+      expect(text.match(/= api\.raw\(/g)).toHaveLength(4);
+    });
+
+    it("never writes one wildcard route per service, which a second service would clash with", () => {
+      expect(text).not.toContain("/webhooks/*");
+      expect(text).not.toContain("*rest");
+    });
+
+    it("writes nothing for a service that receives no webhook", () => {
+      const quiet: MemberIR = {
+        ...hosting,
+        classes: hosting.classes.filter((declared) => declared.kind !== "integration"),
+        dependencies: BILLING_IR.dependencies,
+      };
+      expect(
+        emitEncoreApi(quiet, { ...buildManifest(quiet).manifest, actions: [] }),
+      ).toBeUndefined();
+      expect(content).not.toContain("InboundWebhooksController");
+    });
   });
 
   it("writes none for a package, an app or a service with no endpoint", () => {

@@ -10,7 +10,13 @@
  *          .handle(request)` (a controller). The endpoint is named by the camel-cased key and its version (`shop.order
  *          .cancel@1` is `shopOrderCancelV1`), a controller by its class name. A hosted package's actions, queries and
  *          controllers get the same adapters, imported from the entry its manifest's `services` names, when the host
- *          imports its root module (the manifest names the module's file), as the wiring binds them. An action or
+ *          imports its root module (the manifest names the module's file), as the wiring binds them. A service that
+ *          receives provider webhooks (`webhookIntegrations`) gets two adapters per Integration around the generated
+ *          `InboundWebhooksController` (`#stackra/webhooks`): `/webhooks/<module>/<name>` and
+ *          `/webhooks/<module>/<name>/:connectionId`, any method, anonymous and `credentials: "ignore"` (the provider's
+ *          `Authorization` is its signature, which the receiver verifies), named `webhooks<Module><Name>` and
+ *          `webhooks<Module><Name>ByConnection`. Never one `/webhooks/*rest` per service: two services of one app that
+ *          receive webhooks would claim the same Encore route. An action or
  *          query endpoint names its class to the helper as `action`, so `serveGuardedCall` knows whether a forwarded user token may travel a
  *          second hop through it (ADR 0209, amendment of 2026-11-07).
  * Boundary: pure; reads the manifest's actions and the member's classes. The actor comes only from the verified
@@ -27,7 +33,8 @@
  * Governing contract: ADR 0091 (decision 2) and 0124 (Encore is generated); ADR 0237 (STA-2577 note: every generated
  *                     adapter is raw, so the edge signature covers the body); ADR 0294 (decision 21: the derived
  *                     endpoint); ADR 0098 (the actor from the credential); ADR 0295 (decision 8: the adapters reach the
- *                     member through `handlers`); STA-2025 (the anonymous opt-in); STA-2063; STA-2577.
+ *                     member through `handlers`); STA-2025 (the anonymous opt-in); STA-2063; STA-2577; ADR 0308
+ *                     (rules 15 and 16) and ADR 0224 as amended (the inbound webhook route, raw body); STA-1955.
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
@@ -39,6 +46,7 @@ import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { ownClass } from "#core/functions/own-class.function";
 import { shapeOfRef } from "#core/functions/shape-of-ref.function";
+import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -50,7 +58,8 @@ type Entry = Readonly<Record<string, unknown>>;
 const RESERVED = ["ActionPipeline", "answerCall", "api", "app", "requestCallOptions"];
 
 /**
- * The Encore endpoints of a service, or undefined when it has no own action or query with an endpoint.
+ * The Encore endpoints of a service, or undefined when it has no action, query or controller with an endpoint and
+ * receives no webhook.
  *
  * @param ir - the member read by discovery.
  * @param manifest - the manifest built from `ir`, whose entries carry the derived endpoints.
@@ -173,6 +182,35 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       ");",
       "",
     );
+  }
+  // The inbound webhook route (ADR 0308 rule 16): one endpoint per Integration path, with and without the connection
+  // segment, so two services of one app never claim the same Encore route. The provider's `Authorization` header is its
+  // own signature (Tamara's JWT), so the call reads no credential; the receiver verifies before anything is parsed.
+  const integrations = webhookIntegrations(ir);
+  if (integrations.length > 0) {
+    const inbound = ref({ name: "InboundWebhooksController", from: "#stackra/webhooks" }, false);
+    for (const { route, integration } of integrations) {
+      const words = ["webhooks", ...route.split("/")].join(" ");
+      for (const [path, name, who] of [
+        [`/webhooks/${route}`, camelCase(words), "the platform account's"],
+        [`/webhooks/${route}/:connectionId`, camelCase(`${words} by connection`), "a connection's"],
+      ] as const)
+        body.push(
+          `/** ${path}: ${who} webhooks of ${integration.name}, received raw by InboundWebhooksController. */`,
+          `export const ${name} = api.raw(`,
+          `  { method: "*", path: ${JSON.stringify(path)}, expose: true, auth: false },`,
+          "  (req, resp) =>",
+          "    answerCall(req, resp, {",
+          `      path: ${JSON.stringify(path)},`,
+          "      anonymous: true,",
+          "      raw: true,",
+          '      credentials: "ignore",',
+          `      execute: (container, _input, _actor, request) => container.get(${inbound}).handle(request),`,
+          "    }),",
+          ");",
+          "",
+        );
+    }
   }
   if (body.length === 0) return undefined;
 

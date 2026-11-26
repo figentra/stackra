@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `GuardedCallOptions`, what `serveGuardedCall` needs to answer one inbound HTTP call: the request (body
  *          unread), the body cap, the route template, whether the call lists the anonymous actor, the action it runs,
- *          whether it is raw,
+ *          whether it is raw, whether it reads no credential (`credentials: "ignore"`, an inbound webhook),
  *          and the three seams the generated adapter fills (`guard`, `authenticate`, `execute`).
  * Boundary: a type only. The seams are functions, so the library depends on neither `@stackra/actions` nor Encore.
  * Runtime: node
@@ -42,6 +42,14 @@ export interface GuardedCallOptions {
 
   /** True for a hand-written controller: the body is not parsed and `execute` answers a `Response` itself. */
   readonly raw?: boolean;
+
+  /**
+   * `"ignore"` for a call that reads no credential, stated by the adapter: an inbound provider webhook, whose
+   * `Authorization` header is the provider's own signature (Tamara's JWT), never a Stackra token. Nothing is verified
+   * or held, the call runs as the anonymous actor (with `anonymous`), and the header still reaches `execute`. An action
+   * states the same with its own `credentials: "ignore"` option.
+   */
+  readonly credentials?: "ignore" | undefined;
 
   /** Runs every request guard on the request carrying the exact body bytes (`app.handlers.guard`). */
   readonly guard: (request: Request) => Promise<void>;

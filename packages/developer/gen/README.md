@@ -685,7 +685,8 @@ filters, entries, sections, fields, steps; not relations or actions), for the ca
 ## Call options from a request (design, ADR 0472)
 
 A service gets `.stackra/encore/<member>/encore.service.ts` (`export default new Service("<member>")`, so the folder
-is one Encore service) and, when it has an own action or query with an endpoint, `.stackra/encore/<member>/api.ts`:
+is one Encore service) and, when it has an own action or query with an endpoint, a controller or a webhook
+Integration, `.stackra/encore/<member>/api.ts`:
 one `api.raw()` per such manifest entry (and one per own `Controller`, method `*`, its `path`), named by its
 camel-cased key and version (`shop.order.cancel@1` is `shopOrderCancelV1`), with the entry's derived `method` and
 `path`, `expose: true` and `auth: false` to Encore (STA-2577). Every adapter is raw and calls the one helper,
@@ -700,7 +701,13 @@ string for GET and DELETE, then the path parameters, which win); the call runs a
 .execute(<class>, input, { actor })`, which validates the input. A guard or authentication failure is one generic 401 or
 403 (`request_refused`) naming no check; a refusal of the call is its kind's status with its envelope; a rate limit is
 429 through `answerHttp`. A controller skips input parsing, runs `container.get(<class>).handle(request)` and is
-reachable without a credential (it is raw: its own login or callback logic), behind the same guards. No adapter is
+reachable without a credential (it is raw: its own login or callback logic), behind the same guards. A service that
+receives provider webhooks (an own or hosted Integration with `webhooks`) gets two adapters per Integration around the
+generated `InboundWebhooksController` (`#stackra/webhooks`): `/webhooks/<module>/<name>` (the platform account) and
+`/webhooks/<module>/<name>/:connectionId`, method `*`, named `webhooks<Module><Name>` and
+`webhooks<Module><Name>ByConnection`; each states `credentials: "ignore"`, so a provider's own `Authorization` header
+(Tamara's JWT) reaches the receiver unverified by `CallAuthenticator` and the call runs anonymous (STA-1955). There is no
+`/webhooks/*rest` route per service, which two services of one app would both claim. No adapter is
 written for an entry with no endpoint or a hosted package's entry (its manifest does not name the files of its schemas,
 the limit `registerActions` has). The manifest build refuses a route whose path parameter is no field of the input
 (`endpoint_param_unbound`), such as `x.get` with no `xId`. No `auth.ts` or `Gateway` is written: no endpoint uses

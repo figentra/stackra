@@ -4,7 +4,8 @@
  *          handle)`, which every generated raw endpoint answers through, and `answerCall(req, resp, call)`, the bridge
  *          of every action, query and controller endpoint: Node's request becomes a Fetch `Request` with a streamed
  *          body, `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes`, runs the guards
- *          over the exact bytes, authenticates through `CallAuthenticator` and runs the call, and the answer is written
+ *          over the exact bytes, authenticates through `CallAuthenticator` (unless the endpoint states `credentials: "ignore"`, an inbound
+ *          webhook) and runs the call, and the answer is written
  *          to the `ServerResponse` (STA-2577), its body piped as it is produced, so a server-sent-events answer streams. It answers an `OPTIONS` preflight with 204
  *          and `corsHeaders(request, CorsConfig)`, and adds the same CORS headers to every other answer, with
  *          `Cache-Control: private, no-store` where `apiCacheControl` forces it (ADR 0325 rule 22), inside
@@ -113,13 +114,17 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  });",
       "}",
       "",
-      "/** What an endpoint states: its route, whether anonymous callers may reach it, its action, and the call it runs. */",
+      "/**",
+      " * What an endpoint states: its route, whether anonymous callers may reach it, its action, whether it is raw, whether",
+      ' * it reads no credential (`credentials: "ignore"`, an inbound webhook), and the call it runs.',
+      " */",
       "interface Call {",
       "  path: string;",
       "  anonymous: boolean;",
       "  action?: AnyClass;",
       "  input?: AnyClass;",
       "  raw?: boolean;",
+      '  credentials?: "ignore";',
       "  execute: (",
       "    container: Container,",
       "    input: unknown,",
@@ -151,6 +156,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "      action: call.action,",
       "      input: call.input,",
       "      raw: call.raw === true,",
+      "      credentials: call.credentials,",
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",

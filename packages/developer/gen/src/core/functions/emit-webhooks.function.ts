@@ -7,7 +7,8 @@
  *          `?hmac=`, Tamara sends `?tamaraToken=`).
  * Boundary: pure. Written only for a service with an Integration that declares `webhooks` (its own or a hosted
  *           package's). The receiver verifies before anything is parsed; an unknown path answers 404 and a received
- *           event 202. The wiring binds the controller; the raw Encore adapter around it is the Encore target's.
+ *           event 202. The wiring binds the controller; `emitEncoreApi` writes its raw Encore adapters, one
+ *           per Integration path (STA-1955).
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 15 and 16); ADR 0224 as amended (one inbound route, raw body); ADR 0294
  *                     (decision 16: a raw endpoint is a Controller).

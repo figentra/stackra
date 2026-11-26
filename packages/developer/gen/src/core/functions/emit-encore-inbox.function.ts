@@ -6,8 +6,9 @@
  *          `InboundEventsController#handle`'s status.
  * Boundary: pure. Written only when `emitInbox` writes the route (a service with a listener of a contract-only
  *           producer's event). The signature is the authentication (ADR 0511 decision 18), so the endpoint is
- *           `auth: false`; the body is passed on as bytes, never parsed here. This is the inbox's adapter only: the
- *           general adapter of a service's raw controllers is STA-1955.
+ *           `auth: false`; the body is passed on as bytes, never parsed here. This is the inbox's adapter only: a service's
+ *           raw controllers and its webhook route are `emitEncoreApi`'s (STA-1955); the inbox keeps this adapter, with its 1 MiB
+ *           cap and outside the request guards.
  * Runtime: isomorphic
  * Governing contract: ADR 0511 (amendment of 2026-11-02, decision 18); ADR 0091 and 0124 (Encore is generated); ADR
  *                     0295 (decision 8: the adapters reach the member through `handlers`); STA-1910.

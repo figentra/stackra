@@ -9,7 +9,8 @@
  *          say which check failed. Through the adapter, a call forwards a user's token only as ADR 0209's amendment
  *          allows: a user's bearer on a first hop, a service's forwarded token only into an action that declares
  *          `onBehalfOf: { secondHop: true }`, never through a controller, never anything into an action that declares
- *          `credentials: "ignore"` (which runs anonymous, its credential never verified), and the holder is empty once
+ *          `credentials: "ignore"` or into a raw call its adapter states it for (an inbound webhook, whose
+ *          bearer reaches the controller unverified), both of which run anonymous, and the holder is empty once
  *          the call returned or threw. An API key's call options and the `Origin` header reach the call; a token's
  *          call gets none. An anonymous call acts in the tenant the edge signed (its visitor id kept), and in none
  *          without a signed one; a credential's tenant wins, and a token or API key for another tenant than the signed
@@ -657,6 +658,45 @@ describe("serveGuardedCall forwarding a caller's token (ADR 0209)", () => {
       expect(actor.kind).toBe(ActorKind.Anonymous);
       expect(token).toBeUndefined();
     }
+  });
+
+  it('never verifies a raw call its adapter states credentials: "ignore" for, and hands the header on', async () => {
+    const authenticate = vi.fn(async () => ({ actor: customer }));
+    const seen: [Actor, string | null, string | undefined][] = [];
+    // A provider webhook signs with its own bearer (Tamara's JWT): the controller verifies it; it is no credential.
+    const serve = (headers: Record<string, string>) =>
+      serveGuardedCall({
+        request: new Request("https://api.example.test/webhooks/payments/tamara/con_1", {
+          method: "POST",
+          headers,
+          body: '{"event":"order_approved"}',
+        }),
+        path: "/webhooks/payments/tamara/:connectionId",
+        maxBodyBytes: 1024,
+        anonymous: true,
+        raw: true,
+        credentials: "ignore",
+        guard: async () => {},
+        authenticate,
+        execute: async (_input, actor, request) => {
+          seen.push([
+            actor,
+            request.headers.get("authorization"),
+            ON_BEHALF_OF_TOKEN.getStore()?.(),
+          ]);
+          return new Response(null, { status: 202 });
+        },
+      });
+    for (const headers of [{ authorization: "Bearer provider.jwt.signature" }, serviceCall, {}])
+      expect((await serve(headers)).status).toBe(202);
+    expect(authenticate).not.toHaveBeenCalled();
+    expect(seen.map(([actor]) => actor.kind)).toStrictEqual([
+      ActorKind.Anonymous,
+      ActorKind.Anonymous,
+      ActorKind.Anonymous,
+    ]);
+    expect(seen[0]?.[1]).toBe("Bearer provider.jwt.signature");
+    for (const [, , token] of seen) expect(token).toBeUndefined();
   });
 
   it("answers a stream action as server-sent events, holding the token until the stream ends", async () => {
