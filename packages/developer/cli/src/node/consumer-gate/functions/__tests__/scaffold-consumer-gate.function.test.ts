@@ -46,6 +46,7 @@ const SCAFFOLD = [
   '    pinned: "2026-11-20"',
   "    service: gate-example",
   "    fixture: tools/consumer-gate/scaffold-fixture",
+  '    dependencies: { "@stackra/actions": "catalog:stackra" }',
   "    services: [example, gate-example]",
 ].join("\n");
 
@@ -71,6 +72,9 @@ describe("loadConsumerGateMatrix on scaffold entries and pin dates", () => {
     );
     expect(load(`${SCAFFOLD}\n    overlays: [tenancy]`)).toThrow(/takes no overlays/);
     expect(load(`${SCAFFOLD}\n    mode: link`)).toThrow(/its mode is pack/);
+    expect(load(SCAFFOLD.replace('"catalog:stackra"', "1"))).toThrow(
+      /map a package name to a spec/,
+    );
   });
 
   it("refuses a pinned date that is not YYYY-MM-DD", () => {
@@ -179,7 +183,11 @@ function fakeCli(calls: Call[], failCreate = false): ConsumerGateDeps["exec"] {
     } else if (command === "new") {
       write(
         join(cwd, "services/gate-example/package.json"),
-        '{"name":"@consumer-gate/gate-example","scripts":{"test:int":"x"}}',
+        JSON.stringify({
+          name: "@consumer-gate/gate-example",
+          scripts: { "test:int": "x" },
+          dependencies: { "@stackra/database": "catalog:stackra" },
+        }),
       );
     }
     writeFileSync(logFile, argv[1] === "--version" ? "12.16.1\n" : "fine\n");
@@ -221,6 +229,15 @@ describe("runConsumerGate on a scaffold", () => {
         "utf8",
       ),
     ).toBe("export const a = 1;\n");
+    // The fixture's imports are added to the service as `pnpm add` would, beside what `new service` declared.
+    expect(
+      JSON.parse(readFileSync(join(root, "services/gate-example/package.json"), "utf8")),
+    ).toMatchObject({
+      dependencies: {
+        "@stackra/database": "catalog:stackra",
+        "@stackra/actions": "catalog:stackra",
+      },
+    });
     // Packed before the app is made, since create reads the tarball folder.
     const packed = calls.findIndex((call) => call.argv[1] === "pack");
     expect(packed).toBeGreaterThanOrEqual(0);

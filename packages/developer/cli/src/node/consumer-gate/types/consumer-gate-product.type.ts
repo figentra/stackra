@@ -29,6 +29,12 @@ export type ConsumerGateProduct = {
   /** The service a scaffold adds with `stackra new service <name> --data`, the fixture copied into it. */
   readonly service?: string;
 
+  /**
+   * Packages a scaffold's fixture imports beyond what `stackra new service --data` declares, by name and spec: added
+   * to that service's `package.json` dependencies, as a user's `pnpm add` would.
+   */
+  readonly dependencies?: Readonly<Record<string, string>>;
+
   /** The repository, `owner/name`: the product, or a scaffold's starter template. */
   readonly repo?: string;
 

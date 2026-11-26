@@ -4,7 +4,7 @@
  *          tree's own built CLI: `stackra create <root> --starter <checkout> --tarballs <tarballs>` (files only: no
  *          doctor, install or git; the `@stackra/*` packages resolve to the packed tarballs through `overrides:`), then
  *          `stackra new service <service> --area app --data` in it, then the matrix `fixture` folder copied into that
- *          service. Resolves with one step result each for `scaffold/create` and `scaffold/service`; a failed create
+ *          service and the matrix `dependencies` added to its `package.json` (what a user's `pnpm add` does). Resolves with one step result each for `scaffold/create` and `scaffold/service`; a failed create
  *          skips the service. A dry run plans both and runs neither.
  * Boundary: writes only `root` (under `--out`); reads the starter checkout, the tarball folder and the fixture; runs
  *           the CLI through `deps.exec` with node, never through a shell. A scaffold failure is core's own (its create
@@ -13,7 +13,7 @@
  * Governing contract: ADR 0500 (decision 3); ADR 0515 (decision 3: `create --starter`, `--tarballs`); STA-1813
  *                     (FR-013); STA-2705.
  */
-import { cpSync, existsSync, readFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 import { CONSUMER_GATE_SCAFFOLD } from "#node/consumer-gate/constants/consumer-gate-scaffold.constant";
@@ -126,6 +126,14 @@ export function scaffoldConsumerApp(
     cpSync(resolve(core, spec.fixture as string), join(root, "services", service), {
       recursive: true,
     });
+    if (spec.dependencies !== undefined) {
+      const file = join(root, "services", service, "package.json");
+      const manifest = JSON.parse(readFileSync(file, "utf8")) as {
+        dependencies?: Record<string, string>;
+      };
+      manifest.dependencies = { ...manifest.dependencies, ...spec.dependencies };
+      writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
+    }
   }
   return results;
 }

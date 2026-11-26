@@ -4,7 +4,8 @@
  *          `ref` (one commit) and `pins` (a commit per service, covering every service), a non-empty `services`
  *          list, optional `overlays`, optional known `steps` and an optional `pinned` date (`YYYY-MM-DD`). A
  *          `kind: scaffold` entry has `repo` and `ref` (the starter template), a `fixture` folder, the `service` the
- *          fixture goes into (listed in `services`), no `pins`, no `overlays` and no `mode` but `pack`.
+ *          fixture goes into (listed in `services`), optional `dependencies` (name to spec strings), no `pins`, no
+ *          `overlays` and no `mode` but `pack`.
  * Boundary: pure; throws an `Error` naming the product on a bad shape.
  * Runtime: node
  * Governing contract: ADR 0500 (decision 3); STA-1813; STA-2705.
@@ -33,6 +34,15 @@ function checkScaffold(name: string, product: ConsumerGateProduct): void {
     throw new Error(
       `matrix: ${name} (scaffold) needs the service it adds for the fixture, listed in services`,
     );
+  }
+  const dependencies: unknown = product.dependencies;
+  if (
+    dependencies !== undefined &&
+    (typeof dependencies !== "object" ||
+      dependencies === null ||
+      !Object.values(dependencies).every((spec) => typeof spec === "string"))
+  ) {
+    throw new Error(`matrix: ${name} (scaffold) dependencies map a package name to a spec`);
   }
   if ((product.overlays?.length ?? 0) > 0) {
     throw new Error(
