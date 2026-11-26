@@ -3,13 +3,15 @@
  * Purpose: `CLOUDFLARE_WORKERS_SETTINGS_SCHEMA`, the `targets.cloudflare-workers` block the `cloudflare-workers`
  *          provider reads: each Worker member by key, with its folder, the deploy kind it ships under, the placeholder
  *          binding ids it swaps for real ones, its D1 databases, its plain vars and secrets (names), its smoke checks (an HTTPS URL, with a bearer read from a variable); a secret may read its value
- *          from another variable.
+ *          from another variable. `versionProof` says how its smoke proves the version that answered (STA-2786):
+ *          the `x-stackra-version` header on every answer (the default) or the `/-/version` route.
  *          A member also names a `preset`, may override any operational Worker setting (`WORKER_SETTINGS_SCHEMA`) and
  *          override it again per environment (`environments`);
  *          the target reads `compatibilityDate` and `defaults` (ADR 0519). Other keys (the old `workflows`) pass through.
  * Boundary: internal; names only. Values (ids, vars, secrets) come from the deploy job's environment, never runway.yaml.
  * Runtime: isomorphic
- * Governing contract: ADR 0352 (decision 1), ADR 0284 (Workers members), ADR 0173 (names in git, values never), ADR 0519; STA-1988.
+ * Governing contract: ADR 0352 (decision 1), ADR 0284 (Workers members), ADR 0173 (names in git, values never), ADR 0519; STA-1988;
+ *                     STA-2786.
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -20,6 +22,7 @@ import { WORKER_SETTINGS_SCHEMA } from "#core/constants/worker-settings-schema.c
 import { SECRET_NAMES_SCHEMA } from "#core/constants/secret-names-schema.constant";
 import { DeployKind } from "#core/enums/deploy-kind.enum";
 import { WorkerPreset } from "#core/enums/worker-preset.enum";
+import { WorkerVersionProof } from "#core/enums/worker-version-proof.enum";
 
 /** A folder below the repository root: relative, with no `..` segment. */
 const MEMBER_PATH_SCHEMA = z
@@ -59,6 +62,10 @@ const MEMBER_SCHEMA = WORKER_SETTINGS_SCHEMA.extend({
     ])
     .default({}),
   smoke: z.array(SMOKE_SCHEMA).default([]),
+  // How the smoke proves which version answered; every deploy step asserts it is the version under test.
+  versionProof: z
+    .enum(Enum.values(WorkerVersionProof) as [WorkerVersionProof, ...WorkerVersionProof[]])
+    .default(WorkerVersionProof.Header),
 });
 
 /** The schema of a runway's `targets.cloudflare-workers` block. */

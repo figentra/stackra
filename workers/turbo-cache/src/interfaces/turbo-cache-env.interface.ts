@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the Worker's environment: the R2 binding, the bearer-token secret and the four settings, all as strings
- *          the way wrangler hands `vars` and secrets in.
+ *          the way wrangler hands `vars` and secrets in, and the version metadata binding.
  * Boundary: types only; read-settings.ts turns the strings into `TurboCacheSettings`.
  * Runtime: worker
  * Governing contract: ADR 0026 (decisions 1 and 2); ADR 0009 (secrets).
@@ -22,4 +22,6 @@ export interface TurboCacheEnv {
   readonly TURBO_CACHE_TTL_SECONDS?: string | undefined;
   /** Most hashes one `POST /v8/artifacts` query may ask about. */
   readonly TURBO_CACHE_MAX_QUERY_HASHES?: string | undefined;
+  /** The version metadata binding: the id of the Worker version that runs (the deploy smoke's proof, STA-2786). */
+  readonly CF_VERSION_METADATA?: { readonly id: string };
 }
