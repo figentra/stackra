@@ -17,9 +17,11 @@ and turns a member's `stackra.config.ts` plus the options gen writes into one Vi
 **Tier:** `tier:lib` (`packages/developer/vite-plugin`). One entry, `.`, which runs in Node inside a Vite build.
 Depends on `@stackra/gen` (the class-component pass), `@stackra/runway` (the dev server type), `@stackra/i18n` (the
 locales of the pages), `@stackra/contracts`, and the framework plugins it wires: `@vitejs/plugin-react`,
-`@tailwindcss/vite`, `@react-router/dev`, `@cloudflare/vite-plugin` and `@sentry/vite-plugin`. `vite` is a peer, and so is
-`vite-plugin-pwa`, optional: only a member that builds the PWA target adds it (`pnpm add -D vite-plugin-pwa`), so every
-other member installs none of its workbox tree. Without it the PWA target stops with one error that says so.
+`@tailwindcss/vite`, `@react-router/dev` and `@cloudflare/vite-plugin`. `vite` is a peer, and so are
+`vite-plugin-pwa` and `@sentry/vite-plugin`, both optional: only a member that builds the PWA target adds the first
+(`pnpm add -D vite-plugin-pwa`) and only one that uploads source maps adds the second (`pnpm add -D @sentry/vite-plugin`,
+which brings the Sentry CLI binary), so every other member installs neither the workbox tree nor the Sentry binary.
+Without its peer the PWA target, or the `sourcemaps` option, stops with one error that says what to add.
 
 ## What is here
 

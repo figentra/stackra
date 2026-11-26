@@ -29,6 +29,9 @@ The Stackra Vite preset (ADR 0261 decision 4, ADR 0295 decision 5, ADR 0305 rule
 - Load a framework plugin only where it is used (dynamic import), so a single-page app never imports the Worker or
   React Router plugins.
 - Never read or pass a secret: the Sentry plugin reads its token from the release job's environment itself.
+- `@sentry/vite-plugin` and `vite-plugin-pwa` are optional peers (and devDependencies for the tests), never
+  dependencies: a member installs one only when it uses the feature, so nobody else gets the Sentry CLI binary or the
+  workbox tree. Load each only through `importOptionalPeer` in its one plugin file; `optional-peers.test.ts` holds this.
 - Extension bundles (`bundleConfig`, `bundlePlugin`): the shared externals are exactly what the shell's import map
   resolves (`importMapResolves`); never add a hand-kept list. `targets` and the version come from the committed
   `stackra.manifest.json` (gen's `surfaces`), never from an option. HeroUI Pro is never inside a bundle, flag or not;

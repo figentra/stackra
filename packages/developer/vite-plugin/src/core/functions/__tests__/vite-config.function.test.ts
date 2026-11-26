@@ -23,9 +23,10 @@ vi.mock("#core/functions/render-plugins.function", () => ({
 vi.mock("#core/functions/pwa-plugin.function", () => ({
   pwaPlugin: async () => ({ name: "vite-plugin-pwa" }),
 }));
-vi.mock("#core/functions/sentry-plugin.function", () => ({
-  sentryPlugin: async () => ({ name: "sentry" }),
+const { sentryPlugin } = vi.hoisted(() => ({
+  sentryPlugin: vi.fn(async () => ({ name: "sentry" })),
 }));
+vi.mock("#core/functions/sentry-plugin.function", () => ({ sentryPlugin }));
 
 const CONSOLE: AppDefinition = {
   targets: [Target.Web, Target.Pwa, Target.Desktop],
@@ -60,6 +61,18 @@ describe("viteConfig", () => {
     expect(
       names((await viteConfig(CONSOLE, { mode: "production", target: Target.Pwa, pwa })).plugins),
     ).toContain("vite-plugin-pwa");
+  });
+
+  it("never asks for the Sentry plugin, an optional peer, unless the sourcemaps option is on", async () => {
+    sentryPlugin.mockClear();
+    await viteConfig(CONSOLE, { mode: "production", target: Target.Web });
+    expect(sentryPlugin).not.toHaveBeenCalled();
+    await viteConfig(CONSOLE, {
+      mode: "production",
+      target: Target.Web,
+      sourcemaps: { upload: "sentry", project: "acme-console" },
+    });
+    expect(sentryPlugin).toHaveBeenCalledWith({ upload: "sentry", project: "acme-console" });
   });
 
   it("refuses a target the app does not declare", async () => {

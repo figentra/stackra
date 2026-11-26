@@ -71,7 +71,6 @@
   "dependencies": {
     "@cloudflare/vite-plugin": "catalog:frontend",
     "@react-router/dev": "catalog:frontend",
-    "@sentry/vite-plugin": "catalog:frontend",
     "@stackra/contracts": "workspace:*",
     "@stackra/gen": "workspace:*",
     "@stackra/i18n": "workspace:*",
@@ -80,6 +79,7 @@
     "@vitejs/plugin-react": "catalog:frontend"
   },
   "devDependencies": {
+    "@sentry/vite-plugin": "catalog:frontend",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
@@ -95,10 +95,14 @@
     "vitest": "catalog:quality"
   },
   "peerDependencies": {
+    "@sentry/vite-plugin": "catalog:frontend",
     "vite": "catalog:frontend",
     "vite-plugin-pwa": "catalog:frontend"
   },
   "peerDependenciesMeta": {
+    "@sentry/vite-plugin": {
+      "optional": true
+    },
     "vite-plugin-pwa": {
       "optional": true
     }
