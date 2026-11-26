@@ -4,8 +4,8 @@
  *          each entry kept with the instant it stops being fresh (and, with a stale window, the instant it stops being
  *          served) on the `Clock`, lifetimes shortened at random by up to `jitter`, one `remember` load per key at a
  *          time in this process, stale-while-revalidate, one load across instances through `CacheLock`, `forget` of a
- *          key and every key it covers, `forgetTag` of every entry carrying a tag, `flush` of every entry of the namespace, and hit, miss, load and evict
- *          metrics per key owner.
+ *          key and every key it covers, `forgetTag` of every entry carrying a tag, `flush` of every entry of the namespace, `add`
+ *          (an atomic set-if-absent) over a store that has one, and hit, miss, load and evict metrics per key owner.
  * Boundary: internal to the package; a driver hands it a `CacheEntryStore` (`memoryEntryStore`, or `textEntryStore`
  *           over an outside store) and delegates the five port methods. The entry's instants decide what is served;
  *           the store's own expiry only reclaims space. `forget` lists the covered keys when the store can (`keys`),
@@ -13,7 +13,8 @@
  *           the whole store. Single-flight is per process; `lock` adds one across instances, and a caller that loses
  *           the lock reads the store every `fill.poll` for up to `fill.wait`, then loads itself. A failed background
  *           reload leaves the stale entry. A store failure rejects the call; nothing falls back to the load or swallows
- *           the error. A metric that throws is ignored.
+ *           the error. A metric that throws is ignored. `add` is exact (no jitter, no stale window, no tags) and is
+ *           absent from the operations when the store has no `create`.
  * Runtime: isomorphic
  * Governing contract: ADR 0150 (decisions 1, 2 and 4: drivers, namespaced keys and tags, single-flight and
  *                     stale-while-revalidate); ADR 0297 (decision 3); ADR 0305 (rule 32).
@@ -92,6 +93,7 @@ export function storedCache(
   const lock = settings.lock ?? new LocalCacheLockDriver();
   const metrics = settings.metrics ?? new NoneCacheMetricsDriver();
   const random = settings.random ?? Math.random;
+  const { create } = store;
 
   /** Scoped key to the `remember` fill in progress for it. */
   const flights = new Map<string, Flight>();
@@ -300,6 +302,33 @@ export function storedCache(
       flights.set(at.scoped, flight);
       return promise;
     },
+
+    ...(create === undefined
+      ? {}
+      : {
+          async add<T>(key: CacheKey, value: T, ttl: Duration): Promise<boolean> {
+            const lifetime = millisecondsOf(ttl);
+            if (lifetime === 0) return false;
+            const at = target(key);
+            const keep = Duration.seconds(lifetime / 1000);
+            // the index sets first, as `write` does, so `forget` and `flush` find what an add stores
+            if (store.keys === undefined)
+              await Promise.all(
+                [
+                  allSet(at.space),
+                  ...keyAncestors(at.key).map((ancestor) => coveredSet(at.space + ancestor)),
+                ].map((set) => store.add(set, at.scoped, keep)),
+              );
+            const added = await create(
+              at.scoped,
+              { value, expiresAt: clock.now().getTime() + lifetime },
+              keep,
+            );
+            // a load in flight for the key read before this value existed, so it is not stored over it
+            if (added) ground((scoped) => scoped === at.scoped);
+            return added;
+          },
+        }),
 
     async forget(key: CacheKey): Promise<void> {
       const at = target(key);

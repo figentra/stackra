@@ -7597,6 +7597,9 @@ importers:
       '@stackra/actions':
         specifier: workspace:*
         version: link:../../application/actions
+      '@stackra/cache':
+        specifier: workspace:*
+        version: link:../cache
       '@stackra/clients':
         specifier: workspace:*
         version: link:../../application/clients
@@ -7761,6 +7764,9 @@ importers:
       oxlint:
         specifier: catalog:quality
         version: 1.86.0
+      testcontainers:
+        specifier: 'catalog:'
+        version: 12.2.1(supports-color@10.2.2)
       tsdown:
         specifier: catalog:build
         version: 0.23.1(oxc-resolver@11.24.2)(typescript@7.0.2)
