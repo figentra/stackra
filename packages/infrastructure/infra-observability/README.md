@@ -124,7 +124,7 @@ into the stack config the deploy reads:
 | `otlp.token` (secret)                       | the services' OTLP header, a runtime secret in sops      |
 | `betterstack.source`                        | `ref:betterstack.source`                                 |
 | `sentry.dsn.<member>`                       | `ref:sentry.dsn.<member>` (an app's `VITE_SENTRY_DSN`)   |
-| `heartbeats.<env>.<service>.<job>` (secret) | the URL the job beats, a runtime secret in sops          |
+| `heartbeats.<env>.<service>.<job>` (secret) | the URL the job beats: `heartbeats.<env>.<service>` is the service's `STACKRA_HEARTBEAT_URLS` secret in sops |
 | `slis`                                      | the indicators, for dashboards and the objectives later  |
 
 ## Indicators
@@ -153,7 +153,9 @@ release job's `SENTRY_AUTH_TOKEN` uploads source maps and is a different token.
 
 ## Not here
 
-- Sending a heartbeat: the scheduler, outbox and queue packages beat the URL they are given.
+- Sending a heartbeat: `@stackra/queue`'s `HeartbeatService`, called by the queue worker (`queue-<queue>`), the outbox
+  relays (`outbox-relay`, `cross-app-relay`) and the scheduler (a cron's CronJob id, `scheduler-schedules`); a
+  `HeartbeatSource` names its job the same way. The service reads its URLs from the `STACKRA_HEARTBEAT_URLS` secret.
 - The services' OTLP exporter and the redaction of personal data: `@stackra/logger` and `@stackra/errors`.
 - Objectives (SLOs) and their alerts: from the first paying tenant (ADR 0184 decision 3).
 - The on-call rotation and severities (ADR 0185): the rotation names people.

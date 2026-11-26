@@ -11,12 +11,16 @@
  *          its attempt when no `RateLimitStore` is bound); a chain runs its links in order; a batch counts done and
  *          failed jobs. Across owners: a claimed job loads, settles and queues its next link in its owner (the link in a
  *          `requiresNew` transaction), an owned job with no isolation bound or a claim that does not load fails the
- *          drain and never runs, and a delivered job's row work runs in its own scope's isolation.
+ *          drain and never runs, and a delivered job's row work runs in its own scope's isolation. Each pass of a `work`
+ *          loop that reached its store beats `queue-<queue>` through a bound `HeartbeatService`, and a job that runs past
+ *          several `minInterval`s keeps beating while it runs; a pass whose store failed, `drain` and a worker with none
+ *          bound beat nothing.
  * Boundary: test only; the memory driver, a fixed clock and a map resolver with an allowing `AccessControl`. Fake timers
- *           only in the timeout test.
+ *           only in the timeout test and the long-job heartbeat test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0148 (decisions 1 and 3); ADR 0305 (rules 28 and 30); ADR 0136
- *                     (decision 3); ADR 0327 (decision 6); ADR 0239 (2026-11-07 amendment, gaps A and C).
+ *                     (decision 3); ADR 0327 (decision 6); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0184
+ *                     (decision 4).
  */
 import {
   Action,
@@ -31,6 +35,7 @@ import {
   IdempotencyStore,
   RateLimitStore,
 } from "@stackra/actions/contracts";
+import { buildConfig } from "@stackra/config";
 import { type AnyClass, Driver } from "@stackra/container";
 import { type Actor, ActorKind, Backoff, Clock, Duration, Logger, Realm } from "@stackra/contracts";
 import { ErrorKind, isRefusal, Refusal } from "@stackra/errors";
@@ -48,6 +53,8 @@ import { JobIsolationMissingError } from "#core/errors/job-isolation-missing.err
 import { JobRowIsolationMissingError } from "#core/errors/job-row-isolation-missing.error";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
+import { HeartbeatConfig } from "#config/heartbeat.config";
+import { HeartbeatService } from "#core/services/heartbeat.service";
 import { QueueService } from "#core/services/queue.service";
 import type { JobFairnessOptions } from "#core/types/job-fairness-options.type";
 import { QueueWorkerService } from "#node/services/queue-worker.service";
@@ -608,5 +615,113 @@ describe(QueueWorkerService, () => {
       { kind: ActorKind.System, id: "sys_queue_worker" },
       scope,
     ]);
+  });
+});
+
+/** A heartbeat sender with a URL for every job and a one-second `minInterval` that records each beat instead of sending it. */
+class RecordingHeartbeats extends HeartbeatService {
+  readonly beats: string[] = [];
+
+  constructor() {
+    super(
+      buildConfig(HeartbeatConfig, { values: { minInterval: Duration.seconds(1) } }),
+      new FixedClock(),
+      new RecordingLogger(),
+    );
+  }
+
+  override has(): boolean {
+    return true;
+  }
+
+  override async beat(name: string): Promise<void> {
+    this.beats.push(name);
+  }
+}
+
+/** A job of the `exports` queue that runs until the test finishes it. */
+class ExportReportAction extends Action({
+  key: "report.export",
+  actors: [ActorKind.System],
+  job: { queue: "exports", timeout: "1m" },
+}) {
+  started = false;
+
+  finish: () => void = () => undefined;
+
+  async handle(): Promise<void> {
+    this.started = true;
+    await new Promise<void>((resolve) => {
+      this.finish = resolve;
+    });
+  }
+}
+
+describe("QueueWorkerService heartbeats", () => {
+  it("beats queue-<queue> on each pass of a work loop, with a job or with none due", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { queue, worker, deliver } = setup([[HeartbeatService, heartbeats]]);
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    const controller = new AbortController();
+    const working = worker.work("delivery", { signal: controller.signal });
+    await vi.waitFor(() => expect(deliver.contexts).toHaveLength(1));
+    // The pass that ran the job, then the pass that found none due.
+    await vi.waitFor(() => expect(heartbeats.beats.length).toBeGreaterThanOrEqual(2));
+    controller.abort();
+    await working;
+    expect(new Set(heartbeats.beats)).toEqual(new Set(["queue-delivery"]));
+  });
+
+  it("does not beat a pass whose store failed, and drain never beats", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { driver, queue, worker, logger } = setup([[HeartbeatService, heartbeats]]);
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    await worker.drain();
+    expect(heartbeats.beats).toEqual([]);
+    vi.spyOn(driver, "reserve").mockRejectedValue(new Error("store down"));
+    const controller = new AbortController();
+    const working = worker.work("delivery", { signal: controller.signal });
+    await vi.waitFor(() => expect(logger.errors).toContain("queue.worker_failed"));
+    controller.abort();
+    await working;
+    expect(heartbeats.beats).toEqual([]);
+  });
+
+  it("keeps beating queue-<queue> while a job runs past several minIntervals", async () => {
+    vi.useFakeTimers();
+    try {
+      const heartbeats = new RecordingHeartbeats();
+      const report = new ExportReportAction();
+      const { queue, worker } = setup([
+        [HeartbeatService, heartbeats],
+        [ExportReportAction, report],
+      ]);
+      await queue.push(ExportReportAction, {});
+      const controller = new AbortController();
+      const working = worker.work("exports", { signal: controller.signal });
+      await vi.waitFor(() => expect(report.started).toBe(true));
+      expect(heartbeats.beats).toEqual([]);
+      await vi.advanceTimersByTimeAsync(3500);
+      // Still running: one beat a second, before the pass that ran it ends.
+      expect(heartbeats.beats).toEqual(["queue-exports", "queue-exports", "queue-exports"]);
+      report.finish();
+      controller.abort();
+      await working;
+      // The pass's own beat, and none after the job settled.
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(heartbeats.beats).toHaveLength(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("works without a HeartbeatService bound", async () => {
+    const { queue, worker, deliver } = setup();
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    const controller = new AbortController();
+    const working = worker.work("delivery", { signal: controller.signal });
+    await vi.waitFor(() => expect(deliver.contexts).toHaveLength(1));
+    controller.abort();
+    await expect(working).resolves.toBeUndefined();
   });
 });

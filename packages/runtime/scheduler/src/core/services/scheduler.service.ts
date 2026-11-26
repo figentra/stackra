@@ -24,11 +24,15 @@
  *           pushed, its watermark kept: none is skipped silently. In SaaS
  *           each cron of an action has its own Encore CronJob (`encoreCronJobs`) whose endpoint calls `fire`, and a
  *           minute CronJob ticks the stored schedules only (`{ crons: false }`); on-prem `run` is the timer (ADR 0148
- *           decision 4).
+ *           decision 4). Heartbeats (ADR 0184 decision 4): with a `HeartbeatService` bound, a tick that ran beats
+ *           each cron whose due runs it pushed (its CronJob id, gen's `cronJobId`) and, when nothing failed,
+ *           `scheduler-schedules`; `fire` beats its cron once its runs are pushed. A beat never throws and is bounded
+ *           by its timeout; a tick another runner held beats nothing (that runner beats), and a failed push beats nothing
+ *           for its cron.
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 4 and 5); ADR 0078 (decision 6, as amended); ADR 0103 (decision 4);
  *                     ADR 0305 (rules 28 and 30); ADR 0327 and ADR 0323 (`ScopeRef`); ADR 0239 (2026-11-07 amendment,
- *                     gaps A and C, decision 5); ADR 0495.
+ *                     gaps A and C, decision 5); ADR 0495; ADR 0184 (decision 4: heartbeats).
  */
 import { boundIsolation, inRowOwner } from "@stackra/actions";
 import type { Action, ActionOptions, CallInput } from "@stackra/actions";
@@ -37,12 +41,15 @@ import type { AnyClass, Container } from "@stackra/container";
 import { ActorKind, Duration } from "@stackra/contracts";
 import type { Actor, Clock, Logger, PublicId, ScopeRef } from "@stackra/contracts";
 import type { Locks } from "@stackra/locking";
+import { cronJobId } from "@stackra/gen";
+import { HeartbeatService } from "@stackra/queue";
 import type { QueueService } from "@stackra/queue";
 
 import type { SchedulerConfig } from "#config/scheduler.config";
 import { Misfire } from "#contracts/index";
 import type { CronScopes, Schedule, ScheduleClaim, ScheduleDriver } from "#contracts/index";
 import { SCHEDULED_JOBS } from "#core/constants/scheduled-jobs.constant";
+import { SCHEDULES_JOB_NAME } from "#core/constants/schedules-job-name.constant";
 import { InvalidTimeZoneError } from "#core/errors/invalid-time-zone.error";
 import { ScheduleClaimNotLoadedError } from "#core/errors/schedule-claim-not-loaded.error";
 import { ScheduleRowIsolationMissingError } from "#core/errors/schedule-row-isolation-missing.error";
@@ -137,11 +144,15 @@ type Push = (
 const cronFireKey = (key: string, scope: ScopeRef | undefined): string =>
   scope === undefined ? key : `${key}:${scope.id}`;
 
-/** What a tick decided under its lock: the pushes to make after it, and the keys it evaluated or skipped. */
+/**
+ * What a tick decided under its lock: the pushes to make after it, the keys it evaluated or skipped, and the keys of
+ * the crons of actions that had runs due (each beats its heartbeat once they are pushed).
+ */
 interface Plan {
   readonly pushes: readonly Push[];
   readonly evaluated: readonly string[];
   readonly skipped: readonly PublicId<"sch">[];
+  readonly crons: readonly string[];
 }
 
 /** What a run of pushes did: how many jobs it stored, the watermark keys whose push failed, the first failure. */
@@ -233,6 +244,11 @@ export class SchedulerService extends Service {
     // and each fire's record drops the copy. A key whose push failed keeps its watermark, so its runs come again.
     const advanced = plan.evaluated.filter((key) => !failed.has(key));
     await this.locks.with(TICK_LOCK, TICK_LEASE, () => this.driver.advance(advanced, at));
+    // Each cron whose runs went out beats; the tick itself beats only when nothing failed.
+    await this.beat([
+      ...plan.crons.filter((key) => !failed.has(key)).map((key) => cronJobId(key)),
+      ...(failure === undefined ? [SCHEDULES_JOB_NAME] : []),
+    ]);
     if (failure !== undefined) throw failure.error;
     return { ran: true, pushed, skipped: plan.skipped };
   }
@@ -243,7 +259,8 @@ export class SchedulerService extends Service {
    * lock and moves no watermark. The slot is the cron's last due time at or before now (UTC, as a tick reads an
    * action's cron), and each run records its fire under the same fire key and time a tick would, so a retried
    * invocation, or a tick of the same slot, pushes nothing again. A call with no due time in the last day (a manual
-   * run off the schedule) has no slot: it pushes once at now, unrecorded.
+   * run off the schedule) has no slot: it pushes once at now, unrecorded. Once every run is pushed it beats the cron's
+   * heartbeat (its CronJob id) when a `HeartbeatService` is bound; a failed push beats nothing.
    *
    * @returns how many jobs were stored.
    * @throws TypeError when `key` is not a registered action with a `cron`.
@@ -280,6 +297,7 @@ export class SchedulerService extends Service {
       })),
     );
     if (failure !== undefined) throw failure.error;
+    await this.beat([cronJobId(key)]);
     return pushed;
   }
 
@@ -353,6 +371,7 @@ export class SchedulerService extends Service {
     const evaluated: string[] = [];
     const skipped: PublicId<"sch">[] = [];
     const pushes: Push[] = [];
+    const dueCrons: string[] = [];
     let scopes: readonly ScopeRef[] | undefined;
     for (const [type, key] of crons ? SCHEDULED_JOBS.keys : []) {
       const options = kindOf(type)?.options as unknown as Pick<ActionOptions, "job"> | undefined;
@@ -367,6 +386,7 @@ export class SchedulerService extends Service {
         at,
       );
       if (runs.length === 0) continue;
+      dueCrons.push(key);
       // Once per scope `CronScopes` lists, each run in its scope.
       const perScope = cron.perScope === true;
       // oxlint-disable-next-line no-await-in-loop -- listed once per tick, on the first per-scope cron that is due
@@ -403,7 +423,14 @@ export class SchedulerService extends Service {
           once: { fireKey: claim.id, markKey: claim.id, after: since },
         });
     }
-    return { pushes, evaluated, skipped };
+    return { pushes, evaluated, skipped, crons: dueCrons };
+  }
+
+  /** Beats each heartbeat of `names` through the bound `HeartbeatService`, if any; a beat never throws. */
+  private async beat(names: readonly string[]): Promise<void> {
+    if (names.length === 0 || !this.container.has(HeartbeatService)) return;
+    const heartbeats = this.container.get(HeartbeatService);
+    await Promise.all(names.map((name) => heartbeats.beat(name)));
   }
 
   /** The runs of a claimed schedule in `(after, now]`, or `undefined` when its cron or time zone is refused. */

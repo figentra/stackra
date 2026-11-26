@@ -10,12 +10,15 @@
  *          })` leaves the crons of actions to theirs. Across owners the lock covers
  *          only the claim and the watermark advance: each owner's runs are pushed after it, in a `requiresNew`
  *          transaction in the owner's isolation (a schedule's claimed owner, a cron scope's own); an owned schedule with
- *          no isolation bound or one that does not load fails the tick after the other pushes.
+ *          no isolation bound or one that does not load fails the tick after the other pushes. Heartbeats: with a
+ *          `HeartbeatService` bound a tick beats each cron whose runs it pushed (its CronJob id) and
+ *          `scheduler-schedules`, a held tick beats nothing, a cron whose push failed beats nothing and the tick then
+ *          skips its own beat, and `fire` beats its cron after its pushes, never after a failed one.
  * Boundary: test only; the real queue service, `Locks` and memory drivers on a clock the test moves. The job registry
  *           is process-wide, so every tick here evaluates the crons registered at the top of this file.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0148 (decisions 4 and 5); ADR 0078 (decision 6); ADR 0103 (decision 4); ADR
- *                     0239 (2026-11-07 amendment, decision 5).
+ *                     0239 (2026-11-07 amendment, decision 5); ADR 0184 (decision 4).
  */
 import { Action } from "@stackra/actions";
 import { CallIsolation } from "@stackra/actions/contracts";
@@ -24,7 +27,13 @@ import type { AnyClass, Container } from "@stackra/container";
 import { ActorKind, Clock, Duration, Logger } from "@stackra/contracts";
 import type { Actor, ScopeRef } from "@stackra/contracts";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
-import { MemoryQueueDriver, QueueService, registerJobs } from "@stackra/queue";
+import {
+  HeartbeatConfig,
+  HeartbeatService,
+  MemoryQueueDriver,
+  QueueService,
+  registerJobs,
+} from "@stackra/queue";
 import type { QueuedJob } from "@stackra/queue/contracts";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -562,5 +571,75 @@ describe("SchedulerService across owners", () => {
       ["scp_globex", globex],
     ]);
     expect(transaction).toHaveBeenCalledTimes(2);
+  });
+});
+
+/** A heartbeat sender that records each beat instead of sending it. */
+class RecordingHeartbeats extends HeartbeatService {
+  readonly beats: string[] = [];
+
+  constructor() {
+    super(buildConfig(HeartbeatConfig), new MovableClock(), new RecordingLogger());
+  }
+
+  override async beat(name: string): Promise<void> {
+    this.beats.push(name);
+  }
+}
+
+describe("SchedulerService heartbeats", () => {
+  it("beats each cron whose runs a tick pushed, then the tick itself", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { scheduler } = setup({}, [acme], [[HeartbeatService, heartbeats]]);
+    await scheduler.tick(at("12:00:30"));
+    expect(heartbeats.beats).toEqual([
+      "orders-order-expire-unpaid-1",
+      "access-log-entry-purge-1",
+      "scheduler-schedules",
+    ]);
+    // 12:01: neither cron is due, so only the tick beats.
+    heartbeats.beats.length = 0;
+    await scheduler.tick(at("12:01:30"));
+    expect(heartbeats.beats).toEqual(["scheduler-schedules"]);
+  });
+
+  it("beats only the tick when the crons are left to their CronJobs", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { scheduler } = setup({}, [], [[HeartbeatService, heartbeats]]);
+    await scheduler.tick(at("12:00:30"), { crons: false });
+    expect(heartbeats.beats).toEqual(["scheduler-schedules"]);
+  });
+
+  it("beats nothing while another runner holds the tick", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { scheduler, locks } = setup({}, [], [[HeartbeatService, heartbeats]]);
+    await locks.tryWith("scheduler:tick", Duration.minutes(1), async () => {
+      expect((await scheduler.tick(at("12:00:30"))).ran).toBe(false);
+    });
+    expect(heartbeats.beats).toEqual([]);
+  });
+
+  it("beats no cron whose push failed, and then not the tick", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { scheduler, jobs } = setup({}, [], [[HeartbeatService, heartbeats]]);
+    const push = jobs.push.bind(jobs);
+    vi.spyOn(jobs, "push").mockImplementation(async (job) => {
+      if (job.key === "access_log.entry.purge@1") throw new Error("store down");
+      return push(job);
+    });
+    await expect(scheduler.tick(at("12:00:30"))).rejects.toThrow("store down");
+    expect(heartbeats.beats).toEqual(["orders-order-expire-unpaid-1"]);
+  });
+
+  it("fires a cron and then beats it, but not after a failed push", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { scheduler, jobs, clock } = setup({}, [], [[HeartbeatService, heartbeats]]);
+    clock.at = at("12:00:30").getTime();
+    await expect(scheduler.fire("access_log.entry.purge@1")).resolves.toBe(1);
+    expect(heartbeats.beats).toEqual(["access-log-entry-purge-1"]);
+    vi.spyOn(jobs, "push").mockRejectedValue(new Error("store down"));
+    clock.at = at("13:00:30").getTime();
+    await expect(scheduler.fire("access_log.entry.purge@1")).rejects.toThrow("store down");
+    expect(heartbeats.beats).toEqual(["access-log-entry-purge-1"]);
   });
 });

@@ -9,11 +9,13 @@
  *          sends them outside the lock, so another tick takes none in flight and a crashed relay's rows return when the
  *          lease ends; `work` logs a failed tick and stops when its signal aborts. A leased delivery is loaded and its
  *          outcome recorded in its owner through the bound `CallIsolation`; an owned delivery with no isolation bound,
- *          or one that does not load, fails the tick and is never skipped.
+ *          or one that does not load, fails the tick and is never skipped. Every tick that held the lock and completed
+ *          beats `cross-app-relay` through a bound `HeartbeatService`; a tick another relay held the lock for and a
+ *          failed tick beat nothing.
  * Boundary: test only; the memory delivery store, the memory lock driver, the real Ed25519 signer with a fresh key, a
  *           fixed clock, a recording logger and a stubbed `fetch`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0511 (decisions 12 and 13; AC-005, SC-005).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0511 (decisions 12 and 13; AC-005, SC-005); ADR 0184 (decision 4).
  */
 import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
@@ -21,7 +23,9 @@ import { CallIsolation } from "@stackra/actions/contracts";
 import type { AnyClass } from "@stackra/container";
 import { Duration, Logger } from "@stackra/contracts";
 import type { Actor, Clock } from "@stackra/contracts";
+import { buildConfig } from "@stackra/config";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
+import { HeartbeatConfig, HeartbeatService } from "@stackra/queue";
 import { afterEach, beforeAll, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -125,7 +129,12 @@ function recordingIsolation(owners: (string | undefined)[]): CallIsolation {
 async function relayOf(
   deliveries: readonly Delivery[],
   secrets: Record<string, string> = {},
-  options: { owned?: string; unloaded?: boolean; isolation?: CallIsolation } = {},
+  options: {
+    owned?: string;
+    unloaded?: boolean;
+    isolation?: CallIsolation;
+    heartbeats?: HeartbeatService;
+  } = {},
 ) {
   const driver = new MemoryDeliveryDriver();
   await driver.write(deliveries);
@@ -150,6 +159,7 @@ async function relayOf(
   const bound = new Map<AnyClass, object>([
     [Logger, logger],
     ...(options.isolation === undefined ? [] : [[CallIsolation, options.isolation] as const]),
+    ...(options.heartbeats === undefined ? [] : [[HeartbeatService, options.heartbeats] as const]),
   ]);
   const resolver: Resolver = {
     has: (type) => bound.has(type),
@@ -361,5 +371,54 @@ describe(CrossAppRelayService, () => {
     expect(logger.errors.map(([event]) => event)).toEqual([OUTBOX_LOG_EVENTS.crossAppRelayFailed]);
     expect((await stored(driver))[0]).toMatchObject({ attempts: 0 });
     await expect(relay.work({ signal: AbortSignal.abort() })).resolves.toBeUndefined();
+  });
+});
+
+/** A heartbeat sender that records each beat instead of sending it. */
+class RecordingHeartbeats extends HeartbeatService {
+  readonly beats: string[] = [];
+
+  constructor() {
+    super(buildConfig(HeartbeatConfig), clock, new RecordingLogger());
+  }
+
+  override async beat(name: string): Promise<void> {
+    this.beats.push(name);
+  }
+}
+
+describe("CrossAppRelayService heartbeats", () => {
+  it("beats cross-app-relay after every tick that completed", async () => {
+    transport();
+    const heartbeats = new RecordingHeartbeats();
+    const { relay } = await relayOf([deliveryOf()], {}, { heartbeats });
+    await expect(relay.relay()).resolves.toBe(1);
+    await expect(relay.relay()).resolves.toBe(0);
+    expect(heartbeats.beats).toEqual(["cross-app-relay", "cross-app-relay"]);
+  });
+
+  it("beats nothing for a tick another relay held the lock for", async () => {
+    transport();
+    const heartbeats = new RecordingHeartbeats();
+    const { relay, lockDriver } = await relayOf([deliveryOf()], {}, { heartbeats });
+    await new Locks(lockDriver, clock).tryWith(
+      "outbox.cross-app",
+      Duration.minutes(1),
+      async () => {
+        await expect(relay.relay()).resolves.toBe(0);
+      },
+    );
+    expect(heartbeats.beats).toEqual([]);
+  });
+
+  it("beats nothing for a tick that failed", async () => {
+    transport();
+    const heartbeats = new RecordingHeartbeats();
+    const { relay, driver } = await relayOf([deliveryOf()], {}, { heartbeats });
+    driver.lease = async () => {
+      throw new Error("store down");
+    };
+    await expect(relay.relay()).rejects.toThrow("store down");
+    expect(heartbeats.beats).toEqual([]);
   });
 });

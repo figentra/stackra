@@ -96,6 +96,14 @@ one invocation of a CronJob at a time, so `fire` takes no lock. `fire` pushes th
 time at or before now, in UTC) once per scope: it records the fire as a tick would, so an Encore retry in the same
 slot, or a tick of that slot, pushes nothing again. On-prem, `run` stays the timer.
 
+## Heartbeats
+
+With `@stackra/queue`'s `HeartbeatService` bound (ADR 0184 decision 4), each cron of an action beats its CronJob id
+(`cronJobId(key)`) once its runs are pushed, by `fire` or by a tick, and a tick that ran with no failed push beats
+`scheduler-schedules`. A tick another runner held beats nothing (that runner beats), and a cron whose push failed
+beats nothing, so its heartbeat misses. The URLs are `@stackra/queue`'s `STACKRA_HEARTBEAT_URLS` secret; without it
+nothing is sent.
+
 ## Testing
 
 ```ts

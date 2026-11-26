@@ -2,20 +2,24 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/queue (`Backoff`, re-exported from @stackra/contracts, and
  *          `queues` for the template, `JOB_BACKOFF` for the outbox and workflow retries, the queue service,
- *          the memory driver, the `JobDispatcher` driver, the job registration, the refusals, and the configuration
- *          with its shape and shipped schema) until `stackra gen` writes the entry barrels (STA-339).
+ *          the memory driver, the `JobDispatcher` driver, the job registration, the refusals, the heartbeat sender with
+ *          its configuration and job-name formula, and the configuration with its shape and shipped schema) until
+ *          `stackra gen` writes the entry barrels (STA-339).
  *          `QueueHealthIndicatorDriver` is the `/readyz` probe.
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under its generated name
- *           (`QueueConfig$`). The defaults, the job registry, the job plan and the driver-name list stay internal. The
- *           port is `./contracts`'; the worker and the Postgres driver are `./node`'s. Nothing here touches a database.
+ *           (`QueueConfig$`, `HeartbeatConfig$`). The defaults, the job registry, the job plan and the driver-name list
+ *           stay internal. The port is `./contracts`'; the worker and the Postgres driver are `./node`'s. Nothing here
+ *           touches a database.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 // One home for the curve (stackra-223): re-exported for the template and its generated `#stackra/queues`.
 export { Backoff } from "@stackra/contracts";
 export { BrokerConfig } from "#config/broker.config";
+export { HeartbeatConfig } from "#config/heartbeat.config";
 export { QueueConfig } from "#config/queue.config";
 export { BROKER_CONFIG_SCHEMA as BrokerConfig$ } from "#core/constants/broker-config-schema.constant";
+export { HEARTBEAT_CONFIG_SCHEMA as HeartbeatConfig$ } from "#core/constants/heartbeat-config-schema.constant";
 export { QUEUE_CONFIG_SCHEMA as QueueConfig$ } from "#core/constants/queue-config-schema.constant";
 export { JOB_BACKOFF } from "#core/constants/job-backoff.constant";
 export { MemoryBrokerPublisherDriver } from "#core/drivers/memory-broker-publisher.driver";
@@ -33,11 +37,14 @@ export { ScopeNotPlatformWrittenError } from "#core/errors/scope-not-platform-wr
 export { UnknownJobError } from "#core/errors/unknown-job.error";
 export { assertPlatformScope } from "#core/functions/assert-platform-scope.function";
 export { callerScopeOf } from "#core/functions/caller-scope-of.function";
+export { heartbeatName } from "#core/functions/heartbeat-name.function";
 export { queues } from "#core/functions/queues.function";
 export { registerBrokerTopics } from "#core/functions/register-broker-topics.function";
 export { registerJobs } from "#core/functions/register-jobs.function";
 export { BrokerOptions } from "#core/schemas/broker-options.schema";
+export { HeartbeatOptions } from "#core/schemas/heartbeat-options.schema";
 export { QueueOptions } from "#core/schemas/queue-options.schema";
+export { HeartbeatService } from "#core/services/heartbeat.service";
 export { QueueService } from "#core/services/queue.service";
 export type { BrokerTopic } from "#core/types/broker-topic.type";
 export type { JobFairnessOptions } from "#core/types/job-fairness-options.type";

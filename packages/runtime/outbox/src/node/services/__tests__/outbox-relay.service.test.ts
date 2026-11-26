@@ -11,11 +11,13 @@
  *          live change is published again at the older version, same id, its data run through `down` (stackra-403).
  *          An owned claim is loaded, fanned out and removed (or retried) in its owner through the bound isolation, and
  *          its changes loaded in their owner; an owned claim with no isolation bound, or a claim that does not load,
- *          fails the tick and is never skipped.
+ *          fails the tick and is never skipped. Every poll that held the lock and completed beats `outbox-relay`
+ *          through a bound `HeartbeatService`; a poll another relay held the lock for and a failed poll beat nothing.
  * Boundary: test only; the memory store, the memory lock driver, a recording publisher, a stand-in database that
  *           records the scopes it opens, a fixed clock and a map resolver.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decision 4); ADR 0221 (decision 5); ADR 0327 (decision 9).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0078 (decision 4); ADR 0221 (decision 5); ADR 0327 (decision 9); ADR
+ *                     0184 (decision 4).
  */
 import { ClaimNotLoadedError, RowIsolationMissingError } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
@@ -34,6 +36,7 @@ import {
 } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
+import { HeartbeatConfig, HeartbeatService } from "@stackra/queue";
 import { IntegrationEvent } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
 import { registerSchemas } from "@stackra/validation";
@@ -558,5 +561,54 @@ describe("OutboxRelayService across owners", () => {
     await expect(relay.relay()).rejects.toBeInstanceOf(ClaimNotLoadedError);
     expect(batch.batches).toEqual([]);
     await expect(feed.cursor("BatchConsumer")).resolves.toBeUndefined();
+  });
+});
+
+/** A heartbeat sender that records each beat instead of sending it. */
+class RecordingHeartbeats extends HeartbeatService {
+  readonly beats: string[] = [];
+
+  constructor() {
+    super(buildConfig(HeartbeatConfig), clock, new RecordingLogger());
+  }
+
+  override async beat(name: string): Promise<void> {
+    this.beats.push(name);
+  }
+}
+
+describe("OutboxRelayService heartbeats", () => {
+  it("beats outbox-relay after every poll it held the lock for and completed", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { relay, store } = relayOf(new MemoryLockDriver(clock), 0, [
+      [HeartbeatService, heartbeats],
+    ]);
+    await store.write([eventMessage()]);
+    await expect(relay.relay()).resolves.toBe(1);
+    await expect(relay.relay()).resolves.toBe(0);
+    expect(heartbeats.beats).toEqual(["outbox-relay", "outbox-relay"]);
+  });
+
+  it("beats nothing for a poll another relay held the lock for, so a stuck holder is not hidden", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const lockDriver = new MemoryLockDriver(clock);
+    const { relay, store } = relayOf(lockDriver, 0, [[HeartbeatService, heartbeats]]);
+    await store.write([eventMessage()]);
+    // Another replica holds the lock (and, stuck inside it, keeps it): every poll here is skipped and beats nothing.
+    await new Locks(lockDriver, clock).tryWith("outbox.relay", Duration.minutes(1), async () => {
+      await expect(relay.relay()).resolves.toBe(0);
+      await expect(relay.relay()).resolves.toBe(0);
+    });
+    expect(heartbeats.beats).toEqual([]);
+  });
+
+  it("beats nothing for a poll that failed", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { relay, store } = relayOf(undefined, 0, [[HeartbeatService, heartbeats]]);
+    store.claim = async () => {
+      throw new Error("store down");
+    };
+    await expect(relay.relay()).rejects.toThrow("store down");
+    expect(heartbeats.beats).toEqual([]);
   });
 });

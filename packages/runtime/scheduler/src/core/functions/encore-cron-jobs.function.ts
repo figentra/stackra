@@ -16,10 +16,8 @@ import { kindOf } from "@stackra/container";
 import { cronJobId } from "@stackra/gen";
 
 import { SCHEDULED_JOBS } from "#core/constants/scheduled-jobs.constant";
+import { SCHEDULES_JOB_NAME as SCHEDULES } from "#core/constants/schedules-job-name.constant";
 import type { CronJobDeclaration } from "#core/types/cron-job-declaration.type";
-
-/** The id of the stored schedules' minute tick. */
-const SCHEDULES = "scheduler-schedules";
 
 /**
  * The CronJobs of this process.
