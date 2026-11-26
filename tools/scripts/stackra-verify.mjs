@@ -136,7 +136,9 @@
  *   could alter the kept base or store image layers on disk without changing their ids.
  *   Start it directly from systemd, never through secrets-exec: it needs no stackra-bot secret, only its own key file.
  * Runbook (box 1): the unit runs as `User=stackra-verifyd` from the code clone /work/stackra/service with
- *     ExecStart=/usr/local/bin/node tools/scripts/stackra-verify.mjs daemon -R stackra-inc/stackra -R stackra-inc/stackra-template
+ *     ExecStart=/usr/local/bin/node tools/scripts/stackra-verify.mjs daemon -R stackra-inc/stackra
+ *   (GATE_REPOS only: the gate, its judges and the service files are this repository's, so any other `-R` is refused
+ *   at start, never verified against a main that lacks them; CTO read of #1043)
  *   and these settings (none is a secret; the files they name are):
  *     STACKRA_VERIFY_HOME=/work/stackra/verify (the daemon's home; set to 0711 at start, so the verify user can reach
  *       a run's inputs by name and never list it), STACKRA_VERIFY_RUN_AS=stackra-verify (uid 1003),
@@ -240,7 +242,8 @@
  * Secrets: the App key is read from STACKRA_VERIFY_KEY_FILE (owner-placed, mode 0400) only to mint a token, which
  *   stays in the gh child's environment. No secret is passed to sudo, docker or a container: the gate runs with no
  *   token, so zizmor's online audits are off (`--offline`) and the PR facts come from the daemon's API read.
- * Exit: 0 every head recorded, 1 a head could not be recorded or the host is not set up, 2 usage, 75 lock held.
+ * Exit: 0 every head recorded, 1 a head could not be recorded or the host is not set up, 2 usage (or a repository
+ *   outside GATE_REPOS), 75 lock held.
  */
 import { spawn as spawnChild, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -288,6 +291,14 @@ import {
 } from "./pr-merge.mjs";
 
 export const DEFAULT_REPO = "stackra-inc/stackra";
+/**
+ * The repositories the gate is defined for: GATE_STEPS, JUDGE_ROOTS and SERVICE_FILES are this repository's. Another
+ * repository's main has none of the service files, so definitionDrift would post a service failure on each of its
+ * heads every ERROR_RETRY_MS (CTO read of #1043): the service refuses to start for one instead.
+ */
+export const GATE_REPOS = Object.freeze([DEFAULT_REPO]);
+/** The repositories in `repos` the gate is not defined for (GATE_REPOS), in the order given. */
+export const ungatedRepos = (repos) => repos.filter((repo) => !GATE_REPOS.includes(repo));
 export const INSTALL_COMMAND =
   "pnpm install --frozen-lockfile --store-dir /store --ignore-scripts --ignore-pnpmfile";
 
@@ -910,6 +921,10 @@ const IMPORTER_SECTIONS = Object.freeze([
 const lockedAliasTarget = (version) =>
   /^((?:@[^/@(]+\/)?[^@(:/][^@(:]*)@/.exec(String(version))?.[1] ?? null;
 
+/** The package an `npm:<package>@<range>` spec names, or null. */
+const npmAliasTarget = (spec) =>
+  /^npm:((?:@[^/@\s]+\/)?[^@/\s]+)@/.exec(typeof spec === "string" ? spec : "")?.[1] ?? null;
+
 /**
  * What the tested tree's lockfile says each node_modules holds (round 7, R6-H1), for prepare and the judge view:
  * `importers`, the member directories ("." the root), and `entries`, one line per direct dependency:
@@ -918,9 +933,20 @@ const lockedAliasTarget = (version) =>
  * `npm:` alias names (`typescript6: typescript@6.0.3` links to .pnpm/typescript@6.0.3/node_modules/typescript). Reads
  * lockfileGraph's importers as they are (`{ dir: { dependencies, optionalDependencies, devDependencies } }`, each
  * `{ name: version }`); a name, package or directory with a tab or a newline is refused, and so is a name two
- * sections lock differently.
+ * sections lock differently. A locked alias is the member's own only when the spec it locks says so (re-review of
+ * the box 1 proofs: a lockfile-only `turbo: evil-turbo@1.0.0` under an unchanged spec passed the planted check):
+ * lockfileGraph's `specifiers` for the entry is `npm:<package>@…`, or `catalog:<c>` whose lockfile `catalogs.<c>.<name>`
+ * is (`catalog:` alone the default catalog); any other alias is refused.
  */
-export function nodeModulesPlan(importers) {
+export function nodeModulesPlan(importers, { specifiers = {}, catalogs = {} } = {}) {
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- reads this call's specifiers and catalogs
+  const declaredAlias = (dir, section, name) => {
+    const spec = specifiers?.[dir]?.[section]?.[name];
+    const catalog = /^catalog:(.*)$/.exec(typeof spec === "string" ? spec : "");
+    if (!catalog) return npmAliasTarget(spec);
+    const entries = catalogs?.[catalog[1].trim() || "default"];
+    return Object.hasOwn(entries ?? {}, name) ? npmAliasTarget(entries[name]) : null;
+  };
   const entries = new Set();
   for (const [dir, sections] of Object.entries(importers)) {
     if (/[\t\n]/.test(dir)) throw new Error(`not a lockfile importer entry: ${dir}`);
@@ -949,6 +975,10 @@ export function nodeModulesPlan(importers) {
         }
         const pkg = lockedAliasTarget(version) ?? name;
         if (/[\t\n]/.test(pkg)) throw new Error(`not a lockfile importer entry: ${dir} ${name}`);
+        if (pkg !== name && declaredAlias(dir, section, name) !== pkg)
+          throw new Error(
+            `an alias only the lockfile makes: ${dir} ${name} locked as ${pkg}, which its spec does not name`,
+          );
         entries.add(`${dir}\t${name}\tregistry\t${pkg}`);
       }
   }
@@ -1487,18 +1517,27 @@ export function exceptionScopeViolations(members, workspace, policy, mobileMembe
  * What the licence check reads from pnpm-lock.yaml (lockfile v9, every `---` document merged: pnpm 12 writes its own
  * package-manager document first): each importer's `dependencies`, `devDependencies` and `optionalDependencies`
  * (`{ name: version }`, the version as the lockfile writes it: `1.2.3(peer@1.0.0)`, `alias@1.2.3(…)` or `link:../x`);
+ * the same entries' specifiers (`specifiers[dir][section][name]`, the spec the manifest wrote: `^1.0.0`, `catalog:x`,
+ * `npm:pkg@1`); each catalog entry's specifier (`catalogs[catalog][name]`, the default catalog as `default`);
  * each snapshot's `dependencies` and `optionalDependencies` together (`snapshots[key]`, resolved peers included);
  * each package's optional peers (`optionalPeers["name@1.2.3"]`, a Set); and `problems`. A reader for the block layout
- * pnpm writes, which fails closed (review of #1043, MEDIUM A): inside `importers`, `packages` and `snapshots`, a line
- * it does not consume is a problem, never a skipped edge: a comment, a flow value other than `{}` (a package's own
- * fields, such as `resolution: {…}` or `os: [linux]`, excepted), a YAML indicator (`& * ! | > ? %`), an indent off
- * the two-space steps, a line under a scalar, or a key the layout does not have where the reader looks.
+ * pnpm writes, which fails closed (review of #1043, MEDIUM A): inside `importers`, `catalogs`, `packages` and
+ * `snapshots`, a line it does not consume is a problem, never a skipped edge: a comment, a flow value other than `{}`
+ * (a package's own fields, such as `resolution: {…}` or `os: [linux]`, excepted), a YAML indicator (`& * ! | > ? %`),
+ * an indent off the two-space steps, a line under a scalar, or a key the layout does not have where the reader looks.
  * Self-contained: the licence check file is this function's own source.
  */
 export function lockfileGraph(lockText) {
   // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the check file is this function's source
   const map = () => Object.create(null);
-  const graph = { importers: map(), snapshots: map(), optionalPeers: map(), problems: [] };
+  const graph = {
+    importers: map(),
+    specifiers: map(),
+    catalogs: map(),
+    snapshots: map(),
+    optionalPeers: map(),
+    problems: [],
+  };
   const sections = new Set(["dependencies", "devDependencies", "optionalDependencies"]);
   const depKeys = new Set([
     "dependencies",
@@ -1592,11 +1631,11 @@ export function lockfileGraph(lockText) {
         const entry = pair(body);
         top = entry ? scalar(entry[0]) : null;
         keys = [top];
-        if (["importers", "packages", "snapshots"].includes(top) && entry[1] !== "")
+        if (["importers", "packages", "snapshots", "catalogs"].includes(top) && entry[1] !== "")
           problem(`\`${top}\` is not a block mapping`);
         continue;
       }
-      if (top !== "importers" && top !== "packages" && top !== "snapshots") continue;
+      if (!["importers", "packages", "snapshots", "catalogs"].includes(top)) continue;
       if (/^ *\t/.test(raw)) {
         problem("a tab in the indentation");
         continue;
@@ -1653,7 +1692,10 @@ export function lockfileGraph(lockText) {
       if (top === "importers") {
         if (depth === 1) {
           if (!empty) problem(`an importer that is not a mapping: ${body}`);
-          else graph.importers[key] ??= map();
+          else {
+            graph.importers[key] ??= map();
+            graph.specifiers[key] ??= map();
+          }
         } else if (sections.has(path[1])) {
           if (depth === 3 && rawValue !== "")
             problem(`a dependency that is not a mapping: ${body}`);
@@ -1662,10 +1704,22 @@ export function lockfileGraph(lockText) {
               problem(`an importer dependency field the reader does not know: ${body}`);
             else if (key === "version")
               (graph.importers[path[0]][path[1]] ??= map())[path[2]] = value;
+            // the spec the member's manifest wrote, which says whether a locked alias is the member's own
+            else (graph.specifiers[path[0]][path[1]] ??= map())[path[2]] = value;
           } else if (depth > 4) problem(`a line too deep in an importer: ${body}`);
         } else if (depth === 2 && sections.has(key) && !empty)
           problem(`importer dependencies that are not a mapping: ${body}`);
         else if (depth > 5) problem(`a line too deep in an importer: ${body}`);
+      } else if (top === "catalogs") {
+        // `catalogs: { <catalog>: { <name>: { specifier, version } } }`: the specifier is kept
+        if (depth === 1 || depth === 2) {
+          if (rawValue !== "") problem(`a catalog line that is not a mapping: ${body}`);
+          else if (depth === 1) graph.catalogs[key] ??= map();
+        } else if (depth === 3) {
+          if ((key !== "specifier" && key !== "version") || value === "")
+            problem(`a catalog entry field the reader does not know: ${body}`);
+          else if (key === "specifier") graph.catalogs[path[0]][path[1]] = value;
+        } else problem(`a line too deep in a catalog: ${body}`);
       } else if (top === "snapshots") {
         if (depth === 1) {
           if (!empty) problem(`a snapshot that is not a mapping: ${body}`);
@@ -4254,19 +4308,21 @@ export const recordedRun = (checkRuns, sha, appId, base, name = VERIFY_CHECK) =>
 
 /**
  * Whether a head needs a verify. A completed run from this App against the current main (`base`) stands until the
- * head or main moves; pr-merge refuses a run against an older main. A service problem (or a neutral) never stands.
+ * head or main moves. When the repository has a merge queue (`queue`), a run against an older main stands while it is
+ * fresh (pr-merge counts it for as long); without one, pr-merge counts only a run against current main, so the head
+ * is verified again whenever main moves (CTO read of #1043). A service problem (or a neutral) never stands.
  * Otherwise the local error record decides: no error yet, or the last one older than ERROR_RETRY_MS (after
  * MAX_ERROR_ATTEMPTS the service problem is posted and the head is tried again every ERROR_RETRY_MS, so it is verified
  * once the service is healthy).
  */
 export function needsRun(
-  { checkRuns, sha, appId, base, errors = { count: 0 }, name = VERIFY_CHECK },
+  { checkRuns, sha, appId, base, errors = { count: 0 }, name = VERIFY_CHECK, queue = false },
   now = Date.now(),
 ) {
   if (recordedRun(checkRuns, sha, appId, base, name)) return false;
-  // A run against an older main stands while it is fresh: re-verifying every PR on every main merge, one verify at a
-  // time, would never finish. The merge queue's own commit verify is the gate that sees the latest main.
-  const fresh = recordedRun(checkRuns, sha, appId, undefined, name);
+  // With a merge queue, a run against an older main stands while it is fresh: re-verifying every PR on every main
+  // merge, one verify at a time, would never finish, and the queue's own commit verify sees the latest main.
+  const fresh = queue ? recordedRun(checkRuns, sha, appId, undefined, name) : undefined;
   if (fresh && isFresh(fresh.completed_at, now)) return false;
   if (errors.count === 0) return true;
   return now - errors.at > ERROR_RETRY_MS;
@@ -5600,7 +5656,12 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}
     const lockText = blob(mergedByPath.get("pnpm-lock.yaml"));
     const graph = lockfileGraph(lockText);
     importerDirs = new Set(Object.keys(graph.importers));
-    out.nodeModules = nodeModulesPlan(graph.importers);
+    // What the lockfile links is the PR's to get right: a plan it cannot make refuses the tree, never a service error.
+    try {
+      out.nodeModules = nodeModulesPlan(graph.importers, graph);
+    } catch (error) {
+      problems.push(`pnpm-lock.yaml: ${error.message}`);
+    }
     // What an allowed build installs is the registry's package under its own name, never a tarball the PR chose.
     problems.push(...lockfileResolutionProblems(lockText));
   }
@@ -6504,7 +6565,32 @@ async function heads(s, repo) {
   const queue = JSON.parse(
     gh(["api", `repos/${repo}/git/matching-refs/heads/gh-readonly-queue/`], token, true),
   ).map((ref) => ({ repo, sha: ref.object?.sha, base: main, queue: true }));
-  return jobsFrom({ repo, pulls, main, queue });
+  // Whether main has a merge queue (needsRun's fresh window): a failed read counts as none, which only verifies more.
+  const [owner, name] = repo.split("/");
+  let hasQueue = false;
+  try {
+    hasQueue = Boolean(
+      JSON.parse(
+        gh(
+          [
+            "api",
+            "graphql",
+            "-f",
+            'query=query($o:String!,$r:String!){repository(owner:$o,name:$r){mergeQueue(branch:"main"){id}}}',
+            "-f",
+            `o=${owner}`,
+            "-f",
+            `r=${name}`,
+          ],
+          token,
+          true,
+        ),
+      ).data?.repository?.mergeQueue,
+    );
+  } catch {
+    hasQueue = false;
+  }
+  return jobsFrom({ repo, pulls, main, queue }).map((job) => ({ ...job, hasQueue }));
 }
 
 /** The local error record's key for a job: one per head and check, so one check's errors never hold another back. */
@@ -6572,6 +6658,7 @@ async function wanted(s, job) {
     base: job.base,
     errors,
     name: KINDS[job.kind ?? "gate"].check,
+    queue: job.hasQueue === true,
   });
 }
 
@@ -6647,6 +6734,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!options) {
     process.stderr.write(
       "usage: stackra-verify.mjs run --sha <sha> [--pr <n>] | once | daemon [--interval <s>]  [-R owner/repo] | self-check\n",
+    );
+    process.exit(2);
+  }
+  const ungated = ungatedRepos(options.repos);
+  if (ungated.length) {
+    process.stderr.write(
+      `stackra-verify: the gate is defined for ${GATE_REPOS.join(", ")} only; not verifying ${ungated.join(", ")}\n`,
     );
     process.exit(2);
   }

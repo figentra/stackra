@@ -66,6 +66,8 @@ import {
   cleanupPlan,
   CONTAINER_ENV,
   DEFAULT_REPO,
+  GATE_REPOS,
+  ungatedRepos,
   dockerAs,
   dockerEnvFile,
   ERROR_RETRY_MS,
@@ -310,6 +312,26 @@ const lockEntry = (v) =>
 
 /** A lockfile that locks these uniwind-pro versions. */
 const lockWith = (versions) => ["packages:", ...versions.map(lockEntry)].join("\n\n");
+
+test("parseArgs: the gate is defined for this repository only; the template and any other -R are refused (CTO read of #1043)", () => {
+  assert.deepEqual(GATE_REPOS, [DEFAULT_REPO]);
+  assert.deepEqual(ungatedRepos(parseArgs(["daemon"]).repos), []);
+  assert.deepEqual(
+    ungatedRepos(
+      parseArgs(["daemon", "-R", DEFAULT_REPO, "-R", "stackra-inc/stackra-template"]).repos,
+    ),
+    ["stackra-inc/stackra-template"],
+  );
+  assert.deepEqual(ungatedRepos(["a/b", DEFAULT_REPO, "c/d"]), ["a/b", "c/d"]);
+  // the runbook's unit names this repository alone
+  const runbook = readFileSync(new URL("../stackra-verify.mjs", import.meta.url), "utf8");
+  const exec = /ExecStart=.*stackra-verify\.mjs daemon(.*)$/m.exec(runbook)?.[1] ?? "";
+  assert.deepEqual(
+    [...exec.matchAll(/-R (\S+)/g)].map((m) => m[1]),
+    [DEFAULT_REPO],
+  );
+  assert.doesNotMatch(runbook, /-R \S*stackra-template/);
+});
 
 test("parseArgs: run needs a full SHA; --in-place and same-user modes are gone; bad input is a usage error", () => {
   assert.equal(parseArgs(["run", "--sha", SHA, "--pr", "12"]).sha, SHA);
@@ -1888,40 +1910,30 @@ test("fetchRefs: a merge-queue job fetches the queue's refs, a PR its head, main
   );
 });
 
-test("needsRun: a fresh green against an older main stands (no livelock); a stale one runs again", () => {
-  const run = (completedAt) => ({
-    name: "stackra/verify",
-    head_sha: SHA,
-    status: "completed",
-    conclusion: "success",
-    app: { id: Number(APP_ID) },
-    external_id: `base:${"d".repeat(40)}`,
-    completed_at: completedAt,
-  });
-  assert.equal(
-    needsRun(
-      {
-        checkRuns: [run(new Date(NOW - 60_000).toISOString())],
-        sha: SHA,
-        appId: APP_ID,
-        base: BASE,
-      },
-      NOW,
-    ),
-    false,
-  );
-  assert.equal(
-    needsRun(
-      {
-        checkRuns: [run(new Date(NOW - FRESH_MS - 60_000).toISOString())],
-        sha: SHA,
-        appId: APP_ID,
-        base: BASE,
-      },
-      NOW,
-    ),
-    true,
-  );
+/** A green stackra/verify from our App against an older main, finished at `completedAt`. */
+const olderMainRun = (completedAt) => ({
+  name: "stackra/verify",
+  head_sha: SHA,
+  status: "completed",
+  conclusion: "success",
+  app: { id: Number(APP_ID) },
+  external_id: `base:${"d".repeat(40)}`,
+  completed_at: completedAt,
+});
+
+test("needsRun: with a merge queue a fresh green against an older main stands (no livelock); without one it runs again", () => {
+  const recent = olderMainRun(new Date(NOW - 60_000).toISOString());
+  const stale = olderMainRun(new Date(NOW - FRESH_MS - 60_000).toISOString());
+  const needs = (checkRun, queue) =>
+    needsRun({ checkRuns: [checkRun], sha: SHA, appId: APP_ID, base: BASE, queue }, NOW);
+  assert.equal(needs(recent, true), false);
+  assert.equal(needs(stale, true), true);
+  // no merge queue (CTO read of #1043): pr-merge counts only a run against current main, so main moving re-verifies
+  assert.equal(needs(recent, false), true);
+  assert.equal(needs(recent, undefined), true);
+  assert.equal(needs(stale, false), true);
+  // against current main it stands either way
+  assert.equal(needs({ ...recent, external_id: `base:${BASE}` }, false), false);
 });
 
 test("scrub: a registered secret goes from every output in every encoding", () => {
@@ -2215,10 +2227,28 @@ test("gate mirrors main's ci.yml: every dependency-scan, gate and mobile step, i
   const notMirrored = {
     "dependency-scan": ["Toolchain (mise)", "Put osv-scanner on PATH", "Checkout"],
     gate: ["Checkout", "Toolchain (mise)", "Turborepo remote cache (sops)", "Install dependencies"],
+    // the mobile job's own setup: the token, its download cache and the install are the service's (mobileScript)
+    mobile: [
+      "Checkout",
+      "Toolchain (mise)",
+      "Uniwind Pro token (sops)",
+      "Uniwind Pro cache directory",
+      "Uniwind Pro download cache (restore)",
+      "Uniwind Pro cache token (GitHub App)",
+      "Uniwind Pro cache from figentra/ci-cache",
+      "Install dependencies",
+      "Uniwind Pro download cache (filled?)",
+      "Uniwind Pro download cache (save)",
+    ],
   };
-  for (const job of ["dependency-scan", "gate"])
+  // review of the box 1 proofs (field mutant): every job a step names is enumerated, mobile's included
+  assert.deepEqual(
+    [...new Set([...GATE_STEPS, ...MOBILE_STEPS].map((s) => s.job).filter(Boolean))].toSorted(),
+    Object.keys(notMirrored).toSorted(),
+  );
+  for (const job of Object.keys(notMirrored))
     assert.deepEqual(
-      GATE_STEPS.filter((s) => s.job === job).map((s) => s.ci),
+      [...GATE_STEPS, ...MOBILE_STEPS].filter((s) => s.job === job).map((s) => s.ci),
       jobs[job].map((s) => s.name).filter((n) => !notMirrored[job].includes(n)),
       job,
     );
@@ -5481,6 +5511,26 @@ test("proof B2: buildTree accepts main's own workspace link to its gate-tool mem
           error.message.includes(`${key} "workspace:*" links a gate tool to a workspace member`),
         key,
       );
+    // re-review of the box 1 proofs: a gate tool the lockfile alone aliases (the spec unchanged) refuses the tree,
+    // never a service error
+    const evilLock = (version) =>
+      memberLinkLock("b", { name: "@stackra/cli", dir: "a" }).replace(
+        "        version: link:../a\n",
+        `        version: link:../a\n      turbo:\n        specifier: 'catalog:'\n        version: ${version}\n`,
+      );
+    const withTurbo = {
+      "packages/b/package.json":
+        '{"name":"b","devDependencies":{"@stackra/cli":"workspace:*","turbo":"catalog:"}}\n',
+    };
+    assert.throws(
+      () => build({ ...withTurbo, "pnpm-lock.yaml": evilLock("evil-turbo@1.0.0") }),
+      (error) =>
+        error.refused === true &&
+        error.message.includes(
+          "pnpm-lock.yaml: an alias only the lockfile makes: packages/b turbo locked as evil-turbo",
+        ),
+    );
+    assert.match(build({ ...withTurbo, "pnpm-lock.yaml": evilLock("2.11.9") }), /^[0-9a-f]{40}$/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -6557,6 +6607,29 @@ test("B: every gate step is a judge or a PR step, as ruled; judges never start f
     GATE_STEPS.filter((s) => !s.judge).map((s) => s.id),
     PR_STEPS,
   );
+  // review of the box 1 proofs (field mutant): the image each step starts from, exactly
+  assert.deepEqual(
+    GATE_STEPS.map((s) => [s.id, s.from]),
+    [
+      ["licence-policy", undefined],
+      ["dependency-scan", undefined],
+      ["workflow-lint", undefined],
+      ["linear-key-check", undefined],
+      ["format-check", undefined],
+      ["lint", undefined],
+      ["typecheck", "base"],
+      ["build", "base"],
+      ["service-gen", "built"],
+      ["manifests-match-gen", "built"],
+      ["migration-lint", undefined],
+      ["validate", undefined],
+      ["env-names", undefined],
+      ["boundaries", undefined],
+      ["knip", undefined],
+      ["secrets-scan", undefined],
+      ["test", "built"],
+    ],
+  );
   for (const step of GATE_STEPS) {
     // a judge starts from a view; a PR step names the image it starts from, and only the build's is kept
     if (step.judge) assert.equal(step.from, undefined, step.id);
@@ -7129,10 +7202,13 @@ function installFixture() {
   writeFileSync(join(dir, "importers"), ".\npackages/a\n");
   writeFileSync(
     join(dir, "node-modules.tsv"),
-    nodeModulesPlan({
-      ".": { devDependencies: { turbo: "2.11.9", "@stackra/a": "link:packages/a" } },
-      "packages/a": { dependencies: { zod: "4.0.0", zod3: "zod@3.25.0" } },
-    })
+    nodeModulesPlan(
+      {
+        ".": { devDependencies: { turbo: "2.11.9", "@stackra/a": "link:packages/a" } },
+        "packages/a": { dependencies: { zod: "4.0.0", zod3: "zod@3.25.0" } },
+      },
+      { specifiers: { "packages/a": { dependencies: { zod3: "npm:zod@3.25.0" } } } },
+    )
       .entries.map((line) => `${line}\n`)
       .join(""),
   );
@@ -7324,17 +7400,27 @@ test("round 7 R6-H1: prepare accepts exactly what pnpm writes for the lockfile, 
 
 test("round 7: the lockfile plan names each member's direct dependencies, registry or the member a link names", () => {
   assert.deepEqual(
-    nodeModulesPlan({
-      ".": {
-        dependencies: { turbo: "2.11.9(x@1)" },
-        devDependencies: { "@stackra/a": "link:packages/a" },
+    nodeModulesPlan(
+      {
+        ".": {
+          dependencies: { turbo: "2.11.9(x@1)" },
+          devDependencies: { "@stackra/a": "link:packages/a" },
+        },
+        "packages/b": {
+          dependencies: { "@stackra/a": "link:../a" },
+          optionalDependencies: { zod: "4.0.0" },
+          devDependencies: { ts6: "typescript@6.0.3", "@x/y": "@scope/z@1.0.0(p@1)" },
+        },
       },
-      "packages/b": {
-        dependencies: { "@stackra/a": "link:../a" },
-        optionalDependencies: { zod: "4.0.0" },
-        devDependencies: { ts6: "typescript@6.0.3", "@x/y": "@scope/z@1.0.0(p@1)" },
+      {
+        specifiers: {
+          "packages/b": {
+            devDependencies: { ts6: "catalog:tooling", "@x/y": "npm:@scope/z@^1.0.0" },
+          },
+        },
+        catalogs: { tooling: { ts6: "npm:typescript@6.0.3" } },
       },
-    }),
+    ),
     {
       importers: [".", "packages/b"],
       entries: [
@@ -7381,11 +7467,104 @@ test("round 7: the lockfile plan names each member's direct dependencies, regist
   );
 });
 
+/** nodeModulesPlan's entries for a lockfile text, through lockfileGraph (which must read it cleanly). */
+const planOf = (text) => {
+  const graph = lockfileGraph(text);
+  assert.deepEqual(graph.problems, []);
+  return nodeModulesPlan(graph.importers, graph).entries;
+};
+
+test("re-review of the box 1 proofs: a locked alias stands only when the spec the lockfile records names it", () => {
+  const lock = (spec, version, catalogs = CATALOGS) =>
+    [
+      "lockfileVersion: '9.0'",
+      "",
+      catalogs,
+      "importers:",
+      "",
+      "  .:",
+      "    devDependencies:",
+      "      turbo:",
+      `        specifier: ${spec}`,
+      `        version: ${version}`,
+      "      typescript6:",
+      "        specifier: catalog:tooling",
+      "        version: typescript@6.0.3",
+      "",
+    ].join("\n");
+  const CATALOGS = [
+    "catalogs:",
+    "  build:",
+    "    turbo:",
+    "      specifier: 2.11.9",
+    "      version: 2.11.9",
+    "  default:",
+    "    turbo:",
+    "      specifier: 2.11.9",
+    "      version: 2.11.9",
+    "  tooling:",
+    "    typescript6:",
+    "      specifier: npm:typescript@6.0.3",
+    "      version: 6.0.3",
+    "",
+  ].join("\n");
+  // main's shape: the catalog's npm: spec names the package the lockfile installs
+  assert.deepEqual(planOf(lock("2.11.9", "2.11.9")), [
+    ".\tturbo\tregistry\tturbo",
+    ".\ttypescript6\tregistry\ttypescript",
+  ]);
+  // a lockfile-only alias of a gate tool, the spec unchanged (a range, the default catalog, a named catalog)
+  for (const spec of [
+    "2.11.9",
+    "^2.11.9",
+    "'catalog:'",
+    "catalog:build",
+    "catalog:tooling",
+    "catalog:none",
+  ])
+    assert.throws(
+      () => planOf(lock(spec, "evil-turbo@1.0.0")),
+      /an alias only the lockfile makes: \. turbo locked as evil-turbo, which its spec does not name/,
+      spec,
+    );
+  // an npm: spec naming another package, or none
+  for (const spec of ["npm:turbo@2.11.9", "npm:evil-turbo", "npm:other@1.0.0"])
+    assert.throws(
+      () => planOf(lock(spec, "evil-turbo@1.0.0")),
+      /an alias only the lockfile makes/,
+      spec,
+    );
+  // the alias a spec declares is planned as that package (the manifest checks judge the spec itself)
+  assert.deepEqual(
+    planOf(lock("npm:evil-turbo@1.0.0", "evil-turbo@1.0.0"))[0],
+    ".\tturbo\tregistry\tevil-turbo",
+  );
+  // the catalog's entry is the one under the dependency's own name, never another entry's alias
+  assert.throws(
+    () => planOf(lock("catalog:tooling", "typescript@6.0.3")),
+    /\. turbo locked as typescript, which its spec does not name/,
+  );
+  // no specifiers handed in: every alias is refused (fails closed)
+  assert.throws(
+    () => nodeModulesPlan({ ".": { devDependencies: { typescript6: "typescript@6.0.3" } } }),
+    /an alias only the lockfile makes/,
+  );
+  // the catalogs section is read as strictly as the importers
+  assert.match(
+    lockfileGraph("catalogs:\n  build:\n    turbo:\n      integrity: x\n").problems[0],
+    /a catalog entry field the reader does not know/,
+  );
+  assert.match(lockfileGraph("catalogs: {}\n").problems[0], /`catalogs` is not a block mapping/);
+});
+
 test("proof B1: the plan reads lockfileGraph's importers from main's real lockfile, aliases and workspace links included", () => {
   const graph = lockfileGraph(readFileSync(join(CODE_DIR, "pnpm-lock.yaml"), "utf8"));
   assert.deepEqual(graph.problems, []);
-  const plan = nodeModulesPlan(graph.importers);
+  const plan = nodeModulesPlan(graph.importers, graph);
   assert.deepEqual(plan.importers, Object.keys(graph.importers).toSorted());
+  // main's own aliases come from its catalogs (catalog:tooling, catalog:mobile, catalog:uniwind-pro)
+  assert.equal(graph.catalogs.tooling.typescript6, "npm:typescript@6.0.3");
+  assert.equal(graph.catalogs["uniwind-pro"].uniwind, "npm:uniwind-pro@1.9.0");
   assert.ok(plan.importers.includes("packages/developer/cli"));
   const rows = plan.entries.map((line) => line.split("\t"));
   for (const row of rows) {
