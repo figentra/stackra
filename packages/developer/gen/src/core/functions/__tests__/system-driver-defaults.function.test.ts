@@ -177,6 +177,19 @@ describe("systemDriverDefaults", () => {
     expect(app).not.toContainEqual(tokens);
   });
 
+  it("binds tenancy's CronScopes in a service that declares the scheduler and tenancy, and nowhere else", () => {
+    const scopes = ["CronScopes", "tenancy"];
+    const both = ["@stackra/scheduler", "@stackra/tenancy"];
+    const rows = systemDriverDefaults({ ...COMMERCE_IR, packages: both });
+    expect(rows.find(({ port }) => port.name === "CronScopes")).toEqual({
+      port: { name: "CronScopes", from: "@stackra/scheduler/contracts" },
+      driver: "tenancy",
+    });
+    expect(pairs({ ...COMMERCE_IR, packages: ["@stackra/scheduler"] })).not.toContainEqual(scopes);
+    expect(pairs({ ...COMMERCE_IR, packages: ["@stackra/tenancy"] })).not.toContainEqual(scopes);
+    expect(pairs({ ...WEB_APP_IR, targets: ["web"], packages: both })).not.toContainEqual(scopes);
+  });
+
   it("gives a package, and a host without the port's package, none", () => {
     expect(systemDriverDefaults({ ...LOYALTY_KIT_IR, packages: DECLARED })).toEqual([]);
     expect(pairs({ ...WEB_APP_IR, targets: ["ios"], packages: ["@stackra/platform"] })).toEqual([

@@ -591,7 +591,10 @@ For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackr
 `cronJobId`, which `encoreCronJobs()` also calls) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`
 holds one Pub/Sub `Topic` and `Subscription` per queue its job actions name, registered as `queue.<name>` for a
 broker-delivered queue driver, each delivery run through `QueueWorkerService.process`. Both reach the member through the
-server app's `handlers`.
+server app's `handlers`. Nothing injects the `SchedulerService` the CronJobs resolve, so a service that declares
+`@stackra/scheduler` gets it bound in its wiring (`BOOT_SERVICES`), and one that also declares `@stackra/tenancy` binds
+the scheduler's `CronScopes` port to tenancy's `tenancy` driver by default, so a `perScope` cron runs once per tenant
+node; the scheduler's memory driver lists no scope (STA-2856).
 
 `.stackra/encore/<member>/events.ts` holds one Pub/Sub `Topic` per integration event the manifest publishes, registered
 under its `<module>.<name>.v<n>` wire name for the outbox's `broker` publisher. A service with a relay listener (the
