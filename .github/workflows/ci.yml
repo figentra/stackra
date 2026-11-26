@@ -181,8 +181,13 @@ jobs:
           # The single-quoted script is the inner sh's: it expands $1 and STACKRA_CLI itself.
           # shellcheck disable=SC2016
           {
-            for member in services/*/; do grep -qs '"gen":' "${member}package.json" && echo "$member"; done
-            for member in packages/*/*/; do [ -d "${member}src/node/database/migrations" ] || [ -d "${member}src/node/database/compiled-migrations" ] && echo "$member"; done
+            # if/then, not `test && echo`: a last member that does not match would end the group with status 1.
+            for member in services/*/; do
+              if grep -qs '"gen":' "${member}package.json"; then echo "$member"; fi
+            done
+            for member in packages/*/*/; do
+              if [ -d "${member}src/node/database/migrations" ] || [ -d "${member}src/node/database/compiled-migrations" ]; then echo "$member"; fi
+            done
           } | xargs -P 4 -I {} sh -c 'cd "$1" && node "$STACKRA_CLI" gen --check' _ {} || stale=1
           if [ "$stale" -ne 0 ]; then
             echo "::error title=Stale generated files::run pnpm gen and commit the stackra.manifest.json, entities.gen.ts and compiled migration files above"
