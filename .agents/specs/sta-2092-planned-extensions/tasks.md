@@ -27,16 +27,16 @@ description: "Tasks for STA-2092: planned Postgres extensions are created before
 
 ## Phase 3: User Story 2 - A failure stops the deploy before any migration (Priority: P1)
 
-- [x] T006 [US2] Test first, then add `purpose: "extensions"` to `packages/infrastructure/infra-aws-runtime/src/node/types/workload-migration-inputs.type.ts` and its failure wording to `packages/infrastructure/infra-aws-runtime/src/node/constants/workload-migration-provider.constant.ts` (test: `workload-migration-provider.constant.test.ts`) — covers: FR-005, AC-002 — route: package — deps: T004
+- [x] T006 [US2] Test first, then add `purpose: "extensions"` to `packages/infrastructure/infra-aws-runtime/src/node/types/workload-migration-inputs.type.ts` and its failure wording to `packages/infrastructure/infra-aws-runtime/src/node/constants/workload-migration-provider.constant.ts` (test: `workload-migration-provider.constant.test.ts`) — covers: FR-005, P-007, AC-002 — route: package — deps: T004
 
 ## Phase 4: User Story 1 - GCP creates the extensions before migrations (Priority: P1)
 
-- [x] T007 [US1] Test first, then return the services' extensions from `packages/infrastructure/infra-gcp/src/core/functions/gcp-runtime-config.function.ts` as `database.extensions` on `packages/infrastructure/infra-gcp/src/core/types/gcp-runtime-config.type.ts` (test: `gcp-runtime-config.function.test.ts`) — covers: FR-006, AC-001 — route: package — deps: T002
-- [x] T008 [US1] Test first, then declare the admin user, the in-region secret, the reader account and the Cloud Run job in `packages/infrastructure/infra-gcp/src/node/functions/database-extensions.function.ts` with `packages/infrastructure/infra-gcp/src/core/constants/database-setup-settings.constant.ts`, called from `packages/infrastructure/infra-gcp/src/node/functions/gcp-runtime.function.ts`, refusing planned extensions without `adminPassword` (test: `gcp-runtime.function.test.ts`) — covers: FR-007, FR-008, FR-010, P-004, P-006, EC-03, AC-001, AC-002, AC-003, AC-004 — route: package — deps: T007
+- [x] T007 [US1] Test first, then return the services' extensions from `packages/infrastructure/infra-gcp/src/core/functions/gcp-runtime-config.function.ts` as the `extensions` of the `database` block on `packages/infrastructure/infra-gcp/src/core/types/gcp-runtime-config.type.ts` (test: `gcp-runtime-config.function.test.ts`) — covers: FR-006, P-008, AC-001 — route: package — deps: T002
+- [x] T008 [US1] Test first, then declare the admin user, the in-region secret, the reader account and the Cloud Run job in `packages/infrastructure/infra-gcp/src/node/functions/database-extensions.function.ts` with `packages/infrastructure/infra-gcp/src/core/constants/database-setup-settings.constant.ts`, called from `packages/infrastructure/infra-gcp/src/node/functions/gcp-runtime.function.ts`, refusing planned extensions without `adminPassword` (test: `gcp-runtime.function.test.ts`) — covers: FR-007, FR-008, FR-010, P-004, P-006, P-009, EC-03, AC-001, AC-002, AC-003, AC-004 — route: package — deps: T007
 
 ## Phase 5: User Story 3 - The deploy identity may create the job's secret (Priority: P1)
 
-- [x] T009 [US3] Test first: every provider module the extensions path declares maps to a role in `DEPLOY_ROLES`, owner and editor never granted; then add `roles/secretmanager.admin` in `packages/infrastructure/infra-gcp/src/node/constants/deploy-roles.constant.ts` (test: `packages/infrastructure/infra-gcp/src/node/constants/__tests__/deploy-roles.constant.test.ts`) — covers: FR-009, P-005, EC-06, AC-005 — route: package — deps: T008
+- [x] T009 [US3] Test first: every provider module the extensions path declares maps to a role in `DEPLOY_ROLES`, owner and editor never granted; then add the roles/secretmanager.admin role in `packages/infrastructure/infra-gcp/src/node/constants/deploy-roles.constant.ts` (test: `packages/infrastructure/infra-gcp/src/node/constants/__tests__/deploy-roles.constant.test.ts`) — covers: FR-009, P-005, EC-06, AC-005 — route: package — deps: T008
 
 ## Phase 6: Polish
 

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-26
 
-**Status**: Implementing <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
+**Status**: Tasked <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
 
 **Tier**: feature
 
@@ -167,11 +167,9 @@ extensions; the script against a real Postgres.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
-- **AC-001**: WHEN a server's services name extensions THE infrastructure SHALL create them with the admin login in
-  every database before any migration runs, on AWS and on GCP.
-- **AC-002**: IF the extensions run fails THEN the apply SHALL fail and no migration SHALL run.
-- **AC-003**: THE admin password SHALL never appear in a task or job definition, a log, an output or the state in plain
-  text.
+- **AC-001**: WHEN a server's services name extensions THE infrastructure SHALL create them with the admin login in every database before any migration runs, on AWS and on GCP.
+- **AC-002**: IF the extensions run fails THEN THE apply SHALL fail before any migration runs.
+- **AC-003**: THE admin password SHALL never appear in a task or job definition, a log, an output or the state in plain text.
 - **AC-004**: WHERE no extension is named THE runtimes SHALL declare nothing new.
 - **AC-005**: THE deploy identity's roles SHALL cover every resource the extensions path declares.
 - **AC-006**: THE script SHALL refuse a name outside the approved list.
@@ -231,5 +229,4 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-2092 spec, batch 21) · written after the fact from the diff of PR #1143
 - 2026-11-26 · Draft → Clarified · Claude (STA-2092 spec, batch 21) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-2092 spec, batch 21) · plan.md
-- 2026-11-26 · Planned → Tasked · Claude (STA-2092 spec, batch 21) · tasks.md
-- 2026-11-26 · Tasked → Implementing · Claude (STA-2092 spec, batch 21) · T001 to T010 are the commits 4fd0eb4f4 and 5b8d9e566 on the branch
+- 2026-11-26 · Planned → Tasked · Claude (STA-2092 spec, batch 21) · tasks.md; the tasks marked done are already on the branch (PR); Implementing waits for the approver's Planned approval (ADR 0502)

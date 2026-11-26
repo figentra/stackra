@@ -57,6 +57,9 @@ role the block needs.
 - **P-004**: the password never appears in a task or job definition — Validates: FR-003, FR-007
 - **P-005**: for every provider module the extensions path declares, a role in `DEPLOY_ROLES` covers it — Validates: FR-009
 - **P-006**: with no planned extension, the resource set equals the one before this change — Validates: FR-010
+- **P-007**: for every run with `purpose: "extensions"`, each failure message (not started, non-zero exit, timeout) says that no migration ran, and a run without `purpose` keeps the migration wording — Validates: FR-005
+- **P-008**: for every set of service runways, `gcpRuntimeConfig(...).database.extensions` equals `plannedExtensions(services, environment)` — Validates: FR-006
+- **P-009**: for every config with planned extensions and no `adminPassword`, `gcpRuntime` throws before declaring any resource — Validates: FR-008
 
 ## Architecture overview
 
@@ -84,15 +87,51 @@ execution token ties it to the apply, reading the password from Secret Manager a
 ```text
 packages/developer/runway/
 ├── README.md
-└── src/core/{index.ts, functions/{planned-extensions,create-extensions-script}.function.ts} (+ tests)
+└── src/core/
+    ├── index.ts
+    ├── __tests__/index.test.ts
+    └── functions/
+        ├── planned-extensions.function.ts
+        ├── create-extensions-script.function.ts
+        └── __tests__/
 packages/infrastructure/infra-aws-runtime/
 ├── README.md
-└── src/{core/functions/runtime-plan.function.ts, node/constants/{database-setup-settings,workload-migration-provider}.constant.ts, node/functions/{aws-databases,aws-runtime,aws-workloads}.function.ts, node/types/workload-migration-inputs.type.ts} (+ tests)
+└── src/
+    ├── core/functions/runtime-plan.function.ts
+    └── node/
+        ├── constants/
+        │   ├── database-setup-settings.constant.ts
+        │   ├── workload-migration-provider.constant.ts
+        │   └── __tests__/
+        ├── functions/
+        │   ├── aws-databases.function.ts
+        │   ├── aws-runtime.function.ts
+        │   ├── aws-workloads.function.ts
+        │   └── __tests__/
+        └── types/workload-migration-inputs.type.ts
 packages/infrastructure/infra-gcp/
-├── AGENTS.md, README.md
-└── src/{core/constants/database-setup-settings.constant.ts, core/functions/gcp-runtime-config.function.ts, core/types/gcp-runtime-config.type.ts, node/constants/deploy-roles.constant.ts, node/functions/{database-extensions,gcp-runtime}.function.ts} (+ tests)
+├── AGENTS.md
+├── README.md
+├── package.json
+└── src/
+    ├── core/
+    │   ├── constants/database-setup-settings.constant.ts
+    │   ├── functions/
+    │   │   ├── gcp-runtime-config.function.ts
+    │   │   └── __tests__/
+    │   └── types/gcp-runtime-config.type.ts
+    └── node/
+        ├── constants/
+        │   ├── deploy-roles.constant.ts
+        │   └── __tests__/
+        └── functions/
+            ├── database-extensions.function.ts
+            ├── gcp-runtime.function.ts
+            └── __tests__/
 apps/docs/src/docs/adr/0160-raw-sql-at-runtime-and-the-approved-postgres-extensions.mdx
-.changeset/{runway-planned-extensions,infra-aws-runtime-extensions-before-migrations,infra-gcp-extensions-before-migrations}.md
+.changeset/runway-planned-extensions.md
+.changeset/infra-aws-runtime-extensions-before-migrations.md
+.changeset/infra-gcp-extensions-before-migrations.md
 ```
 
 ## Data models and migrations
