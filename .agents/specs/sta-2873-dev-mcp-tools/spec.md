@@ -206,7 +206,8 @@ output, failing and passing; and the real `stackra mcp` against this repository.
   results for a failing and a passing run (FR-005, FR-006).
 - **AC-004**: WHEN a writing tool is called on a deployed target THE server SHALL refuse it before it runs (FR-008).
 - **AC-005**: WHEN Encore pages its tool list THE server SHALL serve every page (FR-009).
-- **AC-006**: EVERY listed tool SHALL carry its hints (FR-007).
+- **AC-006**: WHEN a client lists the tools THE server SHALL give each tool its `readOnlyHint`, and each writing
+  tool its `destructiveHint` and `idempotentHint` (FR-007).
 
 ## Success Criteria _(mandatory)_
 

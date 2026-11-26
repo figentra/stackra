@@ -55,6 +55,10 @@ A writing tool is refused on a deployed target (`deployedTarget`). The Encore li
 - **P-003**: for every call of a tool that is not read-only with a non-local environment, no runner call happens and the result is `deployed_target` — Validates: FR-008
 - **P-004**: for every chain of `tools/list` pages, the served Encore tools are the concatenation of every page up to a repeated or absent cursor — Validates: FR-009
 - **P-005**: a read-only tool resolves to `destructive: false, idempotent: true`; `tool: true` to `false, true, false` (readOnly, destructive, idempotent) — Validates: FR-007
+- **P-006**: the tools `tools/list` serves are exactly the `toolsOf` tools of `DEV_TOOL_COMMANDS` then the host's (a host tool replacing a built-in of its name), then the Encore tools — Validates: FR-001, FR-004
+- **P-007**: for every set of manifests and every section name `s`, `manifest` answers when some manifest holds `s` and refuses naming the held sections otherwise — Validates: FR-003
+- **P-008**: for every runner tool call, the data holds `command`, `cwd`, `exitCode`, `ok` equal to `exitCode === 0`, `durationMs` and an output no longer than the limit plus its cut notice, and `isError` equals `!ok` — Validates: FR-005
+- **P-009**: for every member named by key, package name or folder, the runner runs in `<root>/<member path>`, and with no member in the root — Validates: FR-006
 
 ## Architecture overview
 
@@ -80,6 +84,30 @@ tool's `isError`. `listUpstreamTools` walks Encore's pages once, at start.
 ## Files and folders
 
 ```text
+.changeset/
+└── dev-mcp-truthful-tools.md
+apps/docs/src/docs/
+├── cli.mdx
+├── cli.ar.mdx
+├── clients-and-tools.mdx
+└── clients-and-tools.ar.mdx
+packages/developer/cli/src/node/
+├── commands/ls.command.ts
+├── constants/
+│   ├── mcp-command.constant.ts
+│   └── __tests__/mcp-command.constant.test.ts
+├── functions/run-cli.function.ts
+└── types/cli-context.type.ts
+packages/developer/console/src/
+├── contracts/types/
+│   ├── command-options.type.ts
+│   └── command-structure.type.ts
+└── core/
+    ├── functions/
+    │   ├── read-command.function.ts
+    │   ├── tools-of.function.ts
+    │   └── __tests__/tools-of.function.test.ts
+    └── types/console-tool.type.ts
 packages/developer/mcp/
 ├── AGENTS.md
 ├── README.md
@@ -91,37 +119,65 @@ packages/developer/mcp/
     │   └── ports/dev-tool-host.port.ts
     └── node/
         ├── index.ts
-        ├── commands/ (11 tool commands)
-        ├── constants/ (dev-tool-commands, new-kinds, check-phase-names, local-environments, output-limit)
-        ├── functions/ (run-tool-command, tool-run, read-members, resolve-member, deployed-target,
-        │               list-upstream-tools, dev-tool-container, parse-*, check-report, diagnostics-of,
-        │               serve-local-mcp, spawn-stackra, and their __tests__)
-        └── types/ (diagnostic, test-summary, tool-run-result, upstream-tool, workspace-member, local-tool,
-                    serve-local-mcp-options, stackra-runner)
-packages/developer/console/src/
-├── contracts/types/command-options.type.ts
-├── contracts/types/command-structure.type.ts
-└── core/
-    ├── functions/read-command.function.ts
-    ├── functions/tools-of.function.ts
-    ├── functions/__tests__/tools-of.function.test.ts
-    └── types/console-tool.type.ts
-packages/developer/cli/src/node/
-├── commands/ls.command.ts
-├── constants/mcp-command.constant.ts
-├── constants/__tests__/mcp-command.constant.test.ts
-├── functions/run-cli.function.ts
-└── types/cli-context.type.ts
-apps/docs/src/docs/
-├── cli.mdx, cli.ar.mdx
-└── clients-and-tools.mdx, clients-and-tools.ar.mdx
-.changeset/dev-mcp-truthful-tools.md
+        ├── commands/
+        │   ├── app-info.command.ts
+        │   ├── check.command.ts
+        │   ├── gen.command.ts
+        │   ├── lint.command.ts
+        │   ├── manifest.command.ts
+        │   ├── new.command.ts
+        │   ├── routes.command.ts
+        │   ├── test.command.ts
+        │   ├── typecheck.command.ts
+        │   ├── validate.command.ts
+        │   └── verify.command.ts
+        ├── constants/
+        │   ├── check-phase-names.constant.ts
+        │   ├── dev-tool-commands.constant.ts
+        │   ├── local-environments.constant.ts
+        │   ├── local-tools.constant.ts (deleted)
+        │   ├── new-kinds.constant.ts
+        │   └── output-limit.constant.ts
+        ├── functions/
+        │   ├── check-report.function.ts
+        │   ├── deployed-target.function.ts
+        │   ├── dev-tool-container.function.ts
+        │   ├── diagnostics-of.function.ts
+        │   ├── list-upstream-tools.function.ts
+        │   ├── parse-check-output.function.ts
+        │   ├── parse-diagnostics.function.ts
+        │   ├── parse-gen-output.function.ts
+        │   ├── parse-test-output.function.ts
+        │   ├── read-manifests.function.ts (deleted)
+        │   ├── read-members.function.ts
+        │   ├── resolve-member.function.ts
+        │   ├── run-tool-command.function.ts
+        │   ├── serve-local-mcp.function.ts
+        │   ├── spawn-stackra.function.ts
+        │   ├── tool-run.function.ts
+        │   └── __tests__/
+        │       ├── deployed-target.function.test.ts
+        │       ├── list-upstream-tools.function.test.ts
+        │       ├── parse-check-output.function.test.ts
+        │       ├── parse-diagnostics.function.test.ts
+        │       ├── parse-gen-output.function.test.ts
+        │       ├── parse-test-output.function.test.ts
+        │       ├── read-manifests.function.test.ts (deleted)
+        │       ├── read-members.function.test.ts
+        │       ├── serve-local-mcp.function.test.ts
+        │       ├── spawn-stackra.function.test.ts
+        │       └── tool-run.function.test.ts
+        └── types/
+            ├── diagnostic.type.ts
+            ├── local-tool.type.ts
+            ├── serve-local-mcp-options.type.ts
+            ├── stackra-runner.type.ts
+            ├── test-summary.type.ts
+            ├── tool-run-result.type.ts
+            ├── upstream-tool.type.ts
+            └── workspace-member.type.ts
+pnpm-lock.yaml
 ```
-
-- `packages/developer/mcp/src/node/functions/serve-local-mcp.function.ts`
-- `packages/developer/mcp/src/node/constants/dev-tool-commands.constant.ts`
-- `packages/developer/console/src/core/functions/read-command.function.ts`
-- `packages/developer/cli/src/node/constants/mcp-command.constant.ts`
 
 ## Data models and migrations
 
