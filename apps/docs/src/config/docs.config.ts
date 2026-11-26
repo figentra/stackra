@@ -90,6 +90,7 @@ export class StackraDocsConfig extends DocsConfig {
         {
           group: "Use Stackra",
           pages: [
+            "customers/create",
             "customers/install",
             "customers/support",
             "customers/security",

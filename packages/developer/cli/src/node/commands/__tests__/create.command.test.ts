@@ -1,15 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `CreateCommand` on the console: its steps run through the process port as tasks, gen's summary
- *          is drawn as a tree, and a failed step stops the run and shows the tail of its output.
+ *          is drawn as a tree, a failed step stops the run and shows the tail of its output, and the package README
+ *          documents the command and every one of its options.
  * Boundary: test only; the starter is a stub, the folder a temporary one and every child process scripted.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); STA-1952 spec User Story 1; STA-1966.
+ * Governing contract: ADR 0022 (test placement); ADR 0515 (enforcement); STA-1952 spec User Story 1; STA-1966;
+ *                     STA-2794.
  */
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { readCommand } from "@stackra/console";
 import { MemoryProcessRunnerDriver, runCommandForTest } from "@stackra/console/testing";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -82,5 +85,25 @@ describe("CreateCommand", () => {
       "pnpm install",
       "pnpm exec stackra gen",
     ]);
+  });
+
+  it("is documented in the package README: a Commands row and every option in New apps", () => {
+    const readme = readFileSync(new URL("../../../../README.md", import.meta.url), "utf8");
+    expect(readme).toMatch(/^\| `stackra create <directory>` +\|/m);
+    const start = readme.indexOf("\n## New apps\n");
+    expect(start).toBeGreaterThan(-1);
+    const end = readme.indexOf("\n## ", start + 1);
+    const section = readme.slice(start, end === -1 ? undefined : end);
+    const { options } = readCommand(CreateCommand);
+    expect(options.length).toBeGreaterThan(0);
+    // A switch that defaults to on is written as its negation (`--no-git`); every other option by its flag.
+    const flags = options.map((option) =>
+      option.kind === "boolean" && option.default === true
+        ? `--no-${option.flag}`
+        : `--${option.flag}`,
+    );
+    const rows = new Set([...section.matchAll(/^\| `(--[a-z-]+)/gm)].map((match) => match[1]));
+    expect(flags.filter((flag) => !rows.has(flag))).toEqual([]);
+    expect([...rows].filter((row) => !flags.includes(row ?? ""))).toEqual([]);
   });
 });

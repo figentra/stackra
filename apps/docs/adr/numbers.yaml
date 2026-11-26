@@ -1540,7 +1540,7 @@
   issue: STA-1920
 "0515":
   slug: stackra-create-and-the-published-starter
-  status: reserved
+  status: accepted
   issue: STA-1952
 "0516":
   slug: aws-quotas-are-fixed-inputs
