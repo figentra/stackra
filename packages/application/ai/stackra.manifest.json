@@ -903,6 +903,46 @@
                 "name": "repositoryOf",
                 "from": "@stackra/database"
               }
+            },
+            {
+              "class": {
+                "name": "Run",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "RunStep",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "ToolCall",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "RunApproval",
+                "from": "@stackra/ai/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
             }
           ]
         }

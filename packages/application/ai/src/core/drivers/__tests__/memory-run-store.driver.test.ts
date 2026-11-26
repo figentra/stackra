@@ -7,7 +7,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0100 (decision 10); STA-781.
  */
-import { ActorKind } from "@stackra/contracts";
+import { ActorKind, Realm } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { RunApprovalStatus } from "#contracts/enums/run-approval-status.enum";
@@ -80,5 +80,44 @@ describe(MemoryRunStoreDriver, () => {
     expect(await store.get(run.id)).toMatchObject({ status: "waiting_client_tool", clientPending });
     await store.update(run.id, { status: RunStatus.Running, clientPending: null });
     expect((await store.get(run.id))?.clientPending).toBeUndefined();
+  });
+
+  it("forgets the runs that acted for a person, with their rows, and no one else's", async () => {
+    const store = new MemoryRunStoreDriver();
+    const person = { kind: ActorKind.User, id: "usr_1", realm: Realm.Staff } as const;
+    const own = await store.create({
+      conversationId: "aiconv_1",
+      agent: "assistant",
+      actor: person,
+      status: RunStatus.Completed,
+    });
+    const delegated = await store.create({
+      conversationId: "aiconv_2",
+      agent: "assistant",
+      actor: { kind: ActorKind.Agent, id: "agt_1", onBehalfOf: person },
+      status: RunStatus.Completed,
+    });
+    const other = await store.create({
+      conversationId: "aiconv_3",
+      agent: "assistant",
+      actor: { kind: ActorKind.User, id: "usr_2", realm: Realm.Staff },
+      status: RunStatus.Completed,
+    });
+    for (const run of [own, delegated, other])
+      await store.recordToolCall({
+        runId: run.id,
+        toolCallId: `call_${run.id}`,
+        tool: "orders.order.get@1",
+        inputHash: "ab",
+        outcome: ToolCallOutcome.Ok,
+        at,
+      });
+    expect(await store.forget("usr_1")).toBe(2);
+    expect(await store.get(own.id)).toBeUndefined();
+    expect(await store.get(delegated.id)).toBeUndefined();
+    expect(await store.toolCalls(delegated.id)).toEqual([]);
+    expect(await store.get(other.id)).toBeDefined();
+    expect(await store.toolCalls(other.id)).toHaveLength(1);
+    expect(await store.forget("usr_1")).toBe(0);
   });
 });

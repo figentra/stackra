@@ -19,6 +19,15 @@ import type { RunRecord } from "#contracts/types/run-record.type";
 import type { RunStepRecord } from "#contracts/types/run-step-record.type";
 import type { ToolCallRecord } from "#contracts/types/tool-call-record.type";
 
+/** Whether `actor` is `principalId`, or acts for them up to two delegations deep (as the Postgres store reads it). */
+function actsFor(actor: Actor, principalId: string): boolean {
+  return (
+    actor.id === principalId ||
+    actor.onBehalfOf?.id === principalId ||
+    actor.onBehalfOf?.onBehalfOf?.id === principalId
+  );
+}
+
 /**
  * Keeps runs in memory.
  *
@@ -105,5 +114,19 @@ export class MemoryRunStoreDriver extends Driver(RunStore) {
   /** Implements `RunStore.approvals`, documented there. */
   async approvals(runId: string): Promise<readonly RunApprovalRecord[]> {
     return [...this.decisions.values()].filter((approval) => approval.runId === runId);
+  }
+
+  /** Implements `RunStore.forget`, documented there; this store holds no legal hold. */
+  async forget(principalId: string): Promise<number> {
+    const ids = new Set(
+      [...this.rows.values()].filter((run) => actsFor(run.actor, principalId)).map((run) => run.id),
+    );
+    for (const list of [this.steps, this.calls])
+      for (let index = list.length - 1; index >= 0; index -= 1)
+        if (ids.has(list[index]?.runId ?? "")) list.splice(index, 1);
+    for (const [approvalId, approval] of this.decisions)
+      if (ids.has(approval.runId)) this.decisions.delete(approvalId);
+    for (const id of ids) this.rows.delete(id);
+    return ids.size;
   }
 }

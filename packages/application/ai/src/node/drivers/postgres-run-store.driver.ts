@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresRunStoreDriver`, the `RunStore` over `ai.runs`, `ai.steps`, `ai.tool_calls` and `ai.approvals`:
- *          creates and updates runs, records steps, tool calls and approvals, and reads them per run.
+ *          creates and updates runs, records steps, tool calls and approvals, reads them per run, and forgets the runs
+ *          that acted for a person (a subject's erasure).
  * Boundary: a driver over the four repositories, so every read and write runs in the caller's tenant session under
  *           row-level security. Inserts are written at once; a run's or an approval's update changes the loaded row,
  *           which the caller's unit of work flushes. No text is written here (ADR 0100 decision 9). The three ADR 0100
@@ -29,6 +30,7 @@ import type { ToolCallRecord } from "#contracts/types/tool-call-record.type";
 import { ApprovalRequested } from "#core/events/approval-requested.event";
 import { ApprovalResolved } from "#core/events/approval-resolved.event";
 import { RunCompleted } from "#core/events/run-completed.event";
+import { purgeRuns } from "#node/functions/purge-runs.function";
 import type { RunApproval } from "#node/models/run-approval.model";
 import type { RunStep } from "#node/models/run-step.model";
 import type { Run } from "#node/models/run.model";
@@ -271,5 +273,23 @@ export class PostgresRunStoreDriver extends Driver(RunStore) {
       } as never,
     )) as RunApproval[];
     return rows.map(approvalOf);
+  }
+
+  /** Implements `RunStore.forget`, documented there. */
+  async forget(principalId: string): Promise<number> {
+    // the actor is JSON: the person acting, or the person an agent acts for, up to two delegations deep
+    const rows = (await this.runs.find({
+      $or: [
+        { actor: { id: principalId } },
+        { actor: { onBehalfOf: { id: principalId } } },
+        { actor: { onBehalfOf: { onBehalfOf: { id: principalId } } } },
+      ],
+    } as never)) as Run[];
+    const ids = rows.map((row) => row.id);
+    const kept = await purgeRuns(
+      { runs: this.runs, steps: this.steps, calls: this.calls, decisions: this.decisions },
+      ids,
+    );
+    return ids.length - kept.size;
   }
 }

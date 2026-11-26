@@ -59,4 +59,13 @@ export abstract class RunStore extends Port {
 
   /** The run's approvals, in order of first record. */
   abstract approvals(runId: string): Promise<readonly RunApprovalRecord[]>;
+
+  /**
+   * Erases every visible run that acted for `principalId` (as the actor, or the person in `onBehalfOf` up to two
+   * delegations deep) with its steps, tool calls and approvals, for a subject's erasure; a row a legal hold covers
+   * stays, and so does its run. Idempotent.
+   *
+   * @returns how many runs it removed.
+   */
+  abstract forget(principalId: string): Promise<number>;
 }
