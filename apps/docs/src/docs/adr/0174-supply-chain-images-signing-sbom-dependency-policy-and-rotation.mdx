@@ -35,7 +35,7 @@ rules. The owner's answers DP17, DP18, SC5, SC6 and SC7 (mem L447, L551, 2026-10
 
 ## Enforcement
 
-planned — Trivy and OSV-Scanner in the release job; cosign verification at deploy; the Renovate configuration is reviewed under `runbooks/renovate.mdx` (final pass).
+partial — decision 3 is enforced: OSV-Scanner checks `pnpm-lock.yaml` for advisories and for the licence allow-list (`.github/licence-allowlist.yaml`, exceptions in `osv-scanner.toml`) in CI; `pnpm-workspace.yaml` sets `minimumReleaseAge: 1440`; `renovate.json5` waits one day with automerge off and is validated by `renovate-config.yml`; `tools/scripts/__tests__/supply-chain-policy.test.mjs` holds all of it (STA-1735, STA-312). Trivy runs in the release job. Planned: cosign verification at deploy and the Renovate app's installation.
 
 ## Alternatives
 

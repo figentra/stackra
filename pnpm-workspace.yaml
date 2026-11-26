@@ -466,6 +466,11 @@ allowBuilds:
   # platform packages into libs/, with no download; the native build needs them.
   "@shopify/react-native-skia": true
 
+# ADR 0174 decision 3 (STA-312): a version resolves only once it has been published for a day (1440 minutes), so a
+# freshly compromised release has time to be pulled first. pnpm 12 sets no age by default: without this line the
+# exclude list below did nothing. Renovate waits the same day before it proposes a version (renovate.json5).
+minimumReleaseAge: 1440
+
 minimumReleaseAgeExclude:
   # Figentra's own open packages install the day they publish (owner, 2026-11-09).
   - "@figentra-oss/*"

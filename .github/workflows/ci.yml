@@ -1,6 +1,6 @@
 # Stackra file contract:
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
-#          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
+#          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency and licence scan,
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
 #          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
 #          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
@@ -29,9 +29,9 @@ permissions:
   contents: read
 
 jobs:
-  # ADR 0174: known vulnerabilities in the lockfile, as their own job. A finding fails this job and never skips the
-  # gate's code steps: as a gate step it failed first on a lockfile finding and skipped install, lint, typecheck,
-  # build and tests (2026-11-09).
+  # ADR 0174 decision 3: known vulnerabilities and licences off the allow-list in the lockfile, as their own job. A
+  # finding fails this job and never skips the gate's code steps: as a gate step it failed first on a lockfile finding
+  # and skipped install, lint, typecheck, build and tests (2026-11-09).
   dependency-scan:
     name: Dependency scan (OSV-Scanner)
     runs-on: ubuntu-latest
@@ -44,11 +44,13 @@ jobs:
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
           version: 2026.11.4
-          install_args: aqua:google/osv-scanner@2.7.0
+          install_args: aqua:google/osv-scanner@2.7.0 aqua:mikefarah/yq@4.54.2
           cache: false
 
-      - name: Put osv-scanner on PATH
-        run: dirname "$(mise exec aqua:google/osv-scanner@2.7.0 -- which osv-scanner)" >> "$GITHUB_PATH"
+      - name: Put osv-scanner and yq on PATH
+        run: |
+          dirname "$(mise exec aqua:google/osv-scanner@2.7.0 -- which osv-scanner)" >> "$GITHUB_PATH"
+          dirname "$(mise exec aqua:mikefarah/yq@4.54.2 -- which yq)" >> "$GITHUB_PATH"
 
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -56,8 +58,14 @@ jobs:
           persist-credentials: false
           submodules: false
 
+      # Advisories (osv-scanner.toml holds the reviewed ignores) and the licence allow-list (STA-1735): a package whose
+      # licence is not in .github/licence-allowlist.yaml fails, unless osv-scanner.toml corrects or excepts it with a
+      # reason. Fail closed: a missing or empty allow-list stops the step instead of scanning without one.
       - name: Dependency scan (OSV-Scanner)
-        run: osv-scanner scan source --lockfile=pnpm-lock.yaml
+        run: |
+          allow="$(yq -e '.allow | join(",")' .github/licence-allowlist.yaml)"
+          test -n "$allow"
+          osv-scanner scan source --lockfile=pnpm-lock.yaml --licenses="$allow"
 
   gate:
     name: Quality Gate

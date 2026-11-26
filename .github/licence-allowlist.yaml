@@ -1,0 +1,33 @@
+# Stackra file contract:
+# Purpose: the third-party licence allow-list of ADR 0174 decision 3, enforced over pnpm-lock.yaml by the CI dependency
+#          scan (`osv-scanner scan source --licenses`, .github/workflows/ci.yml, STA-1735). A package whose licence is
+#          not listed here fails the scan, unless osv-scanner.toml corrects it (deps.dev reports no licence, the
+#          published tarball states an allowed one: `license.override`) or excepts it (a ruling approved it:
+#          `license.ignore`), each with its reason. A refused licence is fixed by replacing the dependency, never by
+#          widening this list in the same change.
+# Scope: pnpm-lock.yaml (every package the lockfile records, dev tooling included)
+# Owner: release-operations (code owners review a change here like a new dependency)
+# Secrets: forbidden
+# Governing contract: owner decision 2026-11-01 (STA-1589: MIT, Apache-2.0, BSD-2/3, ISC, 0BSD, MPL-2.0, CC0; GPL,
+#                     AGPL, SSPL and BUSL refused), widened by the CTO's licence ruling of 2026-11-24 (MIT-0,
+#                     BlueOak-1.0.0, Unlicense, Zlib, Python-2.0, CC-BY-3.0, CC-BY-4.0). Tests:
+#                     tools/scripts/__tests__/supply-chain-policy.test.mjs.
+
+# SPDX ids. An expression passes when osv-scanner finds it satisfied by these ids (an OR needs one allowed part, an
+# AND needs every part).
+allow:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+  - MIT-0
+  - BlueOak-1.0.0
+  - CC0-1.0
+  - Unlicense
+  - Zlib
+  - Python-2.0
+  - MPL-2.0
+  - CC-BY-3.0
+  - CC-BY-4.0

@@ -1,23 +1,19 @@
 # Stackra file contract:
-# Purpose: OSV-Scanner policy for the Quality Gate's dependency scan (`osv-scanner scan source --lockfile=pnpm-lock.yaml`,
-#          ADR 0174, STA-310). Every fixable advisory is fixed through pnpm-workspace.yaml (catalog or `overrides`); an
-#          entry here is an advisory with no same-major fix, named by id or by exact package version, with its reason and
-#          a date to look again.
+# Purpose: OSV-Scanner policy for the CI dependency scan (`osv-scanner scan source --lockfile=pnpm-lock.yaml
+#          --licenses=<.github/licence-allowlist.yaml>`, ADR 0174 decision 3, STA-310, STA-1735). Advisories: every
+#          fixable advisory is fixed through pnpm-workspace.yaml (catalog or `overrides`); an entry here is an advisory
+#          with no same-major fix, named by id or by exact package version, with its reason and a date to look again.
+#          Licences: an entry is either a correction (deps.dev reports no licence, the published tarball states an
+#          allowed one: `license.override`, exact version) or a reviewed exception to the allow-list (`license.ignore`,
+#          naming the ruling that approved it). Each has its reason and a date to look again.
 # Scope: pnpm-lock.yaml
 # Owner: release-operations
 # Secrets: forbidden
 
-# zod 3.x: the fix ships only in zod 4 (4.6.6). The 3.x copies come from dev tooling only, never from a published
-# package: the Mintlify docs CLI (@mintlify/scraping, @mintlify/validation, zod-to-json-schema 3.20) and Expo's CLI.
-# Forcing zod 4 under parents written for 3 breaks them. Our own zod is catalog 4.6.7.
-[[PackageOverrides]]
-name = "zod"
-version = "3.24.0"
-ecosystem = "npm"
-vulnerability.ignore = true
-reason = "GHSA-mrhx-c7xc-m3w5: fixed only in zod 4; dev-only parents (Mintlify CLI) need zod 3"
-effectiveUntil = 2027-01-31
-
+# zod 3.x: the fix ships only in zod 4 (4.6.6). The one 3.x copy comes from Expo's CLI (dev tooling), never from a
+# published package; forcing zod 4 under a parent written for 3 breaks it. Our own zod is catalog 4.6.7, every
+# published @stackra/actions version declares zod 4.6.7, and the `zod@>=4.0.0 <4.6.6` override in pnpm-workspace.yaml
+# keeps a 4.x copy below the fix out of the lockfile (STA-1735).
 [[PackageOverrides]]
 name = "zod"
 version = "3.25.76"
@@ -46,3 +42,277 @@ reason = "glob AbortSignal cancellation bypass: fixed only in glob 14; tooling-o
 id = "GHSA-g3hv-75wg-m249"
 ignoreUntil = 2027-01-31
 reason = "minimatch globparts amplification DoS: fixed only in minimatch 11; tooling-only, our own patterns"
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Licences (ADR 0174 decision 3; the allow-list is .github/licence-allowlist.yaml).
+# ---------------------------------------------------------------------------------------------------------------------
+
+# Corrections. deps.dev reports no licence for these exact versions, but the published tarball states an allowed one:
+# a legacy `licenses` array (ssh2 and its build helpers), a `SEE LICENSE IN LICENSE` field over an MIT text, or no
+# field beside an MIT LICENSE file. Each is pinned to the version that was read, so a new version is checked afresh.
+
+[[PackageOverrides]]
+name = "ssh2"
+version = "1.17.0"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "package.json `licenses: [{type: MIT}]` and an MIT LICENSE; via @testcontainers/postgresql (tests)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "cpu-features"
+version = "0.0.10"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "package.json `licenses: [{type: MIT}]` and an MIT LICENSE; optional native helper of ssh2 (tests)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "buildcheck"
+version = "0.0.7"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "package.json `licenses: [{type: MIT}]` and an MIT LICENSE; build helper of cpu-features (tests)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@logdna/tail-file"
+version = "2.2.0"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "`SEE LICENSE IN LICENSE`, and the LICENSE is the MIT text; via @pulumi/pulumi (infra tooling)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@contentauth/c2pa-types"
+version = "0.7.6"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "no license field; the tarball's LICENSE is the MIT text (Adobe); types of the C2PA binding"
+effectiveUntil = 2027-05-31
+
+# First-party packages from the Stackra registry (https://npm.stackra.figentra.com/), which deps.dev cannot read. Their
+# registry metadata says MIT (ADR 0024); the pinned @stackra versions are the ones minimumReleaseAgeExclude names.
+
+[[PackageOverrides]]
+name = "@figentra-oss/flow"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "first-party, MIT in the Stackra registry's metadata (ADR 0024); deps.dev cannot read that registry"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@stackra/console"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "first-party, MIT in the Stackra registry's metadata (ADR 0024); deps.dev cannot read that registry"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@stackra/container"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "first-party, MIT in the Stackra registry's metadata (ADR 0024); deps.dev cannot read that registry"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@stackra/contracts"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "first-party, MIT in the Stackra registry's metadata (ADR 0024); deps.dev cannot read that registry"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@stackra/validation"
+ecosystem = "npm"
+license.override = ["MIT"]
+reason = "first-party, MIT in the Stackra registry's metadata (ADR 0024); deps.dev cannot read that registry"
+effectiveUntil = 2027-05-31
+
+# Reviewed exceptions: licences off the allow-list, approved by the CTO's licence ruling of 2026-11-24 (STA-2761) on
+# top of the owner's decision of 2026-11-01 (STA-1589). The ruling named the Linux x64 binary of libvips and of the
+# Sentry CLI, the ones the gate installs; the other platform packages are the same library and the same licence, built
+# for another OS, and the lockfile records all of them. buffers@0.1.1 (no licence anywhere) has no exception: the
+# ruling denies it, and STA-2781 removes it from the tree.
+
+[[PackageOverrides]]
+name = "@electric-sql/pglite-postgis"
+ecosystem = "npm"
+license.ignore = true
+reason = "Apache-2.0 AND GPL-2.0-or-later: an optional test peer, used only in tests and never distributed (ADR 0314; CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-darwin-arm64"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-darwin-x64"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-linux-arm"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-linux-arm64"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-linux-ppc64"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-linux-riscv64"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-linux-s390x"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-linux-x64"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-linuxmusl-arm64"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-libvips-linuxmusl-x64"
+ecosystem = "npm"
+license.ignore = true
+reason = "LGPL-3.0-or-later: libvips, loaded dynamically and unmodified; its notice goes in the third-party notices (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-wasm32"
+ecosystem = "npm"
+license.ignore = true
+reason = "Apache-2.0 AND LGPL-3.0-or-later: sharp with libvips bundled for this platform, unmodified (CTO ruling 2026-11-24, as the libvips packages)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-win32-arm64"
+ecosystem = "npm"
+license.ignore = true
+reason = "Apache-2.0 AND LGPL-3.0-or-later: sharp with libvips bundled for this platform, unmodified (CTO ruling 2026-11-24, as the libvips packages)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-win32-ia32"
+ecosystem = "npm"
+license.ignore = true
+reason = "Apache-2.0 AND LGPL-3.0-or-later: sharp with libvips bundled for this platform, unmodified (CTO ruling 2026-11-24, as the libvips packages)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@img/sharp-win32-x64"
+ecosystem = "npm"
+license.ignore = true
+reason = "Apache-2.0 AND LGPL-3.0-or-later: sharp with libvips bundled for this platform, unmodified (CTO ruling 2026-11-24, as the libvips packages)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli-darwin"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli-linux-arm"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli-linux-arm64"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli-linux-i686"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli-linux-x64"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli-win32-arm64"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli-win32-i686"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@sentry/cli-win32-x64"
+ecosystem = "npm"
+license.ignore = true
+reason = "FSL-1.1-MIT: shipped through @stackra/vite-plugin > @sentry/vite-plugin; FSL limits competing products, not our use, and becomes MIT after two years (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "@zowe/secrets-for-zowe-sdk"
+ecosystem = "npm"
+license.ignore = true
+reason = "EPL-2.0: unmodified, via uniwind-pro in the mobile and playground apps only (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
+
+[[PackageOverrides]]
+name = "uniwind-pro"
+ecosystem = "npm"
+license.ignore = true
+reason = "UNLICENSED: our commercial Uniwind Pro licence (ADR 0310), used by the mobile and playground apps only (CTO ruling 2026-11-24)"
+effectiveUntil = 2027-05-31
