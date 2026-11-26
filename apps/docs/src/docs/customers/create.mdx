@@ -108,17 +108,19 @@ pnpm dev
 ```
 
 `pnpm dev` runs `stackra dev`: it checks the machine (the tools, Docker and the ports), generates, and starts every
-member on the port its own `runway.yaml` names. It prints the addresses and writes them to `.stackra/dev/ports.json`.
+member. The console runs on the port its `runway.yaml` names, and that port is recorded in `.stackra/dev/ports.json`.
+The service runs under `encore run`, which picks its own ports and prints them: look for `Your API is running at` and
+`Development Dashboard URL` in the output. The service's address is not in `ports.json`.
 
-| What               | Where                   | Check                                            |
-| ------------------ | ----------------------- | ------------------------------------------------ |
-| The web console    | `http://localhost:3710` | the home page renders                            |
-| The service's API  | `http://localhost:4000` | `curl http://localhost:4000/healthz` answers 200 |
-| Encore's dashboard | `http://localhost:9400` | requests, traces and the local database          |
+| What               | Where                                        | Check                                                    |
+| ------------------ | -------------------------------------------- | -------------------------------------------------------- |
+| The web console    | `http://localhost:3710`                      | the home page renders                                    |
+| The service's API  | `http://localhost:4000`, as Encore prints it | `curl -i http://localhost:4000/app/notes` answers 401    |
+| Encore's dashboard | `http://localhost:9400/<app-id>`             | the `example` service, its requests, traces and database |
 
-Encore runs local-only: no Encore Cloud login and no secret is needed. `GET /app/notes` answers 401: the notes
-endpoints need a signed-in caller, and there is no development sign-in yet, so an authenticated call needs your own
-OIDC issuer for now.
+Encore runs local-only: no Encore Cloud login and no secret is needed. The 401 is the answer to expect, and it shows the
+service is up: the notes endpoints need a signed-in caller, and there is no development sign-in yet, so an authenticated
+call needs your own OIDC issuer for now. The service serves no `/healthz` under `pnpm dev`: that path answers 404.
 
 ## What you got
 
