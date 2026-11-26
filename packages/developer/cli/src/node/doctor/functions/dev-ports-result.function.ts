@@ -8,6 +8,7 @@
  * Runtime: node
  * Governing contract: STA-1952 spec FR-019; STA-2794 (a second `stackra dev` reuses the user's own Encore daemon).
  */
+import type { DevPortsProbe } from "#node/doctor/types/dev-ports-probe.type";
 import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 
 /**
@@ -22,10 +23,7 @@ import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 export async function devPortsResult(
   ports: readonly number[],
   reusable: readonly number[],
-  probe: {
-    readonly portFree: (port: number) => Promise<boolean>;
-    readonly ownEncoreDaemon: (port: number) => Promise<boolean>;
-  },
+  probe: DevPortsProbe,
 ): Promise<DoctorResult | undefined> {
   if (ports.length === 0) return undefined;
   const busy: number[] = [];
