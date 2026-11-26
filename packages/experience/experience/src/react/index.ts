@@ -48,3 +48,5 @@ export { Surfaces } from "#react/surfaces/surfaces";
 export type { SurfacesProps } from "#react/surfaces/surfaces.props";
 export { TerminalStage } from "#react/terminal-stage/terminal-stage";
 export type { TerminalStageProps } from "#react/terminal-stage/terminal-stage.props";
+export { TimelineHero } from "#react/timeline-hero/timeline-hero";
+export type { TimelineHeroProps } from "#react/timeline-hero/timeline-hero.props";

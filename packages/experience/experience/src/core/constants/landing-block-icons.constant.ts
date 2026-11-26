@@ -26,4 +26,5 @@ export const LANDING_BLOCK_ICONS = Object.freeze({
   surfaces: "monitor-smartphone",
   pageDock: "panel-bottom-open",
   capabilityMatrix: "table",
+  timelineHero: "route",
 } as const satisfies Readonly<Record<string, IconName>>);

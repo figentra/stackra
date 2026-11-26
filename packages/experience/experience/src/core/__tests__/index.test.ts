@@ -48,6 +48,7 @@ describe("@stackra/experience", () => {
       "StepSwitcherBlock",
       "SurfacesBlock",
       "TerminalStageBlock",
+      "TimelineHeroBlock",
       "UnknownBlockError",
       "blockKinds",
       "commitSiteTheme",
