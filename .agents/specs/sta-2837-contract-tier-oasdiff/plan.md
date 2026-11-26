@@ -87,13 +87,19 @@ packages/tooling/vitest/{package.json,README.md}
 packages/developer/gen/src/core/functions/emit-tier-config.function.ts (was emit-int-tier-config, + test)
 packages/developer/gen/src/node/functions/has-tier-tests.function.ts (was has-int-tests, + test)
 packages/developer/gen/src/node/functions/generate.function.ts
+packages/developer/gen/src/core/functions/emit-int-tier-config.function.ts (removed)
+packages/developer/gen/src/node/functions/has-int-tests.function.ts (removed)
 packages/developer/cli/src/node/commands/contract.command.ts (+ test)
+packages/developer/cli/src/node/contract/
 packages/developer/cli/src/node/contract/{constants,types,functions}/ (+ tests, fixture, the contract-tier test)
 packages/developer/cli/src/node/functions/{resolve-tool,tool-command}.function.ts (+ tests)
 packages/developer/cli/src/node/constants/commands.constant.ts
 packages/developer/cli/{package.json,README.md,stackra.manifest.json}
 tools/contract/accepted-breaks.yaml
-.github/workflows/ci.yml, turbo.jsonc, package.json, mise.toml
+.github/workflows/ci.yml
+turbo.jsonc
+package.json
+mise.toml
 apps/docs/src/docs/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies.mdx
 .changeset/contract-tier-oasdiff.md
 ```

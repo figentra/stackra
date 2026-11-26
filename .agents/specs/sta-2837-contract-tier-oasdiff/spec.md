@@ -8,6 +8,8 @@
 
 **Tier**: feature
 
+**Approver**: leader
+
 **Linear**: STA-2837
 
 **Clarifications status**: complete
@@ -57,9 +59,10 @@ makes an input field required merges unnoticed. Split out of STA-229 (whose cove
 - **AC-001**: THE `./contract` entry of `@stackra/vitest-config` SHALL export `contractTier`, which narrows a member's
   config to `CONTRACT_TESTS` (`src/**/__tests__/**/*.contract.test.{ts,tsx}` and `.stackra/tests/**/*.contract.test.ts`)
   and keeps its preset, aliases and setup.
-- **AC-002**: WHEN gen runs for a member with a `.contract.test.ts` (authored under `src/**/__tests__/`, or written by gen
-  under `.stackra/tests/`) THE output SHALL include `.stackra/vitest.contract.config.ts`, the generated unit config
-  wrapped in `contractTier`; the int tier's config stays byte for byte as before.
+- **AC-002**: WHEN gen runs for a member with a `.contract.test.ts` THE output SHALL include
+  `.stackra/vitest.contract.config.ts`, the generated unit config wrapped in `contractTier`. The test counts when it is
+  authored under `src/**/__tests__/` or written by gen under `.stackra/tests/`; the int tier's config stays byte for
+  byte as before.
 - **AC-003**: WHEN `stackra test --tier contract` runs in a package or service THE CLI SHALL run vitest on that config,
   refuse with the reason when gen wrote none or the member is an app, and at the workspace root run
   `turbo run test:contract`.
@@ -67,12 +70,13 @@ makes an input field required merges unnoticed. Split out of STA-229 (whose cove
   `stackra.manifest.json` at the merge base of HEAD and `--base` (default `origin/main`) with the same member in the
   working tree, through `oasdiff breaking` on each side's OpenAPI projection, and fail with one row per error-level break
   named by the member folder, operation and oasdiff rule; warnings never fail.
-- **AC-005**: WHEN a host's projection references a mounted package's shape (`<package>#/schemas/<name>`) THE check SHALL
-  inline that shape from the package's manifest on the same side (the workspace member's, else the installed copy), so
-  a package's breaking shape change fails each host that mounts it.
-- **AC-006**: WHEN an unexpired entry of `tools/contract/accepted-breaks.yaml` names the member, operation and rule of a
-  break THE check SHALL excuse it; an expired entry excuses nothing and the row says when it expired; a malformed entry
-  (missing field, no issue key, `expires` more than 30 days after `added`, `added` in the future) is a failed row.
+- **AC-005**: WHEN a host's projection references a mounted package's shape THE check SHALL inline that shape from
+  the package's manifest on the same side (the workspace member's, else the installed copy), so a package's breaking
+  shape change fails each host that mounts it. Such a reference has the form `<package>#/schemas/<name>`.
+- **AC-006**: WHEN an unexpired accepted break names a break's member, operation and rule THE check SHALL excuse it.
+  Accepted breaks live in `tools/contract/accepted-breaks.yaml`. An expired entry excuses nothing and the row says when
+  it expired; a malformed entry (missing field, no issue key, `expires` more than 30 days after `added`, `added` in the
+  future) is a failed row.
 - **AC-007**: THE Quality Gate SHALL install the pinned `oasdiff` and run `stackra contract --base HEAD~1` on every pull
   request after the manifests are checked against gen.
 - **AC-008**: THE contract tier SHALL hold a real `.contract.test.ts` that runs the pinned `oasdiff`: a removed
