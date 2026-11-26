@@ -8,7 +8,8 @@
  *          `.stackra/site/` gen assembles, or in `src/` for a docs app not yet moved to that layout, STA-1316),
  *          and vitest, tsc
  *          and oxlint everywhere (`--tier int` runs the `.stackra/vitest.int.config.ts` gen writes for a member with an
- *          `.int.test.ts`). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
+ *          `.int.test.ts`, and `--tier load` the `.stackra/vitest.load.config.ts` it writes for one with a
+ *          `.load.test.ts`, whose files drive k6 against the subject, STA-317). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
  *          member-root config it finds itself.
  * Boundary: pure apart from checking which generated configs exist, whether a Fumadocs site's dependencies are
  *           installed, and reading a docs app's dev port from its `runway.yaml` (`environments.dev.port`, the one place
@@ -42,7 +43,7 @@ const WEB_TARGETS = new Set(["web", "pwa"]);
 const NATIVE_TARGETS = new Set(["ios", "android"]);
 
 /** The test tiers a member command runs; the other tiers of ADR 0182 run under their own tasks. */
-const TIERS = new Set(["unit", "int", "e2e"]);
+const TIERS = new Set(["unit", "int", "load", "e2e"]);
 
 /**
  * The tool process for `task` in `member`.
@@ -134,7 +135,7 @@ export function resolveTool(
     case "test": {
       const tier = options.tier ?? "unit";
       if (!TIERS.has(tier))
-        throw new CliUsageError(`unknown tier: ${tier} (expected unit, int or e2e)`);
+        throw new CliUsageError(`unknown tier: ${tier} (expected unit, int, load or e2e)`);
       if (tier === "unit") return at("vitest", ["run", ...config("vitest.config.ts")]);
       if (tier === "int") {
         // Gen writes this config for a package or service that has an `.int.test.ts`; nobody authors one.
@@ -144,6 +145,16 @@ export function resolveTool(
           ? at("vitest", ["run", ...config("vitest.int.config.ts")])
           : refuse(
               "gen wrote no .stackra/vitest.int.config.ts, so the member has no `.int.test.ts`",
+            );
+      }
+      if (tier === "load") {
+        // Gen writes this config for a package or service that has a `.load.test.ts`; nobody authors one (STA-317).
+        if (layout !== "package" && layout !== "service")
+          return refuse("load tests run in a package or a service");
+        return existsSync(join(root, ".stackra", "vitest.load.config.ts"))
+          ? at("vitest", ["run", ...config("vitest.load.config.ts")])
+          : refuse(
+              "gen wrote no .stackra/vitest.load.config.ts, so the member has no `.load.test.ts`",
             );
       }
       if (layout === "package") {

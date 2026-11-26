@@ -20,10 +20,12 @@ export default mergeConfig(
 | `./preset-react`      | React libraries and the console app (jsdom)                     |
 | `./coverage`          | `withCoverage`, the shared coverage gate                        |
 | `./int`               | `intTier`, the integration tier (`test:int`) of a member        |
+| `./load`              | `loadTier`, the k6 load tier (`test:load`) of a member          |
 
 The base preset sets `pool: "forks"`, `maxWorkers` at half the CPUs (`STACKRA_TEST_MAX_WORKERS` overrides it),
 `testTimeout` 30 s and `hookTimeout` 60 s, because service tests boot a PGlite (3 to 4 s of CPU each). `intTier` keeps
-`fileParallelism: false`.
+`fileParallelism: false`. `loadTier` runs one file and one test at a time with no retry and a two-hour timeout, since
+each `.load.test.ts` soaks its subject under k6 for as long as `STACKRA_LOAD_DURATION` says.
 
 The `.` entry adds the role presets, one per member role (they are what `stackra gen` writes into each member's
 `.stackra/vitest.config.ts`):

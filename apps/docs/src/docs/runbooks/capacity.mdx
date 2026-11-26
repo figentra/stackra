@@ -1,0 +1,133 @@
+---
+title: "Capacity: what the load tier measured"
+description: "The throughput and lag the action pipeline, the queue and the outbox relay held under k6 on a named machine, what limits each, how to plan with the numbers, and how to measure them again."
+icon: "gauge"
+---
+
+A capacity number nobody measured is a guess, and the first traffic spike would test it. The load tier of
+[ADR 0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies) (decisions 1 and 4) drives three
+subjects with k6 and checks what they did with the load: every unit of work ran exactly once, nothing was left behind,
+and the lag stayed under its ceiling. This page records what those runs measured. The weekly `load.yml` workflow runs
+the same tests again and uploads the same reports, so a regression shows up as a red run or a smaller number.
+
+## Where the numbers come from
+
+| Item     | Value                                                                                                                                                                                                |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Machine  | box 2: 16 vCPU Intel Xeon Platinum 8488C, 61 GB, shared with other build work (load average 13 to 34)                                                                                                |
+| Postgres | 18 (`stackra-postgres-test`), default settings, in Docker on the same machine                                                                                                                        |
+| Runtime  | Node 24.22.0, k6 1.3.0; k6, the subject and Postgres share the machine                                                                                                                               |
+| Shape    | one service process, the service's default pool of ten connections ([ADR 0473](/adr/0473-connection-pooling-a-managed-proxy-per-cloud-a-pool-budget-per-service-and-a-direct-url-for-session-tools)) |
+| Tenancy  | owned writes in two tenants as the NOBYPASSRLS service role, so row security is on under load                                                                                                        |
+| Measured | 26 November 2026, branch `figentra/sta-317-k6-load-tier`                                                                                                                                             |
+
+Numbers from one machine are that machine's. The machine was busy with other work, so treat them as a floor, not a
+promise. A production database on its own host is faster than Postgres sharing a box with k6 and the subject. The tests
+assert correctness with generous ceilings and never a throughput figure, so a slower runner still passes.
+
+## The action pipeline
+
+`ActionPipeline.execute` running a system write with an `Idempotency-Key`, in one process, with memory stores. It
+measures the pipeline's own cost (validation, access, idempotency, the handler call), not a handler's database work.
+
+| Load                 | Calls   | Failed or dropped | Pipeline p50 | p95     | p99     | k6 p95  | Heap growth |
+| -------------------- | ------- | ----------------- | ------------ | ------- | ------- | ------- | ----------- |
+| 200 a second, 10 min | 120,000 | 0                 | 0.19 ms      | 0.61 ms | 1.59 ms | 1.24 ms | 63 MB       |
+| 2,000 a second, 60 s | 120,001 | 0                 | 0.22 ms      | 1.12 ms | 2.58 ms | 2.81 ms | 172 MB      |
+
+One process runs 2,000 calls a second through the pipeline with a p99 under 3 ms. The pipeline is not what limits a
+service: its handlers and their database calls are.
+
+## The queue
+
+`QueueService.push` in two tenants on Postgres, worked by four `QueueWorkerService` loops (one instance's worth),
+through the action pipeline in each job's tenant. Lag is the time from queueing a job to the job running.
+
+| Load                 | Jobs   | Ran exactly once | Push p95 | Lag p50 | Lag p95 | Lag p99 | Result                    |
+| -------------------- | ------ | ---------------- | -------- | ------- | ------- | ------- | ------------------------- |
+| 50 a second, 10 min  | 30,000 | all              | 5.6 ms   | 502 ms  | 950 ms  | 992 ms  | pass                      |
+| 100 a second, 30 s   | 3,001  | all              | 6.8 ms   | 430 ms  | 933 ms  | 980 ms  | pass                      |
+| 100 a second, 10 min | 60,000 | all              | 7.4 ms   | 616 ms  | 13.7 s  | 15.3 s  | fails the 5 s lag ceiling |
+
+A backlog queued first and then drained by the same four workers:
+
+| Backlog waiting | Drain rate          | Queueing rate (eight callers) |
+| --------------- | ------------------- | ----------------------------- |
+| 3,000           | 113 to 164 a second | 1,335 to 1,546 a second       |
+| 10,000          | 74 a second         | 2,008 a second                |
+| 20,000          | 67 a second         | 2,019 a second                |
+
+What limits it: picking the next job costs time in proportion to the number of jobs waiting. `queue.reserve_job` works
+out, for every due job, how many jobs of its scope are running, then sorts them all (the fairness rule of
+[ADR 0148](/adr/0148-queue-and-scheduler-full-job-features-fair-queuing-and-tenant-schedules)). A longer queue therefore drains more slowly, and a sustained 100 a second
+builds a backlog after a few minutes that the workers cannot catch up with. STA-2875 tracks the fix. The soak runs at 50
+a second until it lands. Every job still ran exactly once in every run, including the one that failed its lag ceiling.
+
+## The outbox relay
+
+Event messages written in two tenants on Postgres, delivered by `OutboxRelayService`. The soak runs two relays on one
+lock, as two instances of a service do: only the relay holding the lock delivers
+([ADR 0149](/adr/0149-locking-fencing-tokens-auto-renew-and-with-lock)). Lag is the time from the write to the publish;
+[ADR 0221](/adr/0221-search-postgres-hybrid-elasticsuite-parity-arabic-and-operations) decision 5 holds what the
+outbox feeds to under five seconds of lag, so that is the ceiling.
+
+| Load                 | Messages | Published exactly once | Write p95 | Lag p50 | Lag p95 | Lag p99 | Lag max |
+| -------------------- | -------- | ---------------------- | --------- | ------- | ------- | ------- | ------- |
+| 100 a second, 10 min | 60,000   | all                    | 6.3 ms    | 308 ms  | 790 ms  | 918 ms  | 1.0 s   |
+
+A backlog written first and then drained by one relay:
+
+| Backlog waiting | Drain rate          | Write rate (eight writers) |
+| --------------- | ------------------- | -------------------------- |
+| 3,000           | 151 to 326 a second | 1,225 to 2,632 a second    |
+| 20,000          | 156 a second        | 1,343 a second             |
+
+What limits it: one relay per service delivers, holding the lock, one batch of up to 100 messages a tick, each loaded
+and published in its tenant's isolation. Adding instances adds standby relays, not delivery rate. Unlike the queue, the
+drain rate does not fall as the backlog grows. The lag has a floor near one second: an idle relay, like an idle worker,
+waits one poll interval before it looks again. The lower drain rates were measured while the machine was busiest.
+
+## Planning with the numbers
+
+| Subject                         | Sustained, inside its lag ceiling | A burst above it                                  |
+| ------------------------------- | --------------------------------- | ------------------------------------------------- |
+| Action pipeline (one process)   | 2,000 calls a second, measured    | not the limit; the handlers are                   |
+| Queue (one instance, 4 workers) | 50 jobs a second, measured        | drains at 67 or more a second, slower as it grows |
+| Outbox relay (one per service)  | 100 events a second, measured     | drains at about 150 a second                      |
+
+- A service that writes more than about 100 events a second, sustained, needs its events split across services, or the
+  relay changed. More instances do not help.
+- A queue that takes more than 50 jobs a second, sustained, needs STA-2875 first. A burst of 10,000 jobs takes about two
+  minutes to clear today.
+- These are figures for one service's pool of ten connections. A service that shares its pool with heavy request work
+  has less to give its workers and relay.
+
+## Measuring again
+
+Locally or on a testbed box, with k6 installed and a Postgres to reach:
+
+```bash
+# Postgres 17 or 18, any throwaway server the tests may create databases in
+export TESTBED_POSTGRES_HOST=127.0.0.1
+# k6 on PATH, or its path here
+export STACKRA_K6="$(mise which k6 --tool aqua:grafana/k6@1.3.0)"
+export STACKRA_LOAD_REPORT_DIR="$PWD/load-reports"
+
+pnpm test:load                                   # every member, one at a time, each test's own rate and length
+STACKRA_LOAD_DURATION=10m pnpm test:load         # the weekly soak length
+STACKRA_LOAD_RATE=100 STACKRA_LOAD_DURATION=10m \
+  pnpm --filter @stackra/queue test:load         # one subject at another rate
+STACKRA_LOAD_BACKLOG=20000 \
+  pnpm --filter @stackra/outbox test:load        # a larger backlog for the drain tests
+```
+
+Each test writes `<STACKRA_LOAD_REPORT_DIR>/<name>.json`: `actions.pipeline`, `queue.soak`, `queue.ceiling`,
+`outbox.relay` and `outbox.ceiling`. Each report holds the load, k6's own summary, the latencies the subject measured
+on its side and the drain figures. Record the machine and its load average beside them, since the numbers mean nothing
+without the machine.
+
+From GitHub, run the **Load** workflow (`load.yml`) by hand with a duration and, optionally, a rate. It also runs every
+Monday at 03:17 UTC with a ten-minute soak per test. Download the `load-reports` artifact and compare it with the tables
+above. A hosted runner is slower and noisier than box 2, so the weekly run is advisory and never a required check.
+
+When a change moves a number for good, run the soaks again and update the tables on this page in the same pull request.

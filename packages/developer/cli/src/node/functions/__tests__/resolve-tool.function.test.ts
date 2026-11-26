@@ -246,12 +246,28 @@ describe("resolveTool", () => {
     );
   });
 
+  it("runs the generated load config for a package or service, and refuses without it or in an app (STA-317)", () => {
+    expect(() => resolveTool("test", member("package"), { tier: "load" })).toThrow(
+      "no .stackra/vitest.load.config.ts",
+    );
+    generated("vitest.load.config.ts");
+    expect(resolveTool("test", member("package"), { tier: "load" })).toEqual({
+      command: "vitest",
+      args: ["run", "--config", ".stackra/vitest.load.config.ts"],
+      cwd: root,
+    });
+    expect(resolveTool("test", member("service"), { tier: "load" }).command).toBe("vitest");
+    expect(() => resolveTool("test", member("app", ["web"]), { tier: "load" })).toThrow(
+      "load tests run in a package or a service",
+    );
+  });
+
   it("refuses an unknown target or tier as a usage error", () => {
     expect(() => resolveTool("dev", member("app", ["web"]), { target: "ios" })).toThrow(
       CliUsageError,
     );
     expect(() => resolveTool("dev", member("package"), { target: "web" })).toThrow(CliUsageError);
-    expect(() => resolveTool("test", member("package"), { tier: "load" })).toThrow(CliUsageError);
+    expect(() => resolveTool("test", member("package"), { tier: "soak" })).toThrow(CliUsageError);
   });
 
   it("refuses a task no tool serves with a plain error", () => {

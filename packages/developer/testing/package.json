@@ -50,6 +50,11 @@
       "./src/native/*.ts",
       "./src/native/*/index.ts"
     ],
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
     "#react/*": [
       "./src/react/*",
       "./src/react/*.ts",
@@ -82,6 +87,11 @@
       "@stackra/source": "./src/e2e/index.ts",
       "types": "./dist/e2e.d.mts",
       "default": "./dist/e2e.mjs"
+    },
+    "./node": {
+      "@stackra/source": "./src/node/index.ts",
+      "types": "./dist/node.d.mts",
+      "default": "./dist/node.mjs"
     }
   },
   "publishConfig": {

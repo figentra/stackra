@@ -5,17 +5,21 @@ The generic test kit. Member at `packages/developer/testing` (`tier:lib`), in th
 
 ## Rules
 
-- Entries `.` (`src/core/`), `./react` (`src/react/`), `./native` (`src/native/`) and `./e2e` (`src/e2e/`, ADR 0269
-  decision 6). `./node` and `./contract` are added only when something imports them (owner decision 14).
+- Entries `.` (`src/core/`), `./react` (`src/react/`), `./native` (`src/native/`), `./e2e` (`src/e2e/`, ADR 0269
+  decision 6) and `./node` (`src/node/`, the load tier's kit: `serveLoadTarget`, `runK6`, `soakLoad`; ADR 0182
+  decision 4, STA-317). `./contract` is added only when something imports it (owner decision 14).
 - `.` is generic (ADR 0269 decision 2): its only runtime edge is the `vitest` peer. No workspace import, no domain
   type, nothing that knows a module, action, permission or event. `src/__tests__/package-boundary.test.ts` checks it.
-- `./react`, `./native` and `./e2e` import no `@stackra/*` package, and no `@stackra/*` package is a dependency of any
+- `./react`, `./native`, `./e2e` and `./node` import no `@stackra/*` package, and no `@stackra/*` package is a dependency of any
   kind (only the `*-config` presets as dev dependencies): every package's tests depend on this one, so any edge back
   is a cycle in the turbo graph. Route helpers come from `@stackra/navigation/testing` directly. Third-party edges
   (Testing Library, React, React Native, Playwright, axe) are optional peers. Entries import `.` internals one way and
   never each other, so the small wrapper helper is kept in each.
 - No house provider here: the renders take `providers` and `wrapper`, and framework packages compose theirs. The route
   helpers are implemented in `@stackra/navigation/testing`, never copied here.
+- `./node` runs k6 as a child process and never k6 code in node: the k6 script is a string it writes to a temporary
+  file. Its unit tests run a stand-in k6 (a shell script), never real k6; the `.load.test.ts` files of the packages under
+  load run the real one and skip without it.
 - `./e2e` runs in the Playwright runner only; its unit tests cover the pure parts (`e2ePreset` with
   `@playwright/test` mocked, endpoint matching, the axe gate) and never load Playwright under vitest.
 - Domain helpers never come here: they go in the owning package's `./testing` entry (ADR 0269 decision 3).

@@ -14,6 +14,6 @@ import { UsageError } from "@stackra/console";
  * A command line that cannot run as written.
  *
  * @example
- * throw new CliUsageError("unknown tier: load (expected unit or e2e)");
+ * throw new CliUsageError("unknown tier: soak (expected unit, int, load or e2e)");
  */
 export class CliUsageError extends UsageError {}

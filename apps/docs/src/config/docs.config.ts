@@ -170,6 +170,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runbooks/deploys",
             "runbooks/monitoring",
             "runbooks/restore-drill",
+            "runbooks/capacity",
             "runbooks/test-infrastructure",
             "runbooks/runway",
             "runbooks/upgrade",

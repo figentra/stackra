@@ -8,7 +8,7 @@
  *           (the barrels package.json `exports` names) and options over it, so gen keeps this file (ADR 0295
  *           decision 5; STA-1306, STA-1299). Before gen has run the package's own config builds alone.
  * Runtime: node
- * Governing contract: ADR 0025 (build output); ADR 0269 (decisions 2 and 6).
+ * Governing contract: ADR 0025 (build output); ADR 0269 (decisions 2 and 6); ADR 0182 (decision 4, the `./node` entry).
  */
 import { existsSync } from "node:fs";
 
@@ -21,10 +21,18 @@ const generated = existsSync(url) ? (await import(url.href)).default : {};
 
 export default {
   ...generated,
-  ...library({
-    index: "src/core/index.ts",
-    react: "src/react/index.ts",
-    native: "src/native/index.ts",
-    e2e: "src/e2e/index.ts",
-  }),
+  ...library(
+    {
+      index: "src/core/index.ts",
+      react: "src/react/index.ts",
+      native: "src/native/index.ts",
+      e2e: "src/e2e/index.ts",
+      node: "src/node/index.ts",
+    },
+    {
+      // `node:` builtins stay imports (the `./node` entry spawns k6 and serves HTTP); the shared preset targets the
+      // neutral platform, which would warn on each.
+      external: [/^node:/],
+    },
+  ),
 };

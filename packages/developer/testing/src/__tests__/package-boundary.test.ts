@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: proves ADR 0269 decision 2: no workspace package among the dependencies of any kind (every package's tests
  *          use this one, so an edge back is a turbo build cycle); the `.` entry imports only vitest, node built-ins
- *          and its own files; `./react`, `./native` and `./e2e` import no workspace package; and no domain vocabulary
+ *          and its own files; `./react`, `./native`, `./e2e` and `./node` import no workspace package; and no domain vocabulary
  *          anywhere in the public surface.
  * Boundary: reads package.json and the files under src/ from disk; asserts nothing about behaviour.
  * Runtime: node
@@ -57,10 +57,11 @@ describe("the entries of @stackra/testing", () => {
   });
 
   // @covers sta-348:FR-009
-  it("keeps ./react, ./native and ./e2e free of workspace imports", () => {
+  it("keeps ./react, ./native, ./e2e and ./node free of workspace imports", () => {
     const entries = sources.filter(({ path }) =>
-      ["react", "native", "e2e"].some((e) => inEntry(path, e)),
+      ["react", "native", "e2e", "node"].some((e) => inEntry(path, e)),
     );
+    expect(entries.some(({ path }) => inEntry(path, "node"))).toBe(true);
     expect(entries.length).toBeGreaterThan(0);
     for (const { path, text } of entries) {
       const workspace = specifiersOf(text).filter((s) => s.startsWith("@stackra/"));

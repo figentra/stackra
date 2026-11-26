@@ -3,7 +3,9 @@
  * Purpose: `toolCommand(task, summary)`, the `stackra dev|build|start|typecheck|test|lint` commands. In a member it
  *          runs gen first (except for `lint`, and for members without `stackra.config.ts`), so the tool always sees
  *          fresh generated configs and entries, then starts the tool `resolveTool` picks. At the workspace root it fans
- *          out through `turbo run <task>`, whose member scripts call `stackra <task>` again.
+ *          out through `turbo run <task>` (`test:e2e` for that tier; `test:load --concurrency=1` for the load tier, so
+ *          two members never soak side by side), whose member scripts call
+ *          `stackra <task>` again.
  *          A docs app (`src/config/docs.config.ts`, STA-1316) always runs gen first, `lint` included, since the
  *          checks read the site gen assembles: `dev` keeps gen watching `src/` while the site's dev server runs. For a
  *          Mintlify site `lint` runs `mint broken-links`, then `mint a11y`; for a Fumadocs site (STA-2026) it builds the
@@ -82,9 +84,16 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
       if (existsSync(join(cwd, "pnpm-workspace.yaml"))) {
         if (target !== undefined)
           throw new CliUsageError("--target picks one app's target; run it in the app");
-        if (tier !== undefined && tier !== "unit" && tier !== "e2e") {
-          throw new CliUsageError(`unknown tier: ${tier} (expected unit or e2e)`);
+        if (tier !== undefined && tier !== "unit" && tier !== "load" && tier !== "e2e") {
+          throw new CliUsageError(`unknown tier: ${tier} (expected unit, load or e2e)`);
         }
+        // The load tier runs one member at a time: two soaks side by side would share the box and halve each
+        // other's numbers (STA-317).
+        if (tier === "load")
+          return runProcess(
+            { command: "turbo", args: ["run", "test:load", "--concurrency=1"], cwd },
+            io,
+          );
         const turboTask = tier === "e2e" ? "test:e2e" : task;
         return runProcess({ command: "turbo", args: ["run", turboTask], cwd }, io);
       }

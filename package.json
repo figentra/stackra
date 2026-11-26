@@ -19,6 +19,7 @@
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage --filter='./packages/**'",
     "test:int": "turbo run test:int",
+    "test:load": "turbo run test:load --concurrency=1",
     "check": "pnpm format:check && turbo run lint typecheck && pnpm lint:root",
     "verify": "pnpm format:check && turbo run lint typecheck test build && pnpm lint:root && pnpm validate && pnpm boundaries && pnpm knip",
     "verify:affected": "pnpm format:check && turbo run lint typecheck test build --affected",
