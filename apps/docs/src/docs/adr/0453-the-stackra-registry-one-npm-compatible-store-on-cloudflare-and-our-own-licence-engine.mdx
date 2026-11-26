@@ -425,7 +425,7 @@ Cloudflare account. He put the naming and the order to the CTO, who ruled the sa
   - Splitting packs into their own service needs a new ADR, and only if storage or scale truly diverges.
   - Relation to decision 2: the skill, agent, MCP-server and plugin _packages_ published today keep their package
     names and npm paths. `/-/packs/` is the read path for a pack addressed by kind; the build that maps one onto
-    the other is decided with the packs endpoint (STA-2787).
+    the other is decided with the packs endpoint (STA-2787). `/-/packs/` is **read-only**: a view by kind over packages published through the normal npm publish. It has no publish, unpublish or dist-tag endpoint of its own, and the D1 rights gate and provenance apply only at publish.
 - **Adding a host, never swapping one (all three shared hosts).** The order is:
   1. `turbo.figentra.com` (0026, amendment of 2026-11-05);
   2. `static.figentra.com` (0284, amendment of 2026-11-05), with `static.stackra.figentra.com` permanent;
