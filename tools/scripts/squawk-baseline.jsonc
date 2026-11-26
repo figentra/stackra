@@ -1,0 +1,77 @@
+// Stackra file contract:
+// Purpose: the Squawk findings the Quality Gate waives (STA-2788, the CTO's ruling of 2026-11-25): compiled migrations
+//          frozen once applied (ADR 0159), each pinned by its exact path and the SHA-256 of the committed SQL, with the
+//          rules that fire there. The list only shrinks: fix a finding with a new forward migration, then drop its
+//          entry; never edit a listed file, and never add an entry, a rule, a glob or a folder.
+//          `tools/scripts/squawk-baseline.mjs` enforces it in ci.yml's "Migration lint (Squawk)" step.
+// Owner: the CTO · Secrets: forbidden
+{
+  "entries": [
+    {
+      "path": "packages/application/ai/src/node/database/compiled-migrations/ai_0001_create_ai_tables.up.sql",
+      "sha256": "3f7a2467aa7546680dd7eb8e03e87a8a3354fe7104d4680fbb046dd6eab3dbed",
+      "rules": ["adding-required-field"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/application/ai/src/node/database/compiled-migrations/ai_0002_drop_embeddings.up.sql",
+      "sha256": "8f9ea0095faa3cc07a696e2340261b9cd47ee83fce1783313aef32931958e398",
+      "rules": ["ban-drop-table"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/application/ai/src/node/database/compiled-migrations/ai_0004_add_client_tool_park.up.sql",
+      "sha256": "172861c70dbbf2866c462703b4459827d515c6911de2ad8fdaebe20318b4f406",
+      "rules": ["ban-drop-constraint", "constraint-missing-not-valid"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/application/ai/src/node/database/compiled-migrations/ai_0005_run_steps_append_only.up.sql",
+      "sha256": "215446b270451f207ef742cfa107abd5425f32a68c978b192066c2fd5a12b63e",
+      "rules": ["renaming-table"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/application/ai/src/node/database/compiled-migrations/ai_0006_rename_run_policies.up.sql",
+      "sha256": "9304d7d0f7d36117993d3aa9d78eb73be30091893668ef06560ecc4b0855120a",
+      "rules": ["renaming-object"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/data/search/src/node/database/compiled-migrations/search_0002_create_vector_items.up.sql",
+      "sha256": "f6cb290122e36c848fdad029e6ecab70eea2a786a31f3f842d4fe8229c777488",
+      "rules": ["adding-required-field"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/data/search/src/node/database/compiled-migrations/search_0004_create_vector_hnsw_index.up.sql",
+      "sha256": "8145da42fa69cc98b32599353603183cfe1669f724b732733973473b9dabf8fc",
+      "rules": ["require-concurrent-index-creation"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/data/search/src/node/database/compiled-migrations/search_0010_contract_search_index_tenancy_1.up.sql",
+      "sha256": "9a72e0cc61a24e88ded6501c04b214e9a3f4a7ec10304fa97c2d8bf6414a2565",
+      "rules": ["ban-drop-not-null"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/security/access-log/src/node/database/compiled-migrations/access_log_0004_credential_classification.up.sql",
+      "sha256": "c281297979ebb1fdb87d04c23ddcad2faf5d18885074e22ca49f691fcc6e6b1b",
+      "rules": ["ban-drop-constraint"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/security/privacy/src/node/database/compiled-migrations/privacy_0003_contract_privacy_tenancy_1.up.sql",
+      "sha256": "00ccf4ebbb006a9990afab5f3ecf9da9ee96c56d7f88a48aa5e356adcbd7d828",
+      "rules": ["ban-drop-not-null"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+    {
+      "path": "packages/state/settings/src/node/database/compiled-migrations/settings_0004_contract_settings_tenancy_1.up.sql",
+      "sha256": "0f606ce25f9edd4c09e502ff1aaea6dff4ec4a3941662bda51efc15d38feb82e",
+      "rules": ["require-concurrent-index-deletion"],
+      "reason": "frozen by ADR 0159, applied on main",
+    },
+  ],
+}

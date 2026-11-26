@@ -10,12 +10,18 @@
  *          tsconfig, drops the members' `__tests__` folders (Encore parses every TypeScript file under the root),
  *          writes the generated `encore.app` at the root, and commits that tree as the deploy commit: a parentless
  *          commit whose message names the source commit, so a shallow CI checkout pushes it whole.
+ *          The compiled migrations are the one generated output it never copies: a service commits them
+ *          (`.stackra/migrations` and the Encore copy Encore applies, `stackra-encore/<service>/migrations`), so the
+ *          deploy commit carries the source commit's files, byte for byte, and what the pull request showed and Squawk
+ *          linted is what Encore applies. A working tree whose gen wrote other SQL (a missing, extra or different file)
+ *          is refused before anything is committed, never deployed in its place (STA-2788).
  * Boundary: reads the repository and writes only the temporary checkout (`git worktree add`), removed by `dispose`;
  *           runs `git` through the given runner. A repository with no generated service app gets `undefined`, and the
  *           caller pushes the source commit as it is.
  * Runtime: node
  * Governing contract: ADR 0091 (decision 2: the generated Encore app), ADR 0289 (decision 5: Encore Cloud), ADR 0233
- *                     (package.json imports), STA-136, STA-2155, STA-2194.
+ *                     (package.json imports), ADR 0159 (decision 3: the compiled migrations Squawk lints), STA-136,
+ *                     STA-2155, STA-2194, STA-2788 (the committed compiled migrations are what deploys).
  */
 import {
   copyFileSync,
@@ -29,7 +35,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
@@ -50,6 +56,14 @@ const ENCORE_SERVICES = "stackra-encore";
 /** The build outputs a deploy tree carries from each workspace package and service member. */
 const OUTPUTS = ["dist", ".stackra", ENCORE_SERVICES] as const;
 
+/** A member's compiled migration stream (`@stackra/gen`'s `MIGRATIONS_DIR`), committed (STA-2788). */
+const MIGRATIONS = ".stackra/migrations";
+
+/** A member-relative folder that holds committed compiled migrations: the stream, or an Encore service's copy. */
+const MIGRATION_FOLDER = new RegExp(
+  `^(?:${MIGRATIONS.replaceAll(".", "\\.")}|${ENCORE_SERVICES}/[^/]+/migrations)$`,
+);
+
 /** The folders of a service member whose TypeScript files may import through `#` aliases. */
 const SOURCES = ["src", ".stackra", ENCORE_SERVICES] as const;
 
@@ -63,6 +77,36 @@ function serviceApps(repository: string): string[] {
   return readdirSync(services, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(services, entry.name, GENERATED_APP)))
     .map((entry) => join("services", entry.name))
+    .toSorted();
+}
+
+/**
+ * The committed compiled migrations of the member at `root`: each `.sql` file of `.stackra/migrations` and of every
+ * `stackra-encore/<service>/migrations`, by member-relative path, with its content.
+ */
+function compiledMigrations(root: string): Map<string, string> {
+  const encore = join(root, ENCORE_SERVICES);
+  const folders = [
+    MIGRATIONS,
+    ...(existsSync(encore) ? readdirSync(encore, { withFileTypes: true }) : [])
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `${ENCORE_SERVICES}/${entry.name}/migrations`),
+  ];
+  const files = new Map<string, string>();
+  for (const folder of folders) {
+    const dir = join(root, folder);
+    if (!existsSync(dir)) continue;
+    for (const entry of readdirSync(dir, { withFileTypes: true }))
+      if (entry.isFile() && entry.name.endsWith(".sql"))
+        files.set(`${folder}/${entry.name}`, readFileSync(join(dir, entry.name), "utf8"));
+  }
+  return files;
+}
+
+/** The member-relative paths whose compiled SQL differs between two members: missing, extra or changed. */
+function migrationDrift(committed: Map<string, string>, generated: Map<string, string>): string[] {
+  return [...new Set([...committed.keys(), ...generated.keys()])]
+    .filter((path) => committed.get(path) !== generated.get(path))
     .toSorted();
 }
 
@@ -135,6 +179,8 @@ function rewriteMember(root: string): string[] {
  * @returns the deploy tree, or `undefined` when the repository has no generated service app.
  * @throws RunwayInvalidError when the service members' generated apps name different Encore app ids.
  * @throws RunwayUnresolvedError when a `#` import resolves through no member's map, before anything is committed.
+ * @throws RunwayUnresolvedError when a member's compiled migrations in the working tree differ from the commit's, before
+ *         anything is committed: the deploy applies only committed SQL.
  * @example
  * const tree = await encoreDeployTree({ repository: ".", sha, run: runProgram });
  * if (tree !== undefined) await run("git", ["push", "encore://acme", `+${tree.sha}:refs/heads/main`], {});
@@ -170,6 +216,17 @@ export async function encoreDeployTree(
     await run("git", ["worktree", "prune"], { cwd: repository });
   };
   try {
+    // The deploy applies the commit's compiled SQL, never what gen wrote at deploy: a difference is refused.
+    const drift = members.flatMap((member) =>
+      migrationDrift(
+        compiledMigrations(join(tree, member)),
+        compiledMigrations(join(repository, member)),
+      ).map((path) => `${member}/${path}`),
+    );
+    if (drift.length > 0)
+      throw new RunwayUnresolvedError(
+        `${drift.length} compiled migration file(s) in the working tree differ from commit ${sha} (${drift.slice(0, 5).join("; ")}); a deploy applies only the committed SQL: run \`stackra gen\`, commit the compiled migrations and deploy that commit`,
+      );
     const added: string[] = [];
     const folders = [
       ...members,
@@ -181,7 +238,10 @@ export async function encoreDeployTree(
         if (!existsSync(from)) continue;
         cpSync(from, join(tree, folder, output), {
           recursive: true,
-          filter: (path) => !path.split(/[\\/]/).includes("node_modules"),
+          // The commit's compiled migrations stay as committed; none is copied over them (STA-2788).
+          filter: (path) =>
+            !path.split(/[\\/]/).includes("node_modules") &&
+            !MIGRATION_FOLDER.test(relative(join(repository, folder), path).split(sep).join("/")),
         });
         added.push(join(folder, output));
       }

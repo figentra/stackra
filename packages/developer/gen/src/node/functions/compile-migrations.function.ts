@@ -9,7 +9,11 @@
  *          extends, STA-2006; a compile error from a macro no one supplied names those collected, `macroHint`), orders them across members (`orderMigrations`, `Migration({ after })`
  *          resolved there; `needs`: a module's dependencies and the owners of the macros a migration calls, recorded while
  *          it compiles) and returns the `.stackra/migrations` files (`emitMigrations`), plus, for a service with own
- *          macros, `.stackra/gen/blueprint.ts` (`emitBlueprintMacros`).
+ *          macros, `.stackra/gen/blueprint.ts` (`emitBlueprintMacros`), and, for a package, the committed SQL of its own
+ *          migrations (`emitPackageMigrations`, `src/node/database/compiled-migrations`, STA-2788). A declared package
+ *          installed from a registry (its real path under `node_modules`) that ships that folder must compile here to
+ *          exactly the SQL it ships, or the member is refused (`migration_package_drift`): what a host applies is the
+ *          SQL the package committed and linted; a workspace package is checked by its own `stackra gen --check`.
  * Boundary: imports the migration and macro files (Node 24 strips their types; `loadSourceModule` strips those of a
  *           package installed from the registry into `.stackra/cache`) and the member's `@stackra/database`, resolved
  *           from the member root so the migration classes and the compiler share one kind registry. Writes nothing
@@ -35,6 +39,9 @@ import { isMacroClass } from "#core/functions/is-macro-class.function";
 import { macroHint } from "#core/functions/macro-hint.function";
 import { checkAppendOnly } from "#core/functions/check-append-only.function";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
+import { emitPackageMigrations } from "#core/functions/emit-package-migrations.function";
+import { migrationStepFiles } from "#core/functions/migration-step-files.function";
+import { PACKAGE_MIGRATIONS_DIR } from "#core/constants/package-migrations-dir.constant";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { emitBlueprintMacros } from "#core/functions/emit-blueprint-macros.function";
@@ -77,6 +84,8 @@ interface FoundMigration {
   readonly owner: MigrationUnit["owner"];
   readonly path: string;
   readonly file: string;
+  /** The declared package that ships it (`owner: "package"`). */
+  readonly pkg?: string;
 }
 
 /** One whole-file refusal. */
@@ -217,6 +226,7 @@ export async function compileMigrations(
           owner: "package",
           path: join(dir as string, file),
           file: `${name}/src/node/database/migrations/${file}`,
+          pkg: name,
         });
     }
     if (
@@ -337,6 +347,8 @@ export async function compileMigrations(
     return Recording;
   });
   const units: MigrationUnit[] = [];
+  // The units of each declared package, by package name, for the shipped-SQL check (STA-2788).
+  const shipped = new Map<string, MigrationUnit[]>();
   for (const migration of found) {
     // A migration is a frozen snapshot: refused before it is loaded when it imports more than the two specifiers.
     const forbidden = importsOf(migration.path).filter(
@@ -392,7 +404,7 @@ export async function compileMigrations(
         createsSchema: migration.id.slice(migration.module.length + 1).startsWith("0001_"),
         macros,
       });
-      units.push({
+      const unit: MigrationUnit = {
         id: migration.id,
         owner: migration.owner,
         file: migration.file,
@@ -406,7 +418,10 @@ export async function compileMigrations(
           ]),
         ].filter((need) => need !== migration.module),
         steps: compiled.steps,
-      });
+      };
+      units.push(unit);
+      if (migration.pkg !== undefined)
+        shipped.set(migration.pkg, [...(shipped.get(migration.pkg) ?? []), unit]);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors.push(
@@ -421,9 +436,56 @@ export async function compileMigrations(
     }
   }
   errors.push(...checkAppendOnly(ir, units));
+  for (const [name, compiled] of shipped) errors.push(...shippedDrift(root, name, compiled));
   if (errors.length > 0) return { files: [], errors };
   const { ordered, errors: orderErrors } = orderMigrations(units);
+  // A package commits the SQL of its own migrations, which a host compiles to the same bytes (STA-2788).
+  const committed =
+    ir.layout === "package"
+      ? emitPackageMigrations(
+          units.filter((unit) => unit.owner === "member"),
+          ir.package,
+        )
+      : [];
   return orderErrors.length > 0
     ? { files: [], errors: orderErrors }
-    : { files: [...emitMigrations(ordered), ...blueprint], errors: [] };
+    : { files: [...emitMigrations(ordered), ...committed, ...blueprint], errors: [] };
+}
+
+/**
+ * The refusal of a declared package installed from a registry whose shipped compiled SQL
+ * (`src/node/database/compiled-migrations`) is not exactly what its migrations compiled to here: a file that differs, is
+ * missing or is extra. None for a workspace package (its own `stackra gen --check` holds it to its sources) or for a
+ * package that ships no such folder.
+ */
+function shippedDrift(root: string, name: string, units: readonly MigrationUnit[]): GenError[] {
+  const dir = dependencyPath(root, name, PACKAGE_MIGRATIONS_DIR);
+  if (dir === undefined || !realpathSync(dir).split(/[\\/]/).includes("node_modules")) return [];
+  const expected = new Map(
+    units.flatMap((unit) =>
+      migrationStepFiles(unit).flatMap((step): [string, string][] => [
+        [`${step.name}.up.sql`, step.up],
+        ...(step.down === undefined
+          ? []
+          : [[`${step.name}.down.sql`, step.down] as [string, string]]),
+      ]),
+    ),
+  );
+  const actual = new Map(
+    filesOf(dir, ".sql").map((file) => [file, readFileSync(join(dir, file), "utf8")] as const),
+  );
+  const differ = [...new Set([...expected.keys(), ...actual.keys()])]
+    .filter((file) => expected.get(file) !== actual.get(file))
+    .toSorted();
+  return differ.length === 0
+    ? []
+    : [
+        refusal(
+          "migration_package_drift",
+          `${name}/${PACKAGE_MIGRATIONS_DIR}`,
+          name,
+          `${name}'s migrations compile here to SQL other than the SQL it ships and its repository linted (${differ.slice(0, 5).join(", ")}${differ.length > 5 ? ", …" : ""})`,
+          `install a ${name} whose committed compiled migrations match its sources (its \`stackra gen --check\` passes), and the same version of the packages whose macros its migrations call`,
+        ),
+      ];
 }
