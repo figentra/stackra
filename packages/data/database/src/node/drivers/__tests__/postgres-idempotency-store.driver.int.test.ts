@@ -204,7 +204,7 @@ class BrokenAfterCommit extends Driver(ReplicaReads) {
 
 /** Writes one order row; with `unkeepable` its output cannot be stored, so the completion fails. */
 class PlaceOrderAction extends Action({
-  key: "orders.order.place",
+  key: "order.place",
   actors: [ActorKind.User],
   idempotency: Idempotency.Required,
 }) {
