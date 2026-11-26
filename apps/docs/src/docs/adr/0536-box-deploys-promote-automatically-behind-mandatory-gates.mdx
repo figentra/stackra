@@ -36,9 +36,21 @@ TABLE`, `CREATE INDEX`, `ALTER TABLE … ADD COLUMN` or `INSERT`; anything else 
    4. **Gradual promotion with automatic rollback.** 10%, 50%, then 100%, as CI's rollout, held, with the whole smoke
       again at each step and live at the end; any failure puts the previous version back at 100%.
    5. **A bounded token.** The Cloudflare API token is the owner's, for the Stackra account only, restricted to box 1's
-      egress IP, with an expiry, kept in its own sops scope `ci/deploy/box1-stackra` and held 0400 by a dedicated
-      deploy user. Its blast radius is Stackra's own Workers.
-   6. **The ledger.** Every attempt is one JSON line: SHA, trigger, verify evidence, migrations, old and new version ids,
+      egress IP, with an expiry, kept in its own scope `ci/deploy/box1-stackra` and read only by the Workers path's
+      deploy user. Its blast radius is Stackra's own Workers. Secret values are fetched at run time into memory from
+      Infisical by that user's own machine identity (`STACKRA_DEPLOY_SECRETS=infisical`), or read from 0400 files
+      (`files`, the fallback); which one runs is the owner's choice, recorded on STA-2783 before the switch goes on.
+   6. **One credential per user.** The Workers path runs wrangler and runway from a tree the build user wrote, so it
+      holds only the Cloudflare token and refuses to run while it can reach the Encore credential's folder. Encore's
+      Deployer role is not environment-scoped, so the Encore path and its audit run as their own user, which runs no
+      tree code, cannot act as the build user and holds no Workers setting.
+   7. **Pinned service code.** The service never pulls main: `service update` moves each service clone only to a main
+      SHA that passed gate 1, as a fast-forward, and every deploy refuses a clone that is not at its pinned commit or
+      whose code another user could change. Owner-only review of the service's own scripts (CODEOWNERS, through the
+      owner-only list) is on the go-live list.
+   8. **No retry loop.** The timer never repeats an SHA whose last attempt failed, needed the owner or was refused; a
+      new head of main or a run by hand clears the hold.
+   9. **The ledger.** Every attempt is one JSON line: SHA, trigger, verify evidence, migrations, old and new version ids,
       every step and smoke result with its version proof, rollback, and times. No secret reaches it.
 3. Everything is built OFF. The path switches on only after the strict reads, with the owner's token in place and the
    go-live list of the runbook (tools/scripts/stackra-deploy.mjs) verified on the first watched deploy of each Worker
@@ -60,7 +72,8 @@ box path is switched off and CI resumes under 0468.
 their tests in `tools/scripts/__tests__/` cover each gate: non-main and unverified SHAs refused, the shared services and
 the main account refused, destructive and trust-changing migrations stopped, the false pass failing the version proof,
 the smoke failure and its rollback at 0% and at 10%, the 10/50/100 steps, approve mode, the ledger, no secret in argv
-or output, and Encore production refused before any API call.
+or output, Encore production refused before any API call, the credential split, the service pin, the held SHA and
+secrets fetched from Infisical.
 
 ## Supersedes and sources
 
