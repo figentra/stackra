@@ -111,8 +111,11 @@ const LOGIN_POLICY = "/management/v1/policies/login";
 /** The owner type of a login-policy provider: the regional providers (national IDs) are configured on the instance. */
 const SYSTEM_OWNED = "IDP_OWNER_TYPE_SYSTEM";
 
-/** The sign-in rules Stackra manages, as ZITADEL's login policy spells them. */
-interface LoginRules {
+/**
+ * The sign-in rules Stackra manages, as ZITADEL's login policy spells them. A type alias, not an interface, so it reads
+ * as the JSON record `sameRules` compares field by field.
+ */
+type LoginRules = {
   readonly allowUsernamePassword: boolean;
   readonly allowRegister: boolean;
   readonly allowExternalIdp: boolean;
@@ -120,7 +123,7 @@ interface LoginRules {
   readonly passwordlessType: string;
   readonly hidePasswordReset: boolean;
   readonly ignoreUnknownUsernames: boolean;
-}
+};
 
 /**
  * The login policy settings Stackra does not manage, carried over from the policy in force on every add or update, so
