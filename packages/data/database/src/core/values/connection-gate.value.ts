@@ -115,7 +115,7 @@ export class ConnectionGate {
       return Promise.resolve();
     }
     return new Promise<void>((resolve, reject) => {
-      let timer: NodeJS.Timeout | undefined;
+      let timer: ReturnType<typeof setTimeout> | undefined;
       const waiter: Waiter = {
         level,
         admit: () => {
