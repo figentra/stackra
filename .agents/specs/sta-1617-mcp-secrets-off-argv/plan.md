@@ -52,19 +52,12 @@ whose environment handling was read; GitHub's header comes from a committed mcp-
 
 ## Correctness properties
 
-- **P-001**: for every `.mcp.yaml` server that starts through `mcp.sh` and every canary value of a declared or
-  referenced name, the server's recorded argv never contains the canary, and each declared name's canary is in its
-  environment — Validates: FR-001, FR-004
-- **P-002**: for every `mcp.sh` argument list holding `$NAME` or `${NAME}`, the launcher exits 2 and neither sops nor
-  the server runs — Validates: FR-002
-- **P-003**: `secrets-exec.mjs` starts its child with exactly the arguments it was given, and refuses `--expand-args` —
-  Validates: FR-003
-- **P-004**: for every `argv` without a reference and every set of `--env` names, `mcpExecCommand` returns a command
-  whose arguments contain no `$`, and the started server's argv never holds a value — Validates: FR-005
-- **P-005**: for every `argv` with a reference, or a name that is not SCREAMING_SNAKE, `mcpExecCommand` throws and the
-  message never contains the bad name — Validates: FR-006
-- **P-006**: `ruleIssues` reports `secret_on_argv` for every local server with a reference on its command line, and
-  never for one that only names secrets with `--env` — Validates: FR-007
+- **P-001**: for every `.mcp.yaml` server that starts through `mcp.sh` and every canary value of a declared or referenced name, the server's recorded argv never contains the canary, and each declared name's canary is in its environment — Validates: FR-001, FR-004
+- **P-002**: for every `mcp.sh` argument list holding `$NAME` or `${NAME}`, the launcher exits 2 and neither sops nor the server runs — Validates: FR-002
+- **P-003**: `secrets-exec.mjs` starts its child with exactly the arguments it was given, and refuses `--expand-args` — Validates: FR-003
+- **P-004**: for every `argv` without a reference and every set of `--env` names, `mcpExecCommand` returns a command whose arguments contain no `$`, and the started server's argv never holds a value — Validates: FR-005
+- **P-005**: for every `argv` with a reference, or a name that is not SCREAMING_SNAKE, `mcpExecCommand` throws and the message never contains the bad name — Validates: FR-006
+- **P-006**: `ruleIssues` reports `secret_on_argv` for every local server with a reference on its command line, and never for one that only names secrets with `--env` — Validates: FR-007
 
 ## Architecture overview
 
