@@ -11,6 +11,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as core from "#core/index";
 import type {
+  AdmittedUpload,
   BucketClass,
   BucketOptions,
   BucketRegistration,
@@ -18,6 +19,7 @@ import type {
   ImageVariantOptions,
   MediaFile,
   PendingUpload,
+  ResumableUpload,
 } from "#core/index";
 
 describe("@stackra/media", () => {
@@ -34,6 +36,7 @@ describe("@stackra/media", () => {
       "MediaType",
       "MemoryFileScannerDriver",
       "MemoryUploaderDriver",
+      "TusUploaderDriver",
       "Upload",
       "UploadBucketMismatchError",
       "UploadExpiredError",
@@ -52,5 +55,7 @@ describe("@stackra/media", () => {
     expectTypeOf<ImageVariant["url"]>().toEqualTypeOf<string>();
     expectTypeOf<MediaFile["mediaType"]>().toEqualTypeOf<core.MediaType>();
     expectTypeOf<PendingUpload["upload"]>().toEqualTypeOf<core.Upload>();
+    expectTypeOf<ResumableUpload["upload"]>().toEqualTypeOf<core.Upload>();
+    expectTypeOf<AdmittedUpload["mediaType"]>().toEqualTypeOf<core.MediaType>();
   });
 });

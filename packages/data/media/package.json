@@ -2,7 +2,7 @@
   "name": "@stackra/media",
   "version": "0.33.1",
   "private": false,
-  "description": "Stackra media: the Bucket kind (visibility, accepted media types, size limit, image variants), signed direct uploads that MediaLibrary claims into a bucket, stored on the FileSystem disk of @stackra/filesystem (any of its drivers), the sharp ImageTransformer with compositing, the in-region DOCX and PDF TextExtractor, the in-region PaddleOCR TextExtractor with Arabic, the c2pa ContentCredentials signer and reader, the Uploader port with its memory and HTTP drivers, MediaConfig with its shipped schema, the upload.create action, useUpload, useImageVariant and fakeUpload",
+  "description": "Stackra media: the Bucket kind (visibility, accepted media types, size limit, image variants), signed direct uploads and resumable tus uploads that MediaLibrary claims into a bucket, stored on the FileSystem disk of @stackra/filesystem (any of its drivers), the sharp ImageTransformer with compositing, the in-region DOCX and PDF TextExtractor, the in-region PaddleOCR TextExtractor with Arabic, the c2pa ContentCredentials signer and reader, the Uploader port with its memory, HTTP and tus drivers, MediaConfig with its shipped schema, the upload.create and upload.create_resumable actions, the tus hook controller, useUpload, useImageVariant and fakeUpload",
   "keywords": [
     "buckets",
     "data",
@@ -108,6 +108,7 @@
     "lint": "oxlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:int": "vitest run --config vitest.int.config.ts",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo"
@@ -116,6 +117,7 @@
     "@aws-sdk/client-s3": "catalog:",
     "@contentauth/c2pa-node": "catalog:media",
     "@stackra/actions": "workspace:*",
+    "@stackra/app": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
@@ -141,6 +143,7 @@
     "oxlint": "catalog:quality",
     "react": "catalog:frontend",
     "react-dom": "catalog:frontend",
+    "testcontainers": "catalog:",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:quality"

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `UploadExpiredError`, what `MediaLibrary.claim` raises for a token claimed after its expiry
- *          (`media.uploadExpiresIn` after it was issued).
+ *          (`media.uploadExpiresIn` after it was issued; for a tus upload `media.resumableUploadExpiresIn`, or
+ *          `uploadExpiresIn` after the tus server reported it finished, whichever is later).
  * Boundary: kind `FailedPrecondition`, code `upload_expired`, no details. The client uploads the file again.
  * Runtime: isomorphic
  * Governing contract: ADR 0140 (envelope and kinds); ADR 0294 (decisions 16 and 20); ADR 0222 (decision 2).

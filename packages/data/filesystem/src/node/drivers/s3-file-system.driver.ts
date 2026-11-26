@@ -2,14 +2,20 @@
  * Stackra file contract:
  * Purpose: the S3-compatible `FileSystem` (`disk: "s3"`): AWS S3, Cloudflare R2 or MinIO, chosen by
  *          `filesystem.s3.{region, endpoint, forcePathStyle}`. Temporary URLs are SigV4 presigned GETs and signed uploads
- *          SigV4 presigned `PUT`s that sign the content type; a move is a server-side copy and delete. A streamed write
- *          is a multipart upload in 8 MiB parts and a streamed read is the GET body as a web stream, so a large export or
- *          import never sits in memory whole.
+ *          SigV4 presigned `PUT`s that sign the content type; a move is a server-side copy and delete, part by part
+ *          (`UploadPartCopy`) above the 5 GiB one `CopyObject` takes. A streamed write is a multipart upload in 8 MiB
+ *          parts and a streamed read is the GET body as a web stream, so a large export, import or upload never sits in
+ *          memory whole.
  * Boundary: holds no credential: the AWS SDK reads its default chain (`AWS_ACCESS_KEY_ID` and
  *           `AWS_SECRET_ACCESS_KEY`, which runway syncs from SOPS, or an instance role). Every key passes
  *           `normalizePath`. A missing object is a `FileNotFoundError`; any other store error is rethrown as it is. Every
  *           part but the last is exactly `PART_SIZE` (R2 needs equal parts; S3 needs at least 5 MiB), a stream shorter
- *           than one part is one PUT, and a failed upload is aborted so no part is left billed or visible. Uploads are
+ *           than one part is one PUT, and a failed upload is aborted so no part is left billed or visible. A move asks
+ *           the object's size first (HEAD): up to 5 GiB it is one `CopyObject`; above, a multipart copy of equal ranges
+ *           (512 MiB, larger when 10,000 parts would not reach the end) that carries the content type, the cache, the
+ *           disposition, encoding and language headers and the user metadata over (a multipart upload starts with none),
+ *           copies each range only while the source keeps the ETag it was asked with, and is aborted on any failure,
+ *           leaving the source in place. Uploads are
  *           presigned by a second client that computes no request checksum (a checksum of the empty body at signing time
  *           would refuse the browser's real bytes), so the writes keep the SDK's default checksums; the bucket's CORS
  *           rule must allow `content-type` on `PUT`. The size is not signed (a browser sets Content-Length itself): the
@@ -31,6 +37,11 @@ import {
   PutObjectCommand,
   S3Client,
   UploadPartCommand,
+  UploadPartCopyCommand,
+} from "@aws-sdk/client-s3";
+import type {
+  CreateMultipartUploadCommandInput,
+  HeadObjectCommandOutput,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Driver } from "@stackra/container";
@@ -52,6 +63,34 @@ import { publicUrl } from "#core/functions/public-url.function";
 
 /** The size of every part of a multipart upload but the last: above S3's 5 MiB floor, equal as R2 requires. */
 const PART_SIZE = 8 * 1024 * 1024;
+
+/** The largest object one `CopyObject` copies (S3's limit); a larger one is copied part by part. */
+const MAX_COPY_SIZE = 5 * 1024 * 1024 * 1024;
+
+/** The size of every copied part but the last, unless 10,000 of them would not reach the end of the object. */
+const COPY_PART_SIZE = 512 * 1024 * 1024;
+
+/** The most parts one multipart upload takes. */
+const MAX_PARTS = 10_000;
+
+/** The headers of an object a multipart copy carries over: it starts with none of them. */
+const COPIED_HEADERS = [
+  "ContentType",
+  "CacheControl",
+  "ContentDisposition",
+  "ContentEncoding",
+  "ContentLanguage",
+  "Metadata",
+] as const;
+
+/** The headers of `head` a multipart copy sets on the new object (only those the source has). */
+function copiedHeadersOf(
+  head: HeadObjectCommandOutput,
+): Pick<CreateMultipartUploadCommandInput, (typeof COPIED_HEADERS)[number]> {
+  return Object.fromEntries(
+    COPIED_HEADERS.filter((name) => head[name] !== undefined).map((name) => [name, head[name]]),
+  );
+}
 
 /** Whether a store error means the object is not there (`NoSuchKey` from GET, `NotFound` or 404 from HEAD). */
 function isNotFound(error: unknown): boolean {
@@ -239,17 +278,23 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
     }
   }
 
-  /** Copies the object under `from` to `to` inside the bucket, keeping its content type and metadata, then deletes it. */
+  /**
+   * Copies the object under `from` to `to` inside the bucket, keeping its content type and metadata, then deletes it.
+   * Above 5 GiB the copy is a multipart copy of ranges; a failed one is aborted and the source is kept.
+   */
   override async move(from: string, to: string): Promise<void> {
     const source = normalizePath(from);
+    const key = normalizePath(to);
+    const copySource = `${this.bucket}/${source.split("/").map(encodeURIComponent).join("/")}`;
     try {
-      await this.client.send(
-        new CopyObjectCommand({
-          Bucket: this.bucket,
-          Key: normalizePath(to),
-          CopySource: `${this.bucket}/${source.split("/").map(encodeURIComponent).join("/")}`,
-        }),
+      const head = await this.client.send(
+        new HeadObjectCommand({ Bucket: this.bucket, Key: source }),
       );
+      if ((head.ContentLength ?? 0) > MAX_COPY_SIZE) await this.copyInParts(copySource, key, head);
+      else
+        await this.client.send(
+          new CopyObjectCommand({ Bucket: this.bucket, Key: key, CopySource: copySource }),
+        );
     } catch (error) {
       throw isNotFound(error) ? FileNotFoundError.create({ path: source }) : error;
     }
@@ -334,5 +379,53 @@ export class S3FileSystemDriver extends Driver(FileSystem) {
       new GetObjectCommand({ Bucket: this.bucket, Key: normalizePath(path) }),
       { expiresIn: secondsOf(expiresIn) },
     );
+  }
+
+  /**
+   * Copies the object `head` describes (`copySource`, above 5 GiB) to `key` as a multipart upload of equal ranges,
+   * one `UploadPartCopy` after another, each only while the source keeps the ETag `head` read. A failure aborts it.
+   */
+  private async copyInParts(
+    copySource: string,
+    key: string,
+    head: HeadObjectCommandOutput,
+  ): Promise<void> {
+    const size = head.ContentLength ?? 0;
+    const partSize = Math.max(COPY_PART_SIZE, Math.ceil(size / MAX_PARTS));
+    const { UploadId } = await this.client.send(
+      new CreateMultipartUploadCommand({ Bucket: this.bucket, Key: key, ...copiedHeadersOf(head) }),
+    );
+    const parts: { ETag: string | undefined; PartNumber: number }[] = [];
+    try {
+      for (let start = 0; start < size; start += partSize) {
+        const PartNumber = parts.length + 1;
+        const { CopyPartResult } = await this.client.send(
+          new UploadPartCopyCommand({
+            Bucket: this.bucket,
+            Key: key,
+            UploadId,
+            PartNumber,
+            CopySource: copySource,
+            CopySourceRange: `bytes=${start}-${Math.min(start + partSize, size) - 1}`,
+            ...(head.ETag === undefined ? {} : { CopySourceIfMatch: head.ETag }),
+          }),
+        );
+        parts.push({ ETag: CopyPartResult?.ETag, PartNumber });
+      }
+      await this.client.send(
+        new CompleteMultipartUploadCommand({
+          Bucket: this.bucket,
+          Key: key,
+          UploadId,
+          MultipartUpload: { Parts: parts },
+        }),
+      );
+    } catch (error) {
+      await this.client
+        .send(new AbortMultipartUploadCommand({ Bucket: this.bucket, Key: key, UploadId }))
+        // The copy's own error is the one to report, never an abort failure on top of it.
+        .catch(() => undefined);
+      throw error;
+    }
   }
 }

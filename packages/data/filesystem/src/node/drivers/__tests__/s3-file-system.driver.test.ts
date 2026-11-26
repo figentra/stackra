@@ -3,8 +3,9 @@
  * Purpose: unit tests of `S3FileSystemDriver`: the commands it sends for each call, the bucket, region, endpoint and
  *          path style it builds its client with, not-found mapping, paged listing, a real SigV4 presigned URL, and the
  *          streamed write: one PUT under a part, equal 8 MiB parts then the rest and a completion above, an abort when
- *          the stream fails; a move by server-side copy and delete, and a presigned upload `PUT` that signs the content
- *          type and carries no checksum (moved from the old `S3MediaDiskDriver` tests).
+ *          the stream fails; a move by server-side copy and delete, above 5 GiB a multipart copy of ranges that keeps
+ *          the headers and the source's ETag and is aborted on failure with the source kept, and a presigned upload
+ *          `PUT` that signs the content type and carries no checksum (moved from the old `S3MediaDiskDriver` tests).
  * Boundary: test only; `S3Client.prototype.send` is replaced, so no request leaves the process. Presigning is local
  *           computation, run with fake credentials set through the environment for the test only.
  * Runtime: node (vitest)
@@ -21,6 +22,7 @@ import {
   PutObjectCommand,
   S3Client,
   UploadPartCommand,
+  UploadPartCopyCommand,
 } from "@aws-sdk/client-s3";
 import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
@@ -32,6 +34,10 @@ import { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
 import { S3FileSystemDriver } from "#node/drivers/s3-file-system.driver";
+
+/** One mebibyte and one gibibyte, in bytes. */
+const MIB = 1024 * 1024;
+const GIB = 1024 * MIB;
 
 /** A store error as the SDK throws it for a missing object. */
 function missing(name: "NoSuchKey" | "NotFound"): Error {
@@ -298,7 +304,13 @@ describe("S3FileSystemDriver", () => {
   it("moves by a server-side copy and a delete", async () => {
     const send = answer(() => ({}));
     await disk().move("uploads/upl 1", "public/products/upl_1.png");
-    const [copy, remove] = send.mock.calls.map(([command]) => command);
+    const [head, copy, remove, ...rest] = send.mock.calls.map(([command]) => command);
+    expect(head).toBeInstanceOf(HeadObjectCommand);
+    expect((head as HeadObjectCommand).input).toEqual({
+      Bucket: "acme-files",
+      Key: "uploads/upl 1",
+    });
+    expect(rest).toEqual([]);
     expect(copy).toBeInstanceOf(CopyObjectCommand);
     expect((copy as CopyObjectCommand).input).toEqual({
       Bucket: "acme-files",
@@ -310,6 +322,121 @@ describe("S3FileSystemDriver", () => {
       Bucket: "acme-files",
       Key: "uploads/upl 1",
     });
+  });
+
+  it("copies an object of exactly 5 GiB in one CopyObject", async () => {
+    const send = answer((command) =>
+      command instanceof HeadObjectCommand ? { ContentLength: GIB * 5 } : {},
+    );
+    await disk().move("uploads/upl_1", "public/videos/upl_1.mp4");
+    expect(send.mock.calls.map(([command]) => (command as object).constructor)).toEqual([
+      HeadObjectCommand,
+      CopyObjectCommand,
+      DeleteObjectCommand,
+    ]);
+  });
+
+  it("moves an object above 5 GiB by a multipart copy of ranges, keeping its headers, then deletes it", async () => {
+    const size = GIB * 5 + 1;
+    const send = answer((command) => {
+      if (command instanceof HeadObjectCommand)
+        return {
+          ContentLength: size,
+          ContentType: "video/mp4",
+          CacheControl: "private",
+          Metadata: { upload: "upl_1" },
+          ETag: '"source-etag"',
+        };
+      if (command instanceof CreateMultipartUploadCommand) return { UploadId: "copy-1" };
+      if (command instanceof UploadPartCopyCommand)
+        return { CopyPartResult: { ETag: `"part-${command.input.PartNumber}"` } };
+      return {};
+    });
+    await disk().move("uploads/upl 1", "public/videos/upl_1.mp4");
+    const sent = send.mock.calls.map(([command]) => command);
+    expect(sent.some((command) => command instanceof CopyObjectCommand)).toBe(false);
+    expect((sent[1] as CreateMultipartUploadCommand).input).toEqual({
+      Bucket: "acme-files",
+      Key: "public/videos/upl_1.mp4",
+      ContentType: "video/mp4",
+      CacheControl: "private",
+      Metadata: { upload: "upl_1" },
+    });
+    const copies = sent.filter(
+      (command) => command instanceof UploadPartCopyCommand,
+    ) as UploadPartCopyCommand[];
+    // ten parts of 512 MiB make 5 GiB; the eleventh carries the last byte
+    expect(copies).toHaveLength(11);
+    expect(copies[0]?.input).toEqual({
+      Bucket: "acme-files",
+      Key: "public/videos/upl_1.mp4",
+      UploadId: "copy-1",
+      PartNumber: 1,
+      CopySource: "acme-files/uploads/upl%201",
+      CopySourceRange: `bytes=0-${MIB * 512 - 1}`,
+      CopySourceIfMatch: '"source-etag"',
+    });
+    expect(copies[10]?.input.CopySourceRange).toBe(`bytes=${GIB * 5}-${GIB * 5}`);
+    const complete = sent.at(-2) as CompleteMultipartUploadCommand;
+    expect(complete).toBeInstanceOf(CompleteMultipartUploadCommand);
+    expect(complete.input.UploadId).toBe("copy-1");
+    expect(complete.input.MultipartUpload?.Parts).toEqual(
+      Array.from({ length: 11 }, (_, index) => ({
+        ETag: `"part-${index + 1}"`,
+        PartNumber: index + 1,
+      })),
+    );
+    expect(sent.at(-1)).toBeInstanceOf(DeleteObjectCommand);
+    expect((sent.at(-1) as DeleteObjectCommand).input).toEqual({
+      Bucket: "acme-files",
+      Key: "uploads/upl 1",
+    });
+  });
+
+  it("grows the copied part when 10,000 parts of 512 MiB would not reach the end", async () => {
+    const size = MIB * 512 * 10_000 + 1;
+    const send = answer((command) =>
+      command instanceof HeadObjectCommand
+        ? { ContentLength: size }
+        : command instanceof CreateMultipartUploadCommand
+          ? { UploadId: "copy-2" }
+          : command instanceof UploadPartCopyCommand
+            ? { CopyPartResult: { ETag: "e" } }
+            : {},
+    );
+    await disk().move("uploads/upl_1", "public/videos/upl_1.mp4");
+    const copies = send.mock.calls
+      .map(([command]) => command)
+      .filter((command) => command instanceof UploadPartCopyCommand) as UploadPartCopyCommand[];
+    expect(copies).toHaveLength(10_000);
+    expect(copies.at(-1)?.input.CopySourceRange).toMatch(new RegExp(`-${size - 1}$`));
+  });
+
+  it("aborts a multipart copy that fails and keeps the source", async () => {
+    const send = answer((command) => {
+      if (command instanceof HeadObjectCommand) return { ContentLength: GIB * 6 };
+      if (command instanceof CreateMultipartUploadCommand) return { UploadId: "copy-3" };
+      if (command instanceof UploadPartCopyCommand && command.input.PartNumber === 2)
+        throw Object.assign(new Error("PreconditionFailed"), {
+          name: "PreconditionFailed",
+          $metadata: { httpStatusCode: 412 },
+        });
+      if (command instanceof AbortMultipartUploadCommand) throw new Error("abort failed too");
+      return { CopyPartResult: { ETag: "e" } };
+    });
+    await expect(disk().move("uploads/upl_1", "public/videos/upl_1.mp4")).rejects.toThrow(
+      "PreconditionFailed",
+    );
+    const sent = send.mock.calls.map(([command]) => command);
+    const abort = sent.at(-1) as AbortMultipartUploadCommand;
+    expect(abort).toBeInstanceOf(AbortMultipartUploadCommand);
+    expect(abort.input).toEqual({
+      Bucket: "acme-files",
+      Key: "public/videos/upl_1.mp4",
+      UploadId: "copy-3",
+    });
+    expect(sent.some((command) => command instanceof DeleteObjectCommand)).toBe(false);
+    expect(sent.some((command) => command instanceof CompleteMultipartUploadCommand)).toBe(false);
   });
 
   it("refuses to move nothing and deletes nothing", async () => {

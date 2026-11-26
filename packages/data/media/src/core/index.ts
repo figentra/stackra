@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/media (the `Bucket` kind and its enums, the `Upload` token,
- *          `MediaLibrary`, the configuration and its shipped schema, the `Uploader` port, the memory and HTTP uploaders,
+ *          `MediaLibrary`, the configuration and its shipped schema, the `Uploader` port, the memory, HTTP and tus uploaders,
  *          the memory scanner,
  *          the refusals and `registerBuckets`) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under its generated name
  *           (`MediaConfig$`). The path, key and id helpers stay internal. The store is `FileSystem` of
- *           @stackra/filesystem (ADR 0465); the `upload.create` action is `./node`'s.
+ *           @stackra/filesystem (ADR 0465); the `upload.create` and `upload.create_resumable` actions and the tus hook
+ *           controller are `./node`'s.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
@@ -16,6 +17,7 @@ export { MEDIA_CONFIG_SCHEMA as MediaConfig$ } from "#core/constants/media-confi
 export { HttpUploaderDriver } from "#core/drivers/http-uploader.driver";
 export { MemoryFileScannerDriver } from "#core/drivers/memory-file-scanner.driver";
 export { MemoryUploaderDriver } from "#core/drivers/memory-uploader.driver";
+export { TusUploaderDriver } from "#core/drivers/tus-uploader.driver";
 export { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 export { ImageFormat } from "#core/enums/image-format.enum";
 export { MediaType } from "#core/enums/media-type.enum";
@@ -28,6 +30,7 @@ export { registerBuckets } from "#core/functions/register-buckets.function";
 export { Uploader } from "#core/ports/uploader.port";
 export { MediaOptions } from "#core/schemas/media-options.schema";
 export { MediaLibrary } from "#core/services/media-library.service";
+export type { AdmittedUpload } from "#core/types/admitted-upload.type";
 export type { BucketClass } from "#core/types/bucket-class.type";
 export type { BucketOptions } from "#core/types/bucket-options.type";
 export type { BucketRegistration } from "#core/types/bucket-registration.type";
@@ -35,4 +38,5 @@ export type { ImageVariant } from "#core/types/image-variant.type";
 export type { ImageVariantOptions } from "#core/types/image-variant-options.type";
 export type { MediaFile } from "#core/types/media-file.type";
 export type { PendingUpload } from "#core/types/pending-upload.type";
+export type { ResumableUpload } from "#core/types/resumable-upload.type";
 export { Upload } from "#core/values/upload.value";

@@ -13,7 +13,7 @@ import type { MEDIA_UPLOADERS } from "#core/constants/media-uploaders.constant";
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `Uploader` (`memory`, `http`). */
+    /** The driver names of `Uploader` (`memory`, `http`, `tus`). */
     "media.Uploader": (typeof MEDIA_UPLOADERS)[number];
     /** The driver names of `FileScanner` (`memory`, `clamav`, `guard_duty`). */
     "media.FileScanner": (typeof MEDIA_SCANNERS)[number];

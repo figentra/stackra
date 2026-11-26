@@ -26,7 +26,7 @@ describe("MediaOptions", () => {
   });
 
   it("types the driver fields by this package's names", () => {
-    expectTypeOf<DriverName<Uploader>>().toEqualTypeOf<"memory" | "http">();
+    expectTypeOf<DriverName<Uploader>>().toEqualTypeOf<"memory" | "http" | "tus">();
     expectTypeOf<DriverName<FileScanner>>().toEqualTypeOf<"memory" | "clamav" | "guard_duty">();
     expectTypeOf<MediaOptions["scanner"]>().toEqualTypeOf<"memory" | "clamav" | "guard_duty">();
   });

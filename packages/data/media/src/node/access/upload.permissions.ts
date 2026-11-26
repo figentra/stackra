@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `UploadPermissions`, the permissions of the media module's `upload` aggregate: `media.upload.create`, which
- *          `CreateUploadAction` runs under.
+ *          `CreateUploadAction` runs under, and `media.upload.create_resumable`, which `CreateResumableUploadAction`
+ *          runs under.
  * Boundary: declarations only. Signing an upload stores nothing until the claiming action takes the token, but it is a
  *           write, so L2 (STA-2096); the bucket's own rules (media types, size) still bound what a holder may put.
  * Runtime: node
@@ -18,4 +19,7 @@ import { Permission, Permissions } from "@stackra/iam";
 export class UploadPermissions extends Permissions {
   /** Sign an upload to a registered bucket. */
   static readonly create = Permission.L2;
+
+  /** Open a resumable tus upload to a registered bucket; a write like `create`, under the same bucket rules. */
+  static readonly createResumable = Permission.L2;
 }
