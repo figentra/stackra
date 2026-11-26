@@ -1,0 +1,78 @@
+---
+title: "Upgrade to 0.31"
+description: "What 0.31.0 changes for an app built on Stackra, the steps to take, how to check them and how to go back."
+icon: "arrow-up-circle"
+---
+
+{/* Stackra file contract: Purpose: the upgrade note of the 0.31 release line (ADR 0013 decision 5): what 0.31.0 changes for a consumer, the pins, the steps, the checks and the rollback, written from the 0.31.0 changelog entries. Boundary: customer-facing documentation only; the per-package CHANGELOG.md files stay the full record. Runtime: docs. Governing contract: ADR 0013 (decisions 4 and 5); ADR 0025 (decision 5); STA-2835. */}
+
+From **0.30.x** to **0.31.x**. Upgrade to 0.30 first ([Upgrade to 0.30](/customers/upgrading/0-30)).
+Every `@stackra/*` package moves together.
+
+## What changes
+
+**Automation quota.** Every automation run that a trigger or a schedule starts is checked against
+the new `AutomationQuota` port, which `AutomationService` injects. A service that runs automations
+must bind a driver for it:
+
+- the usage client driver of your billing service, when you sell automation runs by quota;
+- `UnlimitedAutomationQuotaDriver`, only when you sell no automation quota at all.
+
+Over the quota, a run is skipped and recorded as `AutomationRunSkipped` (`quota_exceeded`); this is
+not a failure. A quota that cannot be read starts nothing and records `quota_unavailable`.
+`AutomationService.triggered` takes an optional `startedBy` (`AutomationStart`, an event by default),
+kept on a skip; existing calls compile unchanged.
+
+**Table names and resource paths of plural models.** A model whose last word is already plural keeps
+it: `OpeningHours` is `opening_hours`, no longer `opening_hourses`. The same goes for `news`,
+`series`, `settings`, `analytics`, `species`, `preferences` and the rest of gen's invariant plurals.
+A table that a migration created under the old name must be renamed, and the model's derived
+resource path changes with it. Regular nouns ending in `s` (`address`, `class`) still take `es`.
+
+**White-label mobile builds.** `runMobileJob` reads `whiteLabel.entitlement`: a white-label build a
+scope starts is refused unless the variant's `entitlements` list holds that entitlement.
+
+## Pins
+
+Set every entry of the `stackra` catalog in `pnpm-workspace.yaml` to `0.31.0`, and
+`@stackra-pro/*` to the same version. If your repository uses TypeScript 7, go on to 0.33.1 instead
+(see [Upgrade to 0.30](/customers/upgrading/0-30#pins)).
+
+## Steps
+
+<Steps>
+  <Step title="Move the pins and install">
+    Set the `stackra` catalog to `0.31.0`, then `pnpm install`.
+  </Step>
+  <Step title="Bind an automation quota driver">
+    In each service that runs automations, bind the `AutomationQuota` driver that matches how you
+    sell automations (above).
+  </Step>
+  <Step title="Rename the tables of plural models">
+    Run `stackra gen`. For each model whose table name changed, write a migration that renames the
+    old table to the new name, then run `stackra db:migrate`. Change any hand-written URL that used
+    the old resource path.
+  </Step>
+  <Step title="White-label variants">
+    If scopes start white-label builds, list the entitlement in each variant's `entitlements`.
+  </Step>
+</Steps>
+
+## Verify
+
+- `pnpm install --frozen-lockfile` passes, and `pnpm why @stackra/workflow` shows only `0.31.0`.
+- `stackra gen` reports no refusal, and a second run changes no file.
+- `stackra validate --repository`, `stackra typecheck` and `stackra test` pass.
+- After `stackra db:migrate`, the database schema matches the models: no table is left under its
+  old plural name.
+- Fire one trigger: the automation runs, or is recorded as skipped with `quota_exceeded` when the
+  quota is spent.
+
+## Roll back
+
+1. Revert the commit that moved the pins, the lockfile and the regenerated files, then
+   `pnpm install --frozen-lockfile`.
+2. If you renamed tables, run the down of your rename migrations (`stackra db:rollback`) before you
+   deploy 0.30 code, or restore a snapshot taken before the migration.
+
+If 0.31 itself is the problem, report it. The fix ships as a new release; nothing is unpublished.

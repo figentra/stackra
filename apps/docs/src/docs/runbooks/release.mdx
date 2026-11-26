@@ -4,7 +4,7 @@ description: "Changesets, the version-packages pull request, publishing to the S
 icon: "package-check"
 ---
 
-{/* Stackra file contract: Purpose: the package release runbook: changesets, the version pull request, the trusted-publisher publish to the Stackra registry (release.yml calling runway-npm.yml), the prerelease and dry-run dispatches, the one-time owner setup, failures and recovery. Boundary: npm packages only; app store releases are Mobile release, the registry's own deploy is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 6 to 9, 16 and 18); ADR 0013; ADR 0025; ADR 0119; ADR 0174; ADR 0177 (decisions 4 to 7); STA-1575. */}
+{/* Stackra file contract: Purpose: the package release runbook: changesets, the version pull request, the trusted-publisher publish to the Stackra registry (release.yml calling runway-npm.yml), the prerelease and dry-run dispatches, the one-time owner setup, failures and recovery. Boundary: npm packages only; app store releases are Mobile release, the registry's own deploy is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 6 to 9, 16 and 18); ADR 0013; ADR 0025; ADR 0119; ADR 0174; ADR 0177 (decisions 4 to 7); STA-1575; STA-2835. */}
 
 <Note>
   Status 2026-10-29: live. `.github/workflows/release.yml` calls Runway's `npm` provider
@@ -35,7 +35,10 @@ icon: "package-check"
   <Step title="Land changesets with the work">
     In each pull request that changes a member: `pnpm changeset`, pick the members, pick the bump
     (patch, minor, major) and write one user-facing line. Commit the generated file under
-    `.changeset/`.
+    `.changeset/`. A change a consumer must act on carries a break mark in its note (`Breaking:`,
+    `Upgrade:`, `Bump step`, …) and, in the same pull request, its release line's upgrade note under
+    `apps/docs/src/docs/customers/upgrading/` ([Upgrading](/customers/upgrading)); `pnpm validate`
+    refuses the mark without it.
   </Step>
   <Step title="Let CI open the version pull request">
     After a push to `main` the release job runs `pnpm changeset:version` (which also refreshes the
@@ -46,7 +49,8 @@ icon: "package-check"
   <Step title="Review it">
     Read the `CHANGELOG.md` diffs and the version bumps. Check the bump matches the change. A major (or,
     before 1.0, a breaking minor) needs its human release note first ([0013](/adr/0013-versioning-and-release)
-    decision 5).
+    decision 5): the Quality Gate's `pnpm validate` fails the version pull request when a break-marked entry's
+    release line has no complete note. Read the note against the diff.
   </Step>
   <Step title="Merge it and approve the run">
     The merge to `main` starts the release job, which waits in the `release` environment until the
@@ -139,16 +143,17 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 
 ## Checks that back this page
 
-| Rule                                          | Check                                        | State                        |
-| --------------------------------------------- | -------------------------------------------- | ---------------------------- |
-| Changeset per changed member                  | `pnpm changeset:status`                      | Script live; not in `verify` |
-| No local `changeset version`                  | `guard-bash`                                 | Live                         |
-| Conventional commits and generated changelogs | commitlint, changesets                       | Live                         |
-| Publish only from the release workflow        | registry publisher rows and OIDC claim match | Live                         |
-| Publish checks, signatures, provenance        | `workers/registry`                           | Live                         |
-| `id-token: write` scope of the workflows      | `zizmor` in the Quality Gate                 | Live                         |
-| Packed-tarball smoke test                     | release job                                  | Not built                    |
-| Tag ruleset                                   | owner setting                                | Not checked                  |
+| Rule                                          | Check                                            | State                        |
+| --------------------------------------------- | ------------------------------------------------ | ---------------------------- |
+| Changeset per changed member                  | `pnpm changeset:status`                          | Script live; not in `verify` |
+| Upgrade note per breaking release (0.30 on)   | `stackra validate --repository`, `release-notes` | Live                         |
+| No local `changeset version`                  | `guard-bash`                                     | Live                         |
+| Conventional commits and generated changelogs | commitlint, changesets                           | Live                         |
+| Publish only from the release workflow        | registry publisher rows and OIDC claim match     | Live                         |
+| Publish checks, signatures, provenance        | `workers/registry`                               | Live                         |
+| `id-token: write` scope of the workflows      | `zizmor` in the Quality Gate                     | Live                         |
+| Packed-tarball smoke test                     | release job                                      | Not built                    |
+| Tag ruleset                                   | owner setting                                    | Not checked                  |
 
 See also [Get access and install](/customers/install) (the consumer side), [Mobile release](/runbooks/mobile-release),
 [Deploys](/runbooks/deploys) and [Commits and releases](/guides/workflow).

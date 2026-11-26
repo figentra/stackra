@@ -1,0 +1,160 @@
+---
+title: "Upgrade to 0.34"
+description: "What 0.34 changes for an app built on Stackra, chiefly for a custom idempotency store and a Cloudflare Workers deploy, the steps to take, how to check them and how to go back."
+icon: "arrow-up-circle"
+---
+
+{/* Stackra file contract: Purpose: the upgrade note of the 0.34 release line (ADR 0013 decision 5): what 0.34.0 changes for a consumer, the pins, the steps, the checks and the rollback, written ahead of the release from its pending changesets (STA-2797's `IdempotencyStore` break; STA-2786's Worker version proof; the `vite-plugin-pwa` peer). Boundary: customer-facing documentation only; the per-package CHANGELOG.md files stay the full record once 0.34.0 is released, and `stackra validate --repository` (rule release-notes) holds this page to its five sections. Runtime: docs. Governing contract: ADR 0013 (decisions 4 and 5); ADR 0025 (decision 5); ADR 0136 (decision 3); ADR 0495 (note of 2026-11-26); STA-2786; STA-2797; STA-2835. */}
+
+From **0.33.1** to **0.34.0**. Upgrade to 0.33.1 first ([Upgrade to 0.33](/customers/upgrading/0-33)).
+Every `@stackra/*` package moves together.
+
+<Note>
+  **0.34.0 is pending: it is not released yet.** This note is written ahead of it from the
+  changesets waiting on `main`, as the release-note rule requires, and grows with each breaking
+  change that joins 0.34 before it ships.
+</Note>
+
+Most apps only move their pins. You have work to do if your code **implements `IdempotencyStore`**
+(a store of your own, or a fake of one in your tests), if runway **deploys a Cloudflare Worker**
+(`targets.cloudflare-workers`), or if a member **builds the PWA target** of `@stackra/vite-plugin`.
+Do the Worker steps **before** you deploy on 0.34: until then, every Worker deploy fails.
+
+## What changes
+
+### An Idempotency-Key's result commits with the call
+
+A call with an `Idempotency-Key` can no longer repeat a committed write when the result's write
+fails or the process dies after the commit (STA-2797, [0495](/adr/0495-every-call-and-background-unit-runs-in-a-transaction-local-isolation-context)
+note of 2026-11-26). For every app, with no code of its own:
+
+- **Postgres store** (`config.actions.stores.idempotency: postgres`): the result is written inside
+  the call's transaction, after the interceptors, so it commits with the action's writes or not at
+  all. With no `CallIsolation` bound, the pipeline opens one `UnitOfWork` transaction around such a
+  keyed call, and the action's own unit of work becomes a savepoint of it.
+- **Valkey and memory stores**: as the last step before the commit, the claim is extended to the
+  replay window. If another call took the key after this call's lease lapsed, this call rolls back
+  with `idempotency_key_in_progress`, so it never writes twice. The result is written right after
+  the commit.
+- **A claim holds its key for a 15-minute lease**, separate from the 24-hour replay window. A call
+  whose process died before its commit frees its key after 15 minutes, instead of answering
+  in-progress for a day.
+- **A committed call never frees its key.** If writing the result fails after the commit, the
+  caller still gets its output, the failure is logged as `actions.idempotency_store_failed`, and
+  the key stays held for the window.
+
+### Breaking: the `IdempotencyStore` port
+
+Every claim now carries a **holder** token unique to the call, and the store acts on a key only while
+it still holds that call's claim. The shipped memory, Valkey and Postgres drivers already follow it.
+A class of yours that extends `IdempotencyStore` (or `Driver(IdempotencyStore)`) stops compiling:
+
+| Method                                            | Before (0.33)                  | Now (0.34)                                                                                       |
+| ------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `claim(key, fingerprint, lease, holder)`          | `claim(key, fingerprint, ttl)` | holds the key for `lease` (15 minutes) under `holder`, not for the replay window                 |
+| `extend(key, fingerprint, ttl, holder)`           | (none)                         | new: keeps `holder`'s claim, or a free key, held for `ttl`; `false`, touching nothing, when lost |
+| `complete(key, fingerprint, output, ttl, holder)` | `complete(key, output)`        | writes the done record for `ttl` when `holder` holds the key or it is free                       |
+| `release(key, holder)`                            | `release(key)`                 | frees only `holder`'s claim; never a done record                                                 |
+
+`completeRefused(key, fingerprint, refusal, ttl)` and `joinsTransaction` are unchanged. A store whose
+`joinsTransaction` is `true` is completed inside the call's transaction and is never asked to
+`extend`; any other store is extended before the commit and completed after it.
+
+### Breaking: a Worker deploy proves which version answered
+
+Runway's `cloudflare-workers` provider now stages a new version at 0% of the deployment, smokes it
+there, and only then moves traffic in the member's `rollout` steps, smoking after each one (STA-2786).
+Before, its "0% smoke" could check the version already serving and pass with a broken new one. Each
+smoke answer must now name the version under test, so:
+
+- **A Worker member with no `smoke` check is refused** before anything ships.
+- **Every answer must name its version** in the `x-stackra-version` header, read from a
+  `version_metadata` binding (`CF_VERSION_METADATA`). A Worker that serves only static assets sets
+  `versionProof: route` on its member instead, and answers `GET /-/version` with
+  `{ "version": "<id>" }` and the same header. An answer that names no version, or another one, fails
+  the step.
+- A failed 0% smoke takes the version out and moves no traffic; a failed later step puts the
+  previous version back. A partial step's deployment message is `<sha> (<percent>%)`, and `current`
+  names only the commit that serves at 100%.
+
+`WORKER_VERSION`, `WorkerVersionProof` and `servedVersionProblem` (`@stackra/runway`) let another
+smoke apply the same proof.
+
+### Also in 0.34
+
+- `vite-plugin-pwa` is an optional peer of `@stackra/vite-plugin`, no longer a dependency, so a
+  product under pnpm's `trustPolicy: no-downgrade` can install the plugin. Only the PWA target
+  loads it; without it, that target stops with one error that names the package to add.
+
+## Pins
+
+Set every entry of the `stackra` catalog in `pnpm-workspace.yaml` to **`0.34.0`**, and
+`@stackra-pro/*` to the same version, once 0.34.0 is released.
+
+## Steps
+
+<Steps>
+  <Step title="Move the pins and install">
+    Set the `stackra` catalog to `0.34.0`, then `pnpm install`.
+  </Step>
+  <Step title="Update your own idempotency store">
+    Only if your code implements `IdempotencyStore`. Give `claim`, `complete` and `release` the
+    signatures in the table, store the `holder` with each held key, and add `extend`. `extend` and
+    `complete` write when the key is held by that `holder` or is free (a lease that lapsed); they
+    leave a key another holder took, or one already done, as it is. `release` deletes only that
+    `holder`'s claim. Hold a claimed key for the `lease` the pipeline passes, and a completed or
+    extended one for the `ttl`. Model it on the shipped drivers: `MemoryIdempotencyStoreDriver`
+    (`@stackra/actions`), `ValkeyIdempotencyStoreDriver` (`@stackra/actions/node`) and
+    `PostgresIdempotencyStoreDriver` (`@stackra/database/node`).
+  </Step>
+  <Step title="Update fakes and direct calls">
+    Give every test double of `IdempotencyStore` an `extend`, and pass the lease and a holder
+    wherever a test calls `claim`, `complete` or `release` itself.
+  </Step>
+  <Step title="Make every Worker prove its version">
+    Only if runway deploys a Cloudflare Worker, and before the first deploy on 0.34. Give each member
+    under `targets.cloudflare-workers.members` at least one `smoke` check. In each Worker's
+    `wrangler.jsonc`, add `"version_metadata": { "binding": "CF_VERSION_METADATA" }`, and set
+    `x-stackra-version` to `env.CF_VERSION_METADATA.id` on every response its script returns. For a
+    Worker that serves only static assets, add a script that answers just `GET /-/version` with
+    `{ "version": "<id>" }` and that header, list it in `assets.run_worker_first: ["/-/version"]`,
+    and set `versionProof: route` on its member.
+  </Step>
+  <Step title="Add vite-plugin-pwa where you build the PWA target">
+    In each member that builds the PWA target, run `pnpm add -D vite-plugin-pwa` and decide its
+    trust question there. Members that do not build it need nothing.
+  </Step>
+  <Step title="Regenerate and watch the new log">
+    Run `stackra gen` and commit what it writes. In each deployed environment, alert on the log
+    event `actions.idempotency_store_failed`: it means a result was not kept after a commit.
+  </Step>
+</Steps>
+
+## Verify
+
+- `pnpm install --frozen-lockfile` passes, and `pnpm why @stackra/actions` shows only `0.34.0`.
+- `stackra typecheck` passes: a store still on the 0.33 signatures, or with no `extend`, fails here.
+- Your store's tests show: a second `claim` of a held key gets the held record; after another
+  holder took the key, `extend` answers `false` and `complete` and `release` change nothing; a
+  `release` never deletes a done record.
+- `stackra validate --repository`, `stackra test` and, for a PWA member, its PWA build pass.
+- For each Worker, `curl -sI <smoke url>` shows an `x-stackra-version` header (or, for a route member,
+  `curl -s <origin>/-/version` answers its version), and the staging deploy's log shows the 0% smoke
+  and a smoke after each rollout step, each naming the new version.
+- In staging, send one keyed action twice with the same `Idempotency-Key`: the second call replays
+  the first one's output and nothing is written twice.
+
+## Roll back
+
+Revert the commit that moved the pins, the lockfile, your store and fake changes and the
+regenerated files, then `pnpm install --frozen-lockfile`. 0.34 adds no migration: the Postgres
+store's table is unchanged, and a Valkey record 0.34 holds only adds a `holder` field that 0.33
+ignores. On 0.33 the old completion paths return: a result write that fails after the commit frees
+the key again, so a retry can repeat the write.
+
+The Worker's binding, header and `/-/version` route can stay when you go back, but delete
+`versionProof` from each member first: 0.33's runway refuses a member key it does not know. A Worker version deployed on 0.34 rolls back as usual; for a version uploaded
+before 0.34, which names none, 0.34's `verify` asks for 2xx answers and Cloudflare's deployment
+showing it at 100%.
+
+If 0.34 itself is the problem, report it. The fix ships as a new release; nothing is unpublished.

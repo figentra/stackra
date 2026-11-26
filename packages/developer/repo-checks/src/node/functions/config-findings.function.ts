@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `configFindings(context)`, the `config` phase of `stackra check`: JSON versus JSONC versus YAML, YAML flow
- *          mappings (each file must also parse), `.stackra/` in `.gitignore`, golden files git would ignore (STA-1807), the ADR number register (STA-1732), mise npm pins that match the catalogs (STA-1865), gen tasks that carry STACKRA_GEN_STRICT, a current `.flow/constitution.md`, and the skill and agent source rules (STA-2098 H6).
+ *          mappings (each file must also parse), `.stackra/` in `.gitignore`, golden files git would ignore (STA-1807), the ADR number register (STA-1732), mise npm pins that match the catalogs (STA-1865), gen tasks that carry STACKRA_GEN_STRICT, a current `.flow/constitution.md`, the skill and agent source rules (STA-2098 H6), and an upgrade note for every breaking `@stackra/*` release (STA-2835).
  * Boundary: reads the listed files; returns findings and never prints.
  * Runtime: node
- * Governing contract: the YAML standard (STA-299); ADR 0295 (decision 5); STA-1732.
+ * Governing contract: the YAML standard (STA-299); ADR 0295 (decision 5); STA-1732; ADR 0013 (decision 5).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -20,6 +20,7 @@ import { constitutionFindings } from "#node/functions/constitution-findings.func
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { ignoredGoldenFindings } from "#node/functions/ignored-golden-findings.function";
 import { isRepoOwnedYaml } from "#node/functions/is-repo-owned-yaml.function";
+import { releaseNoteFindings } from "#node/functions/release-note-findings.function";
 import type { RawFinding } from "#node/types/raw-finding.type";
 import type { RepoContext } from "#node/types/repo-context.type";
 
@@ -71,5 +72,6 @@ export function configFindings(context: RepoContext): RawFinding[] {
       checkToolPins(readIf(join(root, "mise.toml")), readIf(join(root, "pnpm-workspace.yaml"))),
     ),
     ...of("gen-strict-env", checkGenStrictEnv(readIf(join(root, "turbo.jsonc")))),
+    ...releaseNoteFindings(context),
   ];
 }

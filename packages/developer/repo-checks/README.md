@@ -20,7 +20,7 @@ TypeScript 6 compiler API the doc standard parses with).
 
 | Phase (`stackra check`) | Runner              | Checks                                                                                                             |
 | ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `config`                | `configFindings`    | JSON vs JSONC vs YAML (`MUST_STAY_JSON`, `MUST_STAY_JSONC`), YAML flow maps, `.stackra/*` ignored                  |
+| `config`                | `configFindings`    | JSON vs JSONC vs YAML (`MUST_STAY_JSON`, `MUST_STAY_JSONC`), YAML flow maps, `.stackra/*` ignored, an upgrade note per breaking `@stackra/*` release (`release-notes`, below) |
 | `structure`             | `structureFindings` | test placement, workflow triggers, runway schemas and files, imports, raw SQL reasons, Expo form factor, members' manifests and files, public id prefix uniqueness across apps and services |
 | `docs`                  | `docsFindings`      | contract headers, TSDoc on exports and members, no types in doc tags (ADR 0007)                                    |
 | `layout` (`--repository`) | `layoutFindings`  | the root against the preset's template (`LAYOUT_TEMPLATES`): no root `src/` or script folder, `apps/` and extras only when declared in package.json `stackra.layout.allow`, `tools/` with a README, no `figentra-flow` path and none with a name the repository lists in package.json `stackra.layout.banned` (ADR 0526, 0528, 0529) |
@@ -37,7 +37,7 @@ The single checks stay exported (`checkMember`, `checkMemberFiles`, `checkMember
 `stackra` field and its turbo tags of ADR 0453 decision 11, run in the Stackra repository only, with the built
 `STACKRA_MANIFEST_SCHEMA` of `@stackra/skills`), `checkExports`, `checkService`,
 `checkTestPlacement`, `checkWorkflowTriggers`, `checkJsonConfigs`, `checkRunwaySchemas`, `checkRunwayFiles`, `checkYamlFlowMaps`,
-`checkImports`, `checkRawSql`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`, `checkRepositoryLayout`, `checkIgnoredGoldens` (a file under `__golden__` that git ignores), `checkAdrNumbers`), and so
+`checkImports`, `checkRawSql`, `checkIosFormFactor`, `checkWindowSizing`, `checkDocFile`, `checkCatalogues`, `checkGitignore`, `checkRepositoryLayout`, `checkIgnoredGoldens` (a file under `__golden__` that git ignores), `checkAdrNumbers`, `checkReleaseNotes`), and so
 do the structure tables (`CATEGORIES`, `ENTRIES`, `MODULE_GROUPS`, `APP_GROUPS`, `PACKAGE_FOLDERS`, `MEMBER_ROOT`,
 `KIND_FOLDERS`, `BANNED_FOLDERS`, `TEST_TIERS`, …) and their lookups.
 
@@ -49,6 +49,15 @@ included: Stackra ships free HeroUI and its own components only (ADR 0469).
 an `.execute(...)` with a literal statement, or a `raw(...)` imported from the ORM or `@stackra/database`, carries a
 `// raw-sql: <why>` comment on its line, inside its statement, or in the comment lines directly above the statement.
 `RAW_SQL_BASELINE` lists the calls that had no reason when the check landed, per file; it only goes down.
+
+`releaseNoteFindings` (rule `release-notes`, ADR 0013 decision 5, STA-2835) holds every breaking `@stackra/*` release
+from `RELEASE_NOTES_FLOOR` (0.30.0) on to a written upgrade note. `breakingReleases` reads the `@stackra/*`
+`CHANGELOG.md` entries and the pending `.changeset/*.md` that carry a break mark (`RELEASE_BREAK_PATTERN`: "breaking"
+but not "non-breaking", `Upgrade:`, `Bump step`, `After upgrading`, `Before taking this version`, `on its bump`); a
+pending one names the version the largest pending bump releases. `checkReleaseNotes` wants the release line's page
+(`releaseNotePath`: `apps/docs/src/docs/customers/upgrading/0-<minor>.mdx`, or `<major>.mdx` from 1.0.0) with the
+`RELEASE_NOTE_SECTIONS` as `##` headings, and a breaking patch named by its version. A product repository has no
+`@stackra/*` changelog, so the rule reports nothing there.
 
 `checkIsolationTier` (rule `isolation-tier`, ADR 0239 decision 1) fails a test that imports `assertRowSecurity` or
 `tenantIsolationOptions` from `@stackra/database/testing` or `@stackra/tenancy/testing` unless it is a `.int.test.ts`.

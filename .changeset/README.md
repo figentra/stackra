@@ -1,4 +1,4 @@
-<!-- Purpose: what .changeset/ holds and how a changeset is added, versioned and published. Boundary: folder documentation only; the release itself is .github/workflows/release.yml. Runtime: docs. Governing contract: ADR 0119, ADR 0453 (decisions 6 and 18). -->
+<!-- Purpose: what .changeset/ holds and how a changeset is added, versioned and published. Boundary: folder documentation only; the release itself is .github/workflows/release.yml. Runtime: docs. Governing contract: ADR 0119, ADR 0453 (decisions 6 and 18), ADR 0013 (decision 5). -->
 
 # `.changeset/`
 
@@ -23,4 +23,9 @@ never to npmjs. Apps and services are not versioned; they deploy by commit SHA
   request; the owner merges it ([ADR 0119](../apps/docs/src/docs/adr/0119-merge-policy-and-release-authority.mdx)). Do not
   run them locally.
 - Never hand-edit a generated `CHANGELOG.md`; the `guard-paths` hook refuses it.
+- A note that changes what a consumer must do carries a break mark: the word "breaking", a line that opens with
+  `Upgrade:`, `Bump step`, `After upgrading`, `Before taking this version` or `on its bump`. In the same pull request,
+  write or extend the release line's upgrade note in `apps/docs/src/docs/customers/upgrading/` (`0-<minor>.mdx`, with
+  the sections What changes, Pins, Steps, Verify and Roll back). `pnpm validate` refuses a break mark without it
+  (rule `release-notes`, [ADR 0013](../apps/docs/src/docs/adr/0013-versioning-and-release.mdx) decision 5).
 - `config.json` stays strict JSON: the Changesets CLI cannot read comments.

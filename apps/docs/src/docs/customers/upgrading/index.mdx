@@ -1,0 +1,54 @@
+---
+title: "Upgrading"
+description: "The upgrade note of each breaking Stackra release, the versions to skip, and how to move an app from one release to the next."
+icon: "arrow-up-circle"
+---
+
+{/* Stackra file contract: Purpose: the index of the upgrade notes (ADR 0013 decision 5): which note covers which move, the versions to skip, and the rule that keeps a note per breaking release. Boundary: customer-facing documentation only; each note is its own page in this folder, and the per-package CHANGELOG.md files stay the full record. Runtime: docs. Governing contract: ADR 0013 (decisions 4 and 5); ADR 0025 (decision 5); STA-2835. */}
+
+Before 1.0.0, a minor release (`0.y.0`) may change what your app must do. Each one that does has an
+upgrade note here: what changes, the pins, the steps, how to verify and how to roll back. A patch
+(`0.y.z`) changes nothing you must act on, unless its line's note names it.
+
+## The notes
+
+| Move                      | Note                                         | Work for an app                                                                                         |
+| ------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 0.29.x → 0.30.x           | [Upgrade to 0.30](/customers/upgrading/0-30) | the most: area routes, tenant-owned tables with migrations that refuse, custom drivers, Encore app root |
+| 0.30.x → 0.31.x           | [Upgrade to 0.31](/customers/upgrading/0-31) | an automation quota driver; renamed tables for plural model names                                       |
+| 0.31.x → 0.32.x           | [Upgrade to 0.32](/customers/upgrading/0-32) | only a service that injects `Signer`                                                                    |
+| 0.32.x → 0.33.1           | [Upgrade to 0.33](/customers/upgrading/0-33) | `stackra encore:prepare` and `stackra gen` in each service                                              |
+| 0.33.1 → 0.34.0 (pending) | [Upgrade to 0.34](/customers/upgrading/0-34) | a Worker deploy's smoke and version header; a custom `IdempotencyStore`; a PWA member's peer            |
+
+A release marked pending is not published yet: its note is written ahead of it, from the changesets
+waiting on `main`, and is final when the release ships.
+
+To cross several releases, apply the notes in order, one release line at a time, and verify after
+each. Breaks released before 0.30.0 have no note; read the packages' `CHANGELOG.md` for those.
+
+## Versions to skip
+
+| Version  | Why                                         | Take instead |
+| -------- | ------------------------------------------- | ------------ |
+| `0.33.0` | breaks `stackra typecheck` in every service | `0.33.1`     |
+
+<Note>
+  A published version is never replaced or unpublished ([0013](/adr/0013-versioning-and-release)
+  decision 4), and no release workflow deprecates one yet. This table is the warning: check it
+  before you move your pins.
+</Note>
+
+## How you pin
+
+Every `@stackra/*` package releases at one version. Pin them all, exactly, in the `stackra` catalog
+of `pnpm-workspace.yaml`, and `@stackra-pro/*` at the same version. Never mix two Stackra versions in
+one repository.
+
+## How the notes stay complete
+
+A changeset or changelog entry that marks a break (the word "breaking", `Upgrade:`, `Bump step`,
+`After upgrading`, `Before taking this version` and the like) makes its release a breaking one.
+`stackra validate --repository` refuses a breaking release from 0.30.0 on, released or still
+pending, until its line's note exists with the five sections, and until the note names a breaking
+patch by its version. The pull request that adds the break and the version pull request are both
+held, so a breaking release cannot ship without its note.

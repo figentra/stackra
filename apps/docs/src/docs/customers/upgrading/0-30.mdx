@@ -1,0 +1,167 @@
+---
+title: "Upgrade to 0.30"
+description: "What 0.30.0 changes for an app built on Stackra, the steps to take, how to check them and how to go back."
+icon: "arrow-up-circle"
+---
+
+{/* Stackra file contract: Purpose: the upgrade note of the 0.30 release line (ADR 0013 decision 5): what 0.30.0 changes for a consumer, the pins, the steps, the checks and the rollback, written from the 0.30.0 changelog entries. Boundary: customer-facing documentation only; the per-package CHANGELOG.md files stay the full record, and `stackra validate --repository` (rule release-notes) holds this page to its five sections. Runtime: docs. Governing contract: ADR 0013 (decisions 4 and 5); ADR 0025 (decision 5); ADR 0239; ADR 0091; STA-2835. */}
+
+From **0.29.x** to **0.30.x**. Take **0.30.0** only if you stop there; to go further, read
+[Upgrade to 0.31](/customers/upgrading/0-31) next. Every `@stackra/*` package moves together.
+
+<Warning>
+  0.30.0 adds tenant ownership to the settings, search, privacy, queue and scheduler tables. Four of
+  those migrations refuse to run, changing nothing, until you clear the rows they name. Read
+  [Steps](#steps) before you migrate a database that holds data.
+</Warning>
+
+## What changes
+
+**Routes.** Every action and query route now starts with its API area. Gen takes the call's
+`area`, else the service's `defineService({ area })`, else `app`: `PUT /orders/:orderId/cancel`
+becomes `PUT /app/orders/:orderId/cancel`. A call whose actors are exactly
+`[ActorKind.Anonymous]` moves to the `public` area (`/public/...`). The committed
+`stackra.manifest.json`, `openapi.json` and the generated clients follow when you run `stackra gen`.
+A caller that wrote a raw URL by hand must add the area. Gen's identity lock accepts this one move
+without `@Renamed`.
+
+**New gen refusals.** Gen now refuses `endpoint_collision`, `endpoint_versioned`,
+`endpoint_area_mismatch`, `endpoint_method_mismatch`, `job_without_system_actor`,
+`cron_input_invalid` and `intent_phrases_missing`. Each message names what to fix.
+
+**Tenancy is an error, not a warning.** `assertRowSecurity` fails a table that has no owner column
+and is not on a platform list, and gen's `model_tenancy_missing` and
+`model_tenancy_migration_missing` are errors for a package's models too. It no longer reads
+`STACKRA_GEN_STRICT`, so the generated isolation test fails on such a table.
+
+**Tables that become tenant-owned.** These tables gain a nullable `tenant_id`, forced row-level
+security and the platform policies:
+
+| Package              | Migration                                   | Refuses while                                                       |
+| -------------------- | ------------------------------------------- | ------------------------------------------------------------------- |
+| `@stackra/settings`  | `settings.0004_contract_settings_tenancy`   | a setting or revision sits below a tenant node or belongs to a user |
+| `@stackra/search`    | `search.0010_contract_search_index_tenancy` | an index registry row sits below a tenant node                      |
+| `@stackra/privacy`   | `privacy.0003_contract_privacy_tenancy`     | nothing (it copies `scope_id` into `tenant_id`)                     |
+| `@stackra/queue`     | `queue.0003_contract_queue_tenancy`         | a job sits below a tenant node                                      |
+| `@stackra/scheduler` | `scheduler.0002_contract_scheduler_tenancy` | a schedule sits below a tenant node                                 |
+
+**Custom drivers.** If you wrote your own driver for one of these ports, it no longer compiles or
+no longer satisfies the port:
+
+- `IdempotencyStore` gains `completeRefused(key, fingerprint, refusal, ttl)`: a refusal no retry can
+  change is kept under its key. The memory, Valkey and Postgres stores implement it (Postgres through
+  migration `0008_add_idempotency_refusal`).
+- `QueueDriver.reserve` returns a `JobClaim` (id, `ownerId`); `load(id)` returns the job and
+  `claimDead({ queue?, id?, limit })` claims dead letters.
+- `ScheduleDriver.schedules(scope)` takes its scope; `claim()` returns `ScheduleClaim`s, and the
+  driver gains `load(id)`, `recordFire(key, at)`, `forgetFires(key, through)` and `transaction(work)`.
+- `PostgresHoldRegistryDriver` takes the `Container` as its second argument.
+
+**Moved exports.** `boundIsolation`, `ClaimNotLoadedError` and `RowIsolationMissingError` now come
+from `@stackra/actions`. `@stackra/outbox` still re-exports them, but only for a while: import them
+from `@stackra/actions`.
+
+**Edge traffic.** `EdgeHeaderGuard` is bound in every generated service. A request with any edge
+header must verify; one with none goes on to authentication. `publicPaths` is gone from the guard.
+`EdgeConfig` (`app.edge`) picks the drivers: `keys` is `memory` or `env` (the
+`STACKRA_EDGE_SIGNING_KEYS` secret, newest key first, comma-separated).
+
+**API keys.** API keys reach the action pipeline as `api_client` actors. An API-key caller must send
+an `Idempotency-Key` on every write. A key's text names its mode (`stackra_sk_test_…`); a key minted
+before modes reads as live.
+
+**Encore app root.** Gen writes `encore.app` at `services/<name>/encore.app` instead of
+`.stackra/encore/`. `stackra validate --repository` holds each service to a literal `encore.dev`
+equal to the catalog's version and to tsconfig `paths` that match its package.json `imports`.
+
+**Runway.** A service runway's `environments.<env>.database.extensions` accepts only `vector`,
+`pg_trgm`, `ltree`, `citext`, `pgcrypto`, `postgis`, `pg_stat_statements` and `btree_gist`.
+
+## Pins
+
+Every `@stackra/*` package releases at one version. Set every entry of the `stackra` catalog in
+`pnpm-workspace.yaml` to the same exact version, `0.30.0`, and keep no other `@stackra/*` version
+anywhere. `@stackra-pro/*` packages move to the same version.
+
+<Warning>
+  If your repository uses TypeScript 7, do not stop on 0.30, 0.31 or 0.32. The tsconfig `baseUrl`
+  that `stackra encore:prepare` writes in those releases fails typecheck with TS5102. Go to 0.33.1
+  ([Upgrade to 0.33](/customers/upgrading/0-33)).
+</Warning>
+
+## Steps
+
+<Steps>
+  <Step title="Before you take the version: fix tenancy">
+    On 0.29, run `stackra gen` and your isolation tests and clear every tenancy warning they print
+    (`model_tenancy_missing`, `model_tenancy_migration_missing`, a table without its owner column).
+    Every table must have an owner column or be listed with `t.platformTable(reason)` (or
+    `t.reviewedPolicy(reason, policies)`), and every model must be marked `BelongsToTenant`,
+    `BelongsToTenantOrPlatform` or `Model.global`. On 0.30 each one left fails gen or the isolation
+    test.
+  </Step>
+  <Step title="Take a database snapshot">
+    Snapshot each database you will migrate. It is the only way back once the migrations have run
+    (see [Roll back](#roll-back)).
+  </Step>
+  <Step title="Clear the rows the migrations refuse">
+    - **Queue:** drain it. Let reserved and pending jobs finish or fail, then delete the dead jobs.
+    - **Scheduler:** for each schedule below a tenant node, write down its job, cron, time zone,
+      input and missed-run policy, then unschedule it.
+    - **Settings:** record every setting and revision below a tenant node
+      (`nlevel(scope_path) > 3`) or with a `user_id`, then delete those rows from both tables.
+    - **Search:** delete the index registry rows below a tenant node. They hold only a rebuild's
+      state and counts.
+  </Step>
+  <Step title="Move the pins and install">
+    Set the `stackra` catalog to `0.30.0`, then `pnpm install`.
+  </Step>
+  <Step title="Port your code">
+    - Move imports of `boundIsolation`, `ClaimNotLoadedError` and `RowIsolationMissingError` from
+      `@stackra/outbox` to `@stackra/actions`.
+    - Implement the new methods on any custom `IdempotencyStore`, `QueueDriver` or
+      `ScheduleDriver`, and pass the `Container` to a `PostgresHoldRegistryDriver` you build by hand.
+    - Delete `publicPaths` from the edge guard's config. Where edge traffic arrives, set
+      `app.edge.keys` to `env` and the `STACKRA_EDGE_SIGNING_KEYS` secret in each deployed environment.
+    - Keep each runway's database extensions to the list above.
+    - Change every hand-written URL to an action or query so it starts with the area.
+  </Step>
+  <Step title="Prepare the services and regenerate">
+    Run `stackra encore:prepare` in each service (it pins `encore.dev` and writes tsconfig `paths`),
+    add `services/*/encore.app` to `.gitignore`, then run `stackra gen`. Fix each refusal gen names.
+    Commit the regenerated `stackra.manifest.json` and `openapi.json` of every member.
+  </Step>
+  <Step title="Migrate, then put the rows back">
+    Run `stackra db:migrate`. Then, from a call or session in each node's or user's tenant: schedule
+    again the schedules you wrote down, write again the settings you recorded, and run
+    `stackra search:reindex`.
+  </Step>
+  <Step title="Update API clients">
+    Regenerate your clients from the new manifests. Make sure API-key callers send an
+    `Idempotency-Key` on every write.
+  </Step>
+</Steps>
+
+## Verify
+
+- `pnpm install --frozen-lockfile` passes, and `pnpm why @stackra/actions` shows only `0.30.0`.
+- `stackra gen` reports no refusal, and a second run changes no file.
+- `stackra validate --repository` and `stackra typecheck` pass.
+- `stackra test` passes, the generated isolation tests included.
+- `stackra db:migrate` finished every migration listed above, and each service's `/readyz` answers
+  ready.
+- A call to a moved route answers on `/<area>/...`, and an anonymous call on `/public/...`.
+
+## Roll back
+
+Published versions never change, so going back means restoring what you had:
+
+1. Revert the commit that moved the pins, the lockfile and the regenerated files, then
+   `pnpm install --frozen-lockfile`.
+2. If the migrations have not run, you are done.
+3. If they have run, restore the snapshot you took. Nothing promises that 0.29 works against the
+   migrated settings, queue and scheduler tables. The search and privacy migrations are expand
+   steps, so the previous release keeps working beside those two.
+4. If you cleared rows, put them back from what you recorded.
+
+If 0.30 itself is the problem, report it. The fix ships as a new release; nothing is unpublished.
