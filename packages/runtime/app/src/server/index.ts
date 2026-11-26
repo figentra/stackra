@@ -6,7 +6,8 @@
  *          configuration and refusals, the JWKS bearer-token guard with its configuration, key drivers, refusal and the request's
  *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check, API keys included) with its call types,
  *          `ServiceClientSessionDriver` (a service call's own token and the user's token it forwards),
- *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, and `apiCacheControl`, the rule 22 `private, no-store` header), until
+ *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, and `apiCacheControl`, the rule 22 `private, no-store` header, and `runningEnvironment` with
+ *          `HostEnvironment`, the environment the generated Encore app sets from Encore's report), until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` through `#core/*`; `.` never imports it.
  * Runtime: node
@@ -35,6 +36,7 @@ export { OriginNotAllowedError } from "#server/errors/origin-not-allowed.error";
 export { apiCacheControl } from "#server/functions/api-cache-control.function";
 export { corsHeaders } from "#server/functions/cors-headers.function";
 export { createApp } from "#server/functions/create-app.function";
+export { runningEnvironment } from "#server/functions/running-environment.function";
 export { serveGuardedCall } from "#server/functions/serve-guarded-call.function";
 export { BearerTokenGuard } from "#server/services/bearer-token.guard";
 export { CallAuthenticator } from "#server/services/call-authenticator.service";
@@ -50,6 +52,7 @@ export type { GuardedCallOptions } from "#server/types/guarded-call-options.type
 export type { KeyCallOptions } from "#server/types/key-call-options.type";
 export type { VisitorIdentity } from "#server/types/visitor-identity.type";
 export type { ControllerOptions } from "#server/types/controller-options.type";
+export type { HostEnvironment } from "#server/types/host-environment.type";
 export type { ProbeAnswer } from "#server/types/probe-answer.type";
 export type { ServerApp } from "#server/types/server-app.type";
 export type { ServerAppOptions } from "#server/types/server-app-options.type";

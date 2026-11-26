@@ -84,7 +84,8 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - `StoresConfig` refuses the `memory` idempotency and rate-limit stores outside `dev` and `test`
   (`STACKRA_ENVIRONMENT`, `MEMORY_STORE_ENVIRONMENTS`): the refusal is the config schema's, so boot fails before the
   first call. Never widen that list, add an opt-out, or move the check into the pipeline (STA-2798); runway's
-  `checkActionStores` reports the same before a deploy.
+  `checkActionStores` reports the same before a deploy. The drivers reach the config from runway through gen's
+  `#stackra/runway-config`, and a deployed Encore service's environment from the generated `environment.ts`.
 - A bound `IdempotencyRetentionSource` sets the idempotency window, capped at `IDEMPOTENCY_TTL` (24 hours); an action's
   own shorter `idempotencyTtl` wins over it. A failed read fails the call.
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they

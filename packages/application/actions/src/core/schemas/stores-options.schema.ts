@@ -4,8 +4,9 @@
  *          buckets, the Valkey server and key prefix of the `valkey` drivers, and the running environment.
  * Boundary: a shape class; it registers this package's own schema (`STORES_CONFIG_SCHEMA`) for itself when the module
  *           loads. The defaults are `memory` (ADR 0266 decision 2), allowed only in `dev` and `test`: a deployed
- *           environment (`STACKRA_ENVIRONMENT` `preview`, `staging` or `production`) names `valkey` or `postgres`
- *           (@stackra/database's durable drivers) in runway, or boot fails (STA-2798). The Valkey URL carries its
+ *           environment (`STACKRA_ENVIRONMENT` `preview`, `staging` or `production`, which the generated Encore app
+ *           sets from Encore's report) names `valkey` or `postgres` (@stackra/database's durable drivers) in runway,
+ *           whose values reach boot through gen's `#stackra/runway-config`, or boot fails (STA-2798). The Valkey URL carries its
  *           password, so it is the `ACTIONS_VALKEY_URL` secret, never a value.
  * Runtime: isomorphic
  * Governing contract: ADR 0136 (decision 3); ADR 0217 (decision 2); ADR 0266; ADR 0294 (decisions 4, 19 and 26); ADR

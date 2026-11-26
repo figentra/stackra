@@ -295,8 +295,12 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
   default and is allowed only where `STACKRA_ENVIRONMENT` is `dev` or `test` (unset reads as `dev`). In `preview`,
   `staging` or `production` a `memory` store fails boot with `ConfigInvalidError` naming the field: it would forget
   every Idempotency-Key on a restart (a retried write runs twice) and keep one set of buckets per instance. Set both
-  in runway (`config.actions.stores`, in the member or the root's `defaults.service.config`); `runway validate`
-  reports a deployed environment of a service that uses the stores and sets neither (STA-2798).
+  in runway (`config.actions.stores`, in the member or the root's `defaults.service.config`): gen writes those values
+  into the service's `#stackra/runway-config`, which the server, seed and console entries hand `bootApp`. On a deployed
+  Encore service the generated `stackra-encore/<member>/environment.ts` sets `STACKRA_ENVIRONMENT` from Encore's own
+  report (`runningEnvironment` of `@stackra/app/server`), so nobody has to set it. `runway validate` reports a deployed
+  environment of a service that uses the stores and sets neither, or names a driver none of its packages provides
+  (STA-2798).
 
 ## Offline clients
 

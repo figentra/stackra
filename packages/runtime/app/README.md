@@ -37,6 +37,7 @@ peers, each loaded only by the entry that needs it.
 | `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                    |
 | `registerContext`                            | `./react`   | a client package names the component of its context key                               |
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
+| `runningEnvironment`, `HostEnvironment`      | `./server`  | `STACKRA_ENVIRONMENT` from Encore's report: a deployed service never runs as `dev` (STA-2798) |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
 | `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) |
@@ -68,7 +69,7 @@ peers, each loaded only by the entry that needs it.
 
 ```ts
 // services/commerce/.stackra/entry/server.ts
-export const app = await createApp(CommerceModule, { wiring, boot });
+export const app = await createApp(CommerceModule, { wiring, boot, runway: runwayConfig });
 
 // apps/web/.stackra/entry/worker.ts
 export const app = await createApp(wiring, {
@@ -98,6 +99,15 @@ bindings, `import.meta.env`), resolves `@Secret` fields by name from the same so
 its base class, so a package that injects its base gets the host's override. A value that breaks its rule fails boot
 with `ConfigInvalidError` naming it; a port with no driver fails with `UnresolvedPortError`. The reporter is the bound
 `ErrorReporter`, or the console when none is bound.
+
+Runway's `config` values are the last layer before the secrets (ADR 0296). Gen writes them per environment into the
+service's `#stackra/runway-config`, the server, seed and console entries pass them as `runway`, and `bootApp` applies
+the values of the environment `STACKRA_ENVIRONMENT` names (`dev` when unset) to each configuration by its key. On a
+deployed Encore service nobody sets the variable, so the generated `stackra-encore/<member>/environment.ts` derives it
+from Encore's `appMeta().environment` with `runningEnvironment`: `production` runs as `production`, a preview
+(`ephemeral`) as `preview`, any other cloud environment as its name or `staging`; `encore run` and `encore test` keep
+the declared value; a deployed environment that declares `dev` or `test`, or a host that reports nothing usable, fails
+boot (STA-2798).
 
 ## Wiring sections
 

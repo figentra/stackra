@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `bootApp`, the boot every target's `createApp` shares: it builds each configuration class of the wiring
- *          from the target's raw environment (secrets by name from the same source), binds the wiring itself as
+ *          from the target's raw environment and runway's values for its key in the running environment
+ *          (`STACKRA_ENVIRONMENT`, `dev` when unset; secrets by name from the same source), binds the wiring itself as
  *          `AppWiring`, binds the same secrets as the `SecretStore` port unless the caller overrides it, boots the
  *          container with those instances in place of their classes, and picks the error reporter.
  * Boundary: boots; it starts nothing (no server, no window, no render). A configuration that breaks its rule or a
@@ -9,8 +10,8 @@
  *           `UnresolvedPortError`, so a bad environment fails boot instead of a later call. A host override is built
  *           in place of its base and bound under the base, so a package that injects its base gets the host's values.
  * Runtime: isomorphic
- * Governing contract: ADR 0295 (decisions 7, 8 and 10); ADR 0294 (decisions 17 and 19); ADR 0263 (decisions 1, 9
- *                     and 11); ADR 0173.
+ * Governing contract: ADR 0295 (decisions 7, 8 and 10); ADR 0294 (decisions 17 and 19); ADR 0296 (decision 1:
+ *                     runway's values are the last layer); ADR 0263 (decisions 1, 9 and 11); ADR 0173; STA-2798.
  */
 import { buildConfig } from "@stackra/config";
 import type { Config } from "@stackra/config";
@@ -40,11 +41,18 @@ export async function bootApp(
 ): Promise<BootedApp> {
   const env = options.env ?? {};
   const secrets = envSecrets(env);
+  // Runway's values of the running environment, by config key (ADR 0296: the last layer before the secrets).
+  const running = env["STACKRA_ENVIRONMENT"];
+  const values = options.runway?.[typeof running === "string" && running !== "" ? running : "dev"];
   const overrides = new Map<Token, object>(options.overrides);
   for (const entry of wiring.config ?? []) {
     if (overrides.has(entry.provide)) continue;
     const type = (entry.override ?? entry.provide) as new () => Config;
-    overrides.set(entry.provide, buildConfig(type, { env, secrets }));
+    const own = values?.[entry.key];
+    overrides.set(
+      entry.provide,
+      buildConfig(type, own === undefined ? { env, secrets } : { env, values: own, secrets }),
+    );
   }
   // A driver that reads a secret by name (an event signer, a webhook receiver) gets the same source as @Secret fields.
   if (!overrides.has(SecretStore)) overrides.set(SecretStore, secrets);

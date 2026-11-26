@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitEncoreCronJobs`: a service with a cron action gets one CronJob firing its locked key on
  *          its schedule and the stored schedules' minute tick, each with an internal endpoint run through the server
- *          app's handlers; no file for a package, an app or a service that schedules nothing.
+ *          app's handlers, after the running environment and the database load; no file for a package, an app or a service
+ *          that schedules nothing.
  * Boundary: test only; runs on the IR fixtures and the manifests built from them.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0148 (decisions 4 and 6); ADR 0266 (decision 4.6).
+ * Governing contract: ADR 0022 (test placement); ADR 0148 (decisions 4 and 6); ADR 0266 (decision 4.6); STA-2798.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -42,11 +43,11 @@ describe("emitEncoreCronJobs", () => {
     expect(content).toContain("api({ expose: false }");
   });
 
-  it("loads the Encore database first, ahead of the server app (STA-1652)", () => {
+  it("loads the running environment, then the Encore database, ahead of the server app (STA-2798, STA-1652)", () => {
     const content =
       emitEncoreCronJobs(BILLING_IR, buildManifest(BILLING_IR).manifest)?.content ?? "";
     const lines = content.split("\n").filter((line) => line.startsWith("import "));
-    expect(lines[0]).toBe('import "./database";');
+    expect(lines.slice(0, 2)).toEqual(['import "./environment";', 'import "./database";']);
     expect(lines.indexOf('import "./database";')).toBeLessThan(lines.indexOf(ENCORE_APP_IMPORT));
   });
 

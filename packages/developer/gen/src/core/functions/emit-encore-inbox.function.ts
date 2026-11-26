@@ -12,7 +12,7 @@
  * Governing contract: ADR 0511 (amendment of 2026-11-02, decision 18); ADR 0091 and 0124 (Encore is generated); ADR
  *                     0295 (decision 8: the adapters reach the member through `handlers`); STA-1910.
  */
-import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreFirstImports } from "#core/functions/encore-first-imports.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
@@ -39,7 +39,7 @@ export function emitEncoreInbox(ir: MemberIR): GeneratedFile | undefined {
     path: `${encoreServiceFolder(ir.member)}/inbox.ts`,
     content: [
       header,
-      ...encoreDatabaseImport(ir),
+      ...encoreFirstImports(ir),
       'import { InboundEventsController } from "#stackra/inbox";',
       'import { api } from "encore.dev/api";',
       "",

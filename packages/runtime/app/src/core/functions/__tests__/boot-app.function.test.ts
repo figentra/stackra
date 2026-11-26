@@ -3,11 +3,12 @@
  * Purpose: unit tests of `bootApp`: each configuration class is built and bound under its base (a host override
  *          answers for both), the wiring is bound as `AppWiring`, the bound `ErrorReporter` is picked over the console
  *          fallback, the environment answers the SecretStore port, given overrides win over the built configuration, an invalid configuration fails boot, a
- *          deployed environment refuses the memory action stores (STA-2798), and the roots option boots only the given modules.
+ *          deployed environment refuses the memory action stores (STA-2798), runway's values of the running environment
+ *          win over the defaults (ADR 0296), and the roots option boots only the given modules.
  * Boundary: test only; boots real containers over small wirings.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 and 8); ADR 0294 (decision 19); ADR 0266 (decision 2);
- *                     STA-2798.
+ *                     ADR 0296 (decision 1); STA-2798.
  */
 import { StoresConfig } from "@stackra/actions";
 import { buildConfig, ConfigInvalidError } from "@stackra/config";
@@ -138,6 +139,27 @@ describe("bootApp", () => {
       { env: { STACKRA_ENVIRONMENT: "production" } },
     );
     expect(durable.container.get(StoresConfig).environment).toBe("production");
+  });
+
+  it("applies runway's values of the running environment, so runway selects the action stores (STA-2798)", async () => {
+    const wiring = { member: "orders", config: [{ key: "actions.stores", provide: StoresConfig }] };
+    const runway = {
+      dev: { "actions.stores": { idempotency: "valkey" } },
+      production: { "actions.stores": { idempotency: "postgres", rateLimit: "postgres" } },
+    };
+    // production with runway's durable stores boots, as `stackra db seed --env production` does
+    const deployed = await bootApp(wiring, {
+      env: { STACKRA_ENVIRONMENT: "production" },
+      runway,
+    });
+    expect(deployed.container.get(StoresConfig).idempotency).toBe("postgres");
+    expect(deployed.container.get(StoresConfig).rateLimit).toBe("postgres");
+    // unset reads as dev; an environment runway does not name gets none of another's values
+    const dev = await bootApp(wiring, { env: {}, runway });
+    expect(dev.container.get(StoresConfig).idempotency).toBe("valkey");
+    await expect(
+      bootApp(wiring, { env: { STACKRA_ENVIRONMENT: "staging" }, runway }),
+    ).rejects.toThrow(/^StoresConfig is invalid: idempotency: .*staging refuses it/);
   });
 
   it("boots the given root modules", async () => {
