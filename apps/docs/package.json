@@ -33,6 +33,8 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "test": "vitest run",
+    "api-reference": "node scripts/api-reference/write-api-reference.ts",
+    "api-reference:check": "node scripts/api-reference/write-api-reference.ts --check",
     "clean": "rm -rf .stackra .turbo .wrangler"
   },
   "dependencies": {
@@ -55,6 +57,7 @@
     "@types/node": "catalog:",
     "oxfmt": "catalog:quality",
     "tailwindcss": "catalog:frontend",
+    "typescript6": "catalog:tooling",
     "vite": "catalog:frontend",
     "vitest": "catalog:quality",
     "wrangler": "catalog:deploy"
