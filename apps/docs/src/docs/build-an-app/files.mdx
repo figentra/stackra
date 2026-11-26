@@ -1,0 +1,191 @@
+---
+title: "Files"
+description: "Accept an upload, store it in a private bucket, hand out a time-limited link, and keep each file to its tenant."
+icon: "paperclip"
+---
+
+This guide lets a customer attach a PDF or a photo to a support ticket. The file goes straight from the browser to
+storage; your service checks it, records where it is for the tenant, and later gives that tenant a link that stops
+working after five minutes. The code is copied from `apps/docs/scripts/guides/files`, which the docs site's tests run.
+
+Read [Tenancy in an app](/build-an-app/tenancy) first. The service also depends on `@stackra/media` and
+`@stackra/filesystem`.
+
+## How an upload works
+
+The bytes never pass through your service.
+
+1. The client asks for an upload into a bucket (`media.upload.create`, which `useUpload()` calls). The server checks
+   the media type and size against the bucket, mints an `upl_…` id and returns a signed `PUT` URL.
+2. The client puts the bytes to that URL, then sends the upload token (the id only) to your action.
+3. Your action claims the token for the bucket. The claim checks that the file arrived, is of a type the bucket
+   takes, within its size, not expired and not claimed before, and moves it into the bucket's folder.
+
+## 1. Declare a bucket
+
+```ts src/modules/support/models/ticket-attachments.bucket.ts
+import { Bucket, BucketVisibility, MediaType } from "@stackra/media";
+
+/** What a customer may attach to a ticket. */
+export class TicketAttachmentsBucket extends Bucket({
+  visibility: BucketVisibility.Private,
+  maxBytes: 10_000_000,
+  accept: [MediaType.Pdf, MediaType.Png, MediaType.Jpeg],
+}) {}
+```
+
+Gen derives the bucket's key from the file: `support.ticket_attachments`. A private file is stored under `private/`,
+which the CDN must not serve; a reader only ever gets a time-limited link. Use `BucketVisibility.Public` only for files
+anyone may see, such as product photos.
+
+## 2. Record each file for its tenant
+
+The bytes stay on the disk. A tenant-owned row records where they are, so the tenant policy decides who may ask for a
+link.
+
+```ts src/modules/support/models/attachment.model.ts
+import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
+import { Int, Str } from "@stackra/validation";
+
+/** A file attached to a ticket. */
+export class Attachment extends Model.with(HasPublicId("att"), BelongsToTenant, Timestamps) {
+  /** The file's name as the customer gave it. */
+  @Str({ max: 200 })
+  name!: string;
+
+  /** Where the claim stored it on the disk (`private/support/ticket_attachments/upl_….pdf`). */
+  @Str({ max: 300 })
+  path!: string;
+
+  /** Its media type (`application/pdf`). */
+  @Str({ max: 100 })
+  mediaType!: string;
+
+  /** Its size in bytes. */
+  @Int({ min: 1 })
+  size!: number;
+}
+```
+
+Its migration is an ordinary tenant-owned table (`t.belongsToTenant()`), as in the tenancy guide.
+
+## 3. Claim and link in a service
+
+```ts src/modules/support/services/attachment.service.ts
+/** The attachments of the support module. */
+export class AttachmentService extends CrudService<Attachment> {
+  /** Claims uploads into the bucket. */
+  private readonly media: MediaLibrary;
+
+  /** The disk the files are on. */
+  private readonly files: FileSystem;
+
+  /**
+   * @param media - claims a finished upload.
+   * @param files - signs a link to a stored file.
+   */
+  constructor(media: MediaLibrary, files: FileSystem) {
+    super();
+    this.media = media;
+    this.files = files;
+  }
+
+  /** Claims `upload` for the ticket-attachments bucket and records it for the running tenant. */
+  async attach(upload: Upload<TicketAttachmentsBucket>, name: string): Promise<Attachment> {
+    const file = await this.media.claim(upload, TicketAttachmentsBucket);
+    return this.insert({ name, path: file.path, mediaType: file.mediaType, size: file.size });
+  }
+
+  /** A link to the attachment that works for five minutes; reading the row first keeps it to its tenant. */
+  async link(id: Attachment["id"]): Promise<string> {
+    const attachment = await this.findOneOrFail({ id });
+    return this.files.temporaryUrl(attachment.path, LINK_LIFETIME);
+  }
+}
+```
+
+`LINK_LIFETIME` is `Duration.minutes(5)` from `@stackra/contracts`. Inject the ports (`MediaLibrary`, `FileSystem`),
+never a driver: the disk is configuration (`filesystem.disk`: `s3`, `gcs`, `encore_bucket`, or `memory` in tests), so
+the same code runs on every cloud.
+
+An action input takes the token, not bytes: a field typed `Upload<TicketAttachmentsBucket>` becomes the upload token in
+the action's schema and its OpenAPI document. Its handler calls `attachments.attach(input.file, input.name)`.
+
+## 4. Test it
+
+The `memory` disk signs and receives uploads exactly as the cloud disks do, so a test plays the browser's part. In an
+app, `createTestingModule(SupportModule).useDrivers("memory")` binds it, and `fakeUpload(app, Bucket, { mediaType })`
+from `@stackra/media/testing` does the browser's part in one line. The guide's test builds the pieces itself:
+
+```ts
+const clock = new SystemClockDriver();
+const disk = new MemoryFileSystemDriver(
+  buildConfig(FilesystemConfig, { values: { url: "https://files.test" } }),
+  clock,
+);
+const media = new MediaLibrary(disk, buildConfig(MediaConfig), clock);
+const attachments = new AttachmentService(media, disk);
+```
+
+```ts
+// The browser's part: ask for a signed upload, then put the bytes to its URL.
+const pending = await media.createUpload(TicketAttachmentsBucket, {
+  mediaType: MediaType.Pdf,
+  size: PDF.byteLength,
+});
+expect(await disk.receive(pending.url, pending.headers, PDF)).toBe(200);
+```
+
+The tenant who attached the file gets a link; another tenant asking for the same id gets `not_found`:
+
+```ts
+const attachment = await asTenant(acme, () =>
+  asServiceRole(() => attachments.attach(pending.upload, "invoice.pdf")),
+);
+expect(attachment.path).toBe(`private/support/ticket_attachments/${pending.upload.id}.pdf`);
+
+const link = await asTenant(acme, () => asServiceRole(() => attachments.link(attachment.id)));
+expect(link).toMatch(
+  /^https:\/\/files\.test\/private\/support\/ticket_attachments\/upl_\w+\.pdf\?expires=/,
+);
+
+const stranger = asTenant(globex, () => asServiceRole(() => attachments.link(attachment.id)));
+await expect(stranger).rejects.toSatisfy((error: unknown) => isRefusal(error, NotFoundError));
+```
+
+A token is claimed once:
+
+```ts
+const again = asTenant(acme, () =>
+  asServiceRole(() => attachments.attach(pending.upload, "invoice.pdf")),
+);
+const refusal: unknown = await again.catch((error: unknown) => error);
+expect(isRefusal(refusal, UploadIncompleteError)).toBe(true);
+```
+
+And the bucket refuses a type it does not take, or a file over its size, before anything is uploaded:
+
+```ts
+const gif = media.createUpload(TicketAttachmentsBucket, { mediaType: MediaType.Gif, size: 10 });
+await expect(gif).rejects.toSatisfy((error: unknown) => isRefusal(error, UploadRejectedError));
+
+const huge = media.createUpload(TicketAttachmentsBucket, {
+  mediaType: MediaType.Pdf,
+  size: 20_000_000,
+});
+await expect(huge).rejects.toSatisfy((error: unknown) => isRefusal(error, UploadRejectedError));
+```
+
+## In production
+
+- `config.filesystem` picks the disk per environment (`s3` for AWS S3 or Cloudflare R2, `gcs`, `encore_bucket`); no
+  credential is configuration, the disk uses its SDK's default chain.
+- The bucket's CORS rule allows `PUT` from your app's origins with the `content-type` header.
+- A lifecycle rule expires `uploads/` after a day, which removes uploads nobody claimed.
+- The CDN serves `public/*` only.
+- The claim checks the type (from the file's first bytes) and the size, not whether the file is safe. Where other people open a tenant's files, ask the `FileScanner` port
+  (`config.media.scanner`: `guard_duty`, or `clamav` where GuardDuty is not offered) for a `clean` verdict before you
+  hand out a link.
+
+Next: [Search](/build-an-app/search) finds rows by what they say.

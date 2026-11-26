@@ -62,8 +62,12 @@ export class TextRendererDriver extends Driver(Renderer) {
   /** Right-to-left text, reordered once here before anything measures it. */
   protected readonly bidi: (text: string) => string;
 
-  constructor(protected readonly context: RenderContext) {
+  /** The run's mode, theme and streams. */
+  protected readonly context: RenderContext;
+
+  constructor(context: RenderContext) {
     super();
+    this.context = context;
     this.painter = createPainter(context.mode.depth, context.theme.accent);
     this.symbols = SYMBOLS[context.mode.unicode ? "unicode" : "ascii"];
     this.bidi = context.mode.bidi === "visual" ? visualBidi : (text: string) => text;

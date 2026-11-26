@@ -1,0 +1,185 @@
+---
+title: "Tenancy in an app"
+description: "Make a model belong to a tenant, let Postgres keep each tenant to its own rows, and prove it in a test."
+icon: "building-2"
+---
+
+In a multi-tenant app each customer organisation is a tenant, and one tenant must never see or change another's rows.
+Stackra keeps that promise in Postgres, with row-level security, not with `WHERE tenant_id = …` in your code. This
+guide makes a support `Ticket` tenant-owned and proves the isolation in a test. The code is copied from
+`apps/docs/scripts/guides/tenancy`, which the docs site's tests run.
+
+Read [Models and migrations](/build-an-app/models-and-migrations) first. The service also depends on
+`@stackra/tenancy`.
+
+## How it works
+
+1. Every call runs in one transaction that sets `app.tenant_id` to the tenant of the verified caller. The action
+   pipeline does it for every action and query, and the queue worker, outbox relay and workflow runner for every
+   background unit, through `CallIsolation`. The tenant comes from the caller's token, never from a request body, a
+   query string or a header.
+2. Every tenant-owned table has a `tenant_id` column and one policy: a row is visible, and writable, only when its
+   `tenant_id` equals `app.tenant_id`. With no tenant set, no row matches.
+3. A new row takes the running call's tenant. Your code never passes one.
+
+So a service written with no tenant in it is isolated anyway, and a forgotten filter cannot leak a row.
+
+## 1. Make the model tenant-owned
+
+```ts src/modules/support/models/ticket.model.ts
+import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
+import { Str } from "@stackra/validation";
+
+/** A question one customer of one tenant asked. */
+export class Ticket extends Model.with(HasPublicId("tkt"), BelongsToTenant, Timestamps) {
+  /** What the customer asked about. */
+  @Str({ max: 200 })
+  subject!: string;
+
+  /** `open` until someone answers it, then `resolved`. */
+  status = "open";
+}
+```
+
+`BelongsToTenant` adds `tenantId`, filled from the running tenant call. A create may leave it out, and an input schema
+never carries it.
+
+## 2. Create the table with its policy
+
+```ts src/modules/support/database/migrations/0001-create-tickets.migration.ts
+import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database";
+
+/** Creates the tickets table, owned by a tenant. */
+export class CreateTicketsMigration extends Migration {
+  /** The table, its tenant column and policy, and its columns. */
+  up(schema: SchemaBuilder): void {
+    schema.create("tickets", (t: Blueprint) => {
+      t.hasPublicId("tkt");
+      t.belongsToTenant();
+      t.timestamps();
+      t.string("subject", 200).notNull().comment("What the customer asked about.");
+      t.string("status", 20).notNull().default("open").comment("open or resolved.");
+    });
+  }
+}
+```
+
+`t.belongsToTenant()` is a macro of `@stackra/tenancy`. It compiles to the column, its index, row-level security that
+binds the table's owner too, and the policy:
+
+```sql
+create index "idx_tickets_tenant_id" on "support"."tickets" ("tenant_id");
+alter table "support"."tickets" enable row level security;
+alter table "support"."tickets" force row level security;
+create policy "pol_tickets_tenant_id" on "support"."tickets" using ("tenant_id" = nullif(current_setting('app.tenant_id', true), '')::varchar(33)) with check ("tenant_id" = nullif(current_setting('app.tenant_id', true), '')::varchar(33));
+```
+
+A table that already has rows becomes tenant-owned in two releases (add the column, backfill, then enforce); the
+compiler refuses the bare `t.belongsToTenant()` on `schema.table(...)`. The tenancy README's "An existing table"
+section has the steps.
+
+## 3. Write the service with no tenant in it
+
+```ts src/modules/support/services/ticket.service.ts
+import { SortDirection } from "@stackra/contracts";
+import { CrudService } from "@stackra/database";
+
+import type { Ticket } from "./ticket.model";
+
+/** The support module's reads and writes. No method takes a tenant. */
+export class TicketService extends CrudService<Ticket> {
+  /** Opens a ticket for the running call's tenant. */
+  open(subject: string): Promise<Ticket> {
+    return this.insert({ subject });
+  }
+
+  /** The running tenant's open tickets, oldest first. */
+  waiting(): Promise<Ticket[]> {
+    return this.find({ status: "open" }, { orderBy: { createdAt: SortDirection.Asc } });
+  }
+
+  /** Resolves one of the running tenant's tickets; another tenant's id is `not_found`. */
+  resolve(id: Ticket["id"]): Promise<Ticket> {
+    return this.update({ id }, { status: "resolved" });
+  }
+}
+```
+
+`waiting()` has no tenant filter and `resolve(id)` does not check who owns the ticket. Postgres does both.
+
+## 4. Prove the isolation
+
+`asTenant(tenantId, work)` from `@stackra/tenancy/testing` runs `work` through the same isolation the action pipeline
+uses: one transaction with `app.tenant_id` set. `fakeTenantId()` mints a tenant id.
+
+A superuser bypasses row-level security, and the test database's session user is one, so the guide's test switches to
+a role like your service's: no `BYPASSRLS`, owning nothing. Without that step, a policy test passes even when the
+policy is wrong.
+
+```ts
+/**
+ * Runs `work` as the service role for the rest of the running transaction.
+ *
+ * @example
+ * await asTenant(acme, () => asServiceRole(() => tickets.waiting()));
+ */
+export async function asServiceRole<T>(work: () => Promise<T>): Promise<T> {
+  // raw-sql: a transaction-local role switch, which a deployed service gets from its connection's user
+  await Database.current().em().execute(`set local role ${SERVICE_ROLE}`);
+  return work();
+}
+```
+
+Each tenant sees and changes only its own tickets:
+
+```ts
+const tickets = new TicketService();
+const acme = fakeTenantId();
+const globex = fakeTenantId();
+
+const invoice = await asTenant(acme, () => asServiceRole(() => tickets.open("Bad invoice")));
+const login = await asTenant(globex, () => asServiceRole(() => tickets.open("Cannot sign in")));
+expect(invoice.tenantId).toBe(acme);
+expect(login.tenantId).toBe(globex);
+
+const seenByAcme = await asTenant(acme, () => asServiceRole(() => tickets.waiting()));
+expect(seenByAcme.map((ticket) => ticket.subject)).toEqual(["Bad invoice"]);
+```
+
+Another tenant's id is not found, as if the row did not exist, so its existence does not leak:
+
+```ts
+const crossWrite = asTenant(acme, () => asServiceRole(() => tickets.resolve(login.id)));
+await expect(crossWrite).rejects.toSatisfy((error: unknown) => isRefusal(error, NotFoundError));
+```
+
+A platform call (no tenant) sees no tenant's rows:
+
+```ts
+const seenByPlatform = await asTenant(undefined, () => asServiceRole(() => tickets.waiting()));
+expect(seenByPlatform).toEqual([]);
+```
+
+And a write outside any tenant call is refused by Postgres:
+
+```ts
+const orphan = guide.database.transaction(() => asServiceRole(() => tickets.open("Lost")));
+await expect(orphan).rejects.toThrow();
+```
+
+For every service with tenant-owned tables, `stackra gen` also writes `.stackra/tests/tenant-isolation.int.test.ts`.
+It runs on a real Postgres (Docker) and audits every table of the service with `assertRowSecurity`: each table has the
+tenant policy (or a reviewed reason not to), and one tenant cannot read or move another's row. It runs in CI with the
+integration tests; keep it green.
+
+## Rules
+
+- Never take a tenant id from input, and never filter by `tenantId` to isolate. Filtering by it for other reasons is
+  fine; isolation is the policy's job.
+- Every tenant-owned table uses `t.belongsToTenant()`. A table with no tenant says why with `t.platformTable(reason)`.
+- Background work is isolated the same way: the queue worker, outbox relay and workflow runner set the tenant for
+  every unit they run, so a job or listener needs no tenant code either.
+- A test that proves a policy runs as a role without `BYPASSRLS`.
+
+Next: [Files](/build-an-app/files) stores files a tenant uploads.

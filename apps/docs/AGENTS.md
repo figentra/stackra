@@ -30,6 +30,20 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
   entry (the `{ folder: "adr" }` group lists it). Every media file in `src/assets` is referenced by a page (the brand
   kit by `src/docs/brand.mdx`).
 
+## Task guides (`scripts/guides/`)
+
+- The "Build an app" pages (`src/docs/build-an-app/<page>.mdx`) teach a real task on Stackra. Their code is never
+  written in the page: each `ts` block is a run of lines of an example file under `scripts/guides/<page>/` (a block
+  titled with a path must come from a file of that name) or a whole `// #region` of a test, and each `sql` block a run
+  of what the page's migrations compile to. `scripts/guides/__tests__/guide-blocks.test.ts` fails when one drifts.
+- Each guide's examples run in `scripts/guides/<page>/__tests__/` on the `memory` database (PGlite, from the compiled
+  migrations: `support/connect-guide-database.ts`) and the other `memory` drivers. `__tests__/*.entities.ts` stands in
+  for what `stackra gen` writes in an app (entity metadata, partners, bucket keys); keep it in gen's shape.
+- A tenancy proof runs as the service role (`support/as-service-role.ts`): the PGlite session user is a superuser,
+  which row-level security never restricts.
+- Change an example, run `pnpm test`, then copy the changed lines into the page. A new page needs its folder, its
+  schema in the drift test's `SCHEMAS`, and an entry in the "Build an app" group of `src/config/docs.config.ts`.
+
 ## System map (`scripts/system-map/`)
 
 - `render-system-map.ts` (pure) and `write-system-map.ts` (node) turn the merged `SystemGraph` of `@stackra/gen` into
@@ -58,7 +72,7 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
 
 ## Tasks
 
-`pnpm dev`, `build`, `lint`, `format`, `test` (the `scripts/` tests), `clean`.
+`pnpm dev`, `build`, `lint`, `format`, `test` (the `scripts/` tests: the system map and the task guides), `clean`.
 
 ## PII
 

@@ -842,21 +842,72 @@ importers:
         specifier: catalog:frontend
         version: 7.18.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: 'catalog:'
+        version: 0.5.15
+      '@electric-sql/pglite-pgvector':
+        specifier: 'catalog:'
+        version: 0.0.16(@electric-sql/pglite@0.5.15)
+      '@faker-js/faker':
+        specifier: 'catalog:'
+        version: 10.6.0
+      '@mikro-orm/pglite':
+        specifier: 'catalog:'
+        version: 7.2.5(@mikro-orm/core@7.2.5)
       '@react-router/dev':
         specifier: catalog:frontend
         version: 7.18.4(@types/node@26.6.4)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(supports-color@8.1.1)(terser@5.51.2)(typescript@6.0.3)(vite@8.3.3(@types/node@26.6.4)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(wrangler@4.148.0(@types/node@26.6.4))(yaml@2.9.1)
+      '@stackra/actions':
+        specifier: workspace:*
+        version: link:../../packages/application/actions
       '@stackra/cli':
         specifier: workspace:*
         version: link:../../packages/developer/cli
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../packages/foundation/config
+      '@stackra/container':
+        specifier: workspace:*
+        version: link:../../packages/foundation/container
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../packages/foundation/contracts
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../packages/data/database
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../packages/foundation/errors
+      '@stackra/events':
+        specifier: workspace:*
+        version: link:../../packages/foundation/events
+      '@stackra/filesystem':
+        specifier: workspace:*
+        version: link:../../packages/data/filesystem
+      '@stackra/media':
+        specifier: workspace:*
+        version: link:../../packages/data/media
+      '@stackra/model':
+        specifier: workspace:*
+        version: link:../../packages/data/model
+      '@stackra/search':
+        specifier: workspace:*
+        version: link:../../packages/data/search
+      '@stackra/settings':
+        specifier: workspace:*
+        version: link:../../packages/state/settings
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../../packages/security/tenancy
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../packages/developer/testing
       '@stackra/typescript-config':
         specifier: workspace:*
         version: link:../../packages/tooling/typescript
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../packages/foundation/validation
       '@stackra/vitest-config':
         specifier: workspace:*
         version: link:../../packages/tooling/vitest
