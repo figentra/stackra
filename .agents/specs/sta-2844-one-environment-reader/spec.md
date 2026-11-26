@@ -106,15 +106,15 @@ that the safety pull requests rebase onto.
   environment, and IF the variable names `dev`, `test` or an environment the platform contradicts THEN it SHALL refuse.
 - **AC-005**: IF a self-hosted image reports no metadata and the variable is unset THEN THE reader SHALL refuse
   instead of answering `dev`.
-- **AC-006**: IF the values layer sets a field mapped to a safety-critical variable THEN THE configuration build SHALL
-  refuse it with `ConfigInvalidError` naming the field and the variable, and keep another field of the class a value.
+- **AC-006**: IF the values layer sets a field mapped to a safety-critical variable THEN THE `buildConfig` SHALL refuse
+  it with `ConfigInvalidError` naming the field and the variable, and keep another field of the class a value.
 - **AC-007**: WHEN the server `createApp` boots THE configuration SHALL see `STACKRA_ENVIRONMENT` as the reader's
   answer, given what `providePlatformEnvironment` recorded, and boot SHALL fail on a refusal.
 - **AC-008**: WHEN gen runs for a service that runs `@stackra/app` THE generator SHALL write
   `stackra-encore/<member>/environment.ts` handing `appMeta().environment` to `providePlatformEnvironment`, and every
   generated Encore file SHALL import it first.
 - **AC-009**: IF a runway `config` block sets a field that an installed manifest maps to a safety-critical variable THEN
-  THE runway check SHALL report it with the file and the path, in `runway validate` and `stackra validate --repository`.
+  THE validator SHALL report it with the file and the path, in `runway validate` and `stackra validate --repository`.
 - **AC-010**: THE `isDeployedEnvironment` SHALL be true for `preview`, `staging` and `production` only.
 
 ## Status history
