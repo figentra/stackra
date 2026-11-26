@@ -106,6 +106,9 @@ jobs:
 
       - name: Verify
         if: inputs.preset == 'verify'
+        # A Linux x64 runner: the c2pa round trip must run here, so a skip fails it (STA-2781).
+        env:
+          C2PA_ROUND_TRIP_REQUIRED: "1"
         run: pnpm verify
 
       - name: Integration tests

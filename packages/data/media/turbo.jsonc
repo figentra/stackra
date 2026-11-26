@@ -5,4 +5,10 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tags": ["tier:lib", "category:data", "runtime:isomorphic", "runtime:node"],
+  // Strict env mode drops undeclared variables. C2PA_ROUND_TRIP_REQUIRED=1 makes the c2pa round trip fail, not skip,
+  // where its binding does not load (STA-2781), so the tests must see it and the cache key must carry it.
+  "tasks": {
+    "test": { "env": ["C2PA_ROUND_TRIP_REQUIRED"] },
+    "test:coverage": { "env": ["C2PA_ROUND_TRIP_REQUIRED"] },
+  },
 }

@@ -414,6 +414,13 @@ overrides:
   # the prosemirror-* packages TipTap's @tiptap/pm brings to that copy while @tiptap/pm took 1.25.12, so splitting and
   # wrapping nodes threw "multiple versions of prosemirror-model". Same minor, so Mintlify takes the patch.
   "prosemirror-model@<1.25.12": "1.25.12"
+  # STA-2781: every @contentauth/c2pa-node release (0.9.10 to 0.12.2) asks for unzipper ^0.10.14, whose binary 0.3.0
+  # brings buffers 0.1.1: no licence in its tarball or on the registry, so the licence gate denies it. unzipper 0.12
+  # drops binary (with chainsaw) and fstream. c2pa-node calls unzipper only in its postinstall, as
+  # `res.body.pipe(unzipper.ParseOne()).pipe(file)` to unpack its prebuilt binding (off here, see allowBuilds); 0.12
+  # keeps ParseOne with the same stream shape. 0.12.3, not 0.12.5: 0.12.4 pins fs-extra 11.3.1 exactly, a second copy
+  # beside c2pa-node's ^11.3.4. Drop this once c2pa-node depends on unzipper >= 0.12 itself.
+  "@contentauth/c2pa-node>unzipper": "0.12.3"
 
 # Dependencies a published package uses without declaring.
 packageExtensions:
