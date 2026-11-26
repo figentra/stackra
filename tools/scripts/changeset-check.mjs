@@ -7,8 +7,10 @@
  *   member is named by a changeset the change adds or edits. `changeset status` alone passes when any changeset is
  *   pending, so one changeset for package A let a change to package B ship with no note (stackra#766, #770).
  * What counts: a file under a member that is not `private` and not in `.changeset/config.json` `ignore`, other than
- *   its tests (`__tests__/`, `__fixtures__/`, `test/`, `tests/`, `e2e/`, `*.test.*`, `*.spec.*`) and its generated
- *   `CHANGELOG.md`; when the config sets `changedFilePatterns`, only member-relative paths matching one of them.
+ *   its tests and its generated `CHANGELOG.md`. Tests are `__tests__/` and `__fixtures__/` folders and `*.test.*` /
+ *   `*.spec.*` files at any depth (ADR 0022), plus a `test/`, `tests/` or `e2e/` tier at the member root only: the
+ *   same folder name inside `src/` is published source (`@stackra/testing` ships `src/e2e/` as its `./e2e` export),
+ *   so it counts. When the config sets `changedFilePatterns`, only member-relative paths matching one of them count.
  * Coverage: a changeset names the member with `major`, `minor`, `patch` or `none` (an explicit "no release" for that
  *   member). A changeset with no packages and a written reason (`pnpm changeset --empty`, then say why) waives the
  *   whole change; an empty one with no reason fails. A changeset naming a member that is not a published workspace
@@ -32,7 +34,8 @@ import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 
 const BUMPS = new Set(["major", "minor", "patch", "none"]);
-const TEST_PATH = /(^|\/)(__tests__|__fixtures__|tests?|e2e)\/|\.(test|spec)\.[^/]+$/;
+/** Test paths, member-relative: test folders and files at any depth, test tiers only at the member root. */
+const TEST_PATH = /^(tests?|e2e)\/|(^|\/)(__tests__|__fixtures__)\/|\.(test|spec)\.[^/]+$/;
 
 /**
  * Parse one changeset file.

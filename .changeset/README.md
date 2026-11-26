@@ -19,8 +19,9 @@ never to npmjs. Apps and services are not versioned; they deploy by commit SHA
 
 - Add one with `pnpm changeset` in the same change as the code it describes; `pnpm changeset:status` lists what is
   pending. `pnpm changeset:check` (in `pnpm verify` and the Quality Gate) fails when a changed published member has no
-  changeset naming it; tests and `CHANGELOG.md` do not count. A change that needs no release adds
-  `pnpm changeset --empty` and writes why in its body.
+  changeset naming it. Tests (`__tests__/`, `__fixtures__/`, `*.test.*`, `*.spec.*`, and a `test/`, `tests/` or `e2e/`
+  folder at the member root) and `CHANGELOG.md` do not count; the same folder names inside `src/` are published source
+  and do. A change that needs no release adds `pnpm changeset --empty` and writes why in its body.
 - Versioning and publishing run in CI (`.github/workflows/release.yml`) on `main`, which opens the version pull
   request; the owner merges it ([ADR 0119](../apps/docs/src/docs/adr/0119-merge-policy-and-release-authority.mdx)). Do not
   run them locally.

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: hold `changeset-check.mjs` to its contract: a changed published member needs a changeset naming it (one
- *          for another member does not count), tests and the generated changelog do not count, private and ignored
+ *          for another member does not count), tests and the generated changelog do not count (a `test/`, `tests/`
+ *          or `e2e/` tier only at the member root, so published `src/e2e/` source still counts), private and ignored
  *          members never need one, an empty changeset waives only with a written reason, an unknown package or a
  *          broken front matter fails, the version branch is skipped, and a missing implicit base warns while a bad
  *          explicit base fails.
@@ -125,10 +126,25 @@ describe("countsAsChange", () => {
       "src/a.spec.tsx",
       "__fixtures__/x.json",
       "test/x.ts",
+      "tests/x.ts",
+      "e2e/x.spec.ts",
+      "e2e/helpers/login.ts",
+      "src/e2e/__fixtures__/page.html",
       "CHANGELOG.md",
     ];
     for (const rel of skipped) assert.equal(countsAsChange(rel, undefined), false, rel);
     for (const rel of ["src/index.ts", "package.json", "README.md", "src/testing/index.ts"]) {
+      assert.equal(countsAsChange(rel, undefined), true, rel);
+    }
+  });
+  test("a test, tests or e2e folder below the member root is published source and counts", () => {
+    for (const rel of [
+      "src/e2e/api-calls/api-calls.function.ts",
+      "src/e2e/index.ts",
+      "src/test/setup.ts",
+      "src/tests/helpers.ts",
+      "lib/e2e/preset.js",
+    ]) {
       assert.equal(countsAsChange(rel, undefined), true, rel);
     }
   });
@@ -221,6 +237,26 @@ describe("run", () => {
     const r = runIn(root);
     assert.equal(r.code, 0, r.err);
     assert.match(r.out, /no published package changed/);
+  });
+
+  test("a published src/e2e change needs a changeset; a member-root e2e tier does not", () => {
+    const root = repo();
+    put(root, "packages/core/a/e2e/a.spec.ts", "test;\n");
+    put(root, "packages/core/a/e2e/helpers/login.ts", "export {};\n");
+    commit(root);
+    const tier = runIn(root);
+    assert.equal(tier.code, 0, tier.err);
+    assert.match(tier.out, /no published package changed/);
+    put(root, "packages/core/a/src/e2e/login-as.function.ts", "export const loginAs = 1;\n");
+    commit(root);
+    const source = runIn(root);
+    assert.equal(source.code, 1);
+    assert.match(
+      source.err,
+      /@x\/a changed \(packages\/core\/a\/src\/e2e\/login-as\.function\.ts\) and no changeset names it/,
+    );
+    put(root, ".changeset/e2e.md", changeset(["@x/a"]));
+    assert.equal(runIn(root).code, 0);
   });
 
   test("an empty changeset with a reason waives; without one it fails", () => {
