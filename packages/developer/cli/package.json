@@ -67,6 +67,7 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@ast-grep/napi": "catalog:",
     "@stackra/config": "workspace:*",
     "@stackra/console": "workspace:*",
     "@stackra/contracts": "workspace:*",
@@ -77,6 +78,7 @@
     "@stackra/skills": "workspace:*",
     "@stackra/support": "workspace:*",
     "@stackra/validation": "workspace:*",
+    "ts-morph": "catalog:",
     "vite": "catalog:frontend",
     "yaml": "catalog:"
   },

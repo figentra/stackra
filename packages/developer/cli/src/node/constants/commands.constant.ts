@@ -1,13 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `COMMANDS`, every command the `stackra` binary has (native console classes and the `CliCommand`s not yet ported), in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
+ * Purpose: `COMMANDS`, every command the `stackra` binary has (native console classes and the `CliCommand`s not yet ported), in help order: create, upgrade (ADR 0199 decision 2, STA-145), new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy, mobile onboard and
  *          preview serve commands (ADR 0482, STA-1676), the db commands, the seed-pack
  *          command, the settings pack commands, the search reindex and status commands, the offline audit check, the operator bootstrap (`ops
  *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the consumer gate (`consumer-gate`, ADR 0500), the local MCP and agent-file commands,
  *          the registry item commands (add, publish; ADR 0453), and the repository commands moved from
- *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs
+ *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs (`upgrade-notes`, STA-145)
  *          and `validate --repository`).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db seed` runs the member's seeders (STA-1709) and
@@ -69,6 +69,8 @@ import { SettingsDiffCommand } from "#node/commands/settings-diff.command";
 import { SkillLicencesCommand } from "#node/commands/skill-licences.command";
 import { SmokeCommand } from "#node/commands/smoke.command";
 import { StructureCommand } from "#node/commands/structure.command";
+import { UpgradeCommand } from "#node/commands/upgrade.command";
+import { UpgradeNotesCommand } from "#node/commands/upgrade-notes.command";
 import { checkCommand } from "#node/functions/check-command.function";
 import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommands } from "#node/types/cli-commands.type";
@@ -76,6 +78,7 @@ import type { CliCommands } from "#node/types/cli-commands.type";
 /** The commands of `stackra`. */
 export const COMMANDS: CliCommands = [
   CreateCommand,
+  UpgradeCommand,
   NEW_COMMAND,
   GEN_COMMAND,
   CONSOLE_COMMAND,
@@ -147,4 +150,5 @@ export const COMMANDS: CliCommands = [
   RowSecurityDeclarationsCommand,
   DuplicationCommand,
   SkillLicencesCommand,
+  UpgradeNotesCommand,
 ];

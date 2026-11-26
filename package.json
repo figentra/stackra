@@ -23,7 +23,7 @@
     "verify": "pnpm format:check && turbo run lint typecheck test build && pnpm lint:root && pnpm validate && pnpm boundaries && pnpm knip",
     "verify:affected": "pnpm format:check && turbo run lint typecheck test build --affected",
     "test:hooks": "node --test .agents/hooks/__tests__/*.test.mjs .opencode/plugins/guard/__tests__/*.test.ts",
-    "validate": "node --test tools/scripts/__tests__/*.test.mjs && node packages/developer/cli/dist/stackra.mjs validate --repository && node packages/developer/cli/dist/stackra.mjs doc-standard && fflow gate ci && fflow trace ci && node packages/developer/cli/dist/stackra.mjs duplication && pnpm test:hooks",
+    "validate": "node --test tools/scripts/__tests__/*.test.mjs && node packages/developer/cli/dist/stackra.mjs validate --repository && node packages/developer/cli/dist/stackra.mjs doc-standard && fflow gate ci && fflow trace ci && node packages/developer/cli/dist/stackra.mjs duplication && node packages/developer/cli/dist/stackra.mjs upgrade-notes && pnpm test:hooks",
     "new": "node packages/developer/cli/dist/stackra.mjs new",
     "boundaries": "turbo boundaries",
     "knip": "knip",

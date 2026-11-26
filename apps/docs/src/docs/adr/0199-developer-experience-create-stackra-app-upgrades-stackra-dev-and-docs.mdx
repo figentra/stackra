@@ -45,7 +45,7 @@ A new developer needs one command to start, one command to upgrade, and a dev lo
 
 ## Enforcement
 
-planned — `stackra upgrade` is tested against the codemod fixtures; the dev compose file is checked by the smoke test in CI.
+Decision 2 (2026-11-26, STA-145): `stackra upgrade` (`packages/developer/cli/src/node/commands/upgrade.command.ts`) is tested against the codemod fixtures: `upgrade-codemods.constant.test.ts` runs every source codemod of `UPGRADE_CODEMODS` over its fixture files (expected source, expected findings, a second run changes nothing) and fails when a source codemod has no fixture. Every break a consumer must act on has an entry (a codemod, or a note when nothing can be changed mechanically): `stackra upgrade-notes`, in `pnpm validate`, refuses a pending `@stackra/*` changeset or an `@stackra/*` changelog entry from 0.4.0 on that carries a break mark (ADR 0013 decision 5) without an entry, so the pull request that adds a break and the version pull request are both held, and the same fixture test runs that check over this repository. Planned: the dev compose file is checked by the smoke test in CI.
 
 ## Supersedes and sources
 
