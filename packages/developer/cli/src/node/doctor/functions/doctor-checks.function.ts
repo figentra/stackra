@@ -3,15 +3,18 @@
  * Purpose: `doctorChecks(root, workspace, options?)`, the `stackra doctor` checklist of the workspace at `root`, in
  *          order: the base checks (mise tools, pnpm install, disk, network, GitHub), then one group per need
  *          `doctorNeeds` finds (Docker, Encore and the Encore ports; the `@stackra` and `@figentra` registry reads;
- *          Pulumi; Xcode and a simulator; the agent tooling, sops and its Google login included), then the members' dev ports. `quick` keeps only
- *          what `stackra dev` needs before it starts: mise tools, Docker and the ports. `fresh` is a workspace not
- *          written yet (`stackra create` checks a starter): no install and no agents:check.
+ *          Pulumi; Xcode and a simulator; the agent tooling, sops and its Google login included), then the members'
+ *          dev ports (Encore's dashboard port held by the user's own Encore daemon is reused, see `ownEncoreDaemon`).
+ *          `quick` keeps only what `stackra dev` needs before it starts: mise tools, Docker and the ports. `fresh` is a
+ *          workspace not written yet (`stackra create` checks a starter): no install and no agents:check.
  * Boundary: runs read-only status commands (`mise ls`, `docker info`, `gh auth status`, `pnpm view`, `xcode-select
- *           -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes hosts and
- *           tries to bind ports; installs and changes nothing. Secrets: forbidden: output is parsed, never printed;
- *           the registry check reads only the exit status of a version lookup, so no token is read or shown.
+ *           -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes hosts and tries to bind ports (on a busy
+ *           Encore dashboard port, asks who holds it); installs and changes nothing. Secrets: forbidden: output is
+ *           parsed, never printed; the registry check reads only the exit status of a version lookup, so no token is
+ *           read or shown.
  * Runtime: node
- * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121; STA-1952 spec FR-014 to FR-019; ADR 0515.
+ * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121; STA-1952 spec FR-014 to FR-019; ADR 0515;
+ *                     STA-2794 (the user's own Encore daemon).
  */
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { existsSync, statfsSync } from "node:fs";
@@ -21,12 +24,14 @@ import { join } from "node:path";
 
 import { DOCTOR_HOSTS } from "#node/doctor/constants/doctor-hosts.constant";
 import { awsIdentityOk } from "#node/doctor/functions/aws-identity-ok.function";
+import { devPortsResult } from "#node/doctor/functions/dev-ports-result.function";
 import { dockerState } from "#node/doctor/functions/docker-state.function";
 import { doctorNeeds } from "#node/doctor/functions/doctor-needs.function";
 import { droppedAddresses } from "#node/doctor/functions/dropped-addresses.function";
 import { googleCredentialsPath } from "#node/doctor/functions/google-credentials-path.function";
 import { publishedDependency } from "#node/doctor/functions/published-dependency.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
+import { ownEncoreDaemon } from "#node/doctor/functions/own-encore-daemon.function";
 import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
 import { simulatorAvailable } from "#node/doctor/functions/simulator-available.function";
 import type { DoctorNeed } from "#node/doctor/types/doctor-need.type";
@@ -34,8 +39,11 @@ import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 import type { DoctorWorkspace } from "#node/doctor/types/doctor-workspace.type";
 import { registryOrigin } from "#node/functions/registry-origin.function";
 
+/** Encore's development dashboard, served by the user's Encore daemon (which outlives `encore run`). */
+const ENCORE_DASH_PORT = 9400;
+
 /** Encore's local API and its development dashboard. */
-const ENCORE_PORTS = [4000, 9400];
+const ENCORE_PORTS = [4000, ENCORE_DASH_PORT];
 
 /** Below this much free disk, an install or an image pull may fail. */
 const MIN_FREE_BYTES = 5 * 1024 ** 3;
@@ -122,15 +130,10 @@ export async function doctorChecks(
   }
 
   const ports = [...(needs.has("services") ? ENCORE_PORTS : []), ...workspace.devPorts];
-  const busy: number[] = [];
-  for (const port of ports) if (!(await portFree(port))) busy.push(port);
-  if (ports.length > 0)
-    add({
-      name: "dev ports free",
-      status: busy.length ? "fail" : "ok",
-      detail: busy.length ? `in use: ${busy.join(", ")}` : undefined,
-      fix: `stop what listens there (lsof -nP -iTCP:${busy[0] ?? ports[0]} -sTCP:LISTEN)`,
-    });
+  // The user's own Encore daemon keeps the dashboard port between runs, and `encore run` reuses it (STA-2794).
+  const reusable = needs.has("services") ? [ENCORE_DASH_PORT] : [];
+  const portsLine = await devPortsResult(ports, reusable, { portFree, ownEncoreDaemon });
+  if (portsLine !== undefined) add(portsLine);
 
   if (quick) return out;
 
