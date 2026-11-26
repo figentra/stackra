@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./server` entry: `createApp` (the template's service entries import it),
- *          the `Controller` kind, the `RequestGuard` extension point, `AppDrainingError` and the edge-header guard
+ *          the `Controller` kind, the `RequestGuard` extension point, `AppDrainingError`, `DrainTimeoutError` (what the
+ *          drain deadline reports) and the edge-header guard
  *          with its memory drivers and refusal, the bearer-token guard with its config, key drivers, refusal and
  *          `VerifiedToken`, `CallAuthenticator` (the generated auth handler's check), `ServiceClientSessionDriver`
  *          (the tokens a service call sends), the origin and CSRF guards with
@@ -29,6 +30,7 @@ describe("@stackra/app/server", () => {
       "CsrfConfig",
       "CsrfGuard",
       "CsrfTokenInvalidError",
+      "DrainTimeoutError",
       "EdgeConfig",
       "EdgeHeaderGuard",
       "EdgeSignatureInvalidError",
