@@ -18,8 +18,9 @@
 #          The release gate (ADR 0177 PK4, STA-2705, tools/scripts/release-gate.mjs): on the publishing run and on a dry
 #          run, `package-checks` packs every public package and runs publint, arethetypeswrong, the pin check and the
 #          packed-tarball smoke in Node, Vite and Metro, with read-only permissions and no environment, before
-#          `release` may start; after a publish, `registry-check` proves every package is on the registry at the new
-#          version, every workspace pin resolves and `latest` moved, so a partial publish (0.33.1) turns the run red.
+#          `release` may start; after every run in `release` (even one whose release job failed or was cancelled),
+#          `registry-check` proves every package is on the registry at the new version, every workspace pin resolves
+#          and `latest` moved, so a partial publish (0.33.1) turns the run red and names what is missing.
 # Boundary: the registry URL is set only in this file (the release job's `registry`, the root runway's
 #           `providers.npm.registry`, the gate jobs' and the prerelease job's REGISTRY); no member's publishConfig
 #           names one. Never npmjs, never Keygen (ADR 0453).
@@ -184,10 +185,16 @@ jobs:
   # After a publish: every public package is on the registry at the new version, every workspace pin of each published
   # version resolves, and `latest` points at it. 0.33.1 stopped at 99 of 119 and left @stackra/app pinning versions
   # that answer 404; this job names each missing package and each broken pin. Reads only; anonymous registry reads.
+  # It runs after every run that may have published (the `release` environment, not a dry run), whatever the release
+  # job's result: a publish that stops part way fails or cancels the release job (runway-npm.yml's publish runs under
+  # `set -euo pipefail`; 0.17.0 was cancelled at 118 of 119), changesets/action then sets no `published` output, and a
+  # condition on that output (with the implicit `success()`) would skip this job exactly when it matters.
   registry-check:
     name: Registry check
-    needs: release
-    if: ${{ needs.release.outputs.published == 'true' }}
+    needs: [gate, release]
+    if: >-
+      ${{ always() && !inputs.prerelease && inputs.dry_run != true &&
+      needs.gate.outputs.environment == 'release' && needs.release.result != 'skipped' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

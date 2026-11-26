@@ -624,7 +624,36 @@ test("the release workflow gates the publish on the package checks and checks th
   assert.match(release, /needs: \[gate, package-checks\]/);
   assert.match(release, /needs\.package-checks\.result == 'success'/);
   const registry = job("registry-check");
-  assert.match(registry, /needs: release/);
-  assert.match(registry, /needs\.release\.outputs\.published == 'true'/);
   assert.match(registry, /node tools\/scripts\/release-gate\.mjs registry /);
+});
+
+test("the registry check runs after every publishing run, even when the release job failed part way", () => {
+  // 0.33.1 stopped at 99 of 119 and 0.17.0 was cancelled at 118 of 119: the release job ends failed or cancelled,
+  // changesets/action sets no `published` output, and a job that needs it (with the implicit success()) is skipped.
+  const workflow = readFileSync(join(REPO_ROOT, ".github", "workflows", "release.yml"), "utf8");
+  const start = workflow.indexOf("\n  registry-check:\n");
+  assert.ok(start >= 0, "release.yml has no registry-check job");
+  const rest = workflow.slice(start + 1);
+  const end = rest.slice(1).search(/\n {2}[a-z][a-z0-9-]*:\n/);
+  const registry = end < 0 ? rest : rest.slice(0, end + 1);
+  assert.match(registry, /needs: \[gate, release\]/);
+  const condition = /\n {4}if: >-\n((?: {6}.*\n)+)/
+    .exec(registry)?.[1]
+    .replaceAll(/\s+/g, " ")
+    .trim();
+  assert.ok(condition, "registry-check has a folded `if:`");
+  assert.match(
+    condition,
+    /^\$\{\{ always\(\) && /,
+    "always() first, so a failed or cancelled release still runs it",
+  );
+  assert.match(condition, /!inputs\.prerelease/);
+  assert.match(condition, /inputs\.dry_run != true/);
+  assert.match(condition, /needs\.gate\.outputs\.environment == 'release'/);
+  assert.match(condition, /needs\.release\.result != 'skipped'/);
+  assert.doesNotMatch(
+    condition,
+    /outputs\.published/,
+    "a partial publish sets no `published` output; the check must not depend on it",
+  );
 });
