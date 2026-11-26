@@ -48,8 +48,8 @@ no product feature lands here. It is built by AI agent lanes (as the `stackra-bo
   fails. Latest cause (run 42339257875):
   `pnpm format:check` finds 4 unformatted files on main (`.vscode/tasks.json` and three files under
   `packages/developer/runway/src/node/`), so no pull request can pass.
-- **Tests.** Under the merge-now rule (STA-2083) nothing tests on a workstation. Since STA-2705 the Quality Gate
-  runs the unit tests of the affected members plus gen, tenancy, identity, actions and database; `test:int` and
+- **Tests.** Nothing tests on a workstation (STA-2083). Since STA-2705 a code change merges on a green Quality Gate,
+  which runs the unit tests of the affected members plus gen, tenancy, identity, actions and database; `test:int` and
   e2e run later on the testbed. No test result is recorded in this repository, so no package's tests are
   proven at this head.
 - **Runway workflows never ran:** `runway-cloudflare-workers.yml`, `runway-npm.yml`, `runway-smoke.yml`,

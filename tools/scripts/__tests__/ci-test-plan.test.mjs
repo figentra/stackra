@@ -2,9 +2,11 @@
  * Stackra file contract:
  * Purpose: hold `ci-test-plan.mjs` to its contract (STA-2705): a pull request tests its affected members plus the
  *          core five, a markdown-only change only the members whose files it changed, any other event every member; the core five
- *          are real workspace members; and the Quality Gate in `.github/workflows/ci.yml` runs the plan as a step.
+ *          are real workspace members; the Quality Gate in `.github/workflows/ci.yml` runs the plan as a step; and the
+ *          agent merge rule (flow.config.json `agentsMd`, rendered into AGENTS.md) lets only a markdown-only change, or
+ *          an accepted `Known red:` line, merge past the gate with `--admin` (STA-2705 amending STA-2083).
  * Boundary: pure functions on injected data; the CLI runs with `--dry-run` in a throwaway git repository, so no test
- *           runs turbo. Reads ci.yml and the members' package.json files.
+ *           runs turbo. Reads ci.yml, flow.config.json, AGENTS.md and the members' package.json files.
  * Runtime: node
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy).
  */
@@ -157,6 +159,37 @@ test("the Quality Gate runs the test plan as a step of the required job", () => 
   assert.ok(!("if" in step), "the Test step must run on every gate event");
   assert.ok(!step["continue-on-error"], "a red test must fail the gate");
   assert.ok(Number(step["timeout-minutes"]) > 0, "the Test step needs a timeout");
+});
+
+/** The merge rule as flow.config.json states it: the "Tests run later" section of `facts` plus the `land` line. */
+function mergeRule() {
+  const { facts, land } = JSON.parse(readFileSync(join(ROOT, "flow.config.json"), "utf8")).agentsMd;
+  const start = facts.indexOf("## Tests run later");
+  assert.ok(start >= 0, 'flow.config.json facts lost the "Tests run later" section');
+  const end = facts.indexOf("\n## ", start + 1);
+  return { section: facts.slice(start, end < 0 ? undefined : end), land };
+}
+
+test("the merge rule lets only a markdown-only change or an accepted known red pass the gate with --admin", () => {
+  const { section, land } = mergeRule();
+  for (const text of [section, land]) {
+    assert.doesNotMatch(text, /never wait on the gate|no waiting on CI|nothing waits on tests/i);
+    // Every paragraph or bullet that sends a merge through --admin scopes it to docs or a named known red.
+    for (const part of text.split(/\n(?=- )|\n\n/)) {
+      if (/--admin\b/.test(part) && !/without `--admin`/.test(part))
+        assert.match(part, /markdown-only|Known red:/, `an unscoped --admin merge: ${part}`);
+    }
+  }
+  assert.match(section, /code change[^.]*merges only once the Quality Gate is green/);
+  assert.match(land, /code change[^.]*once the Quality Gate is green/);
+  assert.match(section, /STA-2705/);
+});
+
+test("AGENTS.md carries the merge rule exactly as flow.config.json states it (fflow sync ran)", () => {
+  const { section, land } = mergeRule();
+  const agents = readFileSync(join(ROOT, "AGENTS.md"), "utf8");
+  assert.ok(agents.includes(section.trim()), "AGENTS.md is stale: run fflow sync");
+  assert.ok(agents.includes(land), "AGENTS.md is stale: run fflow sync");
 });
 
 /** A throwaway git repository with one commit of `files` on top of an initial one. */
