@@ -148,6 +148,7 @@ export type { MemberGraph } from "#core/types/member-graph.type";
 export type { MemberIR } from "#core/types/member-ir.type";
 export type { MigrationUnit } from "#core/types/migration-unit.type";
 export type { OpenApiDocument } from "#core/types/open-api-document.type";
+export type { QueueSettings } from "#core/types/queue-settings.type";
 export type { RegexValue } from "#core/types/regex-value.type";
 export type { RelationIR } from "#core/types/relation-ir.type";
 export type { SchemaDifference } from "#core/types/schema-difference.type";

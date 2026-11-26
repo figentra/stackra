@@ -32,7 +32,8 @@
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
  *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
  *           and `.stackra/playwright.e2e.config.ts` (`emitE2ePageFiles`, ADR 0022 amendment of 2026-11-09).
- *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
+ *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910;
+ *           `queue_dlq_unsupported`, `checkQueueSettings`, STA-2050).
  *           A member that declares a resource has each tree read through `loader` before the manifest is built
  *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
  * Runtime: node
@@ -54,6 +55,7 @@ import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
+import { checkQueueSettings } from "#core/functions/check-queue-settings.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
 import { encoreMigrationSql } from "#core/functions/encore-migration-sql.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
@@ -412,7 +414,13 @@ export async function generate(
   if (errors.length > 0) return { errors, warnings, files: [], changed: partial };
   result = { ...result, files };
   // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910).
-  const reported = [...warnings, ...(options.pass === undefined ? checkSubscriptions(ir) : [])];
+  // A runway `dlq: false` an Encore subscription cannot honour (STA-2050).
+  const reported = [
+    ...warnings,
+    ...(options.pass === undefined
+      ? [...checkSubscriptions(ir), ...checkQueueSettings(ir, result.manifest)]
+      : []),
+  ];
   return {
     errors: [],
     files: result.files,

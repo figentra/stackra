@@ -3,12 +3,15 @@
  * Purpose: `SERVICE_ENVIRONMENT_SCHEMA`, one `environments.<env>` block of a service runway: the dev port, host and
  *          dev console port, the size of the logical database (pool budget, plan, storage, extensions, read replica),
  *          of the cache, of each bucket and queue, the cron switch, the secret names, the `config` values and the
- *          cross-app relay's `events`.
+ *          cross-app relay's `events`. A queue's `visibilityTimeoutSeconds` and `dlq` size the Encore Pub/Sub
+ *          subscription its jobs ride: gen sets the subscription's ack deadline to the largest timeout any environment
+ *          gives the queue, and Encore always dead-letters, so gen warns of `dlq: false` (STA-2050).
  * Boundary: internal. Strict at its top: a root key (`deployable`, `isolate`, `group`, `cpu`, `memory`, `instances`)
  *           fails here. The size blocks stay open, as the canonical schema leaves them.
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (decision 1), ADR 0238 (logical databases and pool budgets), ADR 0160 (extensions: the
- *                     approved names, `PostgresExtension`), ADR 0511 (decisions 11 to 15, amendment of 2026-11-02).
+ *                     approved names, `PostgresExtension`), ADR 0511 (decisions 11 to 15, amendment of 2026-11-02),
+ *                     ADR 0148 (decisions 3 and 6: jobs ride Encore Pub/Sub in SaaS).
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";

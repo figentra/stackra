@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitEncoreQueues`: a service with a job action gets one Pub/Sub topic and subscription per
  *          queue, named after the member, registered as `queue.<name>` and running each delivery through the queue
- *          worker; no file for a package, an app or a service without jobs.
+ *          worker, with the runway's largest visibility timeout as its ack deadline (STA-2050); no file for a package,
+ *          an app or a service without jobs.
  * Boundary: test only; runs on the IR fixtures and the manifests built from them.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0148 (decisions 3 and 6); ADR 0266 (decision 4.3).
+ * Governing contract: ADR 0022 (test placement); ADR 0148 (decisions 3 and 6); ADR 0266 (decision 4.3); STA-2050.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -40,6 +41,29 @@ describe("emitEncoreQueues", () => {
     // Encore cannot resolve a type through a package's dist: the topic's message type is the local declaration
     expect(content).toContain('import type { BrokerMessage } from "./broker-message";');
     expect(content).toContain('import type { QueuedJob } from "@stackra/queue/contracts";');
+  });
+
+  it("sets each subscription's ack deadline from the runway's largest visibility timeout (STA-2050)", () => {
+    const ir = {
+      ...BILLING_IR,
+      queueSettings: {
+        dev: { default: { visibilityTimeoutSeconds: 30 } },
+        production: { default: { visibilityTimeoutSeconds: 300, dlq: true } },
+      },
+    };
+    const content = emitEncoreQueues(ir, buildManifest(ir).manifest)?.content ?? "";
+    expect(content).toContain(
+      [
+        "      await container.get(QueueWorkerService).process(jobOf(message));",
+        "    }),",
+        '  ackDeadline: "300s",',
+        "});",
+      ].join("\n"),
+    );
+    // No runway setting: Encore's default ack deadline applies
+    expect(emitEncoreQueues(BILLING_IR, buildManifest(BILLING_IR).manifest)?.content).not.toContain(
+      "ackDeadline",
+    );
   });
 
   it("writes nothing for a package, an app or a service without jobs", () => {

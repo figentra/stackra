@@ -8,7 +8,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 20 and 25); ADR 0295 (decisions 1 and 7); ADR 0305 (rules 15 and 16); ADR 0260
  *                     (decision 3: clients from the producer's manifest); STA-1298 (package catalogues, key references);
- *                     ADR 0438 (shell slots and fills, stackra-03); ADR 0490 (anchors, STA-1631).
+ *                     ADR 0438 (shell slots and fills, stackra-03); ADR 0490 (anchors, STA-1631); ADR 0296
+ *                     (a service's runway queues, STA-2050).
  */
 import type { Json, StackraManifest } from "@stackra/contracts";
 
@@ -18,6 +19,7 @@ import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
 import type { GenError } from "#core/types/gen-error.type";
+import type { QueueSettings } from "#core/types/queue-settings.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 import type { SlotFillIR } from "#core/types/slot-fill-ir.type";
 import type { SlotIR } from "#core/types/slot-ir.type";
@@ -166,6 +168,13 @@ export interface MemberIR {
       }
     >
   >;
+
+  /**
+   * The `queues` block of each environment of a service's `runway.yaml` that has one, by environment and then queue
+   * (ADR 0296): the settings `emitEncoreQueues` applies to each queue's Encore subscription and `checkQueueSettings`
+   * checks (STA-2050). Absent when no environment has one, and in an IR built by hand.
+   */
+  readonly queueSettings?: Readonly<Record<string, Readonly<Record<string, QueueSettings>>>>;
 
   /**
    * The committed manifests of every other service beside the member that publishes an integration event, with the
