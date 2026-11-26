@@ -176,8 +176,9 @@ export interface Blueprint {
   dropColumn: (column: string, options: ContractOptions & RenamedColumnOptions) => void;
 
   /**
-   * The expand step of a column rename (`schema.table` only): adds `to` with `options.type` (state its nullability
-   * and comment on the returned column; nullable or defaulted, as any added column) and a trigger,
+   * The expand step of a column rename (`schema.table` only): adds `to` with `options.type` (state its comment and
+   * `.nullable()` on the returned column: it has no default and is not NOT NULL, so every row still to copy keeps `to`
+   * null; a later `t.change` adds them after `t.finishRenameColumn`) and a trigger,
    * `trg_<table>_<from>_<to>`, that keeps the two equal on every insert and update, so the release that writes `from`
    * and the one that writes `to` run side by side. A `Backfill` copies the existing rows (`pending: "<to> is null and
    * <from> is not null"`); `t.finishRenameColumn` drops the trigger and `from` in a later release. Indexes and

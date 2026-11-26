@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `DbMigrateCommand`, `db:migrate`: applies the member's pending migrations through `migrate`.
  * Boundary: runs against `DATABASE_DIRECT_URL` (else `DATABASE_URL`) as `migrate` does, keeping its refusals (an edited
- *           applied file, a dirty version). Audited: each run is recorded through `CommandAudit`.
+ *           applied file, a dirty version). `--release` names the release applied (else `migrate` reads
+ *           `STACKRA_RELEASE`). Audited: each run is recorded through `CommandAudit`.
  * Runtime: node
  * Governing contract: STA-1731 spec FR-001 and FR-015; ADR 0159; ADR 0506.
  */
@@ -31,6 +32,14 @@ export class DbMigrateCommand extends Command({
   @Str
   env = "";
 
+  /** The release this run applies. */
+  @Option({
+    description:
+      "The release applied (version, tag or commit), which contract steps' release gates compare; STACKRA_RELEASE when absent",
+  })
+  @Str
+  release = "";
+
   /** The runner the command calls. */
   private readonly runner: DatabaseRunner;
 
@@ -46,7 +55,11 @@ export class DbMigrateCommand extends Command({
   async handle(io: CommandIo): Promise<Readonly<Record<string, unknown>>> {
     const environment = commandEnvironment(this.env);
     const { applied } = await io.output.task("Applying migrations", () =>
-      this.runner.migrate({ cwd: this.cwd, environment: environment }),
+      this.runner.migrate({
+        cwd: this.cwd,
+        environment: environment,
+        ...(this.release === "" ? {} : { release: this.release }),
+      }),
     );
     if (applied.length === 0) io.output.info("Nothing to migrate");
     else io.output.list(applied);

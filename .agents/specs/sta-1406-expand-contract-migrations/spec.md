@@ -42,21 +42,27 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
 - **Services touched**: none
 - **Packages touched**: database (the blueprint and schema builder types and records, the release and data gates, the
   rename sync trigger, `t.check`, `t.exclude`, `t.timeRange`, `t.dropIndex`, `t.dropCheck`, the `Backfill` kind, its
-  runner, the node `backfill` entry, migration `database.0009_create_backfill_runs`, the runner's starting-version
-  setting, tests, README, AGENTS.md); gen (`KIND_FILES` and `KIND_BASES` rows for `backfill`); coding-standard (the
+  runner, the node `backfill` entry, migration `database.0009_create_backfill_runs`, the runner's starting-version and
+  release settings, the `release_id` column of `schema_migrations_history`, `db:migrate --release`, tests, README,
+  AGENTS.md); gen (`KIND_FILES` and `KIND_BASES` rows for `backfill`); coding-standard (the
   `base-matches-suffix` row for `.backfill.ts`); repo-checks (the `database/backfills` module group)
 - **Public contract change**: additive. `Blueprint` gains `dropColumn`, `renameColumn`, `finishRenameColumn`, `check`,
   `dropCheck`, `exclude`, `dropIndex` and `timeRange`; `SchemaBuilder` gains `rename`, `finishRename`, `drop` and
   `requireBackfill`; the `.` entry exports `Backfill`, `runBackfill` and the types `BackfillBatch`, `BackfillClass`,
   `BackfillOptions`, `BackfillProgress`, `BackfillQuery`, `BackfillSession`, `ContractOptions`,
   `DroppedIndexOptions`, `ExclusionOptions`, `RenamedColumnOptions`, `RunBackfillOptions`; `./node` exports
-  `backfill`. `compileMigration`'s `after` now also lists the ids its contract steps wait for. A member whose macro was
+  `backfill`. `compileMigration`'s `after` now also lists the ids its contract steps wait for. `migrate` and
+  `DatabaseRunner.migrate` take an optional `release` (else `STACKRA_RELEASE`), `db:migrate` gains `--release`, and
+  the runner adds a nullable `release_id` column to its `schema_migrations_history` ledger. A member whose macro was
   named like one of the new methods would now collide at compile time (none in this repo).
 - **Cross-service events**: none
 - **Tenancy and data**: one new platform table, `database.backfill_runs` (declared with `t.platformTable`), holding a
   backfill key, a keyset cursor, counts, a finish time and an error code; no tenant data and no personal data. A
   table rename's view is `security_invoker`, so the older release reads through it under its own grants and row-level
-  security. A backfill and the gates read and write every tenant's rows of their table, as the migrating role does.
+  security. A backfill and the data gate read and write every tenant's rows of their table, so they run with
+  `row_security` off: a role that is neither superuser nor `BYPASSRLS` is refused (SQLSTATE 42501) on a table under
+  row-level security instead of seeing the rows its policy shows. They run on `DATABASE_DIRECT_URL` as the migrating
+  role, which bypasses row security; the runtime role never does.
 - **Security and privacy**: every SQL fragment a step or backfill embeds is a one-line literal from the migration or the
   class, checked for `;`, `$$` and line breaks; keys a backfill reads back are quoted with `sqlLiteral`. A failed
   batch records its SQLSTATE or error class, never its message (which can quote row values).
@@ -78,8 +84,9 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
 - **AC-001**: WHEN a migration holds a contract step, THE compiler SHALL open the step's transaction with a release
   gate on the migration the step names as its release (a dropped column or table, a finished rename), and add that id
   to the migration's after edges.
-- **AC-002**: IF a forward-only run applied the named release itself THEN THE release gate SHALL refuse the migration
-  before any change, naming the step and the release; a release never applied is refused the same way.
+- **AC-002**: IF a forward-only run's release applied the named migration THEN THE release gate SHALL refuse the step
+  before any change, naming the step, the migration and the release, whether the run is that release's first or a
+  retry of the same deploy; a migration never applied, and a run that names no release, are refused the same way.
 - **AC-003**: THE gate SHALL pass on a fresh database (the run started at version 0), in dev, preview and test, and
   wherever no `schema_migrations_history` exists (Encore's runner, tests).
 - **AC-004**: WHEN a column is renamed (expand), THE compiled step SHALL add the new column and a trigger that keeps the
@@ -101,6 +108,11 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
   it SHALL pass once none does.
 - **AC-011**: THE gen kind tables, the lint kind table and the module-group check SHALL know a backfill file under
   `database/backfills/`.
+- **AC-012**: IF row security would hide rows from the migrating role THEN THE data gate SHALL refuse the migration,
+  naming the table and the role, and a backfill batch fails with SQLSTATE 42501 without finishing, rather than either
+  finding no rows (a `FORCE` table, a role neither superuser nor `BYPASSRLS`).
+- **AC-013**: IF a column rename's new column has a default, a generation or NOT NULL THEN THE compiler SHALL refuse the
+  migration, so the rows the copy has not reached keep the new column null.
 
 ## Status history
 
@@ -108,3 +120,5 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing (built on `figentra/sta-1406-expand-contract-dsl`)
+- 2026-11-26 → Implementing (review fixes: AC-002 compares releases, not runs; AC-012 row security; AC-013 rename
+  defaults)

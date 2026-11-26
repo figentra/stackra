@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: behaviour tests of the blueprint's expand and contract steps on a real Postgres engine (PGlite): a column
  *          rename's sync trigger keeps both names equal for a release that writes either, its finish refuses while a
- *          row is not backfilled and then drops the old column; a dropped column waits for its release gate; a named
+ *          row is not backfilled (also as an owner role that forced row security would show no row) and then drops the
+ *          old column; a dropped column waits for its release gate, a retried deploy of that release included; a named
  *          check added to an existing table holds new rows at once and its validation scans the old ones; an
  *          exclusion constraint refuses an overlapping booking (STA-1406).
  * Boundary: test only; each test applies compiled migrations to a fresh in-memory PGlite as the runner would (a
@@ -31,10 +32,12 @@ function compiled(up: (schema: SchemaBuilder) => void): CompiledMigration {
   return compileMigration(TestMigration, { schema: "shop", createsSchema: false });
 }
 
-/** Applies `migration` to `pg` step by step, as the runner does. */
-async function apply(pg: PGlite, migration: CompiledMigration): Promise<void> {
+/** Applies `migration` to `pg` step by step, as the runner does, as `role` when one is named. */
+async function apply(pg: PGlite, migration: CompiledMigration, role?: string): Promise<void> {
   for (const step of migration.steps) {
-    const sql = step.sql.map((statement) => `${statement};\n`).join("");
+    const sql =
+      (role === undefined ? "" : `set local role ${role};\n`) +
+      step.sql.map((statement) => `${statement};\n`).join("");
     if (step.transactional) await pg.transaction((tx) => tx.exec(sql));
     else for (const statement of step.sql) await pg.exec(statement);
   }
@@ -109,6 +112,28 @@ describe("BlueprintRecord expand and contract on Postgres", () => {
     ).toEqual([{ n: 0 }]);
   });
 
+  it("refuses to finish a rename as an owner role that forced row security shows no row, keeping the old column", async () => {
+    const pg = await shop();
+    // the tables' owner, as on a managed Postgres: neither superuser nor BYPASSRLS, and FORCE binds it too
+    await pg.exec(`
+      create role owner_role nologin;
+      grant usage, create on schema shop to owner_role;
+      alter table shop.orders owner to owner_role;
+      alter table shop.orders enable row level security;
+      alter table shop.orders force row level security;
+      create policy pol_orders_tenant on shop.orders using (current_setting('app.tenant_id', true) = 'acme');
+    `);
+    await apply(pg, expand, "owner_role");
+    // with app.tenant_id unset the policy shows no row, so a count would find nothing to copy and drop both notes
+    await expect(apply(pg, finish, "owner_role")).rejects.toThrow(
+      /refused before any change: "shop"\."orders" hides rows from role owner_role under row-level security/,
+    );
+    expect(await rows(pg, "select id, note, memo from shop.orders order by id")).toEqual([
+      { id: "a", note: "first", memo: null },
+      { id: "b", note: "second", memo: null },
+    ]);
+  });
+
   it("holds a dropped column to its release gate under the runner's ledger", async () => {
     const pg = await shop();
     const drop = compiled((schema) =>
@@ -117,16 +142,25 @@ describe("BlueprintRecord expand and contract on Postgres", () => {
       }),
     );
     await pg.exec(
-      "create table schema_migrations_history (version bigint primary key, name text not null, checksum text not null, applied_at timestamptz not null default now()); insert into schema_migrations_history (version, name, checksum) values (1, '0001_shop_0001_create_orders', 'x'), (2, '0002_shop_0002_stop_reading_note', 'y');",
+      "create table schema_migrations_history (version bigint primary key, name text not null, checksum text not null, applied_at timestamptz not null default now(), release_id text); insert into schema_migrations_history (version, name, checksum, release_id) values (1, '0001_shop_0001_create_orders', 'x', 'v1'), (2, '0002_shop_0002_stop_reading_note', 'y', 'v2');",
     );
-    // this run started at version 1, so it applied the release the drop waits for itself
-    await pg.exec("select set_config('stackra.migrate_from_version', '1', false)");
+    /** The settings of a run that started at version `from` and applies `release`. */
+    const run = (from: number, release: string) =>
+      pg.exec(
+        `select set_config('stackra.migrate_from_version', '${from}', false), set_config('stackra.migrate_release', '${release}', false)`,
+      );
+    // release v2 started at version 1 and applied the release the drop waits for itself
+    await run(1, "v2");
     await expect(apply(pg, drop)).rejects.toThrow(
-      /shop\.orders drop column note is a contract step after shop\.0002_stop_reading_note, which this run applies/,
+      /shop\.orders drop column note is a contract step after shop\.0002_stop_reading_note, which release v2 applies/,
     );
     expect(await rows(pg, "select note from shop.orders order by id")).toHaveLength(2);
-    // a later run, started past it
-    await pg.exec("select set_config('stackra.migrate_from_version', '2', false)");
+    // the same deploy retried starts past it, while v1 may still be serving: still refused
+    await run(2, "v2");
+    await expect(apply(pg, drop)).rejects.toThrow(/which release v2 applies/);
+    expect(await rows(pg, "select note from shop.orders order by id")).toHaveLength(2);
+    // the next release
+    await run(2, "v3");
     await apply(pg, drop);
     expect(await rows(pg, "select * from shop.orders order by id")).toEqual([
       { id: "a" },

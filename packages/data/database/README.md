@@ -244,14 +244,26 @@ schema.drop("order_drafts", { after: "orders.0007_rename_note" });
 
 - **Release gate.** Every contract step (`dropColumn`, `finishRenameColumn`, `finishRename`, `drop`) names `{ after }`,
   the migration of the earlier release. It compiles to a `DO` block first in the transaction that refuses the
-  migration while `after` was applied by the same `stackra db migrate` run (or never), and `after` becomes one of the
-  migration's edges, so gen orders the two and refuses an id no migration has. The runner sets
-  `stackra.migrate_from_version` in forward-only environments; the gate passes on a fresh database, on dev, preview
+  migration while `after` was applied under the release this run applies (or never), and `after` becomes one of the
+  migration's edges, so gen orders the two and refuses an id no migration has. The release is the deploy's version or
+  commit: `stackra db migrate --release <id>`, else `STACKRA_RELEASE`. The runner records it on every
+  `schema_migrations_history` row and sets `stackra.migrate_from_version` and `stackra.migrate_release` in
+  forward-only environments, so a retried deploy of the same release (a CI retry, a re-run pipeline) is refused as its
+  first run was, a run that names no release is refused, and only the next release passes. Give every deploy its own
+  id: one reused across deploys holds the step until it changes. The gate passes on a fresh database, on dev, preview
   and test, and wherever Encore's runner or a test applies the files (no `schema_migrations_history`).
-- **Column rename.** `t.renameColumn(from, to, { type })` adds `to` (nullable or defaulted, with its comment) and the
-  trigger `trg_<table>_<from>_<to>`, which keeps the two equal on every insert and update, so the release that writes
-  `from` and the one that writes `to` run side by side. A `Backfill` copies the old rows; `t.finishRenameColumn` refuses
-  while a row still has `to` null and `from` set, then drops the trigger and `from`. Indexes are not copied.
+- **Column rename.** `t.renameColumn(from, to, { type })` adds `to` (`.nullable()` with its comment: no default, no
+  generation, not NOT NULL, refused otherwise, since a filled `to` hides the rows still to copy) and the trigger
+  `trg_<table>_<from>_<to>`, which keeps the two equal on every insert and update, so the release that writes `from`
+  and the one that writes `to` run side by side. A `Backfill` copies the old rows; `t.finishRenameColumn` refuses while
+  a row still has `to` null and `from` set, then drops the trigger and `from`. Add the default or NOT NULL with
+  `t.change` after the finish. Indexes are not copied.
+- **Row-level security.** The data gate (`requireBackfill`, the finish of a column rename) and every backfill batch run
+  with `row_security` off, so they read every tenant's rows or fail: on a table under row-level security (every
+  tenant table is `ENABLE` + `FORCE`), a role that is neither superuser nor `BYPASSRLS` gets a refusal naming the
+  table (SQLSTATE 42501 for a backfill), never a count of the rows its policy shows, which with no tenant set is none.
+  Run migrations and backfills on `DATABASE_DIRECT_URL` as a role that bypasses row security; the runtime role never
+  does (the health check fails readiness when it could).
 - **Table rename.** `schema.rename(from, to)` renames the table and leaves a `security_invoker` view under the old
   name, updatable, through which the older release keeps reading and writing with its own grants and row-level
   security. Indexes, constraints and policies keep their names; a later `dropIndex`, `dropCheck` or
@@ -292,7 +304,8 @@ the batch in flight and the next run resumes. Progress (`rows`, `batches`, `curs
 `database.backfill_runs`; a failed batch records its SQLSTATE only. The job that owns it calls `backfill` with
 `maxBatches` and queues itself again until `finished`. Rows written behind the cursor later are reached with
 `restart: true`. `schema.requireBackfill(key, { table, pending })` is the contract step's data gate: it counts pending
-rows, not the ledger, so a fresh database passes.
+rows, not the ledger, so a fresh database passes. Both walk every tenant's rows, so their role bypasses row security
+(see "Row-level security" above); a role that cannot fails on its first batch instead of reporting `finished`.
 
 ### Running migrations
 
@@ -301,7 +314,7 @@ rows, not the ledger, so a fresh database passes.
 - It holds a session-level `pg_advisory_lock` for the whole run, so a second pod or job waits instead of applying the
   same files.
 - `schema_migrations(version, dirty)` keeps golang-migrate's shape; `schema_migrations_history(version, name,
-checksum, applied_at)` records each applied file's SHA-256. A run refuses to start when an applied file's text no
+checksum, applied_at, release_id)` records each applied file's SHA-256 and the release that applied it. A run refuses to start when an applied file's text no
   longer matches (a frozen migration was edited); files applied before the ledger existed are recorded on the first
   run. A dev `rollback` removes the reverted rows.
 - Sessions run with `lock_timeout 5s` and `statement_timeout 5min`; a file whose leading comment lines hold
@@ -309,8 +322,9 @@ checksum, applied_at)` records each applied file's SHA-256. A run refuses to sta
 - When a file fails, the INVALID indexes it named (a failed `create index concurrently`) are dropped and the version
   goes back to the last applied file, clean, so the next run starts that file again. Only a crash mid-file leaves the
   version dirty.
-- Outside dev, preview and test, a run sets `stackra.migrate_from_version` to the version it started from, which the
-  release gate of every contract step reads (see "Dropping and renaming").
+- Outside dev, preview and test, a run sets `stackra.migrate_from_version` to the version it started from and
+  `stackra.migrate_release` to its release (`--release`, else `STACKRA_RELEASE`: letters, digits and `. _ + / -`),
+  which the release gate of every contract step reads (see "Dropping and renaming").
 
 ## Scope isolation
 

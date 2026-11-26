@@ -10,15 +10,18 @@
  *           file's `-- stackra:timeout=` header sets its own statement timeout. When a file fails, the INVALID
  *           indexes it left (a failed `create index concurrently`) are dropped and the version goes back to the last
  *           applied file, clean: the failed transaction rolled back and a failed single statement left nothing else,
- *           so the next run starts that file again. In a forward-only environment (not dev, preview or test) the run
- *           sets `MIGRATE_FROM_VERSION_SETTING` to the version it started from, which each contract step's release
- *           gate reads: a drop or finished rename is refused while the migration it waits for was applied by this
- *           same run.
+ *           so the next run starts that file again. Each applied file's history row records the release the run applies
+ *           (`release`, else `STACKRA_RELEASE`; a run may name none). In a forward-only environment (not dev, preview or
+ *           test) the run sets `MIGRATE_FROM_VERSION_SETTING` to the version it started from and
+ *           `MIGRATE_RELEASE_SETTING` to its release, which each contract step's release gate reads: a drop or finished
+ *           rename is refused while the migration it waits for was applied under this same release (a retried deploy
+ *           included), and on a database with older releases when the run names none.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 2 as amended 2026-10-24, decision 3: timeouts per session; destructive steps
  *                     deferred to a later release).
  */
 import { MIGRATE_FROM_VERSION_SETTING } from "#core/constants/migrate-from-version-setting.constant";
+import { MIGRATE_RELEASE_SETTING } from "#core/constants/migrate-release-setting.constant";
 import { ROLLBACK_ENVIRONMENTS } from "#node/constants/rollback-environments.constant";
 import { openMigrationSession } from "#node/functions/open-migration-session.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
@@ -28,17 +31,35 @@ import type { MigrationSession } from "#node/types/migration-session.type";
 /** The session statement timeout a step's header overrides; the session opens with it. */
 const SESSION_STATEMENT_TIMEOUT = "5min";
 
+/** The variable naming the release a run applies when it is not passed: the deploy's version or commit. */
+const RELEASE_VARIABLE = "STACKRA_RELEASE";
+
+/** A release id: a version, tag or commit, such as `v1.4.0`, `2026.11.26-3` or a commit sha. */
+const RELEASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._+/-]{0,127}$/;
+
 /**
  * Applies the pending migrations.
  *
- * @throws Error when an applied file was edited, the version is dirty or a file fails; the message names the file.
+ * @param options.release - the release this run applies; `STACKRA_RELEASE` when absent.
+ * @param env - the environment `STACKRA_RELEASE` is read from, `process.env` by default.
+ * @throws TypeError for a release that is not a version, tag or commit; Error when an applied file was edited, the
+ *         version is dirty or a file fails; the message names the file.
  * @example
- * const { applied } = await migrate({ cwd: "apps/api", environment: "dev" });
+ * const { applied } = await migrate({ cwd: "apps/api", environment: "production", release: "v1.4.0" });
  */
-export function migrate(options: {
-  readonly cwd: string;
-  readonly environment: string;
-}): Promise<{ readonly applied: readonly string[] }> {
+export async function migrate(
+  options: {
+    readonly cwd: string;
+    readonly environment: string;
+    readonly release?: string;
+  },
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): Promise<{ readonly applied: readonly string[] }> {
+  const release = (options.release ?? env[RELEASE_VARIABLE] ?? "").trim() || undefined;
+  if (release !== undefined && !RELEASE_PATTERN.test(release))
+    throw new TypeError(
+      `the release ${JSON.stringify(release)} is not a version, tag or commit (letters, digits and . _ + / -, up to 128)`,
+    );
   return openMigrationSession(options.cwd, async (session) => {
     const { files, execute, state } = session;
     const current = await state();
@@ -49,11 +70,17 @@ export function migrate(options: {
       );
     await checkHistory(session, current.version);
     // raw-sql: the release gate of a contract step reads where this run started; a rollback environment has no gate
-    if (!ROLLBACK_ENVIRONMENTS.has(options.environment))
+    if (!ROLLBACK_ENVIRONMENTS.has(options.environment)) {
       await execute(
         `select set_config(${sqlLiteral(MIGRATE_FROM_VERSION_SETTING)}, ${sqlLiteral(String(current.version))}, false)`,
         false,
       );
+      if (release !== undefined)
+        await execute(
+          `select set_config(${sqlLiteral(MIGRATE_RELEASE_SETTING)}, ${sqlLiteral(release)}, false)`,
+          false,
+        );
+    }
     const applied: string[] = [];
     let previous = current.version;
     for (const file of files.filter((candidate) => candidate.version > current.version)) {
@@ -83,7 +110,7 @@ export function migrate(options: {
           await execute(`set statement_timeout = '${SESSION_STATEMENT_TIMEOUT}'`, false);
       }
       await execute(
-        `update schema_migrations set dirty = false where version = ${file.version}; ${historyInsert(file)}`,
+        `update schema_migrations set dirty = false where version = ${file.version}; ${historyInsert(file, release)}`,
         true,
       );
       previous = file.version;
@@ -93,9 +120,12 @@ export function migrate(options: {
   });
 }
 
-/** The ledger row of an applied file; a re-applied version (after a dev rollback) takes the new checksum. */
-function historyInsert(file: MigrationFile): string {
-  return `insert into schema_migrations_history (version, name, checksum) values (${file.version}, ${sqlLiteral(file.name)}, ${sqlLiteral(file.checksum)}) on conflict (version) do update set name = excluded.name, checksum = excluded.checksum, applied_at = now()`;
+/**
+ * The ledger row of an applied file under `release` (none for a file adopted from before the ledger); a re-applied
+ * version (after a dev rollback) takes the new checksum and release.
+ */
+function historyInsert(file: MigrationFile, release?: string): string {
+  return `insert into schema_migrations_history (version, name, checksum, release_id) values (${file.version}, ${sqlLiteral(file.name)}, ${sqlLiteral(file.checksum)}, ${release === undefined ? "null" : sqlLiteral(release)}) on conflict (version) do update set name = excluded.name, checksum = excluded.checksum, release_id = excluded.release_id, applied_at = now()`;
 }
 
 /**
@@ -115,7 +145,8 @@ async function checkHistory(session: MigrationSession, version: number): Promise
       );
   }
   const unrecorded = appliedFiles.filter((file) => !recorded.has(file.version));
-  if (unrecorded.length > 0) await session.execute(unrecorded.map(historyInsert).join("; "), true);
+  if (unrecorded.length > 0)
+    await session.execute(unrecorded.map((file) => historyInsert(file)).join("; "), true);
 }
 
 /** Drops the INVALID indexes a failed concurrent build of `file` left, and returns their names. */

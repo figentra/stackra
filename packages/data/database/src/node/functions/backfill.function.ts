@@ -5,8 +5,10 @@
  *          job that owns a backfill calls it with `maxBatches` and queues itself again until it is `finished`.
  * Boundary: the connection string is `directDatabaseUrl()` (`DATABASE_DIRECT_URL`, past the pooling proxy, else
  *           `DATABASE_URL`), never an argument (ADR 0473 decision 3). One pooled connection, as the migration runner
- *           uses, so the timeouts hold for every batch; it reads and writes every tenant's rows of the table, as the
- *           migrating role does.
+ *           uses, so the timeouts hold for every batch. It reads and writes every tenant's rows of the table, so the
+ *           URL's role bypasses row security (a superuser or `BYPASSRLS`, as the migrating role); the runtime role,
+ *           which never does, fails on the first batch (SQLSTATE 42501: `runBackfill` runs with `row_security` off)
+ *           instead of finding no rows.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3: backfills run as queue jobs; timeouts per session); ADR 0473 (decision 3).
  */

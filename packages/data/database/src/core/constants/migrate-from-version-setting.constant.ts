@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `MIGRATE_FROM_VERSION_SETTING`, the session setting `stackra db migrate` sets in a forward-only environment
  *          to the `schema_migrations` version the run started from, which a contract step's release gate reads to tell
- *          a migration an earlier run applied from one this run applies.
+ *          a fresh database (`0`, nothing to protect) and to know it runs under the runner; the release it compares is
+ *          `MIGRATE_RELEASE_SETTING`.
  * Boundary: a literal shared by the runner (`migrate`) and the compiler (`releaseGateSql`), so the two never disagree.
  *           Unset in a rollback environment (dev, preview, test) and on every database Encore's runner or a test
  *           applies, where the gate does not hold.

@@ -1826,7 +1826,40 @@ describe(compileMigration, () => {
       ).toThrow(/not a column type/);
       expect(
         refusal((t) => t.renameColumn("note", "memo", { type: "text" }).notNull().comment("x")),
-      ).toThrow(/nullable or has a default/);
+      ).toThrow(/memo: the new name of a column rename starts nullable, with no default/);
+    });
+
+    it("refuses a rename whose new column has a default or a generation, which would hide the rows to copy", () => {
+      const refused =
+        /jobs\.memo: the new name of a column rename starts nullable, with no default/;
+      expect(
+        refusal((t) =>
+          t.renameColumn("note", "memo", { type: "text" }).nullable().default("").comment("x"),
+        ),
+      ).toThrow(refused);
+      expect(
+        refusal((t) =>
+          t.renameColumn("note", "memo", { type: "text" }).default("none").notNull().comment("x"),
+        ),
+      ).toThrow(refused);
+      expect(
+        refusal((t) =>
+          t
+            .renameColumn("note", "memo", { type: "text" })
+            .defaultSetting("app.default_memo")
+            .nullable()
+            .comment("x"),
+        ),
+      ).toThrow(refused);
+      expect(
+        refusal((t) =>
+          t
+            .renameColumn("note", "memo", { type: "text" })
+            .storedAs("upper(note)")
+            .nullable()
+            .comment("x"),
+        ),
+      ).toThrow(refused);
     });
 
     it("writes a check inline on a new table, and NOT VALID then validated on an existing one", () => {

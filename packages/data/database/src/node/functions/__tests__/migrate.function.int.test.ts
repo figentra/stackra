@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: integration test of the release gate through the real runner on real Postgres: `migrate` in a forward-only
- *          environment refuses a contract step whose release it applied in the same run, leaves the version at the
- *          release, clean, and applies the step on the next run; a fresh database takes both in one run (STA-1406).
+ *          environment refuses a contract step whose release it applies, leaves the version at that release, clean,
+ *          refuses it again when the same release is retried and when a run names no release, and applies it under the
+ *          next release (STA-1406).
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled migrations are written as gen
  *           writes them into a temporary member folder, and `DATABASE_URL` points the runner at the container.
  * Runtime: node (vitest)
@@ -93,21 +94,34 @@ const ALL = [
 ] as const;
 
 describe("migrate and the release gate", () => {
-  it("refuses a contract step in the run that applied its release, and applies it on the next run", async () => {
+  it("refuses a contract step under the release that applied the step it waits for, retried or not, and applies it under the next", async () => {
     const environment = "production";
-    expect(await migrate({ cwd: member(ALL.slice(0, 1)), environment })).toEqual({
+    expect(await migrate({ cwd: member(ALL.slice(0, 1)), environment, release: "v1" })).toEqual({
       applied: ["0001_notes_0001_create_notes"],
     });
     const next = member(ALL);
-    await expect(migrate({ cwd: next, environment })).rejects.toThrow(
-      /0003_notes_0003_drop_ref failed: .*notes\.notes drop column legacy_ref is a contract step after notes\.0002_stop_reading_ref, which this run applies/,
-    );
+    const refused =
+      /0003_notes_0003_drop_ref failed: .*notes\.notes drop column legacy_ref is a contract step after notes\.0002_stop_reading_ref, which release v2 applies/;
+    await expect(migrate({ cwd: next, environment, release: "v2" })).rejects.toThrow(refused);
     const { database } = postgres;
-    const state = await database.transaction(() =>
-      database.em().execute("select version, dirty from schema_migrations"),
-    );
-    expect(state).toEqual([{ version: "2", dirty: false }]);
-    expect(await migrate({ cwd: next, environment })).toEqual({
+    const read = (sql: string) => database.transaction(() => database.em().execute(sql));
+    expect(await read("select version, dirty from schema_migrations")).toEqual([
+      { version: "2", dirty: false },
+    ]);
+    expect(
+      await read("select version, release_id from schema_migrations_history order by version"),
+    ).toEqual([
+      { version: "1", release_id: "v1" },
+      { version: "2", release_id: "v2" },
+    ]);
+    // the same deploy retried (a CI retry, a re-run pipeline): release v1's code may still be serving
+    await expect(migrate({ cwd: next, environment, release: "v2" })).rejects.toThrow(refused);
+    // a run that names no release cannot be told from v2
+    await expect(migrate({ cwd: next, environment })).rejects.toThrow(/this run names no release/);
+    expect(await read("select version, dirty from schema_migrations")).toEqual([
+      { version: "2", dirty: false },
+    ]);
+    expect(await migrate({ cwd: next, environment, release: "v3" })).toEqual({
       applied: ["0003_notes_0003_drop_ref"],
     });
     const columns = await database.transaction(() =>

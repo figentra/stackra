@@ -137,16 +137,20 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
 - Drops and renames (STA-1406) are expand and contract steps, never raw `schema.sql`. A contract step (`t.dropColumn`,
   `t.finishRenameColumn`, `schema.finishRename`, `schema.drop`) states `{ after }`, the migration of the earlier release
   that made it safe; it compiles to `releaseGateSql` first in its transaction and becomes one of the migration's `after`
-  edges. The gate reads `schema_migrations_history` and `MIGRATE_FROM_VERSION_SETTING`, which only `migrate` sets, and
-  only outside `ROLLBACK_ENVIRONMENTS`; keep the three in step. A rename's expand (`t.renameColumn`, `schema.rename`)
-  leaves the old name working (the `trg_` sync trigger, the `security_invoker` view); never drop either outside its
-  finish step. A drop or relaxing step carries a squawk ignore with its reason (lint lines never change a checksum).
+  edges. The gate reads `schema_migrations_history` (its `release_id`), `MIGRATE_FROM_VERSION_SETTING` and
+  `MIGRATE_RELEASE_SETTING`, which only `migrate` sets, and only outside `ROLLBACK_ENVIRONMENTS`; keep them in step. It
+  compares releases, never runs, and fails closed when a run names none: a retried deploy is the same release. A
+  rename's expand (`t.renameColumn`, `schema.rename`) leaves the old name working (the `trg_` sync trigger, the
+  `security_invoker` view); never drop either outside its finish step. A renamed column's new name has no default,
+  generation or NOT NULL (`BlueprintRecord` refuses them): a filled `to` hides the rows the copy has not reached. A drop or relaxing step carries a squawk ignore with its reason (lint lines never change a checksum).
 - `t.check` is `NOT VALID` plus its own validation step on an existing table; `t.exclude` goes on a new table only
   (Postgres has no online exclusion constraint). Names: `ck_`, `ex_`, `trg_` through `constraintName`.
 - `Backfill` is the data kind a contract step waits for (ADR 0159 d3): batches by its keyset column, the cursor moved in
   the batch's transaction, the ledger `database.backfill_runs` (migration 0009, a platform table). `runBackfill` builds
   SQL from the declaration's literals and quoted keys only, and records an error's SQLSTATE, never its message. A
   migration's data gate is `schema.requireBackfill`, which reads rows, never the ledger, so a fresh database passes.
+  The gate and each batch run with `row_security` off so a role that row security would filter fails (42501) instead
+  of seeing no rows; never count or walk a table's rows under a policy where an empty result lets a drop through.
 - Raw SQL only through `sql` and the `$raw` filter, or in a subclass method with a `// raw-sql:` reason (ADR 0160).
 - A filter operator MikroORM has no typed form for (jsonb contains or path, `ltree` ancestor or descendant) is a
   function returning a parameterised fragment for `$raw` (`jsonContains`, `jsonPath`, `ancestorOf`, `descendantOf`);

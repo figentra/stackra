@@ -37,6 +37,21 @@ describe("DbMigrateCommand", () => {
     expect(audit.entries[0]).toMatchObject({ command: "db:migrate", outcome: "ok", exitCode: 0 });
   });
 
+  it("hands the runner the release a run applies (STA-1406)", async () => {
+    const runner = { migrate: vi.fn(async () => ({ applied: [] })) };
+    const result = await runCommandForTest(
+      [DbMigrateCommand],
+      ["db:migrate", "--env", "production", "--cwd", "apps/api", "--release", "v1.4.0", "--json"],
+      { audit: new MemoryCommandAuditDriver(), container: serving(runner) },
+    );
+    expect(result.exitCode).toBe(0);
+    expect(runner.migrate).toHaveBeenCalledWith({
+      cwd: "apps/api",
+      environment: "production",
+      release: "v1.4.0",
+    });
+  });
+
   it("is refused when no CommandAudit is bound", async () => {
     const runner = { migrate: vi.fn() };
     const result = await runCommandForTest([DbMigrateCommand], ["db:migrate"], {

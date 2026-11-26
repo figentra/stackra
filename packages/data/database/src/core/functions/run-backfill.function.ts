@@ -4,13 +4,17 @@
  *          in batches of the rows still `pending` past the ledger's cursor, fills each batch (`set`, or the class's
  *          `apply`) and moves the cursor in the same transaction, pauses between batches, and returns its progress.
  *          A queue job calls it with `maxBatches` and queues itself again until `finished` (ADR 0159 d3).
- * Boundary: runs on the session it is given (`backfill` opens one in node). Each batch locks its ledger row first, so
+ * Boundary: runs on the session it is given (`backfill` opens one in node). Each batch runs with `row_security` off
+ *           (transaction-local), so it reads every tenant's rows or fails: a role that row-level security would filter
+ *           (a `FORCE` table, a role neither superuser nor `BYPASSRLS`) gets SQLSTATE 42501 on its first batch, never
+ *           an empty batch reported as finished. Each batch locks its ledger row first, so
  *           two workers on one backfill take turns and never fill the same batch twice; a crash loses at most the
  *           batch in flight, which rolls back with its cursor. A failed batch records its SQLSTATE or error class in
  *           the ledger, never its message (which can quote row values), and the error is rethrown. SQL is built from
  *           the declaration's literals and quoted keys, never from input.
  * Runtime: node
- * Governing contract: ADR 0159 (decision 3: backfills run as queue jobs, batched and resumable); ADR 0334 (rule 4).
+ * Governing contract: ADR 0159 (decision 3: backfills run as queue jobs, batched and resumable); ADR 0334 (rule 4); ADR
+ *                     0239 (FORCE row security on every tenant table).
  */
 import { kindOf } from "@stackra/container";
 
@@ -120,6 +124,8 @@ export async function runBackfill(
   /** One batch in its transaction: lock the ledger row, take the next pending rows, fill them, move the cursor. */
   async function fillBatch(query: BackfillQuery): Promise<number> {
     const { pending, set, batch } = declared;
+    // raw-sql: off makes Postgres raise rather than filter, so a role row security would cut never sees "no rows left"
+    await query("select set_config('row_security', 'off', true)");
     const [row] = await query(
       `select last_key from ${BACKFILL_LEDGER} where key = ${key} for update`,
     );

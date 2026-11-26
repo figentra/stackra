@@ -1040,7 +1040,8 @@ export class BlueprintRecord {
 
   /**
    * Refuses two steps of this blueprint on one column that cannot both run: a drop of a column the blueprint also adds,
-   * changes or renames, or a finished rename of one it also adds, changes or drops.
+   * changes or renames, or a finished rename of one it also adds, changes or drops; and a rename's new column with a
+   * default, a generation or NOT NULL, which would hide the rows the copy has not reached.
    *
    * @throws TypeError naming the column.
    */
@@ -1060,11 +1061,25 @@ export class BlueprintRecord {
           throw new TypeError(
             `${this.table}.${column}: its rename is finished by this blueprint, so it is not also added, changed, renamed or dropped`,
           );
-    for (const { from } of this.renames)
+    for (const { from, to } of this.renames) {
       if (added.has(from))
         throw new TypeError(
           `${this.table}.${from} is added by this blueprint, so it is defined, not renamed`,
         );
+      // A default fills `to` in every existing row and every insert of the release that writes `from`, so the sync
+      // trigger (which copies into a null `to`) and the finish gate (`to` null, `from` set) would both see nothing to
+      // copy, and the finish would drop `from` with its values.
+      const column = this.columns.find((candidate) => candidate.name === to);
+      if (
+        column !== undefined &&
+        (column.defaultSql !== undefined ||
+          column.generated !== undefined ||
+          column.nullability === "not null")
+      )
+        throw new TypeError(
+          `${this.table}.${to}: the new name of a column rename starts nullable, with no default, so the sync trigger and the backfill copy ${from} into every row; add the default or NOT NULL with t.change after t.finishRenameColumn`,
+        );
+    }
   }
 
   /** The release and data gates of this blueprint's contract steps, first in its transaction. */

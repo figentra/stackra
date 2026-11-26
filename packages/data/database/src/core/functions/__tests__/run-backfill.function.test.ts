@@ -4,7 +4,8 @@
  *          `database.0009_create_backfill_runs`: a `set` backfill fills every pending row in keyset batches and records
  *          its progress; `maxBatches` hands back unfinished and the next run resumes at the cursor; rows written past
  *          the cursor are reached by a later run and `restart` walks from the first row again; an `apply` backfill gets
- *          the batch's keys and predicate; a failed batch rolls back with its cursor and records only its SQLSTATE; the
+ *          the batch's keys and predicate; a failed batch rolls back with its cursor and records only its SQLSTATE; a
+ *          role that row-level security would filter fails on its first batch instead of finishing with no rows; the
  *          pause runs between batches; a class of another kind, or one with neither `set` nor `apply`, is refused
  *          (STA-1406).
  * Boundary: test only; an in-memory PGlite stands in for the direct connection `backfill` opens in node.
@@ -183,6 +184,40 @@ describe(runBackfill, () => {
     expect(
       (await pg.query("select id from shop.orders where total is null order by id")).rows,
     ).toEqual([{ id: "ord_3" }, { id: "ord_4" }, { id: "ord_5" }]);
+  });
+
+  it("fails on a table row security would filter for its role, never finishing with the rows it cannot see", async () => {
+    const pg = await database();
+    // the tables' owner, as on a managed Postgres: neither superuser nor BYPASSRLS, and FORCE binds it too
+    await pg.exec(`
+      create role owner_role nologin;
+      grant usage on schema shop, database to owner_role;
+      grant select, insert, update on database.backfill_runs to owner_role;
+      alter table shop.orders owner to owner_role;
+      alter table shop.orders enable row level security;
+      alter table shop.orders force row level security;
+      create policy pol_orders_tenant on shop.orders using (current_setting('app.tenant_id', true) = 'acme');
+      set role owner_role;
+    `);
+    // with app.tenant_id unset the policy shows no row: a filtered walk would find nothing and call itself finished
+    await expect(
+      runBackfill(FillTotalsBackfill, sessionOf(pg), { sleep: noSleep }),
+    ).rejects.toMatchObject({
+      code: "42501",
+    });
+    expect(await ledgerOf(pg, "shop.fill_totals")).toEqual({
+      last_key: null,
+      rows_done: 0,
+      batches: 0,
+      finished: false,
+      last_error: "42501",
+    });
+    await pg.exec("reset role");
+    expect(
+      await pg.query("select count(*)::int as n from shop.orders where total is null"),
+    ).toMatchObject({
+      rows: [{ n: 5 }],
+    });
   });
 
   it("stops before the next batch once its signal aborts", async () => {

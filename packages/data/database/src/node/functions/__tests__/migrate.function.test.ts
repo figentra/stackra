@@ -88,10 +88,10 @@ describe("migrate", () => {
     reset([file(1, "select 1"), file(2, "select 2", { timeout: "30min" })], 1);
     expect(await run()).toEqual({ applied: ["0002_orders_step"] });
     const sql = fake.executed.map(([text]) => text);
-    expect(sql[0]).toContain("values (1, '0001_orders_step', 'sum1')");
+    expect(sql[0]).toContain("values (1, '0001_orders_step', 'sum1', null)");
     expect(sql).toContain("set statement_timeout = '30min'");
     expect(sql).toContain("set statement_timeout = '5min'");
-    expect(sql.at(-1)).toContain("values (2, '0002_orders_step', 'sum2')");
+    expect(sql.at(-1)).toContain("values (2, '0002_orders_step', 'sum2', null)");
   });
 
   it("drops the invalid index a failed concurrent build left and puts the version back clean", async () => {
@@ -126,5 +126,35 @@ describe("migrate", () => {
     reset([file(1, "select 1")]);
     await run();
     expect(fake.executed.some(([sql]) => sql.includes("stackra.migrate_from_version"))).toBe(false);
+    expect(fake.executed.some(([sql]) => sql.includes("stackra.migrate_release"))).toBe(false);
+  });
+
+  it("sets the release a run applies before any file and records it on each applied file (STA-1406)", async () => {
+    reset([file(1, "select 1"), file(2, "select 2")], 1);
+    fake.history = [{ version: 1, name: "0001_orders_step", checksum: "sum1" }];
+    await migrate({ cwd: ".", environment: "production", release: "v1.4.0" });
+    const sql = fake.executed.map(([statement]) => statement);
+    const gate = sql.indexOf("select set_config('stackra.migrate_release', 'v1.4.0', false)");
+    expect(gate).toBeGreaterThanOrEqual(0);
+    expect(gate).toBeLessThan(sql.indexOf("select 2"));
+    expect(sql.at(-1)).toContain(
+      "insert into schema_migrations_history (version, name, checksum, release_id) values (2, '0002_orders_step', 'sum2', 'v1.4.0')",
+    );
+  });
+
+  it("reads the release from STACKRA_RELEASE when none is passed (STA-1406)", async () => {
+    reset([file(1, "select 1")]);
+    await migrate({ cwd: ".", environment: "production" }, { STACKRA_RELEASE: "2026.11.26-3" });
+    expect(fake.executed.map(([sql]) => sql)).toContain(
+      "select set_config('stackra.migrate_release', '2026.11.26-3', false)",
+    );
+  });
+
+  it("refuses a release that is not a version, tag or commit, before connecting (STA-1406)", async () => {
+    reset([file(1, "select 1")]);
+    await expect(
+      migrate({ cwd: ".", environment: "production", release: "v1'; drop table x" }),
+    ).rejects.toThrow(/is not a version, tag or commit/);
+    expect(fake.executed).toEqual([]);
   });
 });

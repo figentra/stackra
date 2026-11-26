@@ -67,6 +67,12 @@ contract step's data gate.
 - **P-010**: a backfill run to the end fills every pending row; a `maxBatches` run hands back and the next one resumes;
   a failed batch leaves the cursor and records the SQLSTATE — Validates: AC-009
 - **P-011**: `requireBackfill` refuses while a pending row exists and passes after — Validates: AC-010
+- **P-012**: with `after` applied under release v2, a run of v2 (first or retried) and a run naming no release are
+  refused and leave the version clean; a run of v3 applies the step — Validates: AC-002
+- **P-013**: as an owner role on a `FORCE` table with no tenant set, the data gate is refused naming the role and the
+  old column keeps its values; a backfill fails with 42501, records it and is not finished — Validates: AC-012
+- **P-014**: a rename whose new column has a default, a setting default, a generation or NOT NULL does not compile —
+  Validates: AC-013
 
 ## Architecture overview
 
@@ -86,7 +92,8 @@ contract step's data gate.
 ## Components and responsibilities
 
 - `releaseGateSql`, `pendingRowsGateSql`, `renameSyncSql`, `assertColumnType`: pure SQL builders and checks.
-- `MIGRATION_ID_PATTERN`, `MIGRATE_FROM_VERSION_SETTING`, `ROLLBACK_ENVIRONMENTS`, `BACKFILL_LEDGER`: shared literals,
+- `MIGRATION_ID_PATTERN`, `MIGRATE_FROM_VERSION_SETTING`, `MIGRATE_RELEASE_SETTING`, `ROLLBACK_ENVIRONMENTS`,
+  `BACKFILL_LEDGER`: shared literals,
   so the compiler, the runner and the kind never disagree.
 - `BackfillBase` and `Backfill`: the kind; `runBackfill`: batches, cursor, pause, progress, error code.
 - `CreateBackfillRunsMigration` (`database.0009_create_backfill_runs`): the ledger.
@@ -103,6 +110,7 @@ packages/data/database/
   src/core/bases/migration.base.ts
   src/core/constants/backfill-ledger.constant.ts
   src/core/constants/migrate-from-version-setting.constant.ts
+  src/core/constants/migrate-release-setting.constant.ts
   src/core/constants/migration-id-pattern.constant.ts
   src/core/functions/assert-column-type.function.ts
   src/core/functions/compile-migration.function.ts
@@ -133,17 +141,21 @@ packages/data/database/
   src/core/types/schema-builder.type.ts
   src/core/index.ts
   src/core/__tests__/index.test.ts
+  src/node/commands/db-migrate.command.ts
+  src/node/commands/__tests__/db-migrate.command.test.ts
   src/node/constants/rollback-environments.constant.ts
   src/node/database/migrations/0009-create-backfill-runs.migration.ts
   src/node/database/migrations/__tests__/0009-create-backfill-runs.migration.test.ts
   src/node/functions/backfill.function.ts
   src/node/functions/migrate.function.ts
+  src/node/functions/open-migration-session.function.ts
   src/node/functions/rollback.function.ts
   src/node/functions/__tests__/migrate.function.test.ts
   src/node/functions/__tests__/migrate.function.int.test.ts
   src/node/functions/__tests__/backfill.function.int.test.ts
   src/node/index.ts
   src/node/__tests__/index.test.ts
+  src/node/services/database-runner.service.ts
 packages/developer/gen/src/core/constants/kind-files.constant.ts
 packages/developer/gen/src/node/constants/kind-bases.constant.ts
 packages/developer/coding-standard/src/core/constants/kind-bases.constant.ts
