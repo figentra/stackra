@@ -120,6 +120,8 @@ type LoginRules = {
   readonly allowRegister: boolean;
   readonly allowExternalIdp: boolean;
   readonly forceMfa: boolean;
+  /** ZITADEL exempts users who sign in through an external provider from `forceMfa` while this is on. */
+  readonly forceMfaLocalOnly: boolean;
   readonly passwordlessType: string;
   readonly hidePasswordReset: boolean;
   readonly ignoreUnknownUsernames: boolean;
@@ -139,7 +141,6 @@ const KEPT_LOGIN_POLICY_FIELDS: readonly string[] = [
   "allowDomainDiscovery",
   "disableLoginWithEmail",
   "disableLoginWithPhone",
-  "forceMfaLocalOnly",
 ];
 
 /** The strings of `value` when it is a list, else none. */
@@ -171,6 +172,8 @@ function rulesOf(policy: LoginPolicy): LoginRules {
     allowRegister: policy.allowRegister,
     allowExternalIdp: policy.allowExternalIdp,
     forceMfa: policy.forceMfa,
+    // A forced second factor covers everyone, including users who sign in through an external provider.
+    forceMfaLocalOnly: false,
     passwordlessType: policy.allowPasswordless ? PASSWORDLESS_ALLOWED : PASSWORDLESS_NOT_ALLOWED,
     hidePasswordReset: policy.hidePasswordReset,
     ignoreUnknownUsernames: policy.ignoreUnknownUsernames,
@@ -191,12 +194,15 @@ function widenedRules(
   const passwordless =
     target.passwordlessType === PASSWORDLESS_ALLOWED ||
     answered?.["passwordlessType"] === PASSWORDLESS_ALLOWED;
+  const forceMfa = target.forceMfa && on("forceMfa");
   return {
     ...target,
     allowUsernamePassword: target.allowUsernamePassword || on("allowUsernamePassword"),
     allowExternalIdp: target.allowExternalIdp || on("allowExternalIdp"),
     passwordlessType: passwordless ? PASSWORDLESS_ALLOWED : PASSWORDLESS_NOT_ALLOWED,
-    forceMfa: target.forceMfa && on("forceMfa"),
+    forceMfa,
+    // A second factor forced on local sign-ins only reaches external sign-ins with the tightening, not before.
+    forceMfaLocalOnly: forceMfa && on("forceMfaLocalOnly"),
   };
 }
 
@@ -726,7 +732,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
   /**
    * See `IdpAdmin.getLoginPolicy`: the policy the organisation applies (its own or the inherited default; ZITADEL leaves
    * a false flag out of the answer), then the providers and second factors it offers. A factor type this package does
-   * not name is left out.
+   * not name is left out, and a second factor forced on local sign-ins only (`forceMfaLocalOnly`) reads as not forced.
    */
   async getLoginPolicy(organizationId: string): Promise<LoginPolicy> {
     const { body } = await this.call({
@@ -740,7 +746,8 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       allowUsernamePassword: policy["allowUsernamePassword"] === true,
       allowRegister: policy["allowRegister"] === true,
       allowExternalIdp: policy["allowExternalIdp"] === true,
-      forceMfa: policy["forceMfa"] === true,
+      // A second factor forced on local sign-ins only leaves external sign-ins without one: not forced for everyone.
+      forceMfa: policy["forceMfa"] === true && policy["forceMfaLocalOnly"] !== true,
       allowPasswordless: policy["passwordlessType"] === PASSWORDLESS_ALLOWED,
       hidePasswordReset: policy["hidePasswordReset"] === true,
       ignoreUnknownUsernames: policy["ignoreUnknownUsernames"] === true,
@@ -751,17 +758,20 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     };
   }
 
-  /** The provider ids the organisation's login policy offers now. */
+  /** The provider ids the organisation's login policy offers now, every page of them. */
   private async providersOf(organizationId: string): Promise<string[]> {
-    // shortcut: one page of PAGE linked providers; page through when an organisation can link more.
-    const { body } = await this.call({
-      method: "POST",
-      path: "/management/v1/policies/login/idps/_search",
-      organizationId,
-      json: { query: { offset: 0, limit: PAGE } },
-    });
-    const rows = (body as { result?: readonly { idpId?: unknown }[] }).result ?? [];
-    return rows.map((row) => row.idpId).filter((id): id is string => typeof id === "string");
+    const linked: string[] = [];
+    for (let offset = 0; ; offset += PAGE) {
+      const { body } = await this.call({
+        method: "POST",
+        path: "/management/v1/policies/login/idps/_search",
+        organizationId,
+        json: { query: { offset, limit: PAGE } },
+      });
+      const rows = (body as { result?: readonly { idpId?: unknown }[] }).result ?? [];
+      for (const row of rows) if (typeof row.idpId === "string") linked.push(row.idpId);
+      if (rows.length < PAGE) return linked;
+    }
   }
 
   /** The `SECOND_FACTOR_TYPE_*` values the organisation's login policy offers now. */

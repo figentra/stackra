@@ -25,3 +25,8 @@ only for that exact node, never a descendant; both login policy calls refuse wit
 the call's own scope, so a grant held at a branch can never change the whole tenant's sign-in rules. The set call
 records its audit (the policy before and the one attempted) before the provider writes, so a refused write is still
 recorded with what it tried.
+
+A forced second factor covers everyone: `ZitadelIdpAdminDriver` writes ZITADEL's `forceMfaLocalOnly` as `false` with
+the rules (it was carried over, so a policy forced on local sign-ins only left external-provider users without a second
+factor), keeps it until the added factors are offered, and `getLoginPolicy` reads a policy forced on local sign-ins
+only as not forced. The driver also reads every page of the providers a login policy links, not the first 100.

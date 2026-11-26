@@ -306,6 +306,7 @@ describe(ZitadelIdpAdminDriver, () => {
       allowRegister: false,
       allowExternalIdp: true,
       forceMfa: false,
+      forceMfaLocalOnly: false,
       passwordlessType: "PASSWORDLESS_TYPE_NOT_ALLOWED",
       hidePasswordReset: false,
       ignoreUnknownUsernames: true,
@@ -350,6 +351,73 @@ describe(ZitadelIdpAdminDriver, () => {
       ignoreUnknownUsernames: true,
     });
     expect(sent.map((request) => request.method)).toEqual(["GET"]);
+  });
+
+  it("forces a second factor on external sign-ins too when the policy in force forces it on local ones only", async () => {
+    // ZITADEL's forceMfaLocalOnly exempts users who sign in through an external provider from forceMfa.
+    const { idp, sent } = driverWith([
+      [
+        200,
+        {
+          policy: {
+            allowUsernamePassword: true,
+            forceMfa: true,
+            forceMfaLocalOnly: true,
+            ignoreUnknownUsernames: true,
+            passwordCheckLifetime: "240h0m0s",
+          },
+        },
+      ],
+      [200, {}],
+    ]);
+    await idp.setLoginPolicy("org_1", {
+      allowUsernamePassword: true,
+      allowRegister: false,
+      allowExternalIdp: false,
+      forceMfa: true,
+      allowPasswordless: false,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: true,
+    });
+    expect(sent.map((request) => request.method)).toEqual(["GET", "PUT"]);
+    expect(JSON.parse(sent[1]?.body ?? "")).toMatchObject({
+      passwordCheckLifetime: "240h0m0s",
+      forceMfa: true,
+      forceMfaLocalOnly: false,
+    });
+  });
+
+  it("keeps a second factor forced on local sign-ins only until the added factors are offered, then forces it on all", async () => {
+    const { idp, sent } = driverWith([
+      [200, { policy: { allowUsernamePassword: true, forceMfa: true, forceMfaLocalOnly: true } }],
+      [200, { result: ["SECOND_FACTOR_TYPE_OTP"] }],
+      [200, {}],
+      [200, {}],
+    ]);
+    await idp.setLoginPolicy("org_1", {
+      allowUsernamePassword: true,
+      allowRegister: false,
+      allowExternalIdp: false,
+      forceMfa: true,
+      allowPasswordless: false,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: false,
+      secondFactors: [IdpSecondFactor.Totp, IdpSecondFactor.U2f],
+    });
+    expect(
+      sent.map(
+        (request) => `${request.method} ${request.url.replace("https://id.acme.example", "")}`,
+      ),
+    ).toEqual([
+      "GET /management/v1/policies/login",
+      "POST /management/v1/policies/login/second_factors/_search",
+      "POST /management/v1/policies/login/second_factors",
+      "PUT /management/v1/policies/login",
+    ]);
+    expect(JSON.parse(sent[3]?.body ?? "")).toMatchObject({
+      forceMfa: true,
+      forceMfaLocalOnly: false,
+    });
   });
 
   it("updates an organisation's own policy that ZITADEL answers without isDefault", async () => {
@@ -673,6 +741,32 @@ describe(ZitadelIdpAdminDriver, () => {
       "POST /management/v1/policies/login/idps/_search",
     ]);
     expect(sent.every((request) => request.headers["x-zitadel-orgid"] === "org_1")).toBe(true);
+  });
+
+  it("reads a second factor forced on local sign-ins only as not forced", async () => {
+    const { idp } = driverWith([
+      [200, { policy: { forceMfa: true, forceMfaLocalOnly: true } }],
+      [200, {}],
+      [200, {}],
+    ]);
+    expect(await idp.getLoginPolicy("org_1")).toMatchObject({ forceMfa: false });
+  });
+
+  it("reads every page of the providers the login policy offers", async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({ idpId: `idp_${index}` }));
+    const { idp, sent } = driverWith([
+      [200, { policy: {} }],
+      [200, {}],
+      [200, { result: firstPage }],
+      [200, { result: [{ idpId: "idp_nafath" }] }],
+    ]);
+    const policy = await idp.getLoginPolicy("org_1");
+    expect(policy.externalProviderIds).toHaveLength(101);
+    expect(policy.externalProviderIds?.at(-1)).toBe("idp_nafath");
+    expect(sent.slice(2).map((request) => JSON.parse(request.body ?? "").query)).toEqual([
+      { offset: 0, limit: 100 },
+      { offset: 100, limit: 100 },
+    ]);
   });
 
   it("reads a policy answered without flags or lists as all off and empty", async () => {

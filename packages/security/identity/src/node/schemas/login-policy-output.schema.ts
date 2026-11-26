@@ -29,7 +29,7 @@ export class LoginPolicyOutput extends Schema {
   /** Users may sign in through an external identity provider. */
   allowExternalIdp!: boolean;
 
-  /** Every user must set up and use a second factor. */
+  /** Every user must set up and use a second factor, including those who sign in through an external provider. */
   forceMfa!: boolean;
 
   /** Users may sign in with a passkey alone. */

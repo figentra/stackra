@@ -353,6 +353,8 @@ ADR 0410 decision 4). Core ships no screen; a template's security settings call 
 - Setting is L3 with a fresh `aal2` step-up; grant `identity.login_policy.set` at the tenant's root to its owner and
   administrator roles. The audit (the policy before and the one attempted) is recorded before the provider writes, so a
   call refused part way still shows what it tried; it carries the rules and provider-side ids only, never a person.
+- A forced second factor covers everyone, including users who sign in through an external provider: the ZITADEL
+  driver writes `forceMfaLocalOnly: false` with it, and reads a policy forced on local sign-ins only as not forced.
 - `ZitadelIdpAdminDriver` writes the rules, providers and second factors as separate calls in a sign-in-safe order:
   additions first, then a forced second factor or a method turned off, removals last. A write that fails part way
   (`IdpAdminUnavailableError`, retryable) leaves a looser policy, never a lock-out.
