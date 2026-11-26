@@ -150,6 +150,7 @@ provider JWT>`, **When** `serveGuardedCall` runs it, **Then** no credential is v
 - **SC-004**: the `webhook-route` golden fixture (`golden.test.ts`) proves AC-001 end to end through gen — verified
   by: unit
 - **SC-005**: the `@stackra/gen` and `@stackra/app` tests, typecheck, oxlint and oxfmt pass — verified by: manual
+- **SC-006** (CTO condition at approval, 26 Nov): every `/webhooks/*` raw handler verifies the provider signature, and the timestamp or replay window where the provider has one, on the raw body before any parse or side effect, and refuses otherwise with a coded 401. A test plants an unsigned request and a request with a bad signature. `api.raw` is allowed only under `/webhooks/*`, enforced by the gate, never for other paths — verified by: unit and golden tests
 
 ## Compatibility and migration
 
@@ -184,4 +185,5 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-1955 spec, batch 21) · written after the fact from the diff of PR #1146
 - 2026-11-26 · Draft → Clarified · Claude (STA-1955 spec, batch 21) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-1955 spec, batch 21) · plan.md
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 · Planned → Tasked · Claude (STA-1955 spec, batch 21) · tasks.md; the tasks marked done are already on the branch (PR); Implementing waits for the approver's Planned approval (ADR 0502)
