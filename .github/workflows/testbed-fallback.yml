@@ -41,6 +41,8 @@ jobs:
         with:
           persist-credentials: false
           submodules: false
+          # The verify preset's changeset check diffs against the merge base with origin/main (STA-2604).
+          fetch-depth: 0
 
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0

@@ -1,7 +1,7 @@
 # Stackra file contract:
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
-#          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
+#          install, Linear key check, changeset check (STA-2604), format, lint, typecheck, build, service gen (`stackra gen`, so each service's
 #          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
 #          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
 #          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
@@ -125,6 +125,13 @@ jobs:
           case "$PR_BRANCH" in renovate/*|changeset-release/*) exit 0 ;; esac
           # The preset builds to dist for its tarball; here, before any build, Node reads its src (ADR 0025).
           NODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
+
+      # STA-2604 (ADR 0013): every changed published member needs a changeset naming it, or an empty changeset that says
+      # why no release is needed. `pnpm verify` runs the same check against the merge base with origin/main; here a PR
+      # checks out its merge into main, so HEAD~1 is main. The script skips the version branch (GITHUB_HEAD_REF).
+      - name: Changeset check
+        if: github.event_name == 'pull_request'
+        run: node tools/scripts/changeset-check.mjs --base HEAD~1
 
       # oxfmt on every supported file, then shfmt on *.sh (CONTRIBUTING.md, "Formatting").
       - name: Format check
