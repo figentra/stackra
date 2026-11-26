@@ -113,8 +113,9 @@ that the safety pull requests rebase onto.
 - **AC-008**: WHEN gen runs for a service that runs `@stackra/app` THE generator SHALL write
   `stackra-encore/<member>/environment.ts` handing `appMeta().environment` to `providePlatformEnvironment`, and every
   generated Encore file SHALL import it first.
-- **AC-009**: IF a runway `config` block sets a field that an installed manifest maps to a safety-critical variable THEN
-  THE validator SHALL report it with the file and the path, in `runway validate` and `stackra validate --repository`.
+- **AC-009**: IF a runway `config` block sets a runtime-only field THEN THE validator SHALL report it with the file
+  and the path, in `runway validate` and `stackra validate --repository`; a runtime-only field is one an installed
+  manifest maps to a safety-critical variable.
 - **AC-010**: THE `isDeployedEnvironment` SHALL be true for `preview`, `staging` and `production` only.
 
 ## Status history
