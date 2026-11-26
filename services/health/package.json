@@ -2,12 +2,12 @@
   "name": "@figentra/service-health",
   "version": "0.0.1",
   "private": true,
-  "description": "Health service.",
+  "description": "The reference health service: /healthz liveness and /readyz readiness over the container's health indicators.",
   "keywords": [
     "health",
     "health-check",
     "liveness",
-    "module",
+    "readiness",
     "stackra"
   ],
   "homepage": "https://github.com/figentra/stackra/tree/main/services/health#readme",
@@ -29,6 +29,25 @@
       "./src/*.tsx",
       "./src/*/index.ts"
     ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts",
+      "./src/config/*.tsx",
+      "./src/config/*/index.ts"
+    ],
+    "#contracts/*": [
+      "./src/contracts/*",
+      "./src/contracts/*.ts",
+      "./src/contracts/*.tsx",
+      "./src/contracts/*/index.ts"
+    ],
+    "#modules/*": [
+      "./src/modules/*",
+      "./src/modules/*.ts",
+      "./src/modules/*.tsx",
+      "./src/modules/*/index.ts"
+    ],
+    "#assets/*": "./assets/*",
     "#stackra/*": [
       "./.stackra/gen/*",
       "./.stackra/gen/*.ts",
@@ -36,30 +55,52 @@
       "./.stackra/gen/*/index.ts"
     ]
   },
+  "exports": {
+    "./assets/*": "./assets/*"
+  },
   "scripts": {
-    "dev": "node --watch src/main.ts",
-    "start": "node src/main.ts",
-    "build": "tsdown",
-    "gen": "stackra gen",
-    "typecheck": "tsc --noEmit",
-    "lint": "oxlint .",
+    "dev": "stackra dev",
+    "build": "stackra build",
+    "typecheck": "stackra typecheck",
+    "lint": "stackra lint",
+    "test": "stackra test",
+    "test:int": "stackra test --tier int",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "clean": "rm -rf dist .turbo"
+    "clean": "rm -rf dist coverage .turbo .stackra"
   },
   "dependencies": {
+    "@stackra/actions": "workspace:*",
+    "@stackra/app": "workspace:*",
+    "@stackra/console": "workspace:*",
     "@stackra/container": "workspace:*",
-    "encore.dev": "1.58.8"
+    "@stackra/contracts": "workspace:*",
+    "@stackra/database": "workspace:*",
+    "@stackra/events": "workspace:*",
+    "@stackra/iam": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/validation": "workspace:*",
+    "encore.dev": "1.58.8",
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "@electric-sql/pglite-pgvector": "catalog:",
+    "@faker-js/faker": "catalog:",
+    "@mikro-orm/pglite": "catalog:",
     "@stackra/cli": "workspace:*",
+    "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@testcontainers/postgresql": "catalog:",
     "@types/node": "catalog:",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "testcontainers": "catalog:",
     "tsdown": "catalog:build",
-    "typescript": "catalog:build"
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
   },
   "engines": {
     "node": ">=24.0.0"
@@ -70,7 +111,6 @@
     "runtimes": [
       "node"
     ],
-    "summary": "The health service, today an entry and an empty HealthModule named in stackra.module; work here when adding health-check endpoints.",
-    "module": "./src/health.module.ts"
+    "summary": "The reference health service: GET /healthz (liveness) and GET /readyz (readiness over the database, migrations and actions-pipeline indicators); read it for how a service exposes probes."
   }
 }
