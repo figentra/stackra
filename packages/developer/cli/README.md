@@ -7,7 +7,7 @@ Purpose: the package's reader guide: the `stackra` binary, its commands (gen's t
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0294; ADR 0260; ADR 0349 (member names); ADR 0453 (add,
-                    publish).
+                    publish); STA-2872 (the command list).
 -->
 
 The `stackra` binary (ADR 0083, ADR 0282 decision 3). It runs gen, runs each member's tools against the configs gen
@@ -133,6 +133,23 @@ packages' `./<surface>` entries from source with the descriptor (`STACKRA_DEV_SU
 needed. `stackra dev --mobile <app> --os <checkout> --device <udid>` prepares `.stackra/mobile/<app>` with Runway's
 `prepareMobileDev`, then `expo prebuild` and a Release `expo run:ios` with no bundler; `stackra dev --product` runs
 them all.
+
+## The command list
+
+`stackra` alone (or `stackra list`) groups the commands under seven headings, in the order a developer meets them:
+Create, Develop, Inspect, Database, Quality, Deploy and Repository (`COMMAND_GROUPS`; each command names its `group`).
+The list is kept short for the workspace it runs in (STA-2872):
+
+- **Repository** holds the core repository's own checks (structure, cycles, duplication, doc-standard, the testbed,
+  the consumer gate, …). They are listed only in the workspace that builds `@stackra/cli`.
+- **Fits** (`COMMAND_FITS`): a command that acts on something only some workspaces have is listed only there. Smoke
+  needs a product's surfaces or mobile app, preview serve web surfaces, mobile onboard a mobile app, seed-pack a
+  `seed-packs/` folder, and the search, settings, audit and operator commands the package whose data they touch.
+- **Hidden**: the check presets (`validate`, `verify`, `code:check`, `code:fix`; `check` names them) and what a script,
+  hook or agent client runs (`mcp`, `mcp exec`, `mcp sync`, `agents sync`, `agents check`).
+
+Every left-out command still runs by name, and `stackra list --all` lists them all. A new app from `stackra create`
+lists 25 commands; a test keeps it at 25 or fewer, and every new command must name a group.
 
 ## A product's CI: build and deploy
 

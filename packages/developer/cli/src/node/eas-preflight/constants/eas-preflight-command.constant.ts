@@ -28,6 +28,7 @@ const USAGE =
 /** The `stackra eas-preflight` command. */
 export const EAS_PREFLIGHT_COMMAND: CliCommand = {
   name: "eas-preflight",
+  group: "Repository",
   summary:
     "Check a local EAS build may start (clean tree, deployed sha, free disk), or record its build id",
   usage:

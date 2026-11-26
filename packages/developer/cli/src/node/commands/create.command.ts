@@ -43,6 +43,7 @@ const STARTER = "@stackra/starter";
 /** Creates a new Stackra app. */
 export class CreateCommand extends Command({
   name: "create",
+  group: "Create",
   description:
     "Create a new Stackra app: a web console and a service, generated, installed and tested",
   bin: true,

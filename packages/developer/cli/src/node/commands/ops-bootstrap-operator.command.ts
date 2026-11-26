@@ -40,6 +40,7 @@ const SAID: Readonly<Record<string, (role: string, userId: string) => string>> =
 /** Gives an environment's first operator a role at the platform node. */
 export class OpsBootstrapOperatorCommand extends Command({
   name: "ops:bootstrap-operator",
+  group: "Deploy",
   description: "Give an environment's first operator a role at the platform node, once (audited)",
   bin: true,
 }) {

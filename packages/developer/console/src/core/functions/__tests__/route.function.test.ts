@@ -13,6 +13,7 @@
  */
 // @covers sta-1966:FR-012 sta-1966:FR-013 sta-1966:FR-014 sta-1966:FR-015 sta-1966:FR-016
 // @covers sta-1966:AC-002 sta-1966:AC-003
+// @covers sta-2872:FR-003
 import { Str } from "@stackra/validation";
 
 import { Command } from "#core/bases/command.base";
@@ -67,6 +68,22 @@ describe("route", () => {
     const intent = route(argv, registry);
     expect(intent.kind).toBe("help");
     expect(intent.kind === "help" && intent.entry.structure.name).toBe(name);
+  });
+
+  it("lists for the built-in `list`, every command with `--all`", () => {
+    expect(route(["list"], registry)).toMatchObject({ kind: "list", all: false });
+    expect(route(["list", "--all"], registry)).toMatchObject({ kind: "list", all: true });
+    expect(route(["list", "--all", "--json"], registry)).toMatchObject({
+      kind: "list",
+      all: true,
+      globals: { json: true },
+    });
+    expect(route([], registry)).toMatchObject({ kind: "list", all: false });
+  });
+
+  it("answers a usage problem for anything else after `list`", () => {
+    expect(route(["list", "status"], registry).kind).toBe("usage");
+    expect(route(["list", "--every"], registry).kind).toBe("usage");
   });
 
   it("joins spaced names into the longest registered name", () => {

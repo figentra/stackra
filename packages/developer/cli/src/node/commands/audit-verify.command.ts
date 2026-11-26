@@ -27,6 +27,7 @@ const counted = (count: number, noun: string) => `${count} ${noun}${count === 1 
 /** Checks an audit proof bundle offline. */
 export class AuditVerifyCommand extends Command({
   name: "audit:verify",
+  group: "Inspect",
   description: "Check an audit proof bundle offline: hash chain and signed checkpoints",
   bin: true,
 }) {

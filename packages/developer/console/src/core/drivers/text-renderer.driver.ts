@@ -15,6 +15,7 @@ import { Driver } from "@stackra/container";
 import { Renderer } from "#contracts/ports/renderer.port";
 import type { ChecklistSpec } from "#contracts/types/checklist-spec.type";
 import type { ChecklistSummary } from "#contracts/types/checklist-summary.type";
+import type { CommandListOptions } from "#contracts/types/command-list-options.type";
 import type { CommandStructure } from "#contracts/types/command-structure.type";
 import type { LiveHandle } from "#contracts/types/live-handle.type";
 import type { LiveView } from "#contracts/types/live-view.type";
@@ -185,9 +186,13 @@ export class TextRendererDriver extends Driver(Renderer) {
     for (const line of renderHelp(structure, binary, this.painter)) this.out(line);
   }
 
-  /** Writes the visible commands under their headings. */
-  commandList(structures: readonly CommandStructure[], binary: string): void {
-    for (const line of renderList(structures, binary, this.painter)) this.out(line);
+  /** Writes the visible commands under their headings, drawn as `options` says. */
+  commandList(
+    structures: readonly CommandStructure[],
+    binary: string,
+    options: CommandListOptions = {},
+  ): void {
+    for (const line of renderList(structures, binary, this.painter, options)) this.out(line);
   }
 
   /** Runs `work` and writes a dotted DONE or FAIL line with its timing; rethrows a failure. */

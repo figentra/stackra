@@ -38,7 +38,7 @@
     {
       "name": "agents:check",
       "aliases": [],
-      "hidden": false,
+      "hidden": true,
       "audit": false,
       "bin": true,
       "class": "AgentsCheckCommand",
@@ -48,7 +48,7 @@
     {
       "name": "agents:sync",
       "aliases": [],
-      "hidden": false,
+      "hidden": true,
       "audit": false,
       "bin": true,
       "class": "AgentsSyncCommand",
@@ -238,7 +238,7 @@
     {
       "name": "mcp:sync",
       "aliases": [],
-      "hidden": false,
+      "hidden": true,
       "audit": false,
       "bin": true,
       "class": "McpSyncCommand",

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `legacyCommand(command, recurse, inherit)`, a `CliCommand` that still parses its own line, as a `@stackra/console`
  *          passthrough command: the name has `:` for spaces (`mcp sync` is `mcp:sync`; the kernel joins spaced words, so
- *          `stackra mcp sync` still works), the summary is its description and the usage its one example. Its `handle`
+ *          `stackra mcp sync` still works), the summary is its description, the usage its one example, and its group
+ *          and hidden flag are the list's. Its `handle`
  *          does what `runCli` did: split the raw tokens at `--`, `parseArgs` strictly, run it with the run's streams and
  *          return its exit code, a usage error becoming the console's `UsageError` (exit 2).
  * Boundary: migration only (ADR 0500 decision 7); a command leaves it by becoming a native console command class.
@@ -35,6 +36,8 @@ export function legacyCommand(
   return class LegacyCommand extends Command({
     name: command.name.replaceAll(" ", ":"),
     description: command.summary,
+    ...(command.group === undefined ? {} : { group: command.group }),
+    ...(command.hidden === true ? { hidden: true } : {}),
     examples: [command.usage],
     passthrough: true,
   }) {

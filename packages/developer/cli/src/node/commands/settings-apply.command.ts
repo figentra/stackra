@@ -25,6 +25,7 @@ import { settingsScope } from "#node/functions/settings-scope.function";
 /** Applies a settings pack to a sandbox scope node. */
 export class SettingsApplyCommand extends Command({
   name: "settings:apply",
+  group: "Database",
   description: "Apply a settings pack to a sandbox scope node, recording each change as a revision",
   bin: true,
 }) {

@@ -1,15 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `createConsole(config)`, a console: the registry is read and checked once (declarations, duplicate
- *          names), and `run(argv, ports)` routes the invocation to one intent, decides the mode, lists, helps, versions
- *          or dispatches, renders a
- *          failure as an error screen or a `--json` error (or, with `json: "bare"`, the data alone on stdout and
- *          everything else on stderr), and resolves with the exit code.
+ *          names), and `run(argv, ports)` routes the invocation to one intent, decides the mode, lists (headings in
+ *          `config.groups` order, without the hidden commands and those `config.unlisted` names unless `list --all`),
+ *          helps, versions or dispatches, renders a failure as an error screen or a `--json` error (or, with
+ *          `json: "bare"`, the data alone on stdout and everything else on stderr), and resolves with the exit code.
  * Boundary: no module's commands live here; they come in `config.commands`. Writes only to `ports`; the container
  *           factory is called only to dispatch a command.
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-006 to FR-025; spec 030 Requirements 3 to 7; STA-1966 spec FR-012 to FR-016;
- *                     ADR 0506 (amendment 2026-11-03).
+ *                     ADR 0506 (amendment 2026-11-03); STA-2872 spec FR-001 to FR-003.
  */
 import { EXIT_CODE } from "#core/constants/exit-code.constant";
 import { TextRendererDriver } from "#core/drivers/text-renderer.driver";
@@ -61,6 +61,7 @@ const codeOf = (error: unknown) =>
  */
 export function createConsole(config: ConsoleConfig): ConsoleApp {
   const registry = buildRegistry(config.commands);
+  const unlisted = config.unlisted ?? (() => false);
   const baseTheme = config.theme ?? STACKRA_THEME;
 
   const run = async (argv: readonly string[], ports: ConsolePorts): Promise<number> => {
@@ -138,9 +139,11 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       return finish(EXIT_CODE.success);
     }
     if (intent.kind === "list") {
+      // `list --all` shows every command; otherwise the hidden ones and those this run leaves out are not listed.
       const visible = [...new Set(registry.values())]
         .map((row) => row.structure)
-        .filter((structure) => !structure.hidden);
+        .map((structure) => (intent.all ? { ...structure, hidden: false } : structure))
+        .filter((structure) => !structure.hidden && (intent.all || !unlisted(structure)));
       data = visible;
       if (!mode.json) {
         // The banner carries the name and version on a terminal; a pipe gets them as a plain line.
@@ -149,7 +152,10 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
           renderer.about();
           renderer.line();
         }
-        renderer.commandList(visible, config.name);
+        renderer.commandList(visible, config.name, {
+          order: config.groups ?? [],
+          more: new Set(registry.values()).size - visible.length,
+        });
       }
       return finish(EXIT_CODE.success);
     }
@@ -168,7 +174,10 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
             fix: "pass nodePorts() from @stackra/console/node",
           }),
         );
-      const definitions = [...new Set(registry.values())].map((row) => row.structure);
+      // A command this run leaves out of the list is completed as a hidden one is: not at all.
+      const definitions = [...new Set(registry.values())]
+        .map((row) => row.structure)
+        .map((structure) => (unlisted(structure) ? { ...structure, hidden: true } : structure));
       if (intent.kind === "completion") {
         const script = completions.script(intent.shell, config.name, definitions);
         data = { shell: intent.shell, script };

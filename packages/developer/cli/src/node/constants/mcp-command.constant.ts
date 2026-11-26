@@ -20,6 +20,8 @@ import type { CliCommand } from "#node/types/cli-command.type";
 /** The `stackra mcp` command definition. */
 export const MCP_COMMAND: CliCommand = {
   name: "mcp",
+  group: "Develop",
+  hidden: true,
   summary: "Serve the local developer MCP over stdio",
   usage: "stackra mcp",
   async run({ cwd, cli }) {

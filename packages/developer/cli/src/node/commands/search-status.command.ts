@@ -15,6 +15,7 @@ import { loadSearchRunner } from "#node/functions/load-search-runner.function";
 /** Shows each search index's state. */
 export class SearchStatusCommand extends Command({
   name: "search:status",
+  group: "Inspect",
   description: "Show each search index's state, document count and rebuild progress",
   bin: true,
 }) {

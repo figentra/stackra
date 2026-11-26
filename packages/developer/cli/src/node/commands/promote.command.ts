@@ -42,6 +42,7 @@ const ENVIRONMENTS: readonly string[] = Enum.values(RunwayEnvironment).map(Strin
 /** Ships what one environment runs to the next. */
 export class PromoteCommand extends Command({
   name: "promote",
+  group: "Deploy",
   description: "Ship the commit one environment runs to the next, through runway's providers",
   bin: true,
   examples: [

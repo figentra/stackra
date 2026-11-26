@@ -16,6 +16,7 @@ import { runSmoke } from "#node/product/functions/run-smoke.function";
 /** Smoke-checks a product after a preview deploy. */
 export class SmokeCommand extends Command({
   name: "smoke",
+  group: "Deploy",
   description:
     "Smoke-check a product after a preview deploy: web surfaces with Playwright, mobile builds with Maestro; blocks promotion",
   bin: true,

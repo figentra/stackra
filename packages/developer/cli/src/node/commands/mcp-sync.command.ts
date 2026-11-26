@@ -14,6 +14,8 @@ import { syncMcpConfig } from "@stackra/mcp/node";
 /** Renders `.mcp.json` from `.mcp.yaml`. */
 export class McpSyncCommand extends Command({
   name: "mcp:sync",
+  group: "Develop",
+  hidden: true,
   description: "Render .mcp.json from .mcp.yaml",
   bin: true,
 }) {

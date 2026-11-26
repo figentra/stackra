@@ -20,6 +20,7 @@ import { rowSecurityDeclarations } from "#node/row-security-declarations/functio
 /** Lists the row-security declarations and fails on one that is not reviewed. */
 export class RowSecurityDeclarationsCommand extends Command({
   name: "row-security-declarations",
+  group: "Repository",
   description:
     "List every row-security and system-access declaration with its reason; fail on one not reviewed",
   bin: true,

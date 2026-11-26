@@ -35,6 +35,7 @@ import { CliUsageError } from "#node/errors/cli-usage.error";
 /** Gates one consumer product against a core tree. */
 export class ConsumerGateCommand extends Command({
   name: "consumer-gate",
+  group: "Repository",
   description: "Run a consumer product's services against a core tree (generate, typecheck, test)",
   bin: true,
 }) {

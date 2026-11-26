@@ -24,6 +24,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Writes `.flow/constitution.md`, or checks it for drift. */
 export class ConstitutionCommand extends Command({
   name: "constitution",
+  group: "Repository",
   description: "Write .flow/constitution.md from the docs laws, or --check it for drift",
   bin: true,
 }) {

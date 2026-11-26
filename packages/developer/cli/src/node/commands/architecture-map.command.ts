@@ -40,6 +40,7 @@ const ARCHIFY = ".agents/skills/archify/bin/archify.mjs";
 /** Writes the docs architecture map, or checks it for drift. */
 export class ArchitectureMapCommand extends Command({
   name: "architecture-map",
+  group: "Repository",
   description:
     "Write the docs architecture map (archify candidate and HTML), or --check it for drift",
   bin: true,

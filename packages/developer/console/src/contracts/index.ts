@@ -32,6 +32,7 @@ export type { TreeNode } from "#contracts/types/tree-node.type";
 export type { BreakGlassSession } from "#contracts/types/break-glass-session.type";
 export type { CommandAuditEntry } from "#contracts/types/command-audit-entry.type";
 export type { CommandField } from "#contracts/types/command-field.type";
+export type { CommandListOptions } from "#contracts/types/command-list-options.type";
 export type { CommandOptions } from "#contracts/types/command-options.type";
 export type { CompletionCandidate } from "#contracts/types/completion-candidate.type";
 export type { CommandStructure } from "#contracts/types/command-structure.type";

@@ -17,6 +17,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Checks every source file's contract header and TSDoc. */
 export class DocStandardCommand extends Command({
   name: "doc-standard",
+  group: "Repository",
   description: "Check every source file's contract header and TSDoc (ADR 0007)",
   bin: true,
 }) {

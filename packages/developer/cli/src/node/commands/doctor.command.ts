@@ -22,6 +22,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Checks the machine for what the workspace needs. */
 export class DoctorCommand extends Command({
   name: "doctor",
+  group: "Inspect",
   description: "Check the machine for what this workspace needs, and how to fix what is missing",
   bin: true,
   tool: { readOnly: true },

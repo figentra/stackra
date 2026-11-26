@@ -17,6 +17,7 @@ import { checkLicences } from "#node/skill-licences/functions/check-licences.fun
 /** Fails when an agent skill or enabled plugin lacks an allowed licence. */
 export class SkillLicencesCommand extends Command({
   name: "skill-licences",
+  group: "Repository",
   description: "Fail when an agent skill or enabled plugin lacks an allowed licence",
   bin: true,
 }) {

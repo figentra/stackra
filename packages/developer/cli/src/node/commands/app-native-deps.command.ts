@@ -16,6 +16,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Fails when an Expo app lacks a native library its dependency closure declares. */
 export class AppNativeDepsCommand extends Command({
   name: "app-native-deps",
+  group: "Repository",
   description:
     "Fail when an Expo app lacks a native library a package in its dependency closure declares",
   bin: true,

@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: `TabCompletionsDriver`, the `Completions` of Bombshell Tab (`@bomb.sh/tab`): each visible command becomes a
  *          Tab command under its spaced name (`mcp:sync` as `mcp sync`), with its options, the global options, and
- *          choice values for an option or argument that has them.
+ *          choice values for an option or argument that has them; the built-in `list` (with `--all`) too, unless a
+ *          command takes its name.
  * Boundary: node only. Tab prints what it produces with `console.log`, so each synchronous call here captures that
  *           output and returns it, and nothing reaches the process's stdout.
  * Runtime: node
- * Governing contract: STA-1966 spec FR-006 and AC-008; ADR 0506 (amendment of 2026-11-02, decision 1).
+ * Governing contract: STA-1966 spec FR-006 and AC-008; ADR 0506 (amendment of 2026-11-02, decision 1); STA-2872
+ *                     spec FR-003.
  */
 import { type Command, RootCommand } from "@bomb.sh/tab";
 import { Driver } from "@stackra/container";
@@ -18,6 +20,8 @@ import type { CompletionCandidate } from "#contracts/types/completion-candidate.
 import { COMPLETION_COMMAND } from "#core/constants/completion-command.constant";
 import { GLOBAL_OPTIONS } from "#core/constants/global-options.constant";
 import { HELP_COMMAND } from "#core/constants/help-command.constant";
+import { LIST_ALL_FLAG } from "#core/constants/list-all-flag.constant";
+import { LIST_COMMAND } from "#core/constants/list-command.constant";
 import { SHELLS } from "#core/constants/shells.constant";
 
 /** The lines `work` prints through `console.log`, which Tab uses for all its output. */
@@ -59,6 +63,12 @@ function treeOf(definitions: readonly CommandStructure[]): RootCommand {
   const root = new RootCommand();
   addGlobals(root);
   root.command(HELP_COMMAND, "Show a command's help");
+  if (!definitions.some((definition) => definition.name === LIST_COMMAND))
+    addGlobals(
+      root
+        .command(LIST_COMMAND, "List the commands")
+        .option(LIST_ALL_FLAG.slice(2), "Every command, the hidden ones included"),
+    );
   root
     .command(COMPLETION_COMMAND, "Print the shell script that completes commands with Tab")
     .argument("shell", (complete) => {

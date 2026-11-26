@@ -5,7 +5,7 @@
  *          script, or the candidates a completion script asks for.
  * Boundary: a type only; `route` decides it, `createConsole` acts on it.
  * Runtime: isomorphic
- * Governing contract: STA-1966 spec FR-006 and FR-012 to FR-016.
+ * Governing contract: STA-1966 spec FR-006 and FR-012 to FR-016; STA-2872 spec FR-003.
  */
 import type { SHELLS } from "#core/constants/shells.constant";
 import type { UsageError } from "#core/errors/usage.error";
@@ -14,7 +14,12 @@ import type { GlobalFlags } from "#core/types/global-flags.type";
 
 /** What an invocation asks for. */
 export type RouteDecision =
-  | { readonly kind: "list"; readonly globals: GlobalFlags }
+  | {
+      readonly kind: "list";
+      readonly globals: GlobalFlags;
+      /** `list --all`: every command, the hidden and unlisted ones included. */
+      readonly all: boolean;
+    }
   | { readonly kind: "version"; readonly globals: GlobalFlags }
   | { readonly kind: "help"; readonly globals: GlobalFlags; readonly entry: CommandEntry }
   | {
