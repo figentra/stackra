@@ -76,8 +76,17 @@ packages/developer/cli/src/node/commands/upgrade-notes.command.ts
 packages/developer/cli/src/node/upgrade/constants/
 packages/developer/cli/src/node/upgrade/functions/
 packages/developer/cli/src/node/upgrade/types/
+packages/developer/cli/src/node/constants/commands.constant.ts
 packages/developer/cli/stackra.manifest.json
+packages/developer/cli/package.json
+packages/developer/cli/AGENTS.md
+packages/developer/cli/README.md
+apps/docs/src/docs/cli.mdx
+apps/docs/src/docs/cli.ar.mdx
+apps/docs/src/docs/runbooks/upgrade.mdx
+apps/docs/src/docs/adr/0199-developer-experience-create-stackra-app-upgrades-stackra-dev-and-docs.mdx
 package.json
+pnpm-workspace.yaml
 .changeset/stackra-upgrade-codemods.md
 .changeset/stackra-upgrade-notes-gate.md
 ```

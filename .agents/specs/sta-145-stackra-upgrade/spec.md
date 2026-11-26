@@ -61,15 +61,16 @@ a namespace rename applied before the named-import rename.
 - **AC-003**: THE ts-morph rename codemods SHALL rewrite imports and re-exports of a moved or renamed export, rename a
   named import before a namespace use in the same file, and never alias the import because of a member name.
 - **AC-004**: THE ast-grep report codemods SHALL list the code only a person can port as `file:line:column` findings.
-- **AC-005**: `--dry-run` SHALL print the plan, the notes and every diff and write nothing.
+- **AC-005**: WHEN a consumer passes `--dry-run` THE command SHALL print the plan, the notes and every diff and SHALL
+  write nothing.
 - **AC-006**: THE command SHALL refuse a dirty working tree, an inexact version and a pin newer than the target (exit 2).
 - **AC-007**: WHEN a command step fails THE command SHALL exit 1, run nothing after it, and name the re-run
   (`--from <old> --to <new> --allow-dirty`); THE re-run SHALL install again and finish every step.
-- **AC-008**: `UPGRADE_CODEMODS` SHALL have an entry for every `@stackra/*` release from 0.4.0 to 0.33.1 whose changelog
-  asks a consumer to act.
-- **AC-009**: `stackra upgrade-notes`, run by `pnpm validate`, SHALL fail when a pending `@stackra/*` changeset or a
-  released `@stackra/*` changelog entry carries a break mark and has no upgrade entry, or names an entry that does not
-  exist.
+- **AC-008**: THE `UPGRADE_CODEMODS` registry SHALL hold an entry for every `@stackra/*` release from 0.4.0 to 0.33.1
+  whose changelog asks a consumer to act.
+- **AC-009**: WHEN a break mark has no upgrade entry THE `stackra upgrade-notes` command SHALL fail, for a mark in a
+  pending `@stackra/*` changeset or in a released `@stackra/*` changelog entry, AND SHALL fail the same way when the
+  mark names an entry that does not exist; `pnpm validate` runs the command.
 
 ## Status history
 
