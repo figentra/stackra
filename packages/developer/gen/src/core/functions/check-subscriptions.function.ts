@@ -4,7 +4,8 @@
  *          contract-only producer whose pinned manifest does not list the service as a subscriber of that event in
  *          any environment (`relay.subscribers`), so no delivery reaches the listener until the producer's runway lists
  *          it. Names the consumer, the producer and the event.
- * Boundary: pure; warnings only, never a refusal, so gen still writes (ADR 0511 decision 17). Events compare without
+ * Boundary: pure; warnings, so gen still writes (ADR 0511 decision 17), except under `STACKRA_GEN_STRICT=1`, where each
+ *           finding refuses (Leader, 2026-11-09: a warning let Tamo's erasure delivery go silent for weeks). Events compare without
  *           their version (`.v<n>`): the producer relays every live version under one id and the inbox lifts an older
  *           one. Member keys compare in kebab case.
  * Runtime: isomorphic
@@ -21,12 +22,14 @@ import type { MemberIR } from "#core/types/member-ir.type";
 const unversioned = (wire: string): string => wire.replace(/\.v\d+$/, "");
 
 /**
- * The `client_event_unsubscribed` warnings of `ir`.
+ * The `client_event_unsubscribed` findings of `ir`: warnings, or refusals when gen runs strict.
  *
+ * @param strict - `STACKRA_GEN_STRICT=1`: each finding refuses, since the listener would never be delivered to (Tamo's
+ *                 erasures went silent for weeks while this only warned).
  * @example
- * checkSubscriptions(billingIr); // [{ code: "client_event_unsubscribed", subject: "BillOnPaymentCapturedListener.handle", ... }]
+ * checkSubscriptions(billingIr); // [{ code: "client_event_unsubscribed", severity: "warning", ... }]
  */
-export function checkSubscriptions(ir: MemberIR): GenError[] {
+export function checkSubscriptions(ir: MemberIR, strict = false): GenError[] {
   const producers = new Map(inboxProducersOf(ir).map((row) => [row.service, row.manifest]));
   const warnings: GenError[] = [];
   for (const declared of ir.classes) {
@@ -55,6 +58,7 @@ export function checkSubscriptions(ir: MemberIR): GenError[] {
         subject: `${declared.name}.handle`,
         message: `${ir.member} listens to \`${wire}\` of ${manifest.member}, but ${manifest.member}'s contract lists ${ir.member} as its subscriber in no environment, so no delivery reaches it`,
         fix: `add \`${ir.member}\` with \`${wire}\` under \`events.subscribers\` in ${manifest.member}'s runway.yaml, release its contract and bump it here`,
+        ...(strict ? {} : { severity: "warning" as const }),
       });
   }
   return warnings;
