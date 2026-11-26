@@ -13,7 +13,7 @@ import { checkProvenance } from "#src/publish/check-provenance";
 
 const PUBLISHER: PublisherRow = {
   scope: "@stackra",
-  repository: "figentra/stackra",
+  repository: "stackra-inc/stackra",
   repository_id: "1425140001",
   repository_owner_id: "314302700",
   workflow: ".github/workflows/release.yml",
@@ -29,7 +29,11 @@ describe("checkProvenance", () => {
     ["a sha256 subject", { sha256: "a256" }],
   ])("passes the trusted publisher's bundle for this tarball by %s", (_, digest) => {
     expect(
-      checkProvenance(sigstoreBundle(digest, identityOf("figentra/stackra")), DIGESTS, PUBLISHER),
+      checkProvenance(
+        sigstoreBundle(digest, identityOf("stackra-inc/stackra")),
+        DIGESTS,
+        PUBLISHER,
+      ),
     ).toEqual({
       ok: true,
       predicateType: "https://slsa.dev/provenance/v1",
@@ -40,7 +44,7 @@ describe("checkProvenance", () => {
     [null, "provenance bundle is missing"],
     ["{", "provenance bundle is not a Sigstore DSSE bundle"],
     [
-      sigstoreBundle({ sha512: "other" }, identityOf("figentra/stackra")),
+      sigstoreBundle({ sha512: "other" }, identityOf("stackra-inc/stackra")),
       "provenance subject is not this tarball",
     ],
     [
