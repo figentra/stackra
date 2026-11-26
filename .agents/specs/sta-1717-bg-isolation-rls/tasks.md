@@ -1,0 +1,10 @@
+# Tasks: tenancy: the scope ownership reads the scope tree from the root, proven with the background units on real Postgres row security
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-1717
+
+- [x] T001 share the root-label tree read in `packages/security/tenancy/src/core/functions/read-tree-at-root.function.ts` and use it in `packages/security/tenancy/src/node/drivers/call-isolation.driver.ts` — covers: AC-001, P-001 — route: spec-task
+- [x] T002 the ownership driver reads through it and takes the database in `packages/security/tenancy/src/core/drivers/tenant-scope-ownership.driver.ts`; the wiring entry in `packages/security/tenancy/stackra.manifest.json` — covers: AC-001, AC-002, AC-003, AC-004, AC-005, P-001, P-002, P-003 — route: spec-task — deps: T001
+- [x] T003 unit tests with a row-secure tree and a session-recording database in `packages/security/tenancy/src/core/drivers/__tests__/tenant-scope-ownership.driver.test.ts` — covers: AC-001, AC-002, AC-003, AC-004, P-001, P-002 — route: tests — deps: T002
+- [x] T004 background units on real Postgres row security in `packages/security/tenancy/src/node/drivers/__tests__/background-isolation.int.test.ts` with `packages/security/tenancy/src/node/drivers/__tests__/fixtures/background-postgres.fixture.ts` and the dev dependencies in `packages/security/tenancy/package.json` — covers: AC-002, AC-003, AC-006, AC-007, AC-009, P-002, P-004, P-005 — route: tests — deps: T002
+- [x] T005 workflow steps on real Postgres row security in `packages/runtime/workflow/src/node/__tests__/step-isolation.int.test.ts`, the pool cap in `packages/runtime/workflow/src/node/__tests__/fixtures/owner-postgres.fixture.ts`, the dev dependency in `packages/runtime/workflow/package.json` — covers: AC-008, AC-009, P-004, P-005 — route: tests — deps: T002
+- [x] T006 the ownership paragraph in `packages/security/tenancy/AGENTS.md` and the changeset `.changeset/scope-ownership-reads-tree-at-root.md` — covers: AC-005 — route: spec-task — deps: T002
