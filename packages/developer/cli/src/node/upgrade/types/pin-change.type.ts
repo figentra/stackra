@@ -8,7 +8,7 @@
 
 /** A version moved. */
 export type PinChange = {
-  /** The package. */
+  /** The package whose pin moved, such as `@stackra/actions`. */
   readonly name: string;
 
   /** The version before, prefix included (`^0.30.1`). */

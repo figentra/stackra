@@ -7,7 +7,7 @@
  *          command, the settings pack commands, the search reindex and status commands, the offline audit check, the operator bootstrap (`ops
  *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the consumer gate (`consumer-gate`, ADR 0500), the local MCP and agent-file commands,
  *          the registry item commands (add, publish; ADR 0453), and the repository commands moved from
- *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs
+ *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs (`upgrade-notes`, STA-145)
  *          and `validate --repository`).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db seed` runs the member's seeders (STA-1709) and
@@ -70,6 +70,7 @@ import { SkillLicencesCommand } from "#node/commands/skill-licences.command";
 import { SmokeCommand } from "#node/commands/smoke.command";
 import { StructureCommand } from "#node/commands/structure.command";
 import { UpgradeCommand } from "#node/commands/upgrade.command";
+import { UpgradeNotesCommand } from "#node/commands/upgrade-notes.command";
 import { checkCommand } from "#node/functions/check-command.function";
 import { toolCommand } from "#node/functions/tool-command.function";
 import type { CliCommands } from "#node/types/cli-commands.type";
@@ -149,4 +150,5 @@ export const COMMANDS: CliCommands = [
   RowSecurityDeclarationsCommand,
   DuplicationCommand,
   SkillLicencesCommand,
+  UpgradeNotesCommand,
 ];

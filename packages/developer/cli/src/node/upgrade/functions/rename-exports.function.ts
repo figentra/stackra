@@ -14,7 +14,7 @@
  * Runtime: node
  * Governing contract: ADR 0199 (decision 2: ts-morph); STA-145.
  */
-import type { ImportDeclaration, ImportSpecifier, SourceFile } from "ts-morph";
+import type { ImportDeclaration, ImportSpecifier, Node, SourceFile } from "ts-morph";
 
 import type { CodemodEngines } from "#node/upgrade/types/codemod-engines.type";
 import type { ExportRename } from "#node/upgrade/types/export-rename.type";
@@ -71,7 +71,7 @@ function keepsOld(file: SourceFile, old: string, next: string, tsMorph: TsMorph)
   return (
     file
       .getDescendantsOfKind(tsMorph.SyntaxKind.Identifier)
-      .some((identifier) => identifier.getText() === next) ||
+      .some((identifier) => identifier.getText() === next && !isMemberName(identifier, tsMorph)) ||
     file
       .getExportDeclarations()
       .some(
@@ -83,6 +83,15 @@ function keepsOld(file: SourceFile, old: string, next: string, tsMorph: TsMorph)
               (specifier) => specifier.getName() === old && specifier.getAliasNode() === undefined,
             ),
       )
+  );
+}
+
+/** `ns.Name` or `a.b.Name`: the name after a dot, which never takes a local name. */
+function isMemberName(identifier: Node, tsMorph: TsMorph): boolean {
+  const parent = identifier.getParent();
+  return (
+    (tsMorph.Node.isPropertyAccessExpression(parent) && parent.getNameNode() === identifier) ||
+    (tsMorph.Node.isQualifiedName(parent) && parent.getRight() === identifier)
   );
 }
 
@@ -375,9 +384,10 @@ export function renameExports(
   renames: readonly ExportRename[],
   tsMorph: TsMorph,
 ): readonly RenameNote[] {
-  renameNamespaceUses(file, renames, tsMorph);
+  // Named imports first: a namespace use renamed first (`ns.New`) would read as a local `New` and alias the import.
   const planned = planImports(file, renames, tsMorph);
   renameImports(file, planned, tsMorph);
+  renameNamespaceUses(file, renames, tsMorph);
   // Moves change the statement list, so they run last statement first: an earlier index never shifts.
   const moves = planned.filter(
     (entry) =>

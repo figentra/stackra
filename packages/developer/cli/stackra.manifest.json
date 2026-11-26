@@ -374,6 +374,26 @@
       "class": "StructureCommand",
       "file": "src/node/commands/structure.command.ts",
       "entry": "node"
+    },
+    {
+      "name": "upgrade-notes",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "UpgradeNotesCommand",
+      "file": "src/node/commands/upgrade-notes.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "upgrade",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "UpgradeCommand",
+      "file": "src/node/commands/upgrade.command.ts",
+      "entry": "node"
     }
   ],
   "schemas": {}

@@ -23,7 +23,7 @@ and `yaml`.
 
 | Command                                                   | Does                                                                                                                                      |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `stackra upgrade [--to <v>] [--dry-run]`                  | move every `@stackra/*` pin to a release, print each breaking release's note, run its codemods, then install and gen (below)              |
+| `stackra upgrade [--to <v>] [--dry-run]`                  | move every `@stackra/*` pin to a release, print the note of each release with an upgrade entry, run its codemods, then install and gen (below)              |
 | `stackra new <kind> <name>`                               | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                                   |
 | `stackra new <tooling\|app:*> <name>`                     | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                               |
 | `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest; a warning prints and exits 0, a refusal exits 1         |
@@ -156,15 +156,30 @@ pnpm dlx @stackra/cli@<version> upgrade             # write the edits, then pnpm
    aliases and public names kept); ast-grep reports the code only a person can port (a custom driver that must implement
    a new method), as `file:line:column` findings. `node_modules`, build output and every dot folder are never read.
 5. **Steps.** `pnpm install`, then each codemod's commands (such as `stackra encore:prepare` in every service), then
-   `stackra gen`. The first failure stops the run with exit 1 and prints the commands left.
+   `stackra gen`. The first failure stops the run with exit 1, prints the commands left and the re-run that finishes
+   them: `stackra upgrade --from <old> --to <new> --allow-dirty` installs again, runs the codemods (they change
+   nothing twice) and every step.
 
 `--no-install` writes the edits and prints the commands; `--only <ids>` runs only those codemods; `--list` prints every
 codemod with its release; `--allow-dirty` runs on uncommitted changes; `--json` answers the plan, the edits, the
 findings and the runs. Exit 0 when it finished (findings are manual steps), 1 when a command failed, 2 on a usage error.
 
-A release with a breaking change adds its codemod to `UPGRADE_CODEMODS` (`src/node/upgrade/constants/`), with a fixture
-under `__tests__/fixtures/` that the fixture test runs (every source codemod needs one), or a note-only entry when
-nothing in a consumer's code can be found or changed mechanically.
+Every break a consumer must act on has an entry in `UPGRADE_CODEMODS` (`src/node/upgrade/constants/`): a codemod
+with a fixture under `__tests__/fixtures/` that the fixture test runs (every source codemod needs one), or a note-only
+entry when nothing in a consumer's code can be found or changed mechanically. 0.4.0 to 0.33.1 have 36 entries.
+
+**The release gate.** `stackra upgrade-notes` (in `pnpm validate`) reads each pending `.changeset/*.md` that bumps an
+`@stackra/*` package and each `@stackra/*` changelog entry from 0.4.0 on, and fails when a note carries a break mark
+without an entry. The marks (ADR 0013 decision 5) are the word "breaking" (`### Breaking`, `Breaking:`), `**Upgrading**`,
+a line that opens `Upgrade:` or `Upgrade, <part>:`, `Bump step`, `After upgrading`, `Before taking this version` and
+`on its bump`. A breaking changeset adds its entry in the same pull request and names it on a line of its own:
+
+```md
+Upgrade entry: `outbox-row-owners`
+```
+
+The line travels into the changelog, so the version pull request passes the same gate. A released entry is also covered
+when an entry's `source` names its commit; a named id that no entry has is a finding of its own.
 
 ## A product's CI: build and deploy
 

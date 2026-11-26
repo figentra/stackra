@@ -11,7 +11,8 @@
  *          or setup error.
  * Boundary: the work is `planUpgrade` and `collectSourceEdits`; this class prints, writes the edits and starts the
  *           commands through `io.process`. It refuses a working tree with uncommitted changes (`--allow-dirty` to
- *           override), so every edit can be reviewed and reverted with git. `--dry-run` writes and runs nothing;
+ *           override), so every edit can be reviewed and reverted with git. After a failed command it names the
+ *           re-run (`--from <old> --to <new> --allow-dirty`), which runs the codemods again and every step. `--dry-run` writes and runs nothing;
  *           `--no-install` writes the edits and prints the commands instead of running them. Never reads or prints a
  *           secret; never reaches a registry itself (pnpm does, for the install).
  * Runtime: node
@@ -30,6 +31,7 @@ import { lineDiff } from "#node/functions/line-diff.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
 import { UPGRADE_CODEMODS } from "#node/upgrade/constants/upgrade-codemods.constant";
 import { collectSourceEdits } from "#node/upgrade/functions/collect-source-edits.function";
+import { compareUpgradeVersions } from "#node/upgrade/functions/compare-upgrade-versions.function";
 import { planUpgrade } from "#node/upgrade/functions/plan-upgrade.function";
 import { upgradeStepRuns } from "#node/upgrade/functions/upgrade-step-runs.function";
 import type { UpgradeFileEdit } from "#node/upgrade/types/upgrade-file-edit.type";
@@ -101,7 +103,9 @@ export class UpgradeCommand extends Command({
             }),
       }),
     );
-    if (plan.manifests.length === 0 && plan.codemods.length === 0) {
+    // Up to date only when nothing moves and no `--from` names an older version: a re-run after a failed step
+    // (`--from <old> --allow-dirty`) runs the codemods again (they change nothing twice) and every step.
+    if (plan.manifests.length === 0 && compareUpgradeVersions(plan.from, plan.to) === 0) {
       if (io.json) io.output.json({ from: plan.from, to: plan.to, upToDate: true });
       else io.output.success(`already on ${plan.to}: nothing to upgrade`);
       return 0;
@@ -109,7 +113,7 @@ export class UpgradeCommand extends Command({
     if (!this.dryRun && !this.allowDirty) await refuseDirtyTree(io, root);
     const sources = await collectSourceEdits(root, plan.codemods);
     const edits = [...plan.manifests, ...sources.edits];
-    const runs = upgradeStepRuns(plan.codemods, plan.services, plan.manifests.length > 0);
+    const runs = upgradeStepRuns(plan.codemods, plan.services);
     if (!io.json) this.printPlan(io, plan, edits);
     if (!this.dryRun) for (const edit of edits) writeFileSync(join(root, edit.file), edit.after);
     const ran = this.dryRun || !this.install ? [] : await runSteps(io, root, runs);
@@ -144,10 +148,12 @@ export class UpgradeCommand extends Command({
       }
       if (failed !== undefined)
         io.output.error(
-          `${describeRun(failed)} failed: fix it, then run the rest by hand (${runs
+          `${describeRun(failed)} failed: the edits are written, ${runs
             .slice(ran.length)
             .map(describeRun)
-            .join("; ")})`,
+            .join(
+              "; ",
+            )} did not run. Fix it, then finish with: stackra upgrade --from ${plan.from} --to ${plan.to} --allow-dirty`,
         );
       else if (!this.dryRun)
         io.output.success(
@@ -172,7 +178,10 @@ export class UpgradeCommand extends Command({
   /** The plan, the upgrade notes and the edits (every diff under `--dry-run` or `--verbose`). */
   private printPlan(io: CommandIo, plan: UpgradePlan, edits: readonly UpgradeFileEdit[]): void {
     io.output.title(`stackra upgrade ${plan.from} → ${plan.to}${this.dryRun ? " (dry run)" : ""}`);
-    if (plan.codemods.length === 0) io.output.info("no breaking release in between: versions only");
+    if (plan.codemods.length === 0)
+      io.output.info(
+        `no release after ${plan.from} up to ${plan.to} has an upgrade entry: only the @stackra/* versions move`,
+      );
     for (const codemod of plan.codemods)
       io.output.note(codemod.note, "info", `${codemod.version} · ${codemod.id}: ${codemod.title}`);
     io.output.title(`Files (${edits.length})`);

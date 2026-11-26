@@ -11,7 +11,7 @@ import type { Project } from "ts-morph";
 import type { CodemodEngines } from "#node/upgrade/types/codemod-engines.type";
 
 /**
- * The project.
+ * Creates the in-memory ts-morph project every source codemod edits files in.
  *
  * @example
  * const project = createCodemodProject(await loadCodemodEngines());

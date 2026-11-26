@@ -4,7 +4,8 @@
  *          upgrade moves every pin, renames identity's `DeviceSession` in the source (never in `node_modules` or gen's
  *          `.stackra/`), reports the custom idempotency store, then runs `pnpm install`, `stackra encore:prepare` in the
  *          service and `stackra gen` through the process port; `--dry-run` writes and runs nothing; `--no-install`
- *          writes and prints the commands; a failed command exits 1 and runs nothing after it; a dirty tree, an inexact
+ *          writes and prints the commands; a failed command exits 1, runs nothing after it and names the re-run, which
+ *          runs the codemods and every step again on the edited tree; a dirty tree, an inexact
  *          version and an unknown codemod exit 2; a workspace already on the target exits 0; `--list` prints the codemods.
  * Boundary: test only; the process port is a memory driver, so nothing is installed and no git runs. Writes the
  *           workspace under the OS temp folder and removes it.
@@ -140,6 +141,55 @@ export const sessions: AccountSession[] = [];
     ]);
     expect(result.stderr).toContain("pnpm install failed");
     expect(result.stderr).toContain("pnpm exec stackra gen");
+    expect(result.stderr).toContain("stackra upgrade --from 0.8.2 --to 0.33.1 --allow-dirty");
+  });
+
+  it("finishes every step when the named re-run follows a failed install", async () => {
+    const failing = processes({ "pnpm install": { code: 1, output: "ERR_PNPM_FETCH_503" } });
+    const first = await runCommandForTest([UpgradeCommand], ["upgrade", "--to", "0.33.1"], {
+      cwd: root,
+      process: failing,
+    });
+    expect(first.exitCode).toBe(1);
+    const edited = read("services/orders/src/security.ts");
+    // The pins are moved and the tree is dirty now; the re-run the error names runs every step and changes nothing twice.
+    const process = processes({
+      "git status --porcelain": { code: 0, output: " M pnpm-workspace.yaml\n" },
+    });
+    const again = await runCommandForTest(
+      [UpgradeCommand],
+      ["upgrade", "--from", "0.8.2", "--to", "0.33.1", "--allow-dirty"],
+      { cwd: root, process },
+    );
+    expect(again.exitCode).toBe(0);
+    expect(again.stdout).not.toContain("already on");
+    expect(process.calls.map((call) => `${call.cwd}: ${call.line}`)).toEqual([
+      `${root}: pnpm install`,
+      `${join(root, "services/orders")}: pnpm exec stackra encore:prepare`,
+      `${root}: pnpm exec stackra gen`,
+    ]);
+    expect(read("services/orders/src/security.ts")).toBe(edited);
+    expect(again.stdout).toContain("moved to 0.33.1: 0 files changed");
+  });
+
+  it("installs and generates on the re-run of a versions-only upgrade whose install failed", async () => {
+    const failing = processes({ "pnpm install": { code: 1, output: "ERR_PNPM_FETCH_503" } });
+    const argv = ["upgrade", "--from", "0.29.0", "--to", "0.29.1"];
+    const first = await runCommandForTest([UpgradeCommand], argv, { cwd: root, process: failing });
+    expect(first.exitCode).toBe(1);
+    expect(first.stdout).toContain("only the @stackra/* versions move");
+    expect(first.stderr).toContain("stackra upgrade --from 0.29.0 --to 0.29.1 --allow-dirty");
+    // Every pin is on 0.29.1 now, so nothing moves; the named --from still runs the steps the first run never did.
+    const process = processes();
+    const again = await runCommandForTest([UpgradeCommand], [...argv, "--allow-dirty"], {
+      cwd: root,
+      process,
+    });
+    expect(again.exitCode).toBe(0);
+    expect(process.calls.map((call) => call.line)).toEqual([
+      "pnpm install",
+      "pnpm exec stackra gen",
+    ]);
   });
 
   it("refuses a dirty tree, an inexact version and an unknown codemod with exit 2, writing nothing", async () => {

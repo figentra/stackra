@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { UPGRADE_CODEMODS } from "#node/upgrade/constants/upgrade-codemods.constant";
 import { CONSUMER_FILES } from "#node/upgrade/functions/__tests__/consumer-files";
 import { fixtureWorkspace } from "#node/upgrade/functions/__tests__/fixture-workspace";
+import { compareUpgradeVersions } from "#node/upgrade/functions/compare-upgrade-versions.function";
 import { planUpgrade } from "#node/upgrade/functions/plan-upgrade.function";
 
 let cleanup: (() => void) | undefined;
@@ -29,14 +30,25 @@ describe("planUpgrade", () => {
     const plan = planUpgrade(root, { to: "0.33.1", codemods: UPGRADE_CODEMODS });
     expect(plan.from).toBe("0.8.2");
     expect(plan.to).toBe("0.33.1");
-    expect(plan.codemods.map((codemod) => codemod.id)).toEqual([
-      "identity-account-session",
-      "config-infisical-store-removed",
-      "actions-idempotency-complete-refused",
-      "gen-area-routes",
-      "services-encore-app-root",
-      "services-tsconfig-no-base-url",
-    ]);
+    // Every entry after 0.8.2 up to 0.33.1, oldest first: none of 0.4.0 or 0.8.0, the last of 0.33.1.
+    const versions = plan.codemods.map((codemod) => codemod.version);
+    expect(plan.codemods.at(0)?.id).toBe("identity-account-session");
+    expect(plan.codemods.at(-1)?.id).toBe("services-encore-imports-first-target");
+    expect(plan.codemods.map((codemod) => codemod.id)).toEqual(
+      expect.arrayContaining([
+        "config-infisical-store-removed",
+        "outbox-row-owners",
+        "actions-idempotency-complete-refused",
+        "gen-area-routes",
+        "services-encore-app-root",
+        "services-tsconfig-no-base-url",
+      ]),
+    );
+    expect(versions).toEqual(versions.toSorted(compareUpgradeVersions));
+    expect(versions.filter((version) => ["0.4.0", "0.8.0"].includes(version))).toEqual([]);
+    expect(plan.codemods).toHaveLength(
+      UPGRADE_CODEMODS.filter((codemod) => !["0.4.0", "0.8.0"].includes(codemod.version)).length,
+    );
     expect(plan.manifests.map((edit) => edit.file)).toEqual([
       "pnpm-workspace.yaml",
       "services/orders/package.json",

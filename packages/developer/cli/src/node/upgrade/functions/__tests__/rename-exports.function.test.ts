@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `renameExports`, the cases the codemod fixtures do not reach: a default import kept beside a
  *          moved name, names of one import moving to two modules, an import already present in the target, an
- *          inline `type` name joining a value import, an unused import renamed, and a namespace use of a moved export
- *          reported at its place.
+ *          inline `type` name joining a value import, an unused import renamed, a named import and a namespace use
+ *          of one renamed export in one file (the named import is renamed, never aliased), and a namespace use of a
+ *          moved export reported at its place.
  * Boundary: test only; runs ts-morph in an in-memory project over strings.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0199 (decision 2); STA-145.
@@ -43,6 +44,22 @@ const run = (text: string) => {
 };
 
 describe("renameExports", () => {
+  it("renames a named import and a namespace use of one export in one file without aliasing the import", () => {
+    expect(
+      run(`import { Old } from "@acme/ui";
+import * as ui from "@acme/ui";
+
+export const pair: [Old, ui.Old] | undefined = undefined;
+export const other = ui.theme.New;
+`).after,
+    ).toBe(`import { New } from "@acme/ui";
+import * as ui from "@acme/ui";
+
+export const pair: [New, ui.New] | undefined = undefined;
+export const other = ui.theme.New;
+`);
+  });
+
   it("keeps a default import and splits names moving to two modules", () => {
     expect(
       run(`import Ui, { Button, Editor, Chart } from "@acme/ui";

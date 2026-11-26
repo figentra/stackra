@@ -35,7 +35,7 @@ describe("upgradeStepRuns", () => {
         steps: [{ command: ["stackra", "encore:prepare"], in: "services" }],
       },
     ];
-    expect(upgradeStepRuns(codemods, ["services/a", "services/b"], true)).toEqual([
+    expect(upgradeStepRuns(codemods, ["services/a", "services/b"])).toEqual([
       { command: ["pnpm", "install"], cwd: ".", why: ["install"] },
       {
         command: ["pnpm", "exec", "stackra", "encore:prepare"],
@@ -52,7 +52,7 @@ describe("upgradeStepRuns", () => {
     ]);
   });
 
-  it("skips the install when no pin moved, and a service step when there is no service", () => {
+  it("always installs first, and skips a service step when there is no service", () => {
     const codemods: UpgradeCodemod[] = [
       {
         ...base,
@@ -61,7 +61,8 @@ describe("upgradeStepRuns", () => {
         steps: [{ command: ["stackra", "encore:prepare"], in: "services" }],
       },
     ];
-    expect(upgradeStepRuns(codemods, [], false)).toEqual([
+    expect(upgradeStepRuns(codemods, [])).toEqual([
+      { command: ["pnpm", "install"], cwd: ".", why: ["install"] },
       { command: ["pnpm", "exec", "stackra", "gen"], cwd: ".", why: ["gen"] },
     ]);
   });

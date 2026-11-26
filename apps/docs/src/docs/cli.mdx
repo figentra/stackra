@@ -24,6 +24,7 @@ workspace root the task commands fan out through Turborepo; in a member they run
 | `stackra verify`                     | the whole gate, tests included                                                                |
 | `stackra ls [section]`               | the identities a committed manifest locks: actions, events, permissions, …                    |
 | `stackra upgrade`                    | move every `@stackra/*` pin to a release, print its notes, run its codemods, then gen         |
+| `stackra upgrade-notes`              | fail when a breaking `@stackra/*` changeset or changelog entry has no upgrade entry           |
 
 A refusal names its code, its position and the fix; nothing is written when gen refuses. `stackra validate` is what
 CI runs on every pull request; `verify` is what runs on the box before a merge counts.

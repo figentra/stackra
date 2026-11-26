@@ -12,9 +12,9 @@ import type * as TsMorph from "ts-morph";
 
 /** The loaded libraries. */
 export type CodemodEngines = {
-  /** `@ast-grep/napi`. */
+  /** The `@ast-grep/napi` module, which finds the nodes a report codemod lists. */
   readonly astGrep: typeof AstGrep;
 
-  /** `ts-morph`. */
+  /** The `ts-morph` module, which edits imports and renames references. */
   readonly tsMorph: typeof TsMorph;
 };
