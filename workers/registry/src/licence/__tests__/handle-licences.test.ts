@@ -57,7 +57,7 @@ async function setUp() {
   for (const name of ["@stackra-pro/sync", "@stackra-pro/ui", "@stackra-pro/search-advanced"])
     await registry.publish(pro(name), {
       files: PRO_FILES,
-      repository: "figentra/stackra-pro",
+      repository: "stackra-inc/stackra-pro",
       claims: PRO_CLAIMS,
     });
   /** A read of `/<path>` (a name, or a tarball path) with a licence token, through the D1 licence check. */
