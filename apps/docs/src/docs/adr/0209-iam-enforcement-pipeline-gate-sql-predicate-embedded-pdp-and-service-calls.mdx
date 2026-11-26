@@ -28,7 +28,12 @@ An access check that runs in only one place can be bypassed, and a list that fil
 
 ## Enforcement
 
-planned — a test checks that every list action carries the predicate, and the service-call test checks both grants.
+- built — the service-call integration test (`@stackra/app`, `service-call.int.test.ts`, on real Postgres) verifies the
+  service token and the user token it forwards, checks both grants through `IamAccessControlDriver`, refuses any other
+  service key, a user of another tenant and a call with no service token.
+- planned — a test that every list action carries the scope predicate. Today every read of `CrudService`,
+  `GraphQuery` and `MetricsReader` takes its filter from `visibleFilter` (ADR 0333), so no read path misses the
+  visibility conditions.
 
 ## Supersedes and sources
 

@@ -4,7 +4,7 @@ description: "How Stackra isolates tenants, authorises calls, keeps audit eviden
 icon: "shield-check"
 ---
 
-{/* Stackra file contract: Purpose: the buyer-facing security overview: each control, the decision behind it and whether it is built, designed or planned. Boundary: customer-facing documentation only; the laws are constitution/security and constitution/tenancy, the decisions are the linked ADRs; no control is described as built unless the code is in this repository. Runtime: docs. Governing contract: ADR 0212; ADR 0188; ADR 0415; ADR 0173; ADR 0174; ADR 0206; ADR 0437; ADR 0453 (decisions 7 to 9); ADR 0462; SECURITY.md; STA-1575, STA-1566, STA-1579. */}
+{/* Stackra file contract: Purpose: the buyer-facing security overview: each control, the decision behind it and whether it is built, designed or planned. Boundary: customer-facing documentation only; the laws are constitution/security and constitution/tenancy, the decisions are the linked ADRs; no control is described as built unless the code is in this repository. Runtime: docs. Governing contract: ADR 0212; ADR 0188; ADR 0415; ADR 0173; ADR 0174; ADR 0206; ADR 0437; ADR 0453 (decisions 7 to 9); ADR 0462; ADR 0239; ADR 0347; SECURITY.md; STA-1575, STA-1566, STA-1579, STA-2848. */}
 
 Stackra is a framework: your deployment runs its packages. This page says what the packages do for you, and for each
 control whether it is **built** (the code ships in the packages), **designed** (decided in an ADR, not complete in code)
@@ -13,16 +13,16 @@ or **planned**. The rules contributors follow are in [Security](/constitution/se
 
 ## Summary
 
-| Control                                       | State                                                                   |
-| --------------------------------------------- | ----------------------------------------------------------------------- |
-| Tenant isolation by forced row-level security | built (schema builder); catalogue-wide audit check planned              |
-| Authorization denies by default               | built (`@stackra/iam`)                                                  |
-| Per-tenant audit hash chain                   | built (`@stackra/access-log`, with NDJSON export); checkpoints designed |
-| Tenant data keys wrapped by a KMS             | built (`@stackra/contracts` drivers)                                    |
-| Secrets only from a secret store              | built (secret references); designed for runway sync                     |
-| Signed packages, provenance, SBOM, scanning   | built (release workflow and registry)                                   |
-| Token verification and signed edge headers    | designed; being built for 0.1.0 (STA-1566)                              |
-| Out-of-region call refusal                    | built (`RegionGuardDriver`); see [Data residency](/customers/residency) |
+| Control                                       | State                                                                                                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Tenant isolation by forced row-level security | built (schema builder and the generated catalogue audit, `assertRowSecurity`)                           |
+| Authorization denies by default               | built (`@stackra/iam`)                                                                                  |
+| Per-tenant audit hash chain                   | built (`@stackra/access-log`, NDJSON export, `stackra audit:verify`); daily signed checkpoint designed  |
+| Tenant data keys wrapped by a KMS             | built (`@stackra/contracts` drivers)                                                                    |
+| Secrets only from a secret store              | built (secret references); designed for runway sync                                                     |
+| Signed packages, provenance, SBOM, scanning   | built (release workflow and registry)                                                                   |
+| Token verification and signed edge headers    | built (`CallAuthenticator`, `EdgeHeaderGuard`, the edge Worker); shared replay store planned (STA-2803) |
+| Out-of-region call refusal                    | built (`RegionGuardDriver`); see [Data residency](/customers/residency)                                 |
 
 ## Tenant isolation
 
@@ -30,7 +30,15 @@ Every tenant-owned table carries `tenant_id` with `ENABLE` **and** `FORCE ROW LE
 request's tenant, so the table owner cannot bypass it and a query that forgets its filter returns zero rows, never
 another tenant's data. Tables declare this through the scoped-table pattern (`belongsToTenant()`); hand-written RLS is
 not allowed. A cross-tenant miss answers "not found", never "permission denied", so a caller learns nothing about
-other tenants. The check that every tenant table in a database has both flags is planned.
+other tenants.
+
+The catalogue audit is built: `assertRowSecurity` (`@stackra/database/testing`) reads every table of a migrated
+database on a real Postgres and fails when a table with `tenant_id` lacks either flag or its one equality policy, when
+another policy widens it, or when the service role can bypass row-level security. It then seeds rows of two tenants and
+proves, as that role, that a session sees only its own tenant's rows and cannot move a row to the other tenant. Gen
+writes this test into every service that has tenant-owned models (`.stackra/tests/tenant-isolation.int.test.ts`), and
+each package's migration tests run it ([0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views),
+[0347](/adr/0347-row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies)).
 
 ## Authorization
 
@@ -52,21 +60,29 @@ tokens are short-lived JWTs.
 
 ## Verification at the edge
 
+The checks of [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks):
+
+- Built: access tokens are verified against the identity provider's JWKS on every call to an authenticated endpoint
+  (`CallAuthenticator` in `@stackra/app/server`, which the generated auth handler calls): signature, issuer, audience
+  and expiry. A service calling for a user sends its own token and the user's, and both are verified.
+- Built: the edge Worker (`workers/edge` in the core repository) refuses a bad token by JWKS, strips any edge header a
+  client sent, and forwards the tenant, product, surface and realm headers with a timestamp, a request id and an HMAC
+  over the headers, method, path and body hash.
+- Built: `EdgeHeaderGuard` (`@stackra/app/server`), which gen binds first among every service's request guards, trusts
+  those headers only when the HMAC is valid under one of the active keys, the timestamp is inside the validity window
+  (60 seconds by default) and the request id is unseen. Two keys are live during a rotation, so the secret rotates
+  without a cut-over. A request that carries any edge header and fails a check is refused; a request with no edge
+  header is not edge traffic, and its bearer token or its endpoint's own signature decides.
+- Planned (STA-2803): seen request ids are kept per API instance today, so with more than one instance a captured
+  request could be replayed against another instance inside the window. A shared store of seen ids on the cache closes
+  this; it must ship before an edge serves more than one instance.
+- Your deployment: the origin accepts traffic only from the edge (Cloudflare Tunnel or authenticated origin pulls). No
+  package can enforce this network lock; the signature sits on top of it, never in place of it.
+
 <Warning>
-  Designed, not built. The pieces below are being built for 0.1.0 under STA-1566. Until then, the
-  app's `EdgeHeaderGuard` (`@stackra/app`) reads edge headers that nothing signs yet: do not expose
-  an origin directly.
+  Never expose an origin directly, and run one API instance per region behind the edge until the
+  shared replay store (STA-2803) ships.
 </Warning>
-
-The design ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks), proposed):
-
-- Access tokens are verified against the identity provider's JWKS on every request.
-- The edge Worker forwards tenant and product headers with a timestamp, a key id and an HMAC over the headers, method,
-  path, body hash and request id. The API trusts them only when the signature is valid, younger than the validity
-  window (60 seconds by default) and its request id unseen; otherwise only public endpoints answer. Two keys are live
-  at once, so the secret rotates without a cut-over.
-- The origin accepts traffic only from the edge (Cloudflare Tunnel or authenticated origin pulls); the signature sits
-  on top of that lock, never in place of it.
 
 ## Audit evidence
 
@@ -80,9 +96,11 @@ The design ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks),
 - Audit retention: access records are kept 400 days by default (`AccessLogConfig.retentionDays`, at least 90). The
   write audit's retention is the setting `AccessLogConfig.auditRetentionDays`; until the operator states it, the
   write audit is kept without limit, and no job deletes from it yet.
-- Designed ([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)): a KMS-signed checkpoint daily,
-  append-only storage under S3 Object Lock, 13 months hot, then cold storage; money events kept seven years. A tenant
-  can view and export its own audit log.
+- Built: the parts of a checkpoint. `AwsKmsSignerDriver` (`@stackra/contracts`) signs a checkpoint with a KMS key, and
+  `stackra audit:verify` checks each checkpoint's signature against trusted keys.
+- Designed ([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)): the job that writes a KMS-signed
+  checkpoint daily, append-only storage under S3 Object Lock, 13 months hot, then cold storage; money events kept seven
+  years. A tenant can view its own audit log (the export above is built).
 
 ## Encryption and keys
 

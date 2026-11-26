@@ -80,9 +80,14 @@ this ADR answers.
 
 ## Enforcement
 
-- planned — the RLS catalogue audit of 0239, extended as decision 5 says, in the tenant isolation tests.
-- planned — gen (STA-340): a second permissive policy, a hand-written `CREATE POLICY`, or a restrictive policy on a
-  column outside `rowScopes` fails the build; the policy names follow 0231.
+- built — the RLS catalogue audit of 0239, extended as decision 5 says, in the tenant isolation tests:
+  `assertRowSecurity` (through `policyGaps`) fails a second permissive policy and any other policy that is not
+  restrictive and named `pol_<table>_<column>` after a column of the table. Whether that column is in the model's
+  `rowScopes` is not checked yet: `rowScopes` is not in code.
+- built — `Blueprint.rowLevelSecurity` refuses a second permissive policy and a second policy on one column when the
+  migration is built; the policy names follow 0231.
+- planned — gen (STA-340): a hand-written `CREATE POLICY`, or a restrictive policy on a column outside `rowScopes`,
+  fails the build.
 - planned — a tenant isolation test: a session with `app.legal_entity_id` set reads no row of another legal entity in
   the same tenant, and a session without it reads the whole tenant.
 
