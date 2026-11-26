@@ -41,6 +41,10 @@ is an optional peer of `./react`.
 | `.`           | `MemoryConsentProofStoreDriver`, `TermsDocument`, `ConsentAuthorityMissingError`                    | the memory proof store, a versioned document, the refusal                                                    |
 | `.`           | `needsGuardianConsent`                                                                              | whether a birth date is below an age of consent (the age is market-pack data)                                |
 | `.`           | `NoneConsentVerifierDriver`, `ConsentNotVerifiedError`                                              | the default verifier (fails every method closed); the refusal of a failed verification                       |
+| `.`           | `GuardianLoginConsentVerifierDriver`, `GuardianLoginAttestationIssuer`                              | the `guardian_login` verifier and the service that signs a guardian's fresh sign-in for it                   |
+| `.`           | `linkConsentProof`, `findConsentProofChainBreak`, `ConsentProofLink`, `ConsentProofWriteFailedError` | a subject's proof hash chain: the next link, the check of a run, the link type, the lost-race refusal        |
+| `./node`      | `PostgresConsentProofStoreDriver`, `ConsentProofEntry`, `CONSENT_ENTITIES`                          | the durable, tenant-owned, append-only proof store, its model and the entity list a host registers           |
+| `./testing`   | `describeConsentProofStoreConformance`                                                              | the `ConsentProofStore` conformance suite a store driver runs                                                |
 | `./contracts` | `ConsentVerifier`, `ConsentVerificationMethod`, `ConsentVerificationRequest`, `ConsentVerification` | the verification method port, its methods (card check, signed form, guardian login), request and answer      |
 | `./contracts` | `ConsentProofStore`, `ConsentAuthority`, `ConsentProof`                                             | the append-only proof store; who may consent for whom                                                        |
 | `.`           | `ConsentSnapshotIssuer`, `IssuedConsentSnapshot`                                                    | the server half of the consent endpoint: re-applies the rules to the client's record, signs a snapshot       |
@@ -90,8 +94,45 @@ await proofs.answerFor(
 `ConsentVerifier` (`./contracts`) checks it; the services that run the methods implement it and a host binds its class
 with `@Replaces(ConsentVerifier)`. The proof stores the method and the verifier's reference (`verificationMethod`,
 `verificationReference`), never input. A failed check refuses with `ConsentNotVerifiedError` and writes nothing. The
-package ships only `NoneConsentVerifierDriver`, which fails every method closed, so a market that requires verification
-is never recorded unverified. With no method named, the relationship alone suffices, as before.
+default is `NoneConsentVerifierDriver`, which fails every method closed, so a market that requires verification is never
+recorded unverified. With no method named, the relationship alone suffices, as before.
+
+### Guardian sign-in (`guardian_login`, STA-2818)
+
+The package runs one method itself. Inside the guardian's own call, right after they signed in,
+`GuardianLoginAttestationIssuer.issue(ctx.actor.id, child.id, "photos", ctx.assurance)` signs a short-lived attestation
+of that sign-in for one person and one document. It reads only the call's verified assurance: no `auth_time`, or a
+sign-in older than `guardianLoginMaxAgeMinutes` (default 5), is refused with `ConsentNotVerifiedError`. Pass the token as
+the evidence; `GuardianLoginConsentVerifierDriver`, bound in place of `none`, checks the signature against
+`ConsentSnapshotKeys` (the consent signer's keys), that the guardian, person and document match the request, and that the
+attestation is in date (`guardianLoginAttestationMinutes`, default 10). The proof then stores `guardian_login` and the
+attestation id (`cgl_…`) as its reference:
+
+```ts
+const { token } = await attestations.issue(ctx.actor.id, input.child, PHOTOS.key, ctx.assurance);
+await proofs.answerFor(input.child, ctx.actor.id, PHOTOS, true, "guardian_app", {
+  method: ConsentVerificationMethod.GuardianLogin,
+  evidence: token,
+});
+```
+
+Any other method, a consent snapshot, a token for another guardian, person or document, a bad signature or an expired
+attestation answers not verified, and nothing is written. A card check or a signed form still needs the service that runs
+it to bind its own verifier.
+
+## A durable proof store (STA-2818)
+
+`MemoryConsentProofStoreDriver` is for tests and local runs: a restart loses it. A service that keeps evidence binds
+`PostgresConsentProofStoreDriver` (`./node`) for `ConsentProofStore`, registers `CONSENT_ENTITIES` and runs the package's
+migration (`consent.consent_proof_entries`). The table is tenant-owned (the forced `tenant_id` policy of
+`@stackra/tenancy`), append-only (UPDATE revoked from the service's role and refused by a trigger for every role), and
+each subject's proofs form a hash chain (`sequence`, `previous_hash`, `hash`). The driver appends in a savepoint of the
+caller's transaction, so a proof commits or rolls back with the answer's own work; two concurrent answers for one person
+never fork the chain (the loser retries after the new head, and refuses with `ConsentProofWriteFailedError` after five
+lost races). Reads return the proofs exactly as written. `findConsentProofChainBreak(links)` checks a run read from the
+table and names the first link that was edited, removed or reordered; a run whose oldest proofs retention removed
+verifies from its oldest kept link. A host's own durable driver chains with `linkConsentProof` and proves itself with
+`describeConsentProofStoreConformance` (`./testing`).
 
 ## The rules, in order
 

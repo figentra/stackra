@@ -8448,6 +8448,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/database':
+        specifier: workspace:*
+        version: link:../../data/database
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
@@ -8457,12 +8460,18 @@ importers:
       '@stackra/iam':
         specifier: workspace:*
         version: link:../iam
+      '@stackra/model':
+        specifier: workspace:*
+        version: link:../../data/model
       '@stackra/storage':
         specifier: workspace:*
         version: link:../../data/storage
       '@stackra/support':
         specifier: workspace:*
         version: link:../../foundation/support
+      '@stackra/tenancy':
+        specifier: workspace:*
+        version: link:../tenancy
       '@stackra/ui':
         specifier: workspace:*
         version: link:../../design-system/ui

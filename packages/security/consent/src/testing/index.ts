@@ -7,4 +7,5 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decision 15); ADR 0269 (decision 3); the STA-347 stand-in barrel decision.
  */
+export { describeConsentProofStoreConformance } from "#testing/functions/describe-consent-proof-store-conformance.function";
 export { fakeConsent } from "#testing/functions/fake-consent.function";

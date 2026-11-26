@@ -12,6 +12,9 @@ import * as testing from "#testing/index";
 
 describe("@stackra/consent/testing", () => {
   it("exports exactly its values", () => {
-    expect(Object.keys(testing).sort()).toEqual(["fakeConsent"]);
+    expect(Object.keys(testing).sort()).toEqual([
+      "describeConsentProofStoreConformance",
+      "fakeConsent",
+    ]);
   });
 });

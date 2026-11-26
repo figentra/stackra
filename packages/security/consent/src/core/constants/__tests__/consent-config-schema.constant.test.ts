@@ -32,6 +32,8 @@ describe("CONSENT_CONFIG_SCHEMA", () => {
       askOnFirstLaunch: false,
       snapshotLifetimeMinutes: 1440,
       snapshotClockSkewSeconds: 60,
+      guardianLoginMaxAgeMinutes: 5,
+      guardianLoginAttestationMinutes: 10,
     });
   });
 
@@ -60,6 +62,9 @@ describe("CONSENT_CONFIG_SCHEMA", () => {
     ["a snapshot shorter than 5 minutes", { snapshotLifetimeMinutes: 4 }],
     ["a snapshot longer than 7 days", { snapshotLifetimeMinutes: 10_081 }],
     ["a clock skew past 5 minutes", { snapshotClockSkewSeconds: 301 }],
+    ["a guardian sign-in window of 0 minutes", { guardianLoginMaxAgeMinutes: 0 }],
+    ["a guardian sign-in window past an hour", { guardianLoginMaxAgeMinutes: 61 }],
+    ["an attestation lifetime past an hour", { guardianLoginAttestationMinutes: 61 }],
   ])("refuses %s", (_case, values) => {
     expect(CONSENT_CONFIG_SCHEMA.safeParse(values).success).toBe(false);
   });

@@ -11,5 +11,9 @@
  */
 export { ConsentSnapshotPermissions } from "#node/access/consent-snapshot.permissions";
 export { IssueConsentSnapshotAction } from "#node/actions/issue-consent-snapshot.action";
+export { PostgresConsentProofStoreDriver } from "#node/drivers/postgres-consent-proof-store.driver";
+export { ConsentProofEntry } from "#node/models/consent-proof-entry.model";
 export { IssueConsentSnapshotInput } from "#node/schemas/issue-consent-snapshot-input.schema";
 export { IssueConsentSnapshotOutput } from "#node/schemas/issue-consent-snapshot-output.schema";
+// The entity list gen writes for the module, which a hosting service registers (STA-1793).
+export { CONSENT_ENTITIES } from "#node/entities.gen";

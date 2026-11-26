@@ -25,11 +25,14 @@ describe("@stackra/consent", () => {
       "ConsentNotVerifiedError",
       "ConsentOptions",
       "ConsentProofService",
+      "ConsentProofWriteFailedError",
       "ConsentRegime",
       "ConsentSnapshotIssuer",
       "ConsentSnapshotVerifier",
       "ConsentStatus",
       "CookieConsentStoreDriver",
+      "GuardianLoginAttestationIssuer",
+      "GuardianLoginConsentVerifierDriver",
       "MemoryConsentProofStoreDriver",
       "MemoryConsentStoreDriver",
       "NoneConsentVerifierDriver",
@@ -39,6 +42,8 @@ describe("@stackra/consent", () => {
       "StorageConsentStoreDriver",
       "consentModeSignals",
       "consentSnapshotHeaders",
+      "findConsentProofChainBreak",
+      "linkConsentProof",
       "needsGuardianConsent",
     ]);
   });
@@ -58,6 +63,10 @@ describe("@stackra/consent", () => {
       "CONSENT_SNAPSHOT_SCHEMA",
       "encodeConsentSnapshot",
       "decodeConsentSnapshot",
+      "GUARDIAN_LOGIN_ATTESTATION_SCHEMA",
+      "encodeGuardianLoginAttestation",
+      "decodeGuardianLoginAttestation",
+      "hashConsentProofLink",
     ]) {
       expect(name in consent).toBe(false);
     }
