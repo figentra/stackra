@@ -71,8 +71,9 @@ background chains (relay tick, delivery, inbox receipt, the listener call's stor
   at its path; such a service could not serve an isolated call anyway. Raise the budget to two per instance or more.
 - A savepoint (nested transaction without `requiresNew`), a query outside a transaction, the replica pool and a
   database with no gate (the memory driver's single PGlite connection) are not gated and behave as before.
-- A new path that opens its own connection with `em.transactional` outside `runTransaction` must call
-  `holdConnection` (AGENTS.md rule); one that does not is not gated and can still stall.
+- `holdConnection` is internal to `@stackra/database` and is not exported. A new path inside the package that opens its
+  own connection with `em.transactional` outside `runTransaction` calls it (AGENTS.md rule); code outside the package
+  opens transactions through `runTransaction` or `CrudService`, which are gated.
 
 ## Risks
 
@@ -112,4 +113,5 @@ background chains (relay tick, delivery, inbox receipt, the listener call's stor
 
 - 2026-11-26 → Clarified (the stall reproduced against Postgres; ADR 0495 consequence and ADR 0473 decision 2)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md; built in the same branch, stackra#1096)
