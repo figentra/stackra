@@ -5,7 +5,8 @@
  *          the programming model v3 shape, with the `stackra` field and turbo tags of ADR 0453 decision 11
  *          (`packages/<category>/<name>`, `services/<name>`) or a product seed pack
  *          (`seed-packs/<name>`) at the workspace root, then names the next steps. The package name comes from
- *          `memberNaming` (`--scope`, else the root runway's `product.key`). `--over` regenerates over an existing
+ *          `memberNaming` (`--scope`, else the root runway's `product.key`); a service pins the workspace's reference
+ *          `encore.dev` (`encoreReferenceVersion`, else `ENCORE_VERSION`). `--over` regenerates over an existing
  *          member: it writes only the files that are missing and prints a line diff for each authored file that
  *          differs from the template, never writing it. It refuses a folder that exists (without `--over`), a name or
  *          scope that is not kebab-case, a category with no folder under `packages/`, and an area that is not an
@@ -34,6 +35,7 @@ import {
 import { dirname, join, relative, resolve } from "node:path";
 
 import { ApiArea, Enum } from "@stackra/contracts";
+import { encoreReferenceVersion } from "@stackra/repo-checks/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { lineDiff } from "#node/functions/line-diff.function";
@@ -177,12 +179,20 @@ export const NEW_COMMAND: CliCommand = {
       if (typeof area !== "string" || !areas.includes(area))
         throw new CliUsageError(`a service needs --area ${areas.join("|")}`);
       folder = join(root, "services", name);
+      // The `encore.dev` the workspace's services pin (root package.json `stackra.encore`, else the default catalog).
+      const read = (file: string) =>
+        existsSync(join(root, file)) ? readFileSync(join(root, file), "utf8") : undefined;
+      const encoreVersion = encoreReferenceVersion(
+        read("package.json"),
+        read("pnpm-workspace.yaml"),
+      );
       files = serviceTemplate({
         name,
         pascal,
         description,
         area: area.charAt(0).toUpperCase() + area.slice(1),
         data: values["data"] === true,
+        ...(encoreVersion !== undefined && { encoreVersion }),
         ...summary,
         ...memberNaming(root, "service", name, scope),
         ...(freshWorkspace && { stackraVersion: "catalog:stackra" }),

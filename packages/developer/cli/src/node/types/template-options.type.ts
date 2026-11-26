@@ -35,6 +35,9 @@ export type TemplateOptions = {
   /** A service's `--data`: the database test peers and one example module with its model, migration and tests. */
   readonly data?: boolean;
 
+  /** A service's `encore.dev` version: the workspace's reference (`encoreReferenceVersion`), else `ENCORE_VERSION`. */
+  readonly encoreVersion?: string;
+
   /** One sentence for agents on when to reach for the member: `stackra.summary` (ADR 0453 decision 11). */
   readonly summary?: string;
 };
