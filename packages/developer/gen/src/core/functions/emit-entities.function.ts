@@ -11,7 +11,10 @@
  *           constant defaults, relations with their inverse sides, embedded money and link columns. Column types,
  *           lengths, indexes and foreign keys are the migration's (ADR 0159), so none is written here. A getter is
  *           listed as not persisted, because `EntitySchema<T>` names every field of `T`. A `Translated` field gets
- *           `@stackra/model`'s `TranslatedType`, so it loads back as a `Translated`.
+ *           `@stackra/model`'s `TranslatedType`, so it loads back as a `Translated`. A `@Field(zod)` hatch field is
+ *           typed from its migration column (`hatchColumnOf`, `HATCH_ORM_TYPES`: `t.enum` and `t.string` are `string`,
+ *           `t.integer` is `integer`, ...), because the migration owns the column type (ADR 0159); with no column
+ *           found it stays `json`.
  * Runtime: isomorphic
  * Governing contract: ADR 0336 (decision 2, stackra-64); ADR 0097 (decisions 3 and 5.4: gen emits EntitySchema, no runtime scan); ADR 0294 (decisions
  *                     20 and 28: tables per module schema, links); ADR 0159; the STA-335 entity-schema spike; ADR 0162
@@ -19,8 +22,10 @@
  */
 import { snakeCase } from "@stackra/support";
 
+import { HATCH_ORM_TYPES } from "#core/constants/hatch-orm-types.constant";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { hatchColumnOf } from "#core/functions/hatch-column-of.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { plural } from "#core/functions/plural.function";
@@ -37,8 +42,8 @@ const GEO_TYPES = {
   line: "GeoLineType",
 } as const;
 
-/** The ORM type of a scalar field. */
-function ormType(field: FieldIR): string {
+/** The ORM type of a scalar field; `hatch` is the type a hatch field's migration column maps to, when it has one. */
+function ormType(field: FieldIR, hatch?: string): string {
   switch (field.type.kind) {
     case "boolean": {
       return "boolean";
@@ -58,7 +63,7 @@ function ormType(field: FieldIR): string {
       return "string";
     }
     default: {
-      return "json";
+      return hatch ?? "json";
     }
   }
 }
@@ -132,7 +137,11 @@ export function emitEntities(ir: MemberIR, module: string, hosted = false): stri
     !hosted && ir.layout !== "package" && shape.fields.some((field) => field.default !== undefined);
   let money = false;
   /** The column properties of `fields`, given the model's `traits`. */
-  const fieldProperties = (fields: readonly FieldIR[], traits: ReadonlySet<string>): string[] => {
+  const fieldProperties = (
+    shape: ShapeIR,
+    fields: readonly FieldIR[],
+    traits: ReadonlySet<string>,
+  ): string[] => {
     const properties: string[] = [];
     for (const field of fields) {
       const nullable = field.nullable || field.optional ? ", nullable: true" : "";
@@ -146,6 +155,8 @@ export function emitEntities(ir: MemberIR, module: string, hosted = false): stri
       if (field.type.kind === "translated") use("@stackra/model", "TranslatedType");
       const geoType = field.type.kind === "geo" ? GEO_TYPES[field.type.shape] : undefined;
       if (geoType !== undefined) use("@stackra/model", geoType);
+      const column = field.type.kind === "hatch" ? hatchColumnOf(ir, shape, field) : undefined;
+      const hatch = column === undefined ? undefined : HATCH_ORM_TYPES[column.method];
       const parts =
         field.type.kind === "enum"
           ? ["enum: true", `items: ${JSON.stringify(field.type.values)}`]
@@ -154,7 +165,7 @@ export function emitEntities(ir: MemberIR, module: string, hosted = false): stri
             : geoType !== undefined
               ? [`type: ${geoType}`]
               : [
-                  `type: ${JSON.stringify(field.name === "version" && traits.has("Versioned") ? "integer" : ormType(field))}`,
+                  `type: ${JSON.stringify(field.name === "version" && traits.has("Versioned") ? "integer" : ormType(field, hatch))}`,
                 ];
       if (field.name === "id" && traits.has("HasPublicId")) parts.push("primary: true");
       if (field.name === "updatedAt" && traits.has("Timestamps"))
@@ -190,7 +201,7 @@ export function emitEntities(ir: MemberIR, module: string, hosted = false): stri
       );
     }
 
-    const properties = fieldProperties(shape.fields, traits);
+    const properties = fieldProperties(shape, shape.fields, traits);
     for (const relation of shape.entity?.relations ?? []) {
       const nullable = relation.nullable ? ", nullable: true" : "";
       if (relation.kind === "link") {
@@ -260,7 +271,7 @@ export function emitEntities(ir: MemberIR, module: string, hosted = false): stri
       `  tableName: ${JSON.stringify(plural(snakeCase(shape.name)))},`,
       "  properties: {",
       '    id: { type: "string", primary: true },',
-      ...fieldProperties(shape.fields, new Set()),
+      ...fieldProperties(shape, shape.fields, new Set()),
       ...(marked(shape) ? ['    "~defaults": { type: "json", persist: false },'] : []),
       "  },",
       "});",
