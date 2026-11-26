@@ -3,8 +3,8 @@
  * Purpose: unit tests of `checkActionStores` (STA-2798): a service whose manifest binds the action stores passes when
  *          every deployed environment the root declares selects `postgres` or `valkey` (the member's own value, else
  *          the root's default), and is reported at `environments.<env>.config.actions.stores.<field>` when one keeps
- *          `memory`, explicitly or by default; `dev`, undeclared environments, unbound stores and a missing manifest
- *          are never checked.
+ *          `memory`, explicitly or by default, or a durable driver the manifest lists no candidate for; `dev`,
+ *          undeclared environments, unbound stores and a missing manifest are never checked.
  * Boundary: test only; runways are built through `parseRunway`, so each is a checked shape; manifests are the
  *           `drivers` rows gen writes.
  * Runtime: node (vitest)
@@ -34,12 +34,27 @@ const rootWith = (stores?: Record<string, string>) =>
 const serviceWith = (environments: Record<string, unknown> = {}) =>
   parseRunway("service", { version: 3, environments });
 
-/** A generated manifest that binds both action stores (and another port). */
+/** The `drivers` rows `@stackra/actions` gives a member: both action stores in memory or Valkey. */
+const ACTIONS_ROWS = [
+  {
+    key: "actions.IdempotencyStore",
+    candidates: ["memory", "valkey"],
+    selectedBy: "config:actions.stores.idempotency",
+  },
+  {
+    key: "actions.RateLimitStore",
+    candidates: ["memory", "valkey"],
+    selectedBy: "config:actions.stores.rateLimit",
+  },
+  { key: "cache.Cache", candidates: ["memory"], selectedBy: "config:cache.driver" },
+];
+
+/** A generated manifest that binds both action stores, with `@stackra/database`'s Postgres drivers as well. */
 const BOTH = {
   drivers: [
-    { key: "actions.IdempotencyStore", selectedBy: "config:actions.stores.idempotency" },
-    { key: "actions.RateLimitStore", selectedBy: "config:actions.stores.rateLimit" },
-    { key: "cache.Cache", selectedBy: "config:cache.driver" },
+    ...ACTIONS_ROWS,
+    { key: "actions.IdempotencyStore", candidates: ["postgres"], from: "@stackra/database" },
+    { key: "actions.RateLimitStore", candidates: ["postgres"], from: "@stackra/database" },
   ],
 };
 
@@ -84,6 +99,31 @@ describe("checkActionStores", () => {
       {
         path: "environments.production.config.actions.stores.rateLimit",
         message: expect.stringMatching(/^production keeps actions\.RateLimitStore in memory, /),
+      },
+    ]);
+  });
+
+  it("reports a durable driver that no package of the member provides", () => {
+    const issues = checkActionStores(
+      rootWith({ idempotency: "postgres", rateLimit: "postgres" }),
+      serviceWith({
+        staging: { config: { "actions.stores": { idempotency: "valkey", rateLimit: "valkey" } } },
+      }),
+      { drivers: ACTIONS_ROWS },
+    );
+
+    expect(issues).toEqual([
+      {
+        path: "environments.production.config.actions.stores.idempotency",
+        message: expect.stringMatching(
+          /^production keeps actions\.IdempotencyStore in postgres, which no package of the member provides for actions\.IdempotencyStore \(its candidates: memory, valkey\), .* set `config\.actions\.stores\.idempotency` to valkey, /,
+        ),
+      },
+      {
+        path: "environments.production.config.actions.stores.rateLimit",
+        message: expect.stringMatching(
+          /^production keeps actions\.RateLimitStore in postgres, which no package/,
+        ),
       },
     ]);
   });

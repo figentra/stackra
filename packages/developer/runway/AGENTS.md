@@ -83,7 +83,7 @@ and only parses and prints; the work stays in the functions it calls.
   environment variable such as `GITHUB_ACTIONS`, or a caller's word (ADR 0523, STA-2100).
 - `checkActionStores` restates the actions store names (`ACTION_STORE_PORTS`, `DURABLE_ACTION_STORES`) instead of
   importing @stackra/actions; change them with `StoresConfig`. It checks only the stores a member's committed
-  manifest binds, and never `dev` (STA-2798).
+  manifest binds, requires a driver the manifest lists as a candidate of the port, and never checks `dev` (STA-2798).
 - A destination needs a driver: `checkDestinations` and `DRIVEN_TARGETS` list them; a new driver adds its destination
   there (owner decision O8).
 - A runway holds secret names only. `definesFor` inlines public vars (`VITE_`, `EXPO_PUBLIC_`, `RENDERER_VITE_`) and
