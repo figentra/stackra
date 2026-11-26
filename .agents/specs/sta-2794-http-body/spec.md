@@ -95,4 +95,5 @@ ReadableStream<Uint8Array>`; the generated adapter imports it and no longer impo
 
 - 2026-11-26 → Clarified (STA-2794 item C: the crash and its cause on Encore's `RawRequest`)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md; built in the same branch)
