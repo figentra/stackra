@@ -12,10 +12,11 @@
  *          failed jobs. Across owners: a claimed job loads, settles and queues its next link in its owner (the link in a
  *          `requiresNew` transaction), an owned job with no isolation bound or a claim that does not load fails the
  *          drain and never runs, and a delivered job's row work runs in its own scope's isolation. Each pass of a `work`
- *          loop that reached its store beats `queue-<queue>` through a bound `HeartbeatService`; a pass whose store
- *          failed, `drain` and a worker with none bound beat nothing.
+ *          loop that reached its store beats `queue-<queue>` through a bound `HeartbeatService`, and a job that runs past
+ *          several `minInterval`s keeps beating while it runs; a pass whose store failed, `drain` and a worker with none
+ *          bound beat nothing.
  * Boundary: test only; the memory driver, a fixed clock and a map resolver with an allowing `AccessControl`. Fake timers
- *           only in the timeout test.
+ *           only in the timeout test and the long-job heartbeat test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0148 (decisions 1 and 3); ADR 0305 (rules 28 and 30); ADR 0136
  *                     (decision 3); ADR 0327 (decision 6); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0184
@@ -617,16 +618,42 @@ describe(QueueWorkerService, () => {
   });
 });
 
-/** A heartbeat sender that records each beat instead of sending it. */
+/** A heartbeat sender with a URL for every job and a one-second `minInterval` that records each beat instead of sending it. */
 class RecordingHeartbeats extends HeartbeatService {
   readonly beats: string[] = [];
 
   constructor() {
-    super(buildConfig(HeartbeatConfig), new FixedClock(), new RecordingLogger());
+    super(
+      buildConfig(HeartbeatConfig, { values: { minInterval: Duration.seconds(1) } }),
+      new FixedClock(),
+      new RecordingLogger(),
+    );
+  }
+
+  override has(): boolean {
+    return true;
   }
 
   override async beat(name: string): Promise<void> {
     this.beats.push(name);
+  }
+}
+
+/** A job of the `exports` queue that runs until the test finishes it. */
+class ExportReportAction extends Action({
+  key: "report.export",
+  actors: [ActorKind.System],
+  job: { queue: "exports", timeout: "1m" },
+}) {
+  started = false;
+
+  finish: () => void = () => undefined;
+
+  async handle(): Promise<void> {
+    this.started = true;
+    await new Promise<void>((resolve) => {
+      this.finish = resolve;
+    });
   }
 }
 
@@ -658,6 +685,34 @@ describe("QueueWorkerService heartbeats", () => {
     controller.abort();
     await working;
     expect(heartbeats.beats).toEqual([]);
+  });
+
+  it("keeps beating queue-<queue> while a job runs past several minIntervals", async () => {
+    vi.useFakeTimers();
+    try {
+      const heartbeats = new RecordingHeartbeats();
+      const report = new ExportReportAction();
+      const { queue, worker } = setup([
+        [HeartbeatService, heartbeats],
+        [ExportReportAction, report],
+      ]);
+      await queue.push(ExportReportAction, {});
+      const controller = new AbortController();
+      const working = worker.work("exports", { signal: controller.signal });
+      await vi.waitFor(() => expect(report.started).toBe(true));
+      expect(heartbeats.beats).toEqual([]);
+      await vi.advanceTimersByTimeAsync(3500);
+      // Still running: one beat a second, before the pass that ran it ends.
+      expect(heartbeats.beats).toEqual(["queue-exports", "queue-exports", "queue-exports"]);
+      report.finish();
+      controller.abort();
+      await working;
+      // The pass's own beat, and none after the job settled.
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(heartbeats.beats).toHaveLength(4);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("works without a HeartbeatService bound", async () => {

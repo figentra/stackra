@@ -29,7 +29,9 @@
  *           delivered has no claimed row: its row work (a dead letter kept in the store) runs in its own scope's
  *           isolation, so it takes that scope's tenant. Each pass of a `work` loop that reached its store, a job run or
  *           none due, beats the `queue-<queue>` heartbeat through the bound `HeartbeatService` (ADR 0184 decision 4),
- *           without waiting for it; a loop whose store failed does not beat. `process` and `drain` never beat: a
+ *           without waiting for it, and while a loop's attempt runs it keeps beating every `minInterval`
+ *           (`HeartbeatService.during`), so a job longer than the heartbeat's period does not page; the attempt's
+ *           timeout bounds those beats. A loop whose store failed does not beat. `process` and `drain` never beat: a
  *           delivery or a drain is not a loop that a quiet queue would stop.
  * Runtime: node
  * Governing contract: ADR 0495 (decision 2 and the note of 2026-11-01); ADR 0148 (decisions 1, 2 and 3); ADR 0305
@@ -144,7 +146,8 @@ export class QueueWorkerService extends Service {
   /**
    * Works `queue` with `concurrency` loops (one when absent) until `signal` aborts: each reserves the next due job and
    * runs it, and waits a second when none is due. A store that fails is logged and retried after the same pause. Each
-   * pass that reached the store beats the `queue-<queue>` heartbeat when a `HeartbeatService` is bound.
+   * pass that reached the store beats the `queue-<queue>` heartbeat when a `HeartbeatService` is bound, and so does a
+   * running attempt every `minInterval` until it settles.
    *
    * @throws Error before `connect`.
    * @throws RangeError when `concurrency` is not a whole number from 1.
@@ -165,7 +168,7 @@ export class QueueWorkerService extends Service {
     const heartbeat = heartbeatName(`queue-${queue}`);
     while (!signal.aborted) {
       try {
-        const run = await this.next(queue, this.clock.now());
+        const run = await this.next(queue, this.clock.now(), heartbeat);
         this.beat(heartbeat);
         if (run === undefined) await this.pause(signal);
       } catch (error) {
@@ -194,23 +197,35 @@ export class QueueWorkerService extends Service {
 
   /**
    * Reserves the next due job of `queue` at `now`, loads it in its owner and runs one attempt; `undefined` when none is
-   * due.
+   * due. With `heartbeat` (a `work` loop's) the attempt beats it while it runs.
    *
    * @throws JobClaimNotLoadedError when the reserved job does not load in its owner.
    * @throws JobRowIsolationMissingError when it has an owner and no `CallIsolation` is bound.
    */
-  private async next(queue: string | undefined, now: Date): Promise<JobRun | undefined> {
+  private async next(
+    queue: string | undefined,
+    now: Date,
+    heartbeat?: string,
+  ): Promise<JobRun | undefined> {
     const claim = await this.driver.reserve(queue, now);
     if (claim === undefined) return undefined;
     const job = await inJobOwner(this.isolation(), claim.ownerId, claim.id, () =>
       this.driver.load(claim.id),
     );
     if (job === undefined) throw JobClaimNotLoadedError.create({ id: claim.id });
-    return this.run(job, now, claim);
+    return this.run(job, now, claim, heartbeat);
   }
 
-  /** Runs one attempt of a reserved job at `now` (claimed, or delivered when `claim` is undefined) and records it. */
-  private async run(job: QueuedJob, now: Date, claim: JobClaim | undefined): Promise<JobRun> {
+  /**
+   * Runs one attempt of a reserved job at `now` (claimed, or delivered when `claim` is undefined) and records it; with
+   * `heartbeat` the attempt beats it every `minInterval` while it runs.
+   */
+  private async run(
+    job: QueuedJob,
+    now: Date,
+    claim: JobClaim | undefined,
+    heartbeat?: string,
+  ): Promise<JobRun> {
     this.connected();
     const inOwner = <T>(work: () => Promise<T>) => this.inOwner(job, claim, work);
     const found = this.resolve(job);
@@ -229,9 +244,11 @@ export class QueueWorkerService extends Service {
       }
       // With a `CallIsolation` bound the pipeline isolates the attempt itself (the job's actor and scope), and commits
       // once, so no outer scope session wraps it: one would hold the commit past the call's after-commit work.
-      output = this.connected().resolver.has(CallIsolation)
-        ? await this.attempt(type, plan, job)
-        : await this.unisolated(job, () => this.attempt(type, plan, job));
+      output = await this.beating(heartbeat, () =>
+        this.connected().resolver.has(CallIsolation)
+          ? this.attempt(type, plan, job)
+          : this.unisolated(job, () => this.attempt(type, plan, job)),
+      );
       await inOwner(() => this.driver.remove(job.id));
     } catch (error) {
       return this.failed(type, plan, job, now, error, inOwner);
@@ -476,6 +493,17 @@ export class QueueWorkerService extends Service {
       code: isRefusal(error) ? error.code : "internal",
       message: error instanceof Error ? error.message : String(error),
     };
+  }
+
+  /**
+   * Runs `work`, beating heartbeat `name` every `minInterval` until it settles when `name` is given and a
+   * `HeartbeatService` is bound; else just runs it.
+   */
+  private beating<T>(name: string | undefined, work: () => Promise<T>): Promise<T> {
+    const resolver = this.connection?.resolver;
+    return name !== undefined && resolver?.has(HeartbeatService) === true
+      ? resolver.get(HeartbeatService).during(name, work)
+      : work();
   }
 
   /** Beats heartbeat `name` through the bound `HeartbeatService`, without waiting: a beat never throws. */
