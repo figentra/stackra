@@ -267,6 +267,31 @@
       "refusals": ["unauthenticated"]
     },
     {
+      "key": "identity.login_policy.set@1",
+      "kind": "action",
+      "module": "identity",
+      "class": "SetLoginPolicyAction",
+      "file": "src/node/actions/set-login-policy.action.ts",
+      "permission": "identity.login_policy.set",
+      "risk": "L3",
+      "actors": ["user", "service"],
+      "idempotency": "optional",
+      "area": "app",
+      "endpoint": {
+        "method": "POST",
+        "path": "/app/login-policies/set",
+        "derived": true
+      },
+      "toolOff": "how a whole tenant signs in is an administrator's decision, never an agent's",
+      "input": {
+        "$ref": "#/schemas/identity.SetLoginPolicyInput"
+      },
+      "output": {
+        "$ref": "#/schemas/identity.LoginPolicyOutput"
+      },
+      "refusals": ["not_found", "login_policy_rejected"]
+    },
+    {
       "key": "identity.passkey.verify@1",
       "kind": "action",
       "module": "identity",
@@ -340,6 +365,30 @@
       "output": {
         "$ref": "#/schemas/identity.AccountDeletionOutput"
       }
+    },
+    {
+      "key": "identity.login_policy.read@1",
+      "kind": "query",
+      "module": "identity",
+      "class": "ShowLoginPolicyQuery",
+      "file": "src/node/queries/show-login-policy.query.ts",
+      "permission": "identity.login_policy.read",
+      "risk": "L1",
+      "actors": ["user", "service"],
+      "area": "app",
+      "endpoint": {
+        "method": "GET",
+        "path": "/app/login-policies/read",
+        "derived": true
+      },
+      "toolOff": "a tenant's sign-in rules are an administrator's security settings, never an agent's",
+      "input": {
+        "$ref": "#/schemas/identity.ShowLoginPolicyInput"
+      },
+      "output": {
+        "$ref": "#/schemas/identity.LoginPolicyOutput"
+      },
+      "refusals": ["not_found"]
     }
   ],
   "events": [
@@ -443,6 +492,22 @@
       "member": "erase",
       "file": "src/node/access/account-deletion.permissions.ts",
       "system": true
+    },
+    {
+      "key": "identity.login_policy.read",
+      "risk": "L1",
+      "class": "LoginPolicyPermissions",
+      "module": "identity",
+      "member": "read",
+      "file": "src/node/access/login-policy.permissions.ts"
+    },
+    {
+      "key": "identity.login_policy.set",
+      "risk": "L3",
+      "class": "LoginPolicyPermissions",
+      "module": "identity",
+      "member": "set",
+      "file": "src/node/access/login-policy.permissions.ts"
     },
     {
       "key": "identity.operator.bootstrap",
@@ -560,6 +625,13 @@
       "category": "conflict",
       "module": "identity",
       "class": "IdpUserExistsError"
+    },
+    {
+      "code": "login_policy_rejected",
+      "kind": "validation",
+      "category": "validation",
+      "module": "identity",
+      "class": "LoginPolicyRejectedError"
     },
     {
       "code": "service_token_refused",
@@ -805,6 +877,17 @@
               }
             }
           ]
+        }
+      }
+    },
+    {
+      "port": "IdpOrganizations",
+      "key": "identity.IdpOrganizations",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": {
+          "class": "MemoryIdpOrganizationsDriver",
+          "from": "@stackra/identity"
         }
       }
     },
@@ -1444,6 +1527,30 @@
       ]
     },
     {
+      "class": "SetLoginPolicyAction",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "IdpOrganizations",
+            "from": "@stackra/identity/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "IdentityConfig",
+            "from": "@stackra/identity"
+          }
+        }
+      ]
+    },
+    {
       "class": "VerifyPasskeyAction",
       "from": "@stackra/identity/node",
       "deps": [
@@ -1486,6 +1593,24 @@
         {
           "class": {
             "name": "AccountDeletions",
+            "from": "@stackra/identity/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "ShowLoginPolicyQuery",
+      "from": "@stackra/identity/node",
+      "deps": [
+        {
+          "class": {
+            "name": "IdpAdmin",
+            "from": "@stackra/identity/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "IdpOrganizations",
             "from": "@stackra/identity/contracts"
           }
         }
@@ -1577,6 +1702,10 @@
     "identity.LoginIdentifierKind": {
       "type": "string",
       "enum": ["email", "phone"]
+    },
+    "identity.LoginPolicyRejection": {
+      "type": "string",
+      "enum": ["no_sign_in_method", "no_second_factor", "unknown_provider"]
     },
     "identity.OperatorBootstrapOutcome": {
       "type": "string",
@@ -1878,6 +2007,55 @@
         }
       }
     },
+    "identity.LoginPolicyOutput": {
+      "type": "object",
+      "required": [
+        "allowUsernamePassword",
+        "allowRegister",
+        "allowExternalIdp",
+        "forceMfa",
+        "allowPasswordless",
+        "hidePasswordReset",
+        "ignoreUnknownUsernames",
+        "externalProviderIds",
+        "secondFactors"
+      ],
+      "properties": {
+        "allowUsernamePassword": {
+          "type": "boolean"
+        },
+        "allowRegister": {
+          "type": "boolean"
+        },
+        "allowExternalIdp": {
+          "type": "boolean"
+        },
+        "forceMfa": {
+          "type": "boolean"
+        },
+        "allowPasswordless": {
+          "type": "boolean"
+        },
+        "hidePasswordReset": {
+          "type": "boolean"
+        },
+        "ignoreUnknownUsernames": {
+          "type": "boolean"
+        },
+        "externalProviderIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "secondFactors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/identity.IdpSecondFactor"
+          }
+        }
+      }
+    },
     "identity.RegisterPasskeyInput": {
       "type": "object",
       "properties": {}
@@ -1929,6 +2107,61 @@
           }
         }
       }
+    },
+    "identity.SetLoginPolicyInput": {
+      "type": "object",
+      "required": [
+        "allowUsernamePassword",
+        "allowRegister",
+        "allowExternalIdp",
+        "forceMfa",
+        "allowPasswordless",
+        "hidePasswordReset",
+        "ignoreUnknownUsernames"
+      ],
+      "properties": {
+        "externalProviderIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "maxItems": 50
+        },
+        "secondFactors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/identity.IdpSecondFactor"
+          },
+          "uniqueItems": true,
+          "maxItems": 50
+        },
+        "allowUsernamePassword": {
+          "type": "boolean"
+        },
+        "allowRegister": {
+          "type": "boolean"
+        },
+        "allowExternalIdp": {
+          "type": "boolean"
+        },
+        "forceMfa": {
+          "type": "boolean"
+        },
+        "allowPasswordless": {
+          "type": "boolean"
+        },
+        "hidePasswordReset": {
+          "type": "boolean"
+        },
+        "ignoreUnknownUsernames": {
+          "type": "boolean"
+        }
+      }
+    },
+    "identity.ShowLoginPolicyInput": {
+      "type": "object",
+      "properties": {}
     },
     "identity.VerifyPasskeyInput": {
       "type": "object",

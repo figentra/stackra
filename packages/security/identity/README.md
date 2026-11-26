@@ -46,6 +46,9 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `./node`      | `ListMySessionsQuery` (each session a `SessionLine`), `EndMySessionAction`, `EndAllMySessionsAction`, `EndUserSessionsAction` | where you are signed in and sign out everywhere, yours or (admin) another user's; see below    |
 | `./node`      | `DeleteMyAccountAction`, `CancelAccountDeletionAction`, `ShowAccountDeletionQuery`, `EraseDueAccountsAction`                  | in-app account deletion with a grace period (App Store 5.1.1(v), Play); see below              |
 | `./node`      | `BootstrapOperatorAction`, `OperatorPermissions`, `BootstrapOperatorInput`, `BootstrapOperatorOutput`                         | an environment's first operator, by email, once (`stackra ops bootstrap-operator`); see below  |
+| `./node`      | `SetLoginPolicyAction`, `ShowLoginPolicyQuery`, `LoginPolicyPermissions`, `LoginPolicyOutput`                                 | a tenant's login policy: force MFA, the methods, factors and providers; audited; see below    |
+| `./contracts` | `IdpOrganizations`, `LoginPolicyRejection`                                                                                    | the host's scope-to-organisation port; why a login policy is refused                           |
+| `.`           | `MemoryIdpOrganizationsDriver`, `loginPolicyRejectionOf`, `LoginPolicyRejectedError`                                          | the mapping in memory; the lock-out checks and their refusal                                   |
 | `./node`      | `PostgresAccountDeletionsDriver`, `CreateAccountDeletionsMigration`                                                           | the durable store, `identity.account_deletions`, per tenant partition                          |
 | `.`           | `AccountDeletionScheduled`, `AccountDeletionCancelled`, `AccountDeletionStarted`, `MemoryAccountDeletionsDriver`              | `identity.account_deletion.{scheduled,cancelled,started}.v1`; the store in memory              |
 | `./contracts` | `AccountDeletions`, `AccountDeletion`, `AccountDeletionState`                                                                 | the store of scheduled deletions; what the calls answer                                        |
@@ -322,6 +325,31 @@ signing certificate. Without them every call refuses `unsupported`. `ExpoPasskey
 The caller's provider user is found by the actor's `usr_` id, never a body field; a call on someone else's behalf is
 refused. Each device sees `SessionStatus.Revoked` on its next refresh. The provider's sessions span every scope a person
 belongs to and identity holds no membership, so grant `identity.session.end_user` to platform or support roles only.
+
+## Login policy: MFA enforcement (STA-2817)
+
+A tenant administrator decides how the tenant's people sign in: force a second factor for everyone, choose the allowed
+methods, the second factors and the external providers offered, and what the login page reveals (ADR 0207 decision 1,
+ADR 0410 decision 4). Core ships no screen; a template's security settings call these two.
+
+| Call                                                     | Who                         | What                                                                                      |
+| -------------------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
+| `ShowLoginPolicyQuery` (`login_policy.read@1`, L1)       | an administrator or service | the policy in force: the organisation's own, or the instance default it inherits          |
+| `SetLoginPolicyAction` (`login_policy.set@1`, L3, `aal2`) | an administrator or service | pushes the policy to the organisation; audited before and after; answers the policy now   |
+
+- The organisation is the session's: the call's scope, mapped by the host's `IdpOrganizations` binding (the identity
+  service keeps which organisation it made for which tenant). Nothing in the request names an organisation, tenant or
+  scope. A platform call, a scope with no organisation, or a host that binds only the memory driver answers
+  `NotFoundError`, so nothing is changed by mistake.
+- A list the request leaves out (`externalProviderIds`, `secondFactors`) keeps what the organisation offers now.
+- Before any provider write, `loginPolicyRejectionOf` refuses a policy that would lock everyone out or names a provider
+  outside `IdentityConfig.externalProviders`, as `LoginPolicyRejectedError` (`login_policy_rejected`) with a
+  `LoginPolicyRejection` reason: `no_sign_in_method`, `no_second_factor` or `unknown_provider`. The labels are in
+  `assets/lang/<locale>/identity.json` under `enums.login_policy_rejection`.
+- Setting is L3 with a fresh `aal2` step-up; grant `identity.login_policy.set` at the tenant's root to its owner and
+  administrator roles. The audit entry carries the rules and provider-side ids only, never a person.
+- Neither call is an MCP tool: how a whole tenant signs in is an administrator's decision.
+- The staff organisation's policy stays in infrastructure code (`@stackra/infra-identity`), not behind these calls.
 
 ## Account deletion (App Store 5.1.1(v), Play)
 

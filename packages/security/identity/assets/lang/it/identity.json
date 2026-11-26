@@ -7,6 +7,11 @@
       "unsupported": "Accedi con Apple non è disponibile su questo dispositivo",
       "cancelled": "L’accesso con Apple è stato annullato",
       "failed": "Accesso con Apple non riuscito. Riprova."
+    },
+    "login_policy_rejection": {
+      "no_sign_in_method": "Scegli almeno un metodo di accesso",
+      "no_second_factor": "Offri almeno un secondo fattore prima di renderlo obbligatorio",
+      "unknown_provider": "Questo provider di accesso non è configurato per la tua organizzazione"
     }
   },
   "ui": {

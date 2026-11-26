@@ -7,6 +7,11 @@
       "unsupported": "„Mit Apple anmelden“ ist auf diesem Gerät nicht verfügbar",
       "cancelled": "„Mit Apple anmelden“ wurde abgebrochen",
       "failed": "„Mit Apple anmelden“ ist fehlgeschlagen. Versuche es erneut."
+    },
+    "login_policy_rejection": {
+      "no_sign_in_method": "Wählen Sie mindestens eine Anmeldemethode",
+      "no_second_factor": "Bieten Sie mindestens einen zweiten Faktor an, bevor Sie ihn verlangen",
+      "unknown_provider": "Dieser Anmeldeanbieter ist für Ihre Organisation nicht eingerichtet"
     }
   },
   "ui": {

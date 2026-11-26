@@ -3,8 +3,9 @@
  * Purpose: `ZitadelIdpAdminDriver`, the ZITADEL driver of `IdpAdmin`: human users through the v2 user service, machine
  *          users and their client secret through the management API, sessions (listed and ended) through the v2 session service, the
  *          device flow through the OAuth endpoints (RFC 8628), and an organisation's login policy through the
- *          management API (added the first time, updated after, then its external providers and second factors brought
- *          to exactly the listed ones); the claims action as an Actions v2 target and its `preuserinfo` and
+ *          management API (added the first time with the default's factors and providers, updated after only when a
+ *          rule changes, the settings Stackra does not manage carried over, then its external providers and second
+ *          factors brought to exactly the listed ones; read back with the providers and factors it offers); the claims action as an Actions v2 target and its `preuserinfo` and
  *          `preaccesstoken` executions; a user's enrolled authentication methods through the
  *          v2 user service, mapped to RFC 8176 `amr` codes; a Stackra user's provider user through the v2 user search on
  *          the `stackra_user_id` metadata `createUser` writes, and an email's Stackra user through the v2 user search on
@@ -19,9 +20,10 @@
  *           in its associated domains. Personal data and secrets are never logged.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263;
- *                     STA-1538 (passkeys); STA-1543 (erasure); STA-1580 (session list); STA-1586 (operator bootstrap).
+ *                     STA-1538 (passkeys); STA-1543 (erasure); STA-1580 (session list); STA-1586 (operator bootstrap); STA-2817 (reading the login policy).
  */
 import { Driver } from "@stackra/container";
+import { Enum } from "@stackra/contracts";
 import { UnauthenticatedError } from "@stackra/errors";
 
 import type { IdpAdminConfig } from "#config/idp-admin.config";
@@ -97,6 +99,49 @@ const SECOND_FACTOR_TYPE: Readonly<Record<IdpSecondFactor, string>> = {
   [IdpSecondFactor.OtpEmail]: "SECOND_FACTOR_TYPE_OTP_EMAIL",
   [IdpSecondFactor.OtpSms]: "SECOND_FACTOR_TYPE_OTP_SMS",
 };
+
+/** ZITADEL's passwordless (passkey) switch, on and off. */
+const PASSWORDLESS_ALLOWED = "PASSWORDLESS_TYPE_ALLOWED";
+const PASSWORDLESS_NOT_ALLOWED = "PASSWORDLESS_TYPE_NOT_ALLOWED";
+
+/**
+ * The login policy settings Stackra does not manage, carried over from the policy in force on every add or update, so
+ * setting the sign-in rules never resets the check lifetimes, the redirect or the login-name switches to zero.
+ */
+const KEPT_LOGIN_POLICY_FIELDS: readonly string[] = [
+  "defaultRedirectUri",
+  "passwordCheckLifetime",
+  "externalLoginCheckLifetime",
+  "mfaInitSkipLifetime",
+  "secondFactorCheckLifetime",
+  "multiFactorCheckLifetime",
+  "allowDomainDiscovery",
+  "disableLoginWithEmail",
+  "disableLoginWithPhone",
+  "forceMfaLocalOnly",
+];
+
+/** The strings of `value` when it is a list, else none. */
+function listOf(value: unknown): string[] {
+  return (Array.isArray(value) ? value : []).filter(
+    (item): item is string => typeof item === "string",
+  );
+}
+
+/**
+ * Whether the policy in force already has `rules`. ZITADEL leaves a false flag and the zero passwordless type out of
+ * its answer, so a missing flag reads as off.
+ */
+function sameRules(
+  answered: Readonly<Record<string, unknown>> | undefined,
+  rules: Readonly<Record<string, unknown>>,
+): boolean {
+  return Object.entries(rules).every(([field, wanted]) => {
+    const value = answered?.[field];
+    if (field === "passwordlessType") return (value ?? PASSWORDLESS_NOT_ALLOWED) === wanted;
+    return (value === true) === wanted;
+  });
+}
 
 /** One request: the method, the path, a JSON or form body, and the organisation it acts in. */
 interface Call {
@@ -539,38 +584,97 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     return installed;
   }
 
-  /** See `IdpAdmin.setLoginPolicy`: adds the organisation's own policy while it uses the default, updates it after. */
+  /**
+   * See `IdpAdmin.setLoginPolicy`: adds the organisation's own policy while it uses the default, updates it after (and
+   * sends no update when the rules already match, which ZITADEL would refuse as not changed). The settings Stackra does
+   * not manage (`KEPT_LOGIN_POLICY_FIELDS`) are carried over from the policy in force; the first add also keeps the
+   * default's second and multi factors and its providers, so a list the call leaves out stays as the organisation
+   * offered it.
+   */
   async setLoginPolicy(organizationId: string, policy: LoginPolicy): Promise<void> {
     const current = await this.call({
       method: "GET",
       path: "/management/v1/policies/login",
       organizationId,
     });
-    const isDefault = (current.body as { policy?: { isDefault?: unknown } }).policy?.isDefault;
-    await this.call({
-      method: isDefault === false ? "PUT" : "POST",
-      path: "/management/v1/policies/login",
-      organizationId,
-      json: {
-        allowUsernamePassword: policy.allowUsernamePassword,
-        allowRegister: policy.allowRegister,
-        allowExternalIdp: policy.allowExternalIdp,
-        forceMfa: policy.forceMfa,
-        passwordlessType: policy.allowPasswordless
-          ? "PASSWORDLESS_TYPE_ALLOWED"
-          : "PASSWORDLESS_TYPE_NOT_ALLOWED",
-        hidePasswordReset: policy.hidePasswordReset,
-        ignoreUnknownUsernames: policy.ignoreUnknownUsernames,
-      },
-    });
-    if (policy.externalProviderIds !== undefined)
-      await this.syncProviders(organizationId, policy.externalProviderIds);
+    const answered = (current.body as { policy?: Record<string, unknown> }).policy;
+    // ZITADEL leaves a false flag out of its answer, so an organisation's own policy comes back with no `isDefault`:
+    // only an explicit `true` (or no policy at all) means it still inherits the default and needs adding.
+    const inherits = answered === undefined || answered["isDefault"] === true;
+    const rules: Record<string, unknown> = {
+      allowUsernamePassword: policy.allowUsernamePassword,
+      allowRegister: policy.allowRegister,
+      allowExternalIdp: policy.allowExternalIdp,
+      forceMfa: policy.forceMfa,
+      passwordlessType: policy.allowPasswordless ? PASSWORDLESS_ALLOWED : PASSWORDLESS_NOT_ALLOWED,
+      hidePasswordReset: policy.hidePasswordReset,
+      ignoreUnknownUsernames: policy.ignoreUnknownUsernames,
+    };
+    const kept = Object.fromEntries(
+      KEPT_LOGIN_POLICY_FIELDS.filter((field) => answered?.[field] !== undefined).map((field) => [
+        field,
+        answered?.[field],
+      ]),
+    );
+    if (inherits) {
+      const inheritedProviders = await this.providersOf(organizationId);
+      await this.call({
+        method: "POST",
+        path: "/management/v1/policies/login",
+        organizationId,
+        json: {
+          ...kept,
+          secondFactors: listOf(answered?.["secondFactors"]),
+          multiFactors: listOf(answered?.["multiFactors"]),
+          ...rules,
+        },
+      });
+      await this.syncProviders(organizationId, policy.externalProviderIds ?? inheritedProviders);
+    } else {
+      if (!sameRules(answered, rules))
+        await this.call({
+          method: "PUT",
+          path: "/management/v1/policies/login",
+          organizationId,
+          json: { ...kept, ...rules },
+        });
+      if (policy.externalProviderIds !== undefined)
+        await this.syncProviders(organizationId, policy.externalProviderIds);
+    }
     if (policy.secondFactors !== undefined)
       await this.syncSecondFactors(organizationId, policy.secondFactors);
   }
 
-  /** Brings the organisation's login-policy providers to exactly `wanted`: adds the missing, removes the others. */
-  private async syncProviders(organizationId: string, wanted: readonly string[]): Promise<void> {
+  /**
+   * See `IdpAdmin.getLoginPolicy`: the policy the organisation applies (its own or the inherited default; ZITADEL leaves
+   * a false flag out of the answer), then the providers and second factors it offers. A factor type this package does
+   * not name is left out.
+   */
+  async getLoginPolicy(organizationId: string): Promise<LoginPolicy> {
+    const { body } = await this.call({
+      method: "GET",
+      path: "/management/v1/policies/login",
+      organizationId,
+    });
+    const policy = (body as { policy?: Record<string, unknown> }).policy ?? {};
+    const types = await this.secondFactorTypesOf(organizationId);
+    return {
+      allowUsernamePassword: policy["allowUsernamePassword"] === true,
+      allowRegister: policy["allowRegister"] === true,
+      allowExternalIdp: policy["allowExternalIdp"] === true,
+      forceMfa: policy["forceMfa"] === true,
+      allowPasswordless: policy["passwordlessType"] === PASSWORDLESS_ALLOWED,
+      hidePasswordReset: policy["hidePasswordReset"] === true,
+      ignoreUnknownUsernames: policy["ignoreUnknownUsernames"] === true,
+      externalProviderIds: await this.providersOf(organizationId),
+      secondFactors: Enum.values(IdpSecondFactor).filter((factor) =>
+        types.includes(SECOND_FACTOR_TYPE[factor]),
+      ),
+    };
+  }
+
+  /** The provider ids the organisation's login policy offers now. */
+  private async providersOf(organizationId: string): Promise<string[]> {
     // shortcut: one page of PAGE linked providers; page through when an organisation can link more.
     const { body } = await this.call({
       method: "POST",
@@ -579,9 +683,26 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       json: { query: { offset: 0, limit: PAGE } },
     });
     const rows = (body as { result?: readonly { idpId?: unknown }[] }).result ?? [];
-    const current = rows
-      .map((row) => row.idpId)
-      .filter((id): id is string => typeof id === "string");
+    return rows.map((row) => row.idpId).filter((id): id is string => typeof id === "string");
+  }
+
+  /** The `SECOND_FACTOR_TYPE_*` values the organisation's login policy offers now. */
+  private async secondFactorTypesOf(organizationId: string): Promise<string[]> {
+    const { body } = await this.call({
+      method: "POST",
+      path: "/management/v1/policies/login/second_factors/_search",
+      organizationId,
+      json: {},
+    });
+    const result = (body as { result?: unknown }).result;
+    return (Array.isArray(result) ? result : []).filter(
+      (type): type is string => typeof type === "string",
+    );
+  }
+
+  /** Brings the organisation's login-policy providers to exactly `wanted`: adds the missing, removes the others. */
+  private async syncProviders(organizationId: string, wanted: readonly string[]): Promise<void> {
+    const current = await this.providersOf(organizationId);
     for (const idpId of wanted.filter((id) => !current.includes(id)))
       await this.call({
         method: "POST",
@@ -606,16 +727,7 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     organizationId: string,
     wanted: readonly IdpSecondFactor[],
   ): Promise<void> {
-    const { body } = await this.call({
-      method: "POST",
-      path: "/management/v1/policies/login/second_factors/_search",
-      organizationId,
-      json: {},
-    });
-    const result = (body as { result?: unknown }).result;
-    const current = (Array.isArray(result) ? result : []).filter(
-      (type): type is string => typeof type === "string",
-    );
+    const current = await this.secondFactorTypesOf(organizationId);
     const wantedTypes = [...new Set(wanted.map((factor) => SECOND_FACTOR_TYPE[factor]))];
     for (const type of wantedTypes.filter((wantedType) => !current.includes(wantedType)))
       await this.call({

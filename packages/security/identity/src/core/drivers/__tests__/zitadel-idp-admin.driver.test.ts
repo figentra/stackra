@@ -6,8 +6,10 @@
  *          network failure `IdpAdminUnavailableError`, another 4xx an `Error` with no body; ending a gone session
  *          succeeds; ending a user's sessions searches and deletes each; listing them pages the search and keeps
  *          id, times and the device's description only; a device poll maps the RFC 8628 errors; a
- *          user's authentication methods come back as unique `amr` codes; a policy's providers and second factors are
- *          brought to exactly the listed ones; a user is created with and found by its `stackra_user_id` metadata, and an email's Stackra id is read from
+ *          user's authentication methods come back as unique `amr` codes; a policy is added with the default's settings,
+ *          factors and providers carried over, updated when ZITADEL answers it without `isDefault`, and not sent when
+ *          its rules already hold; its providers and second factors are brought to exactly the listed ones, and read
+ *          back with them (a missing flag read as off); a user is created with and found by its `stackra_user_id` metadata, and an email's Stackra id is read from
  *          its one user's metadata (none on no user or no metadata, an error on two users);
  *          passkey sign-in and registration send the v2 session and passkey calls, unwrap `publicKey` (sign-in keeps
  *          only the challenge, relying party and user verification), answer an unknown login a decoy that never
@@ -15,7 +17,7 @@
  * Boundary: test only; a scripted global fetch records each request and answers from a queue.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; RFC 8628; ADR 0410 (STA-834); STA-1264; STA-1263; STA-1538; STA-1543; STA-1580;
- *                     STA-1586.
+ *                     STA-1586; STA-2817.
  */
 import { buildConfig } from "@stackra/config";
 import { UnauthenticatedError } from "@stackra/errors";
@@ -257,22 +259,104 @@ describe(ZitadelIdpAdminDriver, () => {
       ignoreUnknownUsernames: true,
     };
     const added = driverWith([
-      [200, { policy: { isDefault: true } }],
+      [
+        200,
+        {
+          policy: {
+            isDefault: true,
+            details: { sequence: "1" },
+            allowUsernamePassword: true,
+            passwordCheckLifetime: "240h0m0s",
+            allowDomainDiscovery: true,
+            secondFactors: ["SECOND_FACTOR_TYPE_OTP"],
+            multiFactors: ["MULTI_FACTOR_TYPE_U2F_WITH_VERIFICATION"],
+          },
+        },
+      ],
+      [200, { result: [{ idpId: "idp_nafath" }] }],
+      [200, {}],
+      [200, { result: [] }],
       [200, {}],
     ]);
     await added.idp.setLoginPolicy("org_1", policy);
-    expect(added.sent[1]?.method).toBe("POST");
-    expect(JSON.parse(added.sent[1]?.body ?? "")).toMatchObject({
+    expect(
+      added.sent.map(
+        (request) => `${request.method} ${request.url.replace("https://id.acme.example", "")}`,
+      ),
+    ).toEqual([
+      "GET /management/v1/policies/login",
+      "POST /management/v1/policies/login/idps/_search",
+      "POST /management/v1/policies/login",
+      "POST /management/v1/policies/login/idps/_search",
+      "POST /management/v1/policies/login/idps",
+    ]);
+    // The default's settings and factors are carried into the organisation's own policy, never reset.
+    expect(JSON.parse(added.sent[2]?.body ?? "")).toEqual({
+      passwordCheckLifetime: "240h0m0s",
+      allowDomainDiscovery: true,
+      secondFactors: ["SECOND_FACTOR_TYPE_OTP"],
+      multiFactors: ["MULTI_FACTOR_TYPE_U2F_WITH_VERIFICATION"],
+      allowUsernamePassword: true,
+      allowRegister: false,
+      allowExternalIdp: true,
       forceMfa: true,
       passwordlessType: "PASSWORDLESS_TYPE_NOT_ALLOWED",
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: true,
+    });
+    expect(JSON.parse(added.sent[4]?.body ?? "")).toEqual({
+      idpId: "idp_nafath",
+      ownerType: "IDP_OWNER_TYPE_SYSTEM",
     });
     const updated = driverWith([
-      [200, { policy: { isDefault: false } }],
+      [200, { policy: { isDefault: false, passwordCheckLifetime: "240h0m0s" } }],
       [200, {}],
     ]);
     await updated.idp.setLoginPolicy("org_1", policy);
     expect(updated.sent.map((request) => request.method)).toEqual(["GET", "PUT"]);
     expect(updated.sent[1]?.headers["x-zitadel-orgid"]).toBe("org_1");
+    expect(JSON.parse(updated.sent[1]?.body ?? "")).toMatchObject({
+      passwordCheckLifetime: "240h0m0s",
+      forceMfa: true,
+    });
+  });
+
+  it("sends no update when the organisation's own policy already has the rules", async () => {
+    // ZITADEL refuses an unchanged update (Errors.Org.LoginPolicy.NotChanged) and leaves false flags out.
+    const { idp, sent } = driverWith([
+      [
+        200,
+        { policy: { allowUsernamePassword: true, forceMfa: true, ignoreUnknownUsernames: true } },
+      ],
+    ]);
+    await idp.setLoginPolicy("org_1", {
+      allowUsernamePassword: true,
+      allowRegister: false,
+      allowExternalIdp: false,
+      forceMfa: true,
+      allowPasswordless: false,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: true,
+    });
+    expect(sent.map((request) => request.method)).toEqual(["GET"]);
+  });
+
+  it("updates an organisation's own policy that ZITADEL answers without isDefault", async () => {
+    // ZITADEL drops a false flag from its JSON: an organisation's own policy has no `isDefault` at all.
+    const { idp, sent } = driverWith([
+      [200, { policy: { forceMfa: true, allowUsernamePassword: true } }],
+      [200, {}],
+    ]);
+    await idp.setLoginPolicy("org_1", {
+      allowUsernamePassword: true,
+      allowRegister: false,
+      allowExternalIdp: false,
+      forceMfa: false,
+      allowPasswordless: true,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: true,
+    });
+    expect(sent.map((request) => request.method)).toEqual(["GET", "PUT"]);
   });
 
   /** The first install creates the target and answers its key once; a redeploy updates it and answers none. */
@@ -390,7 +474,7 @@ describe(ZitadelIdpAdminDriver, () => {
 
   it("leaves providers and second factors alone when the policy does not list them", async () => {
     const { idp, sent } = driverWith([
-      [200, { policy: { isDefault: true } }],
+      [200, { policy: { allowUsernamePassword: true } }],
       [200, {}],
     ]);
     await idp.setLoginPolicy("org_1", {
@@ -403,6 +487,73 @@ describe(ZitadelIdpAdminDriver, () => {
       ignoreUnknownUsernames: true,
     });
     expect(sent).toHaveLength(2);
+  });
+
+  it("reads the policy in force with the providers and second factors it offers", async () => {
+    const { idp, sent } = driverWith([
+      [
+        200,
+        {
+          policy: {
+            allowUsernamePassword: true,
+            forceMfa: true,
+            passwordlessType: "PASSWORDLESS_TYPE_ALLOWED",
+            ignoreUnknownUsernames: true,
+            isDefault: true,
+          },
+        },
+      ],
+      [
+        200,
+        { result: ["SECOND_FACTOR_TYPE_U2F", "SECOND_FACTOR_TYPE_OTP", "SECOND_FACTOR_TYPE_NEW"] },
+      ],
+      [200, { result: [{ idpId: "idp_nafath" }, { idpName: "no id" }] }],
+    ]);
+    expect(await idp.getLoginPolicy("org_1")).toEqual({
+      allowUsernamePassword: true,
+      allowRegister: false,
+      allowExternalIdp: false,
+      forceMfa: true,
+      allowPasswordless: true,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: true,
+      externalProviderIds: ["idp_nafath"],
+      secondFactors: [IdpSecondFactor.Totp, IdpSecondFactor.U2f],
+    });
+    expect(
+      sent.map(
+        (request) => `${request.method} ${request.url.replace("https://id.acme.example", "")}`,
+      ),
+    ).toEqual([
+      "GET /management/v1/policies/login",
+      "POST /management/v1/policies/login/second_factors/_search",
+      "POST /management/v1/policies/login/idps/_search",
+    ]);
+    expect(sent.every((request) => request.headers["x-zitadel-orgid"] === "org_1")).toBe(true);
+  });
+
+  it("reads a policy answered without flags or lists as all off and empty", async () => {
+    const { idp } = driverWith([
+      [200, {}],
+      [200, {}],
+      [200, {}],
+    ]);
+    expect(await idp.getLoginPolicy("org_1")).toEqual({
+      allowUsernamePassword: false,
+      allowRegister: false,
+      allowExternalIdp: false,
+      forceMfa: false,
+      allowPasswordless: false,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: false,
+      externalProviderIds: [],
+      secondFactors: [],
+    });
+  });
+
+  it("refuses a policy read the provider cannot answer as unavailable", async () => {
+    const { idp } = driverWith([[503, {}]]);
+    await expect(idp.getLoginPolicy("org_1")).rejects.toBeInstanceOf(IdpAdminUnavailableError);
   });
 
   it("creates a user with and finds it by its stackra_user_id metadata", async () => {

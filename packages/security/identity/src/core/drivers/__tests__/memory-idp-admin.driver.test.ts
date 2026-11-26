@@ -2,12 +2,12 @@
  * Stackra file contract:
  * Purpose: unit tests of `MemoryIdpAdminDriver`: it is the `IdpAdmin` port; users and machine users are created with a
  *          taken login name refused per organisation; deactivation, removal, listing a user's own sessions and ending them; the device flow stays
- *          pending until approved or denied; login policies are kept per organisation, a left-out provider or factor list keeping the last; enrolled methods are listed once
+ *          pending until approved or denied; login policies are kept per organisation, a left-out provider or factor list keeping the last, and read back as their own or the default (a copy); enrolled methods are listed once
  *          each and dropped with the user; a user is found by its Stackra id, and its Stackra id by its email; a passkey sign-in needs a known login and
  *          a live session; a passkey registration finishes once and enrols `swk`.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264; STA-1538; STA-1543; STA-1580; STA-1586.
+ * Governing contract: ADR 0022; ADR 0410 (STA-834); STA-1264; STA-1538; STA-1543; STA-1580; STA-1586; STA-2817.
  */
 import { UnauthenticatedError } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
@@ -128,6 +128,23 @@ describe(MemoryIdpAdminDriver, () => {
     });
     await idp.setLoginPolicy("org_1", { ...POLICY, externalProviderIds: [] });
     expect(idp.policies.get("org_1")?.externalProviderIds).toEqual([]);
+  });
+
+  it("reads an organisation's own policy, or the instance default it inherits, lists filled in", async () => {
+    const idp = new MemoryIdpAdminDriver();
+    expect(await idp.getLoginPolicy("org_1")).toEqual(idp.defaultPolicy);
+    await idp.setLoginPolicy("org_1", { ...POLICY, forceMfa: true });
+    expect(await idp.getLoginPolicy("org_1")).toEqual({
+      ...POLICY,
+      forceMfa: true,
+      externalProviderIds: [],
+      secondFactors: [],
+    });
+    await idp.setLoginPolicy("org_1", { ...POLICY, secondFactors: [IdpSecondFactor.Totp] });
+    const read = await idp.getLoginPolicy("org_1");
+    (read.secondFactors as IdpSecondFactor[]).push(IdpSecondFactor.U2f);
+    expect(idp.policies.get("org_1")?.secondFactors).toEqual([IdpSecondFactor.Totp]);
+    expect(await idp.getLoginPolicy("org_2")).toMatchObject({ forceMfa: false });
   });
 
   it("finds a user by its Stackra id", async () => {
