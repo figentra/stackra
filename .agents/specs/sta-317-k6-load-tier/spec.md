@@ -34,9 +34,10 @@ measured it.
 
 - **Apps touched**: none
 - **Services touched**: none (a service that adds a `.load.test.ts` gets the generated load config on its next gen)
-- **Packages touched**: `@stackra/testing` (new `./node` entry), `@stackra/vitest-config` (new `./load` entry),
-  `@stackra/gen` (writes `.stackra/vitest.load.config.ts`), `@stackra/cli` (`stackra test --tier load`),
-  `@stackra/actions`, `@stackra/queue`, `@stackra/outbox` (a `test:load` script and their soaks)
+- **Packages touched**: packages/developer/testing (new `./node` entry); packages/tooling/vitest (new `./load`
+  entry); packages/developer/gen (writes `.stackra/vitest.load.config.ts`); packages/developer/cli
+  (`stackra test --tier load`); packages/application/actions, packages/runtime/queue, packages/runtime/outbox (a
+  `test:load` script and their soaks)
 - **Public contract change**: additive. `@stackra/testing/node` exports `serveLoadTarget`, `runK6`, `k6Args`,
   `readK6Summary`, `K6_SCENARIO_SCRIPT`, `k6Binary`, `soakLoad`, `writeLoadReport`, `summariseLatencies`, `percentile`
   and the types `LoadScenarios`, `LoadTarget`, `LatencySummary`, `K6Load`, `RunK6Options`, `K6Result`.

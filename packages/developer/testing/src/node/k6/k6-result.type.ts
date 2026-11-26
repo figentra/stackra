@@ -16,7 +16,7 @@ export type K6Result = {
   /** Each crossed threshold as `<metric>: <expression>`. */
   readonly crossed: readonly string[];
 
-  /** Requests sent. */
+  /** The number of requests k6 sent over the run. */
   readonly requests: number;
 
   /** Requests per second over the run. */
