@@ -30,6 +30,7 @@ describe("@stackra/infra-observability", () => {
       "ObservabilityHealthIndicatorDriver",
       "SliKind",
       "observabilityPlan",
+      "prometheusSloRules",
     ]);
   });
 

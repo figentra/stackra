@@ -45,6 +45,7 @@ export function observabilityStack(plan: ObservabilityPlan): {
     readonly heartbeats: ReturnType<typeof heartbeatMonitors>["urls"];
     readonly statusPage?: { readonly id: pulumi.Output<pulumi.ID> };
     readonly slis: ObservabilityPlan["slis"];
+    readonly slos: ObservabilityPlan["slos"];
   };
 } {
   const logs =
@@ -86,6 +87,7 @@ export function observabilityStack(plan: ObservabilityPlan): {
       heartbeats: heartbeats.urls,
       ...(status === undefined ? {} : { statusPage: { id: status.statusPage.id } }),
       slis: plan.slis,
+      slos: plan.slos,
     },
   };
 }

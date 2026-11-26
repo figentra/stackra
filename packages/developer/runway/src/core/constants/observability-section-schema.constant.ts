@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `OBSERVABILITY_SECTION_SCHEMA`, the root runway's `observability` block as a closed object, so a misspelt
- *          key fails `parseRunway` instead of passing silently. Beside logs, heartbeats, objectives, the status page
+ *          key fails `parseRunway` instead of passing silently. Beside logs, heartbeats, objectives (when they start,
+ *          their window and each service's availability and latency targets), the status page
  *          and uptime, it holds the alerts figentra/infra sets in a product's account (`alerts`) and where each
  *          severity goes (`notify`).
  * Boundary: internal; validation only, with no defaults. infra-observability stays authoritative and parses the block
  *           with its own `OBSERVABILITY_SCHEMA` and defaults. It depends on @stackra/runway, so this mirrors its keys
  *           and value rules rather than import them; a key added there is added here in the same change.
  * Runtime: isomorphic
- * Governing contract: ADR 0296; ADR 0184; the Runway inventory of 2026-11-02 (static/ finding 1); STA-1976.
+ * Governing contract: ADR 0296; ADR 0184; the Runway inventory of 2026-11-02 (static/ finding 1); STA-1976; STA-2854 (objectives).
  */
 import { z } from "zod";
 
@@ -62,7 +63,32 @@ export const OBSERVABILITY_SECTION_SCHEMA = z.strictObject({
       workers: z.boolean().optional(),
     })
     .optional(),
-  slos: z.strictObject({ startAt: z.enum(["first-paying-tenant"]).optional() }).optional(),
+  slos: z
+    .strictObject({
+      startAt: z.enum(["first-paying-tenant"]).optional(),
+      windowDays: z.int().min(7).max(90).optional(),
+      objectives: z
+        .array(
+          z
+            .strictObject({
+              service: z.string().min(1),
+              availability: z.number().gt(0).lt(100).optional(),
+              latency: z
+                .strictObject({
+                  thresholdMs: z.int().positive(),
+                  percent: z.number().gt(0).lt(100),
+                })
+                .optional(),
+            })
+            .refine(
+              (objective) =>
+                objective.availability !== undefined || objective.latency !== undefined,
+              { message: "Declare availability, latency or both" },
+            ),
+        )
+        .optional(),
+    })
+    .optional(),
   statusPage: z
     .strictObject({
       subdomain: z.string().regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/, "Expected a DNS label"),

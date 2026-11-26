@@ -4,10 +4,11 @@
  *          30-day and 13-month retention, one Sentry project per app that names one and two indicators per service;
  *          the section's defaults and switches apply; no provider means no telemetry or Sentry block; the uptime
  *          list becomes one monitor per URL of a monitored environment; every failure is reported at once; and the
- *          alerts and routes take their defaults beside a runway's own values.
+ *          alerts and routes take their defaults beside a runway's own values; and each declared objective gets the
+ *          four burn-rate alerts scaled to the window, with unknown, repeated or off-bucket objectives refused.
  * Boundary: test only; pure function, no Pulumi.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0184 (decisions 1 to 6); ADR 0296 (enforcement).
+ * Governing contract: ADR 0022 (test placement); ADR 0184 (decisions 1 to 6); ADR 0296 (enforcement); STA-2854.
  */
 import type { RunwayIssue } from "@stackra/runway";
 import { describe, expect, it } from "@stackra/testing";
@@ -94,7 +95,7 @@ describe("observabilityPlan", () => {
         ],
       },
       slis: [...indicators("commerce"), ...indicators("notifications")],
-      slos: { startAt: "first-paying-tenant" },
+      slos: { startAt: "first-paying-tenant", windowDays: 30, objectives: [], burnRateAlerts: [] },
       uptime: [],
       statusPage: null,
       alerts: {
@@ -233,7 +234,12 @@ describe("observabilityPlan", () => {
     expect(plan.environments).toEqual(["production"]);
     expect(plan.telemetry).toEqual({ hotDays: 30, coldMonths: 0 });
     expect(plan.heartbeats.map((beat) => beat.name)).toEqual(["sweep"]);
-    expect(plan.slos).toEqual({ startAt: "first-paying-tenant" });
+    expect(plan.slos).toEqual({
+      startAt: "first-paying-tenant",
+      windowDays: 30,
+      objectives: [],
+      burnRateAlerts: [],
+    });
   });
 
   it("plans no telemetry or Sentry block without their providers", () => {
@@ -334,5 +340,155 @@ describe("observabilityPlan alerts and routes", () => {
       warning: ["linear:STA"],
       info: [],
     });
+  });
+});
+
+describe("observabilityPlan objectives", () => {
+  it("derives the four SRE-workbook burn-rate alerts of each objective over 30 days", () => {
+    const plan = observabilityPlan(
+      rootRunway({
+        providers: { betterstack: {} },
+        observability: {
+          slos: {
+            objectives: [
+              { service: "orders", availability: 99.9, latency: { thresholdMs: 250, percent: 99 } },
+            ],
+          },
+        },
+      }),
+      { apps: {}, services: ["orders", "search"] },
+    );
+
+    expect(plan.slos.windowDays).toBe(30);
+    expect(plan.slos.objectives).toEqual([
+      {
+        service: "orders",
+        kind: SliKind.Availability,
+        metric: "http.server.request.duration",
+        target: 0.999,
+        thresholdSeconds: null,
+      },
+      {
+        service: "orders",
+        kind: SliKind.Latency,
+        metric: "http.server.request.duration",
+        target: 0.99,
+        thresholdSeconds: 0.25,
+      },
+    ]);
+    const availability = plan.slos.burnRateAlerts.filter(
+      (alert) => alert.kind === SliKind.Availability,
+    );
+    expect(availability).toEqual([
+      {
+        service: "orders",
+        kind: SliKind.Availability,
+        severity: "critical",
+        burnRate: 14.4,
+        threshold: 0.0144,
+        budgetSpent: 0.02,
+        longWindow: "1h",
+        shortWindow: "5m",
+      },
+      {
+        service: "orders",
+        kind: SliKind.Availability,
+        severity: "critical",
+        burnRate: 6,
+        threshold: 0.006,
+        budgetSpent: 0.05,
+        longWindow: "6h",
+        shortWindow: "30m",
+      },
+      {
+        service: "orders",
+        kind: SliKind.Availability,
+        severity: "warning",
+        burnRate: 3,
+        threshold: 0.003,
+        budgetSpent: 0.1,
+        longWindow: "1d",
+        shortWindow: "2h",
+      },
+      {
+        service: "orders",
+        kind: SliKind.Availability,
+        severity: "warning",
+        burnRate: 1,
+        threshold: 0.001,
+        budgetSpent: 0.1,
+        longWindow: "3d",
+        shortWindow: "6h",
+      },
+    ]);
+    expect(
+      plan.slos.burnRateAlerts
+        .filter((alert) => alert.kind === SliKind.Latency)
+        .map((alert) => alert.threshold),
+    ).toEqual([0.144, 0.06, 0.03, 0.01]);
+  });
+
+  it("scales the burn rates to the runway's window", () => {
+    const plan = observabilityPlan(
+      rootRunway({
+        providers: { betterstack: {} },
+        observability: {
+          slos: { windowDays: 28, objectives: [{ service: "orders", availability: 99 }] },
+        },
+      }),
+      { apps: {}, services: ["orders"] },
+    );
+
+    expect(plan.slos.windowDays).toBe(28);
+    expect(plan.slos.burnRateAlerts.map((alert) => alert.burnRate)).toEqual([
+      13.44, 5.6, 2.8, 0.933333333333,
+    ]);
+    expect(plan.slos.burnRateAlerts.map((alert) => alert.threshold)).toEqual([
+      0.1344, 0.056, 0.028, 0.00933333333333,
+    ]);
+  });
+
+  it("declares no objective or alert before the runway names one", () => {
+    const plan = observabilityPlan(rootRunway(), { apps: {}, services: ["orders"] });
+
+    expect(plan.slos).toEqual({
+      startAt: "first-paying-tenant",
+      windowDays: 30,
+      objectives: [],
+      burnRateAlerts: [],
+    });
+  });
+
+  it("refuses an objective of an unknown service, one listed twice and a threshold off the buckets", () => {
+    const issues = issuesOf(() =>
+      observabilityPlan(
+        rootRunway({
+          providers: { betterstack: {} },
+          observability: {
+            slos: {
+              objectives: [
+                { service: "ledger", availability: 99.9 },
+                { service: "orders", latency: { thresholdMs: 300, percent: 99 } },
+                { service: "orders", availability: 99.5 },
+              ],
+            },
+          },
+        }),
+        { apps: {}, services: ["orders"] },
+      ),
+    );
+
+    expect(issues).toEqual([
+      {
+        path: "root.observability.slos.objectives.0.service",
+        message: "ledger is not a service member",
+      },
+      {
+        path: "root.observability.slos.objectives.1.latency.thresholdMs",
+        message:
+          "Expected a bucket bound of the duration histogram: 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000",
+      },
+      { path: "root.observability.slos.objectives.2.service", message: "orders is listed twice" },
+    ]);
   });
 });

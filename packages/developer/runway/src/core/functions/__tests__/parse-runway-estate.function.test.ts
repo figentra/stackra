@@ -188,6 +188,45 @@ describe("the observability alerts and routes", () => {
   });
 });
 
+describe("the observability objectives", () => {
+  it("takes the window and per-service objectives, and refuses an empty or out-of-range one", () => {
+    const observability = {
+      slos: {
+        startAt: "first-paying-tenant",
+        windowDays: 28,
+        objectives: [
+          { service: "orders", availability: 99.9, latency: { thresholdMs: 500, percent: 99 } },
+          { service: "search", latency: { thresholdMs: 250, percent: 95 } },
+        ],
+      },
+    };
+    expect(parseRunway("root", root({ observability })).observability).toEqual(observability);
+    expect(
+      pathsOf(
+        root({
+          observability: {
+            slos: {
+              windowDays: 3,
+              objectives: [
+                { service: "orders" },
+                { service: "search", availability: 100 },
+                { service: "billing", latency: { thresholdMs: 0.5, percent: 99 } },
+                { service: "ledger", availability: 99, availabilty: 99 },
+              ],
+            },
+          },
+        }),
+      ),
+    ).toEqual([
+      "observability.slos.windowDays",
+      "observability.slos.objectives.0",
+      "observability.slos.objectives.1.availability",
+      "observability.slos.objectives.2.latency.thresholdMs",
+      "observability.slos.objectives.3",
+    ]);
+  });
+});
+
 describe("deprecatedFields", () => {
   it("names providers.aws.region and providers.aws.accounts, and nothing else", () => {
     const old = root({

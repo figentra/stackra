@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ObservabilityPlan`, the telemetry of a repository as `observabilityPlan` builds it: the deployed
  *          environments, the OTLP destination with its log retention, the heartbeats, the Sentry projects, the
- *          service-level indicators, when objectives start, the uptime monitors of public URLs, the status page, and
+ *          service-level indicators, the objectives and their burn-rate alerts, the uptime monitors of public URLs, the status page, and
  *          the alerts and notification routes figentra/infra sets in a product's account.
  * Boundary: type only; pure data, so `stackra infra gen` can show it and `observabilityStack` can declare it.
  * Runtime: isomorphic
@@ -14,7 +14,9 @@ import type { z } from "zod";
 
 import type { OBSERVABILITY_SCHEMA } from "#core/constants/observability-schema.constant";
 import type { HeartbeatKind } from "#core/enums/heartbeat-kind.enum";
+import type { BurnRateAlert } from "#core/types/burn-rate-alert.type";
 import type { ServiceSli } from "#core/types/service-sli.type";
+import type { SloObjective } from "#core/types/slo-objective.type";
 
 /** The telemetry plan. */
 export type ObservabilityPlan = {
@@ -48,8 +50,19 @@ export type ObservabilityPlan = {
   } | null;
   /** Availability and latency for every service member. */
   readonly slis: readonly ServiceSli[];
-  /** When objectives start (`observability.slos.startAt`); none is declared before then. */
-  readonly slos: { readonly startAt: "first-paying-tenant" };
+  /**
+   * The service-level objectives (`observability.slos`): when they start, their window, the objectives the runway
+   * declares (none before the first paying tenant) and the burn-rate alerts each gets.
+   */
+  readonly slos: {
+    readonly startAt: "first-paying-tenant";
+    /** Days the error budget covers. */
+    readonly windowDays: number;
+    /** One per declared indicator of a service: availability, latency or both. */
+    readonly objectives: readonly SloObjective[];
+    /** Four per objective: two that page (critical), two that open a ticket (warning). */
+    readonly burnRateAlerts: readonly BurnRateAlert[];
+  };
   /** One Better Stack uptime monitor per `observability.uptime` entry, probing a public URL from outside. */
   readonly uptime: readonly {
     readonly environment: RunwayEnvironment;

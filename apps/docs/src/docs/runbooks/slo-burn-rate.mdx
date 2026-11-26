@@ -1,0 +1,99 @@
+---
+title: "SLO burn-rate alert"
+description: "What to do when SloErrorBudgetBurn fires: read which service, indicator and windows burn, decide whether it is still burning, stop the burn, and record what the budget lost."
+icon: "flame"
+---
+
+<Note>
+  Applies to a product that declares objectives in its root `runway.yaml`
+  (`observability.slos.objectives`, STA-2854). Objectives start at the first paying tenant (ADR 0184
+  decision 3); before then no burn alert exists.
+</Note>
+
+An objective promises a share of good requests over a window (30 days by default): availability, the requests
+answered without a server error, or latency, the requests answered within a threshold. The **error budget** is the
+rest: at 99.9% over 30 days, 0.1% of the requests may fail, about 43 minutes of full outage. A **burn rate** is how
+fast the budget goes: a burn rate of 1 spends it in exactly the window, 14.4 spends it in about two days.
+
+Every objective gets four alerts, the multi-window, multi-burn-rate set of the Google SRE workbook. Each fires only
+while the error ratio is above its threshold over a long window and over a short one a twelfth as long, so it fires
+fast and stops soon after the burn stops.
+
+| Severity           | Burn rate (30 days) | Long / short window | Budget spent at that rate | Goes to                     |
+| ------------------ | ------------------- | ------------------- | ------------------------- | --------------------------- |
+| `critical` (page)  | 14.4                | 1h / 5m             | 2% in an hour             | `notify.critical` (on call) |
+| `critical` (page)  | 6                   | 6h / 30m            | 5% in six hours           | `notify.critical` (on call) |
+| `warning` (ticket) | 3                   | 1d / 2h             | 10% in a day              | `notify.warning`            |
+| `warning` (ticket) | 1                   | 3d / 6h             | 10% in three days         | `notify.warning`            |
+
+With another `slos.windowDays` the burn rates scale so each row still spends the same share of the budget.
+
+## Read the alert
+
+The alert is `SloErrorBudgetBurn`. Its labels say what burns:
+
+- `slo_service`: the service member (`orders`).
+- `slo`: `availability` (5xx answers) or `latency` (answers slower than the objective's threshold).
+- `severity`, `long_window`, `short_window`: which row of the table fired.
+
+The summary gives the burn rate and the description the share of the budget that row spends.
+
+## Respond
+
+<Steps>
+  <Step title="Acknowledge and check it still burns">
+    Acknowledge the page. In Grafana (or Prometheus), graph `slo:sli_error:ratio_rate5m{slo_service="<service>",slo="<indicator>"}`
+    over the last hours. Still above the threshold: the burn is live, go on. Back under it: the burn stopped; the
+    alert clears within the short window, and you go to the last step.
+  </Step>
+  <Step title="Find what changed">
+    Compare the start of the burn with the deploy log (`stackra runway status`, the release train), a feature flag
+    change, a dependency incident (database, cache, a provider's status page) and a traffic jump. For availability,
+    group `http_server_request_duration_seconds_count` by `http_route` and `http_response_status_code` to find the
+    failing route; for latency, compare the threshold bucket per route. Traces of the slow or failing route
+    (`service.name` = the service) show the span that fails or waits.
+  </Step>
+  <Step title="Stop the burn first">
+    Roll back the release that started it (`stackra runway rollback`), turn the flag off, or shed the load. Fix
+    forward only when a rollback is not possible. A page means the budget is gone in hours: mitigate before you
+    diagnose further.
+  </Step>
+  <Step title="Ticket: plan the fix">
+    A `warning` alone is a slow burn: no page, but the budget runs out within days. Open (or take) the ticket, find the
+    cause in working hours, and fix it before the budget is spent.
+  </Step>
+  <Step title="Record what the budget lost">
+    Note in the incident or ticket the start, the end, the burn rate and the share of the budget spent. When a burn
+    spends more than a fifth of the window's budget, write a post-incident review (ADR 0185). With the budget spent,
+    releases of that service wait for reliability work until the window recovers.
+  </Step>
+</Steps>
+
+## When the alert is wrong
+
+- **Fires with no traffic problem**: the service label may not match. The rules read `job` (Prometheus's OTLP
+  receiver writes `service.name` there) and `http_server_request_duration_seconds`; a backend that names them
+  differently passes `metric` and `serviceLabel` to `prometheusSloRules`.
+- **Never fires for latency**: the threshold must be a bucket bound of the histogram (5, 10, 25, 50, 75, 100, 250, 500,
+  750, 1000, 2500, 5000, 7500 or 10000 ms); the plan refuses any other value, and a backend with other bounds needs a
+  matching threshold.
+- **Too noisy**: the objective is stricter than the service can hold. Change the target in `runway.yaml` in a reviewed
+  change; never silence the alert.
+
+## How the rules are made
+
+`observabilityPlan` (`@stackra/infra-observability`) reads `observability.slos` and derives the four alerts of each
+objective; `prometheusSloRules(plan)` renders them as one Prometheus rule group per objective (recording rules
+`slo:sli_error:ratio_rate<window>` and the alerting rules), loaded by the LGTM stack's ruler (ADR 0184 decision 2).
+`promtool test rules` proves in the package's integration tests that a fast burn pages, a slow burn opens a ticket and a
+healthy service stays quiet.
+
+```yaml
+observability:
+  slos:
+    windowDays: 30 # default
+    objectives:
+      - service: orders
+        availability: 99.9 # percent of requests without a 5xx
+        latency: { thresholdMs: 500, percent: 99 } # percent of requests within 500 ms
+```

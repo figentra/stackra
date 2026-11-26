@@ -14,6 +14,7 @@ Pulumi program for the core stack.
 | Entry    | Symbol                                                           | Use                                                                                                      |
 | -------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `.`      | `observabilityPlan(root, members)`                               | the telemetry plan from the root runway, the app runways and the jobs                                    |
+| `.`      | `prometheusSloRules(plan, options?)`                             | the plan's objectives as Prometheus recording and burn-rate alerting rules (the LGTM stack's ruler)      |
 | `.`      | `HeartbeatKind`, `SliKind`                                       | enums of snake_case codes                                                                                |
 | `.`      | `ObservabilityConfigInvalidError`                                | every runway or job failure at once, with its path                                                       |
 | `.`      | `ObservabilityHealthIndicatorDriver`, `InfraObservabilityConfig` | the `HealthIndicator` driver: the telemetry endpoint answers; its target is `config.infra_observability` |
@@ -35,6 +36,7 @@ declarations name the Better Stack classes through `pulumi-better-uptime` and `p
 | Log retention                              | root `observability.logs.{hotDays,coldMonths,coldStore}` (30, 13, `s3`)     |
 | Which jobs send heartbeats                 | root `observability.heartbeats.{crons,relays,workers}` (all on)             |
 | When objectives start                      | root `observability.slos.startAt` (`first-paying-tenant`)                   |
+| The objectives and their window            | root `observability.slos.objectives`, `slos.windowDays` (none, 30)          |
 | Public URLs probed from outside            | root `observability.uptime` (none)                                          |
 | The OTLP destination                       | root `providers.betterstack` (named: a Better Stack source is declared)     |
 | Sentry organization                        | root `providers.sentry.org` (a slug, never a `ref:`)                        |
@@ -125,7 +127,8 @@ into the stack config the deploy reads:
 | `betterstack.source`                        | `ref:betterstack.source`                                 |
 | `sentry.dsn.<member>`                       | `ref:sentry.dsn.<member>` (an app's `VITE_SENTRY_DSN`)   |
 | `heartbeats.<env>.<service>.<job>` (secret) | the URL the job beats, a runtime secret in sops          |
-| `slis`                                      | the indicators, for dashboards and the objectives later  |
+| `slis`                                      | the indicators, for dashboards                           |
+| `slos`                                      | the objectives and their burn-rate alerts                |
 
 ## Indicators
 
@@ -134,6 +137,44 @@ decision 3): availability, the requests whose `http.response.status_code` is bel
 latency at the 95th and 99th percentiles. They are measurements, backend-neutral, so the same definitions read Better
 Stack or the on-premises LGTM stack. Objectives start at the first paying tenant (`slos.startAt`); none is declared
 before then.
+
+## Objectives and burn-rate alerts
+
+From then, the root runway declares one entry per service under `observability.slos.objectives`: an availability
+target (percent of requests without a 5xx), a latency target (percent of requests within `thresholdMs`, a bucket bound
+of the histogram: 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500 or 10000 ms), or both. `slos.windowDays`
+(7 to 90, default 30) is the window the error budget covers.
+
+```yaml
+observability:
+  slos:
+    objectives:
+      - service: orders
+        availability: 99.9
+        latency: { thresholdMs: 500, percent: 99 }
+```
+
+The plan gives each objective the four multi-window, multi-burn-rate alerts of the Google SRE workbook: it pages
+(`critical`) when 2% of the budget goes in an hour (1h and 5m windows) or 5% in six hours (6h and 30m), and opens a
+ticket (`warning`) when 10% goes in a day (1d and 2h) or in three days (3d and 6h). Over 30 days those are burn rates of
+14.4, 6, 3 and 1; another window scales them. An objective of an unknown service, one listed twice or a threshold off
+the buckets fails the plan.
+
+`prometheusSloRules(plan)` renders them for the LGTM stack's ruler (Mimir or Prometheus): per objective one group with
+a recording rule `slo:sli_error:ratio_rate<window>` per window and one `SloErrorBudgetBurn` alert per row, labelled
+`slo_service`, `slo`, `severity`, `long_window` and `short_window` and linking the runbook
+(`apps/docs/src/docs/runbooks/slo-burn-rate.mdx`). The series names default to what Prometheus's OTLP receiver writes
+(`http_server_request_duration_seconds`, the service in `job`); `metric`, `serviceLabel` and `runbookUrl` override them.
+`JSON.stringify` of the result is a valid rule file.
+
+```ts
+import { observabilityPlan, prometheusSloRules } from "@stackra/infra-observability";
+
+writeFileSync("slo-rules.yml", JSON.stringify(prometheusSloRules(plan), null, 2));
+```
+
+`pnpm --filter @stackra/infra-observability test:int` (Docker) runs `promtool test rules` of a real Prometheus over the
+rendered rules: a fast burn pages, a slow burn opens a ticket and a healthy service stays quiet.
 
 ## Core's own stack
 
@@ -155,6 +196,7 @@ release job's `SENTRY_AUTH_TOKEN` uploads source maps and is a different token.
 
 - Sending a heartbeat: the scheduler, outbox and queue packages beat the URL they are given.
 - The services' OTLP exporter and the redaction of personal data: `@stackra/logger` and `@stackra/errors`.
-- Objectives (SLOs) and their alerts: from the first paying tenant (ADR 0184 decision 3).
+- Better Stack alerts for the objectives: the rules are Prometheus rules for the LGTM stack; a Better Stack-only
+  product graphs the same recording expressions.
 - The on-call rotation and severities (ADR 0185): the rotation names people.
 - Agents run `pulumi preview` at most; `pulumi up` is the owner's (for core, the reviewer of `apply-observability.yml`).

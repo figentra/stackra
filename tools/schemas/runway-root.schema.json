@@ -1283,6 +1283,53 @@
           "properties": {
             "startAt": {
               "enum": ["first-paying-tenant"]
+            },
+            "windowDays": {
+              "type": "integer",
+              "minimum": 7,
+              "maximum": 90,
+              "description": "Days the error budget covers. Default 30. The burn-rate alerts scale to it (14.4, 6, 3 and 1 times for 30 days)."
+            },
+            "objectives": {
+              "type": "array",
+              "description": "The service-level objectives, none before the first paying tenant (ADR 0184 decision 3). Each gets four multi-window burn-rate alerts: two page (critical), two open a ticket (warning). Runbook: https://docs.stackra.figentra.com/runbooks/slo-burn-rate",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "service": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "A service member of the repository."
+                  },
+                  "availability": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "exclusiveMaximum": 100,
+                    "description": "Percent of requests answered without a server error (status below 500), e.g. 99.9."
+                  },
+                  "latency": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "description": "Percent of requests answered within thresholdMs.",
+                    "properties": {
+                      "thresholdMs": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "description": "A bucket bound of http.server.request.duration in milliseconds: 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500 or 10000."
+                      },
+                      "percent": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "exclusiveMaximum": 100
+                      }
+                    },
+                    "required": ["thresholdMs", "percent"]
+                  }
+                },
+                "required": ["service"],
+                "description": "Declare availability, latency or both."
+              }
             }
           }
         },

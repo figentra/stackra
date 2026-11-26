@@ -5,8 +5,9 @@
  *          `telemetry.sentryProject`, the service keys and the jobs that send heartbeats): the OTLP destination and its
  *          log retention, one heartbeat per deployed environment and job, one Sentry project per app that names one,
  *          availability and latency indicators for every service, one uptime monitor per public URL the runway lists,
- *          the public status page when the runway declares one, and the alerts and notification routes with their
- *          defaults applied.
+ *          the public status page when the runway declares one, the alerts and notification routes with their
+ *          defaults applied, and the service-level objectives the runway declares (`slos.objectives`) with their
+ *          multi-window burn-rate alerts (the SRE workbook's four rows, scaled to `slos.windowDays`).
  * Boundary: pure: parsed runways in, a plan out. Reports every failure at once. Reads no file, resolves no `ref:` and
  *           calls no cloud; `observabilityStack` (`./node`) declares the plan's resources.
  * Runtime: isomorphic
@@ -17,14 +18,18 @@ import { Enum } from "@stackra/contracts";
 import { RunwayEnvironment } from "@stackra/runway";
 import type { RootRunway, RunwayIssue } from "@stackra/runway";
 
+import { BURN_RATE_WINDOWS } from "#core/constants/burn-rate-windows.constant";
+import { HTTP_DURATION_BOUNDS } from "#core/constants/http-duration-bounds.constant";
 import { OBSERVABILITY_SCHEMA } from "#core/constants/observability-schema.constant";
 import { HeartbeatKind } from "#core/enums/heartbeat-kind.enum";
 import { SliKind } from "#core/enums/sli-kind.enum";
 import { ObservabilityConfigInvalidError } from "#core/errors/observability-config-invalid.error";
 import type { HeartbeatSource } from "#core/types/heartbeat-source.type";
 import type { ObservabilityMembers } from "#core/types/observability-members.type";
+import type { BurnRateAlert } from "#core/types/burn-rate-alert.type";
 import type { ObservabilityPlan } from "#core/types/observability-plan.type";
 import type { ServiceSli } from "#core/types/service-sli.type";
+import type { SloObjective } from "#core/types/slo-objective.type";
 
 /** The stable OpenTelemetry HTTP server histogram both indicators read. */
 const HTTP_DURATION = "http.server.request.duration";
@@ -34,6 +39,9 @@ const UNMONITORED: ReadonlySet<RunwayEnvironment> = new Set([
   RunwayEnvironment.Dev,
   RunwayEnvironment.Preview,
 ]);
+
+/** `value` without float noise: `14.4`, never `14.399999999999999`. */
+const exact = (value: number): number => Number(value.toPrecision(12));
 
 /** Better Stack's shortest heartbeat period, in seconds. */
 const MIN_PERIOD = 30;
@@ -60,7 +68,8 @@ const SWITCH = {
  *         misspelt or out-of-range `observability` key, retention or heartbeats without `providers.betterstack`, a
  *         Sentry project without `providers.sentry.org` or claimed by two apps, or a heartbeat job of an unknown
  *         service, with a bad name, a period under 30 seconds, or listed twice, or an uptime entry named twice or of an
- *         environment that is not monitored.
+ *         environment that is not monitored, or an objective of an unknown service, declared twice, or with a latency
+ *         threshold that is not a bucket bound of the duration histogram.
  * @example
  * const plan = observabilityPlan(readRunway("runway.yaml", "root"), {
  *   apps: { web: readRunway("apps/web/runway.yaml", "app") },
@@ -167,7 +176,67 @@ export function observabilityPlan(
       });
   });
 
+  const objectiveServices = new Set<string>();
+  policy.slos.objectives.forEach((objective, index) => {
+    const at = `root.observability.slos.objectives.${index}`;
+    if (!services.has(objective.service))
+      issues.push({
+        path: `${at}.service`,
+        message: `${objective.service} is not a service member`,
+      });
+    if (objectiveServices.has(objective.service))
+      issues.push({ path: `${at}.service`, message: `${objective.service} is listed twice` });
+    objectiveServices.add(objective.service);
+    const thresholdMs = objective.latency?.thresholdMs;
+    if (thresholdMs !== undefined && !HTTP_DURATION_BOUNDS.includes(thresholdMs / 1000))
+      issues.push({
+        path: `${at}.latency.thresholdMs`,
+        message: `Expected a bucket bound of the duration histogram: ${HTTP_DURATION_BOUNDS.map((bound) => exact(bound * 1000)).join(", ")}`,
+      });
+  });
+
   if (issues.length > 0) throw new ObservabilityConfigInvalidError("the telemetry runways", issues);
+
+  const objectives: SloObjective[] = policy.slos.objectives.flatMap((objective) => [
+    ...(objective.availability === undefined
+      ? []
+      : [
+          {
+            service: objective.service,
+            kind: SliKind.Availability,
+            metric: HTTP_DURATION,
+            target: exact(objective.availability / 100),
+            thresholdSeconds: null,
+          },
+        ]),
+    ...(objective.latency === undefined
+      ? []
+      : [
+          {
+            service: objective.service,
+            kind: SliKind.Latency,
+            metric: HTTP_DURATION,
+            target: exact(objective.latency.percent / 100),
+            thresholdSeconds: exact(objective.latency.thresholdMs / 1000),
+          },
+        ]),
+  ]);
+  const windowHours = policy.slos.windowDays * 24;
+  const burnRateAlerts: BurnRateAlert[] = objectives.flatMap((objective) =>
+    BURN_RATE_WINDOWS.map((row) => {
+      const burnRate = exact((row.budgetSpent * windowHours) / row.longHours);
+      return {
+        service: objective.service,
+        kind: objective.kind,
+        severity: row.severity,
+        burnRate,
+        threshold: exact(burnRate * exact(1 - objective.target)),
+        budgetSpent: row.budgetSpent,
+        longWindow: row.longWindow,
+        shortWindow: row.shortWindow,
+      };
+    }),
+  );
 
   const slis: ServiceSli[] = members.services.flatMap((service): ServiceSli[] => [
     {
@@ -197,7 +266,12 @@ export function observabilityPlan(
     ),
     sentry: projects.length === 0 ? null : { org: String(org), projects },
     slis,
-    slos: { startAt: policy.slos.startAt },
+    slos: {
+      startAt: policy.slos.startAt,
+      windowDays: policy.slos.windowDays,
+      objectives,
+      burnRateAlerts,
+    },
     uptime: policy.uptime.map((target) => ({
       environment: target.environment,
       name: target.name,

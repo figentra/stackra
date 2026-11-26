@@ -103,3 +103,8 @@ sender (`fetch` only, no OpenTelemetry SDK):
   dropped.
 
 A failing collector never reaches the traced or measured code.
+
+`pnpm --filter @stackra/logger test:int` (Docker) proves the three drivers against a real OpenTelemetry Collector
+(the pinned contrib image, Testcontainers): the collector's OTLP/HTTP receiver, behind basic auth taken from the
+headers secret, accepts and re-exports each signal with its `service.name`, attributes, trace ids, severities, sums,
+histogram buckets and gauges intact, and a wrong secret is refused (401), dropped and counted.

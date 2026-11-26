@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `OBSERVABILITY_SCHEMA`, the root runway's `observability` section, which `@stackra/runway` leaves open for
  *          its owner to check: log retention (`logs.hotDays` searchable, `logs.coldMonths` archived in `logs.coldStore`),
- *          the heartbeat switches (`heartbeats.crons`, `relays`, `workers`), when objectives start (`slos.startAt`)
+ *          the heartbeat switches (`heartbeats.crons`, `relays`, `workers`), when objectives start (`slos.startAt`),
+ *          the objectives themselves (`slos.objectives`: per service, an availability and a latency target over
+ *          `slos.windowDays`, 30 by default; none before the first paying tenant)
  *          and the public status page (`statusPage`: its Better Stack subdomain, company, time zone, optional custom
  *          domain, whether it is published, and the environments whose heartbeats it shows). An omitted key takes the
  *          ADR 0184 value: 30 days hot, 13 months in S3, every heartbeat on, objectives from the first paying tenant,
@@ -68,7 +70,34 @@ export const OBSERVABILITY_SCHEMA = z.strictObject({
     })
     .prefault({}),
   slos: z
-    .strictObject({ startAt: z.enum(["first-paying-tenant"]).default("first-paying-tenant") })
+    .strictObject({
+      startAt: z.enum(["first-paying-tenant"]).default("first-paying-tenant"),
+      // The objective window; the longest burn-rate window is three days.
+      windowDays: z.int().min(7).max(90).default(30),
+      // None until the first paying tenant (ADR 0184 decision 3): declaring one starts it.
+      objectives: z
+        .array(
+          z
+            .strictObject({
+              service: z.string().min(1),
+              // Percent of requests answered without a server error (below 500).
+              availability: z.number().gt(0).lt(100).optional(),
+              // Percent of requests at or under thresholdMs, a bucket bound of the duration histogram.
+              latency: z
+                .strictObject({
+                  thresholdMs: z.int().positive(),
+                  percent: z.number().gt(0).lt(100),
+                })
+                .optional(),
+            })
+            .refine(
+              (objective) =>
+                objective.availability !== undefined || objective.latency !== undefined,
+              { message: "Declare availability, latency or both" },
+            ),
+        )
+        .default([]),
+    })
     .prefault({}),
   statusPage: z
     .strictObject({

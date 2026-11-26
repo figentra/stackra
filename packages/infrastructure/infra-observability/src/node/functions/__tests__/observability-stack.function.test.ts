@@ -51,7 +51,7 @@ const PLAN: ObservabilityPlan = {
       goodWhen: "http.response.status_code < 500",
     },
   ],
-  slos: { startAt: "first-paying-tenant" },
+  slos: { startAt: "first-paying-tenant", windowDays: 30, objectives: [], burnRateAlerts: [] },
   uptime: [
     {
       environment: "production",
@@ -84,6 +84,7 @@ describe("observabilityStack", () => {
       "https://uptime.betterstack.test/heartbeat-production.commerce.outbox",
     );
     expect(outputs.slis).toBe(PLAN.slis);
+    expect(outputs.slos).toBe(PLAN.slos);
     expect(new Set(declared.map((resource) => resource.type.split(":")[0]))).toEqual(
       new Set(["aws", "logtail", "sentry", "better-uptime"]),
     );
@@ -101,7 +102,7 @@ describe("observabilityStack", () => {
 
     expect(stack.logs).toBeUndefined();
     expect(stack.sentry).toBeUndefined();
-    expect(stack.outputs).toEqual({ heartbeats: {}, slis: PLAN.slis });
+    expect(stack.outputs).toEqual({ heartbeats: {}, slis: PLAN.slis, slos: PLAN.slos });
     expect(declared).toEqual([]);
   });
 
