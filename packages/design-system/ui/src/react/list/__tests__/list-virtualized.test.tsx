@@ -4,8 +4,9 @@
  *          Enter on a row runs that row's `onPress`, a selecting list reports the ids, a scroll near the end asks for
  *          the next page only while `hasMore` and not loading, the loading row names one spinner, and with no rows it
  *          falls back to the empty state.
- * Boundary: jsdom with real HeroUI and React Aria; element sizes and `IntersectionObserver` are stand-ins so the
- *           virtualiser has a viewport to fill. The icons need no registry: the rows carry none.
+ * Boundary: jsdom with real HeroUI and React Aria; element sizes (the viewport and the scroll size a row is measured
+ *           by) and `IntersectionObserver` are stand-ins so the virtualiser has a viewport to fill and rows with a
+ *           height. The icons need no registry: the rows carry none.
  * Runtime: browser
  * Governing contract: ADR 0313; WCAG 2.2 SC 4.1.2 and 4.1.3; ADR 0022 (test placement); STA-1371.
  */
@@ -45,6 +46,10 @@ describe("List virtualised (web)", () => {
       vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(400);
     for (const key of ["clientHeight", "offsetHeight"] as const)
       vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(400);
+    // The virtualiser measures each row by its scroll size, which jsdom reports as 0: a row would collapse to no
+    // height, the list to none, and no row would be drawn.
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(400);
+    vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(56);
   });
 
   afterEach(() => {
