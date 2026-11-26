@@ -112,15 +112,24 @@ the owner's one GitHub Environment approval, which an agent may start. Secret va
 only through a merged pull request, and a workstation `encore deploy` stays denied. Until the owner applies the guard
 and settings edits listed on STA-1395, the guard still asks before staging deploys.
 
-## Tests run later: merge now, label `needs-testing`
+## Tests run later: docs merge now, code merges on a green gate
 
-Owner decision 2026-11-03 (STA-2083, replaces "Tests run on the box"): nothing waits on tests before it lands. No box
-run before the merge and no waiting on CI: open the pull request and merge it right away
-(`figentra pr merge --admin [-R figentra/<repo>] <n>`, as stackra-bot; see below), then add the Linear label
-`needs-testing` to its STA issue and a `Needs testing: <what to run>` line to the pull request body. The tester
-lane later runs those tests on the box (`testbed run "core STA-n" . "pnpm verify"`) and removes the label.
-GitHub CI runs no tests; its checks still run after the merge and stay visible. Nothing installs or tests on a
-workstation.
+Owner decisions 2026-11-03 (STA-2083, "merge now, test later") and 2026-11-20 (STA-2705, which amends STA-2083 for
+code changes: "Docs-only changes keep 'merge now'"):
+
+- A markdown-only change (every changed file is `.md` or `.mdx`) merges at once, with no box run and no wait on
+  CI: `figentra pr merge --admin [-R figentra/<repo>] <n>`, as stackra-bot (see below).
+- A code change (any other file) merges only once the Quality Gate is green on its head commit: `pnpm pr:merge <n>`
+  here, `figentra pr merge [-R figentra/<repo>] <n>` without `--admin` elsewhere; both refuse a red gate. The one
+  exception is a red Test step the change did not cause (the same task is red on main): name it on the pull request
+  in a `Known red: <member>#test (STA-n)` line, and merge with `--admin` only after the review accepts that line on
+  the pull request. A code change never takes `--admin` past a red gate for any other reason.
+
+The Quality Gate runs the unit tests of the members a code change affects, plus gen, tenancy, identity, actions and
+database every time (`tools/scripts/ci-test-plan.mjs`); a markdown-only change tests only the members it changed.
+`test:int` and e2e still run later: after the merge, add the Linear label `needs-testing` to its STA issue and a
+`Needs testing: <what to run>` line to the pull request body. The tester lane runs those tests on the box
+(`testbed run "core STA-n" . "pnpm verify"`) and removes the label. Nothing installs or tests on a workstation.
 
 ## GitHub identity: agents are stackra-bot
 
@@ -148,7 +157,7 @@ Every change goes through Figentra Flow (`fflow`, the preset preset). Specs live
 - Spec the change with `/flow-specify`, `/flow-clarify` and `/flow-plan` (it writes the tasks too), then build it
   with `/flow-implement`.
 - Work in a worktree under `.claude/worktrees/<name>/`, made with `fflow start <key>`; never next to the repository.
-- Merge the pull request right away with `pnpm pr:merge <n>` under the owner's merge-now rule above (STA-2083): never wait on the gate. Then add the `needs-testing` label to its STA issue and a `Needs testing:` line to its body, and remove the worktree yourself.
+- Merge a code change with `pnpm pr:merge <n>` once the Quality Gate is green on its head (STA-2705, amending STA-2083); only a markdown-only change, or a `Known red:` line the review accepted, merges with `figentra pr merge --admin <n>` (rule above). Then add the `needs-testing` label to its STA issue and a `Needs testing:` line to its body, and remove the worktree yourself.
 
 ## Rules
 

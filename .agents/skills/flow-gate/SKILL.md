@@ -8,8 +8,9 @@ metadata:
 
 ## Stackra: where the tests run
 
-GitHub CI runs no tests (the owner, 2026-11-03): they run only on the testbed, through this gate, which posts
-`fflow/gate`, the one required check. Nothing here runs a check on this machine.
+GitHub CI runs only the unit tests of the members a change affects, plus gen, tenancy, identity, actions and
+database (the owner, 2026-11-20, STA-2705). The whole suite, `test:int` and e2e run only on the testbed, through this
+gate, which posts `fflow/gate`. Nothing here runs a check on this machine.
 
 ## User Input
 
