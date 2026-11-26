@@ -39,7 +39,7 @@ const text = (value: unknown): string | null =>
  * @param bundle - the bundle as R2 holds it (JSON text).
  * @param publisherRun - the version's `publisher_run` (the OIDC-exchanged run URL).
  * @example
- * provenanceOf(bundleText, "https://github.com/figentra/stackra/actions/runs/42/attempts/1")?.commit;
+ * provenanceOf(bundleText, "https://github.com/stackra-inc/stackra/actions/runs/42/attempts/1")?.commit;
  */
 export function provenanceOf(bundle: string, publisherRun: string): ProvenanceSummary | null {
   let statement: Statement;
