@@ -48,6 +48,9 @@ Where a scan may point is fixed in code, not left to whoever runs it:
 - **Active full scan and API scan** (attack traffic): only a local or private host (`localhost`, `10.0.0.0/8`,
   `172.16.0.0/12`, `192.168.0.0/16`, `.internal`, `.local`), or a listed target marked `active: true`. The listed
   production hosts are passive only. Any other host is refused before ZAP starts.
+- **The API scan's spec** (`--api`): only a URL on the target's own origin or on a local or private host. ZAP is
+  also told (`-O`) to attack the target's origin, so a spec whose `servers` name another host cannot send the scan
+  there.
 
 ## Run it on the box
 
@@ -100,10 +103,10 @@ error, a refused target or a scanner failure. A scanner that cannot run is a fai
 
 ## Enforcement status
 
-| Rule                                          | Check                                                      | State                       |
-| --------------------------------------------- | ---------------------------------------------------------- | --------------------------- |
-| Code is scanned on every pull request         | CodeQL default setup; `security-scan.yml` `SAST` job       | Live (not a required check) |
-| A new Stackra rule finding fails the scan     | `security-scan.mjs sast` against `baseline.yaml`           | Live                        |
-| Nightly ZAP scan (ADR 0187 decision 3)        | `security-scan.yml` `DAST` job, passive, per listed target | Live                        |
-| Active scans never reach a host we do not own | `resolveTarget` in `security-scan.mjs`, with its tests     | Live                        |
-| Accepted findings are reviewed                | each baseline entry names its issue                        | Live                        |
+| Rule                                          | Check                                                                         | State                       |
+| --------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------- |
+| Code is scanned on every pull request         | CodeQL default setup; `security-scan.yml` `SAST` job                          | Live (not a required check) |
+| A new Stackra rule finding fails the scan     | `security-scan.mjs sast` against `baseline.yaml`                              | Live                        |
+| Nightly ZAP scan (ADR 0187 decision 3)        | `security-scan.yml` `DAST` job, passive, per listed target                    | Live                        |
+| Active scans never reach a host we do not own | `resolveTarget`, `resolveApiSpec` and `-O` in `security-scan.mjs`, with tests | Live                        |
+| Accepted findings are reviewed                | each baseline entry names its issue                                           | Live                        |

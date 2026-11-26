@@ -29,6 +29,7 @@ import {
   parseZapPolicy,
   readBaseline,
   readTargets,
+  resolveApiSpec,
   resolveTarget,
   ruleName,
   semgrepCommand,
@@ -410,6 +411,32 @@ test("resolveTarget: passive scans reach listed or local hosts; active scans onl
   assert.throws(() => resolveTarget("nonsense", "baseline", TARGETS), /neither a listed target/);
 });
 
+test("resolveApiSpec: the spec comes from the target's origin or a local host, never a host we do not own", () => {
+  const local = resolveTarget("http://127.0.0.1:4000/", "api", TARGETS);
+  assert.equal(
+    resolveApiSpec("http://127.0.0.1:4000/openapi.json", local),
+    "http://127.0.0.1:4000/openapi.json",
+  );
+  assert.equal(
+    resolveApiSpec("http://localhost:8080/spec.json", local),
+    "http://localhost:8080/spec.json",
+  );
+  const lab = resolveTarget("lab", "api", TARGETS);
+  assert.equal(
+    resolveApiSpec("https://lab.example/openapi.json", lab),
+    "https://lab.example/openapi.json",
+  );
+  // The review's case: a local target with the production registry's spec would attack the registry.
+  assert.throws(
+    () => resolveApiSpec("https://npm.stackra.figentra.com/openapi.json", local),
+    /--api must be on the target's origin \(http:\/\/127\.0\.0\.1:4000\) or a local host/,
+  );
+  assert.throws(() => resolveApiSpec("https://docs.example/openapi.json", lab), /target's origin/);
+  assert.throws(() => resolveApiSpec("http://u:p@127.0.0.1:4000/o.json", local), /credentials/);
+  assert.throws(() => resolveApiSpec("file:///etc/passwd", local), /http or https/);
+  assert.throws(() => resolveApiSpec("openapi.json", local), /not a URL/);
+});
+
 test("readTargets: the committed file lists https targets, none active", () => {
   const targets = readTargets(readFileSync(join(ROOT, TARGETS_PATH), "utf8"));
   assert.ok(targets.length > 0);
@@ -462,6 +489,7 @@ test("zapCommand: the pinned image, host network only for a local target, the re
   const api = zapCommand({
     mode: "api",
     api: "http://127.0.0.1:4000/openapi.json",
+    url: "http://127.0.0.1:4000/",
     minutes: 2,
     workDir: "/w",
     local: true,
@@ -469,6 +497,18 @@ test("zapCommand: the pinned image, host network only for a local target, the re
   assert.ok(api.args.includes("zap-api-scan.py"));
   assert.ok(api.args.includes("openapi"));
   assert.ok(!api.args.includes("-m"));
+  // -O pins the attack to the target's origin, whatever host the spec's `servers` name.
+  const apiRemoteSpec = zapCommand({
+    mode: "api",
+    api: "http://localhost:8080/spec.json",
+    url: "http://127.0.0.1:4000/",
+    workDir: "/w",
+    local: true,
+  });
+  assert.deepEqual(
+    apiRemoteSpec.args.slice(apiRemoteSpec.args.indexOf("zap-api-scan.py") + 1, -7),
+    ["-t", "http://localhost:8080/spec.json", "-f", "openapi", "-O", "http://127.0.0.1:4000"],
+  );
 });
 
 // ------------------------------------------------------------------------------------------------- main, with fake docker
@@ -626,6 +666,44 @@ test("main dast: a FAIL alert exits 1 with SARIF; a clean report exits 0; a refu
     assert.match(io.text, /active full scan runs only against a local/);
   });
   assert.throws(() => readFileSync(join(refused, "docker.log")), /ENOENT/);
+});
+
+test("main dast api: a spec we do not own is refused before docker starts; a local one scans only the target", () => {
+  const refused = fakeRepo("dast-api-refused", {});
+  withDocker(refused, () => {
+    const io = capture();
+    const argv = ["dast", "--target", "http://127.0.0.1:4000/", "--mode", "api"];
+    assert.equal(
+      main([...argv, "--api", "https://npm.stackra.figentra.com/openapi.json"], io, refused),
+      2,
+    );
+    assert.match(io.text, /--api must be on the target's origin/);
+  });
+  assert.throws(() => readFileSync(join(refused, "docker.log")), /ENOENT/);
+
+  const clean = fakeRepo("dast-api-clean", { zapJson: { site: [] } });
+  withDocker(clean, () =>
+    assert.equal(
+      main(
+        [
+          "dast",
+          "--target",
+          "http://127.0.0.1:4000/",
+          "--mode",
+          "api",
+          "--api",
+          "http://127.0.0.1:4000/openapi.json",
+        ],
+        capture(),
+        clean,
+      ),
+      0,
+    ),
+  );
+  assert.match(
+    readFileSync(join(clean, "docker.log"), "utf8"),
+    /--network host .*zap-api-scan\.py -t http:\/\/127\.0\.0\.1:4000\/openapi\.json -f openapi -O http:\/\/127\.0\.0\.1:4000 /,
+  );
 });
 
 test("main dast: ZAP's error exit (3) is a tool failure, not a pass", () => {

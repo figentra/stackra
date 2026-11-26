@@ -12,6 +12,8 @@
  *            `tools/security/zap/policy.tsv` (ZAP's own rules format). The passive `baseline` may scan a host named in
  *            `tools/security/zap/targets.yaml` or a local one; the active `full` and `api` scans only a local or private
  *            host, or a listed target marked `active: true`. Any other host is refused: we never attack what we do not own.
+ *            The `api` scan's `--api` spec must sit on the target's origin or a local host, and ZAP is told (`-O`) to
+ *            scan the target's origin whatever the spec's `servers` say.
  *          Both run their tool from a Docker image pinned by digest (`--local` uses a `semgrep` on PATH instead), so the
  *          same command runs in CI and on the test box.
  * Boundary: reads the checkout (mounted read-only into Semgrep); writes only `--out`, `--sarif` and, with
@@ -588,12 +590,37 @@ export function resolveTarget(requested, mode, targets) {
   return { url: url.href, name, local };
 }
 
+/**
+ * The checked `--api` spec URL for an `api` scan of the resolved `target`, or a thrown UsageError. The spec must come
+ * from the target's own origin or from a local host: zap-api-scan.py fetches it, and without `-O` it would actively
+ * scan whatever host the spec URL or the spec's `servers` names. `zapCommand` also passes `-O <target origin>`, so the
+ * attack traffic reaches only the checked target whatever the spec says.
+ */
+export function resolveApiSpec(requested, target) {
+  let url;
+  try {
+    url = new URL(requested);
+  } catch {
+    throw new UsageError(`--api ${requested} is not a URL`);
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:")
+    throw new UsageError("--api must be http or https");
+  if (url.username || url.password) throw new UsageError("--api must not carry credentials");
+  if (url.origin !== new URL(target.url).origin && !isLocalHost(url.hostname))
+    throw new UsageError(
+      `--api must be on the target's origin (${new URL(target.url).origin}) or a local host; ${url.hostname} is neither`,
+    );
+  return url.href;
+}
+
 /** The docker argv for a ZAP scan writing `zap.json` and `zap.html` into `workDir` (mounted at /zap/wrk). */
 export function zapCommand({ mode, url, api, minutes, workDir, local }) {
   const script = { baseline: "zap-baseline.py", full: "zap-full-scan.py", api: "zap-api-scan.py" }[
     mode
   ];
-  const target = mode === "api" ? ["-t", api, "-f", "openapi"] : ["-t", url];
+  // -O: the API scan attacks the checked target's origin, never the host in the spec URL or the spec's `servers`.
+  const target =
+    mode === "api" ? ["-t", api, "-f", "openapi", "-O", new URL(url).origin] : ["-t", url];
   const timing = mode === "api" ? [] : ["-m", String(minutes)];
   return {
     file: dockerBinary(),
@@ -627,6 +654,7 @@ export function runDast(options, io = defaultIo(), root = ROOT) {
   const policyText = readFileSync(join(root, POLICY_PATH), "utf8");
   const policy = parseZapPolicy(policyText);
   const target = resolveTarget(options.target, options.mode, targets);
+  const api = options.mode === "api" ? resolveApiSpec(options.api, target) : undefined;
   const out = options.out ? resolve(options.out) : mkdtempSync(join(tmpdir(), "stackra-zap-"));
   mkdirSync(out, { recursive: true });
   // The ZAP image runs as its own user, which must write the report into the mounted folder.
@@ -634,7 +662,7 @@ export function runDast(options, io = defaultIo(), root = ROOT) {
   writeFileSync(join(out, "policy.tsv"), policyText);
   io.out(`zap: ${options.mode} scan of ${target.url} (${target.name}), reports in ${out}\n`);
   const result = run(
-    zapCommand({ ...options, url: target.url, workDir: out, local: target.local }),
+    zapCommand({ ...options, api, url: target.url, workDir: out, local: target.local }),
     { ...io, verbose: true },
   );
   // ZAP: 0 clean, 1 a FAIL rule, 2 warnings, 3 an error (no trustworthy report).
