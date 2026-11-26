@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `checkMigrationDrift`, `stackra db diff` for one member: discovers it, compiles and orders its migrations (its
- *          own and its declared packages', the order gen writes to `.stackra/migrations`), replays them on an in-memory
+ *          own and its declared packages', under the committed migration lock, so in the order gen writes to
+ *          `.stackra/migrations`), replays them on an in-memory
  *          PGlite through the member's own `@stackra/database/node` (`readMigratedSchema`), builds the schema its models
  *          declare (`expectedSchema`) and returns their differences.
  * Boundary: no database, no network, no secret: the replay database is in process and thrown away. gen holds no
@@ -13,12 +14,16 @@
  * Governing contract: ADR 0159 (decisions 1 to 3); ADR 0282 (decision 3: `stackra db diff`); ADR 0014 (only
  *                     `@stackra/database` holds the database driver); STA-1808.
  */
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import type { StackraManifest } from "@stackra/contracts";
+
 import { diffSchemas } from "#core/functions/diff-schemas.function";
 import { expectedSchema } from "#core/functions/expected-schema.function";
+import { migrationLockOf } from "#core/functions/migration-lock-of.function";
 import type { SchemaSnapshot } from "#core/types/schema-snapshot.type";
 import { compileMigrations } from "#node/functions/compile-migrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
@@ -89,7 +94,16 @@ export async function checkMigrationDrift(
   if (ir.layout !== "service")
     return { member: ir.member, differences: [], errors: [], compared: false };
 
-  const compiled = await compileMigrations(root, ir);
+  // The committed lock decides the order and which migrations compile frozen, as `stackra gen` does (STA-2160).
+  const manifest = join(root, "stackra.manifest.json");
+  const lock = migrationLockOf(
+    existsSync(manifest)
+      ? (JSON.parse(readFileSync(manifest, "utf8")) as StackraManifest)
+      : undefined,
+  );
+  if (lock.errors.length > 0)
+    return { member: ir.member, differences: [], errors: lock.errors, compared: false };
+  const compiled = await compileMigrations(root, ir, { locked: lock.locked });
   if (compiled.errors.length > 0)
     return { member: ir.member, differences: [], errors: compiled.errors, compared: false };
 

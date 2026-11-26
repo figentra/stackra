@@ -56,6 +56,10 @@ licence with a NOTICE).
 | `DELETE` of a package or version                             | 405: versions are immutable                                      | —                           |
 | anything else (search, audit, unknown or unscoped names)     | 404                                                              | —                           |
 
+Every answer carries `x-stackra-version`, the id of the Worker version that gave it (the `CF_VERSION_METADATA`
+binding). Runway's deploy smoke reads it on `/-/ping` and `/-/npm/v1/keys` at 0% and at each of the 10/50/100 steps, so
+a smoke that reaches the old version fails instead of passing (STA-2786).
+
 ## Browser
 
 The Worker also serves a read-only browser for people, in English (no prefix) and Arabic (`/ar/`, right to left), on

@@ -32,8 +32,8 @@
 import type { StackraManifest } from "@stackra/contracts";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { encoreEndpoints } from "#core/functions/encore-endpoints.function";
+import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
@@ -134,7 +134,7 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
     path: `${encoreServiceFolder(ir.member)}/api.ts`,
     content: [
       header,
-      ...encoreDatabaseImport(ir),
+      ...encoreSetupImports(ir),
       ...importLines(imports),
       "",
       ENCORE_APP_IMPORT,
