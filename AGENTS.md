@@ -118,7 +118,8 @@ Owner decision 2026-11-03 (STA-2083, replaces "Tests run on the box"): nothing w
 run before the merge and no waiting on CI: open the pull request and merge it right away
 (`figentra pr merge --admin [-R figentra/<repo>] <n>`, as stackra-bot; see below), then add the Linear label
 `needs-testing` to its STA issue and a `Needs testing: <what to run>` line to the pull request body. The tester
-lane later runs those tests on the box (`testbed run "core STA-n" . "pnpm verify"`) and removes the label.
+lane later runs those tests on the box (`testbed run "core STA-n" . "pnpm verify:box"`: the gate, `test:int` and
+the coverage floors of ADR 0182) and removes the label.
 GitHub CI runs no tests; its checks still run after the merge and stay visible. Nothing installs or tests on a
 workstation.
 

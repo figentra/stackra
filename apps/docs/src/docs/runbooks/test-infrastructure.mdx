@@ -198,7 +198,8 @@ Repeat with `stackra-testbed-light`, and in each region that runs boxes (`--regi
 ## When no box is healthy
 
 `stackra testbed run --preset <verify|e2e|integration> --ref <ref>` dispatches `testbed-fallback.yml`. It runs that
-preset for a pushed ref on a GitHub-hosted runner. A plain command, or work in an unpushed worktree, waits for a box
+preset for a pushed ref on a GitHub-hosted runner; `verify` runs `pnpm verify:box` (`pnpm verify`, then `pnpm test:int`,
+then the ADR 0182 coverage floors with `pnpm test:coverage`). A plain command, or work in an unpushed worktree, waits for a box
 instead. Nothing falls back to the Mac.
 
 ## Cost

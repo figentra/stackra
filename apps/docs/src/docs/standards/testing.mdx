@@ -18,8 +18,8 @@ Every test file sits directly in a `__tests__/` folder beside the code it proves
 
 - A test file's name is its subject's name plus `.test` (never `.spec`); its header says what the suite proves, and each `it()` title is a full sentence stating behaviour.
 - The vitest presets set `passWithNoTests: false`, so a member with an empty suite fails. Every layer or entry of a package ships at least one test.
-- Packages meet one coverage floor from `@stackra/vitest-config/coverage`: lines and functions 80, branches 70. A threshold moves only upward; a package that cannot meet it says why in its own `vitest.config.ts`. Apps are not gated.
-- Run one member with `pnpm turbo run test --filter=<package-name>`; coverage with `pnpm test:coverage`.
+- Packages and services meet the coverage floor `withCoverage` from `@stackra/vitest-config/coverage` gives them ([ADR 0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies) decision 2): lines and functions 80, branches 70; 90/90/80 for the packages in `STRICT_COVERAGE_PACKAGES` (every `packages/security` package, plus actions, outbox, workflow, versioning and validation). A threshold moves only upward; a member that cannot meet it says why in its own `vitest.config.ts`. Every member with a `test` script also has `test:coverage`, except the five tooling presets. Apps are not gated.
+- Run one member with `pnpm turbo run test --filter=<package-name>`; coverage with `pnpm test:coverage`. The box runs `pnpm verify:box`: `pnpm verify`, then `pnpm test:int`, then `pnpm test:coverage`; `stackra check --with-tests` runs the `coverage` phase after `test`.
 
 ## Tests need zero secrets
 
@@ -82,7 +82,7 @@ An app's e2e suite is a set of journeys run across axes, not a single configurat
 | Rule                                                      | Check                                                                                                                                | Status |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------ |
 | Empty suite fails                                         | vitest presets (`passWithNoTests: false`)                                                                                            | Yes    |
-| Coverage floor on packages                                | `withCoverage` in `pnpm test:coverage`                                                                                               | Yes    |
+| Coverage floor on packages and services                   | `withCoverage` in `pnpm test:coverage`, run by `pnpm verify:box` and `stackra check --with-tests`; `coverage-gate.test.mjs`          | Yes    |
 | Script tests and the scaffold render every template kind  | `node --test tools/scripts/__tests__/*.test.mjs` in `pnpm validate`                                                                  | Yes    |
 | Every test file sits directly in `__tests__/`; no `.spec` | `checkTestPlacement` in `@stackra/repo-checks` (`stackra validate --repository`) ([ADR 0022](/adr/0022-tests-live-in-tests-folders)) | Yes    |
 | Template output is validated, not only rendered           | planned: scaffold test also runs the validator on each kind                                                                          | No     |

@@ -4,7 +4,9 @@
  *          <name>`, `@figentra/<product>-service-<name>` or `@<scope>/service-<name>`) in the shape of stackra/template's
  *          services: package.json (the `#src`, `#modules`, `#config`, `#contracts`, `#assets` and `#stackra` imports,
  *          the `./assets/*` export, `@stackra/app` and `@stackra/container` for the generated server entry and
- *          Encore app, the other `@stackra/*` at `options.stackraVersion`, scripts that call `stackra <task>`),
+ *          Encore app, the other `@stackra/*` at `options.stackraVersion`, scripts that call `stackra <task>` and
+ *          `test:coverage` (`stackra test --coverage`, with `@vitest/coverage-v8`: services join the coverage gate,
+ *          ADR 0182 decision 2)),
  *          tsconfig.json (the `service` preset), turbo.jsonc, `stackra.config.ts` with one `defineService({ area })`,
  *          `runway.yaml` (version 3, nothing required yet), `assets/.gitkeep`, README.md, AGENTS.md and CHANGELOG.md,
  *          the root module `src/<name>.module.ts` and its one passing test (`createTestingModule`). With `data`: the
@@ -119,6 +121,7 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
     exports: { "./assets/*": "./assets/*" },
     scripts: {
       ...Object.fromEntries(tasks.map((task) => [task, `stackra ${task}`])),
+      "test:coverage": "stackra test --coverage",
       ...(data && { "test:int": "stackra test --tier int" }),
       format: "oxfmt --write .",
       "format:check": "oxfmt --check .",
@@ -142,6 +145,7 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
       "@stackra/typescript-config": stackraVersion,
       "@stackra/vitest-config": stackraVersion,
       "@types/node": "catalog:",
+      "@vitest/coverage-v8": "catalog:quality",
       oxfmt: "catalog:quality",
       oxlint: "catalog:quality",
       tsdown: "catalog:build",

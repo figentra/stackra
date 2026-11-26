@@ -6,7 +6,8 @@
 # Secrets: the ci/build/turbo values, as the Quality Gate reads them (STA-1393), and UNIWIND_AUTH_TOKEN from ci/build
 #          for the e2e preset only (ADR 0310), both decrypted by the job as itself (ADR 0525). No repository secret.
 #          verify and integration install without the two Uniwind Pro apps, as the gate and a box do (#425): the
-#          licensed download has a monthly quota. e2e needs the playground, so it installs everything.
+#          licensed download has a monthly quota. e2e needs the playground, so it installs everything. verify runs
+#          `pnpm verify:box`: `pnpm verify`, then `test:int` and the coverage floors (`test:coverage`, ADR 0182).
 # Owner: release-operations
 
 name: Testbed fallback
@@ -104,9 +105,10 @@ jobs:
         if: inputs.preset != 'e2e'
         run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
 
+      # The box's verify (ADR 0182): the repo gate, then the integration tier and the coverage floors.
       - name: Verify
         if: inputs.preset == 'verify'
-        run: pnpm verify
+        run: pnpm verify:box
 
       - name: Integration tests
         if: inputs.preset == 'integration'

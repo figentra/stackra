@@ -12,7 +12,7 @@ import { CliUsageError } from "#node/errors/cli-usage.error";
 import { parseCheckOptions } from "#node/functions/parse-check-options.function";
 
 describe("parseCheckOptions", () => {
-  it("runs every phase except the opt-in test phase, as text, without fixing", () => {
+  it("runs every phase except the opt-in test and coverage phases, as text, without fixing", () => {
     const options = parseCheckOptions({}, {});
     expect(options.phases).toEqual([
       "config",
@@ -52,8 +52,19 @@ describe("parseCheckOptions", () => {
       "catalogues",
       "spec",
       "test",
+      "coverage",
     ]);
     expect(parseCheckOptions({ only: "test" }, {}).phases).toEqual(["test"]);
+    expect(parseCheckOptions({ only: "coverage" }, {}).phases).toEqual(["coverage"]);
+    expect(parseCheckOptions({ only: "lint", "with-tests": true }, {}).phases).toEqual([
+      "lint",
+      "test",
+      "coverage",
+    ]);
+    expect(parseCheckOptions({ skip: "coverage" }, { withTests: true }).phases).toContain("test");
+    expect(parseCheckOptions({ skip: "coverage" }, { withTests: true }).phases).not.toContain(
+      "coverage",
+    );
   });
 
   it("applies an alias's presets, which flags override", () => {

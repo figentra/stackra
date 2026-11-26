@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: `parseCheckOptions(values, defaults)`, the `CheckOptions` of one `stackra check` run from its parsed flags and
  *          an alias's defaults: `--only`/`--skip` checked against the phase names, `--format` against text, json and
- *          github, and `test` kept only when `--with-tests` or `--only` asks for it.
+ *          github, and the opt-in `test` and `coverage` kept only when `--with-tests` or `--only` asks for them.
  * Boundary: pure; a bad flag value throws `CliUsageError` (exit 2).
  * Runtime: node
- * Governing contract: ADR 0282 (decision 3).
+ * Governing contract: ADR 0282 (decision 3); ADR 0182 (decision 2: the coverage gate runs with the tests).
  */
 import { CHECK_PHASES } from "#node/constants/check-phases.constant";
+import { OPT_IN_PHASES } from "#node/constants/opt-in-phases.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import type { CheckOptions } from "#node/types/check-options.type";
 
@@ -54,8 +55,9 @@ export function parseCheckOptions(
   const phases = CHECK_PHASES.map((phase) => phase.name).filter(
     (name) =>
       (only === undefined
-        ? name !== "test" || withTests
-        : only.includes(name) || (name === "test" && withTests)) && !skip.includes(name),
+        ? !OPT_IN_PHASES.includes(name) || withTests
+        : only.includes(name) || (OPT_IN_PHASES.includes(name) && withTests)) &&
+      !skip.includes(name),
   );
   return {
     fix: values["fix"] === true || defaults.fix === true,

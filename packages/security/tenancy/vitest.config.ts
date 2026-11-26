@@ -7,6 +7,10 @@
  * Boundary: test configuration only; merges gen's `./.stackra/vitest.config` (the decorators preset, the coverage
  *           gate, the unit tier, the generated setup) under this package's own include and coverage, so gen keeps
  *           this file and writes no root shim (ADR 0295 decision 5; STA-1296, STA-1299).
+ *           The Postgres half (the two `postgres-*` store drivers, `TenantDataKeyService` and the migrations) is left
+ *           out of the unit coverage: it runs only against a real Postgres, in the int tier
+ *           (`postgres-*-store.driver.int.test.ts`, `.stackra/tests/migrations.int.test.ts`), which `test:coverage`
+ *           does not measure; the rest of the package meets the strict floor of ADR 0182 (90/90/80, STA-229).
  * Runtime: node
  * Governing contract: ADR 0182 (test tiers and coverage); ADR 0022 (test placement).
  */
@@ -18,11 +22,21 @@ import generated from "./.stackra/vitest.config";
 export default mergeConfig(
   generated,
   defineConfig(
-    withCoverage({
-      test: {
-        include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
-        exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],
+    withCoverage(
+      {
+        test: {
+          include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
+          exclude: ["**/*.{int,contract,e2e,load}.test.{ts,tsx}"],
+        },
       },
-    }),
+      {
+        // Tested in the int tier on a real Postgres (see the contract above), not by the unit tier measured here.
+        exclude: [
+          "src/node/drivers/postgres-*.driver.ts",
+          "src/node/services/tenant-data-key.service.ts",
+          "src/node/database/migrations/**",
+        ],
+      },
+    ),
   ),
 );

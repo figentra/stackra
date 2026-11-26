@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `stackra check` phases: their order, and how the tool phases read their tool's output
- *          (oxfmt, cspell, gitleaks, oxlint, turbo typecheck and test, the spec gates) with the tool replaced, plus
+ *          (oxfmt, cspell, gitleaks, oxlint, turbo typecheck, test and test:coverage, the spec gates) with the tool
+ *          replaced, plus
  *          "skipped (not installed)" when it cannot start.
  * Boundary: test only; `runCaptured` is replaced, so no tool runs.
  * Runtime: node (vitest)
@@ -15,6 +16,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CHECK_PHASES } from "#node/constants/check-phases.constant";
+import { COVERAGE_PHASE } from "#node/constants/coverage-phase.constant";
 import { FORMAT_PHASE } from "#node/constants/format-phase.constant";
 import { LINT_PHASE } from "#node/constants/lint-phase.constant";
 import { SECRETS_PHASE } from "#node/constants/secrets-phase.constant";
@@ -75,11 +77,19 @@ describe("check phases", () => {
       "catalogues",
       "spec",
       "test",
+      "coverage",
     ]);
   });
 
   it("report skipped (not installed) when the tool cannot start", async () => {
-    for (const phase of [FORMAT_PHASE, SPELLING_PHASE, LINT_PHASE, TYPECHECK_PHASE, TEST_PHASE]) {
+    for (const phase of [
+      FORMAT_PHASE,
+      SPELLING_PHASE,
+      LINT_PHASE,
+      TYPECHECK_PHASE,
+      TEST_PHASE,
+      COVERAGE_PHASE,
+    ]) {
       tool.outputs = [undefined];
       expect(await phase.run(runIn())).toEqual({ findings: [], skipped: "not installed" });
     }
@@ -230,6 +240,41 @@ describe("check phases", () => {
     expect(findings.map((f) => f.message)).toEqual([
       "@stackra/a#test failed; run `turbo run @stackra/a#test` for the output",
       "@stackra/b#test failed; run `turbo run @stackra/b#test` for the output",
+    ]);
+  });
+
+  it("coverage runs turbo's test:coverage, affected members only with --affected, and names each member below its floor", async () => {
+    tool.outputs = [{ code: 0, stdout: "", stderr: "" }];
+    expect(await COVERAGE_PHASE.run(runIn())).toEqual({ findings: [] });
+    expect(tool.calls.at(-1)).toEqual({
+      command: "turbo",
+      args: ["run", "test:coverage", "--continue"],
+    });
+    tool.outputs = [
+      {
+        code: 1,
+        stdout:
+          "ERROR: Coverage for branches (71.2%) does not meet global threshold (80%)\n Failed:    @stackra/iam#test:coverage\n",
+        stderr: "",
+      },
+    ];
+    const { findings } = await COVERAGE_PHASE.run(
+      runIn(undefined, { files: ["packages/security/iam/src/a.ts"], base: "origin/dev" }),
+    );
+    expect(tool.calls.at(-1)?.args).toEqual([
+      "run",
+      "test:coverage",
+      "--continue",
+      "--filter=...[origin/dev]",
+    ]);
+    expect(findings).toEqual([
+      expect.objectContaining({
+        phase: "coverage",
+        rule: "failed",
+        adr: "0182",
+        message:
+          "@stackra/iam#test:coverage failed; run `turbo run @stackra/iam#test:coverage` for the output",
+      }),
     ]);
   });
 
