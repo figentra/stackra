@@ -7,7 +7,7 @@
     "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
   },
   "profile": "framework",
-  "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
+  "overrides": "sha256:8c32cdf465036271a782f46b0be5fc4a67306ebcb70c4a5afd397b0080408f58",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:e9bd4919bafea5d6e8ce7dd7d88a47d8ff841bd48d19ccbad8756ecea302d973",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:a21f86c0761479111b99ec88802b44a06c7a0bcab44a9344fb41c109c197bb35",
@@ -56,7 +56,7 @@
     ".agents/rules/module-boundary.md": "sha256:78953dd61387f3386f44506c602efd807ab3057979cb0e89ac381a4b0a7b3b6b",
     ".agents/rules/naming-and-casing.md": "sha256:65b952c312518023e0356a0e3496fc83ce288302e9b8f61131387c73bb9a53ed",
     ".agents/rules/not-built-yet.md": "sha256:70fbc346476d23bb3b461b473cfe7b70d21de51672f9cafcb6f885f0a0514459",
-    ".agents/rules/secrets.md": "sha256:11afd53634a2f4679bb83446c25d0f02a0b58e168f97d9316f81334f7f2b25c8",
+    ".agents/rules/secrets.md": "sha256:3d0bd3c45501b32b2bdd9f7b192d881dc652cc55d28cb47d23198e049346f86a",
     ".agents/rules/service-checklist.md": "sha256:9fcde412b327604fdcbe2fac2406379fb8c5673773fefa2831b53906ffa928c6",
     ".agents/rules/task-vocabulary.md": "sha256:3d45624c18766d6552ee11da53f085ec9770d274496a29e4147b63737c63d87c",
     ".agents/rules/tenancy.md": "sha256:1f4abda4c1b0e5102e574e72f37b57b477a2cfa2d2d541f56d8ff633769c4121",

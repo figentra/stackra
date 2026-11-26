@@ -76,7 +76,8 @@ arguments inside the server's process. This is a convention; no hook enforces it
 In the `agents` scope (local):
 
 - `STACKRA_BOT_APP_ID`, `STACKRA_BOT_INSTALLATION_ID`, `STACKRA_BOT_PRIVATE_KEY` - `pnpm bot:*`, `pnpm pr:merge`,
-  `pnpm adr:reserve`
+  `pnpm adr:reserve`. The installation is looked up from the repository a command acts on (STA-2861);
+  `STACKRA_BOT_INSTALLATION_ID` is only the fallback when that repository cannot be told
 - `LINEAR_AGENT_TOKEN`, `LINEAR_AGENT_CLIENT_ID`, `LINEAR_AGENT_CLIENT_SECRET`, `LINEAR_API_KEY` - `pnpm linear`
 - `GITHUB_PERSONAL_ACCESS_TOKEN` - GitHub MCP
 - `STRIPE_SECRET_KEY` - Stripe MCP (optional)

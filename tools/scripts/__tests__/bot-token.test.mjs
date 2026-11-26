@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: hold `bot-token.mjs` to its contract: the RS256 app JWT, the token mint and its errors that never name the
- *          key, the connect timeout, and the retry rules for idempotent and non-idempotent calls.
+ *          key, the installation looked up from the target repository with the stored id as the fallback (STA-2861),
+ *          the connect timeout, and the retry rules for idempotent and non-idempotent calls.
  * Boundary: a generated throwaway key and mocked fetch; no network.
  * Runtime: node
- * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). STA-302.
+ * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy). STA-302; STA-2861.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -20,7 +21,9 @@ import {
   backoff,
   CONNECT_TIMEOUT_MS,
   ghIdempotent,
+  installationFor,
   isGraphqlRead,
+  mintForCommand,
   mintToken,
   netFetch,
   RETRY_ATTEMPTS,
@@ -85,6 +88,130 @@ test("mintToken errors name the problem, never the key", async () => {
     assert.ok(!error.message.includes("nope"));
     return true;
   });
+});
+
+/** A GitHub whose App is installed on `installs` (repo → installation id); records every call. */
+const fakeGitHub = (installs, calls = []) => {
+  const fetchMock = async (url, init, options) => {
+    calls.push([init.method, url, options]);
+    const m = /\/repos\/([^/]+\/[^/]+)\/installation$/.exec(url);
+    if (m)
+      return Object.hasOwn(installs, m[1])
+        ? { ok: true, status: 200, json: async () => ({ id: installs[m[1]] }) }
+        : { ok: false, status: 404, json: async () => ({ message: "Not Found" }) };
+    const id = /\/app\/installations\/([^/]+)\/access_tokens$/.exec(url)[1];
+    return { ok: true, status: 201, json: async () => ({ token: `ghs_for_${id}` }) };
+  };
+  return fetchMock;
+};
+
+test("STA-2861: given a repository, mintToken looks up its installation with the app JWT, then mints for it", async () => {
+  const calls = [];
+  const fetchMock = fakeGitHub({ "stackra-inc/stackra": 186_048_986 }, calls);
+  // The stored id is stale (the old figentra installation): it must not be used.
+  assert.equal(
+    await mintToken(env, fetchMock, "STACKRA_BOT", "stackra-inc/stackra"),
+    "ghs_for_186048986",
+  );
+  assert.deepEqual(calls, [
+    ["GET", "https://api.github.com/repos/stackra-inc/stackra/installation", { idempotent: true }],
+    [
+      "POST",
+      "https://api.github.com/app/installations/186048986/access_tokens",
+      { idempotent: true },
+    ],
+  ]);
+  // The stored id is not needed when the repository is known.
+  const { STACKRA_BOT_INSTALLATION_ID: _, ...noStoredId } = env;
+  assert.equal(
+    await mintToken(noStoredId, fetchMock, "STACKRA_BOT", "stackra-inc/stackra"),
+    "ghs_for_186048986",
+  );
+});
+
+test("STA-2861: the lookup sends the app JWT, and a failed lookup never falls back to the stored id", async () => {
+  let auth;
+  await installationFor("a/b", "h.b.s", async (_url, init) => {
+    auth = init.headers.Authorization;
+    return { ok: true, status: 200, json: async () => ({ id: 7 }) };
+  });
+  assert.equal(auth, "Bearer h.b.s");
+
+  const calls = [];
+  await assert.rejects(
+    mintToken(env, fakeGitHub({}, calls), "STACKRA_BOT", "someone/else"),
+    (error) => {
+      assert.equal(error.message, "the App is not installed on someone/else (GitHub returned 404)");
+      return true;
+    },
+  );
+  assert.equal(
+    calls.length,
+    1,
+    "no mint after a 404: the stored id could not reach the repository",
+  );
+
+  // `fail` answers 401 Bad credentials: a lookup error other than 404 names the repository and the status.
+  await assert.rejects(
+    mintToken(env, fail, "STACKRA_BOT", "stackra-inc/stackra"),
+    /^Error: GitHub returned 401 looking up the installation for stackra-inc\/stackra: Bad credentials$/,
+  );
+});
+
+test("STA-2861: without a repository the stored installation id is the fallback, and is then required", async () => {
+  const calls = [];
+  assert.equal(await mintToken(env, fakeGitHub({}, calls)), "ghs_for_173153517");
+  assert.deepEqual(
+    calls.map(([method, url]) => [method, url]),
+    [["POST", "https://api.github.com/app/installations/173153517/access_tokens"]],
+  );
+  const { STACKRA_BOT_INSTALLATION_ID: _, ...noStoredId } = env;
+  await assert.rejects(
+    mintToken(noStoredId, fakeGitHub({})),
+    /missing env: STACKRA_BOT_INSTALLATION_ID/,
+  );
+});
+
+/** A git whose only remote is `origin` at `url` (none when url is null). */
+const gitWithOrigin = (url) => (_cmd, argv) =>
+  url && argv.at(-1) === "origin" ? { status: 0, stdout: `${url}\n` } : { status: 2, stdout: "" };
+
+test("STA-2861: mintForCommand mints for the repository the command acts on, else the stored id", async () => {
+  const fetchImpl = fakeGitHub({
+    "stackra-inc/stackra": 11,
+    "stackra-inc/stackra-template": 11,
+    "figentra/figentra": 22,
+  });
+  const origin = gitWithOrigin("git@github.com:stackra-inc/stackra.git");
+  const mint = (tool, args, run = origin) => mintForCommand(tool, args, { env, fetchImpl, run });
+  // pr-merge -R, bot-gh with -R, bot-gh and adr-reserve on origin, bot-git pushing to a URL.
+  assert.equal(await mint("gh", ["-R", "figentra/figentra"]), "ghs_for_22");
+  assert.equal(
+    await mint("gh", ["pr", "list", "--repo", "stackra-inc/stackra-template"]),
+    "ghs_for_11",
+  );
+  assert.equal(await mint("gh", []), "ghs_for_11");
+  assert.equal(
+    await mint("git", ["push", "https://github.com/figentra/figentra.git", "HEAD"]),
+    "ghs_for_22",
+  );
+  // No GitHub origin: the repository cannot be told, so the stored id serves.
+  assert.equal(
+    await mint("git", ["push", "origin", "HEAD"], gitWithOrigin(null)),
+    "ghs_for_173153517",
+  );
+  await assert.rejects(mint("gh", ["-R", "someone/else"]), /not installed on someone\/else/);
+});
+
+test("STA-2861: every bot entry point mints through mintForCommand, never the stored id alone", () => {
+  for (const file of ["bot-gh.mjs", "pr-merge.mjs", "adr-reserve.mjs", "bot-token.mjs"]) {
+    const text = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+    const main = text.slice(
+      text.indexOf("if (process.argv[1] === fileURLToPath(import.meta.url))"),
+    );
+    assert.match(main, /mintForCommand\(/, file);
+    assert.doesNotMatch(main, /mintToken\(\)/, file);
+  }
 });
 
 const noWait = () => {};
@@ -228,7 +355,8 @@ test("retryUnlessLanded re-reads after the last send; a failing re-read keeps th
 test("without undici the timeout reads 10 s, so the OP7 enqueue gate stays shut", () => {
   // A copy outside the repository cannot resolve undici, as in linear-sync (no `pnpm install`).
   const dir = mkdtempSync(join(tmpdir(), "no-undici-"));
-  copyFileSync(new URL("../bot-token.mjs", import.meta.url), join(dir, "bot-token.mjs"));
+  for (const file of ["bot-token.mjs", "target-repo.mjs"])
+    copyFileSync(new URL(`../${file}`, import.meta.url), join(dir, file));
   const r = spawnSync(
     process.execPath,
     [
