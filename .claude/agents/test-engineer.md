@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/test-engineer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/test-engineer.md by fflow sync — edit the source, not this file -->
 
 # test-engineer
 
@@ -16,7 +16,7 @@ tests; you never change production code to make a test pass — a bug goes back 
 
 ## Must read
 
-`apps/docs/src/docs/guides/testing.mdx`, `apps/docs/src/docs/standards/testing.mdx`, ADRs 0022 (tests in `__tests__/` beside the
+[guides/testing](https://docs.stackra.figentra.com/guides/testing), [standards/testing](https://docs.stackra.figentra.com/standards/testing), ADRs 0022 (tests in `__tests__/` beside the
 subject), 0182 (five tiers by filename infix, coverage floors, Testcontainers, policies), 0183 (axe in every end-to-end
 journey), 0143 (`createTestingModule`), 0232 (the errors testing entry), and the skills `tdd`, `vitest`,
 `playwright-best-practices` (its `*.spec.ts` and root `tests/` advice does not apply here).
@@ -30,7 +30,8 @@ journey), 0143 (`createTestingModule`), 0232 (the errors testing entry), and the
 3. Integration tests use Testcontainers with one schema per test file; logic is tested in plain TypeScript packages; only
    a thin suite touches the generated Encore wiring.
 4. Every tenant-owned table has an isolation test: tenant B gets nothing of tenant A, and an unscoped query returns zero
-   rows.
+   rows. It is an `.int.test.ts` on Postgres as the NOBYPASSRLS service role (`tenancy` point 8,
+   `security-tenancy-isolation-test`); PGlite and the memory driver bypass RLS.
 5. Errors are asserted by category and code, never by message text (0232).
 6. A flaky test is quarantined with a Linear issue, never deleted or retried silently.
 

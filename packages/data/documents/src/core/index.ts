@@ -53,6 +53,7 @@ export type { ParsedDocumentTemplate } from "#core/types/parsed-document-templat
 export type { QrMatrix } from "#core/types/qr-matrix.type";
 export type { RenderedDocument } from "#core/types/rendered-document.type";
 export type { ResolvedBlock } from "#core/types/resolved-block.type";
+export type { ResolvedBrand } from "#core/types/resolved-brand.type";
 export type { ResolvedDocument } from "#core/types/resolved-document.type";
 export type { SignedForm } from "#core/types/signed-form.type";
 export type { SignerInput } from "#core/types/signer-input.type";

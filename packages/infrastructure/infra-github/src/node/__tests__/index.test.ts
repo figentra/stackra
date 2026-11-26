@@ -12,7 +12,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import * as core from "#core/index";
 import type { GithubPlan, GithubRules } from "#core/index";
 import * as node from "#node/index";
-import type { GithubStack } from "#node/index";
+import type { GithubStack, GithubStackOptions } from "#node/index";
 
 describe("@stackra/infra-github/node", () => {
   it("exports exactly its values, none of them also exported by .", () => {
@@ -24,7 +24,12 @@ describe("@stackra/infra-github/node", () => {
     expectTypeOf(node.readGithubRules).parameters.toEqualTypeOf<[directory: string]>();
     expectTypeOf(node.readGithubRules).returns.toEqualTypeOf<GithubRules>();
     expectTypeOf(node.githubStack).parameters.toEqualTypeOf<
-      [plan: GithubPlan, rules: GithubRules, config?: pulumi.Config | undefined]
+      [
+        plan: GithubPlan,
+        rules: GithubRules,
+        config?: pulumi.Config | undefined,
+        options?: GithubStackOptions | undefined,
+      ]
     >();
     expectTypeOf(node.githubStack).returns.toEqualTypeOf<GithubStack>();
   });

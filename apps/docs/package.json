@@ -2,12 +2,12 @@
   "name": "@figentra/docs",
   "version": "0.0.1",
   "private": true,
-  "description": "Stackra documentation site: authored pages and DocsConfig; stackra gen assembles the Mintlify site into .stackra/site.",
+  "description": "Stackra documentation site: authored pages and DocsConfig; stackra gen assembles the Fumadocs site into .stackra/site, served by a Cloudflare Worker.",
   "keywords": [
     "adr",
     "documentation",
+    "fumadocs",
     "mdx",
-    "mintlify",
     "stackra",
     "system-map"
   ],
@@ -33,21 +33,31 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "test": "vitest run",
-    "clean": "rm -rf .stackra .turbo"
+    "clean": "rm -rf .stackra .turbo .wrangler"
   },
   "dependencies": {
-    "@stackra/gen": "workspace:*"
+    "@stackra/gen": "workspace:*",
+    "fumadocs-core": "catalog:docs",
+    "fumadocs-mdx": "catalog:docs",
+    "fumadocs-ui": "catalog:docs",
+    "react": "catalog:frontend",
+    "react-dom": "catalog:frontend",
+    "react-router": "catalog:frontend"
   },
   "devDependencies": {
+    "@react-router/dev": "catalog:frontend",
     "@stackra/cli": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
+    "@tailwindcss/vite": "catalog:frontend",
     "@types/node": "catalog:",
-    "mint": "catalog:docs",
     "oxfmt": "catalog:quality",
-    "vitest": "catalog:quality"
+    "tailwindcss": "catalog:frontend",
+    "vite": "catalog:frontend",
+    "vitest": "catalog:quality",
+    "wrangler": "catalog:deploy"
   },
   "engines": {
     "node": ">=24.0.0"
@@ -58,6 +68,6 @@
     "runtimes": [
       "browser"
     ],
-    "summary": "Edit this when writing or changing Stackra documentation pages, ADRs or the system map; it is the Mintlify site, not a TypeScript member."
+    "summary": "Edit this when writing or changing Stackra documentation pages, ADRs or the system map; it is the Fumadocs site gen writes and a Cloudflare Worker serves (ADR 0514)."
   }
 }

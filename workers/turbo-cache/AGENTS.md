@@ -16,8 +16,8 @@ entry is `src/main.ts`, built by tsdown into `dist/main.mjs`, which wrangler dep
 - Never run `wrangler deploy`, `wrangler secret …` or anything that changes the Cloudflare account. Only
   `.github/workflows/deploy-turbo-cache.yml` deploys (main pushes and `workflow_dispatch`, never a pull request).
 - The host `turbo.stackra.figentra.com` is the `routes` Custom Domain in `wrangler.jsonc`; keep `workers_dev` false.
-- The deploy job reuses `INFISICAL_CI_IDENTITY_ID` in the `static` environment; never switch it to the gate identity,
-  which pull requests can use.
+- The deploy job runs in the `static` environment and decrypts only `ci/deploy` and `ci/build/turbo`; never give it a
+  scope that pull requests can read.
 - Fail closed: a missing token or setting answers 503 before any bucket call. Never add a default token or skip auth.
 - Compare tokens only through `tokensMatch` (constant time); never log a token, header or artifact body.
 - Every limit or TTL is a `vars` entry read by `readSettings`, never a literal in the handler.

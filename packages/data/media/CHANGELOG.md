@@ -1,5 +1,563 @@
 # @stackra/media
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/iam@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/filesystem@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/iam@0.33.0
+  - @stackra/filesystem@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/filesystem@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/iam@0.31.0
+  - @stackra/filesystem@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- bed3456: `MediaLibrary.store(bucket, bytes, mediaType)` writes bytes the server made (a rendered PDF, a generated image) as a new
+  file of a bucket under the rules a claim applies: the bucket's media types, its size limit and the content check. Each
+  broken rule refuses with `UploadRejectedError` (`media_type`, `size`, `content`) and writes nothing (STA-2607).
+- d5ffcdd: `MediaLibrary.store(bucket, bytes, mediaType, { retainUntil })` keeps the stored file unchangeable until `retainUntil`
+  through the disk's retention (`FileSystem.write`'s `retainUntil`: Object Lock in COMPLIANCE mode on `s3`); a disk that
+  cannot retain refuses with `RetentionUnsupportedError` (STA-2607).
+- d5a7d0a: **Breaking route change.** Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
+  action's or query's `area`, else the service's own `defineService({ area })`, else `app` (`PUT
+  /app/orders/:orderId/cancel`). Every manifest action entry records its `area`, so the committed manifests,
+  `openapi.json` and the SDKs move to the prefixed paths.
+  
+  Gen also refuses, in its full pass (STA-340):
+  
+  - `endpoint_collision`: two calls on one method and path once parameter names are erased (`GET /app/orders/:orderId`
+    and `GET /app/orders/:id`). Until now `openapi.json` silently kept only one of them.
+  - `endpoint_versioned`: a `v<digits>` path segment (paths stay unversioned; API versions are dates).
+  - `endpoint_area_mismatch`: an `endpoint: { method, path }` override outside its area's prefix.
+  - `endpoint_method_mismatch`: a query not on `GET`, an action on `GET`, or a transition overridden away from `PUT`.
+  - `job_without_system_actor`: a `job` without the `system` or `job` actor.
+  - `cron_input_invalid`: a `job.cron.input` property the input schema does not have, a required one it omits, or a
+    value of another JSON type.
+  - `intent_phrases_missing`: `intent: true` without a non-empty `actions.<key>.intents` list in a base-language
+    catalogue.
+  
+  The routes outside their area move under it: loyalty-kit's five overrides to `/app/loyalty/...`, the award
+  verification to `GET /public/awards/verify`, `CONSENT_SNAPSHOT_PATH` to `/public/consent/snapshots`,
+  `ANALYTICS_INGEST_PATH` to `/public/analytics/batches`, `DEVICE_ORDER.acknowledgedPath` to
+  `/app/devices/acknowledged` and `CLIENT_RESULT_ACTION.path` to `/app/runs/:runId/client-result`. The committed
+  `stackra.manifest.json` of every package with a route (access-log, collaboration, data-maintenance, devices, identity,
+  media, privacy, segments, tenancy, webhooks and the packages above) records each entry's `area` and its prefixed path.
+  
+  The identity lock accepts this move once: an endpoint whose new route is exactly `/<its own area>` plus the locked
+  path, with the same method, keeps its identity without `@Renamed`. A move to another area, a method change, or a route
+  that already started with an area moving again is still refused with `identity_changed`.
+  
+  What a product does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and
+  `openapi.json` of each member. Nothing else; no `@Renamed`. Clients regenerate from the new manifests, so a caller
+  pinned to an old path (none before launch) would need the prefixed one.
+
+### Patch Changes
+
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8084b3a]
+- Updated dependencies [a426842]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a03990d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/iam@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/filesystem@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+
+## 0.29.0
+
+### Minor Changes
+
+- 2d5172a: `MediaLibrary.claim` checks a stored upload's bytes against the media type it declared (JPEG, PNG, GIF, WebP and PDF
+  signatures, the `ftyp` box for AVIF and MP4) and refuses a mismatch with `UploadRejectedError` reason `content`, deleting
+  the file, so an SVG or any other file renamed as an image is never accepted. `contentMatches` does the check (STA-2644).
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/filesystem@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/filesystem@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/iam@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/filesystem@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [9cee75d]
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/filesystem@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/iam@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/filesystem@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+  - @stackra/actions@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/filesystem@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [a42a80c]
+  - @stackra/actions@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/filesystem@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [786848c]
+  - @stackra/actions@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/filesystem@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/filesystem@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/iam@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/filesystem@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 58a8fa5: Every write action's permission is at least L2 (STA-2096, owner decision 2026-11-04). gen refuses an action whose
+  permission is L0 or L1 with `action_risk_below_write`. Raised: `collaboration.room.publish`, `media.upload.create`,
+  `data_maintenance.synonym.create` and `.update`, `analytics.analytics_batch.ingest`, `consent.consent_snapshot.issue`,
+  `identity.passkey.challenge`, `loyalty_kit.loyalty_account.enroll` to L2;
+  `segments.segment.recompute` and `privacy.subject.export` to L2 (system); `loyalty_kit.loyalty_account.redeem` and
+  `.stamp` to L3 (a points balance); `loyalty_kit.loyalty_account.expire` to L3 (system); `panel.view.share` to L2;
+  `identity.passkey.verify` (it mints a session) and `identity.passkey.confirm` (it keeps a new key) to L4;
+  `webhooks.webhook_delivery.send` (an external send) and `access_log.access_log_entry.purge` (it deletes for good) to L4
+  (system).
+
+### Patch Changes
+
+- 0e0de4f: Gen refuses a misshapen call. `checkCallShape` runs once per action or query in the manifest pass and refuses a query
+  whose permission is L2 or above (`query_above_l1`), a query with `preconditions` (`query_precondition`), an action with
+  `cache` (`action_cache`), an L3 or L4 action a user can call with no `stepUp` (`step_up_missing`) and a client write,
+  an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`). Each refusal carries its
+  fix. Write `idempotency: Idempotency.Optional` on a client write that is safe to repeat: it is the default the
+  pipeline already applies, and it now also sets the tool's `idempotentHint`.
+  
+  The actions pipeline asks `StepUpCheck` only when the caller is a user. A service, job, system or agent call carries
+  no assurance, so an action that both users and services call can declare `stepUp` and its service callers keep
+  working; a user call with no `StepUpCheck` bound still fails closed (ADR 0406 as amended).
+  
+  `identity.operator.bootstrap`, `identity.session.end_user` and `privacy.hold.release` declare
+  `stepUp: AssuranceLevel.Aal2`, so a user call to them now needs a bound `StepUpCheck`. The client writes of identity,
+  privacy, access-log, loyalty-kit, data-maintenance, media and collaboration that declared no idempotency write
+  `Idempotency.Optional`; their manifests gain the `idempotency` entry and `idempotentHint: true`.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/filesystem@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/validation@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/iam@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/filesystem@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/iam@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/filesystem@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/iam@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/filesystem@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/iam@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/filesystem@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/filesystem@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/iam@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/filesystem@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/iam@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/iam@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/filesystem@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/iam@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/filesystem@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/filesystem@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/iam@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/filesystem@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/filesystem@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/iam@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/filesystem@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/iam@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/filesystem@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/iam@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/filesystem@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/iam@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/filesystem@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/iam@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/filesystem@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/iam@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/filesystem@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/iam@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

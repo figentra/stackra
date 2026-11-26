@@ -1,9 +1,22 @@
 ---
 title: "0290 — Dev environment and Cloudflare services: zones, tunnels, Access, Turnstile, email and npm names"
-description: "Accepted, amended by 0453 · 2026-10-22"
+description: "Accepted, amended by 0453 and on 2026-11-05 (npflared retired) · 2026-10-22"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0290, Dev environment and Cloudflare services: zones, tunnels, Access, Turnstile, email and npm names. Boundary: decision text only; later decisions reach it as amendment notes, newest first. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0453 (amendment note added by stackra-90, 2026-10-28). */}
+
+<Note>
+  Decision 16 (CF8) closed by the owner on 2026-11-05 (STA-2113): the npflared Worker `npm-registry`
+  is retired. On 2026-11-05 no configuration, workflow, lockfile or `.npmrc` on any branch of any
+  organisation repository named `npm.figentra.com`, `NPM_FIGENTRA_*` or `NPFLARED_*`; only ADRs and
+  notes do, as history. Every former consumer (`@figentra/cli`, Academorix, Vellum, now Figentra
+  Flow) reads Figentra Registry (0453 as amended by STA-1733). The 30-day 410 period of 0453
+  decision 17 is moot, because the name has not resolved since about 2026-11-01. The owner deletes
+  the Worker, its R2 bucket and any leftover route on their go, after an optional archive of the old
+  tarballs. Private `@figentra/*` packages live in Figentra Registry's `@figentra` scope (0453
+  decision 10), so the question this decision left open is answered. The steps are in the
+  cloudflare-hosts runbook (stackra-notes).
+</Note>
 
 <Note>
   2026-11-01 (owner decision, STA-1889): product surfaces follow

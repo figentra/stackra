@@ -8,7 +8,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (decision 3); ADR 0263 (decision 12).
  */
-import { Module } from "@stackra/container";
+import { Driver, Module } from "@stackra/container";
 import { createTestingModule, registerWiring } from "@stackra/container/testing";
 import { Clock } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
@@ -65,6 +65,26 @@ class ThrowingListener extends Listener {
 }
 
 class FixtureModule extends Module {}
+
+/** The real outbox gen wires for the pipeline (`@stackra/outbox`'s, in a service). */
+class TableOutboxDriver extends Driver(EventOutbox) {
+  async write(): Promise<void> {}
+}
+
+/** The fixture's wiring with gen's real outbox as `EventOutbox`'s only candidate (#706). */
+const withRealOutbox = () =>
+  registerWiring({
+    member: "fixture",
+    root: FixtureModule,
+    bindings: [],
+    drivers: [
+      {
+        port: EventOutbox,
+        key: "events.EventOutbox",
+        candidates: { outbox: () => Promise.resolve(TableOutboxDriver) },
+      },
+    ],
+  });
 
 registerListeners([
   [StockLow, AlertListener],
@@ -159,5 +179,24 @@ describe("EVENTS_TESTING_PLUGIN", () => {
 
     expect(currentHarness().bus).toBe(app.get(EventBus));
     expect(currentHarness().outbox).toBe(outbox);
+  });
+
+  /** Gen binds the real outbox for the pipeline; a memory test still gets the fake, so recorded events are seen. */
+  it("binds the OutboxFake under useDrivers(memory) where gen wires the real outbox", async () => {
+    withRealOutbox();
+
+    const memory = await createTestingModule(FixtureModule).useDrivers("memory").compile();
+    expect(memory.get(EventOutbox)).toBeInstanceOf(OutboxFake);
+    expect(currentHarness().outbox).toBe(memory.get(EventOutbox));
+
+    const explicit = new OutboxFake();
+    const overridden = await createTestingModule(FixtureModule)
+      .useDrivers("memory")
+      .override(EventOutbox, explicit)
+      .compile();
+    expect(overridden.get(EventOutbox)).toBe(explicit);
+
+    const real = await createTestingModule(FixtureModule).compile();
+    expect(real.get(EventOutbox)).toBeInstanceOf(TableOutboxDriver);
   });
 });

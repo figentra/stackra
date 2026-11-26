@@ -17,7 +17,11 @@ import type { Isolation } from "#core/enums/isolation.enum";
 
 /** The transaction options. */
 export interface TransactionOptions {
-  /** Run in a transaction of its own that commits even if the caller's rolls back (an audit or dedup row). */
+  /**
+   * Run in a transaction of its own that commits even if the caller's rolls back (an audit or dedup row, a `pending`
+   * row before a provider call). It runs in the caller's scope and tenant: the caller's row-security settings are
+   * carried into it.
+   */
   readonly requiresNew?: boolean;
 
   /** The statement timeout inside the transaction, replacing the session's (`DatabaseConfig.timeouts.statement`). */

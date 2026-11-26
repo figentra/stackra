@@ -29,6 +29,7 @@ import type { SignedUpload } from "#contracts/types/signed-upload.type";
 import type { UploadRequest } from "#contracts/types/upload-request.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { RetentionUnsupportedError } from "#core/errors/retention-unsupported.error";
 import { normalizePath } from "#core/functions/normalize-path.function";
 import { normalizePrefix } from "#core/functions/normalize-prefix.function";
 import { publicUrl } from "#core/functions/public-url.function";
@@ -101,8 +102,13 @@ export class GcsFileSystemDriver extends Driver(FileSystem) {
     return Readable.toWeb(file.createReadStream()) as unknown as ReadableStream<Uint8Array>;
   }
 
-  /** Uploads `contents` under `path` in one request; GCS replaces an object atomically. */
+  /**
+   * Uploads `contents` under `path` in one request; GCS replaces an object atomically.
+   *
+   * @throws RetentionUnsupportedError for a `retainUntil`: this disk does not set a GCS object retention yet.
+   */
   async write(path: string, contents: Uint8Array | string, options?: WriteOptions): Promise<void> {
+    if (options?.retainUntil !== undefined) throw RetentionUnsupportedError.create({ disk: "gcs" });
     await this.bucket
       .file(normalizePath(path))
       .save(typeof contents === "string" ? contents : Buffer.from(contents), {

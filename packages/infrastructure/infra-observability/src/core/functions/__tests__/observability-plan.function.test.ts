@@ -3,7 +3,8 @@
  * Purpose: unit tests of `observabilityPlan`: the template's runways give staging and production heartbeats, the
  *          30-day and 13-month retention, one Sentry project per app that names one and two indicators per service;
  *          the section's defaults and switches apply; no provider means no telemetry or Sentry block; the uptime
- *          list becomes one monitor per URL of a monitored environment; and every failure is reported at once.
+ *          list becomes one monitor per URL of a monitored environment; every failure is reported at once; and the
+ *          alerts and routes take their defaults beside a runway's own values.
  * Boundary: test only; pure function, no Pulumi.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0184 (decisions 1 to 6); ADR 0296 (enforcement).
@@ -96,6 +97,18 @@ describe("observabilityPlan", () => {
       slos: { startAt: "first-paying-tenant" },
       uptime: [],
       statusPage: null,
+      alerts: {
+        environments: ["staging", "production"],
+        errorRate: { enabled: true, threshold: 2, window: "5m", severity: "critical" },
+        latencyP95: { enabled: true, threshold: 1000, window: "10m", severity: "warning" },
+        dbCpu: { enabled: true, threshold: 80, window: "15m", severity: "warning" },
+        dbConnections: { enabled: true, threshold: 80, window: "10m", severity: "warning" },
+        dbFreeStorage: { enabled: true, threshold: 20, window: "15m", severity: "critical" },
+        cacheMemory: { enabled: true, threshold: 80, window: "15m", severity: "warning" },
+        cacheEvictions: { enabled: true, threshold: 0, window: "15m", severity: "warning" },
+        budget: { enabled: true, forecastPercent: 80, actualPercent: 100 },
+      },
+      notify: { critical: ["oncall"], warning: [], info: [] },
     });
   });
 
@@ -294,5 +307,32 @@ describe("observabilityPlan", () => {
       "heartbeats.3.name",
       "root.providers.sentry.org",
     ]);
+  });
+});
+
+describe("observabilityPlan alerts and routes", () => {
+  it("keeps a runway's own threshold and routes beside the defaults", () => {
+    const plan = observabilityPlan(
+      rootRunway({
+        ...TEMPLATE_ROOT,
+        observability: {
+          alerts: { errorRate: { threshold: 5 }, cacheEvictions: { enabled: false } },
+          notify: { critical: ["oncall", "slack:C07ABC1234"], warning: ["linear:STA"] },
+        },
+      }),
+      { apps: {}, services: [] },
+    );
+    expect(plan.alerts.errorRate).toEqual({
+      enabled: true,
+      threshold: 5,
+      window: "5m",
+      severity: "critical",
+    });
+    expect(plan.alerts.cacheEvictions.enabled).toBe(false);
+    expect(plan.notify).toEqual({
+      critical: ["oncall", "slack:C07ABC1234"],
+      warning: ["linear:STA"],
+      info: [],
+    });
   });
 });

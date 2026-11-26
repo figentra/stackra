@@ -1,0 +1,4 @@
+import { Route } from "@stackra/navigation";
+
+/** A customer's past orders. */
+export class OrderHistoryRoute extends Route({ path: "/orders" }) {}

@@ -21,8 +21,8 @@ Entries `.` (isomorphic plan and checks) and `./node` (the file reader and the P
   `figentra/infra`. Test the slice under Pulumi's mocks.
 - Decide in `src/core/` and declare in `src/node/`: a rule that can be checked without Pulumi is a core function with
   its own test.
-- GitHub holds variables (ids) only, never a secret value or an Actions secret: CI reads secrets from Infisical over
-  OIDC (ADR 0173). A variable that carries a CI or gateway secret's name is an error.
+- GitHub holds variables (ids) only, never a secret value or an Actions secret: CI decrypts secrets from sops over
+  OIDC (ADR 0525). A variable that carries a CI or gateway secret's name is an error.
 - The repository is protected and retained on delete. The provider's token comes from `GITHUB_TOKEN`, never from code.
 - An environment's name is the OIDC subject CI's cloud roles trust; renaming one changes who may assume a role.
 - `ref:` values name an id, never a secret; `resolveRef` stays internal to `./node`.

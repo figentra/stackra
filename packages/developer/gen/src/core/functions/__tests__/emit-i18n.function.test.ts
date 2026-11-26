@@ -73,6 +73,12 @@ describe("emitI18n", () => {
     );
   });
 
+  it("writes an app's loaders without the json attribute, which its bundler's module would fail", () => {
+    const app = emitI18n({ ...COMMERCE_IR, layout: "app", catalogues: CATALOGUES })?.content ?? "";
+    expect(app).toContain('"ar": () => import("../../assets/lang/ar/carts.json"),');
+    expect(app).not.toContain('type: "json"');
+  });
+
   it("loads a consumed service's namespace from its folder, relative to the member (STA-1363)", () => {
     const merged =
       emitI18n({
@@ -88,6 +94,27 @@ describe("emitI18n", () => {
     expect(merged).toContain('"orders": [\n    "title"\n  ]');
     expect(merged).toContain(
       '"orders": {\n    "en": () => import("../../../../services/commerce/assets/lang/en/orders.json", { with: { type: "json" } }),',
+    );
+  });
+
+  it("loads a consumed service's namespace the member also has under the service's client name", () => {
+    const merged =
+      emitI18n({
+        ...COMMERCE_IR,
+        catalogues: { en: { rates: { title: "Rate cards" } } },
+        packageCatalogues: [
+          {
+            package: "@acme/service-geography",
+            service: "geography",
+            from: "../../services/geography/assets/lang",
+            catalogues: { en: { rates: { holiday: "Holiday rate" } } },
+          },
+        ],
+      })?.content ?? "";
+    expect(merged).toContain('"rates": [\n    "title"\n  ]');
+    expect(merged).toContain('"geography.rates": [\n    "holiday"\n  ]');
+    expect(merged).toContain(
+      '"geography.rates": {\n    "en": () => import("../../../../services/geography/assets/lang/en/rates.json", { with: { type: "json" } }),',
     );
   });
 

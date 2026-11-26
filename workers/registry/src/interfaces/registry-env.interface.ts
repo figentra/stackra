@@ -18,7 +18,7 @@ export interface RegistryEnv {
   readonly TARBALLS: R2Bucket;
   /** The KV namespace binding for the packument and OIDC key caches. */
   readonly CACHE: KvNamespace;
-  /** PKCS#8 PEM of the ECDSA P-256 signing key (Infisical `prod` `/ci/registry`). */
+  /** PKCS#8 PEM of the ECDSA P-256 signing key (sops `ci/production/registry`). */
   readonly REGISTRY_SIGNING_KEY: string;
   readonly [variable: `REGISTRY_${string}`]: VarValue;
 }

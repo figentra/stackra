@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the `ClientSession` port: what the client runtime needs from the caller's session, the headers every call
- *          carries (the credential, the active scope) and whether the session holds a permission.
+ *          carries (the credential, the active scope) and whether the session holds a permission. A transport hands
+ *          `headers` the call it is about to send, so a service's session can pick the token for that call's producer.
  * Boundary: an abstract class that is its own token, keyed `clients.ClientSession`. The identity package implements it
  *           (the mobile wiring lists `clients` as depending on `identity`); this package never reads a token store, a
  *           cookie or a claim itself, and never names a header the session owns. `can` decides presentation only (a
@@ -11,6 +12,8 @@
  *                     R-59 (scope, not tenant).
  */
 import { Port } from "@stackra/contracts";
+
+import type { ClientRequest } from "#contracts/types/client-request.type";
 
 /**
  * The caller's session, as calls need it.
@@ -29,8 +32,11 @@ export abstract class ClientSession extends Port {
   /** Type-only port key, so `DriverName<ClientSession>` narrows to this port's drivers. */
   declare readonly "~key": "clients.ClientSession";
 
-  /** The headers of the next call; asked once per request, so a refreshed credential is used at once. */
-  abstract headers(): Promise<Readonly<Record<string, string>>>;
+  /**
+   * The headers of `request`, the next call; asked once per request, so a refreshed credential is used at once. A
+   * browser or app session ignores `request`; a service's session reads its producer.
+   */
+  abstract headers(request?: ClientRequest): Promise<Readonly<Record<string, string>>>;
 
   /** Whether the session holds `permission` (`orders.order.cancel`). */
   abstract can(permission: string): boolean;

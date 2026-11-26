@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { FileRetainedError } from "#core/errors/file-retained.error";
 import { LocalFileSystemDriver } from "#node/drivers/local-file-system.driver";
 
 let root = "";
@@ -56,6 +57,19 @@ describe("LocalFileSystemDriver", () => {
     expect(await files.delete("a/b/c.txt")).toBe(true);
     expect(await files.delete("a/b/c.txt")).toBe(false);
     expect(await files.exists("a/b/c.txt")).toBe(false);
+  });
+
+  it("refuses to overwrite, move or delete a retained file until its retainUntil", async () => {
+    const files = disk();
+    await files.write("archive/inv.pdf", "v1", { retainUntil: new Date(Date.now() + 60_000) });
+    await expect(files.write("archive/inv.pdf", "v2")).rejects.toThrow(FileRetainedError);
+    await expect(files.move("archive/inv.pdf", "archive/other.pdf")).rejects.toThrow(
+      FileRetainedError,
+    );
+    await expect(files.delete("archive/inv.pdf")).rejects.toThrow(FileRetainedError);
+    expect(new TextDecoder().decode(await files.read("archive/inv.pdf"))).toBe("v1");
+    await files.write("archive/old.pdf", "v1", { retainUntil: new Date(Date.now() - 1) });
+    expect(await files.delete("archive/old.pdf")).toBe(true);
   });
 
   it("replaces a file and leaves no temporary file behind", async () => {

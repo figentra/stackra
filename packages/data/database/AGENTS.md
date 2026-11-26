@@ -20,7 +20,7 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 | The ORM naming strategy                                              | `src/core/orm/<name>.naming-strategy.ts`                                      |
 | A value class (`ColumnRef`, `MetricsReader`)                         | `src/core/values/<name>.value.ts`                                             |
 | An enum, a function, a constant, a type, a refusal                   | `src/core/{enums,functions,constants,types,errors}/`                          |
-| A migration of this package's own tables                             | `src/node/database/migrations/<NNNN>-<stem>.migration.ts` (schema `database`) |
+| A migration of this package's own tables                             | `src/node/database/migrations/<NNNN>-<stem>.migration.ts` (schema `database`; 0005 makes `cache`, for @stackra/cache) |
 | A test                                                               | `__tests__/<name>.<kind>.test.ts` beside it; Docker tests take `.int`         |
 
 ## Entries and barrels
@@ -32,6 +32,11 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 
 - The only package that imports `@mikro-orm/*` (ADR 0097). Re-export what consumers need (`EntitySchema`,
   `OptionalProps`, `UniqueViolation`) instead of letting them import the ORM.
+- A detached call (`ctx.detach()`) reaches this package only through `DETACHED_RUNS` (@stackra/actions/contracts,
+  registered by `connectDetachedRuns` when a driver connects) and `Database.detached()`. A driver's `runDetached`
+  starts the work on a fresh fork, because MikroORM keeps a committed transaction in the context of a continuation
+  started inside it; each instance keeps its own step store. `CrudService.step` wraps an operation only outside a
+  transaction; never make it refuse (a strict refusal is a later contract step).
 - `Blueprint` is an interface so macros merge into it; never `implements Blueprint` on a class (a consumer's merged
   macros would break the typecheck of this package's source).
 - No scope levels here: levels are deployment data (ADR 0327 d2). Scope hooks take the contracts `ScopeRef` (an id
@@ -77,6 +82,8 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
 - The Postgres action stores (`database.idempotency_keys`, `database.rate_limit_buckets`) and the seed ledger
   (`database.seed_records`) are this package's own tables, written only by their drivers and the seed runner (ADR 0396).
   No row-level security on them: an action-store key is already scoped, and product defaults are not tenant-owned.
+  The `postgres` cache driver's `cache.entries` and `cache.set_members` (migration 0005, hosted for @stackra/cache)
+  are platform tables too: each key carries its `CacheNamespace` prefix and the driver runs outside any transaction.
 - The migration runner (`migrate`, `rollback`) is the only writer of `schema_migrations` and
   `schema_migrations_history`. Keep `schema_migrations` in golang-migrate's `(version, dirty)` shape (Encore reads it);
   anything more goes in the history table. Every run holds the runner's advisory lock for its whole session.
@@ -160,6 +167,10 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   `directDatabaseUrl()`, never the pooled `DATABASE_URL`, since a transaction-mode proxy cannot keep it.
 - `assertRowSecurity` (`./testing`, stackra-258) is owner-agnostic: it takes the column, setting, role and probe
   values and names no tenant; `@stackra/tenancy/testing` supplies the tenant form. Its probe always rolls back.
+  It audits every table, not a list: a table without the owner column must be named by `PLATFORM_TABLES` or the
+  caller's `platform` with a reason; an unlisted one is a gap like every other finding (only the audit's own tests
+  pass `strict: false` to read it back as a warning). Add a `PLATFORM_TABLES` row only with the migration that says why the
+  table is not tenant data, never to quiet the audit (ADR 0347 d5).
 - `ConnectionResolver` (stackra-310) names a scope's connection set and takes a `ScopeRef`; it never names a tenant
   (`@stackra/tenancy` maps a tenant's placement to it). Placement is data: never pick a connection by a hard-coded
   scope, and never open a second pool outside the routing driver (stackra-322). `DatabaseConfig.region` is runway

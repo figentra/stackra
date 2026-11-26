@@ -79,6 +79,17 @@ the singletons of the booted modules, and runs each Explorer once. A port nothin
 `UnresolvedPortError`, a plain `Error`. `forRequest()` gives a container that keeps `Lifetime.Request` instances;
 `close()` calls `onApplicationShutdown()` on what it built. `Clock` defaults to a system driver.
 
+### Driver names and products' own drivers
+
+A host picks a port's driver with a config field typed `DriverName<Port>` (the `selectedBy` of the port's manifest).
+`DriverName` reads the `DriverRegistry`, which every member's generated wiring augments with the names it knows, and
+which a package may also augment by hand so its own program types the field. Two augmentations of one key must be
+identical (TypeScript refuses the merge otherwise, TS2717). So a package hand-writes a `DriverRegistry` entry and a
+type-only `~key` only for a port no product extends (`SecretStore`, `SessionStore`, `Storage`). A port products add
+their own drivers to has neither: the member's generated wiring is its one declarer, and `DriverName` falls back to the
+port class (`PortRegistry`). `AppApprovalChallenges` is the example: identity ships only `memory`, figentra-os adds its
+records driver, and `identity.approvalChallenges` selects it there.
+
 ## Extension points (multi-binding)
 
 A module that owns an extension point declares an abstract base; every module that contributes binds a subclass, and

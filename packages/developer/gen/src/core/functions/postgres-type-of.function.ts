@@ -13,6 +13,13 @@
  */
 import type { FieldIR } from "#core/types/field-ir.type";
 
+/** The PostGIS column of each geospatial shape, spelt as the catalog prints it (ADR 0314). */
+const GEOGRAPHY_TYPES = {
+  point: "geography(Point,4326)",
+  polygon: "geography(Polygon,4326)",
+  line: "geography(LineString,4326)",
+} as const;
+
 /**
  * The Postgres type of `field`, or undefined when no mapping is agreed.
  *
@@ -43,6 +50,9 @@ export function postgresTypeOf(field: FieldIR): string | undefined {
     case "schema":
     case "translated": {
       return "jsonb";
+    }
+    case "geo": {
+      return GEOGRAPHY_TYPES[field.type.shape];
     }
     case "number": {
       if (field.rules.some((rule) => rule.name === "Int")) return "integer";

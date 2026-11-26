@@ -34,7 +34,7 @@ export class ChannelsPublished extends remoteEvent("channels.channel.published.v
 export class ChannelsModule extends moduleRef("channels", "channels") {}
 export class ChannelsPermissions extends permissionsRef("channels.channels", ["read","publish"]) {}
 
-export const PublishChannelsAction = remoteAction("channels.channels.publish@1", { input: PublishChannelsInput, output: PublishChannelsOutput, endpoint: { method: HttpMethod.Post, path: "/channelses/publish" } });
+export const PublishChannelsAction = remoteAction("channels.channels.publish@1", { input: PublishChannelsInput, output: PublishChannelsOutput, endpoint: { method: HttpMethod.Post, path: "/app/channelses/publish" } });
 
 /** The channels service, injected. */
 export class ChannelsClient extends ServiceClient {

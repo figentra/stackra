@@ -11,8 +11,11 @@
 export interface DeployPlan {
   /** The environment the plan is for. */
   readonly environment: string;
-  /** The Infisical environment it maps to, or null when the root runway names none. */
-  readonly infisicalEnvironment: string | null;
+  /**
+   * The figentra/secrets scope that holds its runtime secrets (`products/<project>/<dev|staging|production>`, ADR
+   * 0525), or null when the root runway names no `project`.
+   */
+  readonly secretScope: string | null;
   /** Each build-order target with its caller workflows; `destination` when the environment deploys to it. */
   readonly steps: readonly {
     readonly target: string;
@@ -23,12 +26,7 @@ export interface DeployPlan {
   readonly ci: readonly string[];
   /** The member secret and var names a deploy syncs into the runtimes (names only). */
   readonly sync: readonly (
-    | {
-        readonly member: string;
-        readonly kind: "secret";
-        readonly name: string;
-        readonly path: string | null;
-      }
+    | { readonly member: string; readonly kind: "secret"; readonly name: string }
     | { readonly member: string; readonly kind: "var"; readonly name: string }
   )[];
 }

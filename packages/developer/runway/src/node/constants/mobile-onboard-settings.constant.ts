@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `MOBILE_ONBOARD_SETTINGS`, the fixed facts of mobile onboarding: the default EAS owner account, the
- *          secret NAMES the store steps need (ADR 0480's root kit and the per-product FCM key), and the Infisical path
- *          they live under, the FCM service account and its role, the Sentry organisation and team, and the Firebase
+ *          secret NAMES the store steps need (ADR 0480's root kit and the per-product FCM key), and the sops scope
+ *          the root kit lives in, the FCM service account and its role, the Sentry organisation and team, and the Firebase
  *          config file names.
  * Boundary: data only; names, never values.
  * Runtime: node
@@ -21,10 +21,8 @@ export const MOBILE_ONBOARD_SETTINGS = Object.freeze({
   playKeys: ["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"],
   /** The FCM v1 service-account key EAS sends Android pushes with. */
   fcmKey: "FCM_SERVICE_ACCOUNT_JSON",
-  /** Infisical's API when the job names none (`INFISICAL_API_URL`). */
-  infisicalApi: "https://app.infisical.com",
-  /** Where the store secrets live in Infisical; a product's own keys sit under `<vaultPath>/<product>`. */
-  vaultPath: "prod:/ci/store",
+  /** The figentra/secrets scope of the root kit (ADR 0525); the owner adds a missing name with `pnpm secrets:put`. */
+  storeScope: "ci/production/store",
   /** The service account EAS sends Android pushes as, and the role it needs. */
   fcmAccount: "eas-fcm",
   fcmRole: "roles/firebasecloudmessaging.admin",

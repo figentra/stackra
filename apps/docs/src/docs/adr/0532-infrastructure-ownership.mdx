@@ -1,0 +1,63 @@
+---
+title: "0532 — Infrastructure ownership: figentra/infra builds the estate, Encore its app resources, Runway only deploys"
+description: "Accepted · 2026-11-07"
+---
+
+{/* Stackra file contract. Purpose: ADR 0532 (Accepted 2026-11-07, STA-2104), who owns which part of the cloud estate: Pulumi in figentra/infra (accounts, networks, KMS, DNS), Encore (the app resources a service declares in code) and Runway (deploy and promote only); `stackra runway infra` is retired. Boundary: decision text only. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0030, 0352, 0354, 0435, 0524. */}
+
+<Note>
+  Accepted 2026-11-07, recording the owner's and the leader's ruling on Runway at 100% (step 5). It
+  amends
+  [0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+  decision 4 and [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region)
+  decision 5.
+</Note>
+
+## Context
+
+ADR 0352 decision 4 made Runway the infrastructure engine: `stackra runway infra preview|up` would drive the Pulumi
+components of the `@stackra/infra-*` packages from `runway.yaml`, and ADR 0354 decision 5 extended that to GCP. It was
+never built. Meanwhile figentra/infra grew into the place where the estate lives: its Pulumi stacks create the AWS
+organization's accounts, the GCP projects, the networks, the KMS keys and the DNS ([0524](/adr/0524-cloud-estate-aws-organization-and-gcp-projects)),
+its workflows preview each change in a pull request, and each apply waits on the owner. Services, in turn, reach
+AWS and GCP through Encore Cloud, which deploys into the product's own account or project and creates the resources
+the code declares ([0030](/adr/0030-encore-cloud-on-owner-aws), [0435](/adr/0435-encore-cloud-roles-on-gcp-and-one-apply-per-environment)).
+Two tools claiming the same stacks would race on state and blur who approves what.
+
+## Decision
+
+1. **figentra/infra owns the estate.** Its Pulumi stacks own the cloud accounts and projects, the networks, the KMS
+   keys and DNS, and the roles and links other tools need there (Encore's `ENCORE_ROLES`, the CI callers of sops
+   scopes). Its own workflows preview every change and apply it; an apply waits on the owner's approval. The
+   `@stackra/infra-*` packages are the components those stacks use.
+2. **Encore owns app resources declared in code.** A service's databases, topics, buckets, caches, crons and secrets
+   are declared in its code and created by Encore in the product's account or project. Neither figentra/infra nor
+   Runway creates them.
+3. **Runway only deploys and promotes.** It ships members to their destinations through its providers, promotes and
+   rolls back, syncs secrets and records each release ([0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+   decisions 1 to 3 and 5 to 7). Services on AWS or GCP are the `encore-cloud` destination. Runway drives no Pulumi
+   stack.
+4. **`stackra runway infra` is retired**, not pending. Nothing in `@stackra/runway` or `@stackra/cli` waits for it,
+   and no `infra` command is added to either.
+
+## Consequences
+
+- One owner per stack: figentra/infra's Pulumi state has a single writer, and the owner approves every estate change
+  in one place.
+- Runway's checklist (`cli-tool.md`) and its inventory no longer carry an infra command or an AWS or GCP deploy driver:
+  the `encore-cloud` provider covers both clouds, proven by a product's first Encore Cloud deploy.
+- A self-hosted ECS or Cloud Run path (`encore build docker`, 0030 decision 5) still needs its own ADR before any
+  driver exists.
+
+## Enforcement
+
+- Review: a pull request that adds an `infra` command to `@stackra/runway` or `@stackra/cli`, or a Pulumi program
+  outside figentra/infra, is refused with this ADR.
+- figentra/infra's workflows are the only ones that run `pulumi up` against the estate; each waits on its GitHub
+  environment's owner approval.
+
+## Supersedes and sources
+
+Supersedes: none. Amends [0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step)
+decision 4 and [0354](/adr/0354-two-clouds-aws-and-gcp-and-one-aws-account-per-product-region) decision 5. Sources:
+the leader's ruling of 2026-11-07 on Runway step 5 (the infra-ownership decision), STA-2104.

@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: build config of @stackra/database: one tsdown entry per package.json export (core `.` is `index`), each
  *          naming the stand-in barrel until gen writes the entry barrels (ADR 0294 decision 15, STA-339).
- *          @stackra/testing, Faker, Testcontainers and PGlite stay external as optional peers of `./testing`.
+ *          @stackra/testing stays external as an optional peer of `./testing`; Faker, Testcontainers and PGlite are
+ *          test-only devDependencies the member running the tests installs (not peers: they forked every dependent's
+ *          install), so `external` keeps them out of the build.
  * Boundary: build configuration only; spreads gen's `./.stackra/tsdown.config` and lays this package's own entries
  *           (the barrels package.json `exports` names) and options over it, so gen keeps this file (ADR 0295
  *           decision 5; STA-1306, STA-1299). Before gen has run the package's own config builds alone.
@@ -20,10 +22,20 @@ const generated = existsSync(url) ? (await import(url.href)).default : {};
 
 export default {
   ...generated,
-  ...library({
-    index: "src/core/index.ts",
-    contracts: "src/contracts/index.ts",
-    node: "src/node/index.ts",
-    testing: "src/testing/index.ts",
-  }),
+  ...library(
+    {
+      index: "src/core/index.ts",
+      contracts: "src/contracts/index.ts",
+      node: "src/node/index.ts",
+      testing: "src/testing/index.ts",
+    },
+    {
+      external: [
+        /^@electric-sql\/pglite/,
+        "@faker-js/faker",
+        "@mikro-orm/pglite",
+        /^@?testcontainers/,
+      ],
+    },
+  ),
 };

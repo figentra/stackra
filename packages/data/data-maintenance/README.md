@@ -46,7 +46,7 @@ entry as `RecordSearchQueryAction`, off the read path; an entry without a scope 
 
 `Synonym` (`data_maintenance.synonyms`, migration 0001, tenant-owned under forced row-level security) holds a tenant's synonym
 sets: an index, a language and two to sixteen terms (no comma, `#` or line break). `data_maintenance.synonym.create`,
-`.update` and `.delete` (L1, L1, L2; tools by default) edit them and `data_maintenance.synonym.list` reads them.
+`.update` and `.delete` (L2, L2, L2; tools by default) edit them and `data_maintenance.synonym.list` reads them.
 `DatabaseSynonymSourceDriver` implements `@stackra/search`'s `SynonymSource`, so each search read expands its phrase with the
 tenant's sets. They live here because search must stay below iam. Texts are in `assets/lang/<locale>/data_maintenance.json`
 for `ar`, `de`, `en`, `es`, `fr`, `it` and `nl`.

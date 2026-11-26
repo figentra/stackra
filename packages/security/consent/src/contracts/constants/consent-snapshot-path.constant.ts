@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `CONSENT_SNAPSHOT_PATH`, the route of the consent endpoint (`POST /consent/snapshots`,
+ * Purpose: `CONSENT_SNAPSHOT_PATH`, the route of the consent endpoint (`POST /public/consent/snapshots`,
  *          `consent.consent_snapshot.issue@1`) that signs a `ConsentSnapshot` of the client's stored decision.
  * Boundary: a constant, in this leaf entry, so the client (`consentSnapshotHeaders`) and the action
  *           (`IssueConsentSnapshotAction`, which gen reads as a literal) name the same route; a test keeps them equal.
@@ -14,4 +14,4 @@
  * @example
  * await fetch(`${apiOrigin}${CONSENT_SNAPSHOT_PATH}`, { method: "POST", body });
  */
-export const CONSENT_SNAPSHOT_PATH = "/consent/snapshots";
+export const CONSENT_SNAPSHOT_PATH = "/public/consent/snapshots";

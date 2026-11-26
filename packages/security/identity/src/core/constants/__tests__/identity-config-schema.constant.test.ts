@@ -15,6 +15,8 @@ import { IDENTITY_CONFIG_SCHEMA } from "#core/constants/identity-config-schema.c
 describe("IDENTITY_CONFIG_SCHEMA", () => {
   it("parses nothing into the defaults", () => {
     expect(IDENTITY_CONFIG_SCHEMA.parse({})).toEqual({
+      sessionStore: "memory",
+      approvalChallenges: "memory",
       flow: { web: "bff", pwa: "bff", desktop: "pkce", ios: "pkce", android: "pkce" },
       issuer: "",
       clientId: "",
@@ -46,6 +48,7 @@ describe("IDENTITY_CONFIG_SCHEMA", () => {
       pinLockoutMinutes: 15,
       managerOverrideSeconds: 120,
       apiKeyPrefixes: { secret: "stackra_sk", publishable: "stackra_pk" },
+      apiKeyCacheSeconds: 30,
       apiKeyLastUsedSeconds: 60,
       verificationPackKey: "verification.drivers",
       signInTimeoutMinutes: 10,

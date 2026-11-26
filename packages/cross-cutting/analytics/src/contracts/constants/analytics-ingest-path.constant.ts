@@ -13,4 +13,4 @@
  * @example
  * await fetch(`${apiOrigin}${ANALYTICS_INGEST_PATH}`, { method: "POST", body });
  */
-export const ANALYTICS_INGEST_PATH = "/analytics/batches";
+export const ANALYTICS_INGEST_PATH = "/public/analytics/batches";

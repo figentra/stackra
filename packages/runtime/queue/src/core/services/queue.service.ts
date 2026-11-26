@@ -134,7 +134,10 @@ export class QueueService extends Service {
     return this.driver.batch(id);
   }
 
-  /** Up to `limit` dead-lettered jobs of `queue` (of every queue when absent), in the order they were queued. */
+  /**
+   * Up to `limit` dead-lettered jobs of `queue` (of every queue when absent) the caller's isolation reads (its own
+   * tenant's and the platform's), in the order they were queued; the operator's `queue:failed` reads every tenant's.
+   */
   deadLetters(queue?: string, limit = 100): Promise<readonly QueuedJob[]> {
     return this.driver.deadLetters(queue, limit);
   }
@@ -142,7 +145,8 @@ export class QueueService extends Service {
   /**
    * Queues dead job `id` again, due now, with all its attempts.
    *
-   * @returns `false` when it is not dead, or a unique job of the same scope waits or runs.
+   * @returns `false` when it is not dead or not the caller's to change, or a unique job of the same scope waits or
+   *          runs.
    */
   redrive(id: PublicId<"job">): Promise<boolean> {
     return this.driver.redrive(id, this.clock.now());

@@ -4,7 +4,7 @@
  *          database and its owning role (same name), the extensions the admin creates in it, and the parameter that
  *          holds the role's password.
  * Boundary: type only; plain data `toolsStackPlan` derives from the catalogue's `database` field. The tool's own
- *           connection URL secret must carry the same password; Infisical holds both (ADR 0173).
+ *           connection URL secret must carry the same password; the vault holds both (ADR 0525).
  * Runtime: isomorphic
  * Governing contract: ADR 0444; ADR 0238 (one server per environment, one database and role per service); ADR 0173.
  */

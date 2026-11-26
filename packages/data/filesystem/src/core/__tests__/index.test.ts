@@ -16,11 +16,13 @@ describe("@stackra/filesystem", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(filesystem).sort()).toEqual([
       "FileNotFoundError",
+      "FileRetainedError",
       "FilesystemConfig",
       "FilesystemConfig$",
       "FilesystemHealthIndicatorDriver",
       "FilesystemOptions",
       "MemoryFileSystemDriver",
+      "RetentionUnsupportedError",
     ]);
   });
 

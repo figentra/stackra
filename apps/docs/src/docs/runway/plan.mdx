@@ -1,0 +1,49 @@
+---
+title: "runway plan"
+description: "What a deploy of one environment would do, as JSON, with names only."
+---
+
+What a deploy of one environment would do, as JSON, with names only.
+
+```bash
+stackra runway plan [environment] [--json]
+```
+
+| Argument or option | Kind     | Meaning                                       |
+| ------------------ | -------- | --------------------------------------------- |
+| `environment`      | argument | The runway environment; default `production`. |
+
+## What it does
+
+Reads the runway files under the repository root. It changes nothing, and prints names only, never a value.
+
+## What it prints
+
+For each target, in build order: its caller workflows, the CI secret names its jobs read, and the member secret and
+var names a deploy syncs. The JSON is printed with or without `--json`; with it, the JSON is the envelope's data.
+
+## Exit codes
+
+| Code | Means                     |
+| ---- | ------------------------- |
+| 0    | The plan was printed.     |
+| 1    | A runway file is invalid. |
+| 2    | Usage error.              |
+
+## Where it runs
+
+Anywhere, with no login.
+
+## Examples
+
+```bash
+stackra runway plan
+stackra runway plan staging --json
+```
+
+## See also
+
+[0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted),
+[0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

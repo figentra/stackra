@@ -1,0 +1,6 @@
+import { Listener } from "@stackra/events";
+import type { PaymentCaptured } from "#stackra/clients/pay";
+
+export class ListOnPaymentCapturedListener extends Listener {
+  async handle(event: PaymentCaptured): Promise<void> {}
+}

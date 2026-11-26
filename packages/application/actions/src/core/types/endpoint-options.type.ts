@@ -14,6 +14,6 @@ export interface EndpointOptions {
   /** The method; `GET` for a query, `POST`, `PUT`, `PATCH` or `DELETE` for an action. */
   readonly method: HttpMethod;
 
-  /** The path, kebab-case and plural, starting with `/` (`/loyalty/accounts/:accountId/freeze`). */
+  /** The path, kebab-case and plural, starting with `/` (`/app/loyalty/accounts/:accountId/freeze`). */
   readonly path: string;
 }

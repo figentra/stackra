@@ -54,7 +54,7 @@ const deliveries = (count: number, from = 0) =>
 function answer(status = 200) {
   const fetch = vi.fn((url: string) =>
     Promise.resolve(
-      url.endsWith("/consent/snapshots")
+      url.endsWith("/public/consent/snapshots")
         ? new Response(JSON.stringify({ token: "t", expiresAt: "2999-01-01T00:00:00.000Z" }))
         : new Response("{}", { status }),
     ),
@@ -66,7 +66,7 @@ function answer(status = 200) {
 /** The deliveries of every ingest request, in order. */
 function batches(fetch: ReturnType<typeof answer>) {
   return (fetch.mock.calls as unknown as [string, RequestInit][])
-    .filter(([url]) => url.endsWith("/analytics/batches"))
+    .filter(([url]) => url.endsWith("/public/analytics/batches"))
     .map(
       ([, init]) =>
         JSON.parse(String(init.body)).deliveries as {

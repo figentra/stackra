@@ -4,7 +4,8 @@
  *          users and their client secret through the management API, sessions (listed and ended) through the v2 session service, the
  *          device flow through the OAuth endpoints (RFC 8628), and an organisation's login policy through the
  *          management API (added the first time, updated after, then its external providers and second factors brought
- *          to exactly the listed ones); a user's enrolled authentication methods through the
+ *          to exactly the listed ones); the claims action as an Actions v2 target and its `preuserinfo` and
+ *          `preaccesstoken` executions; a user's enrolled authentication methods through the
  *          v2 user service, mapped to RFC 8176 `amr` codes; a Stackra user's provider user through the v2 user search on
  *          the `stackra_user_id` metadata `createUser` writes, and an email's Stackra user through the v2 user search on
  *          the email and that user's metadata; and passkeys: sign-in as a v2 session with a `webAuthN`
@@ -14,7 +15,7 @@
  *           platform's ZITADEL or a tenant's own. A 409 is `IdpUserExistsError`; a timeout, a network failure, a 429 or a 5xx is `IdpAdminUnavailableError`
  *           (retryable); any other 4xx is a bug and throws an `Error` naming the method, path and status, never a body.
  *           Ending a session that is already gone (404) succeeds. A refused passkey check (400, 404, 412) or an
- *           unknown login or user (404) is `UnauthenticatedError`; a 403 (a missing permission) stays a bug. The passkey relying party is the configured URL's host, so the app lists that host
+ *           unknown user (404) is `UnauthenticatedError`, while an unknown passkey login answers a decoy (STA-2102); a 403 (a missing permission) stays a bug. The passkey relying party is the configured URL's host, so the app lists that host
  *           in its associated domains. Personal data and secrets are never logged.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263;
@@ -26,6 +27,8 @@ import { UnauthenticatedError } from "@stackra/errors";
 import type { IdpAdminConfig } from "#config/idp-admin.config";
 import { DeviceTokenStatus, IdpAdmin, IdpSecondFactor } from "#contracts/index";
 import type {
+  ClaimsActionInput,
+  ClaimsActionInstall,
   DeviceAuthorization,
   DeviceTokenResult,
   IdpMachineCredential,
@@ -36,10 +39,12 @@ import type {
   LoginPolicy,
   PasskeyCredential,
   PasskeyRegistrationChallenge,
+  PasskeyRequestOptions,
   PasskeySignInChallenge,
 } from "#contracts/index";
 import { IdpAdminUnavailableError } from "#core/errors/idp-admin-unavailable.error";
 import { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
+import { randomToken } from "#core/functions/random-token.function";
 
 /** The OAuth grant type of a device-flow poll. */
 const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
@@ -52,6 +57,12 @@ const UNKNOWN: readonly number[] = [404];
 
 /** The statuses ZITADEL answers a refused passkey check with. */
 const REFUSED: readonly number[] = [400, 404, 412];
+
+/** The claims action's target name: an install finds its own target by it. */
+const CLAIMS_TARGET = "stackra-claims";
+
+/** The functions the claims action runs on: the userinfo answer and the access token. */
+const CLAIMS_FUNCTIONS: readonly string[] = ["preuserinfo", "preaccesstoken"];
 
 /** How many sessions one search reads. */
 const PAGE = 100;
@@ -377,7 +388,11 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     return status === 404 || typeof value !== "string" ? undefined : atob(value);
   }
 
-  /** See `IdpAdmin.startPasskeySignIn`: a v2 session with the user check and a `webAuthN` challenge. */
+  /**
+   * See `IdpAdmin.startPasskeySignIn`: a v2 session with the user check and a `webAuthN` challenge. ZITADEL's 404 for
+   * an unknown login answers a decoy after the same round trip: a random numeric session id ZITADEL never issued (so
+   * `finishPasskeySignIn` gets its 404 and refuses) and options with the same keys as a live answer's.
+   */
   async startPasskeySignIn(loginName: string): Promise<PasskeySignInChallenge> {
     const { status, body } = await this.call(
       {
@@ -395,13 +410,32 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       },
       UNKNOWN,
     );
-    refuseOn(status, UNKNOWN);
-    const options = (
-      body as {
-        challenges?: { webAuthN?: { publicKeyCredentialRequestOptions?: { publicKey?: unknown } } };
-      }
-    ).challenges?.webAuthN?.publicKeyCredentialRequestOptions?.publicKey;
-    return { sessionId: stringOf(body, "sessionId"), options: objectOf(options) };
+    if (UNKNOWN.includes(status))
+      return {
+        sessionId: String(crypto.getRandomValues(new BigUint64Array(1))[0] ?? 0n)
+          .padStart(20, "0")
+          .slice(-18),
+        options: { challenge: randomToken(), rpId: this.domain, userVerification: "required" },
+      };
+    const options = objectOf<Partial<PasskeyRequestOptions>>(
+      (
+        body as {
+          challenges?: {
+            webAuthN?: { publicKeyCredentialRequestOptions?: { publicKey?: unknown } };
+          };
+        }
+      ).challenges?.webAuthN?.publicKeyCredentialRequestOptions?.publicKey,
+    );
+    // A live answer keeps only the decoy's keys: `allowCredentials` would name the login's passkeys (and so show it
+    // exists), and a passkey is a discoverable credential, so the device offers it without the list.
+    return {
+      sessionId: stringOf(body, "sessionId"),
+      options: {
+        challenge: stringOf(options, "challenge"),
+        rpId: stringOf(options, "rpId"),
+        userVerification: "required",
+      },
+    };
   }
 
   /** See `IdpAdmin.finishPasskeySignIn`: the session's `webAuthN` check. */
@@ -453,6 +487,56 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
       REFUSED,
     );
     refuseOn(status, REFUSED);
+  }
+
+  /**
+   * See `IdpAdmin.installClaimsAction`: the Actions v2 target named `stackra-claims` (a `restCall` that fails the
+   * token when the endpoint fails), created with its signing key the first time and pointed at the endpoint after,
+   * then the `preuserinfo` and `preaccesstoken` function executions set to it.
+   */
+  async installClaimsAction(input: ClaimsActionInput): Promise<ClaimsActionInstall> {
+    const target = {
+      name: CLAIMS_TARGET,
+      endpoint: input.endpoint,
+      timeout: `${input.timeoutSeconds ?? 10}s`,
+      restCall: { interruptOnError: true },
+    };
+    const { body: found } = await this.call({
+      method: "POST",
+      path: "/v2/actions/targets/search",
+      json: {
+        filters: [
+          { targetNameFilter: { targetName: CLAIMS_TARGET, method: "TEXT_FILTER_METHOD_EQUALS" } },
+        ],
+      },
+    });
+    const existing = (found as { result?: readonly { id?: unknown }[] }).result?.[0]?.id;
+    let installed: ClaimsActionInstall;
+    if (typeof existing === "string" && existing !== "") {
+      await this.call({
+        method: "POST",
+        path: `/v2/actions/targets/${encodeURIComponent(existing)}`,
+        json: target,
+      });
+      installed = { targetId: existing };
+    } else {
+      const { body } = await this.call({
+        method: "POST",
+        path: "/v2/actions/targets",
+        json: target,
+      });
+      const { id, signingKey } = body as { id?: unknown; signingKey?: unknown };
+      if (typeof id !== "string" || typeof signingKey !== "string")
+        throw new Error("ZITADEL created the claims target without an id or signing key");
+      installed = { targetId: id, signingKey };
+    }
+    for (const name of CLAIMS_FUNCTIONS)
+      await this.call({
+        method: "PUT",
+        path: "/v2/actions/executions",
+        json: { condition: { function: { name } }, targets: [installed.targetId] },
+      });
+    return installed;
   }
 
   /** See `IdpAdmin.setLoginPolicy`: adds the organisation's own policy while it uses the default, updates it after. */

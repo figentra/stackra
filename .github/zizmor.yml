@@ -3,7 +3,8 @@
 #          (`zizmor --config .github/zizmor.yml .github/workflows`). ADR 0019 D1: every action and reusable workflow is
 #          pinned to a full commit SHA, including the `actions/*` and `github/*` namespaces zizmor would accept at a
 #          tag; the Runway workflows (ADR 0168) are called by local path here and by SHA from other repositories.
-#          An accepted finding is an `ignore:` entry naming one `file:line` and its reason, never a whole rule or file.
+#          An accepted finding is an inline `# zizmor: ignore[<audit>]` comment on its line, with the reason here; never
+#          a whole audit or file.
 # Scope: .github/workflows
 # Owner: release-operations
 # Secrets: forbidden
@@ -12,19 +13,17 @@ rules:
     config:
       policies:
         "*": hash-pin
-  # zizmor 1.31 audits; each accepted finding names one file:line and its reason.
-  artipacked:
-    ignore:
-      # The checkout persists the App token on purpose: changesets pushes the version branch and tags with it. The only
-      # uploads are named files, never .git: the published list (published-packages.json) in this job, and the SBOM and
-      # its sigstore bundle in the next.
-      - runway-npm.yml:108
-  self-repository:
-    ignore:
-      # Local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168, called by SHA from other repositories);
-      # the `$/…` form is not adopted until a run on GitHub has proven it for these callers.
-      - deploy-docs.yml:55
-      - deploy-registry.yml:66
-      - deploy-static.yml:63
-      - deploy-turbo-cache.yml:67
-      - release.yml:110
+  # zizmor 1.31 audits. An accepted finding is an inline `# zizmor: ignore[<audit>]` comment on the line zizmor
+  # reports, with its reason here, never a whole audit or file: a file:line entry here drifted with every edit above
+  # it (#941, #958) and failed every pull request's workflow lint.
+  #
+  # self-repository, on each `uses: ./…` line: local reusable-workflow calls stay `./.github/workflows/…` (ADR 0168,
+  # called by SHA from other repositories); the `$/…` form is not adopted until a run on GitHub has proven it for these
+  # callers. The same holds for the local secrets-decrypt action (ADR 0525, called by SHA from other repositories).
+  #
+  # dangerous-triggers, on regen-push.yml's `workflow_run:` line: it runs in main's context to push a pull request's
+  # regenerated files with the bot App, and never runs the pull request's code: it reads the patch Regen uploaded,
+  # refuses any path that is not generated and a head that moved, and skips forks and main.
+  #
+  # artipacked, on regen-push.yml's `persist-credentials: true`: the job pushes the regenerated commit with the bot
+  # App's token, and uploads nothing, so the persisted credential never leaves the runner.

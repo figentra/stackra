@@ -3,7 +3,7 @@
  * Purpose: `authenticBody`, the one place the receiver picks a verifier by the Integration's `webhooks.scheme`: it
  *          answers the body text to parse when the request verifies (the plaintext for `aes_gcm_body`, the raw body
  *          for every other scheme), else `undefined`.
- * Boundary: internal; reads only the scheme's own data (`signature` for `hmac`, `recipe` for the six regional gateway
+ * Boundary: internal; reads only the scheme's own data (`signature` for `hmac`, `recipe` for the regional gateway
  *           schemes, which `registerWebhookEvents` checked at boot). Never parses a body whose check failed, apart
  *           from the field schemes reading their token or signed fields. The regional schemes are certification
  *           pending (owner decision D3).
@@ -18,6 +18,7 @@ import { verifyBodyToken } from "#core/functions/verify-body-token.function";
 import { verifyHmacWebhook } from "#core/functions/verify-hmac-webhook.function";
 import { verifyJwtHs256 } from "#core/functions/verify-jwt-hs256.function";
 import { verifyKeyedFieldDigest } from "#core/functions/verify-keyed-field-digest.function";
+import { verifyLabelledFieldHmac } from "#core/functions/verify-labelled-field-hmac.function";
 import { verifyOrderedFieldHmac } from "#core/functions/verify-ordered-field-hmac.function";
 import { verifySharedHeader } from "#core/functions/verify-shared-header.function";
 import { verifyWebhook } from "#core/functions/verify-webhook.function";
@@ -59,6 +60,10 @@ export async function authenticBody(
     }
     case SignatureScheme.OrderedFieldHmac: {
       verified = await verifyOrderedFieldHmac(request, recipe, secrets);
+      break;
+    }
+    case SignatureScheme.LabelledFieldHmac: {
+      verified = await verifyLabelledFieldHmac(request, recipe, secrets);
       break;
     }
     case SignatureScheme.KeyedFieldDigest: {

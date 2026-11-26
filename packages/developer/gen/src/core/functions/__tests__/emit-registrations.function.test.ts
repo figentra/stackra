@@ -2,12 +2,15 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitRegistrations`: the generated entity and schemas files loaded first, then one call per
  *          platform registration with a row each, from the locked identities: the hosted packages' entity lists, the
- *          model partners of each `CrudService<M>` (and of an injected platform one, `RuleSetService`), event wire names, jobs for the queue and the scheduler,
+ *          model partners of each `CrudService<M>` (and of each one its packages' manifests list with its model), event wire names, jobs for the queue and the scheduler,
  *          connections, webhook events, outbound webhooks, sequences (a hosted package's imported from its entry),
  *          entitlements with the calls they gate (STA-903) and searchable models; a listener with the event class it imports (its own, or a consumed service's, whose wire
  *          name comes from the producer's manifest) and a relay listener; no file for an app or a member with nothing
  *          to register; every Permission static (system and restricted included) and module role by its locked key,
- *          permissions first (STA-1702); each record policy with its model, own and hosted (STA-2045).
+ *          permissions first (STA-1702); each record policy with its model, own and hosted (STA-2045); a hosted
+ *          package's webhook events with their Integration and Connection from its manifest, an own event typed
+ *          against a hosted Integration with that Integration's hosted Connection, a service listener of a hosted
+ *          event, and no change for a host without hosted webhook events.
  * Boundary: test only; runs on the IR fixtures and the manifests `buildManifest` derives from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 22); ADR 0097; ADR 0141; ADR 0308;
@@ -17,17 +20,40 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { emitRegistrations } from "#core/functions/emit-registrations.function";
+import { emitWebhooks } from "#core/functions/emit-webhooks.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { CONNECTOR_PACKAGES } from "#core/__tests__/fixtures/connector-packages.fixture";
+import { COURIER_PACKAGE_IR } from "#core/__tests__/fixtures/courier-package-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 
 /** The registrations of `ir` against its own derived manifest. */
 function registrationsOf(ir: MemberIR): string | undefined {
   return emitRegistrations(ir, buildManifest(ir).manifest);
 }
+
+/** An extension of the orders module on `OrderExtensionPoint["adjustTotals"]`. */
+const EXTENSION = {
+  name: "TierBonusExtension",
+  kind: "extension",
+  module: "orders",
+  file: "src/modules/orders/extensions/tier-bonus.extension.ts",
+  importPath: "#modules/orders/extensions/tier-bonus.extension",
+  options: { order: 200 },
+  partner: {
+    name: "OrderExtensionPoint",
+    slot: "adjustTotals",
+    from: "#modules/orders/extensions/order.extension-point",
+  },
+  deps: [],
+  facets: [],
+  methods: [],
+  refusals: [],
+  statics: {},
+  traits: [],
+} as const;
 
 describe("emitRegistrations", () => {
   const billing = registrationsOf(BILLING_IR) ?? "";
@@ -48,27 +74,38 @@ describe("emitRegistrations", () => {
     expect(billing).not.toContain("InvoiceFactory");
   });
 
-  it("registers the model partner of a platform CrudService a class injects", () => {
-    const rules: DeclaredClass = {
-      name: "DunningRulesService",
-      kind: "service",
-      module: "billing",
-      file: "src/modules/billing/services/dunning-rules.service.ts",
-      importPath: "#modules/billing/services/dunning-rules.service",
-      options: {},
-      deps: [{ class: { name: "RuleSetService", from: "@stackra/rules/node" } }],
-      facets: [],
-      methods: [],
-      refusals: [],
-      statics: {},
-      traits: [],
-    };
+  it("registers the model partner of each CrudService a package's manifest lists with its model", () => {
     const content =
-      registrationsOf({ ...BILLING_IR, classes: [...BILLING_IR.classes, rules] }) ?? "";
+      registrationsOf({
+        ...BILLING_IR,
+        dependencies: [
+          ...BILLING_IR.dependencies,
+          {
+            package: "@stackra/scope",
+            manifest: {
+              member: "scope",
+              package: "@stackra/scope",
+              version: "0.1.0",
+              services: [
+                {
+                  class: "ScopeNodeService",
+                  from: "@stackra/scope/node",
+                  partner: { name: "ScopeNode", from: "@stackra/scope/node" },
+                },
+                { class: "ScopeTreeReader", from: "@stackra/scope/node" },
+              ],
+            },
+          },
+        ],
+      }) ?? "";
     expect(content).toContain(
-      "registerModelPartners([\n  [InvoiceService, Invoice],\n  [RuleSetService, RuleSet],\n]);",
+      "registerModelPartners([\n  [InvoiceService, Invoice],\n  [ScopeNodeService, ScopeNode],\n]);",
     );
-    expect(content).toMatch(/import \{[^}]*RuleSet[^}]*\} from "@stackra\/rules\/node";/);
+    expect(content).toMatch(
+      /import \{[^}]*\bScopeNodeService\b[^}]*\} from "@stackra\/scope\/node";/,
+    );
+    expect(content).toMatch(/import \{[^}]*\bScopeNode\b[^}]*\} from "@stackra\/scope\/node";/);
+    expect(content).not.toContain("ScopeTreeReader");
   });
 
   it("registers event names, jobs and outbound webhooks by their locked identities", () => {
@@ -167,6 +204,27 @@ describe("emitRegistrations", () => {
     expect(text).toContain("registerReportSources([\n  [InvoiceTotalsReport, Invoice],\n]);");
     expect(text).toContain('import { registerReportSources } from "@stackra/reports/node";');
     expect(billing).not.toContain("registerReportSources");
+  });
+
+  it("refuses to import `unknown`: a webhook event whose partner resolved to no class stops the run (SHIP, 0.29)", () => {
+    const unresolved: DeclaredClass = {
+      name: "QuiqupOrderUpdated",
+      kind: "webhook_event",
+      module: "orders",
+      file: "src/modules/orders/events/quiqup-order-updated.event.ts",
+      importPath: "#modules/orders/events/quiqup-order-updated.event",
+      options: { type: "order" },
+      partner: { name: "unknown", from: "@figentra/ship-connector-quiqup/node" },
+      deps: [],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    };
+    expect(() =>
+      registrationsOf({ ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, unresolved] }),
+    ).toThrow("gen would import `unknown` from @figentra/ship-connector-quiqup/node");
   });
 
   it("writes no file for an app or a member with nothing to register", () => {
@@ -532,12 +590,14 @@ describe("emitRegistrations of actions and queries (STA-2025)", () => {
     .split("\n")
     .filter((line) => line.startsWith("  { type: ") && line.includes(" risk: "));
 
-  it("registers every action and query with its locked key, permission, risk and input class", () => {
+  it("registers every action and query with its locked key, permission, risk and input and output classes", () => {
     expect(content).toMatch(/import \{[^}]*registerActions[^}]*\} from "@stackra\/actions";/);
     expect(content).toContain(
       '  { type: CancelOrderAction, key: "orders.order.cancel@1", permission: "orders.order.cancel", risk: "L2"',
     );
-    expect(content).toMatch(/\{ type: CancelOrderAction, [^}]*input: CancelOrderInput \}/);
+    expect(content).toMatch(
+      /\{ type: CancelOrderAction, [^}]*input: CancelOrderInput, output: CancelOrderOutput \}/,
+    );
     expect(content).toContain('{ type: ListOrdersQuery, key: "orders.order.list@1"');
     expect(rows).toHaveLength(manifest.actions?.length ?? -1);
   });
@@ -629,5 +689,126 @@ describe("emitRegistrations of record policies (STA-2045)", () => {
   it("records no policies section and registers none for a member without a policy", () => {
     expect(buildManifest(COMMERCE_IR).manifest["policies"]).toBeUndefined();
     expect(registrationsOf(COMMERCE_IR) ?? "").not.toContain("registerPolicies");
+  });
+});
+
+describe("emitRegistrations for extensions", () => {
+  /** A slot runs only the extensions registered on it; gen read the point and slot from the type argument. */
+  it("registers each extension on its point's slot with its order", () => {
+    const content =
+      registrationsOf({ ...COMMERCE_IR, classes: [...COMMERCE_IR.classes, EXTENSION] }) ?? "";
+    expect(content).toMatch(/import \{[^}]*registerExtensions[^}]*\} from "@stackra\/actions";/);
+    expect(content).toContain(
+      '  { point: OrderExtensionPoint, slot: "adjustTotals", extension: TierBonusExtension, order: 200 },',
+    );
+    expect(registrationsOf(COMMERCE_IR) ?? "").not.toContain("registerExtensions");
+  });
+});
+
+/** The courier carrier package's manifest, as gen writes it for the package. */
+const COURIER = buildManifest(COURIER_PACKAGE_IR).manifest;
+
+/** The billing service hosting the courier package by `manifest`, with `classes` added to its own. */
+function hostingCourier(
+  manifest: MemberIR["dependencies"][number]["manifest"],
+  classes: readonly DeclaredClass[] = [],
+): MemberIR {
+  return {
+    ...BILLING_IR,
+    classes: [...BILLING_IR.classes, ...classes],
+    dependencies: [...BILLING_IR.dependencies, { package: "@acme/ship-courier", manifest }],
+  };
+}
+
+/** A billing class typed against the courier package's classes, imported from its `./node` entry. */
+function billingClass(name: string, kind: string, more: Partial<DeclaredClass>): DeclaredClass {
+  return {
+    name,
+    kind,
+    module: "billing",
+    file: `src/modules/billing/${kind === "listener" ? "listeners" : "events"}/${name}.ts`,
+    importPath: `#modules/billing/${kind === "listener" ? "listeners" : "events"}/${name}`,
+    options: {},
+    deps: [],
+    facets: [],
+    methods: [],
+    refusals: [],
+    statics: {},
+    traits: [],
+    ...more,
+  };
+}
+
+/** A hosted package's `WebhookEvent<I>` classes, registered from its manifest with their Connection. */
+describe("emitRegistrations for a hosted package's webhook events", () => {
+  /** The package ships the event; the service names no carrier class, yet the receiver routes it. */
+  it("registers a hosted event with its Integration and Connection, imported from the package entry", () => {
+    const content = registrationsOf(hostingCourier(COURIER)) ?? "";
+    expect(content).toContain(
+      [
+        "registerWebhookEvents([",
+        "  { event: StripePaymentSucceeded, integration: StripeIntegration, connection: StripeConnection },",
+        "  { event: CourierShipmentUpdated, integration: CourierIntegration, connection: CourierConnection },",
+        "]);",
+      ].join("\n"),
+    );
+    for (const name of ["CourierShipmentUpdated", "CourierIntegration", "CourierConnection"])
+      expect(content).toMatch(
+        new RegExp(`import \\{[^}]*\\b${name}\\b[^}]*\\} from "@acme/ship-courier/node";`),
+      );
+    expect(content).not.toMatch(/ImportedCourier/);
+  });
+
+  /**
+   * An own event typed against a hosted Integration used to register with no `connection`, so the receiver answered
+   * 404 for `/webhooks/<module>/<integration>/:connectionId`; it now carries the Connection the package's manifest
+   * lists, even from a manifest written before `webhookEvents`.
+   */
+  it("pairs an own event typed against a hosted Integration with that Integration's hosted Connection", () => {
+    const older = Object.fromEntries(
+      Object.entries(COURIER).filter(([key]) => key !== "webhookEvents"),
+    ) as typeof COURIER;
+    const own = billingClass("ParcelLost", "webhook_event", {
+      options: { type: "parcel.lost" },
+      partner: { name: "CourierIntegration", kind: "integration", from: "@acme/ship-courier/node" },
+    });
+    const ir = hostingCourier(older, [own]);
+    const content = registrationsOf(ir) ?? "";
+    expect(content).toContain(
+      "  { event: ParcelLost, integration: CourierIntegration, connection: CourierConnection },",
+    );
+    expect(content).not.toContain("CourierShipmentUpdated");
+    expect(emitWebhooks(ir)).toContain('  "ship-courier/courier": CourierIntegration,');
+    expect(emitWebhooks(ir)).toMatch(
+      /import \{[^}]*\bCourierIntegration\b[^}]*\} from "@acme\/ship-courier\/node";/,
+    );
+  });
+
+  /** Listeners stay in the service: one typed with the hosted event is wired like one typed with its own. */
+  it("wires a service listener typed with a hosted event, sharing the event's import", () => {
+    const listening = billingClass("NotifyOnShipmentUpdatedListener", "listener", {
+      methods: ["handle"],
+      handle: { event: { name: "CourierShipmentUpdated", from: "@acme/ship-courier/node" } },
+    });
+    const content = registrationsOf(hostingCourier(COURIER, [listening])) ?? "";
+    expect(content).toContain(
+      "registerListeners([\n  [CourierShipmentUpdated, NotifyOnShipmentUpdatedListener],\n]);",
+    );
+    expect(content).not.toMatch(/ImportedCourierShipmentUpdated/);
+  });
+
+  /** A host with no hosted webhook event writes exactly what it wrote before, and its manifest gains no section. */
+  it("leaves a host without hosted webhook events unchanged", () => {
+    const older = Object.fromEntries(
+      Object.entries(COURIER).filter(([key]) => key !== "webhookEvents"),
+    ) as typeof COURIER;
+    const before = registrationsOf(hostingCourier(older));
+    expect(before).not.toContain("CourierShipmentUpdated");
+    expect(registrationsOf(hostingCourier({ ...older, webhookEvents: [] }))).toBe(before);
+    expect(registrationsOf(BILLING_IR)).toContain(
+      "registerWebhookEvents([\n  { event: StripePaymentSucceeded, integration: StripeIntegration, connection: StripeConnection },\n]);",
+    );
+    expect(buildManifest(hostingCourier(COURIER)).manifest).not.toHaveProperty("webhookEvents");
+    expect(buildManifest(BILLING_IR).manifest).not.toHaveProperty("webhookEvents");
   });
 });

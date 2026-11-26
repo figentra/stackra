@@ -64,3 +64,16 @@ planned — the contract tests of `@stackra/identity` run against a ZITADEL cont
 
 Supersedes: [0093](/adr/0093-better-auth-integration); identity decisions 1 to 3 and 5 of [0087](/adr/0087-identity-and-iam-are-driver-packages). Closes gap C33.
 Sources: owner identity decisions (`stackra-decisions-2026-10-19.md` L587–592, L604–616, 2026-10-20).
+
+## Amendment 2026-11-08: one instance per region; staff and customer organisations
+
+**Context.** Decision 5 ("one instance; staff have one global account") predates
+[0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+and [0361](/adr/0361-principals-and-parties)'s one ZITADEL instance per region, and the two disagreed. The owner's
+sign-in decision settles it. Source: the owner's decision and answers of 2026-11-08 (owner ledger).
+
+**Decision.** Decision 5 becomes: **one ZITADEL instance per region.** Merchant staff are in one shared staff
+organisation per region, with access per merchant by IAM memberships; each merchant's end customers are in that
+merchant's own customer organisation; an Enterprise merchant's staff may be in a dedicated organisation with its own
+IdP ([0361](/adr/0361-principals-and-parties) amendment 2026-11-08). Decision 7 stays amended by 0268: ZITADEL's hosted
+login with each organisation's label policy is the branded login.

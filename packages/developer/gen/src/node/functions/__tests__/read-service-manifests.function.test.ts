@@ -3,7 +3,7 @@
  * Purpose: unit tests of `readServiceManifests`: a consumed service's committed manifest found in the folder beside
  *          the member (by key or kebab-case folder), once each and sorted, a folder whose manifest names another
  *          member skipped, a service without one left out, a contract package (`stackra.kind`) supplying a service with no
- *          folder by kind and manifest member, never by package name or an ordinary dependency (STA-1820), an app's service found in the repo's `services/`, and an invalid
+ *          folder by kind and manifest member, never by package name or an ordinary dependency (STA-1820), and winning over a sibling folder (STA-2215), an app's service found in the repo's `services/`, and an invalid
  *          manifest refused.
  * Boundary: test only; writes small fixtures under `.cache/`.
  * Runtime: node (vitest)
@@ -106,13 +106,21 @@ describe("readServiceManifests from a contract package (STA-1820)", () => {
     ]);
   });
 
-  it("prefers a sibling folder over a contract package", () => {
+  it("prefers a declared contract package over a sibling folder, which may be an empty skeleton (STA-2215)", () => {
     const root = writeFixtureMember(
       "console2",
       installed("@acme/commerce-contract", "contract", commerce),
     );
-    sibling(root, "commerce", JSON.stringify(commerce));
+    sibling(root, "commerce", JSON.stringify({ member: "commerce", package: "@acme/skeleton" }));
     expect(readServiceManifests(root, ["commerce"], ["@acme/commerce-contract"])).toEqual([
+      { member: "commerce", package: "@acme/commerce-contract", manifest: commerce },
+    ]);
+  });
+
+  it("still reads a sibling folder when no declared contract supplies the service", () => {
+    const root = writeFixtureMember("console3", {});
+    sibling(root, "commerce", JSON.stringify(commerce));
+    expect(readServiceManifests(root, ["commerce"], [])).toEqual([
       { member: "commerce", folder: "commerce", manifest: commerce },
     ]);
   });

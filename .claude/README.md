@@ -1,7 +1,7 @@
 # `.claude/`
 
 What Claude Code reads in this repository. Most of it is projected from [`.agents/`](../.agents) by
-`pnpm agents:sync`; edit the source there, never the projection. Claude reads the repository rules through
+`pnpm spec:sync`; edit the source there, never the projection. Claude reads the repository rules through
 `CLAUDE.md` → `@AGENTS.md`, so there is no `.claude/rules/`.
 
 | Path            | Holds                                                                                        | Edit here?                                                |
@@ -19,7 +19,7 @@ What Claude Code reads in this repository. Most of it is projected from [`.agent
 
 - `settings.json` and `launch.json` stay strict `.json`: Claude Code reads fixed names (`MUST_STAY_JSON` in
   `@stackra/repo-checks`).
-- `pnpm agents:check` (in `pnpm validate` and CI) fails on drift between `.agents/` and this folder.
+- `fflow gate ci` (in `pnpm validate` and CI) fails on drift between `.agents/` and this folder.
 - No secret goes in `settings.json`; MCP servers that need a token start through `tools/scripts/mcp.sh`, which reads
   the Infisical vault ([secrets rule](../.agents/rules/secrets.md)).
 

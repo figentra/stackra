@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./testing` entry of @stackra/integrations (`fakeIntegrationApi`, `makeConnection`, the
+ * Purpose: Stand-in barrel: the `./testing` entry of @stackra/integrations (`fakeIntegrationApi`, `makeConnection`,
+ *          `liveConnection` over the real managed client for sandbox certification, the
  *          memory payroll, fulfilment-provider and accounting connectors, the recorded-case runner of accounting drivers
  *          (`replayIntegrationApi`, `runAccountingCase`), the recorded-case runners of every other connector driver
  *          (`runConnectorCase`, `runFulfilmentCase` for 3PL and WMS drivers), the memory ad platform, the
@@ -30,9 +31,11 @@ export { MemoryFulfilmentProvider } from "#testing/connectors/memory-fulfilment-
 export { MemoryPayrollConnector } from "#testing/connectors/memory-payroll.connector";
 export { INTEGRATIONS_TESTING_PLUGIN } from "#testing/constants/integrations-testing-plugin.constant";
 export { fakeIntegrationApi } from "#testing/functions/fake-integration-api.function";
+export { liveConnection } from "#testing/functions/live-connection.function";
 export { makeConnection } from "#testing/functions/make-connection.function";
 export type { FakeAnswer } from "#testing/types/fake-answer.type";
 export type { FakeIntegrationRoutes } from "#testing/types/fake-integration-routes.type";
+export type { LiveConnectionOptions } from "#testing/types/live-connection-options.type";
 export type { MakeConnectionOptions } from "#testing/types/make-connection-options.type";
 export type { PathParams } from "#testing/types/path-params.type";
 export type { TestConnection } from "#testing/types/test-connection.type";

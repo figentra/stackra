@@ -30,6 +30,7 @@ const RECIPE_FIELDS: Readonly<
   [SignatureScheme.BodyToken]: [["path", "header", "query"]],
   [SignatureScheme.AesGcmBody]: ["ivHeader", "tagHeader"],
   [SignatureScheme.OrderedFieldHmac]: ["fields", "algorithm", ["query", "header", "path"]],
+  [SignatureScheme.LabelledFieldHmac]: ["labelledFields", "algorithm", ["header", "query"]],
   [SignatureScheme.KeyedFieldDigest]: ["fields", "algorithm", ["path", "query", "header"]],
   [SignatureScheme.SharedHeader]: ["header"],
   [SignatureScheme.JwtHs256]: [["query", "header"]],

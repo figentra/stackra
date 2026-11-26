@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `ChatSurface`, the AI kit's assistant chat block: the conversation in a scroller that sticks to the newest
- *          turn, each answer marked as generated with its reasoning, text, sources and actions, starters while empty, and
- *          the composer.
+ *          turn, each answer marked as generated with its reasoning, text, sources and actions (or its AI SDK UI message
+ *          parts, tool approvals and Tamo data parts included), starters while empty, and the composer.
  * Boundary: composition of @stackra/ui only (ChatMessage, Reasoning, Sources, PromptInput, MessageScroller,
- *           MessageActions, PromptSuggestions, AiMark). It runs no model: the host streams turns from the agent runtime
+ *           MessageActions, PromptSuggestions, AiMark, ApprovalCard). It runs no model: the host streams turns from the agent runtime
  *           and passes them in.
  * Runtime: browser
  * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL).
@@ -23,6 +23,7 @@ import {
 import type { ReactElement } from "react";
 
 import type { ChatSurfaceProps } from "#react/chat-surface/chat-surface.props";
+import { renderChatParts } from "#react/chat-surface/render-chat-parts.function";
 
 /** No starters. */
 const NONE: ChatSurfaceProps["suggestions"] & object = [];
@@ -40,6 +41,10 @@ export function ChatSurface({
   isStreaming = false,
   suggestions = NONE,
   onRetry,
+  renderers,
+  onAnswer,
+  onApprovalResponse,
+  toolLabels,
   labels,
   className,
 }: ChatSurfaceProps): ReactElement {
@@ -55,7 +60,7 @@ export function ChatSurface({
               key={turn.id}
               from={turn.role}
               authorLabel={isAssistant ? labels.assistant : labels.user}
-              isLoading={isWriting && turn.text === ""}
+              isLoading={isWriting && (turn.parts ? turn.parts.length === 0 : turn.text === "")}
               avatar={
                 isAssistant ? <AiMark kind="generated" label={labels.generated} /> : undefined
               }
@@ -68,15 +73,29 @@ export function ChatSurface({
                 ) : undefined
               }
             >
-              {turn.reasoning && turn.reasoning.length > 0 && (
-                <Reasoning
-                  steps={turn.reasoning}
-                  summary={labels.reasoning}
-                  isStreaming={isWriting}
-                />
+              {turn.parts ? (
+                renderChatParts(turn.parts, {
+                  renderers,
+                  onAnswer,
+                  onSend,
+                  onApprovalResponse,
+                  toolLabels,
+                  reasoningLabel: labels.reasoning,
+                  isWriting,
+                })
+              ) : (
+                <>
+                  {turn.reasoning && turn.reasoning.length > 0 && (
+                    <Reasoning
+                      steps={turn.reasoning}
+                      summary={labels.reasoning}
+                      isStreaming={isWriting}
+                    />
+                  )}
+                  <Text aria-live={isWriting ? "polite" : undefined}>{turn.text}</Text>
+                  {turn.sources && turn.sources.length > 0 && <Sources sources={turn.sources} />}
+                </>
               )}
-              <Text aria-live={isWriting ? "polite" : undefined}>{turn.text}</Text>
-              {turn.sources && turn.sources.length > 0 && <Sources sources={turn.sources} />}
             </ChatMessage>
           );
         })}

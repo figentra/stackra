@@ -10,4 +10,11 @@
 export interface WriteOptions {
   /** The media type served with the file (`application/pdf`); a bucket disk stores it, the local disk ignores it. */
   readonly contentType?: string;
+
+  /**
+   * Keep the file unchangeable until this time (WORM): no write, move or delete of it succeeds before then, not even by
+   * an administrator. The `s3` disk stores it under Object Lock in COMPLIANCE mode (the bucket must have Object Lock
+   * on); the memory and local disks record it and refuse; a disk that cannot retain a file refuses the write instead.
+   */
+  readonly retainUntil?: Date;
 }

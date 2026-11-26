@@ -5,6 +5,11 @@ description: "Accepted · 2026-10-30"
 
 {/* Stackra file contract. Purpose: ADR 0483 (Accepted 2026-10-30, owner decision of 2026-10-30 taken during STA-1623, ADR 0482 decision 5), which routes every app's product analytics through one `relay` driver of `@stackra/analytics` to the analytics service, where the vendor destinations run server-side. Boundary: decision text only, as a new ADR file; the code is STA-1624 (`.agents/specs/sta-1624-analytics-relay/`); the forward Notes on ADR 0298 and 0190, the ADR index row and the docs nav belong to the integration batch. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0071, 0190, 0298, 0334, 0353, 0461, 0472, 0482. */}
 
+<Note>
+  Note 2026-11-03 (STA-340): derived routes now carry their API area, so the ingest route below is
+  `<ingestOrigin>/public/analytics/batches` (`ANALYTICS_INGEST_PATH`).
+</Note>
+
 ## Context
 
 Today an app that measures product use sends its events straight to the vendor: the `posthog` driver of

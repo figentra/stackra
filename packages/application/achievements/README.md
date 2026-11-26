@@ -90,7 +90,7 @@ const pdf = await awards.renderCertificate(award.id, {
 await awards.revoke(award.id, input.reason); // AwardRevoked; the token and code stop resolving
 ```
 
-`VerifyAwardQuery` (`achievements.award.verify@1`, `GET /awards/verify?token=` or `?code=`) is the public check, in
+`VerifyAwardQuery` (`achievements.award.verify@1`, `GET /public/awards/verify?token=` or `?code=`) is the public check, in
 the public API area so anonymous callers may use it (ADR 0432). It answers `valid` with the award or `not_found`.
 The short code is 12 Crockford base32 characters (60 bits) printed as `7K3Q-9XPM-0ABZ`.
 

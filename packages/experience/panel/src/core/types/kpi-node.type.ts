@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `KpiNode`, one recorded KPI: the metric field it binds, its icon, tones, drill and which direction is better.
+ * Purpose: `KpiNode`, one recorded KPI: the metric field it binds, its icon, tones, drill, which direction is better and
+ *          the output field its note line reads.
  * Boundary: a type only; format, unit, currency, trend, sparkline and target come from the metric type, never from here.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 15).
@@ -30,4 +31,7 @@ export interface KpiNode {
 
   /** Whether a falling value is the good direction (a cost, a wait time). */
   readonly lowerIsBetter?: boolean;
+
+  /** The output key, a number or a string, whose value the note line under the value words. */
+  readonly note?: string;
 }

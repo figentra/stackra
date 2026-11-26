@@ -13,7 +13,8 @@ Runway format version 3 (ADR 0296) as code. Member at `packages/developer/runway
 `./node`, plus the `schema/{root,app,service}.json` assets, byte copies of `tools/schemas/runway-*.schema.json`
 (ADR 0127, 2026-10-24 note). The `runway` binary (`src/node/runway.ts`; root alias `pnpm runway`) runs
 `RUNWAY_COMMANDS` on `@stackra/console` (ADR 0506 decision 8): plan, deploy, promote, rollback, status, validate, drift
-and `secrets sync` (ADR 0170, ADR 0352, STA-268). A command class lives in `src/node/commands/runway-<name>.command.ts`
+and `secrets sync` (ADR 0170, ADR 0352, STA-268), and `env check` (ADR 0173 amendment 2026-11-04, STA-2104: names
+only, never a value). A command class lives in `src/node/commands/runway-<name>.command.ts`
 and only parses and prints; the work stays in the functions it calls.
 
 ## Where code goes
@@ -57,12 +58,12 @@ and only parses and prints; the work stays in the functions it calls.
   unless an enabled flag lists it), and never hide a feature at run time instead. It
   never publishes a white-label build under the platform's Apple account without the 4.2.6 and 4.3 record, and takes
   store accounts resolved (`storeAccountsOf`, @stackra/infra-mobile); it never reads a store key.
-- Mobile onboarding (`onboardMobile`, ADR 0482) reaches Apple, Google Play, Expo, Google Cloud, Firebase, Sentry and
-  Infisical only through its ports (`src/core/ports/`); each has a real driver and a `Memory…` driver in
+- Mobile onboarding (`onboardMobile`, ADR 0482) reaches Apple, Google Play, Expo, Google Cloud, Firebase and Sentry
+  only through its ports (`src/core/ports/`); each has a real driver and a `Memory…` driver in
   `src/node/drivers/`, and a new store call gets both. Drivers read secrets by NAME from the job's environment per
   request (`secretOf`) and send them only inside it (`requestJson` never puts a header or body in an error). Runway
-  never generates or holds a signing credential (EAS does); the one key it creates (FCM v1) goes to `VaultWriter` and
-  EAS from a local and is never returned, logged or written to disk. A set store id is never changed.
+  never generates or holds a signing credential (EAS does); the one key it creates (FCM v1) goes only to EAS
+  from a local and is never returned, logged, stored elsewhere or written to disk (ADR 0525). A set store id is never changed.
 - The one entitlement written from runway data rather than a capability is Sign in with Apple: `apple` in
   `mobile.<app>.signIn.social` sets `usesAppleSignIn` and `com.apple.developer.applesignin` (STA-1578). A social list
   without `apple` is a schema refusal (App Store guideline 4.8); keep that refine and both JSON schema copies in step.

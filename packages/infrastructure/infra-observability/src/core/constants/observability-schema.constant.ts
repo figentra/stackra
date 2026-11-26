@@ -8,6 +8,9 @@
  *          ADR 0184 value: 30 days hot, 13 months in S3, every heartbeat on, objectives from the first paying tenant,
  *          no status page. `uptime` lists the public URLs Better Stack probes from outside (a host's health path, the
  *          environment it belongs to, how often, and the status codes that mean up when not 2xx); none by default.
+ *          `alerts` holds the thresholds figentra/infra alarms on in a product's account (error rate, p95 latency,
+ *          budget, database and cache saturation; on staging and production by default), and `notify` the routes per
+ *          severity (critical pages on-call by default).
  * Boundary: internal; `observabilityPlan` reads it. Strict at every level, so a misspelt key fails.
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (decisions 3 to 5), ADR 0185 (decisions 1 and 3: on-call and the status page), ADR 0296 (decision 2:
@@ -16,6 +19,37 @@
 import { Enum } from "@stackra/contracts";
 import { RunwayEnvironment } from "@stackra/runway";
 import { z } from "zod";
+
+/** How bad a firing alert is. */
+const SEVERITY = z.enum(["critical", "warning", "info"]);
+
+/** A runway environment name. */
+const ENVIRONMENT = z.enum(
+  Enum.values(RunwayEnvironment) as [RunwayEnvironment, ...RunwayEnvironment[]],
+);
+
+/** One metric alert with its defaults; its direction (above or below the threshold) is fixed per alert. */
+function alert(threshold: number, window: string, severity: z.infer<typeof SEVERITY>) {
+  return z
+    .strictObject({
+      enabled: z.boolean().default(true),
+      threshold: z.number().min(0).default(threshold),
+      window: z
+        .string()
+        .regex(/^[0-9]+m$/, "Expected minutes such as 5m")
+        .default(window),
+      severity: SEVERITY.default(severity),
+    })
+    .prefault({});
+}
+
+/** One notification route: Better Stack on-call, an email, a Slack channel id or a Linear team key. */
+const ROUTE = z
+  .string()
+  .regex(
+    /^(?:oncall|email:[^\s@]+@[^\s@]+\.[^\s@]+|slack:[A-Z0-9]{9,12}|linear:[A-Z][A-Z0-9]{1,9})$/,
+    "Expected oncall, email:<address>, slack:<channel id> or linear:<team key>",
+  );
 
 /** The `observability` section of a root runway, defaults applied. */
 export const OBSERVABILITY_SCHEMA = z.strictObject({
@@ -69,4 +103,32 @@ export const OBSERVABILITY_SCHEMA = z.strictObject({
       }),
     )
     .default([]),
+  // Thresholds are settings (the design of 2026-11-06): a 5xx share in %, a p95 in ms, the rest in % of the resource.
+  alerts: z
+    .strictObject({
+      environments: z.array(ENVIRONMENT).min(1).default(["staging", "production"]),
+      errorRate: alert(2, "5m", "critical"),
+      latencyP95: alert(1000, "10m", "warning"),
+      dbCpu: alert(80, "15m", "warning"),
+      dbConnections: alert(80, "10m", "warning"),
+      dbFreeStorage: alert(20, "15m", "critical"),
+      cacheMemory: alert(80, "15m", "warning"),
+      cacheEvictions: alert(0, "15m", "warning"),
+      budget: z
+        .strictObject({
+          enabled: z.boolean().default(true),
+          forecastPercent: z.int().min(1).default(80),
+          actualPercent: z.int().min(1).default(100),
+        })
+        .prefault({}),
+    })
+    .prefault({}),
+  // No product goes silent: critical alerts page on-call unless the runway routes them elsewhere.
+  notify: z
+    .strictObject({
+      critical: z.array(ROUTE).default(["oncall"]),
+      warning: z.array(ROUTE).default([]),
+      info: z.array(ROUTE).default([]),
+    })
+    .prefault({}),
 });

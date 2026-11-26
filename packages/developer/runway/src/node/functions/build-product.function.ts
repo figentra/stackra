@@ -8,8 +8,9 @@
  *            written, the product packages built in), with the EAS build;
  *          - writes the build manifest (`dist/product/build.json`).
  *          `surfacesOnly` builds the web surfaces and lists the mobile apps as skipped (dev and preview).
- *          A dry run plans the bundles and records the EAS builds instead of starting them; the checkouts, the
- *          generated config and the manifest are still written, so the outputs can be checked.
+ *          A dry run plans the bundles and records the EAS builds and the mobile checkout's install instead of
+ *          running them; the checkouts, the generated config and the manifest are still written, so the outputs can
+ *          be checked.
  * Boundary: writes under the product root only (`.stackra/`, `dist/`); builds through the given bundler, so Runway
  *           carries no build tool. Store accounts are checked when the app is submitted (`deployProduct`), not here.
  *           `ops` has no shell of a product's: its `contributes` is written as a declarative bundle (the
@@ -63,13 +64,16 @@ export async function buildProduct(request: ProductBuildRequest): Promise<Produc
   const root = readRunway(join(repository, "runway.yaml"), "root");
   const real = request.run ?? runProgram;
   const sha = request.sha ?? (await real("git", ["rev-parse", "HEAD"], { cwd: repository })).trim();
-  // A dry run records the EAS builds only; checkouts and the generated config are local and really written.
+  // A dry run records the EAS builds and the mobile checkout's install; checkouts and the generated config are local
+  // and really written.
   const run =
     request.dryRun === true
       ? dryRunCommand({
           head: sha,
           answer: (command, args, cwd) =>
-            command === "eas" ? undefined : real(command, args, { cwd }),
+            command === "eas" || (command === "pnpm" && args[0] === "install")
+              ? undefined
+              : real(command, args, { cwd }),
         })
       : real;
   const version = sha.slice(0, 12);

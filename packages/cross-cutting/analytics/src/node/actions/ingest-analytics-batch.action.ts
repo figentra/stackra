@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `IngestAnalyticsBatchAction`, `analytics.analytics_batch.ingest@1` on `POST /analytics/batches`: the
+ * Purpose: `IngestAnalyticsBatchAction`, `analytics.analytics_batch.ingest@1` on `POST /public/analytics/batches`: the
  *          analytics service's ingest endpoint (ADR 0483 decisions 2 to 4). It takes a batch the `relay` driver posted,
  *          keeps the deliveries the call's verified consent snapshot speaks for, strips `denyProperties`, and publishes
  *          one `AnalyticsBatchAccepted` through the outbox per destination whose category the snapshot grants.

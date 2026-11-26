@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: unit tests of `readBundles`: each named surface's one version folder and its parsed manifest, in the order
  *          given; a missing bundle, two versions, an unreadable manifest, a manifest that breaks its schema and one
- *          whose version is not its folder's are all reported at once in one `RunwayInvalidError`.
+ *          whose version is not its folder's are all reported at once in one `RunwayInvalidError`; a file missing or changed
+ *          since the build recorded its integrity is refused, and a non-sha384 value too.
  * Boundary: test only; writes built bundles in the OS temp directory with the publish fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0436 (decision 4); app-shells 4.2.
  */
+import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -16,6 +18,10 @@ import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { readBundles } from "#node/functions/read-bundles.function";
 import { writeBundle } from "#node/functions/__tests__/fixtures/product-root.fixture";
+
+/** The SRI value of `source`. */
+const sri = (source: string): string =>
+  `sha384-${createHash("sha384").update(source).digest("base64")}`;
 
 let repository: string;
 
@@ -70,5 +76,34 @@ describe("readBundles", () => {
     expect(issues[1]?.message).toMatch(/\(1\.0\.0, 1\.1\.0\)/);
     expect(issues[2]?.message).toMatch(/^Not readable as JSON/);
     expect(issues[4]?.message).toBe("The manifest says 1.9.0, the folder 2.0.0");
+  });
+
+  it("reads a bundle whose files match their integrity, and refuses one tampered with since the build", () => {
+    const integrity = {
+      "entry-abc.js": sri("export {};"),
+      "chunks/view-def.js": sri("export {};"),
+      "style-123.css": sri(""),
+    };
+    writeBundle(repository, "console", "1.2.0", { integrity });
+    expect(readBundles(repository, ["console"])[0]?.manifest.integrity).toEqual(integrity);
+
+    writeFileSync(join(repository, "dist/bundles/console/1.2.0/chunks/view-def.js"), "alert(1);");
+    rmSync(join(repository, "dist/bundles/console/1.2.0/style-123.css"));
+    let caught: unknown;
+    try {
+      readBundles(repository, ["console"]);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(RunwayInvalidError);
+    expect((caught as RunwayInvalidError).issues.map((issue) => issue.path)).toEqual([
+      "dist/bundles/console/1.2.0/chunks/view-def.js",
+      "dist/bundles/console/1.2.0/style-123.css",
+    ]);
+  });
+
+  it("refuses an integrity value that is not sha384", () => {
+    writeBundle(repository, "console", "1.2.0", { integrity: { "entry-abc.js": "sha256-abc" } });
+    expect(() => readBundles(repository, ["console"])).toThrow(RunwayInvalidError);
   });
 });

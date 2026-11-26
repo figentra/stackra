@@ -11,6 +11,7 @@
 import { fakeActionContext } from "@stackra/actions/testing";
 import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
+import type { Container } from "@stackra/container";
 import { ActorKind } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -46,6 +47,7 @@ describe("MaintainChangeLogAction", () => {
     const action = new MaintainChangeLogAction(
       feed,
       buildConfig(OutboxConfig, { values: { changeRetentionDays: 1 } }),
+      { has: () => false, get: () => undefined } as unknown as Container,
     );
     const output = await action.handle(
       MaintainChangeLogInput.create({}),

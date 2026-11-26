@@ -8,6 +8,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { CALL_HEADERS } from "#contracts/constants/call-headers.constant";
+export { DETACHED_RUNS } from "#contracts/constants/detached-runs.constant";
 export { ApprovalExecution } from "#contracts/enums/approval-execution.enum";
 export { ApprovalStatus } from "#contracts/enums/approval-status.enum";
 export { ApproverRefusal } from "#contracts/enums/approver-refusal.enum";
@@ -55,10 +56,15 @@ export type { Approver } from "#contracts/types/approver.type";
 export type { ApproverRule } from "#contracts/types/approver-rule.type";
 export type { AuditEntry } from "#contracts/types/audit-entry.type";
 export type { CallAssurance } from "#contracts/types/call-assurance.type";
+export type { StepUpExemption } from "#contracts/types/step-up-exemption.type";
 export type { CallClient } from "#contracts/types/call-client.type";
 export type { CallConsent } from "#contracts/types/call-consent.type";
+export type { CallCredential } from "#contracts/types/call-credential.type";
 export type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 export type { CallOrigin } from "#contracts/types/call-origin.type";
+export type { CallPublic } from "#contracts/types/call-public.type";
+export type { DetachedRun } from "#contracts/types/detached-run.type";
+export type { DetachedStep } from "#contracts/types/detached-step.type";
 export type { DeviceOrder } from "#contracts/types/device-order.type";
 export type { DeviceSequence } from "#contracts/types/device-sequence.type";
 export type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";

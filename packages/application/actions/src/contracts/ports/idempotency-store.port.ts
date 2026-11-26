@@ -13,6 +13,7 @@
  */
 import { Port } from "@stackra/contracts";
 import type { Duration } from "@stackra/contracts";
+import type { StoredRefusal } from "@stackra/errors";
 
 import type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";
 
@@ -48,6 +49,17 @@ export abstract class IdempotencyStore extends Port {
 
   /** Marks the held `key` done with `output`, kept until the claim's `ttl` ends. */
   abstract complete(key: string, output: unknown): Promise<void>;
+
+  /**
+   * Marks `key` done with the `refusal` that ended its call, until `ttl` ends. The key's claim may be gone (a
+   * joined store's rolled-back transaction took it), so the record is written whole, with `fingerprint`.
+   */
+  abstract completeRefused(
+    key: string,
+    fingerprint: string,
+    refusal: StoredRefusal,
+    ttl: Duration,
+  ): Promise<void>;
 
   /** Frees the held `key` after a failed call, so a retry may run. */
   abstract release(key: string): Promise<void>;

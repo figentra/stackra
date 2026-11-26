@@ -78,11 +78,12 @@ over its cap is refused before anything is declared, and production only warns u
 | `workloads.<name>` `scale.<env>` with max > min | CPU target-tracking autoscaling                                                                                      |
 | member or workload `uses: [<name>]`             | the resource's security group admits it; it gets `<NAME>_URL`, `_HOST`, `_PORT`, `_USER`, `_PASSWORD`                |
 | `workloads.<name>` `aliases`, `command`         | the same SSM parameter under the name the image reads (a used Postgres variable only); the container's arguments     |
+| `workloads.<name>` `migrate`                    | a second task definition (its arguments, no port) run once per revision before the service rolls; a failure stops the apply |
 
 The deploy job calls `ensureDatabasePasswords` before the program (it reuses the password the job has, or generates
-one and writes it blind to Infisical at `<env>:/runtime/<resource>`), passes the result as `databasePasswords`, and
-calls `publishResourceSecrets` after `pulumi up`. Workloads read their secrets from SSM parameters the Infisical sync
-fills (`/<project>/<env>/workloads/<name>/<NAME>`, `/<project>/<env>/runtime/<resource>/<NAME>`). RDS Proxy logs in
+one and writes it blind to the vault, sops in `figentra/secrets`, at `<env>:/runtime/<resource>`), passes the result
+as `databasePasswords`, and calls `publishResourceSecrets` after `pulumi up`. Workloads read their secrets from SSM
+parameters runway's secrets sync fills (`/<project>/<env>/workloads/<name>/<NAME>`, `/<project>/<env>/runtime/<resource>/<NAME>`). RDS Proxy logs in
 through a Secrets Manager copy of the password, read only by the proxy.
 
 ## Not here

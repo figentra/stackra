@@ -9,12 +9,12 @@
  * Governing contract: ADR 0490 (decision 4); ADR 0098; STA-1631.
  */
 
-/** `ai.run.client_result`: `PUT /runs/:runId/client-result`, input `ClientResultInput`. */
+/** `ai.run.client_result`: `PUT /app/runs/:runId/client-result`, input `ClientResultInput`. */
 export const CLIENT_RESULT_ACTION = Object.freeze({
   /** The action key the service's wrapper declares (`ai.run.client_result@1` once locked). */
   key: "ai.run.client_result",
   /** The HTTP method. */
   method: "PUT",
   /** The route, from the key by the endpoint convention. */
-  path: "/runs/:runId/client-result",
+  path: "/app/runs/:runId/client-result",
 } as const);

@@ -40,6 +40,17 @@ const KEYS: readonly SettingKey[] = [
     entitlementValues: { unlimited: "access.enterprise_support" },
   },
   {
+    type: SettingType.List,
+    default: [],
+    scopes: ["platform"],
+    label,
+    module: "access",
+    name: "tiers",
+    path: "access.tiers",
+    options: ["basic", "premium"],
+    entitlementValues: { premium: "access.premium" },
+  },
+  {
     type: SettingType.Integer,
     default: 5,
     scopes: ["platform"],
@@ -69,6 +80,18 @@ describe(unentitledSettingPaths, () => {
         KEYS,
         new Set(["access.sso", "access.enterprise_support"]),
       ),
+    ).toEqual([]);
+  });
+});
+
+describe("unentitledSettingPaths on a list (STA-2056)", () => {
+  it("gates a list by each of its items", () => {
+    expect(unentitledSettingPaths({ tiers: ["basic", "premium"] }, KEYS, new Set())).toEqual([
+      "tiers",
+    ]);
+    expect(unentitledSettingPaths({ tiers: ["basic"] }, KEYS, new Set())).toEqual([]);
+    expect(
+      unentitledSettingPaths({ tiers: ["basic", "premium"] }, KEYS, new Set(["access.premium"])),
     ).toEqual([]);
   });
 });

@@ -10,10 +10,10 @@
  * Governing contract: ADR 0294 (decisions 14, 15 and 16); ADR 0111 (decisions 1 and 3).
  */
 import type { AnyClass } from "@stackra/container";
-import { useMemo } from "react";
 
-import type { ResolvedMenuItem } from "#core/types/resolved-menu-item.type";
+import type { MenuEntries } from "#core/types/menu-entries.type";
 import type { RunnableMenu } from "#core/types/runnable-menu.type";
+import { useMenuFrom } from "#react/menu/use-menu-from";
 import { useMenuResolver } from "#native/menu/use-menu-resolver";
 
 /**
@@ -25,14 +25,6 @@ import { useMenuResolver } from "#native/menu/use-menu-resolver";
 export function useMenu<M extends RunnableMenu<V>, V = unknown>(
   type: AnyClass<M>,
   value?: V,
-): readonly Extract<ResolvedMenuItem, { readonly kind: ReturnType<M["items"]>[number]["kind"] }>[] {
-  const resolve = useMenuResolver();
-  return useMemo(
-    () =>
-      resolve<V>(type, value) as readonly Extract<
-        ResolvedMenuItem,
-        { readonly kind: ReturnType<M["items"]>[number]["kind"] }
-      >[],
-    [resolve, type, value],
-  );
+): MenuEntries<M, V> {
+  return useMenuFrom<M, V>(useMenuResolver(), type, value);
 }

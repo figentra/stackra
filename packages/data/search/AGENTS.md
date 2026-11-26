@@ -83,8 +83,11 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   `__v`; the swap is a contract migration, so `PostgresSearchDriver.swap` only checks.
 - A full rebuild runs only as a job: `reindexSearch`, called by `ReindexSearchAction` of @stackra/data-maintenance,
   records its cursor in `search.indexes` through `SearchIndexRegistry`; never loop `SearchIndex.reindex` in a request.
-  The registry holds counts and states only, no row data, and has no RLS; only platform code reads it. The CLI reaches
-  it through `searchStatus` here and `searchReindex` of @stackra/data-maintenance.
+  The registry holds counts and states only, no row data. It is in the platform form (`search.0010`): a run records its
+  call's own row (`tenant_id` from `app.tenant_id`; a NULL `scope_key` is platform-wide; `-` only from the previous
+  release until the contract step), and `list` reads
+  every tenant's through `search.index_statuses`. The CLI reaches it through `searchStatus` here and `searchReindex` of
+  @stackra/data-maintenance.
 - Declare no job here. A job over this package's work goes in @stackra/data-maintenance, which holds its
   system-held permission; search never depends on it (ADR 0462 decision 1). Search stays below
   iam (and so below tenancy): the synonym rows, actions and permissions are data-maintenance's too.
@@ -153,7 +156,7 @@ Postgres drivers, the `t.searchable(...)` macro and the text-function migration 
   `SEARCH_CONFORMANCE_CASES` (a fresh table per case, id sets not order); the memory driver must keep passing it
   (`run-search-conformance.function.test.ts`). Changing a case changes every recorded fixture of the Pro drivers.
 - This package never imports `@stackra-pro/*` (ADR 0077 d4, ADR 0461).
-- `SearchHealthIndicatorDriver` is the `HealthIndicator` driver: it searches `health.table` for one id with no words, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message.
+- `SearchHealthIndicatorDriver` is the `HealthIndicator` driver: it searches `health.table` for one id with no words, bounded by `health.timeout`; `health.critical: false` reports `degraded` instead of `down`. It reports the error's name, never its message. An empty `health.table` is `down` on every check, never a constructor error, so a testing container still compiles.
 
 ## Rules that fail the build
 

@@ -48,6 +48,20 @@ description: "Accepted, amended by 0290, 0297, 0325, 0334 · 2026-10-20 · amend
   gateway service is added.
 </Note>
 
+<Note>
+  **Amended 2026-11-08 (STA-2577): every generated HTTP adapter is raw.** The edge signs the exact
+  body bytes (ADR 0437), and a typed Encore `api()` never exposes them, so no request guard could
+  verify the body hash there, and the guards never ran. Gen now writes each action, query and
+  controller as an Encore `api.raw` endpoint, `auth: false` to Encore, all answered by one helper
+  that reads the body once under a size cap (`HttpConfig.maxBodyBytes`, 413 before any guard), runs
+  every `RequestGuard` over those bytes, authenticates through `CallAuthenticator` (a bad
+  `Authorization` header is refused, never downgraded to anonymous), then runs the action pipeline.
+  Guard and authentication failures are one generic 401 or 403 that names no check. What we give up:
+  Encore's typed request and response shapes in its dashboard and in Encore-generated clients, and
+  its auth handler and `Gateway` (no `auth.ts` is generated). Stackra's OpenAPI and clients come
+  from the manifest, not from Encore.
+</Note>
+
 ## Context
 
 A gateway in front of the services was rejected in ADR 0011. The owner's answer on 2026-10-20 (mem L953) keeps that rejection and fills the gateway role with four generated layers, so no gateway service has to be written or run.
@@ -67,7 +81,7 @@ A gateway in front of the services was rejected in ADR 0011. The owner's answer 
 
 ## Enforcement
 
-planned — gen fails on a route with no area, and the middleware order is checked by the Explorer's conformance test (ADR 0144).
+`stackra gen` gives every route its area: a derived path starts with `/<area>` (`app` when none is written), and an override outside its area is refused (`endpoint_area_mismatch`, STA-340). Planned: the middleware order is checked by the Explorer's conformance test (ADR 0144).
 
 ## Supersedes and sources
 

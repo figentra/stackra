@@ -29,13 +29,21 @@ describe("DatabaseConfig", () => {
   });
 
   it("takes a runway values layer and refuses a timeout that is not a duration", () => {
-    const values = { health: { timeout: Duration.seconds(1), critical: false } };
+    const values = { health: { timeout: Duration.seconds(1), critical: false, rowSecurity: true } };
     expect(buildConfig(DatabaseConfig, { values }).health).toEqual(values.health);
     expect(() =>
       buildConfig(DatabaseConfig, {
-        values: { health: { timeout: "two seconds" as Duration, critical: true } },
+        values: {
+          health: { timeout: "two seconds" as Duration, critical: true, rowSecurity: false },
+        },
       }),
     ).toThrow(ConfigInvalidError);
+  });
+
+  it("picks the Database driver: postgres by default, memory by config, nothing else", () => {
+    expect(buildConfig(DatabaseConfig).driver).toBe("postgres");
+    expect(buildConfig(DatabaseConfig, { values: { driver: "memory" } }).driver).toBe("memory");
+    expect(DATABASE_CONFIG_SCHEMA.safeParse({ driver: "mysql" }).success).toBe(false);
   });
 
   it("takes the deployment's region key and refuses one that is not a runway key (stackra-310)", () => {

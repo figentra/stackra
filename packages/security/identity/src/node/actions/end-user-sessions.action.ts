@@ -11,8 +11,8 @@
  * Runtime: node
  * Governing contract: ADR 0206; ADR 0462; ADR 0294 (decisions 16 and 21); ADR 0099 (risk); STA-1580.
  */
-import { Action, type ActionContext } from "@stackra/actions";
-import { ActorKind } from "@stackra/contracts";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
+import { ActorKind, AssuranceLevel } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 
 import type { IdpAdmin } from "#contracts/index";
@@ -28,6 +28,8 @@ import { EndedSessionsOutput } from "#node/schemas/ended-sessions-output.schema"
 export class EndUserSessionsAction extends Action({
   key: "session.end_user",
   actors: [ActorKind.User, ActorKind.Service],
+  idempotency: Idempotency.Optional,
+  stepUp: AssuranceLevel.Aal2,
   // reason: signing a person out is an administrator's decision, never an agent's
   tool: false,
 }) {

@@ -1,11 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/runway until `stackra gen` writes the entry barrels
- *          (STA-339): the build-time helpers the generated Vite configs import (`definesFor`, `devServer`, folded in
+ *          (STA-339): `RUNWAY_COMMANDS`, which `stackra runway` runs (ADR 0529 decision 4, STA-2214), the build-time helpers the generated Vite configs import (`definesFor`, `devServer`, folded in
  *          from the old `./vite` entry, owner Q4), the runway file reader, and the deploy providers that run a
  *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316, `cloudflare-workers`, STA-1921) with the command runner they share (ADR 0352 decision 3),
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
- *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439) with its types, the brand step
+ *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439; `startWhiteLabelJob` for the OS event) with its types, the brand step
  *          (`runBrandStep`, `committedBrandOutputs`) and the store-screenshot capture job (`screenshotCaptureJob`,
  *          `runScreenshotCapture`, ADR 0441 as amended: D17, D19), the smoke step after a preview deploy (`smokePreview`, with the
  *          `PlaywrightSmokeDriver`, `MaestroSmokeDriver` and placeholder `ElectronSmokeDriver`) and the mobile launch
@@ -17,7 +17,8 @@
  *          (`dryRunCommand`, `DryRunEdgeKvDriver`, ADR 0481), a product mobile app's local run (`prepareMobileDev`), and a product's build and deploy (`buildProduct`,
  *          `deployProduct`, `workspacePackages`).
  *          Mobile onboarding (`onboardMobile`, `easJsonOf`, `toolVersionOf`, and the real and memory drivers of its
- *          App Store Connect, Play, Expo, Google Cloud, Firebase, Sentry and Infisical ports, ADR 0482).
+ *          App Store Connect, Play, Expo, Google Cloud, Firebase and Sentry ports, ADR 0482; the vault port's
+ *          memory driver only, ADR 0525).
  *          The local edge for a built surface (`previewServe`, `LocalEdgeKvDriver`, `renderShellPage`, STA-1676).
  * Boundary: names each re-export and declares nothing. Node only: it reads files. Imports `.` internals one way
  *           (ADR 0294 decision 15); exports none of `.`'s symbols.
@@ -32,7 +33,6 @@ export { ExpoGraphqlProjectsDriver } from "#node/drivers/expo-graphql-projects.d
 export { FirebaseManagementDriver } from "#node/drivers/firebase-management.driver";
 export { GoogleCloudDriver } from "#node/drivers/google-cloud.driver";
 export { GooglePlayConsoleDriver } from "#node/drivers/google-play-console.driver";
-export { InfisicalVaultWriterDriver } from "#node/drivers/infisical-vault-writer.driver";
 export { SentryApiProjectsDriver } from "#node/drivers/sentry-api-projects.driver";
 export { ElectronSmokeDriver } from "#node/drivers/electron-smoke.driver";
 export { EncoreCloudProviderDriver } from "#node/drivers/encore-cloud-provider.driver";
@@ -53,6 +53,8 @@ export { MemoryVaultWriterDriver } from "#node/drivers/memory-vault-writer.drive
 export { EdgeKvConfig } from "#node/config/edge-kv.config";
 export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";
 export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
+export { PULL_REQUEST_PREVIEW_SETTINGS } from "#node/constants/pull-request-preview-settings.constant";
+export { RUNWAY_COMMANDS } from "#node/constants/runway-commands.constant";
 export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
 export { LAUNCH_CHECK_DEFAULTS } from "#node/constants/launch-check-defaults.constant";
@@ -68,6 +70,7 @@ export { capabilityConfig } from "#node/functions/capability-config.function";
 export { checkoutLine } from "#node/functions/checkout-line.function";
 export { checkOpsReview } from "#node/functions/check-ops-review.function";
 export { checkShellCompatibility } from "#node/functions/check-shell-compatibility.function";
+export { cloudflareAccountEnv } from "#node/functions/cloudflare-account-env.function";
 export { committedBrandOutputs } from "#node/functions/committed-brand-outputs.function";
 export { definesFor } from "#node/functions/defines-for.function";
 export { dryRunCommand } from "#node/functions/dry-run-command.function";
@@ -83,6 +86,7 @@ export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { previewServe } from "#node/functions/preview-serve.function";
 export { promoteCanary } from "#node/functions/promote-canary.function";
 export { publishProduct } from "#node/functions/publish-product.function";
+export { pullRequestPreviewHost } from "#node/functions/pull-request-preview-host.function";
 export { publishShell } from "#node/functions/publish-shell.function";
 export { readBundles } from "#node/functions/read-bundles.function";
 export { launchCheckJob } from "#node/functions/launch-check-job.function";
@@ -98,6 +102,8 @@ export { runProgram } from "#node/functions/run-program.function";
 export { runBrandStep } from "#node/functions/run-brand-step.function";
 export { runLaunchCheck } from "#node/functions/run-launch-check.function";
 export { runMobileJob } from "#node/functions/run-mobile-job.function";
+export { startWhiteLabelJob } from "#node/functions/start-white-label-job.function";
+export { whiteLabelVariantOf } from "#node/functions/white-label-variant-of.function";
 export { runScreenshotCapture } from "#node/functions/run-screenshot-capture.function";
 export { screenshotCaptureJob } from "#node/functions/screenshot-capture-job.function";
 export { shellReleaseOf } from "#node/functions/shell-release-of.function";
@@ -159,6 +165,8 @@ export type { MobileOnboard } from "#node/types/mobile-onboard.type";
 export type { MobileOnboardRequest } from "#node/types/mobile-onboard-request.type";
 export type { MobileStoreAccount } from "#node/types/mobile-store-account.type";
 export type { MobileVariant } from "#node/types/mobile-variant.type";
+export type { WhiteLabelBuildRequested } from "#node/types/white-label-build-requested.type";
+export type { WhiteLabelJobRequest } from "#node/types/white-label-job-request.type";
 export type { LaunchCheckJob } from "#node/types/launch-check-job.type";
 export type { LaunchCheckRequest } from "#node/types/launch-check-request.type";
 export type { SmokePreviewRequest } from "#node/types/smoke-preview-request.type";

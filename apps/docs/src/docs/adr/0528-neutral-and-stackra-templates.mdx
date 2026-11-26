@@ -1,0 +1,50 @@
+---
+title: "0528 — Two templates named after Flow's presets: neutral and stackra"
+description: "Accepted · 2026-11-06"
+---
+
+{/* Stackra file contract. Purpose: ADR 0528 (Accepted 2026-11-06, STA-2199), the owner's decision that there are two repository templates, named after Figentra Flow's presets: figentra/neutral-template (layout only) and the Stackra template (a Stackra product), that fflow init clones the template its preset names, and that every repository is checked against one of them. Boundary: decision text only; the template work is STA-2202 and STA-2205, Flow's part STA-2210. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0126, 0503, 0526. */}
+
+<Note>
+  Accepted 2026-11-06, recording the owner's "agree all" to the repo-standards decisions of that
+  date (row 9) and the owner's naming of the same day: the layout-only template is called `neutral`
+  "to match the preset name".
+</Note>
+
+## Context
+
+Figentra Flow already has two presets, `neutral` (any repository) and `stackra` (a Stackra product). Repositories that
+are not Stackra products (infrastructure, the testbed, Flow itself, brand) had no template at all, and the Stackra
+template had fallen behind the framework, so new products were copied from a sibling product. The layout check of
+[0526](/adr/0526-repository-layout) needs a baseline per kind of repository.
+
+## Decision
+
+1. **Two templates, one per Flow preset.**
+
+   | Preset    | Template repository       | Holds                                                                                                                                 |
+   | --------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+   | `neutral` | figentra/neutral-template | Layout only: `.claude/`, `.github/`, AGENTS.md, CLAUDE.md, `docs/`, flow.config.json, mise, lefthook, renovate and the security files |
+   | `stackra` | figentra/stackra-template | A Stackra product: the neutral layout plus the workspace, catalogs, gen, contracts, deploy, Testbed and Runway wiring                 |
+
+2. **A repository names its preset** in flow.config.json. `fflow init` clones the template its preset names, and the
+   layout check diffs the repository against that template.
+3. **Flow's presets read the same layout rules** the layout check uses, from one source, so the two never disagree.
+4. **Non-product repositories use the neutral template**: infrastructure, the testbed, Flow and brand.
+5. **The Stackra template is the only start for a product.** It stays on a current framework release, with its
+   deploy, contracts, secrets, Flow, Testbed and Runway jobs green on main.
+
+## Consequences
+
+- Keeping the Stackra template current is a standing chore with each framework release.
+- A change to the shared layout is made once in the neutral template and flows into the Stackra template.
+- Creating the neutral template repository is an owner step; agents propose its contents.
+
+## Enforcement
+
+`planned — stackra validate --repository (STA-2203) reads the preset from flow.config.json and diffs against its
+template; fflow init (STA-2210) clones it`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Source: stackra-notes `src/plans/repo-standards-2026-11-06/DECISIONS.md`, row 9.

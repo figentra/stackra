@@ -3,7 +3,8 @@
  * Purpose: unit tests of `BrokerQueueDriver`: a push publishes the job to `queue.<queue>`; a delivered job is claimed
  *          running with one more attempt, or refused `job_not_due` before its `runAt`; a retry publishes it again with a
  *          new message id; a finished job is forgotten; a dead letter lands in `queue.jobs` without its unique key;
- *          dead letters and redrive go through the store; nothing is reserved.
+ *          dead letters, their claims, a load and redrive go through the store (a redrive loads the one id in the
+ *          caller's isolation); nothing is reserved.
  * Boundary: test only; the memory broker publisher stands in for the generated topics and the Postgres store's methods
  *           are spied, so no database runs.
  * Runtime: node (vitest)
@@ -46,6 +47,14 @@ function setup() {
     deadLetters: vi
       .spyOn(PostgresQueueDriver.prototype, "deadLetters")
       .mockResolvedValue([{ ...job, status: JobStatus.Dead, attempts: 4 }]),
+    load: vi
+      .spyOn(PostgresQueueDriver.prototype, "load")
+      .mockImplementation(async (id) =>
+        id === "job_a" ? { ...job, status: JobStatus.Dead, attempts: 4 } : undefined,
+      ),
+    claimDead: vi
+      .spyOn(PostgresQueueDriver.prototype, "claimDead")
+      .mockResolvedValue([{ id: "job_a", ownerId: "scp_acme" }]),
   };
   const driver = new BrokerQueueDriver(broker, {} as Database);
   return { broker, store, driver };
@@ -139,6 +148,11 @@ describe(BrokerQueueDriver, () => {
     expect(store.push.mock.calls[0]?.[0]).not.toHaveProperty("uniqueKey");
     expect(store.deadLetter).toHaveBeenCalledWith("job_a", { code: "internal", message: "boom" });
     await expect(driver.deadLetters("delivery", 10)).resolves.toHaveLength(1);
+    await expect(driver.claimDead({ queue: "delivery", limit: 10 })).resolves.toEqual([
+      { id: "job_a", ownerId: "scp_acme" },
+    ]);
+    expect(store.claimDead).toHaveBeenCalledWith({ queue: "delivery", limit: 10 });
+    await expect(driver.load("job_a")).resolves.toMatchObject({ status: JobStatus.Dead });
   });
 
   it("redrives a dead letter onto the broker with its attempts reset", async () => {
@@ -150,5 +164,7 @@ describe(BrokerQueueDriver, () => {
     });
     expect(store.remove).toHaveBeenCalledWith("job_a");
     await expect(driver.redrive("job_b", NOON)).resolves.toBe(false);
+    store.load.mockResolvedValueOnce({ ...job, status: JobStatus.Running });
+    await expect(driver.redrive("job_a", NOON)).resolves.toBe(false);
   });
 });

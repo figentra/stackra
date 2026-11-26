@@ -26,4 +26,7 @@ export const BUNDLE_MANIFEST_SCHEMA = z.looseObject({
   modulepreload: z.array(FILE),
   css: z.array(FILE),
   imports: z.array(z.string()),
+  integrity: z
+    .record(FILE, z.string().regex(/^sha384-[A-Za-z0-9+/]+={0,2}$/, "Expected sha384-<base64>"))
+    .optional(),
 });

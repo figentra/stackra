@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `OutboxAccessLogSinkDriver`: it is the `AccessLogSink` port; each record is written to the
  *          `EventOutbox` as one `AccessRecorded` with the call id, actor, target, class, subjects and time, and metadata
- *          carrying a fresh `evt_` id, the record's time, the actor's tenant and the call id as correlation; a platform
+ *          carrying a fresh `evt_` id, the record's time, the call's tenant (else the actor's) and the call id as correlation; a platform
  *          actor's event has no tenant; an outbox failure rejects.
  * Boundary: test only; a recording EventOutbox.
  * Runtime: node (vitest)
@@ -68,6 +68,49 @@ describe(OutboxAccessLogSinkDriver, () => {
       correlationId: "call_1",
     });
     expect(record?.meta.id).toMatch(/^evt_[0-9a-hjkmnp-tv-z]{26}$/);
+  });
+
+  it("stamps an agent with no tenant of its own with its human's tenant, and a platform agent with none", async () => {
+    const outbox = new Outbox();
+    const sink = new OutboxAccessLogSinkDriver(outbox);
+    const write = (actor: Actor) =>
+      sink.write({
+        callId: "call_3",
+        actor,
+        target: "Wallets.view",
+        classification: DataClassification.Financial,
+        subjects: ["usr_1"],
+        at: AT,
+      });
+    await write({ kind: ActorKind.Agent, id: "agt_1", onBehalfOf: STAFF });
+    await write({
+      kind: ActorKind.Agent,
+      id: "agt_1",
+      onBehalfOf: { kind: ActorKind.User, id: "usr_staff", realm: Realm.Platform },
+    });
+    expect(outbox.written[0]?.meta).toMatchObject({ scopeId: "ten_1" });
+    expect(outbox.written[1]?.meta).not.toHaveProperty("scopeId");
+  });
+
+  it("stamps a branch user's record with the call's tenant, not the branch it claims", async () => {
+    const outbox = new Outbox();
+    const sink = new OutboxAccessLogSinkDriver(outbox);
+    const branchUser: Actor = {
+      kind: ActorKind.User,
+      id: "usr_1",
+      realm: Realm.Customer,
+      scopeId: "scp_riyadh",
+    };
+    await sink.write({
+      callId: "call_4",
+      actor: branchUser,
+      scopeId: "scp_acme",
+      target: "Wallets.view",
+      classification: DataClassification.Financial,
+      subjects: ["usr_1"],
+      at: AT,
+    });
+    expect(outbox.written[0]?.meta).toMatchObject({ scopeId: "scp_acme", actor: branchUser });
   });
 
   it("writes no tenant for a platform actor, and rejects when the outbox fails", async () => {

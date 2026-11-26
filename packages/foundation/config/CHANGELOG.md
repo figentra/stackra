@@ -1,5 +1,324 @@
 # @stackra/config
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- 82c2718: Loading `@stackra/config/node` no longer needs `@aws-sdk/client-secrets-manager` installed. The AWS Secrets Manager store now imports the SDK, an optional peer, on its first `load()`, as the KMS client already did with `@aws-sdk/client-kms`.
+  
+  Before this, a service whose tests loaded config's node entry failed at import unless it installed the peer (BILLING-A's usage service: 20 test files).
+- 93d63bb: `SignerConfig` has a `driver` field that picks the `Signer` driver: `ephemeral` by default, or `kms`. Before, no config field selected one, so a member that injected `Signer` (os audit) failed to boot with `UnresolvedPortError: ... its drivers are ephemeral, kms, and no config field selects one`, in production too.
+  
+  Production sets `driver: kms` with `kmsKeyId` in its runway values. `Signer` also declares its type-only port key (`contracts.Signer`), so `DriverName<Signer>` narrows to these two names.
+  
+  `SecretsConfig` is new: keyed `secrets` in this package, and exported with `SecretsConfig$` and `SecretsOptions`. Its `store` field picks the `SecretStore` driver: `memory` by default, or `aws_secrets_manager`. Nothing selected one before, and no runway environment sets one today, so `memory` keeps today's boots. A deployment that reads AWS Secrets Manager sets `store: aws_secrets_manager` in its runway values.
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Minor Changes
+
+- 9ddce28: A service that injects @stackra/contracts' `Signer` can now pass gen. Before this, it failed with `port_unbound`, because no manifest listed a driver for the port. @stackra/config adds two `Driver(Signer)` drivers, configured by `SignerConfig` (`config.signer`: `keyId`, `kmsKeyId`, `region`):
+  
+  - `KmsSignerDriver` (`kms`) signs inside AWS KMS through the new `KmsClient` port in `./contracts`. Its default driver, `aws-sdk` (`AwsSdkKmsClientDriver` in `./node`), builds `new KMS({ region })` from `@aws-sdk/client-kms`, an optional peer, on first use; a host may bind its own.
+  - `EphemeralSignerDriver` (`ephemeral`) uses a key pair made in process, for tests and local development.
+  
+  @stackra/contracts' `AwsKmsSignerDriver` and `MemorySignerDriver` are unchanged for code that builds a signer by hand.
+  
+  Bump step for a service that injects `Signer`: bind `kms` in production, set `config.signer.kmsKeyId` (and `region`) in runway, and add `@aws-sdk/client-kms` to its dependencies.
+
+### Patch Changes
+
+- @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/validation@0.30.0
+
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [b4b6422]
+  - @stackra/container@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/container@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- cb26737: Secrets now come from SOPS files keyed by Google Cloud KMS, not Infisical (ADR 0525). `@stackra/config` no longer
+  ships the Infisical secret store: `InfisicalSecretStoreDriver`, `InfisicalConfig`, `InfisicalConfig$` and
+  `InfisicalOptions` are removed, with the `infisical` candidate of the `SecretStore` port and the
+  `INFISICAL_CLIENT_ID` and `INFISICAL_CLIENT_SECRET` env rows. The `SecretStore` candidates are now `memory` and
+  `aws_secrets_manager`; a deployed runtime still reads the platform's own store through `envSecrets`. Re-run
+  `stackra gen` after upgrading so a committed `stackra.manifest.json` drops the `infisical` candidate. The other
+  packages only update comments and docs that named Infisical as the runtime store.
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- e57b9a1: `stackra gen` writes an `env` section into `stackra.manifest.json` (ADR 0173 amendment 2026-11-04, STA-2104): one
+  row per environment name the member's configuration classes declare (`Config({ env })` names and `@Secret` fields),
+  with its kind (`secret`, `public`, `config`), type, rules, refused prefixes and environments; a service adds its
+  hosted packages' rows, an app only their public rows, and each gets the Infisical path `/runtime/<member>`. `@Secret` takes an optional second
+  argument, `{ refuse, environments }`, read by gen. `StackraManifest` types the section.
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

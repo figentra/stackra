@@ -3,11 +3,11 @@
  * Purpose: `doctorChecks(root, workspace, options?)`, the `stackra doctor` checklist of the workspace at `root`, in
  *          order: the base checks (mise tools, pnpm install, disk, network, GitHub), then one group per need
  *          `doctorNeeds` finds (Docker, Encore and the Encore ports; the `@stackra` and `@figentra` registry reads;
- *          Infisical; Pulumi; Xcode and a simulator; the agent tooling), then the members' dev ports. `quick` keeps only
+ *          Pulumi; Xcode and a simulator; the agent tooling, sops and its Google login included), then the members' dev ports. `quick` keeps only
  *          what `stackra dev` needs before it starts: mise tools, Docker and the ports. `fresh` is a workspace not
  *          written yet (`stackra create` checks a starter): no install and no agents:check.
  * Boundary: runs read-only status commands (`mise ls`, `docker info`, `gh auth status`, `pnpm view`, `xcode-select
- *           -p`, `xcrun simctl list`, `infisical profile list`, `aws sts get-caller-identity`), probes hosts and
+ *           -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes hosts and
  *           tries to bind ports; installs and changes nothing. Secrets: forbidden: output is parsed, never printed;
  *           the registry check reads only the exit status of a version lookup, so no token is read or shown.
  * Runtime: node
@@ -16,6 +16,7 @@
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { existsSync, statfsSync } from "node:fs";
 import { createServer } from "node:net";
+import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { DOCTOR_HOSTS } from "#node/doctor/constants/doctor-hosts.constant";
@@ -23,8 +24,8 @@ import { awsIdentityOk } from "#node/doctor/functions/aws-identity-ok.function";
 import { dockerState } from "#node/doctor/functions/docker-state.function";
 import { doctorNeeds } from "#node/doctor/functions/doctor-needs.function";
 import { droppedAddresses } from "#node/doctor/functions/dropped-addresses.function";
+import { googleCredentialsPath } from "#node/doctor/functions/google-credentials-path.function";
 import { publishedDependency } from "#node/doctor/functions/published-dependency.function";
-import { infisicalLoggedIn } from "#node/doctor/functions/infisical-logged-in.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
 import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
 import { simulatorAvailable } from "#node/doctor/functions/simulator-available.function";
@@ -210,27 +211,8 @@ export async function doctorChecks(
       name: "@figentra registry readable",
       status: name !== undefined && registry(name) ? "ok" : "fail",
       detail: "the @figentra channel needs the registry read token",
-      fix: "infisical login, then load the token the way the repository's README says (the token is never printed)",
+      fix: "load the registry read token from figentra/secrets the way the repository's README says (the token is never printed)",
     });
-  }
-
-  if (needs.has("infisical")) {
-    if (!has("infisical"))
-      add({
-        name: "infisical logged in",
-        status: "fail",
-        detail: "infisical not installed",
-        fix: "mise install",
-        run: ["mise", "install"],
-      });
-    else
-      add({
-        name: "infisical logged in",
-        status: infisicalLoggedIn(sh("infisical", ["profile", "list"]).stdout ?? "")
-          ? "ok"
-          : "fail",
-        fix: "infisical login",
-      });
   }
 
   if (needs.has("services"))
@@ -317,6 +299,37 @@ export async function doctorChecks(
       status: existsSync(join(root, ".mcp.json")) ? "ok" : "warn",
       detail: "MCP servers for Claude Code",
       fix: "run pnpm agents:sync (renders it, gitignored, from the committed .mcp.yaml)",
+    });
+  }
+
+  // A root script that runs `secrets-exec.mjs` decrypts the `agents` scope of figentra/secrets (ADR 0525).
+  if (
+    needs.has("agents") &&
+    Object.values(workspace.scripts).some(
+      (s) => typeof s === "string" && s.includes("secrets-exec"),
+    )
+  ) {
+    // The ambient environment of the machine being checked, as sops and secrets-exec.mjs will see it.
+    const env: Readonly<Record<string, string | undefined>> = process.env;
+    add({
+      name: "sops CLI",
+      status: has("sops") ? "ok" : "fail",
+      fix: "mise install",
+      run: ["mise", "install"],
+    });
+    add({
+      name: "Google login for sops",
+      // Only the file's presence is checked: the credential is never read here.
+      status: existsSync(googleCredentialsPath(env, homedir())) ? "ok" : "fail",
+      detail: has("gcloud") ? undefined : "gcloud not installed",
+      fix: "gcloud auth application-default login, as the owner's Google account (only it decrypts the agents scope)",
+    });
+    const secretsDir = env["STACKRA_SECRETS_DIR"] || join(homedir(), ".stackra", "secrets");
+    add({
+      name: "figentra/secrets clone",
+      status: existsSync(join(secretsDir, "agents")) ? "ok" : "fail",
+      detail: secretsDir,
+      fix: `clone figentra/secrets to ${secretsDir} (or set STACKRA_SECRETS_DIR)`,
     });
   }
   return out;

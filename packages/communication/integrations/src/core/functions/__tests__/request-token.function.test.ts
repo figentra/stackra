@@ -105,4 +105,16 @@ describe("requestToken", () => {
     answerWith(Response.json({ token_type: "Bearer" }));
     await expect(requestToken(REQUEST)).rejects.toBeInstanceOf(ProviderUnavailableError);
   });
+
+  it("redacts an error code that echoes the client secret or a grant's token", async () => {
+    answerWith(Response.json({ error: "bad_secret-1" }, { status: 401 }));
+    const secret = await requestToken(REQUEST).catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(secret, { status: 401, code: "[redacted]" })).toBe(true);
+    answerWith(Response.json({ error: "rt_5c0a77" }, { status: 400 }));
+    const refresh = await requestToken({
+      ...REQUEST,
+      form: { grant_type: "refresh_token", refresh_token: "rt_5c0a77" },
+    }).catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(refresh, { status: 400, code: "[redacted]" })).toBe(true);
+  });
 });

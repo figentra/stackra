@@ -84,7 +84,7 @@ describe("emitClients", () => {
   it("names each descriptor after the producer's class, with its key and route", () => {
     expect(content).toContain(
       'export const CancelOrderAction = remoteAction("orders.order.cancel@1", { input: CancelOrderInput, ' +
-        'output: CancelOrderOutput, endpoint: { method: HttpMethod.Put, path: "/orders/:orderId/cancel" } });',
+        'output: CancelOrderOutput, endpoint: { method: HttpMethod.Put, path: "/app/orders/:orderId/cancel" } });',
     );
     expect(content).toContain('export const ListOrdersQuery = remoteQuery("orders.order.list@1",');
   });
@@ -329,11 +329,16 @@ describe("emitClients for a service read from a contract package (STA-1820)", ()
     expect(files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
   });
 
-  it("refuses a listener of its event: cross-app events have no transport yet", () => {
-    const refused = emitClients(consumer({ classes: [listenerOf("OrderPaid")], services: remote }));
-    expect(refused.files).toEqual([]);
+  it("takes a listener of its event, delivered through the inbox (STA-1910)", () => {
+    const taken = emitClients(consumer({ classes: [listenerOf("OrderPaid")], services: remote }));
+    expect(taken.errors).toEqual([]);
+    expect(taken.files.map((file) => file.path)).toEqual([".stackra/gen/clients/commerce.ts"]);
+  });
+
+  it("still refuses a listener of an event the contract does not publish", () => {
+    const refused = emitClients(consumer({ classes: [listenerOf("OrderLost")], services: remote }));
     expect(refused.errors.map((error) => [error.code, error.subject])).toEqual([
-      ["client_event_remote_transport", "SyncOnOrderPaidListener.handle"],
+      ["client_event_unknown", "SyncOnOrderPaidListener.handle"],
     ]);
   });
 

@@ -52,7 +52,7 @@ describe(IngestAnalyticsBatchAction, () => {
       key: "analytics_batch.ingest",
       actors: [ActorKind.Anonymous, ActorKind.User],
       area: ApiArea.Public,
-      endpoint: { method: HttpMethod.Post, path: "/analytics/batches" },
+      endpoint: { method: HttpMethod.Post, path: "/public/analytics/batches" },
       idempotency: Idempotency.Optional,
       tool: false,
     });

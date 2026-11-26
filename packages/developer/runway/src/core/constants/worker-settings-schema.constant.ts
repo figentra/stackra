@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `WORKER_SETTINGS_SCHEMA`, the operational settings of one Cloudflare Worker that `runway.yaml` owns: its
- *          compatibility date and flags, `workers.dev` and Version URLs, observability, limits, source maps and
- *          dashboard-kept vars. Every key is optional, so the same shape types a preset, the repository's defaults and
+ *          compatibility date and flags, `workers.dev` and Version URLs, observability, limits, source maps,
+ *          dashboard-kept vars and its Custom Domains. Every key is optional, so the same shape types a preset, the repository's defaults and
  *          a member's own overrides; `WORKER_BASE` and `WORKER_PRESETS` fill the rest.
  * Boundary: internal; validation only, no defaults (the layers merge in `workerSettingsOf`). Code facts (name, main,
- *           bindings, crons) stay in the member's `wrangler.jsonc`. Domains, Access and logpush arrive with
- *           the renderer (ADR 0519 decisions 3 and 4).
+ *           bindings, crons) stay in the member's `wrangler.jsonc`. Access and logpush arrive with the
+ *           renderer (ADR 0519 decisions 3 and 4).
  * Runtime: isomorphic
  * Governing contract: ADR 0519 (decision 1), ADR 0352; STA-1988.
  */
@@ -35,6 +35,18 @@ export const WORKER_SETTINGS_SCHEMA = z.strictObject({
   cache: z.boolean().optional(),
   uploadSourceMaps: z.boolean().optional(),
   keepVars: z.boolean().optional(),
+  /** Hosts served as Workers Custom Domains, rendered as wrangler `routes` with `custom_domain: true` (ADR 0519). */
+  customDomains: z
+    .array(
+      z
+        .string()
+        .regex(
+          /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/,
+          "Expected a host name such as env-sync.stackra.figentra.com",
+        ),
+    )
+    .min(1)
+    .optional(),
   /** Traffic steps of a production deploy, ascending and ending at 100; unset ships all at once. */
   rollout: z
     .array(z.int().min(1).max(100))

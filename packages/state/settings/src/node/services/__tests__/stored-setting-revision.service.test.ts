@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `StoredSettingRevisionService`: append maps a revision's holder and times to columns; a list
- *          names its holder exactly, newest first; due asks for scheduled rows up to a time, oldest first.
+ *          names its holder exactly (a user's in the session's own owner), newest first; due asks for scheduled rows
+ *          up to a time, oldest first.
  * Boundary: test only; a fake `Database` hands out a recording entity manager, so no database runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0213 (decision 5); ADR 0327 (decisions 3 and 9).
@@ -30,6 +31,7 @@ function connect() {
     assign: vi.fn((row: object, data: object) => Object.assign(row, data)),
     persist: vi.fn(),
     flush: vi.fn(async () => undefined),
+    isInTransaction: vi.fn(() => false),
     transactional: vi.fn(async (work: (manager: unknown) => Promise<unknown>) => work(em)),
   };
   vi.spyOn(Database, "current").mockReturnValue({
@@ -84,10 +86,14 @@ describe(StoredSettingRevisionService, () => {
       scopeId: ACME.id,
       userId: null,
     });
+    expect(Object.getOwnPropertySymbols(em.find.mock.calls[0]?.[1] ?? {})).toEqual([]);
     expect(em.find.mock.calls[0]?.[2]).toMatchObject({ orderBy: { createdAt: "desc" } });
+    await service.listOf("orders", { user: "usr_01j9z3k4m5n6p7q8r9s0t1v2w0" });
+    const [owner] = Object.getOwnPropertySymbols(em.find.mock.calls[1]?.[1] ?? {});
+    expect(owner?.description).toContain("app.tenant_id");
     const at = new Date("2026-11-02T00:00:00.000Z");
     await service.dueAt(at);
-    expect(em.find.mock.calls[1]?.[1]).toMatchObject({
+    expect(em.find.mock.calls[2]?.[1]).toMatchObject({
       status: "scheduled",
       effectiveAt: { $lte: at },
     });

@@ -3,8 +3,8 @@
  * Purpose: `unentitledSettingPaths`, the paths of `values` the holder's plan does not unlock: a key whose own
  *          entitlement is not granted, or a value whose gated entitlement is not granted.
  * Boundary: internal and pure. `values` is keyed by path in the group (`cancellation.window`); a path with no key in
- *           `keys` is not gated. A gated value is matched by its text (`String(value)`), so value gates fit scalar
- *           settings (an enum, a number, a boolean). Readers drop these paths so the default applies; writers refuse
+ *           `keys` is not gated. A gated value is matched by its text (`String(value)`), and a list by each of
+ *           its items, so value gates fit an enum, a number, a boolean or a list of choices. Readers drop these paths so the default applies; writers refuse
  *           them.
  * Runtime: isomorphic
  * Governing contract: ADR 0420 (decisions 1 and 3).
@@ -28,10 +28,14 @@ export function unentitledSettingPaths(
   for (const key of keys) {
     const path = settingPathInGroup(key);
     if (!Object.hasOwn(values, path)) continue;
-    const byValue = key.entitlementValues?.[String(values[path])];
+    const value = values[path];
+    // A list is gated item by item: any item whose entitlement is not granted gates the path.
+    const byValue = (Array.isArray(value) ? value : [value]).map(
+      (item) => key.entitlementValues?.[String(item)],
+    );
     if (
       (key.entitlement !== undefined && !granted.has(key.entitlement)) ||
-      (byValue !== undefined && !granted.has(byValue))
+      byValue.some((entitlement) => entitlement !== undefined && !granted.has(entitlement))
     )
       out.push(path);
   }

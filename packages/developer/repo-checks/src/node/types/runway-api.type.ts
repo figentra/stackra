@@ -29,6 +29,11 @@ export type RunwayApi = {
     root: unknown,
   ) => readonly { readonly path: string; readonly message: string }[];
 
+  /** A product root runway's staging or production that names no `region` (ADR 0524; absent before 0.11). */
+  readonly checkEnvironmentRegion?: (
+    root: unknown,
+  ) => readonly { readonly path: string; readonly message: string }[];
+
   /** The `requires` entries of a parsed service runway that no driver serves, at their document path. */
   readonly checkRequires: (
     root: unknown,

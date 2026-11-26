@@ -28,7 +28,10 @@ export type ProductPublishRequest = {
   readonly assets: { readonly bucket: string; readonly origin: string };
   /** The shell lines the edge serves, `<surface>@<major>`; a bundle targeting another is refused. */
   readonly served: readonly string[];
-  /** The internal and demo scope ids that get the release first (D6). Required unless `firstRelease`. */
+  /**
+   * The internal and demo scope ids that get the release first (D6). Required in production unless `firstRelease`;
+   * without them, dev and staging write `release:` directly.
+   */
   readonly canaryScopes?: readonly string[];
   /** No release exists yet for these surfaces: write `release:` directly, with no canary to judge against. */
   readonly firstRelease?: boolean;
@@ -38,8 +41,15 @@ export type ProductPublishRequest = {
   readonly appLinks?: AppLinkKeys;
   /** The review of the change; required when the root runway has `surfaces.ops`. */
   readonly review?: OpsReview;
+  /**
+   * The pull request this publish previews (`environment` must be `preview`): one `<product>-pr-<n>.figentra.cloud` host with the
+   * console's release, expiring after 7 days, and no canary (ADR 0289 decision 7).
+   */
+  readonly pullRequest?: number;
   /** The canary start; now when absent. */
   readonly now?: Date;
   /** The command runner; `runProgram` when absent. */
   readonly run?: CommandRunner;
+  /** A preview that uploads and writes nothing: the Cloudflare account is not checked (STA-2124). */
+  readonly dryRun?: boolean;
 };

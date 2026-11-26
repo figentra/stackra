@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `handleRequest`: one request through the edge — resolve the host (unknown is 404), refuse a JWT bearer token
  *          the issuer's keys do not verify (401), strip every inbound edge header, sign the identity headers, request
- *          id, timestamp, method, path and body hash with `signEdgeRequest`, and forward to the origin.
+ *          id, timestamp, method, path and body hash with `signEdgeRequest`, and forward to the origin. Every answer,
+ *          the edge's own included, leaves with the surface's security headers and policy (`withSecurityHeaders`).
  * Boundary: the Worker never authorises (ADR 0437 decision 1): the token check is an early refusal, the
  *           `Authorization` header is forwarded untouched, and the API still authenticates (its `BearerTokenGuard` or
  *           identity layer). Only a JWT-shaped bearer token is verified here; an opaque one (an API key) and every other
@@ -10,12 +11,14 @@
  * Runtime: worker
  * Governing contract: ADR 0437 (decisions 2 and 4); ADR 0206 (decision 8); RFC 6750 (`WWW-Authenticate`).
  */
-import { signEdgeRequest, verifyBearerToken } from "@stackra/app";
-import { EdgeHeader } from "@stackra/app/contracts";
+import { verifyBearerToken } from "@stackra/app";
+import type { CspConfig } from "@stackra/csp";
 
 import { resolveHost } from "#src/hosts/resolve-host";
-import { stripEdgeHeaders } from "#src/http/strip-edge-headers";
+import { signedHeaders } from "#src/http/signed-headers";
+import { withSecurityHeaders } from "#src/http/with-security-headers";
 import type { EdgeDeps } from "#src/interfaces/edge-deps.interface";
+import type { HostEntry } from "#src/interfaces/host-entry.interface";
 
 /** `Bearer <header>.<payload>.<signature>`: a JWT, the only bearer token the edge verifies. */
 const BEARER_JWT = /^bearer +([\w-]+\.[\w-]+\.[\w-]*)$/i;
@@ -23,22 +26,30 @@ const BEARER_JWT = /^bearer +([\w-]+\.[\w-]+\.[\w-]*)$/i;
 /** Methods that carry no body. */
 const BODILESS: ReadonlySet<string> = new Set(["GET", "HEAD"]);
 
-/** The lower-case hex SHA-256 of `bytes`. */
-const sha256Hex = async (bytes: Uint8Array<ArrayBuffer>): Promise<string> =>
-  Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
+/** No framer to resolve: the edge's own answers (404, 401) are never framed. */
+const NONE = (): Promise<undefined> => Promise.resolve(undefined);
+
+/** The policy of `host`'s surface, else the baseline. */
+const cspOf = (deps: EdgeDeps, host: HostEntry | null): CspConfig =>
+  (host === null ? undefined : deps.settings.csp[`${host.product}.${host.surface}`]) ??
+  deps.settings.baselineCsp;
 
 /**
  * Handles one request at the edge.
  *
  * @example
- * return handleRequest(request, { settings, secret: env.EDGE_SIGNING_SECRET, keys, fetcher: fetch, now, requestId });
+ * return handleRequest(request, { settings, secret: env.EDGE_SIGNING_SECRET, keys, fetcher: fetch, now, requestId, frameAncestors });
  */
 export async function handleRequest(request: Request, deps: EdgeDeps): Promise<Response> {
   const url = new URL(request.url);
   const host = resolveHost(deps.settings.hosts, url.hostname);
-  if (host === null) return new Response("Not found", { status: 404 });
+  if (host === null)
+    return withSecurityHeaders(
+      new Response("Not found", { status: 404 }),
+      cspOf(deps, null),
+      url.pathname,
+      NONE,
+    );
 
   const token = BEARER_JWT.exec(request.headers.get("authorization")?.trim() ?? "")?.[1];
   if (token !== undefined) {
@@ -50,40 +61,30 @@ export async function handleRequest(request: Request, deps: EdgeDeps): Promise<R
       keys: deps.keys,
     });
     if (claims === undefined)
-      return new Response(null, {
-        status: 401,
-        headers: { "www-authenticate": 'Bearer error="invalid_token"' },
-      });
+      return withSecurityHeaders(
+        new Response(null, {
+          status: 401,
+          headers: { "www-authenticate": 'Bearer error="invalid_token"' },
+        }),
+        cspOf(deps, host),
+        url.pathname,
+        NONE,
+      );
   }
 
   const method = request.method.toUpperCase();
   const body = BODILESS.has(method) ? null : new Uint8Array(await request.arrayBuffer());
   const path = url.pathname + url.search;
-  const input = {
-    scope: host.scope,
-    product: host.product,
-    surface: host.surface,
-    realm: host.realm,
-    requestId: deps.requestId(),
-    timestamp: Math.floor(deps.now().getTime() / 1000),
-    method,
-    path,
-    bodyHash: await sha256Hex(body ?? new Uint8Array()),
-  };
-  const headers = stripEdgeHeaders(request.headers);
-  if (input.scope !== null) headers.set(EdgeHeader.Scope, input.scope);
-  headers.set(EdgeHeader.Product, input.product);
-  headers.set(EdgeHeader.Surface, input.surface);
-  headers.set(EdgeHeader.Realm, input.realm);
-  headers.set(EdgeHeader.RequestId, input.requestId);
-  headers.set(EdgeHeader.Timestamp, String(input.timestamp));
-  headers.set(EdgeHeader.Signature, await signEdgeRequest(input, deps.secret));
-  return deps.fetcher(
+  const headers = await signedHeaders(request.headers, host, method, path, body, deps);
+  const response = await deps.fetcher(
     new Request(new URL(path, deps.settings.origin), {
       method,
       headers,
       body,
       redirect: "manual",
     }),
+  );
+  return withSecurityHeaders(response, cspOf(deps, host), url.pathname, () =>
+    deps.frameAncestors.resolve(host, url.hostname, url.pathname),
   );
 }

@@ -2,44 +2,73 @@
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
-#          .stackra/migrations exists), migration lint (Squawk), validate, boundaries, knip, secrets scan, agent sync),
+#          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
 #          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
 #          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
 #          build run for the members the change affects (turbo `--affected` against the base commit).
 #          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
-# Secrets: UNIWIND_AUTH_TOKEN (the Uniwind Pro CI/CD licence token) from Infisical /ci (env prod) through GitHub
-#          OIDC, in the Mobile apps job only: the gate installs without the two members that use Uniwind Pro, whose
+# Secrets: UNIWIND_AUTH_TOKEN (the Uniwind Pro CI/CD licence token) from the sops scope ci/build, decrypted by the
+#          Mobile apps job as itself (ADR 0525): the gate installs without the two members that use Uniwind Pro, whose
 #          postinstall downloads the licensed build against a monthly quota (ADR 0310 decision 11; no HeroUI Pro, ADR
-#          0469). No repository secret; the Infisical identity id is the non-secret repository variable
-#          INFISICAL_GATE_IDENTITY_ID.
+#          0469). The gate decrypts ci/build/turbo. No repository secret.
 name: CI
 
 on:
   # Owner decision 2026-10-31: every pull request into main is checked here until this repository switches to the
-  # required figentra-flow/gate (STA-1729 phase 6); pushes to main run on demand only (Actions > CI > Run workflow).
+  # required fflow/gate (STA-1729 phase 6); pushes to main run on demand only (Actions > CI > Run workflow).
   pull_request:
     branches: [main]
     # ready_for_review re-runs the gate when a draft PR is marked ready, so the Tasked rule applies.
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
-# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job alone holds an OIDC token,
-# for the Infisical step (ADR 0310).
+# ADR 0019 D2: least privilege. Nothing in the gate writes to the repository; the gate job holds an OIDC token for the
+# sops decrypt of ci/build/turbo (ADR 0525), and the Mobile apps job one for its licence token from ci/build (ADR 0310).
 permissions:
   contents: read
 
 jobs:
+  # ADR 0174: known vulnerabilities in the lockfile, as their own job. A finding fails this job and never skips the
+  # gate's code steps: as a gate step it failed first on a lockfile finding and skipped install, lint, typecheck,
+  # build and tests (2026-11-09).
+  dependency-scan:
+    name: Dependency scan (OSV-Scanner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # mise runs before checkout, as in the gate, so the repository's mise.toml is not loaded.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: aqua:google/osv-scanner@2.7.0
+          cache: false
+
+      - name: Put osv-scanner on PATH
+        run: dirname "$(mise exec aqua:google/osv-scanner@2.7.0 -- which osv-scanner)" >> "$GITHUB_PATH"
+
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Dependency scan (OSV-Scanner)
+        run: osv-scanner scan source --lockfile=pnpm-lock.yaml
+
   gate:
     name: Quality Gate
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # STA-1393: GitHub OIDC token, exchanged with Infisical for the Turborepo cache only
+      id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for the ci/build/turbo scope only
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -50,6 +79,8 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: >-
             node pnpm gitleaks shfmt aqua:rhysd/actionlint aqua:zizmorcore/zizmor aqua:google/osv-scanner
 
@@ -63,25 +94,16 @@ jobs:
           actionlint
           zizmor --config .github/zizmor.yml .github/workflows
 
-      # ADR 0174, STA-310: known vulnerabilities in the lockfile, before anything is installed.
-      - name: Dependency scan (OSV-Scanner)
-        run: osv-scanner scan source --lockfile=pnpm-lock.yaml
-
       # STA-1393: Turborepo remote cache (turbo.stackra.figentra.com). Exports TURBO_API, TURBO_TOKEN, TURBO_TEAM and
-      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from /ci/turbo. Skipped when the variable is unset, and on fork pull requests
+      # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525, P4): this job signs in to Google
+      # Cloud as itself through infra's `callers` provider and decrypts only that scope. Skipped on fork pull requests
       # (no OIDC token there): turbo then has no TURBO_TOKEN and uses its local cache only, so no `--cache` flag is
       # needed to keep a fork from writing to the remote cache.
-      - name: Turborepo remote cache (Infisical OIDC)
-        if: vars.INFISICAL_TURBO_IDENTITY_ID != '' && vars.INFISICAL_TURBO_PROJECT_ID != '' && !github.event.pull_request.head.repo.fork
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      - name: Turborepo remote cache (sops)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_TURBO_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_TURBO_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/turbo
-          export-type: env
+          scope: ci/build/turbo
 
       # Every member but the two that alias `uniwind` to Uniwind Pro, whose postinstall downloads the licensed build
       # against a monthly CI quota; the Mobile apps job below covers those two. Lint, typecheck and build drop them too.
@@ -114,11 +136,13 @@ jobs:
       # dependencies-successful runs every task whose dependencies passed instead of stopping at the first failure, so
       # one run shows every failing member; turbo still exits 1 when any task fails (STA-1937, as os#105).
       # STA-2064: on a pull request only the members the change affects, against the base commit (fetch-depth 0 above).
+      # Two at a time: turbo's default of ten typecheck processes ran the hosted runner out of memory whenever a change
+      # affected most members (a gen change), and the runner then lost contact mid-step.
       - name: Typecheck
         env:
           AFFECTED: ${{ github.event_name == 'pull_request' && '1' || '' }}
           TURBO_SCM_BASE: HEAD~1 # a PR checks out its merge into main, so HEAD~1 is main and the diff is the PR's own
-        run: pnpm exec turbo run typecheck ${AFFECTED:+--affected} --filter='!@figentra/mobile' --filter='!@figentra/playground' --continue=dependencies-successful
+        run: pnpm exec turbo run typecheck ${AFFECTED:+--affected} --filter='!@figentra/mobile' --filter='!@figentra/playground' --continue=dependencies-successful --concurrency=2
 
       # On a pull request: the affected members (`...[base]`, what `--affected` selects) plus the CLI, whose dist
       # `pnpm validate` runs. Two `--filter`s are a union; `--affected` with a `--filter` would intersect them.
@@ -139,10 +163,22 @@ jobs:
       - name: Service gen (stackra gen)
         run: pnpm exec turbo run gen --filter='./services/*'
 
+      # STA-2036: typecheck and the step above ran gen, so a committed contract that differs from what gen writes now
+      # is stale: the member's hosts would read old identities from it (and from the package it is published in).
+      - name: Committed manifests match gen
+        run: |
+          if ! git diff --quiet -- '*stackra.manifest.json' '*src/node/entities.gen.ts'; then
+            git diff --stat -- '*stackra.manifest.json' '*src/node/entities.gen.ts'
+            echo "::error title=Stale manifests::run pnpm gen and commit the stackra.manifest.json and entities.gen.ts files above"
+            exit 1
+          fi
+
       # ADR 0159 d3 (stackra-251): Squawk lints the SQL gen compiled into each service's .stackra/migrations. A file
       # opening with `-- stackra:transactional=false` runs outside a transaction (concurrent indexes); every other file
       # is linted as the runner applies it, inside one. Excluded rules are house decisions: no IF NOT EXISTS (the
       # checksummed history never re-runs a file), varchar and char(3) columns, integer counters.
+      # 2.0.0 could not parse a schema-qualified GRANT/REVOKE (STA-2117). The runner sets lock and
+      # statement timeouts per session (ADR 0159), so the files need no `set lock_timeout`.
       - name: Migration lint (Squawk)
         run: |
           mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)
@@ -156,9 +192,10 @@ jobs:
             if head -n 1 "$file" | grep -qx -- '-- stackra:transactional=false'; then online+=("$file"); else transactional+=("$file"); fi
           done
           lint() {
-            mise exec github:sbdchd/squawk@2.0.0 -- squawk --pg-version=18.0 \
+            mise exec github:sbdchd/squawk@2.71.0 -- squawk --pg-version=18.0 \
               --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field \
-              --exclude=prefer-bigint-over-int "$@"
+              --exclude=prefer-bigint-over-int \
+              --exclude=require-lock-timeout --exclude=require-statement-timeout "$@"
           }
           if [ "${#transactional[@]}" -gt 0 ]; then lint --assume-in-transaction "${transactional[@]}"; fi
           if [ "${#online[@]}" -gt 0 ]; then lint "${online[@]}"; fi
@@ -170,17 +207,26 @@ jobs:
           STACKRA_BRANCH: ${{ github.head_ref }}
         run: pnpm validate
 
+      # ADR 0525 (as ADR 0173's 2026-11-04 amendment, STA-2104): every environment name is declared and has a sops
+      # scope. Names only, no login; a raw read of an undeclared name is a warning until stackra/no-raw-env is at error.
+      - name: Environment names (runway env check)
+        run: |
+          pnpm exec turbo run build --filter=@stackra/runway --output-logs=errors-only
+          pnpm runway env check
+
       - name: Check boundaries
         run: pnpm boundaries
 
+      # knip loads every member's vitest.config.ts, which imports gen's .stackra/vitest.config and the built
+      # @stackra/vitest-config; the steps above gen and build only what the change affects, so this runs both for all.
       - name: Check unused code
-        run: pnpm knip
+        run: |
+          pnpm exec turbo run build --filter=@stackra/vitest-config --output-logs=errors-only
+          pnpm exec turbo run gen --filter='!@figentra/mobile' --filter='!@figentra/playground' --output-logs=errors-only
+          pnpm knip
 
       - name: Secrets scan
         run: pnpm secrets:scan
-
-      - name: Agent sync check
-        run: pnpm agents:check
 
   # STA-310: refuse a pull request that adds a dependency with a known high or critical advisory. The OSV step in the
   # gate scans the whole lockfile; this job reads only the pull request's dependency diff.
@@ -191,14 +237,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # ADR 0310: GitHub OIDC token, exchanged with Infisical for the licence token only
-    env:
-      # Non-secret id of the Infisical machine identity that may read UNIWIND_AUTH_TOKEN in /ci
-      # (ADR 0310 decisions 9 and 11).
-      INFISICAL_IDENTITY_ID: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
+      id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for the ci/build scope only
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
           submodules: false
@@ -206,42 +248,104 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: node pnpm
 
       # Without the licensed build, the playground and the mobile app cannot typecheck or build; stop here with the
       # reason instead of failing later on missing types.
-      - name: Licensed UI prerequisites
-        if: env.INFISICAL_IDENTITY_ID == ''
-        run: >-
-          echo "::error title=Uniwind Pro token unavailable::Repository variable INFISICAL_GATE_IDENTITY_ID is not set.
-          The install needs UNIWIND_AUTH_TOKEN from Infisical /ci (ADR 0310 decision 11)." && exit 1
-
-      # Exchanges this job's OIDC token for Infisical access and exports only UNIWIND_AUTH_TOKEN into the environment
-      # of later steps; the Uniwind Pro postinstall reads it (ADR 0310 decision 11). The secret-name filter keeps every
-      # other /ci value out.
-      - name: Uniwind Pro token (Infisical OIDC)
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+      # Exports only UNIWIND_AUTH_TOKEN from the sops scope ci/build into later steps; the Uniwind Pro postinstall reads
+      # it (ADR 0310 decision 11, ADR 0525). The names filter keeps every other ci/build value out. A fork pull request
+      # has no OIDC token, so this fails there.
+      - name: Uniwind Pro token (sops)
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
-          method: oidc
-          identity-id: ${{ env.INFISICAL_IDENTITY_ID }}
-          domain: https://eu.infisical.com # .infisical.yaml: Infisical Cloud EU
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci
-          secret-name: UNIWIND_AUTH_TOKEN
-          export-type: env
+          scope: ci/build
+          names: UNIWIND_AUTH_TOKEN
 
       # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
       # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.
-      - name: Uniwind Pro download cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # The lockfile holds two peer variants of uniwind-pro (the mobile app's and the playground's), so pnpm runs its
+      # postinstall twice; in parallel both missed the cache and each downloaded (2,001 downloads for ~1,100 jobs).
+      - name: Uniwind Pro cache directory
+        run: echo "UNIWIND_CACHE_DIR=$HOME/.uniwind/cache/pro" >> "$GITHUB_ENV"
+
+      - name: Uniwind Pro download cache (restore)
+        id: uniwind-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.uniwind/cache/pro
-          key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
-          restore-keys: uniwind-pro-${{ runner.os }}-
+          key: uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
+          restore-keys: uniwind-pro-1-${{ runner.os }}-
 
+      # On a cache miss, the verified tarball comes from figentra/ci-cache's private `uniwind-pro-<version>` release
+      # instead of the CDN, so a miss spends no download either (a used-up quota failed every miss). This repository is
+      # public, so the build lives in that private repository only, read through a stackra-bot token scoped to it with
+      # contents:read. The seeded file is checked against the sha256 Uniwind publishes before the install sees it, and
+      # dropped when it differs (the postinstall checks it again). With no token (a fork), no release or a mismatch, the
+      # postinstall downloads as before. Nothing here prints the token: gh reads it from the environment.
+      - name: Uniwind Pro cache token (GitHub App)
+        id: ci-cache-token
+        if: ${{ steps.uniwind-cache.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.STACKRA_BOT_APP_ID }}
+          private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+          owner: figentra
+          repositories: ci-cache
+          permission-contents: read
+
+      - name: Uniwind Pro cache from figentra/ci-cache
+        if: ${{ steps.uniwind-cache.outputs.cache-hit != 'true' && steps.ci-cache-token.outputs.token != '' }}
+        continue-on-error: true # a seed that cannot finish leaves the download to the postinstall, never a red job
+        env:
+          GH_TOKEN: ${{ steps.ci-cache-token.outputs.token }}
+        run: |
+          version=$(awk '/^  uniwind-pro@[0-9]/ { sub(/^  uniwind-pro@/, ""); sub(/:$/, ""); print; exit }' \
+            pnpm-lock.yaml)
+          dir="$UNIWIND_CACHE_DIR/$version"
+          if [ -z "$version" ] || [ -f "$dir/uniwind-pro-$version.tgz" ]; then exit 0; fi
+          mkdir -p "$dir"
+          if ! gh release download "uniwind-pro-$version" --repo figentra/ci-cache \
+            --pattern "uniwind-pro-$version.tgz*" --dir "$dir"; then
+            echo "::notice title=Uniwind Pro::no uniwind-pro-$version release in figentra/ci-cache; downloading"
+            exit 0
+          fi
+          published="https://cdn.uniwind.dev/uniwind-pro/checksums/$version"
+          expected=$(curl -fsS --max-time 10 "$published" | awk '{ print tolower($1); exit }' || true)
+          actual=$(sha256sum "$dir/uniwind-pro-$version.tgz" 2>/dev/null | awk '{ print $1 }' || true)
+          if [ -n "$expected" ] && [ "$expected" = "$actual" ]; then
+            echo "Uniwind Pro $version seeded from figentra/ci-cache (sha256 $actual, as Uniwind publishes)"
+          else
+            rm -rf "$dir"
+            echo "::warning title=Uniwind Pro::seeded $version does not match the published sha256; dropped, downloading"
+          fi
+
+      # One lifecycle script at a time: the first uniwind-pro postinstall downloads into UNIWIND_CACHE_DIR and the
+      # second logs "Using cached v1.9.0 package". The other postinstalls (esbuild, skia, workerd) only take longer.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --child-concurrency=1
+
+      # A failed or limited download leaves the directory without a package: saving it would store an empty entry
+      # that every later run restores as a hit, never saving the real download (seen in #926's first run).
+      - name: Uniwind Pro download cache (filled?)
+        id: uniwind-filled
+        if: ${{ !cancelled() }}
+        run: |
+          if find "$UNIWIND_CACHE_DIR" -type f ! -name '*.sha256' -size +100k 2>/dev/null | grep -q .; then
+            echo "filled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Saved right after the install, even when a later step fails: actions/cache saves only after a green job, so a
+      # failing mobile job never stored the download and every run fetched it again.
+      - name: Uniwind Pro download cache (save)
+        if: ${{ !cancelled() && steps.uniwind-cache.outputs.cache-hit != 'true' && steps.uniwind-filled.outputs.filled == 'true' }}
+        continue-on-error: true # another run may have saved the same key first
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.uniwind/cache/pro
+          key: uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
 
       - name: Lint, typecheck and build the mobile apps
         run: >-
@@ -256,13 +360,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
           submodules: false
 
       - name: Dependency review
-        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
 

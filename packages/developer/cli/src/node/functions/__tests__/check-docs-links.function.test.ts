@@ -57,6 +57,15 @@ describe("checkDocsLinks", () => {
     expect(checkDocsLinks(client)).toEqual([]);
   });
 
+  it("serves an HTML file under assets/ as a file and does not check its own links", () => {
+    write("index.html", html('<a href="/assets/brand/welcome-en.html">welcome mail</a>'));
+    write(
+      "assets/brand/welcome-en.html",
+      html('<a href="[docs URL]">docs</a><img src="../logos/x.png">'),
+    );
+    expect(checkDocsLinks(client)).toEqual([]);
+  });
+
   it("names each broken link by page", () => {
     write(
       "index.html",

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `jscpdArgs(srcDir, part, minTokens, output)`, the jscpd arguments for one part of a member's `src/`:
- *          `src` without the test folders, or `tests` alone (moved from `tools/scripts/duplication.mjs`).
+ *          `src` without the test folders and generated files, or `tests` alone (moved from
+ *          `tools/scripts/duplication.mjs`).
  * Boundary: pure.
  * Runtime: node
  * Governing contract: rule-gap B-9 (notes handover/testing/rule-gap-list.md); ADR 0022 (tests beside the code).
@@ -9,6 +10,8 @@
 
 /** The test folders, measured apart from the source: most of the largest clones are test-to-test (B-9). */
 const TESTS_GLOB = "**/__tests__/**";
+/** Generated files (`entities.gen.ts`): a generator's output repeats its template, and nobody edits it by hand. */
+const GENERATED_GLOB = "**/*.gen.ts";
 
 /**
  * The argument list of one jscpd run.
@@ -32,8 +35,9 @@ export function jscpdArgs(
     String(minTokens),
     "--format",
     "typescript,tsx,javascript,jsx",
-    part === "tests" ? "--pattern" : "--ignore",
-    TESTS_GLOB,
+    ...(part === "tests"
+      ? ["--pattern", TESTS_GLOB]
+      : ["--ignore", `${TESTS_GLOB},${GENERATED_GLOB}`]),
     "--reporters",
     "json",
     "--output",

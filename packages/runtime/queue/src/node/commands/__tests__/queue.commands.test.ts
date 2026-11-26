@@ -1,15 +1,21 @@
 /**
  * Stackra file contract:
  * Purpose: proves `queue:work` runs until a signal stops it, `queue:failed` lists the dead letters, and `queue:retry`
- *          queues one failed job or (with `--force` or a yes) all of them again, refusing `--all` without either.
- * Boundary: test only; runs through `runCommandForTest` over a `MemoryQueueDriver` and a real `QueueWorkerService`.
+ *          queues one failed job or (with `--force` or a yes) all of them again, refusing `--all` without either; across
+ *          owners both claim the dead letters and load or redrive each in its owner, and fail (never skip) on an owned
+ *          one with no isolation bound or a claim that does not load.
+ * Boundary: test only; runs through `runCommandForTest` over a `MemoryQueueDriver` (its claims given an owner where a
+ *           case needs one), a recording isolation and a real `QueueWorkerService`.
  * Runtime: node (vitest)
- * Governing contract: STA-1731 spec FR-012 and FR-013; ADR 0022 (test placement).
+ * Governing contract: STA-1731 spec FR-012 and FR-013; ADR 0022 (test placement); ADR 0239 (2026-11-07 amendment,
+ *                     gap A).
  */
 // @covers sta-1731:FR-012 sta-1731:FR-013
+import { CallIsolation } from "@stackra/actions/contracts";
 import { runCommandForTest } from "@stackra/console/testing";
+import type { Container } from "@stackra/container";
 import { Clock, Duration } from "@stackra/contracts";
-import type { PublicId } from "@stackra/contracts";
+import type { Actor, PublicId } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { JobStatus } from "#contracts/enums/job-status.enum";
@@ -44,8 +50,27 @@ function deadJob(id: PublicId<"job">, queue = "default"): QueuedJob {
 }
 
 /** A memory store holding `ids` as failed jobs, and the container serving it to a command. */
-async function setup(...ids: PublicId<"job">[]) {
+function setup(...ids: PublicId<"job">[]) {
+  return setupWith({}, ...ids);
+}
+
+/**
+ * As `setup`, with every claim owned by `options.owned` and `options.isolation` bound when given.
+ */
+async function setupWith(
+  options: { readonly owned?: string; readonly isolation?: CallIsolation },
+  ...ids: PublicId<"job">[]
+) {
   const driver = new MemoryQueueDriver();
+  if (options.owned !== undefined) {
+    const claimDead = driver.claimDead.bind(driver);
+    driver.claimDead = async (filter) =>
+      (await claimDead(filter)).map((claim) => ({ ...claim, ownerId: options.owned as never }));
+  }
+  const bound = {
+    has: (token: unknown) => token === CallIsolation && options.isolation !== undefined,
+    get: () => options.isolation,
+  } as unknown as Container;
   for (const id of ids) {
     await driver.push(deadJob(id));
     await driver.deadLetter(id, { code: "provider_unavailable", message: "down" });
@@ -60,8 +85,8 @@ async function setup(...ids: PublicId<"job">[]) {
   const container = () => ({
     get: <T extends object>(type: abstract new (...args: never[]) => T): T => {
       const args: unknown[] = [];
-      if (type === (QueueFailedCommand as unknown)) args.push(driver);
-      if (type === (QueueRetryCommand as unknown)) args.push(driver, services.get(Clock));
+      if (type === (QueueFailedCommand as unknown)) args.push(driver, bound);
+      if (type === (QueueRetryCommand as unknown)) args.push(driver, services.get(Clock), bound);
       if (type === (QueueWorkCommand as unknown)) args.push(worker);
       return Reflect.construct(type, args) as T;
     },
@@ -167,5 +192,45 @@ describe(QueueRetryCommand, () => {
     });
     expect(kept.exitCode).toBe(0);
     expect(await no.driver.deadLetters(undefined, 10)).toHaveLength(1);
+  });
+});
+
+describe("the queue commands across owners", () => {
+  it("loads and redrives each owned dead letter in its owner", async () => {
+    const owners: unknown[] = [];
+    const isolation = {
+      run: (actor: Actor, _scope: unknown, work: () => Promise<unknown>) => {
+        owners.push(actor.scopeId);
+        return work();
+      },
+    } as unknown as CallIsolation;
+    const { driver, container } = await setupWith({ owned: "scp_acme", isolation }, "job_a");
+    const listed = await runCommandForTest([QueueFailedCommand], ["queue:failed"], { container });
+    expect(listed.stdout).toContain("job_a");
+    const retried = await runCommandForTest([QueueRetryCommand], ["queue:retry", "job_a"], {
+      container,
+    });
+    expect(retried.exitCode).toBe(0);
+    expect(owners).toEqual(["scp_acme", "scp_acme"]);
+    expect(await driver.deadLetters(undefined, 10)).toEqual([]);
+  });
+
+  it("fails on an owned dead letter with no isolation bound, and keeps it", async () => {
+    const { driver, container } = await setupWith({ owned: "scp_acme" }, "job_a");
+    const listed = await runCommandForTest([QueueFailedCommand], ["queue:failed"], { container });
+    expect(listed.exitCode).not.toBe(0);
+    expect(listed.stdout).not.toContain("job_a");
+    const retried = await runCommandForTest([QueueRetryCommand], ["queue:retry", "job_a"], {
+      container,
+    });
+    expect(retried.exitCode).not.toBe(0);
+    expect(await driver.deadLetters(undefined, 10)).toHaveLength(1);
+  });
+
+  it("fails on a claimed dead letter that does not load", async () => {
+    const { driver, container } = await setup("job_a");
+    driver.load = async () => undefined;
+    const listed = await runCommandForTest([QueueFailedCommand], ["queue:failed"], { container });
+    expect(listed.exitCode).not.toBe(0);
   });
 });

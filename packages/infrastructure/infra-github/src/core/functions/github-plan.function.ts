@@ -1,16 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: `githubPlan(root)`, the repository as code from the root runway: the org, repository and visibility in
- *          `providers.github`; the repository Actions variables (the Infisical domain and project from
- *          `providers.infisical`, which the CI login reads, plus the block's own); one deployment environment per
- *          runway environment that deploys (`environments.<env>.deploy`) and per environment the block names, each
- *          with its reviewers, the refs that may deploy to it and its variables; and the CI secret names.
+ * Purpose: `githubPlan(root)`, the repository as code from the root runway: the org, repository, visibility,
+ *          description, topics and homepage in `providers.github`; the repository Actions variables (the Infisical
+ *          domain and project from `providers.infisical`, which the CI login reads, plus the block's own); one
+ *          deployment environment per runway environment that deploys (`environments.<env>.deploy`) and per
+ *          environment the block names, each with its reviewers, the refs that may deploy to it and its variables;
+ *          and the CI secret names.
  * Boundary: pure: a parsed root runway in, a plan out. A `ref:` value stays a ref; the Pulumi slice (`./node`)
  *           resolves it. Reports every failure at once. Reads no file and calls no cloud.
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (decisions 2 and 4), ADR 0170 (decisions 5 and 6: production promotes behind a GitHub
- *                     environment the owner approves), ADR 0173 (decisions 5 and 6: CI reads Infisical over OIDC,
- *                     secret names in git and values never), ADR 0284 (decisions 6 and 7), ADR 0296 (decision 2).
+ *                     environment the owner approves), ADR 0173 (decisions 5 and 6: secret names in git and values
+ *                     never), ADR 0525 (CI decrypts sops over OIDC), ADR 0284 (decisions 6 and 7), ADR 0296 (decision 2).
  */
 import { Enum } from "@stackra/contracts";
 import { RunwayEnvironment } from "@stackra/runway";
@@ -55,17 +56,22 @@ export function githubPlan(root: RootRunway): GithubPlan {
         issues.push({
           path: `${path}.${name}`,
           message:
-            "A secret name: jobs read it from Infisical over OIDC, and GitHub holds no secret value",
+            "A secret name: jobs decrypt it from sops over OIDC, and GitHub holds no secret value",
         });
       }
     }
     return variables ?? {};
   };
 
-  const infisical = root.providers?.infisical;
+  // shortcut: Runway no longer types `providers.infisical` (ADR 0525), but the CI logins still read these variables
+  // until every workflow decrypts sops; drop this when Infisical is deleted (plan phase P6).
+  const infisical = (root.providers?.["infisical"] ?? {}) as {
+    readonly domain?: unknown;
+    readonly workspace?: unknown;
+  };
   const variables = {
-    ...(infisical?.domain === undefined ? {} : { INFISICAL_DOMAIN: infisical.domain }),
-    ...(infisical?.workspace === undefined
+    ...(typeof infisical.domain === "string" ? { INFISICAL_DOMAIN: infisical.domain } : {}),
+    ...(infisical.workspace === undefined
       ? {}
       : { INFISICAL_PROJECT_ID: String(infisical.workspace) }),
     ...checked(github.variables, "root.providers.github.variables"),
@@ -130,6 +136,9 @@ export function githubPlan(root: RootRunway): GithubPlan {
     org: github.org,
     repo: github.repo,
     visibility: github.visibility,
+    ...(github.description === undefined ? {} : { description: github.description }),
+    ...(github.topics === undefined ? {} : { topics: [...github.topics] }),
+    ...(github.homepage === undefined ? {} : { homepage: github.homepage }),
     variables,
     environments,
     ciSecrets: [...(root.secrets?.ci ?? [])],

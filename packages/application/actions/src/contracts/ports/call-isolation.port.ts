@@ -20,8 +20,8 @@ import type { Actor, ScopeRef } from "@stackra/contracts";
  *
  * @example
  * export class CallIsolationDriver extends Driver(CallIsolation) {
- *   run<T>(actor: Actor, scope: ScopeRef | readonly ScopeRef[] | undefined, work: () => Promise<T>) {
- *     return this.database.withScope(scope ?? [], () => this.isolation.withTenant(actor, work));
+ *   run<T>(actor: Actor, scope: ScopeRef | readonly ScopeRef[] | undefined, work: (actor?: Actor) => Promise<T>) {
+ *     return this.database.withScope(scope ?? [], () => this.isolation.withTenant(actor, () => work(actor)));
  *   }
  * }
  */
@@ -29,14 +29,17 @@ export abstract class CallIsolation extends Port {
   /**
    * Runs `work` in a transaction whose scope settings are `scope` (`undefined` or empty: no granted scope, so no
    * scoped row) and whose tenant is `actor.scopeId` (none: a platform call, which matches no tenant row). The settings
-   * end with the transaction. `options.readOnly` starts it read-only: a write inside it fails.
+   * end with the transaction. `options.readOnly` starts it read-only: a write inside it fails. `work` receives the actor
+   * the transaction runs as: `actor`, or a copy whose `scopeId` is the tenant the isolation resolved (a branch's parent
+   * tenant), so the caller writes the same tenant the settings name. It is optional so that an isolation that resolves
+   * nothing (a test stand-in) may call `work()`; the caller then keeps its own actor.
    *
    * @throws TypeError when `actor.scopeId` is not a tenant id or a scope path is not an `ltree` path.
    */
   abstract run<T>(
     actor: Actor,
     scope: ScopeRef | readonly ScopeRef[] | undefined,
-    work: () => Promise<T>,
+    work: (actor?: Actor) => Promise<T>,
     options: { readonly readOnly: boolean },
   ): Promise<T>;
 }

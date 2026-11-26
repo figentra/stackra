@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `insertChanges`, the one statement that appends row changes to the retained change log: every entry of the
  *          batch in one bound JSON array, the scope columns taken from the transaction's scope settings
- *          (`app.scope_id`, `app.scope_path`), the order (`seq`) and the writing transaction (`tx`) from their column
- *          defaults.
+ *          (`app.scope_id`, `app.scope_path`), the order (`seq`), the writing transaction (`tx`) and the owning tenant
+ *          (`tenant_id`, from `app.tenant_id`, never from input) from their column defaults.
  * Boundary: internal to `./node`; the flush writer runs it on the entity manager whose transaction is committing, the
  *           native-write watcher on the entity manager that ran the native statement, and the Postgres `ChangeFeed`
  *           driver on the running context's, so entries commit with the change or not at all. Nothing but the JSON

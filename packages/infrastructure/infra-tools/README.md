@@ -4,7 +4,7 @@
 Stackra file contract:
 Purpose: the package's reader guide: the per-region self-hosted tools stack (owner decision R3-5), its runway block,
          the catalogue and pinned images, the OCR and Photon images, EBS data, the databases and Valkey, the
-         Infisical sync, the AWS program and the endpoints OS integrations turns into managed Connections.
+         secrets sync, the AWS program and the endpoints OS integrations turns into managed Connections.
 Boundary: documentation only; the code and ADR 0444 win on any difference.
 Runtime: none
 Governing contract: ADR 0444; owner decisions R2-5, R2-6, R2-9, R2-10, R3-5 (2026-10-26); ADR 0171; ADR 0173.
@@ -164,13 +164,14 @@ Chatwoot and its worker read `REDIS_URL` from one Valkey replication group per r
 `cache.t4g.micro`): TLS and encryption at rest, no auth token (no secret value in Pulumi), reachable only through the
 tools security groups.
 
-## Infisical to SSM
+## Vault to SSM
 
-`plan.secretsSync` lists, per parameter folder, the Infisical folder (`<secretsSync.source>/<tool>`, default
-`/tools/<tool>`, in the environment named like the runway's) and the SSM path it fills (`<secretsPath>/<tool>`) with
-the names expected there. When the runway names `secretsSync.principal` and `secretsSync.externalId` (both may be
-`ref:`), each region declares the role Infisical's AWS connection assumes (`secretsSyncRole`): it may write, read,
-tag and delete only those folders. Creating the Infisical secret syncs is the deploy's step (ADR 0173).
+`plan.secretsSync` lists, per parameter folder, the vault folder (`<secretsSync.source>/<tool>`, default
+`/tools/<tool>`, in the environment named like the runway's; the vault is sops in `figentra/secrets`, ADR 0525) and
+the SSM path it fills (`<secretsPath>/<tool>`) with the names expected there. When the runway names
+`secretsSync.principal` and `secretsSync.externalId` (both may be `ref:`), each region declares the role the secrets
+sync assumes (`secretsSyncRole`): it may write, read, tag and delete only those folders. Running the sync is the
+deploy's step (ADR 0173).
 
 ## What the root runway holds
 
@@ -192,9 +193,9 @@ providers:
     logRetentionDays: 30
     cacheNodeType: cache.t4g.small # default cache.t4g.micro
     secretsSync:
-      source: /tools # the Infisical folder root, default /tools
-      principal: ref:infisical.awsPrincipal
-      externalId: ref:infisical.externalId
+      source: /tools # the vault folder root, default /tools
+      principal: ref:secrets-sync.awsPrincipal
+      externalId: ref:secrets-sync.externalId
     tools:
       ocr:
         provider: surya # picks ghcr.io/figentra/tools-ocr:1.0.0-surya
@@ -211,11 +212,11 @@ The regions are the environment's `regions`, each defined under the root `region
 An AWS provider pinned to the region and its account, an ECS cluster, the private DNS namespace
 `<region>.tools.<project>.internal`, one log group, the task execution role (it reads only the parameters under the
 stack's secret path), an encrypted EFS file system with one access point per tool that keeps data on EFS, an EC2
-instance and EBS disk per tool that keeps data on EBS, a GPU capacity provider per GPU instance type, the Valkey, the database task, the Infisical sync role, and per
+instance and EBS disk per tool that keeps data on EBS, a GPU capacity provider per GPU instance type, the Valkey, the database task, the secrets sync role, and per
 tool a task definition and service with no public address. A tool with an endpoint is registered in the namespace, so
 it answers at `http://<tool>.<region>.tools.<project>.internal:<port>` inside the VPC.
 
-Secrets are SSM parameter references (`<secretsPath>/<tool>/<NAME>`); the Infisical sync writes the values (ADR 0173).
+Secrets are SSM parameter references (`<secretsPath>/<tool>/<NAME>`); the secrets sync writes the values (ADR 0173).
 Documenso's and Chatwoot's database URLs point at the environment's shared Postgres server (ADR 0238).
 
 ## Endpoints become managed Connections
@@ -227,8 +228,8 @@ tenant may replace it with its own provider (a T4 connector in own mode).
 ## Not here
 
 - The GCP program (Cloud Run): a region on GCP is refused until it is built.
-- The CI workflow that builds and pushes `images/*`, the deploy step that runs the database task, and the Infisical
-  secret syncs themselves.
+- The CI workflow that builds and pushes `images/*`, the deploy step that runs the database task, and the secrets
+  sync itself.
 - Photon's continuous updates from Nominatim's replication: delete its index to re-import.
 - Which stacks the deploy composes: `stackra infra gen` and the stacks repository.
 

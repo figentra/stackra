@@ -6,18 +6,24 @@
  *          declared `headers`, keeps to its rate limits, retries what is safe to retry, and turns every
  *          provider outcome into a value or a typed refusal.
  * Boundary: internal; `IntegrationRuntime#client` builds it. JSON in and out, or a form body when the call or the
- *           Integration's `requestBody` asks. A
+ *           Integration's `requestBody` asks, or a raw body with its own media type when the call gives one (`body`);
+ *           raw bytes or text out when the call asks (`bytes`, `text`); `send` returns the answer as it came, at
+ *           any status, and throws only when nothing came back (STA-2607). A
  *           `{field}` placeholder in the base URL (a per-region host) is filled from the credential set and must
  *           resolve to an https origin, or an http one on an `.internal` host (the private tools namespace, STA-1653);
  *           a whole-URL `{field}` is filled the same way. A `GET`, `HEAD`, `PUT` or `DELETE`
  *           retries on no answer, 408, 429 or 5xx; a `POST` or `PATCH` only with an idempotency key the provider
  *           deduplicates on. A 4xx is `ProviderRefusedError`; spent retries, or a bucket full past the longest wait,
- *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error. A bucket
- *           key names the connection id (or `platform`), never a credential.
+ *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error: the
+ *           provider's code is scrubbed against the call's credentials (the connection's and the Integration's
+ *           `@Secret` values and the key, password or token sent) before the refusal is built. A bucket key names the
+ *           connection id (or `platform`), never a credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 4, 6, 13 and 20); ADR 0217 (token buckets); ADR 0140 (refusals); STA-793;
  *                     owner D10 2026-10-28 (stackra-223): the waits are the contracts `backoffDelay`.
  */
+import { Secret } from "@stackra/config";
+import type { AnyClass } from "@stackra/container";
 import { backoffDelay, Duration } from "@stackra/contracts";
 
 import type { Connection } from "#core/bases/connection.base";
@@ -29,10 +35,13 @@ import { encodeBase64 } from "#core/functions/encode-base64.function";
 import { integrationOptionsOf } from "#core/functions/integration-options-of.function";
 import { placeholderLookup } from "#core/functions/placeholder-lookup.function";
 import { providerCodeOf } from "#core/functions/provider-code-of.function";
+import { redactSecrets } from "#core/functions/redact-secrets.function";
 import { resolvePlaceholders } from "#core/functions/resolve-placeholders.function";
 import { signJwt } from "#core/functions/sign-jwt.function";
 import type { IntegrationApi } from "#core/types/integration-api.type";
 import type { ManagedClientOptions } from "#core/types/managed-client-options.type";
+import type { RawRequest } from "#core/types/raw-request.type";
+import type { RawResponse } from "#core/types/raw-response.type";
 import type { RequestOptions } from "#core/types/request-options.type";
 
 /** The retry an Integration gets when it states none, unchanged by stackra-223: 3 attempts, 200 ms doubling, 30 s. */
@@ -113,6 +122,21 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   const { idempotencyHeader, ...policy } = { ...RETRY, ...declared.retry };
   const { attempts } = policy;
   const maxDelay = Duration.toMilliseconds(policy.max);
+  const connectionSecrets =
+    connection === undefined ? [] : [...Secret.members(connection.constructor as AnyClass).keys()];
+  const integrationSecrets = [...Secret.members(integration.constructor as AnyClass).values()];
+
+  /** The credential values of one call, read now: `@Secret` values and what `authorize` sent. */
+  function credentialsOf(sent: readonly string[]): (string | undefined)[] {
+    return [
+      ...connectionSecrets.map((field) => {
+        const value: unknown = Reflect.get(connection ?? {}, field);
+        return typeof value === "string" ? value : undefined;
+      }),
+      ...integrationSecrets.map((secretName) => secrets.get(secretName)),
+      ...sent,
+    ];
+  }
 
   /** The full URL of `path`: always joined under the base URL, so even an absolute URL stays on its origin. */
   function urlOf(path: string, query: RequestOptions["query"]): URL {
@@ -133,30 +157,35 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     return url;
   }
 
-  /** Adds the credentials of the Integration's `auth` type. */
-  async function authorize(headers: Headers, url: URL): Promise<void> {
+  /** Adds the credentials of the Integration's `auth` type, and lists each credential value it sent in `sent`. */
+  async function authorize(headers: Headers, url: URL, sent: string[]): Promise<void> {
+    /** `resolve`, listing each placeholder value it fills in `sent`. */
+    const resolveSent = (template: string): string =>
+      resolvePlaceholders(template, (field) => {
+        const value = lookup(field);
+        if (value !== undefined) sent.push(value);
+        return value;
+      });
     switch (auth.type) {
       case AuthType.None: {
         return;
       }
       case AuthType.ApiKey: {
-        const value = resolve(auth.format ?? "{apiKey}");
+        const value = resolveSent(auth.format ?? "{apiKey}");
         if (auth.header !== undefined) headers.set(auth.header, value);
         else if (auth.query !== undefined) url.searchParams.set(auth.query, value);
         return;
       }
       case AuthType.Basic: {
-        headers.set(
-          "authorization",
-          `Basic ${encodeBase64(`${resolve(auth.username)}:${resolve(auth.password)}`)}`,
-        );
+        const basic = encodeBase64(`${resolveSent(auth.username)}:${resolveSent(auth.password)}`);
+        sent.push(basic);
+        headers.set("authorization", `Basic ${basic}`);
         return;
       }
       case AuthType.Jwt: {
-        headers.set(
-          auth.header ?? "authorization",
-          `Bearer ${await signJwt(auth, resolve, clock.now())}`,
-        );
+        const jwt = await signJwt(auth, resolveSent, clock.now());
+        sent.push(jwt);
+        headers.set(auth.header ?? "authorization", `Bearer ${jwt}`);
         return;
       }
       case AuthType.OAuth2Code:
@@ -167,6 +196,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
             `${name} authenticates with OAuth, so it calls only through a connection that holds its tokens`,
           );
         const token = await options.accessToken();
+        sent.push(token);
         headers.set(
           auth.token?.header ?? "authorization",
           (auth.token?.format ?? "Bearer {accessToken}").replace("{accessToken}", token),
@@ -194,30 +224,50 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     }
   }
 
-  /** Sends one call with its retries and reads the answer. */
-  async function send(
+  /**
+   * Builds one call and sends it with its retries: the first answer that is not transient, or the last one once the
+   * retries are spent; `response` is undefined when nothing came back. `sent` lists the credential values it sent.
+   */
+  async function exchange(
     method: string,
     path: string,
     body: unknown,
-    request: RequestOptions = {},
-  ): Promise<unknown> {
+    request: RequestOptions,
+  ): Promise<{
+    readonly response: Response | undefined;
+    readonly failure: unknown;
+    readonly sent: readonly string[];
+  }> {
+    if (request.body !== undefined && body !== undefined)
+      throw new TypeError("A call sends either its body or RequestOptions.body, not both");
     const url = urlOf(path, request.query);
     const form = request.form ?? declared.requestBody === "form";
+    const raw = request.body;
     const headers = new Headers(request.headers);
     for (const [header, value] of Object.entries(declared.headers ?? {}))
       if (!headers.has(header)) headers.set(header, resolve(value));
-    if (!headers.has("accept")) headers.set("accept", "application/json");
-    if (body !== undefined)
+    if (!headers.has("accept"))
+      headers.set(
+        "accept",
+        request.bytes === true || request.text === true ? "*/*" : "application/json",
+      );
+    if (raw !== undefined) headers.set("content-type", raw.contentType);
+    else if (body !== undefined)
       headers.set("content-type", form ? "application/x-www-form-urlencoded" : "application/json");
     const key = request.idempotencyKey;
     if (key !== undefined && idempotencyHeader !== undefined) headers.set(idempotencyHeader, key);
     const retryable =
       IDEMPOTENT_METHODS.has(method) || (key !== undefined && idempotencyHeader !== undefined);
-    await authorize(headers, url);
+    const sent: string[] = [];
+    await authorize(headers, url, sent);
     const init: RequestInit = {
       method,
       headers,
-      ...(body === undefined ? {} : { body: form ? formOf(body) : JSON.stringify(body) }),
+      ...(raw !== undefined
+        ? { body: raw.content }
+        : body === undefined
+          ? {}
+          : { body: form ? formOf(body) : JSON.stringify(body) }),
       ...(request.signal === undefined ? {} : { signal: request.signal }),
     };
     for (let attempt = 1; ; attempt += 1) {
@@ -230,39 +280,72 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
         if (request.signal?.aborted === true) throw error;
         failure = error;
       }
-      if (response?.ok === true) {
-        const text = await response.text();
-        return text === "" ? undefined : parsed(text);
-      }
-      if (response !== undefined && !isTransient(response.status)) {
-        const code = providerCodeOf(parsed(await response.text()));
-        throw ProviderRefusedError.create({
-          provider,
-          status: response.status,
-          ...(code === undefined ? {} : { code }),
-        });
-      }
-      if (!retryable || attempt >= attempts)
-        throw ProviderUnavailableError.create(
-          { provider, ...(response === undefined ? {} : { status: response.status }) },
-          { cause: failure },
-        );
+      if (response !== undefined && !isTransient(response.status))
+        return { response, failure, sent };
+      if (!retryable || attempt >= attempts) return { response, failure, sent };
       await sleep(
         Math.min(retryAfterMs(response, clock.now()) ?? backoffDelay(policy, attempt), maxDelay),
       );
     }
   }
 
+  /** Sends one typed call and reads the answer, or refuses with the provider's outcome. */
+  async function call(
+    method: string,
+    path: string,
+    body: unknown,
+    request: RequestOptions = {},
+  ): Promise<unknown> {
+    const { response, failure, sent } = await exchange(method, path, body, request);
+    if (response?.ok === true) {
+      if (request.bytes === true) return new Uint8Array(await response.arrayBuffer());
+      const text = await response.text();
+      if (request.text === true) return text;
+      return text === "" ? undefined : parsed(text);
+    }
+    if (response !== undefined && !isTransient(response.status)) {
+      const code = providerCodeOf(parsed(await response.text()));
+      throw ProviderRefusedError.create({
+        provider,
+        status: response.status,
+        ...(code === undefined ? {} : { code: redactSecrets(code, credentialsOf(sent)) }),
+      });
+    }
+    throw ProviderUnavailableError.create(
+      { provider, ...(response === undefined ? {} : { status: response.status }) },
+      { cause: failure },
+    );
+  }
+
+  /** Sends `raw` and returns the answer as it came, whatever its status. */
+  async function send(raw: RawRequest): Promise<RawResponse> {
+    const { response, failure } = await exchange(raw.method, raw.path, undefined, {
+      text: true,
+      ...(raw.headers === undefined ? {} : { headers: raw.headers }),
+      ...(raw.body === undefined ? {} : { body: raw.body }),
+      ...(raw.idempotencyKey === undefined ? {} : { idempotencyKey: raw.idempotencyKey }),
+      ...(raw.signal === undefined ? {} : { signal: raw.signal }),
+    });
+    if (response === undefined)
+      throw ProviderUnavailableError.create({ provider }, { cause: failure });
+    return {
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: await response.text(),
+    };
+  }
+
   return {
     get: <T>(path: string, request?: RequestOptions) =>
-      send("GET", path, undefined, request) as Promise<T>,
+      call("GET", path, undefined, request) as Promise<T>,
     delete: <T>(path: string, request?: RequestOptions) =>
-      send("DELETE", path, undefined, request) as Promise<T>,
+      call("DELETE", path, undefined, request) as Promise<T>,
     post: <T>(path: string, body?: unknown, request?: RequestOptions) =>
-      send("POST", path, body, request) as Promise<T>,
+      call("POST", path, body, request) as Promise<T>,
     put: <T>(path: string, body?: unknown, request?: RequestOptions) =>
-      send("PUT", path, body, request) as Promise<T>,
+      call("PUT", path, body, request) as Promise<T>,
     patch: <T>(path: string, body?: unknown, request?: RequestOptions) =>
-      send("PATCH", path, body, request) as Promise<T>,
+      call("PATCH", path, body, request) as Promise<T>,
+    send,
   };
 }

@@ -7,7 +7,8 @@
  *           the function returns. PGlite and pgvector are optional peers loaded on first call with `createRequire`
  *           (the way `requireTestPeer` does, since the CLI path must not import them at load); a missing PGlite throws
  *           an error that says how to install it, a missing pgvector only leaves `vector` unavailable. A step that
- *           fails throws an error naming its file. PostGIS is not available in PGlite (ADR 0314).
+ *           fails throws an error naming its file. PostGIS (ADR 0314) loads like pgvector, from its optional PGlite
+ *           bundle `@electric-sql/pglite-postgis`.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 2: the compiled steps and their transaction header); ADR 0160 (approved
  *                     extensions); ADR 0282 (decision 3); STA-1808.
@@ -83,6 +84,9 @@ export async function readMigratedSchema(
   }
   const vector = loadPeer<{ vector: unknown }>("@electric-sql/pglite-pgvector", false);
   if (vector !== undefined) extensions["vector"] = vector.vector;
+  // PostGIS (ADR 0314) when the member installs its PGlite bundle, so its geography columns replay.
+  const postgis = loadPeer<{ postgis: unknown }>("@electric-sql/pglite-postgis", false);
+  if (postgis !== undefined) extensions["postgis"] = postgis.postgis;
 
   const names = schemas.filter((schema) => SCHEMA_NAME.test(schema));
   const inList = names.length === 0 ? "''" : names.map((schema) => `'${schema}'`).join(", ");

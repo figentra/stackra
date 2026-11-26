@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "8be11a833c1c6929",
+    "hash": "2d400d8bbb44addd",
     "heroDoc": "vendor/heroui/react/table.json",
     "propsFiles": ["ui/src/react/table/table.props.ts"]
   },
@@ -175,7 +175,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",

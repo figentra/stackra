@@ -5,9 +5,9 @@
  *          `services/<member>`), or in the repository's `services/` (the nearest folder with `pnpm-workspace.yaml`,
  *          so `apps/<app>` and `packages/<category>/<name>` read `services/<service>`, STA-1673), by the service key or its kebab-case folder name, the manifest's member matched in snake or kebab case (STA-1296): what the clients target writes
  *          `#stackra/clients/<service>` from, with the folder it sits in (where the events target imports its topics).
- *          When no sibling folder matches, a declared dependency that is a `contract` package (`stackra.kind`) whose
- *          manifest `member` is the service supplies it, with no folder and its package name (STA-1820); a service is
- *          never matched to any other dependency by name.
+ *          A declared dependency that is a `contract` package (`stackra.kind`) whose manifest `member` is the service
+ *          supplies it first, with no folder and its package name (STA-1820), ahead of a sibling folder, which may be an
+ *          empty skeleton of that service (STA-2215); a service is never matched to any other dependency by name.
  * Boundary: reads files only. A service is matched by the manifest's `member`, never by importing its package
  *           (ADR 0010: services never import each other). A service with no manifest is left out, and the clients
  *           target refuses it with its fix. A manifest that is not valid JSON fails the run.
@@ -52,6 +52,24 @@ export function readServiceManifests(
   // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
   for (const service of [...new Set(services)].sort()) {
     const before = found.length;
+    // A contract package the member declares wins over a same-named sibling folder, which may be an empty
+    // skeleton of the service the contract describes (STA-2215).
+    for (const dependency of dependencies) {
+      const path = isContractPackage(root, dependency)
+        ? dependencyPath(root, dependency, "stackra.manifest.json")
+        : undefined;
+      if (path === undefined) continue;
+      let manifest: StackraManifest;
+      try {
+        manifest = JSON.parse(readFileSync(path, "utf8")) as StackraManifest;
+      } catch (error) {
+        throw new Error(`${path} is not valid JSON: ${(error as Error).message}`, { cause: error });
+      }
+      if (kebabCase(manifest.member) !== kebabCase(service)) continue;
+      found.push({ member: service, package: dependency, manifest });
+      break;
+    }
+    if (found.length > before) continue;
     search: for (const parent of new Set(parents))
       for (const folder of new Set([service, kebabCase(service)])) {
         const path = join(parent, folder, "stackra.manifest.json");
@@ -69,23 +87,6 @@ export function readServiceManifests(
         found.push({ member: service, folder, manifest });
         break search;
       }
-    if (found.length > before) continue;
-    // No sibling folder: a contract package of the service, matched by kind and manifest member.
-    for (const dependency of dependencies) {
-      const path = isContractPackage(root, dependency)
-        ? dependencyPath(root, dependency, "stackra.manifest.json")
-        : undefined;
-      if (path === undefined) continue;
-      let manifest: StackraManifest;
-      try {
-        manifest = JSON.parse(readFileSync(path, "utf8")) as StackraManifest;
-      } catch (error) {
-        throw new Error(`${path} is not valid JSON: ${(error as Error).message}`, { cause: error });
-      }
-      if (kebabCase(manifest.member) !== kebabCase(service)) continue;
-      found.push({ member: service, package: dependency, manifest });
-      break;
-    }
   }
   return found;
 }

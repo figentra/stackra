@@ -25,6 +25,7 @@ Depends on `@stackra/contracts`, `@stackra/container` and `zod`; one-time codes 
 | `Str`, `Int`, `Num`, `List`, `Trim`, `Field`                        | field rules, each typed against its field                                          |
 | `Lowercase`                                                         | the transform gen compiles to `.toLowerCase()` after `.trim()` (string fields)     |
 | `Hidden`, `Visible({ audience })`, `OutputAudience`                 | serializers: `@Hidden` keeps a field out of `X$`; `@Visible` records audiences     |
+| `ShownOnce`                                                         | serializer: an output field the caller sees once; never kept for an idempotent replay |
 | `Renamed`, `Classified`                                             | rename marker (class or field) and the privacy class of a field                    |
 | `validate`, `schemaOf`, `registerSchemas`                           | check input; read a class's schema; the registry generated schemas fill            |
 | `publicId`, `isoDateTime`, `json`, `url`, `duration`, `tableInput`  | the runtime helpers generated schemas and clients import                           |

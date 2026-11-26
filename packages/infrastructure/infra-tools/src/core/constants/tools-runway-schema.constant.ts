@@ -3,7 +3,7 @@
  * Purpose: `TOOLS_RUNWAY_SCHEMA`, the parts of an already parsed root runway the tools stack reads, checked strictly:
  *          the project, the regions, each environment's region list, and `providers.tools`: the environments that run
  *          the stack, per-tool overrides, the extract each region imports, extra or replaced extracts, each region's
- *          network, the secret parameter path, the log retention, the Valkey node type, and the Infisical sync (the
+ *          network, the secret parameter path, the log retention, the Valkey node type, and the secrets sync (the
  *          source folder, and the principal and external id of the role it assumes). A tool override may move its
  *          volume to EBS (`storage`, `diskGb`, `instanceType`).
  * Boundary: internal; `toolsStackPlan` is its only reader. `@stackra/runway` leaves provider blocks open (`providers`

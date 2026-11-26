@@ -55,6 +55,10 @@ describe("IntegrationCategory", () => {
     ]);
   });
 
+  it("has the tax shelf of ADR 0447's amendment", () => {
+    expect(IntegrationCategory.Tax).toBe("tax");
+  });
+
   it("keeps every code snake_case and unique", () => {
     const codes = Enum.values(IntegrationCategory);
     expect(codes.every((code) => /^[a-z]+(?:_[a-z]+)*$/.test(code))).toBe(true);

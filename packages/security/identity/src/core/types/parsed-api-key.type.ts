@@ -6,12 +6,16 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0278 (decisions 4 and 5).
  */
+import type { ApiKeyMode } from "#contracts/enums/api-key-mode.enum";
 import type { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 
 /** A key's text, read. */
 export interface ParsedApiKey {
   /** The kind its prefix names. */
   readonly kind: ApiKeyKind;
+
+  /** The mode its text names after the prefix; absent for a key with none (minted before modes), never live. */
+  readonly mode: ApiKeyMode | undefined;
 
   /** Its checksum matches its body. */
   readonly wellFormed: boolean;

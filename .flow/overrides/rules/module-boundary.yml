@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/rules/module-boundary.md
+file: rules/module-boundary.md
+reason: "core's newer text, until the stackra preset carries it: ADR 0511 cross-app events go through the relay inbox, never Encore Pub/Sub; the generated inbox is never hand-edited; the signing key is a secret by name only (STA-1910)"
+owner: figentra-usr
+review: 2027-02-01

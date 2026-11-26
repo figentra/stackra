@@ -30,6 +30,7 @@ describe("@stackra/webhooks", () => {
       "verifyHmacWebhook",
       "verifyJwtHs256",
       "verifyKeyedFieldDigest",
+      "verifyLabelledFieldHmac",
       "verifyOrderedFieldHmac",
       "verifySharedHeader",
       "verifyWebhook",

@@ -1,0 +1,77 @@
+---
+title: "Experience documents"
+description: "Blocks, documents, the renderer, the edge render and the landing kit; how a product writes assets/landing/*.json."
+icon: "layout-template"
+---
+
+{/* Stackra file contract: Purpose: the reader's page on @stackra/experience: a block as registered code, a document as data, the web and native renderers, the edge render, the fifteen landing blocks and a product's landing seed. Boundary: an introduction that cites the package README and ADRs 0110, 0440 and 0504. Runtime: docs. Governing contract: ADR 0110; ADR 0440; ADR 0504; STA-2676. */}
+
+A page a product shows to the public, a landing site or a storefront, is not markup: it is an **experience
+document**, data that names blocks and their props, drawn by a renderer that resolves each block to registered code
+([ADR 0110](/adr/0110-experience-is-the-sdui-service-at-l2)). The words of the page live in the document; the code
+that draws them lives once, in a block.
+
+## Blocks
+
+A block is a class and a component. The class declares the props a document may give it, with `LocalizedText` for
+every word; the component draws them on one target:
+
+```ts packages/experience/experience/src/core/blocks/statement/statement.block.ts
+export class StatementBlock extends Block({ category: BlockCategory.Marketing, icon: … }) {
+  text!: LocalizedText;
+  facts?: LocalizedText[];
+}
+```
+
+Gen's key rule gives the class its key, `<member>.<snake(folder)>`: `experience.statement`. A target registers the
+blocks it can draw with `registerBlocks`, and a document that names a block nobody registered is refused whole, so a
+page never ships a hole.
+
+## Documents
+
+A document is a list of nodes, each `{ id, block, props, children }`, with every text as `{ "en": …, "ar": … }`:
+
+```json assets/landing/index.json
+[
+  {
+    "id": "hero",
+    "block": "experience.hero_machine",
+    "props": {
+      "title": {
+        "en": "One backend, every surface.",
+        "ar": "بنية واحدة. وتجربة متّسقة على كل شاشة."
+      },
+      "primary": { "label": { "en": "Read the docs", "ar": "اقرأ التوثيق" }, "href": "/docs" }
+    }
+  }
+]
+```
+
+`resolveDocument` checks the whole document first: the block exists, the props pass the block's generated schema,
+every `LocalizedText` is read in the locale. Then the web `DocumentRenderer` draws it in the browser, the native one on
+a phone, and the edge render (`./edge`, no React) writes a published page to HTML in a Worker for crawlers and first
+paint ([ADR 0440](/adr/0440-landing-sites-are-experience-documents-rendered-at-the-edge)).
+
+## The landing kit
+
+Fifteen landing blocks on `@stackra/ui` make a marketing site
+([ADR 0504](/adr/0504-module-ui-kits-domain-blocks-live-in-their-module-and-gen-aggregates-them-into-the-showcase)):
+`site_header`, `hero_machine`, `cta_row`, `statement`, `chapter_title`, `station`, `step_switcher`, `surfaces`,
+`bento_grid`, `terminal_stage`, `mono_display`, `ask_ai`, `product_cards`, `site_footer`, `page_dock`, and
+`capability_matrix`. Each has a `Block` class in the root entry and its component in `./react`; a `statement` reads
+`*word*` as a steel keyword, a `product_cards` draws each product in its own brand theme, and every block draws in the
+same ruled band so the column runs unbroken from the hero to the footer.
+
+## A product's landing site
+
+A product declares its landing site in its root `runway.yaml` (`surfaces.landing`: the shell line `os/landing@1`,
+`content: assets/landing`, its host) and writes one document per page under `assets/landing/<page>.json`, images
+beside them. Runway imports the seed documents once into the OS experience service for the product's tenant; after
+that, marketing edits the pages in the builder, and the OS landing shell draws them at the product's host. A seed that
+names an unregistered block is refused at import.
+
+## Read next
+
+- `@stackra/experience`: the package README, with the server renderer for email templates and print documents.
+- [The design system](/design-system): the components the landing blocks compose.
+- [Runway](/runway): `surfaces`, hosts and the deploy of a landing site.

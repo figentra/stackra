@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "0d0e3a181c857123",
+    "hash": "107bab64299b55fd",
     "heroDoc": "vendor/heroui/react/dropdown.json",
     "propsFiles": ["ui/src/react/menu/menu-body.props.ts", "ui/src/react/menu/menu.props.ts"]
   },
@@ -53,7 +53,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The keys of the chosen actions, for a controlled menu; pair it with `onChange`.",
@@ -153,7 +153,7 @@
           "name": "selectionMode",
           "required": true,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The chosen keys across all sections.",
@@ -210,7 +210,7 @@
           "name": "defaultSelectedKeys",
           "required": false,
           "source": "react-aria",
-          "type": "\"all\" | Iterable<Key>"
+          "type": "Iterable<Key> | \"all\""
         },
         {
           "description": "Values that should invalidate the item cache when using dynamic collections.",

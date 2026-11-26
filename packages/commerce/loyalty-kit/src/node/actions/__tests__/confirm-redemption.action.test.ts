@@ -40,7 +40,7 @@ describe("ConfirmRedemptionAction", () => {
       key: "points.confirm_redemption",
       permission: LoyaltyAccountPermissions.redeem,
       actors: [ActorKind.User, ActorKind.Service],
-      endpoint: { method: HttpMethod.Put, path: "/loyalty/redemptions/:reference/confirm" },
+      endpoint: { method: HttpMethod.Put, path: "/app/loyalty/redemptions/:reference/confirm" },
       tool: false,
     });
   });

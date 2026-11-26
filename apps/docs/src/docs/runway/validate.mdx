@@ -1,0 +1,47 @@
+---
+title: "runway validate"
+description: "Checks every runway file against its schema, the placement and the drivers."
+---
+
+Checks every runway file against its schema, the placement and the drivers.
+
+```bash
+stackra runway validate [--json]
+```
+
+## What it does
+
+Reads the root runway and each member's runway (under `apps/`, `services/` and `workers/`), and checks each against
+its kind's schema, then the root's placement, its destinations and target blocks against the drivers, and each
+service's requirements. It changes nothing. `stackra validate --repository` runs the same checks.
+
+## What it prints
+
+One line per finding, `<file>: <path>: <message>`. A deprecated field that is still set (for example a Mintlify block,
+or `providers.aws.region`) prints a warning naming what replaces it, and still passes for one release.
+
+## Exit codes
+
+| Code | Means                                         |
+| ---- | --------------------------------------------- |
+| 0    | Every file is valid; warnings may be printed. |
+| 1    | At least one finding.                         |
+| 2    | Usage error.                                  |
+
+## Where it runs
+
+Anywhere, with no login. CI runs it in the Quality Gate.
+
+## Examples
+
+```bash
+stackra runway validate
+stackra runway validate --json
+```
+
+## See also
+
+[0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups),
+[0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

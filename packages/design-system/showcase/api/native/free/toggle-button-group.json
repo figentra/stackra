@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "5dac988b91d26e6b",
+    "hash": "82c1472856398a47",
     "propsFiles": ["ui/src/native/toggle-button-group/toggle-button-group.props.ts"]
   },
   "importLine": "import { ToggleButtonGroup } from \"@stackra/ui/native\";",
@@ -31,7 +31,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\""
         },
         {
           "description": "The ids pressed, for a controlled group; pair it with `onSelectionChange`.",

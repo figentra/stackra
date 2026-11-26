@@ -10,6 +10,7 @@ import type { PGlite } from "@electric-sql/pglite";
 
 import type { MigrationFile } from "#node/types/migration-file.type";
 import { extensionsSql } from "#testing/functions/extensions-sql.function";
+import { loadPglitePeers } from "#testing/functions/load-pglite-peers.function";
 
 /**
  * Creates the extensions and applies `files` on `pglite`.
@@ -21,7 +22,7 @@ export async function bootstrapPglite(
   files: readonly MigrationFile[],
 ): Promise<void> {
   // raw-sql: extensions and compiled migrations are DDL the schema owns, not queries a model makes
-  await pglite.exec(extensionsSql());
+  await pglite.exec(extensionsSql(Object.keys(loadPglitePeers().extensions)));
   for (const file of files)
     try {
       if (file.transactional) await pglite.transaction((tx) => tx.exec(file.sql));

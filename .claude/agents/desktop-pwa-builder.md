@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/desktop-pwa-builder.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/desktop-pwa-builder.md by fflow sync — edit the source, not this file -->
 
 # desktop-pwa-builder
 
@@ -31,7 +31,7 @@ the generated IPC bridge and hardening, offline, peripherals, PWA, client storag
 5. The service worker covers the app origin only; Web Push for the PWA, in-app fallback elsewhere (0255).
 6. Offline writes go through the mutation queue with idempotency keys (0252, Proposed: confirm before relying on it).
 
-Run `pnpm --filter <member> test typecheck build`, then `pnpm verify`.
+Run `pnpm turbo run test typecheck build --filter=<member>`, then `pnpm verify`.
 
 ## Never
 

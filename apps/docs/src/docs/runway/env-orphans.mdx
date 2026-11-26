@@ -1,0 +1,47 @@
+---
+title: "runway env orphans"
+description: "Warns on names in an environment's sops scope that no code declares."
+---
+
+Warns on names in an environment's sops scope that no code declares.
+
+```bash
+stackra runway env orphans <environment> [--dir <dir>]
+```
+
+| Argument or option | Kind     | Meaning                                                        |
+| ------------------ | -------- | -------------------------------------------------------------- |
+| `environment`      | argument | dev, preview, staging or production.                           |
+| `--dir`            | option   | The folder holding the scope's ciphertext; default `.secrets`. |
+
+## What it does
+
+Reads the file names of the scope's ciphertext and the names every member declares. It decrypts nothing.
+
+## What it prints
+
+One warning per orphan name and where it sits, or that there is none.
+
+## Exit codes
+
+| Code | Means                                                                        |
+| ---- | ---------------------------------------------------------------------------- |
+| 0    | Always, orphans included: an orphan is a finding to clean up, not a failure. |
+| 1    | Outside a proved CI job, or the scope's ciphertext is missing.               |
+
+## Where it runs
+
+Only in a CI job its GitHub OIDC token proves.
+
+## Examples
+
+```bash
+stackra runway env orphans staging --dir .secrets
+```
+
+## See also
+
+[0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical),
+[0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets) (amendment of 2026-11-04) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

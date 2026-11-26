@@ -1,0 +1,56 @@
+{
+  "member": "pay",
+  "package": "@golden/service-pay",
+  "version": "1.2.0",
+  "modules": [
+    {
+      "key": "payments",
+      "class": "PaymentsModule",
+      "exports": [],
+      "dependsOn": []
+    }
+  ],
+  "events": [
+    {
+      "name": "payments.payment.captured.v1",
+      "module": "payments",
+      "class": "PaymentCaptured",
+      "file": "src/modules/payments/events/payment-captured.event.ts",
+      "kind": "integration",
+      "version": 1,
+      "fields": {
+        "$ref": "#/schemas/payments.PaymentCaptured"
+      }
+    }
+  ],
+  "relay": {
+    "keys": {
+      "dev": [
+        {
+          "id": "pay-dev-1",
+          "publicKey": "cGF5LWRldi1wdWJsaWM"
+        }
+      ]
+    },
+    "subscribers": {
+      "dev": [
+        {
+          "member": "channels",
+          "events": ["payments.payment.captured.v1"]
+        }
+      ]
+    }
+  },
+  "schemas": {
+    "payments.PaymentCaptured": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^pay_[0-9A-Za-z]{26}$"
+        }
+      }
+    }
+  }
+}

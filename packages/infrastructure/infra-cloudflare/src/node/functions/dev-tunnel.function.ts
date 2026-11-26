@@ -4,7 +4,7 @@
  *          proxied CNAME per dev host to `<tunnel id>.cfargotunnel.com`, so `stackra dev --tunnel` only runs
  *          cloudflared and never holds a DNS-edit token.
  * Boundary: declares Pulumi resources only; the ingress comes from `tunnelIngress`. The tunnel token is never an output
- *           here: it reaches the machine from Infisical `/agents` through `infisical run` and never touches disk.
+ *           here: it reaches the machine from the sops `agents` scope through `secrets-exec` and never touches disk.
  *           Access in front of the hosts is `accessGate`'s. `edgeWorker` reuses it for a regional API origin's tunnel
  *           (ADR 0437 decision 5), with its own record comment.
  * Runtime: node

@@ -5,7 +5,8 @@
  *          `app.events.published()` and `app.listeners.calls(X)` / `.failures(X)`. Declared on `TestingApp` here and
  *          registered when this module loads.
  * Boundary: uses the app's own `EventBus` and `EventOutbox` when it binds them, else a bus on the app's clock and an
- *           `OutboxFake`. Each compile replaces the current app; nothing is shared between apps. A listener the app
+ *           `OutboxFake`. Offers `OutboxFake` as `EventOutbox`'s `memory` test driver, so `.useDrivers("memory")` binds
+ *           it rather than the real outbox gen wires for the pipeline; a production container never sees it. Each compile replaces the current app; nothing is shared between apps. A listener the app
  *           cannot build because a dependency has no binding is skipped (STA-1740) and listed by `app.listeners.skipped()`.
  * Runtime: node
  * Governing contract: ADR 0269 (decision 3); ADR 0263 (decision 12); the STA-348 registry row (builder extension point).
@@ -89,6 +90,15 @@ function built(
  */
 export const EVENTS_TESTING_PLUGIN: TestingPlugin = {
   name: "@stackra/events",
+  // `.useDrivers("memory")` picks the fake outbox even where gen binds the real one for the pipeline (#706), so
+  // `drainOutbox`, `toRecord` and `app.events.published()` see what a call wrote; an `.override(EventOutbox, …)` still wins.
+  drivers: [
+    {
+      port: EventOutbox,
+      key: "events.EventOutbox",
+      candidates: { memory: () => Promise.resolve(OutboxFake) },
+    },
+  ],
   app(app: TestingApp) {
     const clock = app.get(Clock);
     const bus = app.has(EventBus) ? app.get(EventBus) : new EventBus(clock);

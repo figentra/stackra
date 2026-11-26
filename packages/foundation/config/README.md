@@ -20,6 +20,7 @@ with `@Secret("NAME")` and resolved blind.
 | `.`           | `ConfigInvalidError`                       | thrown at boot; names paths, variables and secrets, never values         |
 | `.`           | `BuildFacts`, `PublicPart`, `ConfigValues` | types                                                                    |
 | `./contracts` | `SecretStore`                              | the port secrets resolve through; the runtime binds its driver           |
+| `./contracts` | `KmsClient`                                | the AWS KMS client the `kms` signer calls; the host binds its driver     |
 | `./react`     | `useConfig`                                | `const site = useConfig(SiteConfig)` in a component                      |
 | `./testing`   | `.withConfig`, `.withSecrets`              | added to `createTestingModule(...)` when the entry loads                 |
 
@@ -69,16 +70,34 @@ throws. A schema with a secret never reaches a wire surface (gen's `secret_on_wi
 
 ## Secret store drivers
 
-Two `SecretStore` drivers read a deployment's secrets into memory at boot; the runtime awaits `load()` before it
-builds the configuration that reads them (and again after a rotation). Neither lists, logs or reports a value.
+A deployed runtime reads its secrets from the platform's own store (`envSecrets` in `@stackra/app`), where runway's
+sync writes them from `figentra/secrets` (ADR 0525). Beside it, the AWS Secrets Manager driver reads a deployment's
+secrets into memory at boot; the runtime awaits `load()` before it builds the configuration that reads them (and again
+after a rotation). No driver lists, logs or reports a value.
 
 | Driver                               | Entry    | Configuration                                                                                                                                                    |
 | ------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `InfisicalSecretStoreDriver`         | `.`      | `InfisicalConfig`: site, project, environment, folder; the machine identity is `INFISICAL_CLIENT_ID` and `INFISICAL_CLIENT_SECRET` from the platform's own store |
 | `MemorySecretStoreDriver`            | `.`      | none: `memory`, the secrets a test sets (STA-1308)                                                                                                               |
 | `AwsSecretsManagerSecretStoreDriver` | `./node` | `AwsSecretsManagerConfig`: region and secret ids; the runtime's AWS role signs the reads                                                                         |
 
+`SecretsConfig.store` (key `config.secrets`) picks the driver: `memory` unless config says otherwise, so a member
+boots with no secrets config; a deployment that reads AWS sets `store: aws_secrets_manager` in its runway values.
+
 A JSON-object secret in AWS gives one secret per string member. `@aws-sdk/client-secrets-manager` is an optional peer.
+
+## Signer drivers
+
+A service that injects @stackra/contracts' `Signer` binds one of these drivers, configured by `SignerConfig` (key
+`config.signer`), whose `driver` field picks it: `ephemeral` unless config says otherwise, so a member boots with no
+signer config; production sets `driver: kms` with `kmsKeyId` in its runway values. They are the container's twins of the contracts classes `AwsKmsSignerDriver` and `MemorySignerDriver`,
+which they delegate to; code that builds a signer by hand keeps using those.
+
+- **`kms`, `KmsSignerDriver`:** signs inside AWS KMS with `kmsKeyId`, and names each signature `keyId` (or the KMS key
+  id). It takes a `KmsClient`: the `aws-sdk` driver in `./node` (`AwsSdkKmsClientDriver`) builds `new KMS({ region })`
+  of `@aws-sdk/client-kms`, an optional peer, on first use, with the runtime's role; a host may bind its own. An
+  empty `kmsKeyId` is refused at the first signature.
+- **`ephemeral`, `EphemeralSignerDriver`:** a key pair made in process on first use, for tests and local development.
+  It is lost on restart, so a signature that must outlive the process never comes from it.
 
 ## The environment
 

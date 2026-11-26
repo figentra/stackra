@@ -11,6 +11,8 @@ and its HeroUI Native / Uniwind CSS, and the theme's fonts. [`ui`](ui) (`@stackr
 shared, HeroUI v3 on web and HeroUI Native with Uniwind on native. Stackra ships no HeroUI Pro: free HeroUI and its own
 components only
 ([ADR 0469](../../apps/docs/src/docs/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only.mdx)).
+[`branding`](branding) (`@stackra/branding`): a tenant's brand profile read at run time (settings, a brand-images
+bucket and `BrandReader`).
 
 **Planned here:** icons. A product brings its own brand as a theme for `@stackra/tokens`; Stackra's own logos and brand
 assets live in the docs app (`apps/docs/src/assets/brand/`).

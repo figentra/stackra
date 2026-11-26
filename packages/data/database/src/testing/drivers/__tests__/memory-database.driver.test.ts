@@ -78,6 +78,38 @@ describe(MemoryDatabaseDriver, { timeout: 60_000 }, () => {
     expect(await memos().count({})).toBe(0);
   });
 
+  it("runs a requiresNew transaction inside a running one as a savepoint, without waiting", async () => {
+    const database = new MemoryDatabaseDriver();
+    await database.transaction(async () => {
+      await memos().insert({ id: "memo_01ja0000000000000000000003", body: "outer" });
+      await database.transaction(
+        () => memos().insert({ id: "memo_01ja0000000000000000000004", body: "reserved" }),
+        { requiresNew: true },
+      );
+    });
+    expect(await memos().count({})).toBe(2);
+  });
+
+  it("rolls back only the savepoint when a requiresNew transaction fails", async () => {
+    const database = new MemoryDatabaseDriver();
+    await database.transaction(async () => {
+      await memos().insert({ id: "memo_01ja0000000000000000000005", body: "kept" });
+      await expect(
+        database.transaction(
+          async () => {
+            await memos().insert({ id: "memo_01ja0000000000000000000006", body: "dropped" });
+            throw new RangeError("boom");
+          },
+          { requiresNew: true },
+        ),
+      ).rejects.toThrow("boom");
+      await memos().insert({ id: "memo_01ja0000000000000000000007", body: "after" });
+    });
+    const bodies = (await memos().find({})).map((memo) => memo.body);
+    bodies.sort();
+    expect(bodies).toEqual(["after", "kept"]);
+  });
+
   it("sets the scope settings inside withScope and has the ltree extension", async () => {
     const database = new MemoryDatabaseDriver();
     const rows = await database.withScope(shop, () =>

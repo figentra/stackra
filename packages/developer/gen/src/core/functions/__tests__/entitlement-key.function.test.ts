@@ -17,4 +17,12 @@ describe("entitlementKey", () => {
       "storefront.shopper_assistant",
     );
   });
+
+  it("strips only a trailing Entitlement and snake-cases a multi-word name", () => {
+    expect(entitlementKey("ai", "TokenQuotaEntitlement")).toBe("ai.token_quota");
+    expect(entitlementKey("billing", "EntitlementAuditEntitlement")).toBe(
+      "billing.entitlement_audit",
+    );
+    expect(entitlementKey("orders", "Exports")).toBe("orders.exports");
+  });
 });

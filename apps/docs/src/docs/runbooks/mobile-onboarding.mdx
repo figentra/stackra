@@ -8,7 +8,7 @@ icon: "rocket"
 
 <Note>
   Status: built (STA-1623), waiting for the first live run. The real drivers are written against the
-  documented API shapes and have not called Apple, Google, Expo, Sentry or Infisical yet. Decision:
+  documented API shapes and have not called Apple, Google, Expo or Sentry yet. Decision:
   [0482](/adr/0482-mobile-onboarding-is-a-runway-step-and-eas-owns-signing).
 </Note>
 
@@ -56,15 +56,15 @@ goes. The listing, screenshots, review details and App Review submission are ADR
 | `analytics-link`   | Links the Firebase project to `google.analyticsAccount`.                                                                                                                                          | no account named, or no grant  |
 | `sentry`           | Creates the Sentry project `<project>-<app>` and writes `sentry.dsn`.                                                                                                                             | —                              |
 | `signing`          | Reads what EAS holds. EAS creates every certificate, profile, APNs key and keystore on the first production build.                                                                                | —                              |
-| `push`             | Creates the `eas-fcm` service account key, writes it blind to `prod:/ci/store/<product>/FCM_SERVICE_ACCOUNT_JSON` and hands it to EAS.                                                            | —                              |
-| `store-keys`       | Checks the root-kit names are set (never a value).                                                                                                                                                | a name is missing              |
+| `push`             | Creates the `eas-fcm` service account key and hands it only to EAS, its one reader; running the step again replaces a lost key.                                                                   | —                              |
+| `store-keys`       | Checks the root-kit names are set (never a value); prints `pnpm secrets:put <NAME> --scope ci/production/store` for each missing one.                                                             | a name is missing              |
 | `play-app`         | Reads whether Play has the app and a release.                                                                                                                                                     | until the first upload is done |
 
 ## One-time setup (owner, for every product)
 
 1. **Root kit** (ADR 0480, STA-1591): `ASC_API_KEY_ID`, `ASC_API_ISSUER_ID`, `ASC_API_PRIVATE_KEY`,
-   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `EXPO_TOKEN` into Infisical `prod:/ci/store` through `~/Secrets-inbox` and
-   `pnpm secrets:import`.
+   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `EXPO_TOKEN` into the `ci/production/store` scope of figentra/secrets
+   (ADR 0525), one `pnpm secrets:put <NAME> --scope ci/production/store` each.
 2. **Google workload identity federation**: in Figentra's Google Cloud organisation, a workload identity pool and
    provider that trust GitHub OIDC from each product repository's `production` environment, and a folder for product
    projects. Grant the pool's principal Project Creator, Firebase Admin, Service Account Admin, Service Account Key
@@ -72,7 +72,6 @@ goes. The listing, screenshots, review details and App Review submission are ADR
    the folder is the organisation variable `GOOGLE_PROJECT_FOLDER` (`folders/<number>`).
 3. **Google Analytics**: add the same principal as Editor on Figentra's Analytics account.
 4. **Sentry**: `SENTRY_AUTH_TOKEN` in `/ci` with `project:write`, and a `mobile` team in the `figentra` organisation.
-5. **Infisical**: the job's OIDC login exports `INFISICAL_TOKEN`; the identity may write under `prod:/ci/store`.
 
 ## Owner steps per app
 

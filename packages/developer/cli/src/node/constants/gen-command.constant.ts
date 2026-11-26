@@ -9,8 +9,9 @@
  *          is the CI gate. At a workspace root with a root runway it also writes Claude's `.claude/launch.json`
  *          and VS Code's `dev: …` tasks from the runways (`writeLaunchFiles`); `--check` fails when one is stale.
  * Boundary: runs every member even after one fails, so one run reports everything; only the last round's refusals
- *           print; exits 1 when any member is not clean. At a workspace root a member with no `node_modules` (left
- *           out by a filtered install) is skipped by name, never refused.
+ *           print, with every member's warnings (a member that passes too) and an `N warning(s) in M member(s)` line;
+ *           exits 1 when any member is not clean, and a warning never changes the exit code. At a workspace root a
+ *           member with no `node_modules` (left out by a filtered install) is skipped by name, never refused.
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: `stackra gen --check`); ADR 0295 (decisions 1 and 5); ADR 0261;
  *                     ADR 0260 (a cycle between services is allowed at the manifest level);
@@ -86,8 +87,10 @@ export const GEN_COMMAND: CliCommand = {
     // refused member may still write its clients or manifest, and a manifest written late can change the clients of
     // a member already clean, so the next round reruns the members refused and those that consume another service.
     let pending = roots;
+    // Each member's lines from its latest run: a member that passes still prints its warnings (STA-2561).
+    const report = new Map<string, readonly string[]>();
     for (let round = 1; ; round += 1) {
-      const failed: { readonly root: string; readonly lines: string[] }[] = [];
+      const failed: string[] = [];
       let wrote = false;
       const roundIo = {
         ...io,
@@ -99,14 +102,23 @@ export const GEN_COMMAND: CliCommand = {
       for (const root of pending) {
         const lines: string[] = [];
         if (!(await runGen(root, options, { ...roundIo, err: (text) => lines.push(text) })))
-          failed.push({ root, lines });
+          failed.push(root);
+        report.set(root, lines);
       }
-      const refused = new Set(failed.map(({ root }) => root));
+      const refused = new Set(failed);
       const next = roots.filter(
         (root) => refused.has(root) || existsSync(join(root, ".stackra", "gen", "clients")),
       );
       if (options.check === true || !wrote || next.length === 0 || round > roots.length) {
-        for (const { lines } of failed) for (const line of lines) io.err(line);
+        for (const lines of report.values()) for (const line of lines) io.err(line);
+        const warned = [...report.values()].map(
+          (lines) => lines.filter((line) => line.startsWith("warning: ")).length,
+        );
+        const warnings = warned.reduce((sum, count) => sum + count, 0);
+        if (warnings > 0)
+          io.err(
+            `gen: ${warnings} warning(s) in ${warned.filter((count) => count > 0).length} member(s)\n`,
+          );
         if (options.check === true && failed.length === 0)
           io.out(`gen --check: ${roots.length} member(s) up to date\n`);
         return failed.length === 0 && !launchStale ? 0 : 1;

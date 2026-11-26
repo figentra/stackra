@@ -54,10 +54,14 @@ describe("@stackra/identity", () => {
       "MemoryIdpAdminDriver",
       "MemoryLoginDirectoryStoreDriver",
       "MemoryPasskeysDriver",
+      "MemoryServicePrincipalsDriver",
+      "MemoryServiceTokensDriver",
       "MemorySessionStoreDriver",
       "MemoryStaffPinStoreDriver",
       "MemoryVerificationDriver",
       "PkceSessionStoreDriver",
+      "ServiceTokenRefusedError",
+      "ServiceTokenUnavailableError",
       "SessionClientSessionDriver",
       "SessionOfflineSessionDriver",
       "SessionRevokedError",
@@ -74,8 +78,10 @@ describe("@stackra/identity", () => {
       "VerificationService",
       "VerificationUnavailableError",
       "ZitadelIdpAdminDriver",
+      "actorOf",
       "assuranceOf",
       "checkPublishableKey",
+      "claimsActionResponse",
       "externalSignIn",
       "hashApiKey",
       "isOriginAllowed",
@@ -88,6 +94,7 @@ describe("@stackra/identity", () => {
       "signInProvidersOf",
       "signInWithPasskey",
       "stepUpSignIn",
+      "verifyZitadelSignature",
     ]);
   });
 

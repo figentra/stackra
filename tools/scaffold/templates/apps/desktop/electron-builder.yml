@@ -1,7 +1,7 @@
 # Stackra file contract:
 # Purpose: electron-builder packaging for @figentra/{{NAME}} (MR7). Signing, notarisation and the update feed are
 #          wired by the release pipeline (MR7-MR9: macOS notarisation, Azure Trusted Signing, electron-updater from
-#          R2 with beta/stable channels and staged rollouts); credentials come from Infisical, never this file.
+#          R2 with beta/stable channels and staged rollouts); credentials come from sops, never this file.
 # Owner: the app owner · Secrets: forbidden
 appId: com.figentra.stackra.{{NAME}}
 productName: "{{TITLE}}"

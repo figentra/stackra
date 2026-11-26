@@ -19,6 +19,7 @@ describe("@stackra/identity/contracts", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "AccountDeletions",
       "AccountSecurity",
+      "ApiKeyMode",
       "ApiKeyStore",
       "AppApprovalChallenges",
       "AppApprovalPurpose",
@@ -36,6 +37,8 @@ describe("@stackra/identity/contracts", () => {
       "OperatorBootstrapOutcome",
       "PasskeyRefusal",
       "Passkeys",
+      "ServicePrincipals",
+      "ServiceTokens",
       "SessionStore",
       "SignInBrowser",
       "StaffPinStore",

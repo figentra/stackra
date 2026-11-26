@@ -1,0 +1,27 @@
+{
+  "member": "container",
+  "package": "@stackra/container",
+  "version": "0.18.0",
+  "modules": [
+    {
+      "key": "container",
+      "class": "ContainerModule",
+      "exports": [],
+      "dependsOn": []
+    }
+  ],
+  "services": [
+    {
+      "class": "DiscoveryService",
+      "from": "@stackra/container",
+      "deps": [
+        {
+          "class": {
+            "name": "Container",
+            "from": "@stackra/container"
+          }
+        }
+      ]
+    }
+  ]
+}

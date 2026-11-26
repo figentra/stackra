@@ -1,0 +1,3 @@
+import { defineService } from "@stackra/contracts";
+
+export default defineService({});

@@ -90,7 +90,8 @@ export function Tabs({
   return (
     <HeroTabs
       {...rest}
-      {...omitUndefined({ variant })}
+      // HeroUI Native has no steps look; the flat one is the closest.
+      {...omitUndefined({ variant: variant === "steps" ? "secondary" : variant })}
       value={value}
       onValueChange={(next) => {
         haptics.play("selection");

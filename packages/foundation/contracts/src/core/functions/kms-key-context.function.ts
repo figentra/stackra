@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `kmsKeyContext`, the KMS encryption context a tenant data key is wrapped and unwrapped with: the tenant id
  *          and the key id, so a wrapped key copied to another tenant's row, or renamed, fails to unwrap.
- * Boundary: internal to the package; pure. Wrapping and unwrapping share it, so the two never drift. KMS logs the
+ * Boundary: pure; exported so a driver that mints a key (tenancy's `kms` KeyProvider) and the one that unwraps it
+ *           share it, and the two never drift. KMS logs the
  *           context in CloudTrail, so it holds ids only.
  * Runtime: isomorphic
  * Governing contract: ADR 0188 (decision 2); ADR 0415 (decision 2).

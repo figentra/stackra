@@ -16,6 +16,8 @@ import { ScopeNode } from "#node/models/scope-node.model";
 describe("ScopeNode", () => {
   it("is a model with the scp public id and the timestamps", () => {
     expect(new ScopeNode()).toBeInstanceOf(Model);
+    // A platform table (ADR 0239 amendment, group (c)), never tenant-owned.
+    expect(Model.isGlobal(ScopeNode)).toBe(true);
     expect(traitsOf(ScopeNode).map((trait) => trait.name)).toEqual(["has_public_id", "timestamps"]);
     expect(traitsOf(ScopeNode)[0]?.options).toEqual({ prefix: "scp" });
   });

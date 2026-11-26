@@ -23,6 +23,20 @@ job, driven by `stackra runway infra` (ADR 0354 decision 5).
 
 `.` never loads Pulumi, so gen can derive the config without it.
 
+## The organization layer
+
+`gcpOrganization(name, args)` (from `./node`) builds a GCP organization's layer, for a stacks repository that
+holds the ids (for Figentra, `figentra/infra`):
+
+- folders as paths (`workloads/ksa`);
+- organization policies on the organization or a folder: enforced, or allowed and denied values;
+- projects in their folders, with a billing account and labels;
+- non-authoritative IAM members on the organization, folders, projects and billing accounts.
+
+Folders and projects are protected and keep GCP's delete protection, so removing a line never deletes anything. An
+imported project shows no change: `autoCreateNetwork` can't be read and is ignored. The organization and billing
+accounts are named by id, never created.
+
 ## The stack
 
 ```ts

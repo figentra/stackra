@@ -24,4 +24,10 @@ export interface CaptureRequest {
 
   /** This capture's id. */
   readonly reference: string;
+
+  /**
+   * The platform's fee on a direct charge on the connected account (Stripe `application_fee_amount`), taken from
+   * this capture; unlike `CheckoutRequest.platform`, which is a destination charge.
+   */
+  readonly applicationFee?: Money;
 }

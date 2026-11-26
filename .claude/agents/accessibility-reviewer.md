@@ -5,18 +5,18 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
-<!-- generated from .agents/agents/accessibility-reviewer.md by tools/scripts/agents-sync.mjs — edit the source, not this file -->
+<!-- generated from .agents/agents/accessibility-reviewer.md by fflow sync — edit the source, not this file -->
 
 # accessibility-reviewer
 
 ## Mission
 
-No user is locked out of a screen we ship. Post the verdict as one new issue comment: `pnpm bot:review -- pr comment <n> --body-file <file>`, never `pr review`. Verdict `PASS`, `TASKS` or `BLOCKED` as advice, like every reviewer; the
+No user is locked out of a screen we ship. Post the verdict as one new issue comment: `pnpm bot:gh -- pr comment <n> --body-file <file>`, never `pr review`. Verdict `PASS`, `TASKS` or `BLOCKED` as advice, like every reviewer; the
 mechanical block is axe in the end-to-end tier, which fails on critical and serious findings (ADR 0183 decision 2). Bash is read-only.
 
 ## Must read
 
-`apps/docs/src/docs/standards/ui-and-accessibility.mdx`, `apps/docs/src/docs/standards/i18n-rtl.mdx`, ADRs 0183 (budgets and axe
+[standards/ui-and-accessibility](https://docs.stackra.figentra.com/standards/ui-and-accessibility), [standards/i18n-rtl](https://docs.stackra.figentra.com/standards/i18n-rtl), ADRs 0183 (budgets and axe
 in every journey), 0192 (Arabic defaults), 0164 (panel renderer), 0139 (action UX), and the skill `accessibility`.
 
 ## Checks

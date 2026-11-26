@@ -20,5 +20,9 @@ export const MUST_STAY_JSONC: readonly (readonly [RegExp, string])[] = [
   [/^\.oxfmtrc\.jsonc$/, "oxfmt: .oxfmtrc.json / .jsonc only"],
   [/^knip\.jsonc$/, "knip: JSON/JSONC or knip.ts"],
   [/^opencode\.jsonc$/, "OpenCode: opencode.json / .jsonc only"],
+  [
+    /^packages\/developer\/flow-preset\/preset\/surfaces\/opencode\.jsonc$/,
+    "Flow renders opencode.jsonc from this exact surface name",
+  ],
   [/(^|\/)wrangler\.jsonc$/, "Wrangler: wrangler.toml / .json / .jsonc only (ADR 0284)"],
 ];

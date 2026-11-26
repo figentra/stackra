@@ -3,9 +3,13 @@
  * Purpose: `DevicePushTransportDriver`, the `device` `PushTransport`: an Expo push through the host's Expo Integration
  *          for the mobile apps, or a Web Push (VAPID, `aes128gcm`) straight to the browser's push service; a device the
  *          service reports gone (Expo `DeviceNotRegistered`, Web Push 404 or 410) is revoked through `PushTokenStore`.
- *          Expo receipts are read with `receipts`, which revokes the devices they report gone.
- * Boundary: the VAPID key pair and contact are platform secrets read by name (`WEB_PUSH_VAPID_PUBLIC_KEY`,
- *           `WEB_PUSH_VAPID_PRIVATE_KEY`, `WEB_PUSH_VAPID_SUBJECT`), never logged. A Web Push goes only to an https
+ *          Expo receipts are read with `receipts`, which revokes the devices they report gone. A push's action
+ *          category and buttons pass through: to Expo as `categoryId` with the links in `data.actions`, to a browser in
+ *          the Web Push payload (`webPushPayload`).
+ * Boundary: the VAPID key pair is a platform secret read by name (`WEB_PUSH_VAPID_PUBLIC_KEY`,
+ *           `WEB_PUSH_VAPID_PRIVATE_KEY`), never logged; the contact is configuration (`NotificationsConfig`
+ *           `webPushVapidSubject`), read from the `WEB_PUSH_VAPID_SUBJECT` secret only while the host sets no config
+ *           (STA-2162). A Web Push goes only to an https
  *           endpoint, the browser's own push service. Sends are logged by key in `SendLog`. The Expo Integration is a
  *           vendor connector in the OS integrations service (R3-8): the host subclasses this abstract driver and
  *           declares it as `expo`; the constructor takes class tokens only (ADR 0294 rule 17).
@@ -22,6 +26,7 @@ import type { EventOutbox } from "@stackra/events/contracts";
 import { ProviderRefusedError, ProviderUnavailableError } from "@stackra/integrations";
 import type { IntegrationApi } from "@stackra/integrations";
 
+import type { NotificationsConfig } from "#config/notifications.config";
 import { NotificationChannel } from "#contracts/enums/notification-channel.enum";
 import { PushTransport } from "#contracts/ports/push-transport.port";
 import type { PushTokenStore } from "#contracts/ports/push-token-store.port";
@@ -31,6 +36,7 @@ import type { PushOutcome } from "#contracts/types/push-outcome.type";
 import { encryptWebPush } from "#core/functions/encrypt-web-push.function";
 import { recordDelivery } from "#core/functions/record-delivery.function";
 import { vapidAuthorization } from "#core/functions/vapid-authorization.function";
+import { webPushPayload } from "#core/functions/web-push-payload.function";
 
 /** An Expo push ticket or receipt. */
 interface ExpoTicket {
@@ -70,12 +76,16 @@ export abstract class DevicePushTransportDriver extends Driver(PushTransport) {
   /** Where delivery outcomes are recorded; none records nothing. */
   private readonly outbox: EventOutbox | undefined;
 
+  /** The configuration holding the VAPID contact; none falls back to the secret. */
+  private readonly config: NotificationsConfig | undefined;
+
   /**
    * @param secrets - the secret store.
    * @param tokens - the push target store.
    * @param log - the send log.
    * @param clock - the clock.
    * @param outbox - the service's event outbox, which receives one `DeliveryRecorded` per outcome; none records nothing.
+   * @param config - the notifications configuration, whose `webPushVapidSubject` is the VAPID contact.
    */
   constructor(
     secrets: SecretStore,
@@ -83,6 +93,7 @@ export abstract class DevicePushTransportDriver extends Driver(PushTransport) {
     log: SendLog,
     clock: Clock,
     outbox?: EventOutbox,
+    config?: NotificationsConfig,
   ) {
     super();
     this.secrets = secrets;
@@ -90,6 +101,7 @@ export abstract class DevicePushTransportDriver extends Driver(PushTransport) {
     this.log = log;
     this.clock = clock;
     this.outbox = outbox;
+    this.config = config;
   }
 
   /** Sends `push` once per `idempotencyKey` and revokes the token of a device that is gone. */
@@ -150,9 +162,14 @@ export abstract class DevicePushTransportDriver extends Driver(PushTransport) {
           to: push.target.token,
           title: push.title,
           body: push.body,
-          data: push.data ?? {},
+          // the buttons' links ride in the data, where the app reads them for the category's actions
+          data:
+            push.actions === undefined || push.actions.length === 0
+              ? (push.data ?? {})
+              : { ...push.data, actions: push.actions },
           ttl: push.ttlSeconds,
           ...(push.channelId === undefined ? {} : { channelId: push.channelId }),
+          ...(push.category === undefined ? {} : { categoryId: push.category }),
         },
       ],
     );
@@ -173,15 +190,13 @@ export abstract class DevicePushTransportDriver extends Driver(PushTransport) {
     const endpoint = new URL(push.target.endpoint);
     if (endpoint.protocol !== "https:") throw new TypeError("A Web Push endpoint must be https");
     const publicKey = this.secret("WEB_PUSH_VAPID_PUBLIC_KEY");
-    const body = await encryptWebPush(
-      JSON.stringify({ title: push.title, body: push.body, data: push.data ?? {} }),
-      push.target,
-    );
+    const body = await encryptWebPush(webPushPayload(push), push.target);
     const authorization = await vapidAuthorization({
       endpoint: push.target.endpoint,
       publicKey,
       privateKey: this.secret("WEB_PUSH_VAPID_PRIVATE_KEY"),
-      subject: this.secret("WEB_PUSH_VAPID_SUBJECT"),
+      // shortcut: the secret fallback serves hosts that set no config yet (os, STA-2162); remove it once they do.
+      subject: this.config?.webPushVapidSubject || this.secret("WEB_PUSH_VAPID_SUBJECT"),
       now: this.clock.now(),
     });
     let response: Response;

@@ -1,0 +1,7 @@
+export declare abstract class ActionBase { protected readonly "~kind": "action"; }
+export declare abstract class QueryBase { protected readonly "~kind": "query"; }
+export declare function Action(options: { readonly key: string; readonly [option: string]: unknown }): abstract new () => ActionBase;
+export declare function Query(options: { readonly key: string; readonly [option: string]: unknown }): abstract new () => QueryBase;
+export interface ReplicaPage<T = unknown> { readonly rows: readonly T[]; readonly removed: readonly string[]; readonly cursor: string; readonly asOf: Date; readonly full: boolean }
+export declare abstract class Permissions {}
+export declare const Permission: { readonly L0: "L0"; readonly L1: "L1"; readonly L2: "L2"; readonly L3: "L3"; readonly L4: "L4" };

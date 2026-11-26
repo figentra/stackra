@@ -3,9 +3,11 @@
  * Purpose: unit tests of `managedClient`: it joins paths to the base URL and refuses another origin (a resolved base URL is https, or http only on an `.internal` host), authenticates by
  *          each auth type (an API key from the connection before the platform's secret, Basic, a signed JWT, an OAuth
  *          bearer, or a token in the header and layout the Integration names), adds the declared headers under the
- *          call's own, sends a form body when the call or the Integration asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
- *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError` without a credential in
- *          either.
+ *          call's own, sends a form body when the call or the Integration asks, reads raw bytes when the call asks, retries only what is safe, honours the idempotency header, keeps to the rate limits, and turns a
+ *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError`, while `send` answers
+ *          every status as it came and throws only when nothing came back, all without a credential in
+ *          either: a provider code that echoes a connection's or the platform's secret, or the bearer sent, is
+ *          redacted under every key a provider names it, and the client logs nothing.
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
  *           are the memory driver of `@stackra/actions`.
  * Runtime: node (vitest)
@@ -13,12 +15,14 @@
  *                     (`retry.base` was `retry.backoff: "1ms"`; the default 200 ms doubling to 30 s is pinned in the
  *                     contracts `backoffDelay` test).
  */
+import { inspect } from "node:util";
+
 import { MemoryRateLimitStoreDriver } from "@stackra/actions";
 import { Secret } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
-import { Clock, Duration } from "@stackra/contracts";
-import { afterEach, describe, expect, it } from "@stackra/testing";
-import { vi } from "vitest";
+import { Clock, Duration, HttpMethod } from "@stackra/contracts";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { type MockInstance, vi } from "vitest";
 
 import { Connection } from "#core/bases/connection.base";
 import { Integration } from "#core/bases/integration.base";
@@ -138,6 +142,53 @@ describe("managedClient", () => {
     expect(headerOf(fetchMock, 0, "content-type")).toBe("application/json");
   });
 
+  it("reads the answer as raw bytes when the call asks, and asks for any media type", async () => {
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0xff, 0x00, 0x80]);
+    const fetchMock = stubFetch(
+      () => new Response(pdf, { status: 200, headers: { "content-type": "application/pdf" } }),
+    );
+
+    const bytes = await clientOf(new MailIntegration()).get<Uint8Array>("/labels/1", {
+      bytes: true,
+    });
+
+    expect(bytes).toBeInstanceOf(Uint8Array);
+    expect([...bytes]).toEqual([...pdf]);
+    expect(headerOf(fetchMock, 0, "accept")).toBe("*/*");
+  });
+
+  it("sends a raw body as given with its media type, and reads the answer as text", async () => {
+    const envelope = '<soap:Envelope><soap:Body><Track id="1&amp;2"/></soap:Body></soap:Envelope>';
+    const reply =
+      "<soap:Envelope><soap:Body><TrackResult>ok</TrackResult></soap:Body></soap:Envelope>";
+    const fetchMock = stubFetch(
+      () => new Response(reply, { status: 200, headers: { "content-type": "text/xml" } }),
+    );
+
+    const text = await clientOf(new MailIntegration()).post<string>("/Service.asmx", undefined, {
+      body: { content: envelope, contentType: "text/xml; charset=utf-8" },
+      text: true,
+    });
+
+    expect(text).toBe(reply);
+    expect(fetchMock.mock.calls[0]?.[1].body).toBe(envelope);
+    expect(headerOf(fetchMock, 0, "content-type")).toBe("text/xml; charset=utf-8");
+    expect(headerOf(fetchMock, 0, "accept")).toBe("*/*");
+    expect(headerOf(fetchMock, 0, "authorization")).toBe("Bearer platform-key");
+  });
+
+  it("refuses a call that gives both a body and a raw body", async () => {
+    stubFetch(() => json({}));
+
+    await expect(
+      clientOf(new MailIntegration()).post(
+        "/messages",
+        { a: 1 },
+        { body: { content: "<a/>", contentType: "text/xml" } },
+      ),
+    ).rejects.toThrow(TypeError);
+  });
+
   it("sends the connection's key before the platform's", async () => {
     const fetchMock = stubFetch(() => new Response(null, { status: 204 }));
     const integration = new MailIntegration();
@@ -253,11 +304,21 @@ describe("managedClient", () => {
 
       authToken = "tok";
     }
+    class KeyOnlyIntegration extends Integration({
+      ...BASE,
+      provider: "key_only",
+      auth: { type: AuthType.Basic, username: "{apiKey}", password: "" },
+    }) {
+      apiKey = "sk_1";
+    }
     const fetchMock = stubFetch(() => json({}));
     await clientOf(new QueryIntegration()).get("/x");
     await clientOf(new BasicIntegration()).get("/x");
+    await clientOf(new KeyOnlyIntegration()).get("/x");
     expect(new URL(String(fetchMock.mock.calls[0]?.[0])).searchParams.get("key")).toBe("query-key");
     expect(headerOf(fetchMock, 1, "authorization")).toBe(`Basic ${btoa("AC1:tok")}`);
+    // An empty password still sends the colon (RFC 7617), as Medusa's and Stripe's API keys expect.
+    expect(headerOf(fetchMock, 2, "authorization")).toBe(`Basic ${btoa("sk_1:")}`);
   });
 
   it("signs a JWT for each call", async () => {
@@ -403,5 +464,163 @@ describe("managedClient", () => {
       auth: { type: AuthType.None },
     } satisfies IntegrationOptions) {}
     await expect(clientOf(new HooksOnlyIntegration()).get("/x")).rejects.toThrow(/no baseUrl/);
+  });
+});
+
+/** A connection that keeps its key as a `@Secret` field. */
+class SecretMailConnection extends Connection<MailIntegration> {
+  @Secret("MAIL_CONNECTION_API_KEY")
+  apiKey!: string;
+
+  async check(): Promise<ConnectedAccount> {
+    return ConnectedAccount.create({ id: "mail" });
+  }
+}
+
+const ECHOED_KEY = "sk_test_5b8e1f9c";
+
+describe("managedClient send", () => {
+  it("answers a 4xx as it came, with its headers and text, authenticated and on its origin", async () => {
+    const result = '{"validationResults":{"status":"ERROR"}}';
+    const fetchMock = stubFetch(
+      () =>
+        new Response(result, {
+          status: 400,
+          headers: { "content-type": "application/json", "X-Request-Id": "req_1" },
+        }),
+    );
+
+    const answer = await clientOf(new MailIntegration()).send({
+      method: HttpMethod.Post,
+      path: "https://elsewhere.example/invoices",
+      headers: { "Accept-Version": "V2" },
+      body: { content: '{"invoice":"PD94"}', contentType: "application/json" },
+    });
+
+    expect(answer).toEqual({
+      status: 400,
+      headers: { "content-type": "application/json", "x-request-id": "req_1" },
+      body: result,
+    });
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url).startsWith("https://api.mail.example/v1/")).toBe(true);
+    expect(init?.body).toBe('{"invoice":"PD94"}');
+    expect(headerOf(fetchMock, 0, "authorization")).toBe("Bearer platform-key");
+    expect(headerOf(fetchMock, 0, "accept-version")).toBe("V2");
+    expect(headerOf(fetchMock, 0, "accept")).toBe("*/*");
+  });
+
+  it("retries a transient status as the typed calls do, then returns the last answer", async () => {
+    const fetchMock = stubFetch(() => new Response("down", { status: 503 }));
+    const api = clientOf(new MailIntegration());
+
+    await expect(api.send({ method: HttpMethod.Get, path: "/status" })).resolves.toMatchObject({
+      status: 503,
+      body: "down",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    await api.send({ method: HttpMethod.Post, path: "/invoices" });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+
+    await api.send({ method: HttpMethod.Post, path: "/invoices", idempotencyKey: "inv_1" });
+    expect(fetchMock).toHaveBeenCalledTimes(7);
+    expect(headerOf(fetchMock, 6, "idempotency-key")).toBe("inv_1");
+  });
+
+  it("reads an empty answer as an empty body", async () => {
+    stubFetch(() => new Response(null, { status: 204 }));
+
+    await expect(
+      clientOf(new MailIntegration()).send({ method: HttpMethod.Delete, path: "/invoices/1" }),
+    ).resolves.toEqual({ status: 204, headers: {}, body: "" });
+  });
+
+  it("throws ProviderUnavailableError only when nothing came back", async () => {
+    stubFetch(() => Promise.reject(new TypeError("fetch failed")));
+
+    await expect(
+      clientOf(new MailIntegration()).send({ method: HttpMethod.Get, path: "/status" }),
+    ).rejects.toBeInstanceOf(ProviderUnavailableError);
+  });
+});
+
+/** Everything a refusal shows: its printout, its JSON, its envelope and every console line written. */
+function shownOf(refused: unknown, consoleSpies: readonly MockInstance[]): string {
+  return [
+    inspect(refused, { depth: 10, showHidden: true }),
+    JSON.stringify(refused),
+    JSON.stringify((refused as ProviderRefusedError).toEnvelope()),
+    ...consoleSpies.flatMap((spy) => spy.mock.calls.map((args) => inspect(args))),
+  ].join("\n");
+}
+
+describe("managedClient with a provider that echoes a credential", () => {
+  let consoleSpies: MockInstance[] = [];
+
+  beforeEach(() => {
+    consoleSpies = (["log", "info", "warn", "error", "debug"] as const).map((method) =>
+      vi.spyOn(console, method).mockImplementation(() => undefined),
+    );
+  });
+
+  afterEach(() => {
+    for (const spy of consoleSpies) spy.mockRestore();
+  });
+
+  const echoes = [ECHOED_KEY, `bad_key_${ECHOED_KEY}_given`, `The key ${ECHOED_KEY} is not valid`];
+  const cases = ["code", "error", "name", "type", "message"].flatMap((field) =>
+    echoes.flatMap((echo) => [
+      { field, echo, body: { [field]: echo } },
+      { field, echo, body: { error: { [field]: echo } } },
+    ]),
+  );
+
+  it.each(cases)("redacts the key echoed under $field ($echo)", async ({ body }) => {
+    stubFetch(() => json(body, 401));
+    const connection = hydrateConnection(
+      SecretMailConnection,
+      { id: "conn_00000000000000000000000001", fields: {}, secrets: { apiKey: ECHOED_KEY } },
+      (built) => clientOf(new MailIntegration(), { connection: built }),
+    );
+    const refused = await connection.api.get("/domains").catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(refused, { status: 401 })).toBe(true);
+    expect((refused as ProviderRefusedError).providerCode ?? "[redacted]").toBe("[redacted]");
+    const shown = shownOf(refused, consoleSpies);
+    expect(shown).not.toContain(ECHOED_KEY);
+    expect(shown).not.toContain("5b8e1f9c");
+  });
+
+  it("redacts the platform's secret and the OAuth bearer it sent", async () => {
+    stubFetch(() => json({ error: { code: "platform-key" } }, 403));
+    const platform = await clientOf(new MailIntegration())
+      .get("/domains")
+      .catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(platform, { status: 403, code: "[redacted]" })).toBe(true);
+
+    class OAuthIntegration extends Integration({
+      ...BASE,
+      provider: "oauth",
+      auth: {
+        type: AuthType.OAuth2ClientCredentials,
+        tokenUrl: "https://auth.mail.example/token",
+        clientId: "{clientId}",
+        clientSecret: "{clientSecret}",
+      },
+    }) {}
+    stubFetch(() => json({ name: "token_at_7d41e2_expired" }, 401));
+    const bearer = await clientOf(new OAuthIntegration(), { accessToken: async () => "at_7d41e2" })
+      .get("/x")
+      .catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(bearer, { status: 401, code: "[redacted]" })).toBe(true);
+    expect(shownOf(bearer, consoleSpies)).not.toContain("at_7d41e2");
+  });
+
+  it("keeps a code that holds no credential", async () => {
+    stubFetch(() => json({ error: { type: "invalid_request" } }, 400));
+    const refused = await clientOf(new MailIntegration())
+      .get("/domains")
+      .catch((error: unknown) => error);
+    expect(ProviderRefusedError.is(refused, { status: 400, code: "invalid_request" })).toBe(true);
   });
 });

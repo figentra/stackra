@@ -1,5 +1,934 @@
 # @stackra/gen
 
+## 0.33.1
+
+### Patch Changes
+
+- d60f9d5: A service's Encore app resolves its `#` imports, and its typecheck no longer resolves a compiled workspace package's
+  `#` imports into the service. Encore honours only the first `./` target of a tsconfig `paths` key, so
+  `stackra encore:prepare` writes, and `stackra validate --repository` expects, each package.json `imports` key with its
+  first target only (`pathsOfImports`). And because tsc applies `paths` to every package a service compiles, gen writes
+  the service's `.stackra/tsconfig.typecheck.json` (its tsconfig without `paths`), and `stackra typecheck` runs on it in a
+  service. After upgrading, run `stackra encore:prepare` in each service and regenerate (ADR 0091, rule 4 as corrected
+  2026-11-10).
+- e885a38: An app's generated `#stackra/i18n` catalogue loaders load in the browser again. gen wrote each loader with
+  `{ with: { type: "json" } }`, and Vite serves the JSON as a JavaScript module, so the browser refused every catalogue
+  ("Expected a JSON module script"). An app's loaders now import the JSON plainly and let its bundler (Vite, Metro) load
+  it; services, packages and Workers keep the attribute, which Node and esbuild need. Regenerate (`stackra gen`).
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- e885a38: A service's Encore app applies its migrations. Encore's runner runs every migration file in one transaction, so the
+  online index builds of `@stackra/database` migration 0006 (`create index concurrently`, which every service declares)
+  failed with SQLSTATE 25001 and no service started under `encore run`. The copy gen writes to the Encore service's
+  `migrations/` folder now builds each online step in its plain form; `.stackra/migrations`, which `stackra db migrate`
+  applies in production, keeps the online form (ADR 0159, amendment of 2026-11-10). Regenerate (`stackra gen`).
+- e885a38: A service's generated Encore topic files pass Encore's parser. Regenerate (`stackra gen`) to pick it up.
+  
+  - `events.ts` and `queues.ts` registered each Pub/Sub topic with `registerBrokerTopics` by passing the topic itself,
+    which Encore refuses ("invalid topic usage"). Each topic is now registered as a publisher ref,
+    `topic.ref<Publisher<BrokerMessage>>()`, the form Encore allows.
+  - The topics and subscriptions named `BrokerMessage` from `@stackra/queue/contracts`, which Encore cannot resolve
+    through the package's dist. gen now writes `.stackra/encore/<member>/broker-message.ts` with the same shape, and the
+    generated files import it from there.
+  
+  Topic names, subscriptions, message bodies and the broker's behaviour are unchanged.
+- e885a38: A service with encrypted fields (a `HasEncryptedFields` model, its own or a declared package's) boots. Its generated
+  boot seals them with `FieldCipher`, but the cipher's one implementation, `AesGcmFieldCipherDriver` in
+  `@stackra/contracts`, is a plain class no manifest lists as a driver, so nothing bound it ("No driver is bound to
+  FieldCipher"). The generated wiring now binds `FieldCipher` to it over `KeyProvider`, and links the `KeyProvider`
+  drivers of a declared package (`@stackra/tenancy`: `ephemeral` by default, `kms` in production). Regenerate
+  (`stackra gen`); a service with encrypted fields declares `@stackra/tenancy`.
+- e885a38: A service's generated wiring binds the services its generated boot resolves. For a service that declares
+  `@stackra/outbox`, boot gets `OutboxWriterService`, `OutboxRelayService`, `InboxService` and `EventBus` from the
+  container (and `SegmentService`, `AutomationService` or `QueueWorkerService` for segments, workflow or queue), but
+  nothing injected them, so the wiring had no row and boot stopped at "Nothing binds OutboxWriterService". Each is now
+  bound with its dependencies from its package's manifest. Regenerate (`stackra gen`).
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 0a57fb3: Gen builds a Fumadocs site from a docs member too: a member whose package.json has `"stackra": { "kind": "docs" }`, with its pages under `content/`, its navigation in each folder's `meta.json` and its settings in `docs.yaml`, described by the new `@stackra/gen/schema/docs.json`. A docs app with `src/config/docs.config.ts` builds exactly as before.
+- 2e3e323: A connector package's manifest lists its `WebhookEvent` classes in `webhookEvents` (class, entry, Integration and
+  Connection), and a hosting service registers them from it, so the service names no provider. Gen refuses a hosted
+  event that is half paired (`webhook_event_unpaired`) or routed twice (`webhook_route_duplicate`), and an own event
+  typed against a hosted Integration now carries that Integration's Connection, so its connection URL routes.
+- 54aa1e7: Gen reads a `stream: true` action's `Promise<ReadableStream<Chunk>>` output (no output shape), marks the manifest entry `stream: true`, and projects its 200 response as `text/event-stream` in `openapi.json`. A `stream` option and a stream output that disagree fail with `stream_output_mismatch`.
+- 41a5ff0: A package with a `src/**/__tests__/<name>.e2e.page.tsx` now gets `.stackra/e2e/` (`index.html`, `main.tsx`, `vite.config.ts`: a small Vite app that renders the page named by the URL path) and `.stackra/playwright.e2e.config.ts`, both built on `@stackra/testing/e2e`. An app, a service or a package with no e2e page gets none of them.
+
+### Patch Changes
+
+- 6186329: A service's tsconfig no longer needs `baseUrl` for Encore. TypeScript 7 removed `baseUrl` (TS5102), so the rule from 0.30.0 broke typecheck in a TS 7 repository (INVOICING).
+  
+  - **The service check:** it now requires only `compilerOptions.paths` equal to package.json `imports`, which resolve from the tsconfig's folder. It refuses a `baseUrl`.
+  - **`stackra encore:prepare`:**
+    - it removes an existing `baseUrl`;
+    - it writes package.json and tsconfig.json with gen's `formatJson`, now exported from `@stackra/gen`, in the repository formatter's layout, so the format check passes after it.
+  
+  Bump step: run `stackra encore:prepare` in each service, or delete `"baseUrl": "."` from its tsconfig.
+  
+  `stackra encore:prepare` also keeps a tsconfig's file contract written inside the braces (NOTIFY's services). Before, it kept only the `//` lines above the object, so the contract was dropped and the format check failed. `encore.dev` stays the literal catalog version (ADR 0091 rule 3): Encore rewrites `catalog:` to `^<version>`, which breaks the frozen install.
+- 93d63bb: An action or query whose actors include `ActorKind.ApiClient` (`api_client`) now gets an endpoint, derived or written. An API-key caller such as a tenant's servers reaches the service like a user. Before, a `public` action whose only external actor was `api_client` got no route, and strict gen refused it with `public_without_endpoint`, even with an explicit `endpoint` (BILLING-B, `meters.usage_event.record_batch@1`). An action for services alone still gets none.
+- 3c47a3a: A package's `src/node/entities.gen.ts` is stable under gen. Gen counted any `[OptionalProps]` under `src/` as one the
+  member wrote beside its model, and so read its own last augmentation in `entities.gen.ts` as authored: it wrote none
+  (`optional: []`), and the next run wrote it back. The committed file flipped on every run, and the gate's "Committed
+  manifests match gen" passed or failed by which version was there before (stackra#1030 to #1032, `TenantDataKey`).
+  Gen now ignores its own entities file in that check; a member's own `[OptionalProps]` still wins (STA-1750).
+- 93d63bb: A consumed service's lang namespace that its own contract package also ships (`<service package>-contract`, declared) is taken once, from the contract. It no longer fails gen with `i18n_namespace_clash`.
+  
+  PAY hit this as soon as payments declared `@stackra/i18n`. The namespaces were consent (compliance-privacy), delivery and inbox (notify), and domains, entities and memberships (tenancy): each was read from both the declared contract and the consumed service's own `assets/lang`.
+  
+  A namespace shipped by two unrelated packages still clashes.
+- 4bf092e: A webhook event typed by an integration `import type`d from a hosted package's entry is now registered with that integration. For example: `WebhookEvent<QuiqupIntegration>`, with `QuiqupIntegration` from `@figentra/ship-connector-quiqup/node`.
+  
+  Before this, the reader could not resolve the package's types and named the partner `unknown`. `registrations.ts` then imported `unknown` and registered `integration: undefined`, so no route or signature check was tied to the event. Nothing typechecks `.stackra/gen`, so it broke only at runtime: Ship's carriers and Pay's Stripe.
+  
+  - The reader now takes the name from the import itself, using the exported name for an aliased import.
+  - gen refuses a partner it still cannot name, with `partner_unresolved`.
+  - The registrations emitter never imports `unknown`.
+- 93d63bb: `endpoint_area_mismatch` now accepts a public call under RFC 8615's `/.well-known/`. A well-known path is a convention across hosts, not an area route. Checkout's `GET /.well-known/stackra/frame-ancestors`, the edge's frame-ancestors callback, was refused before.
+  
+  Only the public area gets this. A call in any other area under `/.well-known/` is still refused, and the method, collision and version checks apply as before.
+- 93d63bb: Tests on `useDrivers("memory")` no longer need per-test overrides for two fail-closed ports and for seeders' services (os#256).
+  
+  - **`@stackra/actions/testing`:** the testing plugin now offers a memory `RateLimitStore` (`MemoryRateLimitStoreDriver`) and a memory `JobDispatcher`. The new `MemoryJobDispatcherDriver` keeps every queued job in `jobs` and runs none.
+    - Production still fails closed: these bind only in a testing module, and only when the test picks "memory".
+    - `ApprovalGate` is left out on purpose. An action that declares `approval` fails closed without a real gate and its binding store (ADR 0509), so a test that runs one binds `MemoryApprovalGateDriver.of(...)` and `MemoryApprovalBindingStoreDriver` itself.
+  - **gen:** a service that only a seeder injects is now wired. Example: a minimal seeder's `SettingsPackService`. Before, `.seed(XMinimalSeeder)` failed with "Nothing binds SettingsPackService".
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/support@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- 597e3e8: A generated docs site titles its home page (`index.mdx`, or a language's `index.<lang>.mdx`) by the page's own
+  words alone, not followed by the site name it already names ("Figentra Geo · Figentra Geo"). The build now also fails
+  when a prerendered title repeats a part.
+- @stackra/errors@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- 73ea174: A model whose last word is already plural keeps it in its derived table name and resource path. `OpeningHours` is now `opening_hours`, no longer `opening_hourses`. The same goes for `news`, `series`, `settings`, `analytics`, `species`, `preferences` and the rest of `INVARIANT_PLURALS`. Regular nouns that end in `s` (`address`, `class`, `bus`) still take `es`.
+- 137a7f9: Every automation run a trigger or a schedule starts is now checked against the new `AutomationQuota` port, which `AutomationService` injects, so a host that runs automations must select a driver. Over the quota, the run is skipped and `AutomationRunSkipped` (`quota_exceeded`) is recorded; that is not a failure. A quota that cannot be read starts nothing and records `quota_unavailable` (fail closed); `triggered` never throws for a quota. `AutomationService.triggered(block, startedBy)` takes an `AutomationStart`, kept on the skip. Gen's platform binding of `AutomationService` gains the port.
+  
+  Release order: this core release first; then Figentra Billing publishes its usage client package with the driver (`credits.quota.check@1` on `automation.runs`, called as the host member inside the automation's tenant); then os bumps and selects that driver in the same pull request. No host takes `UnlimitedAutomationQuotaDriver` as a stopgap: it is only for a host that sells no automation quota.
+- @stackra/money@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/support@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 96b5241: **Route change for anonymous-only calls.** An action or query whose actors are exactly `[ActorKind.Anonymous]` (served
+  with `auth: false`) now defaults to the `public` API area, in gen and at runtime, so its route is `/public/...` and it
+  sits where no gate asks for a principal. A written `area` still wins, and a call with any other actor keeps the
+  service's area or `app`. Gen's identity lock accepts the move under the call's own area, as for STA-340. What a product
+  does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and `openapi.json`.
+- 04d04e4: API keys reach the action pipeline: `CallAuthenticator` verifies a bearer that is an API key with identity's
+  `ApiKeyVerifierService` and answers its principal as an `api_client` actor with the key's call options
+  (`KeyCallOptions`: credential, origin, sandbox for a test key); a forwarded user token beside a key is refused.
+  `serveGuardedCall` reads `Origin` for it and hands the options to `execute`, and gen's adapters pass them to
+  `ActionPipeline#execute`. Run `stackra gen` after upgrading.
+- 0bf0a7f: Collaboration rooms are hosted with no hand wiring. A model declares `@Collaborative({ view, edit })`, and a service
+  that declares `@stackra/collaboration` serves `collaboration.room.token@1` (the checked one-time room token: the record
+  in the caller's tenant, its view permission, `LiveCollaborationEntitlement` for the scope, `mayEdit` from its edit
+  permission), `collaboration.room.publish@1` and `RoomController`, the room's event stream at `REALTIME_ROOM_PATH`,
+  through the package's new root `CollaborationModule`. `RoomMemberRole` (`collaboration.room_member`) grants the two L2 room
+  permissions. A client binds `RoomTokens` to `ClientRoomTokensDriver` over its
+  `DynamicClient`.
+  
+  `RoomGrant.recheckEdit` (realtime): the room asks the edit right again before relaying each `update`, so a permission
+  revoked mid-session drops the member's next edit; `RoomMember.publish` returns a promise for such an update.
+  
+  Gen: a package manifest lists its raw controllers in `services` with their `path`; a host binds a hosted package's
+  controllers, and its Encore `api.ts` serves a hosted package's actions, queries and controllers (the package needs an
+  authored root module); `endpoint_collision` also counts raw controllers (own and hosted, any method, a trailing `/*`
+  covering what is under it); the generated HTTP adapter streams answer bodies instead of buffering them.
+- 5b064da: A service's Encore app root is the member root: gen writes `encore.app` at `services/<name>/encore.app` (gitignored) and no longer writes `.stackra/encore/encore.app` or `.stackra/encore/package.json`, so Encore resolves the member's `node_modules` and, with the tsconfig `paths` block, its `#` imports. The generated services stay in `.stackra/encore/<svc>/`. `encore_app_stray` now refuses only an `encore.app` at the repository root. Breaking: `emitEncorePackage` is removed.
+- e1e1b5e: Gen refuses an Integration whose `webhooks` use a scheme other than Standard Webhooks (`hmac` or a regional gateway's)
+  and name neither `eventId` nor `signature.idHeader`, with `webhook_event_id_undeclared`. Such an Integration keyed every
+  inbound event by the id `""`, so the inbox kept only the first one. Name `eventId` (the payload `path` of the
+  provider's event id, or `parts` of paths and headers) or a signature `idHeader`, or use `SignatureScheme.StandardWebhooks`.
+- cd2496b: An anonymous caller keeps one visitor id across requests. `serveGuardedCall` resolves the visitor from a signed token
+  (the `stackra-visitor` header, else the httpOnly `stackra_visitor` cookie) through `VisitorIdentityService`, and an
+  answer to a new visitor, or one signed with the previous key, carries the token back. The token is an HMAC-SHA-256
+  over the `anon_` id with the `STACKRA_VISITOR_SIGNING_KEY` secret (`STACKRA_VISITOR_SIGNING_KEY_PREVIOUS` is accepted
+  for rotation). Until the secret is set, every anonymous call is a new visitor, as before. Gen's adapter fills the
+  new `visitor` seam.
+- d5a7d0a: **Breaking route change.** Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
+  action's or query's `area`, else the service's own `defineService({ area })`, else `app` (`PUT
+  /app/orders/:orderId/cancel`). Every manifest action entry records its `area`, so the committed manifests,
+  `openapi.json` and the SDKs move to the prefixed paths.
+  
+  Gen also refuses, in its full pass (STA-340):
+  
+  - `endpoint_collision`: two calls on one method and path once parameter names are erased (`GET /app/orders/:orderId`
+    and `GET /app/orders/:id`). Until now `openapi.json` silently kept only one of them.
+  - `endpoint_versioned`: a `v<digits>` path segment (paths stay unversioned; API versions are dates).
+  - `endpoint_area_mismatch`: an `endpoint: { method, path }` override outside its area's prefix.
+  - `endpoint_method_mismatch`: a query not on `GET`, an action on `GET`, or a transition overridden away from `PUT`.
+  - `job_without_system_actor`: a `job` without the `system` or `job` actor.
+  - `cron_input_invalid`: a `job.cron.input` property the input schema does not have, a required one it omits, or a
+    value of another JSON type.
+  - `intent_phrases_missing`: `intent: true` without a non-empty `actions.<key>.intents` list in a base-language
+    catalogue.
+  
+  The routes outside their area move under it: loyalty-kit's five overrides to `/app/loyalty/...`, the award
+  verification to `GET /public/awards/verify`, `CONSENT_SNAPSHOT_PATH` to `/public/consent/snapshots`,
+  `ANALYTICS_INGEST_PATH` to `/public/analytics/batches`, `DEVICE_ORDER.acknowledgedPath` to
+  `/app/devices/acknowledged` and `CLIENT_RESULT_ACTION.path` to `/app/runs/:runId/client-result`. The committed
+  `stackra.manifest.json` of every package with a route (access-log, collaboration, data-maintenance, devices, identity,
+  media, privacy, segments, tenancy, webhooks and the packages above) records each entry's `area` and its prefixed path.
+  
+  The identity lock accepts this move once: an endpoint whose new route is exactly `/<its own area>` plus the locked
+  path, with the same method, keeps its identity without `@Renamed`. A move to another area, a method change, or a route
+  that already started with an area moving again is still refused with `identity_changed`.
+  
+  What a product does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and
+  `openapi.json` of each member. Nothing else; no `@Renamed`. Clients regenerate from the new manifests, so a caller
+  pinned to an old path (none before launch) would need the prefixed one.
+- 15dba8d: The tenancy contract step's two checks are now errors (ADR 0239):
+  
+  - `assertRowSecurity`: a table without the owner column that no platform list names is a gap, by default. It no longer
+    reads `STACKRA_GEN_STRICT`; only the audit's own tests pass `strict: false` to read such tables back as warnings with
+    their group. A service's generated isolation test therefore fails on one.
+  - gen's `model_tenancy_missing` (and `model_tenancy_migration_missing`) are errors for a package's models, as they
+    already were for a service running `@stackra/tenancy`.
+  
+  Before taking this version, a product must have zero such tables and models: list a table that holds no tenant data
+  with `t.platformTable(reason)` (or `t.reviewedPolicy(reason, policies)`), give a tenant table its owner column, and
+  mark each model `BelongsToTenant`, `BelongsToTenantOrPlatform` or `Model.global`. Core itself has none.
+
+### Patch Changes
+
+- 7d60f82: `EdgeHeaderGuard` is bound in every generated service and checks edge traffic only. A request that carries any edge
+  header must verify (fail closed); a request with none is not edge traffic and goes on to authentication or its
+  endpoint's own signature check, so service calls, cross-app deliveries and webhooks keep working. `publicPaths` is
+  removed from the guard. New `EdgeConfig` (`app.edge`) chooses the drivers: `keys` is `memory` or `env`, which reads the
+  `STACKRA_EDGE_SIGNING_KEYS` secret (newest first, comma-separated); `nonces` is `memory`, so a replay is refused per
+  instance until a shared nonce store ships.
+- 418e195: The generated Encore adapter passes the call headers to the action pipeline (`requestCallOptions(request)`): a client's `Idempotency-Key` and `Stackra-Consent` were dropped before.
+- e1e95d1: A service a member depends on (for its contract) ships its lang catalogues as that service's, so a namespace both share moves under the service's name (`I18n.payments.plans`) instead of refusing with `i18n_namespace_clash`; the member keeps the bare namespace.
+- dab9009: The gen golden fixtures commit the seed entry (`.stackra/entry/seed.ts`) that gen writes for the `service` fixture's shop
+  and the overlay fixtures built on it, since that shop has a seeder and a factory (STA-2061). Tests only; gen's output is
+  unchanged.
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/money@0.30.0
+  - @stackra/support@0.30.0
+
+## 0.29.0
+
+### Minor Changes
+
+- 3361957: An action whose actors are exactly `[ActorKind.Anonymous]` may declare `credentials: "ignore"`, for a public page whose visitors may also be signed in elsewhere. The pipeline then runs a signed-in caller's call as a fresh anonymous actor and drops what the credential gave, and `serveGuardedCall` never verifies or holds that credential, so no user token is forwarded. Without the option such an action still refuses a signed-in caller. `Action({...})` throws, and gen refuses `credentials_ignore_not_anonymous`, when the actors are anything else. Limit: a host's optional `BearerTokenGuard` runs before the adapter, so it can still refuse an expired or invalid token on such an action; a host that serves these actions should let them pass that guard.
+- 1b727b9: Settings fields are never dropped: gen refuses a field no setting type holds with `settings_unsupported_type`, and writes an enum or driver name as a `choice` key and a string or enum array as a `list` key (`SettingType.Choice`, `SettingType.List`, `SettingKeyInput.options`, and `readonly string[]` as a `SettingValue`). Gen derives the group key from the class name as the runtime does (`AccountSettings` is `Settings.account`), refuses `settings_scope_widened`, `settings_too_deep`, `settings_group_key_empty` and `settings_group_conflict`, and records every group and key in a `settings` section of `stackra.manifest.json`; a group or key rename needs `@Renamed`. An enum setting field is now `choice` with its `options`, not `string`, and a group whose key is not its module's carries the group in its label key. Regenerate with `stackra gen`.
+- 45afd22: `Action` and `Query` take an `entitlement` option (one entitlement class or a list), and gen now gates calls by it
+  (STA-2059, ADR 0215). The manifest lists a call in the `gates` of every entitlement it names, of a quota whose meter it
+  feeds (`meter`, `per` on the quota entry; `meter` and `entitlements` on the action entry) and of a limit counting a
+  model it creates, including an entitlement or model a hosted package ships. A name that resolves to nothing fails the
+  build with `entitlement_unknown` or `entitlement_counts_unknown`.
+- 25b99da: The seed entry (`.stackra/entry/seed.ts`) registers the service's factory pairs with `registerModelPartners`, so a
+  demo seeder that uses a factory runs under `stackra db seed`. It also runs the seeders of the packages a service hosts,
+  imported from each package's `./testing` entry, before the service's own, and lists every seeder in module-dependency
+  order instead of file order (STA-2061).
+  
+  `stackra.manifest.json` gains two optional sections, `seeders` (key, module, profile, class, file, in module order) and
+  `factories` (class, file, model), which a host reads from its dependencies. The committed manifests of
+  `@stackra/loyalty-kit` and `@stackra/access-log` now carry them.
+
+### Patch Changes
+
+- f069f95: A consumed service's lang namespace that one of the member's own modules also has no longer clashes: it lives under
+  the service's client name (`geography.rates`, keys `geography.rates::<path>`, loaded from the service's own
+  `rates.json`), and the member's own namespace keeps its name. A package and the member claiming one namespace is still
+  refused (`i18n_namespace_clash`).
+- edc2781: The resource-table index check reads an `@Index` that leads with the scope column (`tenantId` or `scopeId`) as serving
+  its next column too, since row-level security already narrows a scoped table to one scope; a filter or sort on that
+  column is no longer refused as `filter_not_indexed` / `sort_not_indexed`.
+- b26036e: Gen reads `@Setting({ scopes, lockable, approval })` field options again. `Setting` returns `FieldDecorator<unknown>`, which the facet reader did not recognise, so generated setting keys carried only their class scopes and no `approval` or `lockable`.
+- 8ad5f87: In a memory-tier testing app, `ScopeTree` now reads the nodes `ScopeNodeService` writes. `MemoryScopeTreeDriver`
+  gains `readFrom(load)`: until it is seeded, every read goes to the tree `load` resolves to. The new
+  `SCOPE_TESTING_PLUGIN` (registered by `@stackra/scope/testing`) points an unseeded memory tree at the Database's
+  `ScopeNode` rows through `PostgresScopeTreeDriver`, so `node`, `byPath` (with the node's `level`), `ancestors` and
+  `descendants` see a node added through `ScopeNodeService`, as in production. A seeded tree (`fakeScopeTree`) keeps its
+  own list. Gen's Vitest setup imports `@stackra/scope/testing` for a member on `@stackra/scope`.
+- 75ec6eb: Gen loads extensions: `#stackra/registrations` calls `registerExtensions` with each extension on its point's slot and
+  its order, and a service with an extension connects the slots at boot (`connectExtensions(container)`). Until now
+  nothing called `registerExtensions`, so every extension point's slots ran no extension.
+- @stackra/money@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- f0be8d8: A service that runs `@stackra/queue` now connects `QueueWorkerService` in its generated `boot`, so a job that a
+  generated Encore subscription delivers, or that `queue:work` reserves, runs through the pipeline instead of throwing
+  "QueueWorkerService is not connected" (STA-2046).
+- 7a87018: `stackra gen` refuses (`port_unbound`) a class whose constructor takes a port that no driver binds in the member, instead of letting every container-built test fail with `UnresolvedPortError`.
+- @stackra/money@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/support@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- fb1ae38: A service that declares a workflow gets the `WorkflowRunner` driver table in its wiring (`pipelinePorts`), as
+  STA-2573 did for the pipeline's other ports: the pipeline resolves the runner for `ctx.run` and `ctx.signal`, and no
+  constructor injects it, so it was left unbound ("WorkflowRunner is not bound"). The generated Vitest setup also imports
+  `@stackra/workflow/testing` for a member on `@stackra/workflow`, so a `useDrivers("memory")` test connects that runner.
+- @stackra/money@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/support@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- ec00fd8: A generated Encore app can now be checked and built. Gen writes `.stackra/encore/package.json` (private, ES modules)
+  beside `encore.app`, since Encore reads the app root's `package.json` to start (`encore check` failed with "failed to
+  read package.json"). It also copies the compiled migrations under the Encore service and declares
+  `migrations: { path: "./migrations" }`, because Encore takes only a local relative migrations path in the object form.
+- 081989b: A Connection that extends another Connection (`class RegionalConnection extends BaseConnection`) is now paired with
+  the member's Integration of the same stem (`RegionalIntegration`), or inherits its base's integration when there is
+  none. Its Integration gets its `connection` in the manifest and `registerConnections` registers the pair; before, the
+  subclass had no partner and was skipped. Two same-stem Integrations in one member are `connection_partner_ambiguous`.
+  An Integration's connection is the one named after it, so a subclass that only inherits never displaces it.
+- b1603a7: Gen refuses every package a member's generated wiring needs through undeclared ones in one run, with the `package.json` lines to paste, instead of one layer per run.
+- 5c0aafc: The generated Vitest setup imports `@stackra/actions/testing` for a member on `@stackra/actions`, so a `useDrivers("memory")` test that only queues work finds the memory `AccessControl`.
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- @stackra/money@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/support@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- 689c37b: A generated docs site serves its home page again. The routes had only a top-level splat, which React Router does not
+  match for `/`, so the root `index.mdx` prerendered as the bare shell and every docs site showed a blank home page. An
+  index route now serves it through the same page module. The generated `react-router.config.ts` also fails the build
+  when a page listed in `app/site.json` prerenders without a `<title>`, so a page no route matches cannot ship blank.
+- 8a8fa6f: Gen sees `ctx.run<Output>(XWorkflow, input)` as the action starting `XWorkflow`, as it does the untyped call, so an
+  action may type the run's result and still pass `checkActionFirst`.
+- @stackra/money@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/support@0.25.0
+
+## 0.24.0
+
+### Minor Changes
+
+- 35959f6: An action or a query can name the data class it handles: `dataClass: DataClassification.Financial`, or a product's
+  own `DataClass({ key })` class. Gen writes the key on the call's manifest entry (`dataClass`) and refuses a value it
+  cannot read with `data_class_unknown`; the catalogue manifest schema names the field. Tamo's gateway uses it to keep a
+  run in region by the most sensitive class among the tools it calls.
+- b4c2501: A query may keep a permission above L1 when it says why: a `// reason: …` above or trailing its `permission`
+  (or its `key`, for a derived permission) lets `query_above_l1` pass, and the manifest records it as `riskReason`.
+  Without a reason the query is still refused. For deliberate floors that strict gen must not lower: an audit
+  export, reads that return credentials, raw provider payloads, hashed personal data.
+- 2df7162: The row-security audit learns the group (c) decisions (ADR 0239 amendment).
+  
+  `assertRowSecurity` now accepts a table that keeps its tenant in `scope_id`, when its one permissive policy is exactly
+  the `equals` or `equalsOrUnset` policy `t.rowLevelSecurity` writes on the tenant setting. It then checks that table
+  like any owned one, with the two-tenant probe on `scope_id`. A looser policy, such as one that adds `or true`, or a
+  second permissive policy, is still refused. Core payments' three tables pass this way, with no migration.
+  
+  Migrations gain two declarations, each with a required one-line reason:
+  
+  - `t.platformTable(reason)`: no row of this table can ever belong to a tenant. Compiling refuses it on a table that
+    also writes a scope id, an isolation scope id, a column filled from a setting, or a policy. The audit refuses it once
+    the table holds the tenant column, a scope id or an isolation scope id.
+  - `t.reviewedPolicy(reason, policies)`: the table's policies have a reviewed shape the audit cannot derive. The audit
+    still requires row-level security enabled and forced, and every named policy present. Only the tenant-policy checks
+    and the probe are left out.
+  
+  The compiled migration carries each declaration as a comment line. Gen's generated isolation test now passes its
+  migrations folder to the audit (`migrationsDirectory`), which reads them.
+  
+  `PLATFORM_TABLES` gains the platform-list tables: `outbox.inbox`, `outbox.change_cursors`, `queue.job_batches`,
+  `scheduler.watermarks`, `workflow.service_ack_sets`, `rules.condition_fields`, `database.seed_records` and
+  `scope.scope_nodes`, each with its reason.
+  
+  New command `stackra row-security-declarations` lists every declaration with its reason. It and
+  `stackra validate --repository` fail on a declaration that is not in the reviewed list
+  `tools/scripts/row-security-declarations.yaml` with that reason.
+
+### Patch Changes
+
+- @stackra/money@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/support@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- 7ff4969: Docs sites in more than one language. `DocsConfig.locales` lists the languages, with one default:
+  
+  - **Pages.** A page in another language sits beside its default page as `<page>.<code>.mdx` and is served under
+    `/<code>/`. A page that isn't translated yet links to the default page in that language's navigation.
+  - **Direction.** The page sets `lang` and `dir`, so an Arabic page renders right to left, sidebar included.
+  - **Interface.** Each language gets its own interface strings, navigation labels and font. Arabic ships with its
+    strings and IBM Plex Sans Arabic.
+  - **Language switch.** The switch keeps the reader on the same page.
+  - **Checks.** gen refuses a translation that has no default page and a page that sits in a language's folder. A page
+    not yet translated is only a warning.
+  - **No change by default.** With `locales` left empty (the default), a site is written byte for byte as before.
+- 96374f4: An L3 or L4 action is no longer an agent tool by default. It becomes one only with `tool: true` and a `// reason:`
+  line, and gen fails with `tool_reason_missing` without the reason. The manifest records the reason on the tool and,
+  for a high-risk user action left off, a `toolOff` note. Owner security decision 2026-11-08.
+- c26fb86: Every generated HTTP adapter is an Encore raw endpoint that runs the request guards (STA-2577, ADR 0237 note of
+  2026-11-08). `@stackra/app/server` adds `serveGuardedCall` and `HttpConfig` (`app.http`, `maxBodyBytes`, 1 MiB by
+  default): the body is read once under the cap (413), every `RequestGuard` runs over the exact bytes (so the edge
+  signature covers the body), `CallAuthenticator` verifies an `Authorization` header (a bad one is refused, never
+  anonymous), then the input is parsed and the action pipeline runs; guard and authentication failures are one generic
+  401 or 403. `@stackra/gen` now writes `api.raw()` endpoints (auth: false to Encore) for actions, queries and
+  controllers through `answerCall` in `http.ts`, binds `app.http` in the wiring, and no longer writes `auth.ts` or the
+  `Gateway`.
+  
+  GET and DELETE query strings are typed by the call's registered input schema (`coerceQueryInput`): finite numbers,
+  `"true"` and `"false"`, and arrays element-wise; enums and strings stay as sent, and a value that does not fit stays a
+  string so validation refuses it. A void output answers 200 `null`.
+  
+  New reachable surface: the typed `api()` skipped every entry whose input or output was not a schema class of the
+  member, so those had no HTTP route. They now get one, behind the same guards, authentication and permission checks:
+  generated search and report queries, replica queries (`ReplicaPage` output) and any other action or query whose
+  schemas come from a package. The gen fixtures show it only for the billing unit fixture (`BILLING_IR`), and no golden
+  gains an endpoint. A hand-written `Controller` is now served too (every method, behind the guards), reachable with no
+  `Authorization` header; a present but invalid or expired one is 401 and never falls back to anonymous.
+- a42a80c: A service now proves who it is when it calls another service, and who it acts for.
+  
+  - An outgoing service call sends the service's own token (`Authorization: Bearer`). `ServiceTokens` in
+    `@stackra/identity` answers it, with a memory driver for tests; the token is issued for the receiving product's
+    project, set per module in `clients.audiences`.
+  - When the call acts for a user, it also sends that user's own token in `Stackra-On-Behalf-Of`. `serveGuardedCall` in
+    `@stackra/app/server` keeps that token for the one request and empties it when the request ends. It is never put on
+    the actor, the call context, a log, an error or an event.
+  - A user's token travels one hop. A service called for a user forwards it again only into an action that declares
+    `onBehalfOf: { secondHop: true }`; otherwise its own calls carry the service token alone.
+  - `ServiceClientSessionDriver` (`service`) is the `ClientSession` a service binds for its generated clients, and
+    `ClientSession.headers` now receives the call it is about to send.
+  - Generated endpoints name their action to `serveGuardedCall`, which reads its second-hop option. A hand-written
+    controller forwards only a user's own token, never a forwarded one.
+- f790fa1: A service now gets its own token from ZITADEL by itself, and sends it on every call to another service.
+  
+  - `ZitadelServiceTokensDriver` (`zitadel`, in `@stackra/identity/node`) signs in as the service's own ZITADEL
+    service account with the JWT profile. It reads the account's key file from the secret store, signs a short-lived
+    assertion, and asks the issuer for a token for the receiving product's project. Each token is reused until shortly
+    before it expires, and callers asking at the same moment share one request. The key and the tokens are never
+    logged, never put in an error and never put in an event. If the issuer refuses, the error is
+    `ServiceTokenRefusedError`. If it cannot be reached or is failing, the error is `ServiceTokenUnavailableError`.
+  - A service that declares `@stackra/app`, `@stackra/clients` and `@stackra/identity` now uses the `service` client
+    session and the `zitadel` token driver by default, so its generated clients need no extra wiring.
+  - If a call goes to a producer module that has no `clients.audiences` entry, the call fails with an error naming that
+    module, before any token is fetched. A call is never sent without a token.
+  
+  What each deployment must set (the values come from the owner or runway, the names are below):
+  
+  - `identity.service_tokens.issuer`: the ZITADEL issuer URL, the same as the bearer issuer.
+  - The secret `IDENTITY_SERVICE_ACCOUNT_KEY`: the service account's ZITADEL key file (JSON). Set
+    `identity.service_tokens.keySecret` to use another secret name.
+  - `clients.audiences`: for each producer module the service calls, the project id of the product that serves it.
+  - In ZITADEL, the service account's access token type must be JWT, because the receiving service checks the token
+    against the issuer's public keys.
+
+### Patch Changes
+
+- 926faa4: A dependency imported only through its `./contracts` entry stays fully hosted when it drives a port gen binds without
+  injection: the action pipeline's own (`EventOutbox` for `ctx.publish`, `IdempotencyStore`, the offline, review and
+  step-up stores, `ReplicaReads`), the follow-the-system defaults and the server contributions' tokens. Before, such a
+  package was hosted contracts-only and the port was left unbound ("EventOutbox is not bound").
+- 557809c: A package that ships routes in its `react` or `native` entry gets its `Routes` ref table, `.stackra/gen/routes.ts`
+  (`#stackra/routes`): one `routeRef` per route stem, keyed `<module>_<stem>` as its manifest's `ui.routes` records and
+  its host app registers, so the package's own pages link to its routes by ref.
+- 8b42c02: A published package's manifest lists its extension points in `services`, beside the services that inject them, so a
+  host's wiring binds them. Commerce customers injects `AccountService` from `@stackra/loyalty-kit`, whose
+  `LoyaltyKitExtensionPoint` had no binding and failed with `UnboundTokenError`.
+- 1083617: Memory-tier tests now run actions in the actor's tenant, as production does, so `runAsTenant` wraps around `run()`
+  become optional. Under `createTestingModule(...).useDrivers("memory")` the tenancy testing plugin binds
+  `MemoryCallIsolationDriver` as `CallIsolation`: a `BelongsToTenant` row built inside the call carries the actor's
+  tenant before it is flushed. An actor with no tenant stays a platform call. Inside `runAsTenant(T)`, an actor of
+  another tenant is refused with `TenantSwitchRefusedError`, as the real driver refuses a tenant switch. An explicit
+  `.override(CallIsolation, …)` still wins. The driver is test-only: production wiring never lists it. Gen's Vitest setup
+  now loads `@stackra/tenancy/testing` for a member on `@stackra/tenancy`, as it loads the database and clients testing
+  entries.
+  
+  **Upgrading.** A product's memory-tier tests now run each action inside its actor's tenant, so a test that relied on
+  no isolation can fail after the bump:
+  
+  - Arrange each tenant's rows under that tenant: `await runAsTenant(tenantA, () => Factory.new().create(...))`, then
+    `runAsTenant(tenantB, …)` for B's rows. A row built inside `runAsTenant(A)` by an actor of B is refused
+    (`TenantSwitchRefusedError`), and a row whose `tenantId` differs from the `runAsTenant` tenant throws.
+  - Call `run(Action, input, { as: actor })` outside any `runAsTenant`, or inside the actor's own tenant. A
+    `runAsTenant(tenant, () => run(...))` wrap around an action of that same tenant still works but is no longer needed.
+  - `drainOutbox()` delivers each event in its actor's tenant. Call it outside `runAsTenant`: inside `runAsTenant(T)`, an
+    event of another tenant is refused in the memory tier (production's own transaction would not refuse it).
+- a2c8821: A seeder that injects its repositories or services now runs wherever seeders run. A seeder is not a binding, so the
+  container could not build one with its dependencies: `.seed()` and `stackra db seed` built it with no arguments and its
+  first repository call failed. `seederOf(container, type, deps)` (`@stackra/database/node`) builds a bound seeder from the
+  container, else the class with its constructor tokens resolved in the container. Gen lists those tokens in the seed
+  entry (`SeederEntry.deps`) and registers them in the test setup (`registerSeederDeps`, `@stackra/database/testing`).
+- fb6e2b3: A role-gated setting approval: `@Setting({ approval: { by: SystemRole.Owner } })` holds a change until someone holding
+  that role approves it, beside the existing four-eyes `approval: true`. The revision records the role (`approvalRole`,
+  migration `settings.0003_add_setting_revision_approval_role`); `SettingsResolver.approve(id, approver, roles)` refuses
+  an approver without it (`SettingApproverRoleError`, forbidden) and fails closed when the calling action passes no roles.
+  The role is the control, so its holder may approve a change they wrote; `decidedBy` records who did. One change needs
+  one approving role. Gen treats a role-gated key as approval-marked too.
+- @stackra/money@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/support@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- e41d9a1: A class gen names in a wiring comes from the entry that really exports it. `BearerConfig` is imported from
+  `@stackra/app/server`, both in the follow-the-system row and in a package manifest's driver, service and config
+  entries, which now name the entry whose barrel exports the class (`@stackra/app`'s configs live in `src/config` but are
+  exported from `./server`). Before, every service declaring `@stackra/app` failed typecheck on 0.21.0 with
+  `Module '"@stackra/app"' has no exported member 'BearerConfig'`. A new test checks every class gen names by hand
+  against the real package entry.
+- 4663a61: A package's generated `tsconfig.build.json` is written in oxfmt's layout (short arrays on one line), so a member's
+  `oxfmt --check` passes on the file exactly as gen writes it.
+- @stackra/money@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/support@0.22.0
+
+## 0.21.0
+
+### Minor Changes
+
+- 2974e54: Subresource Integrity for extension bundles. The bundle build records a sha384 for every emitted file in
+  `bundle.manifest.json` (`integrity`). Runway refuses to publish a bundle whose file is missing or changed since the
+  build, carries each value by URL on the edge release, and the shell page pins every bundle URL with it: an
+  `integrity` attribute on each modulepreload and stylesheet link, and the import map's `integrity` block for the
+  chunks no link names. A bundle built before this has no `integrity` and renders as before.
+- ae9cb23: One generated Encore auth handler for user and service calls (ADR 0209, amendment of 2026-11-07, point 5).
+  `@stackra/app/server` adds `CallAuthenticator`: it reads `Authorization: Bearer`, verifies the token with
+  `verifyBearerToken` under `BearerConfig` and the bound `JsonWebKeys`, and maps it to its actor with
+  `@stackra/identity`'s `actorOf`, answering `{ userID, actor }` (`CallAuthData`). Every failure is one
+  `BearerTokenInvalidError`, with no detail and never the token; a `Stackra-On-Behalf-Of` header is refused until the
+  forwarded user token is verified. For a service with endpoints, `@stackra/gen` now writes
+  `.stackra/encore/<member>/auth.ts`: the app's one `authHandler` over those two headers, which runs `CallAuthenticator`
+  and answers `APIError.unauthenticated` on its refusal, and the app's one `Gateway`.
+- a785356: The geospatial field kit on PostGIS (ADR 0314, STA-1432):
+  
+  - `@stackra/contracts`: the `GeoPolygon` and `GeoLine` types beside `GeoPoint`.
+  - `@stackra/validation`: the `geoPoint()`, `geoPolygon()` and `geoLine()` schemas.
+  - `@stackra/model`: the `GeoPointType`, `GeoPolygonType` and `GeoLineType` column types (EWKT in, `ST_AsGeoJSON` out).
+  - `@stackra/database`: `t.point()`, `t.polygon()` and `t.line()` with default GiST indexes, the `areaCovers`,
+    `withinMetresOf` and `intersectsArea` conditions, the `HasLocation` trait, and PostGIS in the PGlite memory driver
+    and `db diff` when a member installs `@electric-sql/pglite-postgis`.
+  - `@stackra/gen`: the `geo` kind, mapped to `geography(<shape>,4326)` columns, entity column types and the schemas.
+
+### Patch Changes
+
+- d25a7a0: An action or query whose only actor is anonymous now gets its HTTP route, served with `auth: false`, instead of no
+  route at all. Only a call whose actors include no user, agent or anonymous caller (a system-only job) has none.
+- 9feea9d: A dependency whose port the member injects from its `./contracts` entry stays fully hosted, so the port's drivers are
+  wired. Before, a service that injected `FileSystem` from `@stackra/filesystem/contracts` and imported nothing else of
+  the package was hosted contracts-only and failed at boot with `No driver is bound to FileSystem`. Only a dependency
+  imported for its events and types goes contracts-only. The same holds for a port named in a `DriverName<Port>` config
+  field: `DriverName<LogReporter>` from `@stackra/logger/contracts` lists `console` and `otlp` again instead of an empty
+  enum.
+- 00a2477: A service's wiring now binds the ports the action pipeline itself requires for what the service declares, not only
+  the ports a constructor injects: `EventOutbox` for an integration event (own or hosted, which `ctx.publish` writes), a
+  `meter` or `analytics`; `IdempotencyStore` for an action that is not `Idempotency.Never`; `DeviceSequenceStore`,
+  `OfflineCapStore`, `ReviewItemSink` and `StepUpCheck` for `offline`, `offline.cap`, `accepts` and `stepUp`. Before, a
+  service that only published through `ctx.publish`, or only declared `idempotency`, threw "… is not bound".
+- 4242bbb: A tool's `idempotentHint` is set only when a repeat cannot run twice: a query, or an action whose `idempotency` is
+  `Idempotency.Required` or `Idempotency.Derived` (ADR 0099 amendment of 2026-11-08). `Optional` runs a call without a key
+  every time and `Never` ignores the key, so neither tells an MCP host that a retry is safe any more.
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Minor Changes
+
+- 6623da1: A dependency a member imports only through its `./contracts` entry is hosted contracts-only: gen carries its
+  `src/contracts/` integration events (so the outbox and topic emitters know their wire names) and hosts none of its
+  models, migrations, actions, drivers, roles or permissions. A dependency imported any other way is hosted whole, as
+  before (STA-2567).
+- 667a3b5: Every `registerActions` row now carries its output class, so the action pipeline can leave `@ShownOnce` fields out of
+  the idempotency store. The new warning `secret_output_kept` names an action that is not `Idempotency.Never` and returns a
+  secret-named output field (`signingSecret`, `apiKey`, `accessToken`) with neither `@ShownOnce` nor `@Hidden`.
+
+### Patch Changes
+
+- a7b7e58: `@Replaces(Port)` now builds the replacement with its constructor dependencies: gen writes the replacement's
+  constructor tokens on each `replaces` row (`deps`), and the container passes them, as it does for any driver. Before,
+  the replacement was built with none and its injected fields were silently undefined.
+- @stackra/money@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 58a8fa5: Every write action's permission is at least L2 (STA-2096, owner decision 2026-11-04). gen refuses an action whose
+  permission is L0 or L1 with `action_risk_below_write`. Raised: `collaboration.room.publish`, `media.upload.create`,
+  `data_maintenance.synonym.create` and `.update`, `analytics.analytics_batch.ingest`, `consent.consent_snapshot.issue`,
+  `identity.passkey.challenge`, `loyalty_kit.loyalty_account.enroll` to L2;
+  `segments.segment.recompute` and `privacy.subject.export` to L2 (system); `loyalty_kit.loyalty_account.redeem` and
+  `.stamp` to L3 (a points balance); `loyalty_kit.loyalty_account.expire` to L3 (system); `panel.view.share` to L2;
+  `identity.passkey.verify` (it mints a session) and `identity.passkey.confirm` (it keeps a new key) to L4;
+  `webhooks.webhook_delivery.send` (an external send) and `access_log.access_log_entry.purge` (it deletes for good) to L4
+  (system).
+- bac874e: The last Infisical uses in the developer packages move to sops and figentra/secrets (ADR 0525).
+  
+  - `stackra mcp exec -- <argv>` decrypts each `$NAME` the command names with `sops exec-env` from the `agents` scope of
+    the local figentra/secrets clone (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`), one nested call per secret,
+    instead of `infisical run`. Its `--env` and `--path` flags are gone; `McpExecOptions` is now `{ secretsDir? }`.
+  - Mobile onboarding no longer writes the FCM key to a vault: it goes only to EAS, its one reader, and running the
+    `push` step again replaces a lost key. `InfisicalVaultWriterDriver` is removed, and `MobileOnboardRequest` has no
+    `vault` port. A missing root-kit name prints `pnpm secrets:put <NAME> --scope ci/production/store` as its owner step.
+  - gen's `env` manifest rows no longer carry `home` (the Infisical folder `/runtime/<member>`), and the field is gone
+    from the `StackraManifest` type; runway already ignored it. Products regenerate their manifests after the release.
+  - `stackra dev --tunnel` names the sops way to start with `CLOUDFLARE_TUNNEL_TOKEN`, and the service template's
+    `runway.yaml` header names figentra/secrets.
+- 1cc3bd3: The write floor and the call-shape checks are staged. `action_risk_below_write`, `idempotency_missing`,
+  `query_above_l1` and `step_up_missing` print as warnings in 0.19 and gen still writes; with `STACKRA_GEN_STRICT=1`
+  they refuse, as they will everywhere from 0.20. Fix them in each product before 0.20.
+- afd7846: Gen has warnings: a `GenError` with `severity: "warning"` prints as `<at> warning <code> ...` with its fix, never stops
+  gen writing, and comes back in `warnings` from `generateMember` and `generate`; `stackra gen` and `stackra gen --check`
+  print it and exit 0, while an error still exits 1. ADR 0101's checks run in the full pass as the new exported
+  `checkActionFirst`: `action_without_workflow` warns an action that takes another service's client, a sibling module's
+  service or `ConnectionStore` and starts no workflow, and `workflow_without_action` refuses a controller, command or
+  listener that takes a workflow or `WorkflowRunner`, or starts a workflow itself. The source reader records the
+  workflows a class starts as `DeclaredClass.workflows` (STA-340).
+- 0da5f7a: Step-up works out of the box (STA-340). `@stackra/identity` ships `IdentityStepUpCheckDriver`, the `identity` driver of
+  the actions pipeline's `StepUpCheck` (`requireAssurance` with `IdentityConfig.stepUpMaxAgeMinutes`; a call without
+  assurance is refused). gen binds it by default in every service that declares `@stackra/identity`; a host without
+  identity binds none and its step-up actions still fail closed. `@stackra/actions/testing` adds
+  `MemoryStepUpCheckDriver`, picked by `.useDrivers("memory")`: a test passes `assurance` at the declared level to
+  `run`, and a call without it is refused `step_up_required`.
+- 0e0de4f: Gen refuses a misshapen call. `checkCallShape` runs once per action or query in the manifest pass and refuses a query
+  whose permission is L2 or above (`query_above_l1`), a query with `preconditions` (`query_precondition`), an action with
+  `cache` (`action_cache`), an L3 or L4 action a user can call with no `stepUp` (`step_up_missing`) and a client write,
+  an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`). Each refusal carries its
+  fix. Write `idempotency: Idempotency.Optional` on a client write that is safe to repeat: it is the default the
+  pipeline already applies, and it now also sets the tool's `idempotentHint`.
+  
+  The actions pipeline asks `StepUpCheck` only when the caller is a user. A service, job, system or agent call carries
+  no assurance, so an action that both users and services call can declare `stepUp` and its service callers keep
+  working; a user call with no `StepUpCheck` bound still fails closed (ADR 0406 as amended).
+  
+  `identity.operator.bootstrap`, `identity.session.end_user` and `privacy.hold.release` declare
+  `stepUp: AssuranceLevel.Aal2`, so a user call to them now needs a bound `StepUpCheck`. The client writes of identity,
+  privacy, access-log, loyalty-kit, data-maintenance, media and collaboration that declared no idempotency write
+  `Idempotency.Optional`; their manifests gain the `idempotency` entry and `idempotentHint: true`.
+- 0e0de4f: Step-up for the L3 and L4 user actions STA-2096 raised (STA-340):
+  
+  - `@stackra/actions`: `stepUp` also takes `{ exempt: "first-factor-enrolment" }`, for which the pipeline asks no
+    `StepUpCheck`; the action enforces its own rule.
+  - `@stackra/gen`: refuses the exemption on any action outside `FIRST_FACTOR_ENROLMENT_ACTIONS`
+    (`step_up_exemption_unlisted`).
+  - `@stackra/identity`: `identity.passkey.confirm` takes the exemption. A first strong factor needs a fresh sign-in;
+    once the user has one, a new passkey needs AAL2. Each enrolment is audited with `firstFactor`.
+  - `@stackra/loyalty-kit`: `points.redeem` and `points.confirm_redemption` need AAL2 from a user. `points.earn_visit` is
+    service-only and loses its `POST /loyalty/visits` endpoint: call it from the till or booking service.
+
+### Patch Changes
+
+- ee00741: A host's wiring no longer binds `DiscoveryService` (or `Container`), which the container builds itself: a service that
+  injects it only lists it among the `platform` classes. The binding gen wrote had `deps: [Container]`, whose constructor
+  is private, so the host's build failed with TS2322 (commerce stock).
+- 5830168: The generated tenant-isolation test now reaches the services it missed (tenancy audit 2026-11-07, section 6). gen
+  writes it for a service whose owned tables come only from the packages it hosts (their manifests' models with
+  `BelongsToTenant` or `BelongsToTenantOrPlatform`), not just for one with an owned model of its own. And gen writes
+  `.stackra/vitest.int.config.ts` when it emits an `.int.test.ts` under `.stackra/tests/`, so a member with no authored
+  int test can run gen's test through `stackra test --tier int`.
+- ef04935: `model_tenancy_missing` now checks packages too (tenancy audit 2026-11-07; ADR 0210 amendment). A package model that
+  is neither `BelongsToTenant`/`BelongsToTenantOrPlatform` nor `Model.global(...)` prints a warning in 0.19 and will be
+  refused from 0.20. A table an ADR names is skipped (today `achievements.award_verifications`, ADR 0368 decision 5).
+  The new staged check `model_tenancy_migration_missing` warns when an owned model's table is created or altered by the
+  member's migrations but none of them calls `t.belongsToTenant()`; it refuses under `STACKRA_GEN_STRICT=1` and from
+  0.20.
+- 0921f1f: `Idempotency.Never`: an action whose output must never be kept (a credential) ignores a sent `Idempotency-Key`;
+  every call runs and nothing is stored in or replayed from the idempotency store. `HttpDevicePairingDriver` sends no
+  `Idempotency-Key` on the credential pickup (`hubSender(config, credential, { idempotencyKey: false })`), so the hub
+  never keeps the answer that carries the token.
+- dd9427a: `assertRowSecurity` now audits every table, not only those holding the owner column: a table without it fails unless
+  `PLATFORM_TABLES` (the migration ledger, the action store, cache and lock tables) or the new `platform` option names it
+  with a reason. An owned table must have exactly one permissive policy, `pol_<table>_<column>`, the `FOR ALL` owner
+  equality, and only restrictive policies named after their column beside it (ADR 0347 decision 5). The probe seeds a
+  row of each owner itself, so the cross-owner read always runs, and also checks that an unset setting sees no row and
+  the owner sees its own. gen's generated tenant-isolation test passes the service's `Model.global` tables and
+  `MODEL_SCOPE_EXEMPTIONS` as `platform`. A table under a scope-path policy with no `tenant_id` now fails the audit.
+- fc845f4: `assertRowSecurity` stages its every-table check like gen's tenancy checks. Until 0.20, an unlisted table without the owner column is a warning, not a failure. `assertRowSecurity` now returns these warnings. Each one names the table's group, read from the catalogue:
+  
+  - an ancestor `scope_path` table awaiting the contract step;
+  - a `scope_id` table whose policy reads the owner setting;
+  - a system table with no row-level security, awaiting its ADR decision;
+  - otherwise, unclassified.
+  
+  With `strict: true` or `STACKRA_GEN_STRICT=1`, these tables fail the audit as they will from 0.20. Every other finding still fails at once: the policy shape of an owned table, the probe's checks, a listed table that holds the column, and a listing with no reason.
+  
+  gen's tenant-isolation test now prints each warning and passes when the audit returns only warnings.
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/support@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- 2a7bc6d: A service that hosts a package with a searchable model (`@stackra/loyalty-kit`'s `LoyaltyAccount`) now derives
+  that model's `Search<Model>Query` into its own `#stackra/search` and imports it from there. The package's own copy
+  lives in its unpublished `.stackra/gen`, so the host's registrations used to import a class the package does not
+  export (TS2305).
+- @stackra/money@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/support@0.18.1
+
+## 0.18.0
+
+### Minor Changes
+
+- 79dcafb: A service must declare `encore.dev`: gen refuses one whose generated Encore files import it undeclared
+  (`generated_dependency_missing`), since Encore Cloud installs it from the service's package.json when it builds the
+  deploy commit. Add `"encore.dev": "catalog:"` to each service and `encore.dev: 1.58.8` (the Encore CLI version) to the
+  catalog.
+
+### Patch Changes
+
+- @stackra/money@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/support@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- 2da4d9d: Fixes from typechecking os on 0.17.1. Runway's eleven commands and `stackra runway` are `bin` commands, so no member
+  hosts them (their classes are not exported from `@stackra/runway/node`), and gen hosts console commands only from a
+  member's runtime `dependencies`, never its devDependencies. A hosted package's entities carry no `~defaults` marker its
+  published types lack, and a package-base override no longer imports a field hatch it does not use.
+- @stackra/money@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/support@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/money@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/support@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/money@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/support@0.17.0
+
+## 0.16.0
+
+### Minor Changes
+
+- 64cfc1d: Cross-app events (ADR 0511 decisions 11 to 19, STA-1910). Gen lifts `client_event_remote_transport`: a listener of a
+  contract-only producer's event is registered like a sibling's and delivered through a generated inbox, never an
+  Encore subscription. Such a service gets `#stackra/inbox` (`InboundEventsController` on `POST /events/inbox` over
+  `RelayInboxService`, and `RelayInboxConfig` with the pinned producers' public keys and events), its Encore `api.raw`
+  adapter (`.stackra/encore/<member>/inbox.ts`, exposed, `auth: false`) and the boot's `RelayInboxService` connect. A
+  service whose `runway.yaml` has an `events` block gets the manifest's `relay` section (keys and subscribers per
+  environment, no origins), an `env` row for its signing key's secret name, `#stackra/events-relay`
+  (`EventsRelayConfig` picked by `STACKRA_ENVIRONMENT`), the wiring of `CrossAppFanOut`, `CrossAppRelayService` and
+  the Postgres `DeliveryDriver`, and the cross-app relay loop in its boot. The new warning `client_event_unsubscribed`
+  names a listener whose producer's contract does not list the service for that event; `GenerateResult.warnings`
+  carries it and `stackra gen` prints it. Members with neither keep the same output.
+
+### Patch Changes
+
+- 6ed8ab1: `stackra gen` refuses `module_key_collision` when a declared package's migrations need a module key that one of the
+  member's own modules with migrations also has, instead of resolving the need to that module and reporting a
+  cascade of `migration_cycle` errors. A member module that only shares a package's key stays allowed.
+- c6e4715: `#stackra/settings` keys a section's field `<section>.<name>`, so two sections of one module may share a field name
+  without a duplicate key (TS1117). `settingKeys` strips the section back off: each key keeps its `name` and its
+  `<module>.<section>.<name>` path, and files written by an older gen still work.
+- 5bf8ad3: Fixes from the os 0.14 typecheck. Gen reads a trait's enum, `Translated`, list and prefix-less `PublicId` fields by
+  their types instead of `json()`. A declared contract package wins over a same-named sibling service folder. A hatch
+  import named like an `X$` the schema file declares comes in aliased. In validation, `Fields`/`InputFields` stop
+  recursing on `Json`, drop every `~` brand key (a config's `~kind` and `~config`), and `Same` compares readonly arrays
+  at any list-view depth.
+- @stackra/errors@0.16.0
+  - @stackra/money@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/money@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/support@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/money@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/support@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/money@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/support@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/money@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/money@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/support@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/money@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/support@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/money@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/support@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/money@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/support@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/money@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/support@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/money@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/support@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- e57b9a1: `stackra gen` writes an `env` section into `stackra.manifest.json` (ADR 0173 amendment 2026-11-04, STA-2104): one
+  row per environment name the member's configuration classes declare (`Config({ env })` names and `@Secret` fields),
+  with its kind (`secret`, `public`, `config`), type, rules, refused prefixes and environments; a service adds its
+  hosted packages' rows, an app only their public rows, and each gets the Infisical path `/runtime/<member>`. `@Secret` takes an optional second
+  argument, `{ refuse, environments }`, read by gen. `StackraManifest` types the section.
+
+### Patch Changes
+
+- 05da3d4: An action is never advertised to MCP clients as read-only, even at L0 or L1; only a query at L0 or L1 is.
+- 242ebe4: The migration compiler's macro recorder and two tests typecheck again under `exactOptionalPropertyTypes`.
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

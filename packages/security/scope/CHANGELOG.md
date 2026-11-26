@@ -1,5 +1,721 @@
 # @stackra/scope
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/storage@0.33.1
+  - @stackra/outbox@0.33.1
+  - @stackra/entitlements@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/cache@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 4937622: Three kit blocks (ADR 0504). `@stackra/scope/react` adds `ScopePicker`: the host's scopes as a tree nested by path,
+  or a search field above `searchThreshold` scopes (8 by default); choosing one sets the active scope that `useScope`
+  reads. `@stackra/entitlements` gains a `./react` entry with `EntitlementGate`, which shows its children only while the
+  plan grants an entitlement (asked through the container's `EntitlementSource`), its `fallback` otherwise, and nothing
+  while the answer is pending. `@stackra/i18n/react` adds a headless `LocaleSwitcher` that binds @stackra/ui's
+  `LocaleSwitcher` props to the nearest `I18nProvider`, remembers the choice and switches through `setLocale` or the
+  host's `onChange`. Every word comes from the host.
+- 246594d: Core re-paths a moved scope subtree's rows for every service. A model opts in with the new `MovesWithScope` trait (@stackra/model); `repathAllRecords(from, to)` (@stackra/database) runs `CrudService.repath` on every registered model with the trait, in the caller's transaction; and `RepathOnScopeMovedListener` (@stackra/scope/node), a queued listener with back-off, runs it on every `scope.node.moved.v1`, so a service writes no re-path listener of its own. A model without the trait is never touched; a `jsonb` scope keeps its owner's own listener.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/actions@0.33.0
+  - @stackra/entitlements@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/outbox@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/cache@0.33.0
+  - @stackra/storage@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Minor Changes
+
+- 2c6be3c: A scope level may name the levels it sits under: `ScopeLevel.parents` (OS tenancy SPEC gap G9). `childLevelsOf` then offers, in declared order, the parent's own level when it is recursive, every level whose `parents` name the parent, and the next declared level when that level names no `parents`; a configuration without `parents` behaves exactly as before. `ScopeConfig$` refuses a parent that is not a declared level, a level as its own parent unless it is recursive, and an empty list. No migration: a node stores its level as text.
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/cache@0.32.0
+  - @stackra/outbox@0.32.0
+  - @stackra/entitlements@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/storage@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/outbox@0.31.0
+  - @stackra/entitlements@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/storage@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+  - @stackra/cache@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [98a8940]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [15dba8d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/outbox@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/entitlements@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/storage@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/cache@0.30.0
+
+## 0.29.0
+
+### Minor Changes
+
+- 8ad5f87: In a memory-tier testing app, `ScopeTree` now reads the nodes `ScopeNodeService` writes. `MemoryScopeTreeDriver`
+  gains `readFrom(load)`: until it is seeded, every read goes to the tree `load` resolves to. The new
+  `SCOPE_TESTING_PLUGIN` (registered by `@stackra/scope/testing`) points an unseeded memory tree at the Database's
+  `ScopeNode` rows through `PostgresScopeTreeDriver`, so `node`, `byPath` (with the node's `level`), `ancestors` and
+  `descendants` see a node added through `ScopeNodeService`, as in production. A seeded tree (`fakeScopeTree`) keeps its
+  own list. Gen's Vitest setup imports `@stackra/scope/testing` for a member on `@stackra/scope`.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [11a19a7]
+- Updated dependencies [0e8f570]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/entitlements@0.29.0
+  - @stackra/outbox@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/storage@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/cache@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/outbox@0.28.0
+  - @stackra/entitlements@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/storage@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+  - @stackra/cache@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+- Updated dependencies [8a70552]
+  - @stackra/database@0.27.0
+  - @stackra/outbox@0.27.0
+  - @stackra/entitlements@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/storage@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+  - @stackra/cache@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+  - @stackra/database@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/entitlements@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/storage@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/validation@0.26.0
+  - @stackra/cache@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/outbox@0.25.0
+  - @stackra/entitlements@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/storage@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/validation@0.25.0
+  - @stackra/cache@0.25.0
+
+## 0.24.0
+
+### Minor Changes
+
+- 2df7162: `ConditionField`, `ServiceAckSet` and `ScopeNode` now extend `Model.global(...)`. Their tables hold no tenant data by
+  design: a field registry, the service acks a workflow waits for, and the scope tree (read outside its package only
+  through the `ScopeTree` port). Gen no longer warns that these models are neither tenant-owned nor global. The
+  row-security audit lists their tables as platform tables. Nothing changes at run time.
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/entitlements@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/storage@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/validation@0.24.0
+  - @stackra/cache@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+  - @stackra/database@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/entitlements@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/storage@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/validation@0.23.0
+  - @stackra/cache@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/entitlements@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/storage@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+  - @stackra/cache@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/storage@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/cache@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/entitlements@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/entitlements@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/storage@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/cache@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [d2b3d22]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/cache@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/storage@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/outbox@0.19.0
+  - @stackra/entitlements@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/actions@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/storage@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/cache@0.18.1
+  - @stackra/outbox@0.18.1
+  - @stackra/entitlements@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/actions@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/storage@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/cache@0.18.0
+  - @stackra/outbox@0.18.0
+  - @stackra/entitlements@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/actions@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/storage@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/cache@0.17.2
+  - @stackra/outbox@0.17.2
+  - @stackra/entitlements@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/actions@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/storage@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/cache@0.17.1
+  - @stackra/outbox@0.17.1
+  - @stackra/entitlements@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/database@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/storage@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/events@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/cache@0.17.0
+  - @stackra/outbox@0.17.0
+  - @stackra/entitlements@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/storage@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/cache@0.16.0
+  - @stackra/outbox@0.16.0
+  - @stackra/entitlements@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [0b0cf51]
+  - @stackra/outbox@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/storage@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/cache@0.15.0
+  - @stackra/entitlements@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/actions@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/storage@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/cache@0.14.4
+  - @stackra/outbox@0.14.4
+  - @stackra/entitlements@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/storage@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/cache@0.14.3
+  - @stackra/outbox@0.14.3
+  - @stackra/entitlements@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/storage@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/cache@0.14.2
+  - @stackra/outbox@0.14.2
+  - @stackra/entitlements@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/storage@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/cache@0.14.1
+  - @stackra/outbox@0.14.1
+  - @stackra/entitlements@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/storage@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/cache@0.14.0
+  - @stackra/outbox@0.14.0
+  - @stackra/entitlements@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/storage@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/cache@0.13.0
+  - @stackra/outbox@0.13.0
+  - @stackra/entitlements@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/storage@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/cache@0.12.0
+  - @stackra/outbox@0.12.0
+  - @stackra/entitlements@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/storage@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/cache@0.11.1
+  - @stackra/outbox@0.11.1
+  - @stackra/entitlements@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/storage@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/cache@0.11.0
+  - @stackra/outbox@0.11.0
+  - @stackra/entitlements@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/cache@0.10.0
+  - @stackra/outbox@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/storage@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/entitlements@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

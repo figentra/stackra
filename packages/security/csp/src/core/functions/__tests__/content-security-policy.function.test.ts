@@ -120,4 +120,23 @@ describe("contentSecurityPolicy", () => {
     }
     expect(() => contentSecurityPolicy(new LooseCspConfig())).toThrow(TypeError);
   });
+
+  it("replaces frame-ancestors 'none' on a path that allows framers only", () => {
+    class CheckoutCspConfig extends CspConfig {
+      override frameAncestors: Record<string, string[] | "request"> = {
+        "/preview": ["https://console.pay.example"],
+        "/c/*": "request",
+      };
+    }
+    const config = new CheckoutCspConfig();
+    const ancestors = (path: string, framers?: readonly string[]) =>
+      directives(
+        contentSecurityPolicy(config, framers ? { path, frameAncestors: framers } : { path }),
+      ).get("frame-ancestors");
+    expect(ancestors("/preview")).toEqual(["https://console.pay.example"]);
+    expect(ancestors("/c/cs_01", ["https://shop.example"])).toEqual(["https://shop.example"]);
+    expect(ancestors("/c/cs_unknown")).toEqual(["'none'"]);
+    expect(ancestors("/settings")).toEqual(["'none'"]);
+    expect(() => ancestors("/c/cs_01", ["*"])).toThrow(TypeError);
+  });
 });

@@ -4,7 +4,7 @@
  *          payload stored as JSON as Postgres stores it, listed in the order Postgres lists them.
  * Boundary: no transaction: a write is kept at once, so a write whose caller rolls back stays (the Postgres driver is
  *           the transactional one). There are no scope settings in memory, so a message keeps the scope it is written
- *           with, if any.
+ *           with, if any, and no tenant: every claim is a platform row's, which needs no isolation.
  * Runtime: isomorphic
  * Governing contract: ADR 0078 (decision 4); ADR 0142 (drivers behind ports); ADR 0266 (memory first).
  */
@@ -12,7 +12,7 @@ import { Driver } from "@stackra/container";
 import type { PublicId } from "@stackra/contracts";
 
 import { OutboxDriver } from "#contracts/index";
-import type { OutboxError, OutboxMessage } from "#contracts/index";
+import type { OutboxClaim, OutboxError, OutboxMessage } from "#contracts/index";
 import { holdsValue } from "#core/functions/holds-value.function";
 
 /** Oldest first, by id within one instant: the relay's order. */
@@ -21,6 +21,11 @@ function byOrder(left: OutboxMessage, right: OutboxMessage): number {
     left.occurredAt.getTime() - right.occurredAt.getTime() ||
     (left.id < right.id ? -1 : left.id > right.id ? 1 : 0)
   );
+}
+
+/** The claim of a kept message: memory keeps no tenant, so every message is a platform row. */
+function claimOf(message: OutboxMessage): OutboxClaim {
+  return Object.freeze({ id: message.id, availableAt: message.availableAt });
 }
 
 /**
@@ -44,14 +49,19 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
     return Promise.resolve();
   }
 
-  /** Implements `OutboxDriver.due`, documented there. */
-  due(now: Date, limit: number): Promise<readonly OutboxMessage[]> {
+  /** Implements `OutboxDriver.claim`, documented there. */
+  claim(now: Date, limit: number): Promise<readonly OutboxClaim[]> {
     const at = now.getTime();
-    const due = [...this.messages.values()]
-      .filter((message) => message.deadAt === undefined && message.availableAt.getTime() <= at)
-      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-      .sort(byOrder);
-    return Promise.resolve(due.slice(0, limit));
+    return Promise.resolve(
+      this.sorted((message) => message.deadAt === undefined && message.availableAt.getTime() <= at)
+        .slice(0, limit)
+        .map(claimOf),
+    );
+  }
+
+  /** Implements `OutboxDriver.load`, documented there. */
+  load(id: PublicId<"evt">): Promise<OutboxMessage | undefined> {
+    return Promise.resolve(this.messages.get(id));
   }
 
   /** Implements `OutboxDriver.remove`, documented there. */
@@ -72,24 +82,20 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
     return Promise.resolve();
   }
 
-  /** Implements `OutboxDriver.pruneDead`, documented there. */
-  pruneDead(before: Date): Promise<number> {
-    let pruned = 0;
-    for (const [id, message] of this.messages)
-      if (message.deadAt !== undefined && message.deadAt.getTime() < before.getTime()) {
-        this.messages.delete(id);
-        pruned += 1;
-      }
-    return Promise.resolve(pruned);
+  /** Implements `OutboxDriver.claimDead`, documented there. */
+  claimDead(before: Date, limit: number): Promise<readonly OutboxClaim[]> {
+    return Promise.resolve(
+      this.sorted(
+        (message) => message.deadAt !== undefined && message.deadAt.getTime() < before.getTime(),
+      )
+        .slice(0, limit)
+        .map(claimOf),
+    );
   }
 
   /** Implements `OutboxDriver.holding`, documented there. */
   holding(value: string): Promise<readonly OutboxMessage[]> {
-    const held = [...this.messages.values()]
-      .filter((message) => holdsValue(message.data, value))
-      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-      .sort(byOrder);
-    return Promise.resolve(held);
+    return Promise.resolve(this.sorted((message) => holdsValue(message.data, value)));
   }
 
   /** Implements `OutboxDriver.rewrite`, documented there. */
@@ -105,8 +111,13 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
 
   /** Every message kept, dead ones included, in the relay's order; for a test's assertions. */
   stored(): readonly OutboxMessage[] {
+    return this.sorted(() => true);
+  }
+
+  /** The kept messages that pass `keep`, in the relay's order. */
+  private sorted(keep: (message: OutboxMessage) => boolean): OutboxMessage[] {
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-    return [...this.messages.values()].sort(byOrder);
+    return [...this.messages.values()].filter(keep).sort(byOrder);
   }
 
   /** Counts a failed delivery of message `id` and replaces `fields`; a message no longer kept is left alone. */

@@ -25,4 +25,9 @@ export interface AppHeaderContractProps extends LandmarkContractProps, ShellSlot
   readonly search?: ReactNode | undefined;
   /** The user's menu, usually a `Menu` on an avatar; it is the last part of the bar. */
   readonly userMenu?: ReactNode | undefined;
+  /**
+   * `solid` (the default) is the console's bar. `transparent` is a marketing site's: sticky at the top, see-through
+   * with no rule until the page scrolls, then on the nav-bar material over a hairline. Native draws `solid`.
+   */
+  readonly variant?: "solid" | "transparent" | undefined;
 }

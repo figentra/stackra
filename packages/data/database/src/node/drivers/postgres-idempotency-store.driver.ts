@@ -22,6 +22,7 @@ import { IdempotencyStore } from "@stackra/actions/contracts";
 import type { IdempotencyRecord } from "@stackra/actions/contracts";
 import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
+import type { StoredRefusal } from "@stackra/errors";
 
 import type { Database } from "#core/ports/database.port";
 
@@ -71,7 +72,7 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
         const taken = (await em.execute(
           `insert into ${KEYS} (key, fingerprint, done, output, expires_at) ` +
             "values (?, ?, false, null, now() + (? * interval '1 millisecond')) " +
-            "on conflict (key) do update set fingerprint = excluded.fingerprint, done = false, output = null, " +
+            "on conflict (key) do update set fingerprint = excluded.fingerprint, done = false, output = null, refusal = null, " +
             `expires_at = excluded.expires_at, updated_at = now() where ${KEYS}.expires_at <= now() returning key`,
           [key, fingerprint, ms],
         )) as unknown as readonly unknown[];
@@ -86,7 +87,7 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
         }
         // raw-sql: the live record the key already holds
         const [row] = (await em.execute(
-          `select fingerprint, done, output from ${KEYS} where key = ? and expires_at > now()`,
+          `select fingerprint, done, output, refusal from ${KEYS} where key = ? and expires_at > now()`,
           [key],
         )) as unknown as readonly Record<string, unknown>[];
         return row;
@@ -94,9 +95,10 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
       if (earlier === "claimed") return undefined;
       if (earlier !== undefined) {
         const held = String(earlier["fingerprint"]);
-        return earlier["done"] === true
+        if (earlier["done"] !== true) return { fingerprint: held, done: false };
+        return earlier["refusal"] === null || earlier["refusal"] === undefined
           ? { fingerprint: held, done: true, output: earlier["output"] ?? null }
-          : { fingerprint: held, done: false };
+          : { fingerprint: held, done: true, refusal: earlier["refusal"] as StoredRefusal };
       }
     }
     throw new Error(`The idempotency key ${key} changed hands three times while it was claimed`);
@@ -109,6 +111,29 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
       await em.execute(
         `update ${KEYS} set done = true, output = ?::jsonb, updated_at = now() where key = ? and done = false`,
         [JSON.stringify(output ?? null), key],
+      );
+    });
+  }
+
+  /**
+   * Implements `IdempotencyStore.completeRefused`, documented there: one upsert, because the claim row may have rolled
+   * back with the refusing call's transaction.
+   */
+  async completeRefused(
+    key: string,
+    fingerprint: string,
+    refusal: StoredRefusal,
+    ttl: Duration,
+  ): Promise<void> {
+    const ms = Math.max(1, Math.ceil(Duration.toMilliseconds(ttl)));
+    await this.run(async (em) => {
+      // raw-sql: the refusal is kept whole, whether or not the claim row survived
+      await em.execute(
+        `insert into ${KEYS} (key, fingerprint, done, output, refusal, expires_at) ` +
+          "values (?, ?, true, null, ?::jsonb, now() + (? * interval '1 millisecond')) " +
+          "on conflict (key) do update set fingerprint = excluded.fingerprint, done = true, output = null, " +
+          "refusal = excluded.refusal, expires_at = excluded.expires_at, updated_at = now()",
+        [key, fingerprint, JSON.stringify(refusal), ms],
       );
     });
   }

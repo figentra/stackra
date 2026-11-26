@@ -5,14 +5,17 @@
  *          store accounts, refuses a white-label build under the platform's Apple account until the 4.2.6 and 4.3
  *          checks are recorded as passed, writes the template checkout's Expo config with the capability flags applied
  *          (unused plugins, native modules, permission strings and entitlements left out, the Firebase config files
- *          copied in), writes its `eas.json` profiles with the product's exact toolchain pins, and starts the build
+ *          copied in), writes its `eas.json` profiles with the product's exact toolchain pins (the build profile and
+ *          channel are the environment's `mobile.channel`, else the app's `eas.channel`), installs the
+ *          checkout's dependencies when it has none (EAS loads the config plugins from them), and starts the build
  *          through the `eas` provider on the app's EAS channel. With `line`, it first checks the app's template line
  *          out into `templateDir` (`checkoutLine`, a git checkout of the release) and commits the written config there,
  *          so EAS builds exactly that commit.
  * Boundary: reads the root runway, the record file, `mise.toml`, the app's Firebase config files and the template's
  *           `app.json`, `capabilities.json`, `eas.json` and `package.json`; writes only `app.json`, `eas.json`, the
- *           Firebase config files, `package.json` and, with `packages`, the product module in the
- *           template checkout (and, with `line`, the checkout itself); runs `npm`, `tar`, `git` and `eas` through the
+ *           Firebase config files, `package.json`, a copy of the product's `.npmrc`, the install and, with
+ *           `packages`, the product module in the template checkout (and, with `line`, the checkout itself); runs
+ *           `npm`, `tar`, `pnpm`, `git` and `eas` through the
  *           command runner, so `dryRunCommand` makes the whole job a dry run that still writes the generated config.
  *           Store submission and the scope theme's icon and splash (stackra-13) are not this job's; `buildOnly` skips
  *           the store account check for a build that submits later. Store accounts arrive resolved (`storeAccountsOf`).
@@ -82,9 +85,10 @@ function blockOf(block: Block, key: string): Block {
  *
  * @param request - the repository, app, template checkout (or the line source to check it out from), commit,
  *        environment, store accounts and variant.
- * @throws RunwayInvalidError when the app is not in the runway `mobile`, is not white-label for a variant, offers no
- *         mode a store account needs, lacks a store account for a platform it targets, has no EAS channel, or lists a
- *         capability the template line does not offer.
+ * @throws RunwayInvalidError when the app is not in the runway `mobile`, is not white-label for a variant, needs a
+ *         white-label entitlement the variant's scope does not hold, offers no mode a store account needs, lacks a
+ *         store account for a platform it targets, has no EAS channel, or lists a capability the template line does
+ *         not offer.
  * @throws RunwayUnresolvedError when a white-label build would publish under the platform's Apple account before the
  *         4.2.6 and 4.3 checks are recorded as passed, or a template file cannot be read.
  * @example
@@ -123,6 +127,13 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
     if (entry.whiteLabel === undefined) {
       issues.push({ path: `${at}.whiteLabel`, message: "The app has no white-label variants" });
     }
+    const required = entry.whiteLabel?.entitlement;
+    if (required !== undefined && variant.entitlements?.includes(required) !== true) {
+      issues.push({
+        path: `${at}.whiteLabel.entitlement`,
+        message: `The scope does not hold ${required}`,
+      });
+    }
     for (const account of stores) {
       const mode = account.owner === "scope" ? "bring-your-own" : "managed";
       if (!modes.includes(mode)) {
@@ -136,9 +147,13 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
       message: "Name the commit checked out in templateDir, or pass line",
     });
   }
-  const channel = entry.eas?.channel;
+  // The environment's channel wins, so a staging build lands on `staging`, not on the app's production channel.
+  const channel = root.environments?.[request.environment]?.mobile?.channel ?? entry.eas?.channel;
   if (channel === undefined) {
-    issues.push({ path: `${at}.eas.channel`, message: "Name the EAS channel the app builds on" });
+    issues.push({
+      path: `${at}.eas.channel`,
+      message: `Name the EAS channel the app builds on, or environments.${request.environment}.mobile.channel`,
+    });
   }
   if (issues.length > 0) throw new RunwayInvalidError("runway.yaml", issues);
 
@@ -251,6 +266,17 @@ export async function runMobileJob(request: MobileJobRequest): Promise<MobileJob
       2,
     )}\n`,
   );
+
+  // EAS loads the config plugins app.json names from the checkout's node_modules before it uploads, so a checkout
+  // without an install fails ("Failed to resolve plugin for module ..."). The product's .npmrc maps the registry
+  // scopes, for this install and the EAS worker's.
+  if (!existsSync(join(templateDir, "node_modules"))) {
+    const npmrc = join(repository, ".npmrc");
+    if (existsSync(npmrc) && !existsSync(join(templateDir, ".npmrc"))) {
+      copyFileSync(npmrc, join(templateDir, ".npmrc"));
+    }
+    await run("pnpm", [...MOBILE_DEV_SETTINGS.install], { cwd: templateDir });
+  }
 
   let sha = request.sha;
   if (template !== undefined) {

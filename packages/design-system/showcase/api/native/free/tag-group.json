@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "d435988be4637b7d",
+    "hash": "34cd1dd1aba1bba1",
     "heroDoc": "vendor/heroui/native/tag-group.json",
     "propsFiles": ["ui/src/native/tag-group/tag-group.props.ts"]
   },
@@ -47,7 +47,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "default": "md",

@@ -27,8 +27,10 @@ import { MemorySettingValueStoreDriver } from "#core/drivers/memory-setting-valu
 import { SettingScope } from "#core/enums/setting-scope.enum";
 import { SettingType } from "#core/enums/setting-type.enum";
 import { SettingBelowFloorError } from "#core/errors/setting-below-floor.error";
+import { SettingApproverRoleError } from "#core/errors/setting-approver-role.error";
 import { SettingFourEyesError } from "#core/errors/setting-four-eyes.error";
 import { SettingRevisionClosedError } from "#core/errors/setting-revision-closed.error";
+import { SettingScopeRefusedError } from "#core/errors/setting-scope-refused.error";
 import { settingKeys } from "#core/functions/setting-keys.function";
 import { settingsPage } from "#core/functions/settings-page.function";
 import { SettingsResolver } from "#core/services/settings-resolver.service";
@@ -40,6 +42,10 @@ class ReturnsSettings extends Settings({ scopes: [SettingScope.Platform, Setting
   guestRefunds = false;
 
   mode = "cash";
+
+  platformRouting = false;
+
+  refundCeilingMinor = 0;
 }
 
 registerSchemas([
@@ -49,6 +55,8 @@ registerSchemas([
       windowDays: z.number().int().min(0).default(7),
       guestRefunds: z.boolean().default(false),
       mode: z.string().default("cash"),
+      platformRouting: z.boolean().default(false),
+      refundCeilingMinor: z.number().int().default(0),
     }),
   ],
 ]);
@@ -75,10 +83,35 @@ settingKeys({
       live: true,
       approval: true,
     },
-    mode: { type: SettingType.String, default: "cash", scopes: CASCADE, label: label("mode") },
+    // A user may hold it too, so a user's own write of it is a preference (live-editable).
+    mode: {
+      type: SettingType.String,
+      default: "cash",
+      scopes: [...CASCADE, SettingScope.User],
+      label: label("mode"),
+    },
+    platformRouting: {
+      type: SettingType.Boolean,
+      default: false,
+      scopes: CASCADE,
+      label: label("platform_routing"),
+      live: true,
+      approval: { by: "owner" },
+    },
+    // As gen writes `@Setting({ scopes: [SettingScope.Platform], approval: true })` on a Platform+Product class.
+    refundCeilingMinor: {
+      type: SettingType.Integer,
+      default: 0,
+      scopes: [SettingScope.Platform],
+      label: label("refund_ceiling_minor"),
+      live: true,
+      approval: true,
+    },
   },
 });
 const PAGE = settingsPage("returns", { scope: SettingScope.Product });
+const PLATFORM_PAGE = settingsPage("returns", { scope: SettingScope.Platform });
+const STORE_PAGE = settingsPage("returns", { scope: "store" });
 
 const ACME: ScopeRef = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w1", path: "platform.acme" };
 const USER = "usr_01j9z3k4m5n6p7q8r9s0t1v2w0" as const;
@@ -180,6 +213,59 @@ describe(SettingsResolver, () => {
     });
   });
 
+  it("refuses a key at a level its scopes leave out, and writes nothing", async () => {
+    const { values, revisions, resolver } = setup();
+    // A product page holds the Platform+Product key but not the Platform-only one; a store page holds neither.
+    for (const [page, level, paths] of [
+      [PAGE, SettingScope.Product, ["refundCeilingMinor"]],
+      [STORE_PAGE, "store", ["refundCeilingMinor", "windowDays"]],
+    ] as const) {
+      const refused = await resolver
+        .write(page, { refundCeilingMinor: 500, windowDays: 30 }, { scope: ACME }, LIVE)
+        .catch((error: unknown) => error);
+      expect(refused).toBeInstanceOf(SettingScopeRefusedError);
+      expect(refused).toMatchObject({
+        code: "setting_scope_refused",
+        level,
+        paths,
+        fieldErrors: Object.fromEntries(paths.map((path) => [path, "setting_scope_refused"])),
+      });
+    }
+    // The class's scopes bind too: a store page cannot write a Platform+Product key, nor a user a key no user holds.
+    await expect(
+      resolver.write(STORE_PAGE, { windowDays: 30 }, { scope: ACME }, LIVE),
+    ).rejects.toBeInstanceOf(SettingScopeRefusedError);
+    await expect(
+      resolver.write(PAGE, { windowDays: 30 }, { user: USER }, LIVE),
+    ).rejects.toBeInstanceOf(SettingScopeRefusedError);
+    // Break-glass lifts the live check, never the scopes.
+    await expect(
+      resolver.write(
+        PAGE,
+        { refundCeilingMinor: 500 },
+        { scope: ACME },
+        { ...LIVE, breakGlass: true, reason: "incident 42" },
+      ),
+    ).rejects.toBeInstanceOf(SettingScopeRefusedError);
+    await expect(values.layers("returns", { scope: ACME })).resolves.toEqual([]);
+    await expect(revisions.list("returns", { scope: ACME })).resolves.toEqual([]);
+  });
+
+  it("holds a Platform-only approval key, written at the platform, as pending until a second approver", async () => {
+    const { values, resolver } = setup();
+    const pending = await resolver.write(PLATFORM_PAGE, { refundCeilingMinor: 500 }, {}, LIVE);
+    expect(pending.status).toBe(SettingRevisionStatus.Pending);
+    await expect(values.layers("returns", {})).resolves.toEqual([]);
+    expect((await resolver.get(ReturnsSettings, {})).refundCeilingMinor).toBe(0);
+    await expect(resolver.approve(pending.id, "usr_author")).rejects.toBeInstanceOf(
+      SettingFourEyesError,
+    );
+    await expect(resolver.approve(pending.id, "usr_second")).resolves.toMatchObject({
+      status: SettingRevisionStatus.Applied,
+    });
+    expect((await resolver.get(ReturnsSettings, {})).refundCeilingMinor).toBe(500);
+  });
+
   it("applies a live write now and records the value it replaced", async () => {
     const { values, resolver } = setup();
     await values.write("returns", { scope: ACME }, { windowDays: 20 });
@@ -210,6 +296,43 @@ describe(SettingsResolver, () => {
       SettingRevisionClosedError,
     );
     expect((await resolver.get(ReturnsSettings, { scope: ACME })).guestRefunds).toBe(true);
+  });
+
+  it("holds an owner-only key for an owner: a non-owner admin is refused, the owner applies it", async () => {
+    const { values, resolver } = setup();
+    const pending = await resolver.write(PAGE, { platformRouting: true }, { scope: ACME }, LIVE);
+    expect(pending).toMatchObject({ status: SettingRevisionStatus.Pending, approvalRole: "owner" });
+    await expect(values.layers("returns", { scope: ACME })).resolves.toEqual([]);
+    const refused = resolver.approve(pending.id, "usr_admin", ["manager", "staff"]);
+    await expect(refused).rejects.toBeInstanceOf(SettingApproverRoleError);
+    await expect(refused).rejects.toMatchObject({ revision: pending.id, role: "owner" });
+    // no roles passed fails closed
+    await expect(resolver.approve(pending.id, "usr_admin")).rejects.toBeInstanceOf(
+      SettingApproverRoleError,
+    );
+    // the role is the control, so the owner may approve a change they wrote
+    const applied = await resolver.approve(pending.id, "usr_author", ["owner"]);
+    expect(applied).toMatchObject({
+      status: SettingRevisionStatus.Applied,
+      decidedBy: "usr_author",
+      approvalRole: "owner",
+    });
+    expect((await resolver.get(ReturnsSettings, { scope: ACME })).platformRouting).toBe(true);
+  });
+
+  it("lets a role-gated key govern a four-eyes key written beside it", async () => {
+    const { resolver } = setup();
+    const mixed = await resolver.write(
+      PAGE,
+      { guestRefunds: true, platformRouting: true },
+      { scope: ACME },
+      LIVE,
+    );
+    // a four-eyes key beside an owner-only key: the owner's approval is the stricter control
+    expect(mixed.approvalRole).toBe("owner");
+    await expect(resolver.approve(mixed.id, "usr_second", ["manager"])).rejects.toBeInstanceOf(
+      SettingApproverRoleError,
+    );
   });
 
   it("schedules a later write, rejects or applies it when due", async () => {

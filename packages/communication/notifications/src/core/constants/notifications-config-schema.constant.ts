@@ -25,4 +25,8 @@ export const NOTIFICATIONS_CONFIG_SCHEMA = z.object({
     .regex(/^(https:\/\/\S+)?$/)
     .default(""),
   unsubscribeKey: z.string().default(""),
+  webPushVapidSubject: z
+    .string()
+    .regex(/^((mailto:|https:\/\/)\S+)?$/)
+    .default(""),
 });

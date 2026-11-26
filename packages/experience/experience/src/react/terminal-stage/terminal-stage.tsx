@@ -1,0 +1,83 @@
+/**
+ * Stackra file contract:
+ * Purpose: `TerminalStage`, the landing kit's try-it scene: the recorded `TerminalDemo` full width over a dithered
+ *          horizon band, landing on the monitor drawing once the session has played, in its ruled band, under its
+ *          own `h2` when it has a `title`, so heading navigation reaches the chapter. With no
+ *          recording yet (`lines` empty), the log is not drawn: the command bar and the monitor show, and the page's
+ *          own copy says the session is recorded when the command ships.
+ * Boundary: composition of @stackra/ui's `TerminalDemo`, `DitherArt` and `Illustration`; the playing, the copy button
+ *           and the motion level are the terminal's own. The monitor is `Illustration`'s four tone layers in the
+ *           theme's roles, never fetched and never mirrored, decorative unless it has `alt`; it waits on the
+ *           terminal's `data-done` through a CSS `peer` rule, so the server and the edge, which draw the last frame,
+ *           show it at once.
+ * Runtime: browser
+ * Governing contract: ADR 0504 (module UI kits); ADR 0165 (UI through @stackra/ui); ADR 0060 (light, dark, RTL);
+ *          motion principles (one orchestrated moment); STA-2041.
+ */
+import { DitherArt, Heading, Illustration, TerminalDemo } from "@stackra/ui/react";
+import type { ReactElement } from "react";
+
+import { RuledBand } from "#react/ruled-band/ruled-band";
+import type { TerminalStageProps } from "#react/terminal-stage/terminal-stage.props";
+
+/**
+ * A recorded terminal session on a horizon, ending on a monitor.
+ *
+ * @example
+ * <TerminalStage command="stackra create my-app" lines={recording} art={{ poster, sun: { x: 0.7, y: 0.9 } }} />
+ */
+export function TerminalStage({
+  title,
+  command,
+  lines,
+  art,
+  label,
+  result,
+  monitor,
+  className,
+}: TerminalStageProps): ReactElement {
+  return (
+    <RuledBand>
+      <div
+        data-slot="terminal-stage"
+        className={`relative isolate flex flex-col items-center gap-8 overflow-hidden ${className ?? ""}`}
+      >
+        {art ? (
+          <DitherArt
+            front="stk-tile-line"
+            mask="top"
+            {...art}
+            className={`absolute inset-x-0 bottom-0 -z-10 h-2/3 ${art.className ?? ""}`}
+          />
+        ) : null}
+        {title ? (
+          <Heading level={2} type="h2" className="text-balance">
+            {title}
+          </Heading>
+        ) : null}
+        <TerminalDemo
+          command={command}
+          lines={lines}
+          label={label}
+          result={result}
+          // No recording yet: no empty log under the command bar.
+          className={`peer w-full max-w-3xl ${lines.length === 0 ? "[&_[role=log]]:hidden" : ""}`}
+        />
+        {monitor ? (
+          <div
+            data-slot="terminal-stage-monitor"
+            className="invisible w-full max-w-sm peer-data-done:visible"
+          >
+            <Illustration
+              src={monitor.src}
+              width={monitor.width}
+              height={monitor.height}
+              {...(monitor.alt === undefined ? {} : { alt: monitor.alt })}
+              className="w-full"
+            />
+          </div>
+        ) : null}
+      </div>
+    </RuledBand>
+  );
+}

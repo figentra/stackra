@@ -61,6 +61,12 @@ export interface CheckoutRequest {
   /** The merchant account and platform fee, for a platform payment (`PaymentCapability.Platform`). */
   readonly platform?: PlatformShare;
 
+  /**
+   * The platform's fee on a direct charge on the connected account (Stripe `application_fee_amount`); never with
+   * `platform`, which is a destination charge (`transfer_data`).
+   */
+  readonly applicationFee?: Money;
+
   /** What the customer tenders; `card` when absent (`PaymentCapability.RestrictedTender` for `restricted`). */
   readonly tender?: TenderKind;
 

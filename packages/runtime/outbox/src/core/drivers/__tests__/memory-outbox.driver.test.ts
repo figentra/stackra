@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MemoryOutboxDriver`: a write keeps the payload as JSON; `due` lists messages due at `now` that
- *          are not dead, oldest first and by id within one instant, up to the limit; `retry` counts the attempt and
- *          moves the due time; `deadLetter` counts it and hides the message from `due`; `remove` deletes it;
- *          `pruneDead` deletes only messages dead before its cutoff; `holding` finds live and dead messages by a value
+ * Purpose: unit tests of `MemoryOutboxDriver`: a write keeps the payload as JSON; `claim` lists the ids and due times
+ *          (no owner: memory keeps none) of messages due at `now` that are not dead, oldest first and by id within one
+ *          instant, up to the limit, and `load` returns one; `retry` counts the attempt and moves the due time;
+ *          `deadLetter` counts it and hides the message from `claim`; `remove` deletes it; `claimDead` claims only
+ *          messages dead before its cutoff; `holding` finds live and dead messages by a value
  *          at any depth of their payload; `rewrite` replaces a payload and keeps the delivery state.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -44,16 +45,19 @@ describe(MemoryOutboxDriver, () => {
   it("keeps the payload as JSON, as Postgres does", async () => {
     const driver = new MemoryOutboxDriver();
     await driver.write([message("evt_A")]);
-    const [stored] = await driver.due(NOON, 10);
+    const stored = await driver.load("evt_A");
     expect(stored?.data).toEqual({ orderId: "ord_1", paidAt: NOON.toISOString() });
   });
 
   it("lists due messages oldest first, by id within one instant, up to the limit", async () => {
     const driver = new MemoryOutboxDriver();
     await driver.write([message("evt_C", LATER), message("evt_B"), message("evt_A")]);
-    expect((await driver.due(NOON, 10)).map((each) => each.id)).toEqual(["evt_A", "evt_B"]);
-    expect((await driver.due(LATER, 2)).map((each) => each.id)).toEqual(["evt_A", "evt_B"]);
-    expect((await driver.due(LATER, 10)).map((each) => each.id)).toEqual([
+    expect(await driver.claim(NOON, 10)).toEqual([
+      { id: "evt_A", availableAt: NOON },
+      { id: "evt_B", availableAt: NOON },
+    ]);
+    expect((await driver.claim(LATER, 2)).map((each) => each.id)).toEqual(["evt_A", "evt_B"]);
+    expect((await driver.claim(LATER, 10)).map((each) => each.id)).toEqual([
       "evt_A",
       "evt_B",
       "evt_C",
@@ -64,16 +68,17 @@ describe(MemoryOutboxDriver, () => {
     const driver = new MemoryOutboxDriver();
     await driver.write([message("evt_A")]);
     await driver.retry("evt_A", LATER, FAILURE);
-    expect(await driver.due(NOON, 10)).toEqual([]);
-    const [retried] = await driver.due(LATER, 10);
+    expect(await driver.claim(NOON, 10)).toEqual([]);
+    expect(await driver.claim(LATER, 10)).toEqual([{ id: "evt_A", availableAt: LATER }]);
+    const retried = await driver.load("evt_A");
     expect(retried).toMatchObject({ attempts: 1, availableAt: LATER, lastError: FAILURE });
   });
 
-  it("counts the last attempt and keeps a dead message out of due", async () => {
+  it("counts the last attempt and keeps a dead message out of a claim", async () => {
     const driver = new MemoryOutboxDriver();
     await driver.write([message("evt_A")]);
     await driver.deadLetter("evt_A", FAILURE, NOON);
-    expect(await driver.due(LATER, 10)).toEqual([]);
+    expect(await driver.claim(LATER, 10)).toEqual([]);
     expect(driver.stored()).toEqual([
       expect.objectContaining({ id: "evt_A", attempts: 1, deadAt: NOON, lastError: FAILURE }),
     ]);
@@ -85,15 +90,18 @@ describe(MemoryOutboxDriver, () => {
     await driver.remove("evt_A");
     await driver.retry("evt_A", LATER, FAILURE);
     expect(driver.stored()).toEqual([]);
+    await expect(driver.load("evt_A")).resolves.toBeUndefined();
   });
 
-  it("prunes only messages dead before the cutoff", async () => {
+  it("claims only messages dead before the cutoff, up to the limit", async () => {
     const driver = new MemoryOutboxDriver();
     await driver.write([message("evt_A"), message("evt_B"), message("evt_C")]);
     await driver.deadLetter("evt_A", FAILURE, NOON);
     await driver.deadLetter("evt_B", FAILURE, LATER);
-    await expect(driver.pruneDead(LATER)).resolves.toBe(1);
-    expect(driver.stored().map((stored) => stored.id)).toEqual(["evt_B", "evt_C"]);
+    expect(await driver.claimDead(LATER, 10)).toEqual([{ id: "evt_A", availableAt: NOON }]);
+    expect(
+      (await driver.claimDead(new Date(LATER.getTime() + 1), 1)).map((each) => each.id),
+    ).toEqual(["evt_A"]);
   });
 
   it("finds live and dead messages holding a value at any depth, never by a key", async () => {

@@ -1,4 +1,12 @@
 // Turborepo package configuration: extends the root turbo.jsonc and declares this member's tags
 // (tier, category, runtimes; scaffold.mjs writes them). Member-only task overrides go here.
 // Owner: release-operations · Secrets: forbidden
-{ "$schema": "https://turborepo.dev/schema.json", "extends": ["//"], "tags": ["tier:app"] }
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tags": ["tier:app"],
+  "tasks": {
+    // `stackra lint` builds the docs site into .stackra/site too; run after `build` so the two never write it at once.
+    "lint": { "dependsOn": ["build"] },
+  },
+}

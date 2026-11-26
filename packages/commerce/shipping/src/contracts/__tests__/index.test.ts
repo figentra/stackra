@@ -136,6 +136,24 @@ describe("@stackra/shipping/contracts", () => {
     expect(formatless.reference).toBe("ful_1");
   });
 
+  it("lets an aggregator name the carrier that delivers a quote and a shipment", () => {
+    const quote: RateQuote = {
+      service: "2828",
+      name: "Express",
+      amount: Money.of("21.00", "SAR"),
+      carrier: "smsa",
+    };
+    const shipment: Shipment = {
+      shipmentId: "ord_1",
+      trackingNumbers: ["231200021000"],
+      service: quote.service,
+      labels: [],
+      carrier: "smsa",
+    };
+    expect([quote.carrier, shipment.carrier]).toEqual(["smsa", "smsa"]);
+    expectTypeOf<RateQuote["carrier"]>().toEqualTypeOf<string | undefined>();
+  });
+
   it("books pickups and maps tracking", () => {
     const pickupRequest: PickupRequest = {
       reference: "run_1",

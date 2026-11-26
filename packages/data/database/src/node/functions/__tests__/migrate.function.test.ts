@@ -48,6 +48,7 @@ function file(version: number, sql: string, extra: Partial<MigrationFile> = {}):
     timeout: undefined,
     sql,
     checksum: `sum${version}`,
+    legacyChecksum: `legacy${version}`,
     inverse: undefined,
     ...extra,
   };
@@ -66,6 +67,21 @@ describe("migrate", () => {
     reset([file(1, "select 1")], 1);
     fake.history = [{ version: 1, name: "0001_orders_step", checksum: "other" }];
     await expect(run()).rejects.toThrow("was edited after it was applied");
+  });
+
+  it("still verifies a file applied under its whole-file checksum, recorded before lint lines were left out", async () => {
+    // an already-applied migration that carries a squawk ignore line: its row holds the old whole-file digest
+    reset(
+      [
+        file(
+          1,
+          "-- squawk-ignore adding-field-with-default\nalter table t add column x int default 1",
+        ),
+      ],
+      1,
+    );
+    fake.history = [{ version: 1, name: "0001_orders_step", checksum: "legacy1" }];
+    expect(await run()).toEqual({ applied: [] });
   });
 
   it("adopts applied files the history lacks, then applies and records the pending ones", async () => {

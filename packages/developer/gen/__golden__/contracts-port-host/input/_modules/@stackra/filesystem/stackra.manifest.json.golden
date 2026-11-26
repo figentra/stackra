@@ -1,0 +1,15 @@
+{
+  "member": "filesystem",
+  "package": "@stackra/filesystem",
+  "version": "0.20.0",
+  "drivers": [
+    {
+      "port": "FileSystem",
+      "key": "filesystem.FileSystem",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": { "class": "MemoryFileSystemDriver", "from": "@stackra/filesystem" }
+      }
+    }
+  ]
+}

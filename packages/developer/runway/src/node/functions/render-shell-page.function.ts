@@ -3,6 +3,8 @@
  * Purpose: `renderShellPage(page)`, the HTML of one shell page load, as the edge Worker writes it (ADR 0437 decision
  *          2.5): the shell's import map, the startup record as `#stackra-startup`, `modulepreload` links for the shell
  *          entry and the bundle, the shell's then the bundle's stylesheets, the root element and the shell entry as a module script.
+ *          Every bundle URL the build pinned carries its SRI value: on its `modulepreload` or stylesheet link, and in the
+ *          import map's `integrity` block, so the browser refuses a tampered file (STA-2562).
  * Boundary: pure; for the local edge (`previewServe`). shortcut: a copy of the OS edge Worker's `renderShellPage`
  *           (os workers/edge); keep the two in step until the Worker's renderer is a shared package. JSON is written
  *           with `<` escaped so no value can close its element; every attribute value is escaped.
@@ -39,18 +41,27 @@ export function renderShellPage(page: {
   readonly title: string;
 }): string {
   const { shell, release, record } = page;
+  const integrity = release.integrity ?? {};
+  /** ` integrity="…"` for a URL the build pinned, else nothing. */
+  const pinned = (url: string): string => {
+    const value = integrity[url];
+    return value === undefined ? "" : ` integrity="${escape(value)}"`;
+  };
+  // The import map's `integrity` pins every bundle module, the dynamic chunks a modulepreload never names included.
+  const importMap =
+    Object.keys(integrity).length === 0 ? shell.importMap : { ...shell.importMap, integrity };
   const head = [
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     `<title>${escape(page.title)}</title>`,
     '<meta name="robots" content="noindex">',
-    `<script type="importmap">${inline(shell.importMap)}</script>`,
+    `<script type="importmap">${inline(importMap)}</script>`,
     `<script type="application/json" id="${PREVIEW_SERVE_SETTINGS.startupRecordId}">${inline(record)}</script>`,
     ...[...new Set([shell.entry, ...release.modulepreload])].map(
-      (url) => `<link rel="modulepreload" crossorigin href="${escape(url)}">`,
+      (url) => `<link rel="modulepreload" crossorigin href="${escape(url)}"${pinned(url)}>`,
     ),
     ...[...(shell.css ?? []), ...release.css].map(
-      (url) => `<link rel="stylesheet" crossorigin href="${escape(url)}">`,
+      (url) => `<link rel="stylesheet" crossorigin href="${escape(url)}"${pinned(url)}>`,
     ),
   ];
   return `<!doctype html><html lang="${escape(record.locales.default)}"><head>${head.join("")}</head><body class="bg-background text-foreground"><div id="root"></div><script type="module" crossorigin src="${escape(shell.entry)}"></script></body></html>`;

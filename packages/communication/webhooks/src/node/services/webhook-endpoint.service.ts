@@ -4,8 +4,9 @@
  *          URL, or an `s3://bucket/prefix` target), finds the enabled endpoints of a scope node subscribed to an event,
  *          rotates an endpoint's signing secret and disables an endpoint whose delivery dead-lettered. A gated event
  *          (an entitlement named at registration) is subscribed to, and delivered, only on a plan that includes it.
- * Boundary: a `CrudService<WebhookEndpoint>`, so every read and write runs in the caller's transaction. The table has
- *           no row-level-security policy, so every read here names its scope node. It stores secret names only; the
+ * Boundary: a `CrudService<WebhookEndpoint>`, so every read and write runs in the caller's transaction and tenant
+ *           call: the table's tenant equality policy shows a call only its tenant's endpoints, and a scope read here
+ *           still names its scope node. It stores secret names only; the
  *           caller that creates a secret (a console action) puts its value in the secret store. A registered URL is
  *           https or a well-formed `s3:` target; whether its host is reachable or private is the runtime's egress
  *           policy, not checked here. Grants are read through `WebhookEntitlementSource`; with none bound no gated

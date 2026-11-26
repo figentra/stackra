@@ -1,0 +1,68 @@
+---
+title: "runway evidence"
+description: "Writes the approvals bot's evidence for one deploy job."
+---
+
+Writes the approvals bot's evidence for one deploy job.
+
+```bash
+stackra runway evidence <environment> --target <target> --sha <sha> [--member <member>] [--repo <owner/repo>] [--json]
+```
+
+| Argument or option | Kind     | Meaning                                                               |
+| ------------------ | -------- | --------------------------------------------------------------------- |
+| `environment`      | argument | The runway environment the job deploys.                               |
+| `--target`         | option   | The destination target (`cloudflare-workers`, `encore-cloud`, `eas`). |
+| `--sha`            | option   | The full commit the job deploys.                                      |
+| `--member`         | option   | The member the job ships; default the whole target.                   |
+| `--repo`           | option   | `owner/repo`; default the root runway's `providers.github`.           |
+
+## What it does
+
+Reads the root runway and writes `runway-evidence-<environment>[-<member>].json` in the working folder: the
+`runway.evidence/v1` record the approvals bot reads ([0533](/adr/0533-approvals-bot-deployment-protection)). It holds
+the repo, environment, commit, target and member; `rollout`; and `destructive`, which stays `null` until gen classifies
+migrations. The bot treats any `null` as the owner's to approve, and ignores a file whose commit is not the
+deployment's.
+
+`rollout` is judged per target:
+
+| Target and member                                                                              | `rollout` | `floorReason`               |
+| ---------------------------------------------------------------------------------------------- | --------- | --------------------------- |
+| A Workers member whose production settings move traffic in more than one step                  | `true`    | `null`                      |
+| A Workers member whose `wrangler.jsonc` has `migrations` (it ships at 100%)                    | `false`   | `durable-object-migrations` |
+| A Workers member with one step (`public-site`, `internal-tool`, `cache`), or not in production | `false`   | `single-step`               |
+| Another declared target (`encore-cloud`, `eas`, ...)                                           | `false`   | `no-rollout-primitive`      |
+| An undeclared target, no `--member` for Workers, or no `wrangler.jsonc` to read                | `null`    | `undeclared`                |
+
+Every Worker steps through `[10, 50, 100]` in production by default; the driver smokes each step and puts the previous
+version back on a failure. `rolloutDetail` carries the kind, the steps and the reason for the owner's message; the bot
+decides on `rollout` only. `release.strategy` in the root runway is descriptive and no longer read.
+
+## What it prints
+
+The file name and the two answers; with `--json`, the whole record.
+
+## Exit codes
+
+| Code | Means                                                     |
+| ---- | --------------------------------------------------------- |
+| 0    | Written.                                                  |
+| 1    | A runway file is invalid.                                 |
+| 2    | No `--target`, no full `--sha`, or no repository to name. |
+
+## Where it runs
+
+Anywhere; it reads files only. A deploy workflow runs it in a job that finishes before the deploy job, and uploads the
+file as the artifact `runway-evidence-<environment>[-<member>]`: GitHub asks the bot when the deploy job is queued,
+before any of its steps.
+
+## Examples
+
+```bash
+stackra runway evidence production --target cloudflare-workers --member docs --sha <sha>
+```
+
+## See also
+
+[0533](/adr/0533-approvals-bot-deployment-protection) and [the runway runbook](/runbooks/runway).

@@ -4,16 +4,17 @@
  *          generated entity and schemas files, then makes every registration call the platform packages wait for,
  *          from the identities the manifest locked: the hosted packages' entities (the service's own files written from
  *          their manifests, STA-1667, or an older manifest's entity list), the model partners of each
- *          `CrudService<M>` (and of a platform one it injects, from `PLATFORM_PARTNERS`), the integration events' wire names (its own, and those of the consumed services' events its
+ *          `CrudService<M>` (and of every `CrudService<M>` its packages' manifests list with its model, `services[].partner`), the integration events' wire names (its own, and those of the consumed services' events its
  *          listeners import from `#stackra/clients/<service>`, so its inbox rebuilds them), each listener with the event
  *          class it reacts to, the relay listeners, the change consumers with the models their `@ConsumesChanges` names, the outbound webhooks, the job actions for the queue
- *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events, the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
+ *          and the scheduler, the cached queries with invalidating events (`registerCachedQueries`, STA-1445), the connections, the webhook events (its own, each with its Integration's Connection even when a hosted package ships it, and those its hosted packages' manifests list in `webhookEvents`), the sequences, the entitlements with the calls they gate (`registerEntitlements`, STA-903)
  *          the `@Searchable` models, each report with its source model (`registerReportSources`, ADR 0470), and the
  *          locked key of every `Permission` static and module role, the hosted packages' included (`registerPermissions`,
  *          then `registerRoles`; without
  *          them the decision point cannot tell a system or restricted permission, and a module role holds nothing,
  *          STA-1702), each record policy with its model (`registerPolicies`; without it `ctx.authorize(record)` runs no
- *          policy, STA-2045), and every action and query with its locked key, permission, risk, effects and input class
+ *          policy, STA-2045), each extension on its point's slot with its order (`registerExtensions`; without it every
+ *          slot runs none), and every action and query with its locked key, permission, risk, effects and input class
  *          (`registerActions`; without it the pipeline checks no permission and validates no input, STA-2025).
  * Boundary: pure. Node only: the server entry and the generated test setup import it before the container boots. A
  *           service registers its own classes and those its hosted packages list in their manifests (imported from
@@ -32,11 +33,12 @@ import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
 
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
-import { PLATFORM_PARTNERS } from "#core/constants/platform-partners.constant";
+import { connectionOf } from "#core/functions/connection-of.function";
 import { emitHostedEntities } from "#core/functions/emit-hosted-entities.function";
 import { entitiesFile } from "#core/functions/entities-file.function";
 import { entitiesName } from "#core/functions/entities-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { hostedWebhookEvents } from "#core/functions/hosted-webhook-events.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { ownClass } from "#core/functions/own-class.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
@@ -68,6 +70,12 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   };
   /** The local name a class is printed by, importing it once; a clash gets a prefix. */
   const ref = (target: ClassRef): string => {
+    // An unresolved type reads as `unknown`: importing it would register `undefined`, and nothing typechecks
+    // .stackra/gen, so the run stops here instead of shipping a broken route (SHIP, 0.29).
+    if (target.name === "unknown")
+      throw new TypeError(
+        `gen would import \`unknown\` from ${target.from} into registrations.ts; the reader names no class there`,
+      );
     const key = `${target.from}#${target.name}`;
     const known = local.get(key);
     if (known !== undefined) return known;
@@ -143,18 +151,24 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }
   }
 
-  // A platform CrudService a class injects (`RuleSetService`) is typed against its package's model.
-  const injected = ir.classes.flatMap((declared) =>
-    declared.deps.filter((dep) => dep.of === undefined && dep.named === undefined),
-  );
-  const platformPartners = Object.entries(PLATFORM_PARTNERS).flatMap(([key, model]) => {
-    const [pkg = "", name = ""] = key.split("#");
-    const service = injected.find(
-      (dep) =>
-        dep.class.name === name && (dep.class.from === pkg || dep.class.from.startsWith(`${pkg}/`)),
-    );
-    return service === undefined ? [] : [`[${ref(service.class)}, ${ref(model)}]`];
-  });
+  // A package's `CrudService<M>` is typed against its own model; the base's type argument is gone at runtime, so its
+  // manifest keeps the pair (`services[].partner`) and a service registers it for every package it hosts. A package
+  // registers only its own.
+  const packagePartners = (ir.layout === "service" ? ir.dependencies : [])
+    .filter(({ manifest: dependency }) => dependency.kind !== "app")
+    .flatMap(({ manifest: dependency }) => {
+      const rows: unknown = dependency["services"];
+      return (Array.isArray(rows) ? rows : []).flatMap((row: unknown) => {
+        const service = classRefIn(row, "class");
+        const model =
+          typeof row === "object" && row !== null
+            ? classRefIn(Reflect.get(row, "partner"), "name")
+            : undefined;
+        return service === undefined || model === undefined
+          ? []
+          : [`[${ref(service)}, ${ref(model)}]`];
+      });
+    });
   call("registerModelPartners", "@stackra/database", [
     ...ir.classes
       .filter((declared) => declared.kind === "service" && declared.partner !== undefined)
@@ -163,7 +177,7 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
           ? undefined
           : `[${ref({ name: declared.name, from: declared.importPath })}, ${ref({ name: declared.partner.name, from: declared.partner.from })}]`,
       ),
-    ...platformPartners,
+    ...packagePartners,
   ]);
 
   const events = ((manifest.events ?? []) as readonly Entry[]).filter(
@@ -268,25 +282,46 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }),
   );
 
-  call(
-    "registerWebhookEvents",
-    "@stackra/webhooks",
-    ir.classes
+  // why: an own event typed against a hosted package's Integration finds that Integration's Connection in the package's
+  // merged manifest row; without it the row has no connection and every connection URL answers 404
+  const hostedConnection = (partner: ClassRef): string | undefined => {
+    const entry = integrations.find((item) => {
+      const from = item["from"];
+      return (
+        typeof from === "string" &&
+        typeof item["connection"] === "string" &&
+        item["class"] === partner.name &&
+        (partner.from === from || partner.from.startsWith(`${from}/`))
+      );
+    });
+    return entry === undefined ? undefined : classOf(entry, "connection", "connectionFile");
+  };
+  call("registerWebhookEvents", "@stackra/webhooks", [
+    ...ir.classes
       .filter((declared) => declared.kind === "webhook_event" && declared.partner !== undefined)
       .map((declared) => {
         const partner = declared.partner;
         if (partner === undefined) return undefined;
-        const connection = ir.classes.find(
-          (candidate) =>
-            candidate.kind === "connection" && candidate.partner?.name === partner.name,
-        );
+        // why: `ref` prefixes a clashing name by first use, so the event and Integration are named before the Connection
+        const event = ref({ name: declared.name, from: declared.importPath });
+        const integration = ref({ name: partner.name, from: partner.from });
+        const ownConnection = connectionOf(ir.classes, partner.name);
+        const connection =
+          ownConnection === undefined
+            ? hostedConnection(partner)
+            : ref({ name: ownConnection.name, from: ownConnection.importPath });
         return (
-          `{ event: ${ref({ name: declared.name, from: declared.importPath })}, ` +
-          `integration: ${ref({ name: partner.name, from: partner.from })}` +
-          `${connection !== undefined ? `, connection: ${ref({ name: connection.name, from: connection.importPath })}` : ""} }`
+          `{ event: ${event}, integration: ${integration}` +
+          `${connection !== undefined ? `, connection: ${connection}` : ""} }`
         );
       }),
-  );
+    // Each hosted package's own webhook events, paired by its manifest (a half-paired one is refused, never listed).
+    ...hostedWebhookEvents(ir).events.map(
+      (hosted) =>
+        `{ event: ${ref(hosted.event)}, integration: ${ref(hosted.integration)}` +
+        `${hosted.connection !== undefined ? `, connection: ${ref(hosted.connection)}` : ""} }`,
+    ),
+  ]);
 
   call(
     "registerOutboundWebhooks",
@@ -377,6 +412,23 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     }),
   );
 
+  // Each extension on the slot of the point its type argument names (`Extension<Point["slot"]>`), with its order, so the
+  // slot runs it (ADR 0305 rules 22 to 25; gen read the point and slot, which run time has lost).
+  // shortcut: a hosted package's extensions are not registered, since its manifest does not list them yet; upgrade when
+  // the manifest records each extension with its point, slot and file.
+  call(
+    "registerExtensions",
+    "@stackra/actions",
+    ir.classes
+      .filter((declared) => declared.kind === "extension")
+      .map((declared) => {
+        const partner = declared.partner;
+        if (partner === undefined || partner.slot === undefined) return undefined;
+        const order = declared.options["order"];
+        return `{ point: ${ref({ name: partner.name, from: partner.from })}, slot: ${JSON.stringify(partner.slot)}, extension: ${ref({ name: declared.name, from: declared.importPath })}${typeof order === "number" ? `, order: ${order}` : ""} }`;
+      }),
+  );
+
   // Each record policy with the model it judges, own and hosted, so `ctx.authorize(record)` runs it (ADR 0132 as
   // amended, STA-2045); the base's type argument is gone at runtime, so this row is the only pairing.
   // shortcut: a hosted policy whose model the package does not declare (no `modelFile`) is not registered; upgrade when
@@ -411,9 +463,10 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
   // class that lists `ActorKind.Anonymous` skips the check in the access-control driver, never by a missing row.
   // shortcut: a hosted package's input class is not imported, since its manifest names the input schema but not the
   // file that declares it; its calls are permission-checked but not validated until the manifest carries that file.
-  const inputOf = (entry: Entry): string | undefined => {
+  // The output class rides along so the idempotency store leaves out its `@ShownOnce` fields (STA-2568).
+  const shapeOf = (entry: Entry, side: "input" | "output"): string | undefined => {
     if (typeof entry["from"] === "string") return undefined;
-    const shape = shapeOfRef(ir, entry["input"]);
+    const shape = shapeOfRef(ir, entry[side]);
     return shape === undefined ? undefined : ref({ name: shape.name, from: shape.importPath });
   };
   call(
@@ -422,12 +475,14 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     ((manifest.actions ?? []) as readonly Entry[]).map((entry) => {
       const type = classOf(entry);
       if (type === undefined) return undefined;
-      const input = inputOf(entry);
+      const input = shapeOf(entry, "input");
+      const output = shapeOf(entry, "output");
       const effects = entry["effects"];
       return (
         `{ type: ${type}, key: ${JSON.stringify(entry["key"])}, permission: ${JSON.stringify(entry["permission"])}, risk: ${JSON.stringify(entry["risk"])}` +
         `${Array.isArray(effects) && effects.length > 0 ? `, effects: ${JSON.stringify(effects)}` : ""}` +
-        `${input === undefined ? "" : `, input: ${input}`} }`
+        `${input === undefined ? "" : `, input: ${input}`}` +
+        `${output === undefined ? "" : `, output: ${output}`} }`
       );
     }),
   );
@@ -447,4 +502,15 @@ export function emitRegistrations(ir: MemberIR, manifest: StackraManifest): stri
     runtime: "node",
   });
   return [header, ...loads, ...importLines(imports), "", ...calls].join("\n").replace(/\n+$/, "\n");
+}
+
+/**
+ * The class a manifest row names: its `nameKey` field (`class` on a service row, `name` on a partner) with its `from`,
+ * or `undefined` when the row names none.
+ */
+function classRefIn(row: unknown, nameKey: string): ClassRef | undefined {
+  if (typeof row !== "object" || row === null) return undefined;
+  const name: unknown = Reflect.get(row, nameKey);
+  const from: unknown = Reflect.get(row, "from");
+  return typeof name === "string" && typeof from === "string" ? { name, from } : undefined;
 }

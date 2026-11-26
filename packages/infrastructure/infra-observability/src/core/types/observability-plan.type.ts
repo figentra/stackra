@@ -2,14 +2,17 @@
  * Stackra file contract:
  * Purpose: `ObservabilityPlan`, the telemetry of a repository as `observabilityPlan` builds it: the deployed
  *          environments, the OTLP destination with its log retention, the heartbeats, the Sentry projects, the
- *          service-level indicators, when objectives start, the uptime monitors of public URLs and the status page.
+ *          service-level indicators, when objectives start, the uptime monitors of public URLs, the status page, and
+ *          the alerts and notification routes figentra/infra sets in a product's account.
  * Boundary: type only; pure data, so `stackra infra gen` can show it and `observabilityStack` can declare it.
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (decisions 1 to 6), ADR 0171 (decision 6: Sentry and Better Stack in the core stack),
  *                     ADR 0185 (decisions 1 and 3).
  */
 import type { RunwayEnvironment } from "@stackra/runway";
+import type { z } from "zod";
 
+import type { OBSERVABILITY_SCHEMA } from "#core/constants/observability-schema.constant";
 import type { HeartbeatKind } from "#core/enums/heartbeat-kind.enum";
 import type { ServiceSli } from "#core/types/service-sli.type";
 
@@ -68,4 +71,8 @@ export type ObservabilityPlan = {
     /** The monitored environments whose heartbeats and uptime monitors the page shows, one section each. */
     readonly environments: readonly RunwayEnvironment[];
   } | null;
+  /** The alarms figentra/infra sets in the product's account, thresholds and environments resolved. */
+  readonly alerts: z.output<typeof OBSERVABILITY_SCHEMA>["alerts"];
+  /** The routes each severity reaches; critical pages on-call by default. */
+  readonly notify: z.output<typeof OBSERVABILITY_SCHEMA>["notify"];
 };

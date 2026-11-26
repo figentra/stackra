@@ -25,7 +25,7 @@ OS and relicensed to MIT on port ([ADR 0084](../apps/docs/src/docs/adr/0084-fige
 | [`tools/scripts/`](../tools/scripts)                   | the repository scripts behind `pnpm validate`, `pnpm new`, `pnpm linear`, the spec gates and agent sync |
 | [`tools/scaffold/`](../tools/scaffold)                 | the templates `pnpm new` renders                                                                        |
 | [`.agents/`](../.agents)                               | the source of every AI artifact: rules, agents, hooks, skills and specs                                 |
-| [`.claude/`](../.claude), [`.opencode/`](../.opencode) | what Claude Code and OpenCode read, mostly projected from `.agents/` by `pnpm agents:sync`              |
+| [`.claude/`](../.claude), [`.opencode/`](../.opencode) | what Claude Code and OpenCode read, mostly projected from `.agents/` by `pnpm spec:sync`                |
 | [`.flow/`](../.flow)                                   | the Figentra Flow install: the generated constitution, `lock.json` and optional `overrides/`            |
 | [`.agents/specs/`](../.agents/specs)                   | Figentra Flow specs, one folder per Linear issue (`sta-<n>-<slug>/`)                                    |
 | [`.github/`](../.github)                               | CI (the `Quality Gate`), release and Linear sync workflows, the PR template, CODEOWNERS                 |
@@ -68,28 +68,28 @@ The rules in full, and what enforces each one, are in [`AGENTS.md`](../AGENTS.md
 
 ## Commands
 
-| Command                                      | Does                                                                                  |
-| -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `pnpm verify`                                | format check, lint, typecheck, test, build, then `validate`, `boundaries` and `knip`  |
-| `pnpm verify:affected`                       | the turbo half of `verify`, only for members changed since `main`                     |
-| `pnpm validate`                              | repository shape, spec gates, hook tests and the agent sync check                     |
-| `pnpm build` / `test` / `lint` / `typecheck` | one turbo task across every member                                                    |
-| `pnpm format` / `pnpm format:check`          | oxfmt (and shfmt for `*.sh`) over the repo, writing or checking                       |
-| `pnpm boundaries`                            | `turbo boundaries`: the tier direction                                                |
-| `pnpm knip`                                  | unused files, exports and dependencies                                                |
-| `pnpm docs` / `pnpm console` / `pnpm mobile` | run one app in dev mode                                                               |
-| `pnpm new <kind> <name>`                     | scaffold a member from `tools/scaffold/templates`                                     |
-| `pnpm changeset`                             | record a release note for a package change                                            |
-| `pnpm secrets:scan`                          | gitleaks over the whole history                                                       |
-| `pnpm doctor`                                | fresh-machine checklist                                                               |
-| `pnpm agents:sync` / `pnpm agents:check`     | project `.agents/` into `.claude/` and `.opencode/`, or check for drift               |
-| `pnpm spec:sync`                             | render the Figentra Flow `flow-*` skills and record them in `.flow/lock.json`         |
-| `pnpm spec:gate` / `pnpm spec:trace`         | spec stage gates and requirement-to-test traceability                                 |
-| `pnpm linear <command>`                      | keep the Linear issue current: `start`, `review`, `done`, `comment`, `create`, `mine` |
-| `pnpm delegate <task-type> "<brief>"`        | hand a task to the executor `.agents/routing.yaml` names (`--issue STA-n` required)   |
-| `pnpm pr:merge <n>`                          | the only way an agent merges: green gate and an `AI-REVIEW: PASS` for the head's diff |
+| Command                                      | Does                                                                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `pnpm verify`                                | format check, lint, typecheck, test, build, then `validate`, `boundaries` and `knip`                                |
+| `pnpm verify:affected`                       | the turbo half of `verify`, only for members changed since `main`                                                   |
+| `pnpm validate`                              | repository shape, spec gates, hook tests and the agent sync check                                                   |
+| `pnpm build` / `test` / `lint` / `typecheck` | one turbo task across every member                                                                                  |
+| `pnpm format` / `pnpm format:check`          | oxfmt (and shfmt for `*.sh`) over the repo, writing or checking                                                     |
+| `pnpm boundaries`                            | `turbo boundaries`: the tier direction                                                                              |
+| `pnpm knip`                                  | unused files, exports and dependencies                                                                              |
+| `pnpm docs` / `pnpm console` / `pnpm mobile` | run one app in dev mode                                                                                             |
+| `pnpm new <kind> <name>`                     | scaffold a member from `tools/scaffold/templates`                                                                   |
+| `pnpm changeset`                             | record a release note for a package change                                                                          |
+| `pnpm secrets:scan`                          | gitleaks over the whole history                                                                                     |
+| `pnpm doctor`                                | fresh-machine checklist                                                                                             |
+| `pnpm spec:sync`                             | `fflow sync`: render the Flow skills, project `.agents/` into `.claude/` and `.opencode/`, record `.flow/lock.json` |
+| `pnpm spec:gate` / `pnpm spec:trace`         | spec stage gates and requirement-to-test traceability                                                               |
+| `pnpm linear <command>`                      | keep the Linear issue current: `start`, `review`, `done`, `comment`, `create`, `mine`                               |
+| `pnpm delegate <task-type> "<brief>"`        | hand a task to the executor `.agents/routing.yaml` names (`--issue STA-n` required)                                 |
+| `pnpm pr:merge <n>`                          | the only way an agent merges: green gate and an `AI-REVIEW: PASS` for the head's diff                               |
 
-`pnpm linear`, `pnpm spec:linear`, `pnpm bot:*` and `pnpm pr:merge` read their tokens from Infisical. One line per
+`pnpm linear`, `pnpm spec:linear`, `pnpm bot:*` and `pnpm pr:merge` read their tokens from sops through
+`tools/scripts/secrets-exec.mjs`. One line per
 script: [`tools/scripts`](../tools/scripts).
 
 ## How work flows
@@ -104,10 +104,11 @@ script: [`tools/scripts`](../tools/scripts).
    In Progress. Commits are conventional, and `feat`, `fix`, `refactor` and `perf` commits carry `Refs: STA-n`.
 4. **Pull request.** `pnpm verify` is green, the PR follows the template, and `pnpm linear review STA-n <url>` moves
    the issue to In Review. CI's `Quality Gate` is the only required check.
-5. **Independent review.** A separate AI reviewer, never the author, posts `AI-REVIEW: PASS <head sha> base=<base ref> patch=<patch id>` as the
-   `stackra-reviewer` app through `pnpm bot:review`
-   ([ADR 0230](../apps/docs/src/docs/adr/0230-reviewer-identity-separate-from-builder.mdx)). Design PRs
-   and change-risk R3 also need the owner's approval.
+5. **Independent review.** A separate AI reviewer, never the author, posts an advisory
+   `Review (advisory): PASS <head sha> base=<base ref>` through `pnpm bot:gh`. The `stackra-reviewer` app is retired
+   ([ADR 0523](../apps/docs/src/docs/adr/0523-humans-approve-policy-not-instances.mdx) decision 6); `AI-REVIEW:`
+   verdicts come from Figentra Flow in CI once it posts them. Design PRs and change-risk R3 also need the owner's
+   approval.
 6. **Merge.** `pnpm pr:merge` enqueues the PR in the merge queue, which squash-merges after the gate passes on the group
    ([ADR 0119](../apps/docs/src/docs/adr/0119-merge-policy-and-release-authority.mdx)); the issue moves to Done. Packages
    release through changesets in CI.

@@ -20,7 +20,27 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
     "tooling presets (tsdown, vitest) are tier:config with no workspace dependency (ADR 0300); each preset owns its options",
   libraryPreset:
     "tooling presets (tsdown, vitest) are tier:config with no workspace dependency (ADR 0300); each preset owns its factory",
+  CalendarSystem:
+    "@stackra/i18n's enum is the one source; @stackra/ui's contracts entry derives its frozen list from it (`Enum.values`), so a calendar picker iterates the same calendars",
+  LocaleSwitcher:
+    "@stackra/ui's drawn switcher vs @stackra/i18n's headless kit block (ADR 0504) that binds its props to the I18nProvider; i18n sits below ui and cannot import it, so the kit hands ui's switcher its props",
+  LocaleSwitcherProps:
+    "the props of the two LocaleSwitchers above: ui's drawn component vs i18n's headless kit block with its render function",
   // Two concepts that share a name.
+  PushPermission:
+    "@stackra/notifications' answer of a push registration (granted, denied, prompt) vs @stackra/platform's usePushPermission() result (the status with its request and open-settings calls)",
+  PushRegistration:
+    "@stackra/notifications' client port that registers this device with the notifications service vs @stackra/platform's push address a transport returns (provider and token)",
+  FooterLink:
+    "@stackra/experience's authored footer link (a LocalizedText label, content) vs @stackra/ui's Footer render prop (a resolved string label); the content layer resolves one into the other",
+  RawBody:
+    "@stackra/actions' raw response body of a query (an iCalendar feed, a CSV) vs @stackra/integrations' raw request body of a managed client call (a SOAP envelope); opposite directions",
+  Surface:
+    "@stackra/ui's Surface component vs @stackra/experience's landing surface type; different things",
+  SurfaceKind:
+    "@stackra/ai's kind of surface that opened an AI turn (screen, mcp_host, messaging, background) vs @stackra/experience's frame a landing surface is drawn in (web, desktop, phone)",
+  settingsKeyOf:
+    "the same derivation twice by design: gen keys a settings class from its source shape and never loads @stackra/settings, whose internal copy keys it from the runtime class; the two tests share their cases",
   AddressField:
     "@stackra/ui's native address field component vs @stackra/validation's address field type; different things",
   CATEGORIES:
@@ -57,8 +77,6 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
   RuleBuilderProps: "the props of the two RuleBuilder components above",
   RuleField:
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/rules maps its field onto it",
-  SavedView:
-    "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/panel's schema validates the stored one",
   SocialProvider:
     "@stackra/ui sits below the domain packages and imports none of them (ADR 0302), so it declares the shape its component takes; @stackra/identity's enum names the same providers",
   WidgetSize:

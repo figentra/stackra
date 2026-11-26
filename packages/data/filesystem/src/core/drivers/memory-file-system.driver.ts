@@ -25,6 +25,7 @@ import type { SignedUpload } from "#contracts/types/signed-upload.type";
 import type { UploadRequest } from "#contracts/types/upload-request.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { FileRetainedError } from "#core/errors/file-retained.error";
 import { normalizePath } from "#core/functions/normalize-path.function";
 import { normalizePrefix } from "#core/functions/normalize-prefix.function";
 import { publicUrl } from "#core/functions/public-url.function";
@@ -34,6 +35,8 @@ type StoredFile = {
   readonly bytes: Uint8Array;
   readonly contentType: string | null;
   readonly lastModified: Date;
+  /** Kept unchangeable until this time (`WriteOptions.retainUntil`); absent when it may change. */
+  readonly retainUntil?: Date;
 };
 
 /** The base of every URL when `filesystem.url` is not set. */
@@ -84,23 +87,37 @@ export class MemoryFileSystemDriver extends Driver(FileSystem) {
     return new Uint8Array(this.find(normalizePath(path)).bytes);
   }
 
-  /** Stores a copy of `contents` under `path`. */
+  /**
+   * Stores a copy of `contents` under `path`, retained until `options.retainUntil` when given.
+   *
+   * @throws FileRetainedError when the file under `path` is still retained.
+   */
   async write(path: string, contents: Uint8Array | string, options?: WriteOptions): Promise<void> {
-    this.files.set(normalizePath(path), {
+    const key = normalizePath(path);
+    this.assertChangeable(key);
+    this.files.set(key, {
       bytes:
         typeof contents === "string"
           ? new TextEncoder().encode(contents)
           : new Uint8Array(contents),
       contentType: options?.contentType ?? null,
       lastModified: this.clock.now(),
+      ...(options?.retainUntil === undefined ? {} : { retainUntil: options.retainUntil }),
     });
   }
 
-  /** Moves the stored file under `from` to `to`, as one map change. */
+  /**
+   * Moves the stored file under `from` to `to`, as one map change.
+   *
+   * @throws FileRetainedError when either file is still retained.
+   */
   override async move(from: string, to: string): Promise<void> {
     const source = normalizePath(from);
+    const target = normalizePath(to);
     const file = this.find(source);
-    this.files.set(normalizePath(to), file);
+    this.assertChangeable(source);
+    this.assertChangeable(target);
+    this.files.set(target, file);
     this.files.delete(source);
   }
 
@@ -139,9 +156,15 @@ export class MemoryFileSystemDriver extends Driver(FileSystem) {
     return 200;
   }
 
-  /** Removes the file under `path`; false when there was none. */
+  /**
+   * Removes the file under `path`; false when there was none.
+   *
+   * @throws FileRetainedError when the file is still retained.
+   */
   async delete(path: string): Promise<boolean> {
-    return this.files.delete(normalizePath(path));
+    const key = normalizePath(path);
+    this.assertChangeable(key);
+    return this.files.delete(key);
   }
 
   /** Every stored key starting with `prefix`, sorted. */
@@ -172,6 +195,13 @@ export class MemoryFileSystemDriver extends Driver(FileSystem) {
   async temporaryUrl(path: string, expiresIn: Duration): Promise<string> {
     const expires = new Date(this.clock.now().getTime() + Duration.toMilliseconds(expiresIn));
     return `${this.url(path)}?expires=${encodeURIComponent(expires.toISOString())}`;
+  }
+
+  /** Refuses a change of the file under `key` while it is retained. */
+  private assertChangeable(key: string): void {
+    const retainUntil = this.files.get(key)?.retainUntil;
+    if (retainUntil !== undefined && this.clock.now().getTime() < retainUntil.getTime())
+      throw FileRetainedError.create({ path: key, retainUntil });
   }
 
   /** The stored file under a normalised key. */

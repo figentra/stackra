@@ -20,4 +20,7 @@ export interface TokenRef {
 
   /** The token factory of a per-model token (`repositoryOf`, `journalOf`); `class` is then the model. */
   readonly of?: ClassRef;
+
+  /** Set when `class` is a port (it extends `Port`): the unbound-port check reads it; never printed or recorded. */
+  readonly port?: true;
 }

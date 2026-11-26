@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitHostedEntities` and the `entity` facts `buildManifest` records: a service hosting a
  *          package writes that package's EntitySchema from its manifest, the same properties the package writes
- *          itself, over the class the package's entry exports; the registrations load that file instead of a
+ *          itself (less the `~defaults` marker its published types lack), over the class the package's entry exports; the registrations load that file instead of a
  *          `<MODULE>_ENTITIES` import; a package whose manifest records no facts keeps the import; no file outside a
  *          service.
  * Boundary: test only; runs on the IR fixtures and the manifests `buildManifest` derives from them.
@@ -59,10 +59,16 @@ describe("emitHostedEntities", () => {
     expect(billing).not.toContain("declare module");
   });
 
-  it("writes the same EntitySchema properties as the package writes for itself", () => {
-    const own = emitEntities(BILLING_IR, "billing") ?? "";
+  it("writes the same EntitySchema properties as the package writes for itself, without the ~defaults marker", () => {
+    // The marker types a service's own model through its schemas file; a hosted class comes from the package's
+    // published types, which have no such key (TS2353).
+    const own = (emitEntities(BILLING_IR, "billing") ?? "").replaceAll(
+      '    "~defaults": { type: "json", persist: false },\n',
+      "",
+    );
     for (const model of ["Invoice", "InvoiceLine"])
       expect(propertiesOf(billing, model)).toBe(propertiesOf(own, model));
+    expect(billing).not.toContain('"~defaults"');
   });
 
   it("makes the registrations load the files instead of importing BILLING_ENTITIES", () => {

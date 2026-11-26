@@ -11,6 +11,7 @@
 import type { Port } from "@stackra/contracts";
 
 import type { AnyClass } from "#core/types/any-class.type";
+import type { Container } from "#core/services/container.service";
 import type { Token } from "#core/types/token.type";
 
 /** The drivers of one port. */
@@ -39,5 +40,5 @@ export interface WiringDriver {
   readonly candidates: Readonly<Record<string, () => Promise<AnyClass<Port>>>>;
 
   /** Driver name to the tokens of that driver's constructor parameters. */
-  readonly deps?: Readonly<Record<string, readonly Token[]>>;
+  readonly deps?: Readonly<Record<string, readonly (Token | typeof Container)[]>>;
 }

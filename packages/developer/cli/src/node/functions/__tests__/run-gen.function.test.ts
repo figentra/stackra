@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `runGen`: refusals print in gen's form and fail, a write run lists the written files, and a
  *          check run fails on stale files and passes when clean; the options (with the manifest pass) reach
- *          `generate` with the Vite module loader; a refused run that still wrote its clients or manifest lists them.
+ *          `generate` with the Vite module loader; a refused run that still wrote its clients or manifest lists them; a
+ *          warning prints and never fails a run, with or without `check`, while an error beside it still does.
  * Boundary: test only; `@stackra/gen/node`'s `generate` is replaced by a fake, so no TypeScript host opens.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 22 and 26).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 22 and 26); ADR 0101 (Enforcement: gen warns).
  */
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -24,7 +25,45 @@ beforeEach(() => {
   fake.mockReset();
 });
 
+/** A finding of an action file: a refusal as it stands, a warning with its severity. */
+const FINDING = {
+  file: "src/modules/orders/actions/refund-order.action.ts",
+  line: 0,
+  column: 0,
+  subject: "RefundOrderAction",
+  message: "RefundOrderAction reaches past its module but starts no workflow",
+  fix: "start a workflow",
+};
+const WARNING = { ...FINDING, code: "action_without_workflow", severity: "warning" as const };
+
 describe("runGen", () => {
+  it("prints a warning and still passes a write run and a check run", async () => {
+    fake.mockResolvedValue({ errors: [], warnings: [WARNING], files: [], changed: [] });
+    const write = captureIo();
+    expect(await runGen("/repo/services/x", { base: "/repo" }, write.io)).toBe(true);
+    expect(write.output()).toContain(
+      "services/x/src/modules/orders/actions/refund-order.action.ts warning action_without_workflow RefundOrderAction",
+    );
+    expect(write.output()).toContain("fix: start a workflow");
+
+    const check = captureIo();
+    expect(await runGen("/repo/services/x", { base: "/repo", check: true }, check.io)).toBe(true);
+    expect(check.output()).toContain("warning action_without_workflow");
+  });
+
+  it("still fails a run with an error beside a warning, printing both", async () => {
+    fake.mockResolvedValue({
+      errors: [{ ...FINDING, code: "workflow_without_action" }],
+      warnings: [WARNING],
+      files: [],
+      changed: [],
+    });
+    const { io, output } = captureIo();
+    expect(await runGen("/repo/services/x", { base: "/repo" }, io)).toBe(false);
+    expect(output()).toContain("warning action_without_workflow");
+    expect(output()).toContain("error workflow_without_action");
+  });
+
   it("prints each refusal with its fix and fails", async () => {
     fake.mockResolvedValue({
       errors: [

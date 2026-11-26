@@ -1,0 +1,261 @@
+{
+  "member": "outbox",
+  "package": "@stackra/outbox",
+  "version": "0.14.2",
+  "config": [
+    {
+      "key": "outbox.events_relay",
+      "class": "EventsRelayConfig",
+      "from": "@stackra/outbox"
+    },
+    {
+      "key": "outbox",
+      "class": "OutboxConfig",
+      "from": "@stackra/outbox"
+    },
+    {
+      "key": "outbox.relay_inbox",
+      "class": "RelayInboxConfig",
+      "from": "@stackra/outbox"
+    }
+  ],
+  "services": [
+    {
+      "class": "CrossAppFanOut",
+      "from": "@stackra/outbox/node",
+      "deps": [
+        {
+          "class": {
+            "name": "SubscriberSource",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "DeliveryDriver",
+            "from": "@stackra/outbox/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "CrossAppRelayService",
+      "from": "@stackra/outbox/node",
+      "deps": [
+        {
+          "class": {
+            "name": "DeliveryDriver",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "SubscriberSource",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "EventSigner",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "Locks",
+            "from": "@stackra/locking"
+          }
+        },
+        {
+          "class": {
+            "name": "Clock",
+            "from": "@stackra/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "InboxService",
+      "from": "@stackra/outbox/node",
+      "deps": [
+        {
+          "class": {
+            "name": "InboxDriver",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "EventBus",
+            "from": "@stackra/events"
+          }
+        },
+        {
+          "class": {
+            "name": "Database",
+            "from": "@stackra/database"
+          }
+        },
+        {
+          "class": {
+            "name": "Clock",
+            "from": "@stackra/contracts"
+          }
+        }
+      ]
+    },
+    {
+      "class": "RelayInboxService",
+      "from": "@stackra/outbox/node",
+      "deps": [
+        {
+          "class": {
+            "name": "InboxService",
+            "from": "@stackra/outbox/node"
+          }
+        },
+        {
+          "class": {
+            "name": "InboxVerifier",
+            "from": "@stackra/outbox/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "RelayInboxConfig",
+            "from": "@stackra/outbox"
+          }
+        }
+      ]
+    }
+  ],
+  "drivers": [
+    {
+      "port": "SubscriberSource",
+      "key": "outbox.SubscriberSource",
+      "candidates": [
+        "config"
+      ],
+      "classes": {
+        "config": {
+          "class": "ConfigSubscriberSourceDriver",
+          "from": "@stackra/outbox",
+          "deps": [
+            {
+              "class": {
+                "name": "EventsRelayConfig",
+                "from": "@stackra/outbox"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "InboxVerifier",
+      "key": "outbox.InboxVerifier",
+      "candidates": [
+        "contract"
+      ],
+      "classes": {
+        "contract": {
+          "class": "ContractInboxVerifierDriver",
+          "from": "@stackra/outbox",
+          "deps": [
+            {
+              "class": {
+                "name": "RelayInboxConfig",
+                "from": "@stackra/outbox"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "EventSigner",
+      "key": "outbox.EventSigner",
+      "candidates": [
+        "ed25519"
+      ],
+      "classes": {
+        "ed25519": {
+          "class": "Ed25519EventSignerDriver",
+          "from": "@stackra/outbox",
+          "deps": [
+            {
+              "class": {
+                "name": "SecretStore",
+                "from": "@stackra/config/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "EventsRelayConfig",
+                "from": "@stackra/outbox"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "DeliveryDriver",
+      "key": "outbox.DeliveryDriver",
+      "candidates": [
+        "memory",
+        "postgres"
+      ],
+      "classes": {
+        "memory": {
+          "class": "MemoryDeliveryDriver",
+          "from": "@stackra/outbox"
+        },
+        "postgres": {
+          "class": "PostgresDeliveryDriver",
+          "from": "@stackra/outbox/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": "InboxDriver",
+      "key": "outbox.InboxDriver",
+      "candidates": [
+        "memory",
+        "postgres"
+      ],
+      "classes": {
+        "memory": {
+          "class": "MemoryInboxDriver",
+          "from": "@stackra/outbox"
+        },
+        "postgres": {
+          "class": "PostgresInboxDriver",
+          "from": "@stackra/outbox/node",
+          "deps": [
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

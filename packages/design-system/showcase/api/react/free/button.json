@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "e2c8645c2db025ec",
+    "hash": "5788526b069656e9",
     "heroDoc": "vendor/heroui/react/button.json",
     "propsFiles": ["ui/src/react/button/button.props.ts"]
   },
@@ -208,6 +208,20 @@
           "required": false,
           "source": "stackra",
           "type": "ShortcutAction"
+        },
+        {
+          "description": "Where it goes: the button is drawn as a link (`<a href>`) that navigates through the nearest `RouterProvider`.\nA disabled or loading one stays a button, which leaves the tab order.",
+          "name": "href",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The browsing context of the link (`_blank`); read only with `href`.",
+          "name": "target",
+          "required": false,
+          "source": "stackra",
+          "type": "HTMLAttributeAnchorTarget"
         },
         {
           "description": "Overrides the default DOM element with a custom render function.",

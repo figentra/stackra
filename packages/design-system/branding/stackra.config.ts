@@ -1,0 +1,13 @@
+/**
+ * Stackra file contract:
+ * Purpose: the member definition of @stackra/branding: static data that gen reads from the syntax tree without
+ *          running it. The member key (`branding`) is derived from the package name; there is no key option.
+ * Boundary: data only; no call other than `definePackage` and no environment read. The package has no module file:
+ *           gen derives its one module, keyed `branding`.
+ * Runtime: node
+ * Governing contract: ADR 0295 (decision 1); ADR 0294 (rule R12); ADR 0127 2026-10-24 note (define* in contracts).
+ */
+import { definePackage } from "@stackra/contracts";
+
+/** Read by `stackra gen` and `stackra validate`. A package states nothing gen can derive. */
+export default definePackage({});

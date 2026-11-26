@@ -179,7 +179,7 @@
     "package.json": "pnpm-workspace.yaml, pnpm-lock.yaml, .pnpmfile.mjs, turbo.jsonc, knip.jsonc, .npmrc, mise.toml, .node-version, runway.yaml",
     ".oxlintrc.jsonc": ".oxfmtrc.jsonc, .editorconfig, .markdownlint.yaml, .gitattributes, .gitignore, .gitmodules, .gitleaks.toml, osv-scanner.toml",
     "lefthook.yml": ".commitlintrc.yaml, cspell.config.yaml",
-    "AGENTS.md": "CLAUDE.md, .mcp.yaml, .mcp.json, opencode.jsonc, .infisical.yaml",
+    "AGENTS.md": "CLAUDE.md, .mcp.yaml, .mcp.json, opencode.jsonc",
     "README.md": "CONTRIBUTING.md, SECURITY.md, LICENSE, NOTICE, TRADEMARKS.md"
   },
 

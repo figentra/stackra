@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "12cc73ec924a63d6",
+    "hash": "eb1bf1ef9675dcf1",
     "propsFiles": ["ui/src/native/table/table.props.ts"]
   },
   "importLine": "import { Table } from \"@stackra/ui/native\";",
@@ -159,7 +159,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",

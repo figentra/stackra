@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "e9eb00b69a7276f5",
+    "hash": "2630a1427651d603",
     "heroDoc": "vendor/heroui/react/list-box.json",
     "propsFiles": ["ui/src/react/list/list-item.props.ts", "ui/src/react/list/list.props.ts"]
   },
@@ -90,7 +90,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",

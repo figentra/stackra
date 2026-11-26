@@ -21,23 +21,21 @@ beforeAll(async () => {
   );
   pulumi.runtime.setAllConfig({
     "infra:org": "acme",
-    "infra:infisical": JSON.stringify({ workspace: "ws-123", identities: { ci: 42 } }),
+    "infra:ids": JSON.stringify({ workspace: "ws-123", identities: { ci: 42 } }),
   });
 });
 
 describe("resolveRef", () => {
   it("passes a literal through and resolves a ref from the stack config", () => {
-    expect(resolveRef("https://eu.infisical.com")).toBe("https://eu.infisical.com");
+    expect(resolveRef("https://example.com")).toBe("https://example.com");
     expect(resolveRef("ref:org")).toBe("acme");
-    expect(resolveRef("ref:infisical.workspace")).toBe("ws-123");
-    expect(resolveRef("ref:infisical.identities.ci")).toBe("42");
+    expect(resolveRef("ref:ids.workspace")).toBe("ws-123");
+    expect(resolveRef("ref:ids.identities.ci")).toBe("42");
   });
 
   it("fails on an unset key or a path that holds no value", () => {
     expect(() => resolveRef("ref:missing")).toThrow();
-    expect(() => resolveRef("ref:infisical.identities")).toThrow(
-      /ref:infisical\.identities is not set/,
-    );
-    expect(() => resolveRef("ref:infisical.nothing.here")).toThrow(/is not set/);
+    expect(() => resolveRef("ref:ids.identities")).toThrow(/ref:ids\.identities is not set/);
+    expect(() => resolveRef("ref:ids.nothing.here")).toThrow(/is not set/);
   });
 });

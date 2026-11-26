@@ -1,5 +1,901 @@
 # @stackra/workflow
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/scheduler@0.33.1
+  - @stackra/rules@0.33.1
+  - @stackra/content@0.33.1
+  - @stackra/locking@0.33.1
+  - @stackra/queue@0.33.1
+  - @stackra/iam@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 44ca288: With a `QueueService` bound, a trigger occurrence starts its automations through the new queued job `StartTriggeredAutomationsAction` (`workflow.automation.start_triggered@1`), pushed in the delivery's transaction and scope. An automation quota that cannot be read now throws a retryable `AutomationQuotaUnavailableError` on an attempt a retry follows, and only the job's last attempt records `AutomationRunSkipped` (`quota_unavailable`), so a short quota outage no longer skips the occurrence. `AutomationService.triggered(block, startedBy, { last })` takes the attempt; without a queue, starts run in process as before.
+
+### Patch Changes
+
+- 628b60d: The scope-pathed models of these packages opt into `MovesWithScope`, so their rows follow a moved scope subtree (`scope.node.moved.v1`) in every service that hosts them: award kinds, awards and their verifications, rule sets, segments and their memberships, webhook endpoints and deliveries, custom fields, their value sets and content revisions, comment threads, comments, their revisions and mentions, automations, checklists and their progress, and stored settings and their revisions. The audit log (append-only, its history kept) and the scope tree itself (moved by `moveSubtree`) stay out.
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [628b60d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/rules@0.33.0
+  - @stackra/content@0.33.0
+  - @stackra/iam@0.33.0
+  - @stackra/queue@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/scheduler@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/locking@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- 918c766: `NativeWorkflowRunnerDriver#view` now awaits a workflow's async `output()`. Before this, `workflow.run.get@1` showed `{}` for a workflow whose output is computed asynchronously. An async output that rejects falls back to `null`, as a synchronous throw already did.
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/locking@0.32.0
+  - @stackra/queue@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/rules@0.32.0
+  - @stackra/content@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 137a7f9: Every automation run a trigger or a schedule starts is now checked against the new `AutomationQuota` port, which `AutomationService` injects, so a host that runs automations must select a driver. Over the quota, the run is skipped and `AutomationRunSkipped` (`quota_exceeded`) is recorded; that is not a failure. A quota that cannot be read starts nothing and records `quota_unavailable` (fail closed); `triggered` never throws for a quota. `AutomationService.triggered(block, startedBy)` takes an `AutomationStart`, kept on the skip. Gen's platform binding of `AutomationService` gains the port.
+  
+  Release order: this core release first; then Figentra Billing publishes its usage client package with the driver (`credits.quota.check@1` on `automation.runs`, called as the host member inside the automation's tenant); then os bumps and selects that driver in the same pull request. No host takes `UnlimitedAutomationQuotaDriver` as a stopgap: it is only for a host that sells no automation quota.
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/rules@0.31.0
+  - @stackra/content@0.31.0
+  - @stackra/queue@0.31.0
+  - @stackra/iam@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/locking@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- 82dccb3: One shared owner-isolation helper. `@stackra/actions` now exports `inRowOwner(isolation, actorId, ownerId, id, work,
+  missing?)`, `boundIsolation(resolver)`, `ClaimNotLoadedError` (`claim_not_loaded`) and `RowIsolationMissingError`
+  (`row_isolation_missing`) from its `.` entry, so the tenancy families no longer each keep a copy. Every caller keeps
+  its own system actor id (`sys_outbox_relay`, `sys_queue_worker`, `sys_scheduler`, `sys_workflow_runner`,
+  `sys_privacy_holds`), the same refusals and the same rule: an owned row with no isolation bound is refused, never
+  skipped. Queue and scheduler keep their prefixed refusals and codes (`job_row_isolation_missing`,
+  `schedule_row_isolation_missing`, and their claim-not-loaded ones) and pass them to `inRowOwner`.
+  
+  `@stackra/outbox` still re-exports `boundIsolation`, `ClaimNotLoadedError` and `RowIsolationMissingError` from its `.`
+  entry for this release only; the re-exports go away in the next minor, so import them from `@stackra/actions`. The two
+  refusals now appear under `@stackra/actions` in the manifests, with the same codes. `@stackra/workflow` no longer
+  depends on `@stackra/outbox`; `@stackra/data-transfer` now depends on `@stackra/actions`.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [a426842]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [98a8940]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/iam@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/queue@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/tenancy@0.30.0
+  - @stackra/rules@0.30.0
+  - @stackra/content@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/locking@0.30.0
+
+## 0.29.0
+
+### Minor Changes
+
+- 9eb3427: The workflow engine's journal is tenant-owned in the platform form (migration `workflow.0012_contract_journal_tenancy`):
+  `runs`, `steps` and `signals` get a nullable `tenant_id`, filled from `app.tenant_id` by default (a NULL row is the
+  platform's), forced row-level security and the platform policies. The worker's tick claims due runs and lapsed signals
+  across tenants through the system functions `workflow.claim_due_runs` and `workflow.claim_expired_signals` (ids,
+  owners and order only), then loads, advances or removes each in its owner's isolation. A run is owned by the tenant of
+  the call that started it, and every save runs in that owner. A claimed run that does not load, or an owned row with no
+  `CallIsolation` bound, fails the tick (`ClaimNotLoadedError`, `RowIsolationMissingError` from `@stackra/outbox`); a
+  claimed row is never skipped. A system or job origin that names no tenant, started in a tenant's session (an event's
+  run), takes that tenant for its steps; an actor that names a scope, a user and an agent are never rewritten.
+  
+  A signal is held under the tenant it is sent or delivered in, and a run takes only signals of its own tenant: a run
+  that waits for acks (such as a provisioning run waiting for `AllServicesAcked`) must start in the tenant the acks are
+  sent in, never as a platform run. `workflow.run.get` keeps its own check, and another tenant's run is now also hidden by row
+  security, with the same `run_not_found`.
+  
+  Upgrade: finish or cancel the workflows running below a tenant node before you migrate. The migration backfills a run at
+  a tenant node (`nlevel(scope_path) = 3`) from its scope and keeps a run with no scope, at the root or at a product node,
+  as a platform run; a step takes its run's tenant, and a held signal the tenant of the waiting run that awaits it (else
+  its own scope's, by the same rule). It refuses, changing nothing, while a run or a held signal sits below a tenant node,
+  naming each count and the remedy: finish or cancel those runs and delete them (their steps go with them); let the
+  waiting runs take those signals, or delete them.
+  
+  Breaking port changes, for a custom `WorkflowJournal` driver:
+  
+  - `due` returns `RunClaim` (id, `ownerId`, `startedAt`) instead of ids; the engine loads each with `find` in its owner.
+  - `expire` is gone: `expired(now, limit)` claims lapsed signals (`SignalClaim`: id, `ownerId`) and `remove(ids)` deletes
+    them in the session's owner.
+  - New `currentOwner()`: the tenant of the caller's session. `WorkflowRun` gains `ownerId`, which the journal reads back
+    and never writes.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/tenancy@0.29.0
+  - @stackra/rules@0.29.0
+  - @stackra/content@0.29.0
+  - @stackra/outbox@0.29.0
+  - @stackra/queue@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/locking@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/rules@0.28.0
+  - @stackra/content@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/outbox@0.28.0
+  - @stackra/queue@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/tenancy@0.28.0
+  - @stackra/locking@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Minor Changes
+
+- 5119f3c: `workflow.run.get@1`: the person who started a run (or an agent acting for them) and the tenant's services read its
+  status, end time and its workflow's output so far, the pull path beside the run's events for a caller whose `ctx.run`
+  answered while the run parked. It is L1 (`workflow.run.get`), scoped to the caller's tenant, and answers
+  `run_not_found` for any run the caller may not see, so a run's existence never leaks. The engine gains `view(id)`.
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+- Updated dependencies [8a70552]
+  - @stackra/database@0.27.0
+  - @stackra/outbox@0.27.0
+  - @stackra/rules@0.27.0
+  - @stackra/content@0.27.0
+  - @stackra/locking@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/iam@0.27.0
+  - @stackra/tenancy@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Minor Changes
+
+- 0341ef1: A failed step's retry no longer waits out its backoff in process. The run parks like a timed wait (the step waiting
+  with its next attempt's time and the failure it keeps), the caller answers at once with the output so far, and the
+  worker's tick runs the attempt when it is due. A backoff at or under the new config `workflow.retryInlineMax`
+  (default `"0s"`) still waits in process. A step that waits for a signal keeps waiting out its retry in process for now.
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+  - @stackra/database@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/rules@0.26.0
+  - @stackra/content@0.26.0
+  - @stackra/locking@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/queue@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Minor Changes
+
+- ec5272e: A step's retry can come from settings: `@Step({ retry: { attempts, base, backoff, live } })`. `base` sets the first
+  wait (the queue's 10 s when absent) and `live(workflow)` reads values that replace the declared attempts, first wait
+  and curve each time the step fails, so a changed setting applies to the next retry. A bad or failed read keeps the
+  declared values.
+
+### Patch Changes
+
+- 1d7bbc1: The contract migrations (database 0007, achievements 0004, rules 0005, segments 0003, content 0006, collaboration
+  0004, workflow 0011 and webhooks 0003) now carry a reviewed squawk ignore, with its reason, above each `SET NOT NULL`
+  that the migration's pre-flight checked, so a product that hosts them lints clean. The runner hashes a migration
+  without its lint lines, so no checksum changes, and nothing runs differently.
+  
+  New contract steps can set NOT NULL without scanning the table under an exclusive lock:
+  `t.belongsToTenant({ contract: true, safeNotNull: true })`, or `t.change(column).notNull({ safe: true })`, adds a
+  `NOT VALID` check, then validates it, sets NOT NULL and drops the check in a later step. The released migrations keep
+  their form.
+- fe19ac7: Workflow migrations 0007 and 0009 carry reviewed squawk ignores, with their reasons, so a product that hosts
+  `@stackra/workflow` lints clean. The runner hashes a migration without its lint lines, so their checksums are unchanged.
+  Migration 0010's three warnings are already gone from `@stackra/database` 0.22.0 on, which marks setting defaults.
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/rules@0.25.0
+  - @stackra/content@0.25.0
+  - @stackra/locking@0.25.0
+  - @stackra/outbox@0.25.0
+  - @stackra/queue@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Minor Changes
+
+- 2df7162: `ConditionField`, `ServiceAckSet` and `ScopeNode` now extend `Model.global(...)`. Their tables hold no tenant data by
+  design: a field registry, the service acks a workflow waits for, and the scope tree (read outside its package only
+  through the `ScopeTree` port). Gen no longer warns that these models are neither tenant-owned nor global. The
+  row-security audit lists their tables as platform tables. Nothing changes at run time.
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/rules@0.24.0
+  - @stackra/content@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/queue@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/locking@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The tenancy contract step. A new migration in each package (`achievements.0004`, `rules.0005`, `segments.0003`,
+  `content.0006`, `collaboration.0004`, `workflow.0011`) makes `tenant_id` NOT NULL on the tables the expand step gave
+  it, makes the tenant equality `pol_<table>_tenant_id` each table's one permissive policy, and keeps the scope path only
+  as a restrictive policy, which narrows a session inside its tenant and never widens it. The models of those tables now
+  carry `BelongsToTenant`, so a row is filled from the running tenant call.
+  
+  Each migration first counts the rows with no tenant. If any table has one, it refuses before changing anything and
+  names each table's count. An environment that wrote rows in the expand step outside a tenant call runs the tenant
+  backfill (RUNWAY 4c) first, then migrates again. After this step, these tables are written only inside a tenant call.
+  
+  `t.belongsToTenant({ contract: true })` is the macro's form for that step: `SET NOT NULL` on the existing column and
+  the equality policy. `{ contract: true, nullable: true }` is the platform form's contract step: the column stays
+  nullable under the `platform` policy, as search uses it. The packages ship an int test tier (`test:int`) for these migrations.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [12f4836]
+  - @stackra/database@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/rules@0.23.0
+  - @stackra/content@0.23.0
+  - @stackra/locking@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/queue@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [acbee14]
+- Updated dependencies [227dd7a]
+- Updated dependencies [940e198]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/tenancy@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/rules@0.22.0
+  - @stackra/content@0.22.0
+  - @stackra/locking@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/queue@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/rules@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/content@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/locking@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/queue@0.21.0
+
+## 0.20.0
+
+### Minor Changes
+
+- 6623da1: New `./contracts` entry holding `ServiceAcked`, `KeptRecords` and `KeptRecords$`. A service that only sends the ack
+  imports `@stackra/workflow/contracts` and gen hosts none of the workflow engine in it; the wire name stays
+  `workflow.service.acked.v1`. `.` still exports the same symbols (STA-2567).
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/rules@0.20.0
+  - @stackra/content@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/queue@0.20.0
+  - @stackra/tenancy@0.20.0
+  - @stackra/locking@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- 58e3066: `actingScopeId(actor)` and `claimedScopeIds(actor)` move to `@stackra/contracts`: the one answer to which tenant a call acts
+  in (an agent's own `scopeId`, else the tenant of the human it acts for; any other actor's own `scopeId`). Every place
+  that read `actor.scopeId` as the call's tenant now reads it: the pipeline's `CallDescriptor.scopeId` and `ctx.scopeId`
+  (so rate limits, meters, idempotency, query cache keys, approvals and audit entries follow), the queue's job actor and
+  unique key, IAM's node lookup, the automation principal check, the access-log outbox sink's `scopeId` stamp, and
+  `PostgresAuditTrailDriver`, which now records an agent with no tenant of its own in its human's tenant instead of
+  skipping it. A platform agent and every other actor kind are unchanged.
+- d76d1ed: The expand step of tenancy audit gap D: each scope-path table gains a nullable, indexed `tenant_id` that every insert
+  fills from `app.tenant_id` (`t.belongsToTenant({ expand: true })`), with no policy change, so no session reads a row
+  more or less. Migrations: `achievements.0003_add_tenancy` (`award_kinds`, `awards`), `rules.0004_add_tenancy`
+  (`rule_sets`), `segments.0002_add_tenancy` (`segments`, `segment_memberships`), `content.0005_add_tenancy`
+  (`custom_fields`, `custom_field_value_sets`, `revisions`), `search.0008_add_tenancy` (`vector_items`, `queries`),
+  `collaboration.0003_add_tenancy` (the four comment tables) and `workflow.0010_add_tenancy` (`automations`, `checklists`,
+  `checklist_progresses`). Each package now depends on `@stackra/tenancy` for the macro. Older rows stay null until a
+  backfill job sets them; the contract step (NOT NULL, the tenant equality as the one permissive policy, the scope path
+  restrictive) follows in a later release.
+- 6ec440d: Each package's tenancy expand migration now carries the package's name, in its class and its file
+  (`AddAchievementsTenancyMigration` in `0003-add-achievements-tenancy.migration.ts`, and so on), so no exported name is
+  declared in two packages. The SQL is unchanged. The migration ids change with the file names
+  (`achievements.0003_add_achievements_tenancy`); these migrations ship first in this release, so no database has
+  applied the old ids.
+- 3833180: Migration `workflow.0009_rename_checklist_progress` renames `workflow.checklist_progress` to
+  `workflow.checklist_progresses`, the table the `ChecklistProgress` model maps to, so the checklist service's progress
+  reads and writes reach a real table. Rows, indexes and the scope policy move with it. A new integration test runs the
+  checklist service on Postgres with every workflow migration applied.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [e5ac3d0]
+- Updated dependencies [d76d1ed]
+- Updated dependencies [d2b3d22]
+- Updated dependencies [eafb209]
+- Updated dependencies [d22e767]
+- Updated dependencies [e283a31]
+- Updated dependencies [27f2b3f]
+- Updated dependencies [15d8a1b]
+- Updated dependencies [bc5a0ab]
+- Updated dependencies [6ec440d]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/queue@0.19.0
+  - @stackra/tenancy@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/rules@0.19.0
+  - @stackra/content@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/locking@0.19.0
+  - @stackra/outbox@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/rules@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/content@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/locking@0.18.1
+  - @stackra/outbox@0.18.1
+  - @stackra/queue@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/rules@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/content@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/locking@0.18.0
+  - @stackra/outbox@0.18.0
+  - @stackra/queue@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/rules@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/content@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/locking@0.17.2
+  - @stackra/outbox@0.17.2
+  - @stackra/queue@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/rules@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/content@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/locking@0.17.1
+  - @stackra/outbox@0.17.1
+  - @stackra/queue@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/rules@0.17.0
+  - @stackra/content@0.17.0
+  - @stackra/database@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/events@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/locking@0.17.0
+  - @stackra/outbox@0.17.0
+  - @stackra/queue@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/rules@0.16.0
+  - @stackra/content@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/locking@0.16.0
+  - @stackra/outbox@0.16.0
+  - @stackra/queue@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [0b0cf51]
+  - @stackra/outbox@0.15.0
+  - @stackra/rules@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/content@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/locking@0.15.0
+  - @stackra/queue@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/rules@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/content@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/locking@0.14.4
+  - @stackra/outbox@0.14.4
+  - @stackra/queue@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/rules@0.14.3
+  - @stackra/content@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/locking@0.14.3
+  - @stackra/outbox@0.14.3
+  - @stackra/queue@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/rules@0.14.2
+  - @stackra/content@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/locking@0.14.2
+  - @stackra/outbox@0.14.2
+  - @stackra/queue@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/rules@0.14.1
+  - @stackra/content@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/locking@0.14.1
+  - @stackra/outbox@0.14.1
+  - @stackra/queue@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/rules@0.14.0
+  - @stackra/content@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/locking@0.14.0
+  - @stackra/outbox@0.14.0
+  - @stackra/queue@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/rules@0.13.0
+  - @stackra/content@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/locking@0.13.0
+  - @stackra/outbox@0.13.0
+  - @stackra/queue@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/rules@0.12.0
+  - @stackra/content@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/locking@0.12.0
+  - @stackra/outbox@0.12.0
+  - @stackra/queue@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/rules@0.11.1
+  - @stackra/content@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/locking@0.11.1
+  - @stackra/outbox@0.11.1
+  - @stackra/queue@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/rules@0.11.0
+  - @stackra/content@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/locking@0.11.0
+  - @stackra/outbox@0.11.0
+  - @stackra/queue@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/locking@0.10.0
+  - @stackra/outbox@0.10.0
+  - @stackra/queue@0.10.0
+  - @stackra/rules@0.10.0
+  - @stackra/content@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

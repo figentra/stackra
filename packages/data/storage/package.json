@@ -1,6 +1,6 @@
 {
   "name": "@stackra/storage",
-  "version": "0.9.0",
+  "version": "0.33.1",
   "private": false,
   "description": "Stackra client storage: the Storage port with the named areas of ADR 0256 (prefs, session, cache, outbox, secrets, files), values checked by their generated schemas, a time-to-live per write, the memory, web and native drivers, usePrefs and fakeStorage",
   "keywords": [
@@ -38,6 +38,10 @@
       "./src/browser/*",
       "./src/browser/*.ts",
       "./src/browser/*/index.ts"
+    ],
+    "#config/*": [
+      "./src/config/*",
+      "./src/config/*.ts"
     ],
     "#contracts/*": [
       "./src/contracts/*",
@@ -129,9 +133,11 @@
     "clean": "rm -rf dist coverage .turbo"
   },
   "dependencies": {
+    "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
-    "@stackra/validation": "workspace:*"
+    "@stackra/validation": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@stackra/testing": "workspace:*",
@@ -151,8 +157,7 @@
     "react-native-mmkv": "catalog:mobile",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
-    "vitest": "catalog:quality",
-    "zod": "catalog:"
+    "vitest": "catalog:quality"
   },
   "peerDependencies": {
     "electron": "catalog:desktop",

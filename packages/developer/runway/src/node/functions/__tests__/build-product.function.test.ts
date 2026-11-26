@@ -122,7 +122,9 @@ describe("buildProduct", () => {
       answer: (command, args, cwd) =>
         command === "eas"
           ? JSON.stringify([{ id: "build-ios" }, { id: "build-android" }])
-          : runProgram(command, args, { cwd }),
+          : command === "pnpm"
+            ? undefined // the checkout install is recorded, never run
+            : runProgram(command, args, { cwd }),
     });
     const build = await buildProduct({
       repository: product,
@@ -283,7 +285,9 @@ async function built(): Promise<void> {
     answer: (command, args, cwd) =>
       command === "eas"
         ? JSON.stringify([{ id: "build-ios" }])
-        : runProgram(command, args, { cwd }),
+        : command === "pnpm"
+          ? undefined // the checkout install is recorded, never run
+          : runProgram(command, args, { cwd }),
   });
   await buildProduct({
     repository: product,

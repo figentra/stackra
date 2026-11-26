@@ -45,7 +45,9 @@ export async function checkMigrations(directory: string, target?: MigrationTarge
     }
   };
   try {
-    await database.exec(extensionsSql());
+    await database.exec(
+      extensionsSql(peers === undefined ? undefined : Object.keys(peers.extensions)),
+    );
     for (const file of files) await run(file, file.sql, "up");
     const reverted: MigrationFile[] = [];
     // oxlint-disable-next-line unicorn/no-array-reverse -- reverses a copy built here; toReversed is ES2023 and the base lib is ES2022

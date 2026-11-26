@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `RateQuote`, one priced service a carrier offers for a `RateRequest`: its code, its name, the price and the
- *          carrier's transit estimate.
+ * Purpose: `RateQuote`, one priced service a carrier offers for a `RateRequest`: its code, its name, the price, the
+ *          carrier's transit estimate and, through an aggregator, the carrier that delivers.
  * Boundary: a type in the leaf entry. The price is what the carrier charges the account on the connection; any markup
  *           or free-shipping outcome is the consumer's rule set.
  * Runtime: isomorphic
@@ -30,4 +30,10 @@ export interface RateQuote {
 
   /** When the quoted price stops being honoured (ISO 8601), when the carrier says. */
   readonly expiresAt?: string;
+
+  /**
+   * The carrier that delivers, when the connection is an aggregator quoting many (`smsa`): a known provider code, else
+   * the aggregator's name for it. The connection's own `provider` stays the aggregator's. Left out by a direct carrier.
+   */
+  readonly carrier?: string;
 }

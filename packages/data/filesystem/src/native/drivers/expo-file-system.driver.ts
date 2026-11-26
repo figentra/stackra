@@ -18,7 +18,9 @@ import { Directory, File, Paths } from "expo-file-system";
 import type { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
+import type { WriteOptions } from "#contracts/types/write-options.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { RetentionUnsupportedError } from "#core/errors/retention-unsupported.error";
 import { normalizePath } from "#core/functions/normalize-path.function";
 import { normalizePrefix } from "#core/functions/normalize-prefix.function";
 
@@ -50,8 +52,14 @@ export class ExpoFileSystemDriver extends Driver(FileSystem) {
     return this.found(path).bytes();
   }
 
-  /** Writes `contents` under `path` through a cache file, never leaving a half-written file. */
-  async write(path: string, contents: Uint8Array | string): Promise<void> {
+  /**
+   * Writes `contents` under `path` through a cache file, never leaving a half-written file.
+   *
+   * @throws RetentionUnsupportedError for a `retainUntil`: a device's files cannot be kept unchangeable.
+   */
+  async write(path: string, contents: Uint8Array | string, options?: WriteOptions): Promise<void> {
+    if (options?.retainUntil !== undefined)
+      throw RetentionUnsupportedError.create({ disk: "expo" });
     const target = this.file(path);
     const draft = new File(
       Paths.cache,

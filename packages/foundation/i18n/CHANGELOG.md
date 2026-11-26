@@ -1,5 +1,370 @@
 # @stackra/i18n
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 4937622: Three kit blocks (ADR 0504). `@stackra/scope/react` adds `ScopePicker`: the host's scopes as a tree nested by path,
+  or a search field above `searchThreshold` scopes (8 by default); choosing one sets the active scope that `useScope`
+  reads. `@stackra/entitlements` gains a `./react` entry with `EntitlementGate`, which shows its children only while the
+  plan grants an entitlement (asked through the container's `EntitlementSource`), its `fallback` otherwise, and nothing
+  while the answer is pending. `@stackra/i18n/react` adds a headless `LocaleSwitcher` that binds @stackra/ui's
+  `LocaleSwitcher` props to the nearest `I18nProvider`, remembers the choice and switches through `setLocale` or the
+  host's `onChange`. Every word comes from the host.
+
+### Patch Changes
+
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 0f05f60: Dates follow the tenant's calendar. `@stackra/i18n` adds `CalendarSystem` (`gregory`, `islamic-umalqura`, Intl's
+  names). `formatDateTime` and `dateTimeFormatIn` take a `calendar` (Gregorian by default; an explicit
+  `options.calendar` wins), and `I18nProvider` takes a `calendar` prop that `useDateTime` writes in. `@stackra/settings`
+  adds `DisplaySettings` (key `display`, platform, product and tenant scopes, sent to clients) with `calendar`,
+  Gregorian by default: the server reads it and passes it to `formatDateTime`, and an app passes it to `I18nProvider`.
+
+### Patch Changes
+
+- @stackra/money@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/money@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/support@0.30.0
+
+## 0.29.0
+
+### Patch Changes
+
+- @stackra/money@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/money@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/support@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/money@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/money@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/money@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/money@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/money@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/money@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/money@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+  - @stackra/validation@0.20.0
+  - @stackra/money@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/money@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/support@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/money@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/support@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/money@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/support@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/money@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/support@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/money@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/money@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/support@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/money@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/money@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/money@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/money@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/support@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/money@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/money@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/money@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/support@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/money@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/money@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/money@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/money@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/support@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/money@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

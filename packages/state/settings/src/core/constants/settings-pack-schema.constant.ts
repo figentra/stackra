@@ -3,8 +3,8 @@
  * Purpose: `SETTINGS_PACK_SCHEMA`, the zod schema of `SettingsPack` (its `X$`): groups keyed by module key, each with
  *          its values by path and the paths it locks.
  * Boundary: shape only. A pack read from a YAML file or a promotion snapshot is untrusted input and is parsed with this
- *           schema. Group keys are module keys; paths are one or two dotted names; a value is a setting value (never
- *           an object, never a secret); a locked path must be one of the group's values.
+ *           schema. Group keys are module keys; paths are one or two dotted names; a value is a setting value (a list is an
+ *           array of strings; never an object, never a secret); a locked path must be one of the group's values.
  * Runtime: isomorphic
  * Governing contract: ADR 0213 (decision 4); ADR 0307 (rules 22 and 23); ADR 0294 (decision 26: a package ships its
  *                     own `X$`).
@@ -22,7 +22,10 @@ export const SETTINGS_PACK_SCHEMA = z.object({
     z.string().regex(/^[a-z][a-z0-9_]*$/, "Expected a module key"),
     z
       .object({
-        values: z.record(PATH, z.union([z.boolean(), z.number(), z.string(), z.null()])),
+        values: z.record(
+          PATH,
+          z.union([z.boolean(), z.number(), z.string(), z.array(z.string()), z.null()]),
+        ),
         locked: z.array(PATH).default([]),
       })
       .refine((group) => group.locked.every((path) => Object.hasOwn(group.values, path)), {

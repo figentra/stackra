@@ -1,0 +1,6 @@
+import type { EventEnvelope } from "@stackra/outbox/contracts";
+
+/** The id of a delivered envelope; the shop's only import of the outbox is its contracts entry. */
+export function envelopeId(envelope: EventEnvelope): string {
+  return envelope.id;
+}

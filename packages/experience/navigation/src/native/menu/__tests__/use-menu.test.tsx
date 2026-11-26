@@ -26,7 +26,7 @@ import { registerRoutes } from "#core/functions/register-routes.function";
 import { routeRef } from "#core/functions/route-ref.function";
 import type { MenuBuilder } from "#core/types/menu-builder.type";
 import { useMenu } from "#native/menu/use-menu";
-import { useMenus } from "#native/menu/use-menus";
+import { useMenus } from "#react/menu/use-menus";
 
 class OrdersRoute extends Route({ path: "/orders" }) {}
 class OrderRoute extends Route({ path: "/orders/:orderId" }) {}

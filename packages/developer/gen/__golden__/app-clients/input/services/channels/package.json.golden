@@ -21,6 +21,7 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/validation": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
+    "encore.dev": "catalog:",
     "zod": "catalog:"
   },
   "imports": {

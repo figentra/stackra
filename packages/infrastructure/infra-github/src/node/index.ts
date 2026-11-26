@@ -11,3 +11,4 @@
 export { githubStack } from "#node/functions/github-stack.function";
 export { readGithubRules } from "#node/functions/read-github-rules.function";
 export type { GithubStack } from "#node/types/github-stack.type";
+export type { GithubStackOptions } from "#node/types/github-stack-options.type";

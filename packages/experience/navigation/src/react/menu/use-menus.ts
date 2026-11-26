@@ -5,7 +5,8 @@
  *          naming its class; each one's entries come from `useMenu(menu)`.
  * Boundary: reads `MENU_REGISTRY` once per render pass; registration happens when the route table loads, before the
  *           app renders, so the registry does not change under a mounted shell.
- * Runtime: browser
+ *           Platform-free: the native entry imports it too.
+ * Runtime: isomorphic
  * Governing contract: ADR 0111 (decisions 1 and 3); STA-1947.
  */
 import { kindOf } from "@stackra/container";

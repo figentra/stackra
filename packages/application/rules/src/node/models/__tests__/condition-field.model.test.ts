@@ -17,6 +17,8 @@ import { ConditionField } from "#node/models/condition-field.model";
 describe("ConditionField", () => {
   it("is a model with the rcf public id and the timestamps", () => {
     expect(new ConditionField()).toBeInstanceOf(Model);
+    // A platform table (ADR 0239 amendment, group (c)), never tenant-owned.
+    expect(Model.isGlobal(ConditionField)).toBe(true);
     expect(traitsOf(ConditionField).map((trait) => trait.name)).toEqual([
       "has_public_id",
       "timestamps",

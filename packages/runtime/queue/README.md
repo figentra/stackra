@@ -37,7 +37,7 @@ Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
 | `QueueDriver`, `QueuedJob`, `JobError`, `JobStatus` | `./contracts` | the port a driver implements and the stored job                                                    |
 | `JobBatch`, `JobThrottle`, `ChainedJob`             | `./contracts` | a batch's progress, a job's throttle, a chain link still to run                                    |
 | `QueueWorkerService`                                | `./node`      | `connect(container)`, then `work(queue, { signal, concurrency })`, `drain()`, `process(job)`       |
-| `PostgresQueueDriver`                               | `./node`      | the default driver: `queue.jobs`, reserved with `FOR UPDATE SKIP LOCKED`                           |
+| `PostgresQueueDriver`                               | `./node`      | the default driver: `queue.jobs` (tenant-owned), leased by `queue.reserve_job` with `SKIP LOCKED`  |
 | `drainQueue`, `runJob`, `toDeadLetter`              | `./testing`   | run due jobs; run one job to its end; assert a dead letter                                         |
 | `runQueueConformance`, `QUEUE_CONFORMANCE_CASES`    | `./testing`   | the `QueueDriver` conformance suite every driver passes                                            |
 

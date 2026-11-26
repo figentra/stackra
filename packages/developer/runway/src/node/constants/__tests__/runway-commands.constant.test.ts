@@ -6,7 +6,7 @@
  *          and 1 with each finding; status reads one deployment record per environment; a missing command or
  *          argument is a usage error (exit 2).
  * Boundary: test only; each command's dispatcher, drift reader, sync or GitHub reader is replaced through its field,
- *           so no git, gh, wrangler or infisical runs.
+ *           so no git, gh, wrangler or sops runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352; ADR 0506 (decision 8); STA-2100.
  */

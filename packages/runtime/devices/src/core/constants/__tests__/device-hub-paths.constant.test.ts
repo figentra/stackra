@@ -20,6 +20,7 @@ describe("DEVICE_HUB_PATHS", () => {
   it("names the pairing routes and encodes a pairing id", () => {
     expect(DEVICE_HUB_PATHS.pairings).toBe("/device-pairings");
     expect(DEVICE_HUB_PATHS.pairing("pr/1")).toBe("/device-pairings/pr%2F1");
+    expect(DEVICE_HUB_PATHS.pickup("pr/1")).toBe("/device-pairings/pr%2F1/pickup");
   });
 
   it("encodes a command id so it stays one segment", () => {

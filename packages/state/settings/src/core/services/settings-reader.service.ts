@@ -133,7 +133,7 @@ export class SettingsReader extends Service {
     values: Readonly<Record<string, unknown>>,
     target: SettingTarget = {},
   ): Promise<void> {
-    const { changes } = settingPageChanges(page, values);
+    const { changes } = settingPageChanges(page, values, target);
     refuseUnentitledSettings(
       changes,
       page.fields,

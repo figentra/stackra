@@ -10,7 +10,7 @@
 import { Action } from "@stackra/actions";
 import { AccessControl } from "@stackra/actions/contracts";
 import { buildConfig } from "@stackra/config";
-import { Driver, Module } from "@stackra/container";
+import { Container, Driver, Module } from "@stackra/container";
 import { createTestingModule, registerWiring } from "@stackra/container/testing";
 import { ActorKind, Clock, Logger } from "@stackra/contracts";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
@@ -76,7 +76,16 @@ registerWiring({
     {
       module: "fixture",
       provide: SchedulerService,
-      deps: [QueueService, Locks, ScheduleDriver, CronScopes, Clock, SchedulerConfig, Logger],
+      deps: [
+        QueueService,
+        Locks,
+        ScheduleDriver,
+        CronScopes,
+        Clock,
+        SchedulerConfig,
+        Logger,
+        Container,
+      ],
     },
   ],
   drivers: [

@@ -1,15 +1,19 @@
 /**
  * Stackra file contract:
  * Purpose: `PostgresOutboxDriver`, the server's `OutboxDriver`: messages are rows of `outbox.messages`, written in the
- *          caller's transaction with the transaction's scope, listed for the relay oldest first, deleted once
- *          delivered, counted, rescheduled or dead-lettered when a delivery fails, pruned once long dead, and found
- *          and rewritten by an erased subject's id (stackra-275).
+ *          caller's transaction with the transaction's scope and tenant, claimed for the relay oldest first across
+ *          tenants, loaded and deleted once delivered, counted, rescheduled or dead-lettered when a delivery fails in
+ *          their tenant's isolation, claimed for the prune once long dead, and found and rewritten by an erased
+ *          subject's id (stackra-275).
  * Boundary: raw SQL on the running context's entity manager, one statement per method, every value a bound parameter
- *           and every result row read through zod. The table is the service's outbox, read by the relay across scopes
- *           (it opens each message's scope itself), so it has no row-level-security policy. Payload, metadata and last
- *           error are `jsonb`; the scope path is `ltree`, read back as text.
+ *           and every result row read through zod. The table is tenant-owned in the platform form (`outbox.0006`): a
+ *           claim goes through the system functions `outbox.claim_due_messages` and `outbox.claim_dead_messages`, which
+ *           return ids, tenants and due times only; every other statement runs under the caller's row-level security,
+ *           so a message is read or changed only in its tenant's isolation (a platform message in the platform's).
+ *           `tenant_id` is never written here: its default takes the call's `app.tenant_id`. Payload, metadata and
+ *           last error are `jsonb`; the scope path is `ltree`, read back as text.
  * Runtime: node
- * Governing contract: ADR 0078 (decision 4); ADR 0160 (raw SQL is parameterised and typed with zod); ADR 0142 (drivers
+ * Governing contract: ADR 0078 (decision 4); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0160 (raw SQL is parameterised and typed with zod); ADR 0142 (drivers
  *                     behind ports); ADR 0294 (decision 16).
  */
 import { Driver } from "@stackra/container";
@@ -19,7 +23,7 @@ import type { Database } from "@stackra/database";
 import { z } from "zod";
 
 import { MessageKind, OutboxDriver } from "#contracts/index";
-import type { OutboxError, OutboxMessage } from "#contracts/index";
+import type { OutboxClaim, OutboxError, OutboxMessage } from "#contracts/index";
 import { holdsValue } from "#core/functions/holds-value.function";
 import { STORED_MESSAGE_COLUMNS } from "#node/constants/stored-message-columns.constant";
 import { insertMessages } from "#node/functions/insert-messages.function";
@@ -48,6 +52,26 @@ const ROW = z.object({
 
 /** Rows of `outbox.messages`. */
 const ROWS = z.array(ROW);
+
+/** Rows of a claim function. */
+const CLAIMS = z.array(
+  z.object({
+    id: z.string().startsWith("evt_"),
+    tenant_id: z.string().nullable(),
+    available_at: z.coerce.date(),
+  }),
+);
+
+/** The claims of `rows`, a claim function's result. */
+function claimsOf(rows: unknown): readonly OutboxClaim[] {
+  return CLAIMS.parse(rows).map((row) =>
+    Object.freeze({
+      id: row.id as PublicId<"evt">,
+      ...(row.tenant_id === null ? {} : { ownerId: row.tenant_id as PublicId<"scp"> }),
+      availableAt: row.available_at,
+    }),
+  );
+}
 
 /** The message of one row. */
 function messageOf(row: z.infer<typeof ROW>): OutboxMessage {
@@ -89,17 +113,26 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
     return insertMessages(this.database.em(), messages);
   }
 
-  /** Implements `OutboxDriver.due`, documented there. */
-  async due(now: Date, limit: number): Promise<readonly OutboxMessage[]> {
-    // raw-sql: the outbox has no model; the relay reads across scopes, ordered by time then id
-    const rows = await this.database
-      .em()
-      .execute(
-        `select ${COLUMNS} from ${TABLE} where dead_at is null and available_at <= ? ` +
-          "order by occurred_at, id limit ?",
-        [now, limit],
-      );
-    return ROWS.parse(rows).map(messageOf);
+  /** Implements `OutboxDriver.claim`, documented there. */
+  async claim(now: Date, limit: number): Promise<readonly OutboxClaim[]> {
+    // raw-sql: the system function claims across tenants (ids, tenants, due times), which no tenant session may read
+    return claimsOf(
+      await this.database
+        .em()
+        .execute(
+          "select id, tenant_id, available_at from outbox.claim_due_messages(?::timestamptz, ?::integer)",
+          [now, limit],
+        ),
+    );
+  }
+
+  /** Implements `OutboxDriver.load`, documented there. */
+  async load(id: PublicId<"evt">): Promise<OutboxMessage | undefined> {
+    // raw-sql: the outbox has no model; one parameterised read under the caller's row-level security
+    const [row] = ROWS.parse(
+      await this.database.em().execute(`select ${COLUMNS} from ${TABLE} where id = ?`, [id]),
+    );
+    return row === undefined ? undefined : messageOf(row);
   }
 
   /** Implements `OutboxDriver.remove`, documented there. */
@@ -119,15 +152,17 @@ export class PostgresOutboxDriver extends Driver(OutboxDriver) {
       );
   }
 
-  /** Implements `OutboxDriver.pruneDead`, documented there. */
-  async pruneDead(before: Date): Promise<number> {
-    // raw-sql: the outbox has no model; one parameterised delete of old dead letters, counted by `returning`
-    const rows = await this.database
-      .em()
-      .execute(`delete from ${TABLE} where dead_at is not null and dead_at < ? returning id`, [
-        before,
-      ]);
-    return Array.isArray(rows) ? rows.length : 0;
+  /** Implements `OutboxDriver.claimDead`, documented there. */
+  async claimDead(before: Date, limit: number): Promise<readonly OutboxClaim[]> {
+    // raw-sql: the system function claims old dead letters across tenants; each is deleted in its tenant
+    return claimsOf(
+      await this.database
+        .em()
+        .execute(
+          "select id, tenant_id, available_at from outbox.claim_dead_messages(?::timestamptz, ?::integer)",
+          [before, limit],
+        ),
+    );
   }
 
   /** Implements `OutboxDriver.holding`, documented there. */

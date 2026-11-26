@@ -92,6 +92,13 @@ describe("hubSender", () => {
     expect(seen[1]?.headers.get("idempotency-key")).toBe(key);
   });
 
+  it("sends no Idempotency-Key on a write when asked not to", async () => {
+    const seen = stubFetch(() => new Response("{}"));
+    const send = hubSender(config(), new StaticCredential(), { idempotencyKey: false });
+    await send("/device-pairings/pr_1/pickup", { method: "POST", body: "{}" });
+    expect(seen[0]?.headers.has("idempotency-key")).toBe(false);
+  });
+
   it.each([401, 403])("refuses a %i as DeviceUnauthorizedError", async (status) => {
     stubFetch(() => new Response("denied", { status }));
     const failure = await hubSender(

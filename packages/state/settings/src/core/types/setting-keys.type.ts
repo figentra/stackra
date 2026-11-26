@@ -25,6 +25,13 @@ type ValueOf<I> =
   | (I extends { readonly nullable: true } ? null : never);
 
 /** The fields of the shape `pick(keys)` returns: each key's name to its value type. */
+/** A key's field name: its entry without the `<section>.` gen writes before a section's field (STA-2192). */
+type FieldName<I, N extends string> = I extends { readonly section: infer S extends string }
+  ? N extends `${S}.${infer F}`
+    ? F
+    : N
+  : N;
+
 type PickedFields<K extends readonly SettingKey[]> = {
   [E in K[number] as E["name"]]: ValueOf<E>;
 };
@@ -38,7 +45,9 @@ type PickedFields<K extends readonly SettingKey[]> = {
 export type SettingKeys<
   T extends Readonly<Record<string, Readonly<Record<string, SettingKeyInput>>>>,
 > = {
-  readonly [M in keyof T & string]: { readonly [N in keyof T[M] & string]: SettingKey<T[M][N], N> };
+  readonly [M in keyof T & string]: {
+    readonly [N in keyof T[M] & string]: SettingKey<T[M][N], FieldName<T[M][N], N>>;
+  };
 } & {
   /** A shape class whose fields are the keys' names, typed and bounded as the keys declare. */
   pick: <const K extends readonly SettingKey[]>(keys: K) => ShapeClass<PickedFields<K>>;

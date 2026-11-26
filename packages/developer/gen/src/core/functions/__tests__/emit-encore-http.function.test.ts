@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `emitEncoreHttp`: a service that declares @stackra/app gets `.stackra/encore/<member>/http.ts`,
+ * Purpose: unit tests of `emitEncoreHttp`: a service that declares @stackra/app gets `stackra-encore/<member>/http.ts`,
  *          whose `answerHttp` runs through `app.handlers.run`, answers `OPTIONS` with 204 and `corsHeaders` over the
  *          bound `CorsConfig`, and adds those headers to every other answer (`Vary` appended) with `apiCacheControl`'s
  *          `private, no-store` (ADR 0325 rule 22); a service that declares @stackra/errors answers a `RateLimitedError`
@@ -17,16 +17,16 @@ import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 
-/** The entry import of a generated .stackra/encore/<service>/ file; a constant so validate does not read it as this test's own import. */
-const GENERATED_ENTRY = "../../entry/server";
+/** The entry import of a generated stackra-encore/<service>/ file; a constant so validate does not read it as this test's own import. */
+const GENERATED_ENTRY = "../../.stackra/entry/server";
 
 describe(emitEncoreHttp, () => {
   it("writes the CORS adapter of a service that runs @stackra/app", () => {
     const file = emitEncoreHttp(BILLING_IR);
-    expect(file?.path).toBe(".stackra/encore/billing/http.ts");
+    expect(file?.path).toBe("stackra-encore/billing/http.ts");
     const content = file?.content ?? "";
     for (const line of [
-      'import { apiCacheControl, CorsConfig, corsHeaders } from "@stackra/app/server";',
+      "  corsHeaders,",
       `import { app } from "${GENERATED_ENTRY}";`,
       "  return app.handlers.run(async (container) => {",
       "    const cors = corsHeaders(request, container.get(CorsConfig));",
@@ -34,6 +34,23 @@ describe(emitEncoreHttp, () => {
       '      if (name === "vary") response.headers.append(name, value);',
       "    const cacheControl = apiCacheControl(request, response);",
       '    if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
+    ])
+      expect(content).toContain(line);
+  });
+
+  it("bridges a raw request through serveGuardedCall: capped body, guards, CallAuthenticator, the signed visitor, written back (STA-2577)", () => {
+    const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
+    for (const line of [
+      "export async function answerCall(req: IncomingMessage, resp: ServerResponse, call: Call): Promise<void> {",
+      '    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),',
+      "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
+      "      guard: (guarded) => app.handlers.guard(guarded, container),",
+      "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
+      "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",
+      "  action?: AnyClass;",
+      "      action: call.action,",
+      "  if (response.body === null) resp.end();",
+      "  else Readable.fromWeb(response.body as never).pipe(resp);",
     ])
       expect(content).toContain(line);
   });

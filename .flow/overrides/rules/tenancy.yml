@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/rules/tenancy.md
+file: rules/tenancy.md
+reason: "core's newer text, until the stackra preset carries it: point 8, isolation tests run in test:int on Postgres as the NOBYPASSRLS service role through withTenant; PGlite, the memory driver and the container superuser bypass RLS (STA-2561)"
+owner: figentra-usr
+review: 2027-02-01

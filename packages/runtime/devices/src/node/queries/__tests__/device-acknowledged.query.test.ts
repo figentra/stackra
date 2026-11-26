@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DeviceAcknowledgedQuery`: the `device.acknowledged` query (no MCP tool, `GET
- *          /devices/acknowledged` by convention); with no input it answers the calling device's last acknowledged
+ *          /app/devices/acknowledged` by convention); with no input it answers the calling device's last acknowledged
  *          sequence or `null`, and refuses a call from no verified device; another device's sequence is answered only
  *          within the caller's scope (any for a platform caller).
  * Boundary: test only; the query is called directly with the memory sequence store of `@stackra/actions` and

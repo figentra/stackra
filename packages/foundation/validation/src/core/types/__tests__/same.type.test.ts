@@ -29,6 +29,12 @@ describe("Same", () => {
     expectTypeOf<Same<{ at: Date }, { at: string }>>().toEqualTypeOf<false>();
   });
 
+  it("ignores readonly on an array as deep as a list view's page, item, view, list and element (STA-2215)", () => {
+    type Deep<A> = { page: { items: { view: { steps: { options: { values: A } } } } } };
+    expectTypeOf<Same<Deep<readonly string[]>, Deep<string[]>>>().toEqualTypeOf<true>();
+    expectTypeOf<Same<Deep<readonly string[]>, Deep<number[]>>>().toEqualTypeOf<false>();
+  });
+
   it("compares a recursive type without going infinitely deep (STA-1682)", () => {
     type Node = { readonly value: Json; readonly groups?: readonly Node[] };
     type Wire = { value: Json; groups?: Wire[] };

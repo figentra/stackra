@@ -1,0 +1,30 @@
+{
+  "slug": "capability-matrix",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "CapabilityMatrix",
+  "parts": ["CapabilityMatrix"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 320
+    }
+  ],
+  "related": ["free/bento-grid", "free/product-cards"],
+  "tokens": ["color.success", "color.accent", "color.muted", "color.border"],
+  "keywords": [
+    "capability",
+    "matrix",
+    "table",
+    "comparison",
+    "carriers",
+    "marketing",
+    "landing",
+    "kit"
+  ],
+  "status": "new"
+}

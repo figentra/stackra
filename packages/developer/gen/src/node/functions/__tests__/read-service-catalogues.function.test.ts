@@ -33,6 +33,7 @@ describe("readServiceCatalogues", () => {
     ).toEqual([
       {
         package: "@acme/service-commerce",
+        service: "commerce",
         from: "../commerce/assets/lang",
         catalogues: {
           ar: { orders: { title: "الطلبات" } },
@@ -62,6 +63,7 @@ describe("readServiceCatalogues", () => {
     ).toEqual([
       {
         package: "@acme/service-commerce",
+        service: "commerce",
         from: "node_modules/@acme/commerce-contract/assets/lang",
         catalogues: { en: { orders: { title: "Orders" } } },
       },

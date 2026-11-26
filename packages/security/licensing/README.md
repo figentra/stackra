@@ -160,7 +160,7 @@ the same bytes with `verifySignature` of `@stackra/contracts` and the registered
 
 - Deciding when to issue, the licence terms and the true-up: the issuing service (OS licensing, ADR 0178 decision 2).
 - Counting usage per meter: the install's metering hands `signUsageReport` its lines.
-- The file signing key: Keygen and Infisical KMS hold it; this package only ever sees the public verify key.
+- The file signing key: Keygen and the sops vault (ADR 0525) hold it; this package only ever sees the public verify key.
 - Checking the `Keygen-Signature` of the online response; the signed offline file stays the source of truth.
 - The registry's offline licence file for on-prem, signed with its own `LICENCE_SIGNING_KEY` (ADR 0453 decision 15):
   not built; the `registry` driver refuses `checkOut`.

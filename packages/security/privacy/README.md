@@ -109,7 +109,7 @@ export class PrivacyConfig extends BasePrivacyConfig {
 | `./node`      | `UnindexErasedSubjectListener`                                                                                     | removes an erased subject's remaining rows from search                 |
 | `./node`      | `ExportSubjectDataAction`, `PurgeSubjectExportsAction`                                                             | the DSAR export job and the nightly export purge                       |
 | `./node`      | `RepositoryPersonalDataStoreDriver`, `PrivacyModule`                                                               | the database store driver; the root module                             |
-| `./node`      | `SubjectPermissions` (`erase` L4, `export` L1), `SubjectExportPermissions` (`purge` L4)                            | the jobs' system permissions, held by no role                          |
+| `./node`      | `SubjectPermissions` (`erase` L4, `export` L2), `SubjectExportPermissions` (`purge` L4)                            | the jobs' system permissions, held by no role                          |
 | `./node`      | `PostgresSubjectSaltStoreDriver`, `CreateSubjectSaltsMigration`                                                    | the salt store over `privacy.subject_salts`, partitioned per tenant    |
 | `./node`      | `PostgresSubjectHoldsDriver`                                                                                       | `SubjectHolds` over `privacy.legal_holds`, in the session's tenant     |
 | `./node`      | `SaltedSubjectCipherResolverDriver`, `unsealedShredFields`                                                         | per-subject ciphers for `EncryptedFieldsSubscriber`; the shred check   |

@@ -21,6 +21,12 @@ export interface ColumnDefinition {
   /** The default, a constant equal to the model field's initializer; an array or object is stored as jsonb. */
   default: (value: string | number | boolean | null | object) => this;
 
+  /**
+   * The default read from the transaction's custom setting (`app.tenant_id`), null while it is unset or `''`: the
+   * database side of a field the running call fills, for writers that set no value. Not on a `uuid` column.
+   */
+  defaultSetting: (setting: string) => this;
+
   /** A plain index on the column alone (`idx_<table>_<column>`); built online when the table already exists. */
   index: () => this;
 

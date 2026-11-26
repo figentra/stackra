@@ -12,7 +12,7 @@ import type { TurboCacheBucket } from "./turbo-cache-bucket.interface";
 export interface TurboCacheEnv {
   /** The R2 bucket (`r2_buckets[].binding`). */
   readonly BUCKET: TurboCacheBucket;
-  /** Worker secret: the bearer token turbo sends (Infisical `/ci` TURBO_TOKEN). Unset: every request is refused. */
+  /** Worker secret: the bearer token turbo sends (sops `ci/build/turbo` TURBO_TOKEN). Unset: every request is refused. */
   readonly TURBO_CACHE_TOKEN?: string | undefined;
   /** Largest artifact accepted, in bytes. */
   readonly TURBO_CACHE_MAX_ARTIFACT_BYTES?: string | undefined;

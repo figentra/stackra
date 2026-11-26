@@ -1,5 +1,622 @@
 # @stackra/queue
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/testing@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- ad4e5bf: A queued job's call knows which attempt it is: `ctx.attempt` (`{ number, last }`, the new `CallAttempt` type) on every call context, set by the queue worker through `CallOptions.attempt` and absent for a direct call. `last` is true when no retry follows, so a job that may give up (a quota it cannot read) can act on its last attempt instead of throwing again.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/testing@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 98a8940: `queue.jobs` and `scheduler.schedules` are tenant-owned in the platform form (migrations
+  `queue.0003_contract_queue_tenancy` and `scheduler.0002_contract_scheduler_tenancy`): each gets a nullable
+  `tenant_id`, filled from `app.tenant_id` by default (a NULL row is the platform's), forced row-level security and the
+  platform policies. `queue.job_batches` and `scheduler.watermarks` stay platform tables. Cross-owner readers claim
+  through system functions that return ids, owners and order or lease columns only, and load or change each row in its
+  owner: `queue.reserve_job` (the worker's lease: status, attempts and `locked_until` only), `queue.claim_dead_jobs`,
+  `queue.unique_key_holders` (a redrive's check for a live job of any owner holding the same unique key; the unique
+  index stays global) and `scheduler.claim_schedules`.
+  
+  Upgrade: drain the queue before you migrate: let reserved and pending jobs finish or fail, then delete those dead
+  jobs. The queue migration backfills a job at a tenant node (a scope path of three labels) from its scope and keeps a
+  job with no scope, at the root or at a product node as a platform job; the scheduler migration does the same for
+  schedules (`nlevel(scope_path) = 3`). Each refuses, changing nothing, while a row sits below a tenant node, naming
+  the count and the remedy: for jobs, drain the queue as above; for schedules, note each one's job, cron, time zone,
+  input and missed-run policy, unschedule it, migrate again, then schedule it again from a call in its scope.
+  
+  The worker loads each reserved job in its owner and records every outcome there (removed, retried, released or
+  dead-lettered); it queues a chain's next link in a transaction of its own (`requiresNew`) in the job's owner. A job a
+  broker delivered keeps its dead letter in its own scope's isolation. The scheduler's lock now covers only the claim
+  of every owner's schedules and, taken again after the pushes, the watermark advance: each owner's runs (a schedule's,
+  or a per-scope cron's in one scope) are pushed between them, in a `requiresNew` transaction in that owner's isolation.
+  Dispatch is at least once with no duplicate: migration `scheduler.0003_create_fires` adds `scheduler.fires` (platform
+  form, keyed by fire key and fire time), and each run is pushed only when its fire record is new, in the push's own
+  transaction, before the watermark moves. A tick that dies between the pushes and the advance pushes nothing again,
+  even when the first jobs already finished; a key whose push failed keeps its watermark. A watermark never moves back.
+  `fire(key)`, the Encore CronJob entry point, pushes the cron's current slot (its last due time at or before now, in
+  UTC) and records it under the same fire key a tick uses, so an Encore retry in the slot, or a tick of it, pushes
+  nothing again; a call with no due time in the last day pushes once, unrecorded.
+  `ScheduleDriver` gains `recordFire(key, at)` and `forgetFires(key, through)`; its `remove` also deletes the
+  schedule's fires.
+  
+  Breaking port changes, for a custom driver:
+  
+  - `QueueDriver`: `reserve` returns a `JobClaim` (id, `ownerId`) instead of the job; `load(id)` returns the job in the
+    caller's isolation; `claimDead({ queue?, id?, limit })` claims dead letters across owners. `deadLetters` and
+    `redrive` run in the caller's isolation.
+  - `ScheduleDriver`: `schedules(scope)` takes its scope (no scope no longer lists every owner's); `claim()` returns
+    `ScheduleClaim`s (id, `ownerId`, key, cron, time zone, missed-run policy, creation instant) and `load(id)` the
+    schedule.
+  
+  New: `JobClaimNotLoadedError` and `JobRowIsolationMissingError` (`@stackra/queue`), `ScheduleClaimNotLoadedError` and
+  `ScheduleRowIsolationMissingError` (`@stackra/scheduler`): a claimed row that does not load in its owner, or an owned
+  row with no `CallIsolation` bound, fails the work; it is never skipped. `queue:failed` and `queue:retry` inject the
+  `Container` and `SchedulerService` takes it as its last argument; each reads `CallIsolation` from it optionally, so
+  an app without tenancy still boots and runs its platform rows as before. `ScheduleDriver` also gains
+  `transaction(work)` (a `requiresNew` transaction on Postgres, `work` as it is in memory), in which each owner's fire
+  records and pushes commit together.
+
+### Patch Changes
+
+- 82dccb3: One shared owner-isolation helper. `@stackra/actions` now exports `inRowOwner(isolation, actorId, ownerId, id, work,
+  missing?)`, `boundIsolation(resolver)`, `ClaimNotLoadedError` (`claim_not_loaded`) and `RowIsolationMissingError`
+  (`row_isolation_missing`) from its `.` entry, so the tenancy families no longer each keep a copy. Every caller keeps
+  its own system actor id (`sys_outbox_relay`, `sys_queue_worker`, `sys_scheduler`, `sys_workflow_runner`,
+  `sys_privacy_holds`), the same refusals and the same rule: an owned row with no isolation bound is refused, never
+  skipped. Queue and scheduler keep their prefixed refusals and codes (`job_row_isolation_missing`,
+  `schedule_row_isolation_missing`, and their claim-not-loaded ones) and pass them to `inRowOwner`.
+  
+  `@stackra/outbox` still re-exports `boundIsolation`, `ClaimNotLoadedError` and `RowIsolationMissingError` from its `.`
+  entry for this release only; the re-exports go away in the next minor, so import them from `@stackra/actions`. The two
+  refusals now appear under `@stackra/actions` in the manifests, with the same codes. `@stackra/workflow` no longer
+  depends on `@stackra/outbox`; `@stackra/data-transfer` now depends on `@stackra/actions`.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [15dba8d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/testing@0.30.0
+
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/console@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/testing@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/console@0.28.0
+  - @stackra/testing@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+  - @stackra/database@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/console@0.27.0
+  - @stackra/testing@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+  - @stackra/database@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/console@0.26.0
+  - @stackra/testing@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/console@0.25.0
+  - @stackra/testing@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/console@0.24.0
+  - @stackra/testing@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+  - @stackra/database@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/testing@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/testing@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/console@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/testing@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/console@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/testing@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- 58e3066: `actingScopeId(actor)` and `claimedScopeIds(actor)` move to `@stackra/contracts`: the one answer to which tenant a call acts
+  in (an agent's own `scopeId`, else the tenant of the human it acts for; any other actor's own `scopeId`). Every place
+  that read `actor.scopeId` as the call's tenant now reads it: the pipeline's `CallDescriptor.scopeId` and `ctx.scopeId`
+  (so rate limits, meters, idempotency, query cache keys, approvals and audit entries follow), the queue's job actor and
+  unique key, IAM's node lookup, the automation principal check, the access-log outbox sink's `scopeId` stamp, and
+  `PostgresAuditTrailDriver`, which now records an agent with no tenant of its own in its human's tenant instead of
+  skipping it. A platform agent and every other actor kind are unchanged.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [d2b3d22]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/testing@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/actions@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/console@0.18.1
+  - @stackra/testing@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/actions@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/console@0.18.0
+  - @stackra/testing@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/actions@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/console@0.17.2
+  - @stackra/testing@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/actions@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/console@0.17.1
+  - @stackra/testing@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/database@0.17.0
+  - @stackra/console@0.17.0
+  - @stackra/testing@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/console@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/testing@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/testing@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/actions@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/console@0.14.4
+  - @stackra/testing@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/console@0.14.3
+  - @stackra/testing@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/console@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/testing@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/testing@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/testing@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/testing@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/testing@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/console@0.11.1
+  - @stackra/testing@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/console@0.11.0
+  - @stackra/testing@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/testing@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

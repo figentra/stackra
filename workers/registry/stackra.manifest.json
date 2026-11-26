@@ -14,107 +14,15 @@
   "actions": [],
   "events": [],
   "permissions": [],
-  "errors": [
-    {
-      "code": "licence_check_unavailable",
-      "kind": "unavailable",
-      "category": "unavailable",
-      "module": "licensing",
-      "class": "LicenceCheckUnavailableError",
-      "from": "@stackra/licensing"
-    },
-    {
-      "code": "licence_file_invalid",
-      "kind": "failed_precondition",
-      "category": "precondition_failed",
-      "module": "licensing",
-      "class": "LicenceFileInvalidError",
-      "from": "@stackra/licensing"
-    },
-    {
-      "code": "licence_issuer_unavailable",
-      "kind": "unavailable",
-      "category": "unavailable",
-      "module": "licensing",
-      "class": "LicenceIssuerUnavailableError",
-      "from": "@stackra/licensing"
-    }
-  ],
+  "errors": [],
   "models": [],
-  "drivers": [
-    {
-      "port": "LicenceIssuer",
-      "key": "licensing.LicenceIssuer",
-      "candidates": ["keygen", "memory", "registry"],
-      "classes": {
-        "keygen": {
-          "class": "KeygenLicenceIssuerDriver",
-          "from": "@stackra/licensing",
-          "deps": [
-            {
-              "class": {
-                "name": "LicensingConfig",
-                "from": "@stackra/licensing"
-              }
-            },
-            {
-              "class": {
-                "name": "IssuerConfig",
-                "from": "@stackra/licensing"
-              }
-            }
-          ]
-        },
-        "memory": {
-          "class": "MemoryLicenceIssuerDriver",
-          "from": "@stackra/licensing"
-        },
-        "registry": {
-          "class": "RegistryLicenceIssuerDriver",
-          "from": "@stackra/licensing",
-          "deps": [
-            {
-              "class": {
-                "name": "IssuerConfig",
-                "from": "@stackra/licensing"
-              }
-            }
-          ]
-        }
-      },
-      "selectedBy": "config:licensing.issuer.driver",
-      "config": {
-        "class": "IssuerConfig",
-        "from": "@stackra/licensing"
-      },
-      "from": "@stackra/licensing"
-    },
-    {
-      "port": "LicenceVerifier",
-      "key": "licensing.LicenceVerifier",
-      "candidates": ["keygen"],
-      "classes": {
-        "keygen": {
-          "class": "KeygenLicenceVerifierDriver",
-          "from": "@stackra/licensing",
-          "deps": [
-            {
-              "class": {
-                "name": "LicensingConfig",
-                "from": "@stackra/licensing"
-              }
-            }
-          ]
-        }
-      },
-      "from": "@stackra/licensing"
-    }
-  ],
+  "drivers": [],
   "integrations": [],
   "sequences": [],
   "outcomes": [],
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "roles": [],
   "schemas": {}
 }

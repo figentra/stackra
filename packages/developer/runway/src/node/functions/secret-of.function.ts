@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `secretOf(env, name)`, the value of the secret `name` from a CI job's environment (Infisical over OIDC put
- *          it there), for a store driver to put inside one request.
+ * Purpose: `secretOf(env, name)`, the value of the secret `name` from a CI job's environment (the secrets-decrypt
+ *          action put it there from sops, ADR 0525), for a store driver to put inside one request.
  * Boundary: a missing or empty secret throws naming the variable, never a value. The caller keeps the value in the
  *           request only.
  * Runtime: node
@@ -20,7 +20,7 @@ export function secretOf(env: Readonly<Record<string, string | undefined>>, name
   const value = env[name];
   if (value === undefined || value === "")
     throw new RunwayUnresolvedError(
-      `${name} is not set in this job: it comes from Infisical in CI (runway never reads it elsewhere)`,
+      `${name} is not set in this job: it comes from .github/actions/secrets-decrypt in CI (runway never reads it elsewhere)`,
     );
   return value;
 }

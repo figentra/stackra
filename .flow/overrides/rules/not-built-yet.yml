@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/rules/not-built-yet.md
+file: rules/not-built-yet.md
+reason: "core's newer text, until the stackra preset carries it: ADR 0525 (2026-11-06): the vault row names SOPS files keyed by Cloud KMS, Infisical until the move ends"
+owner: figentra-usr
+review: 2027-02-01

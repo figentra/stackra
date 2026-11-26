@@ -2,10 +2,10 @@
  * Stackra file contract:
  * Purpose: unit tests of `onboardMobile`: a dry run of a new app plans every step and writes nothing; a live run
  *          derives and writes the ids (comments kept), creates the EAS, Google, Firebase and Sentry projects, registers
- *          the bundle id with its capabilities, creates the FCM key and writes it blind; a second run is all done and
- *          calls nothing; set ids are kept; the missing App Store Connect record, a taken Google id, the missing
- *          Analytics grant, missing store keys and a Play app without a release are manual with the owner's steps; no
- *          key ever reaches a step.
+ *          the bundle id with its capabilities, creates the FCM key and hands it only to EAS; a second run is all done
+ *          and calls nothing; set ids are kept; the missing App Store Connect record, a taken Google id, the missing
+ *          Analytics grant, missing store keys (each with its `pnpm secrets:put` command) and a Play app without a
+ *          release are manual with the owner's steps; no key ever reaches a step.
  * Boundary: test only; a temporary product repository and the memory drivers, so nothing leaves the process.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0482; spec sta-1623.
@@ -24,7 +24,6 @@ import { MemoryFirebaseDriver } from "#node/drivers/memory-firebase.driver";
 import { MemoryGoogleCloudDriver } from "#node/drivers/memory-google-cloud.driver";
 import { MemoryPlayConsoleDriver } from "#node/drivers/memory-play-console.driver";
 import { MemorySentryProjectsDriver } from "#node/drivers/memory-sentry-projects.driver";
-import { MemoryVaultWriterDriver } from "#node/drivers/memory-vault-writer.driver";
 import { onboardMobile } from "#node/functions/onboard-mobile.function";
 import type { MobileOnboard } from "#node/types/mobile-onboard.type";
 import type { MobileOnboardRequest } from "#node/types/mobile-onboard-request.type";
@@ -69,7 +68,6 @@ let ports: {
   google: MemoryGoogleCloudDriver;
   firebase: MemoryFirebaseDriver;
   sentry: MemorySentryProjectsDriver;
-  vault: MemoryVaultWriterDriver;
 };
 
 /** A request for `staff` with `overrides`. */
@@ -90,7 +88,6 @@ function changes(): string[] {
     ...ports.google.calls,
     ...ports.firebase.calls,
     ...ports.sentry.calls,
-    ...ports.vault.names,
   ];
 }
 
@@ -111,7 +108,6 @@ beforeEach(() => {
     google: new MemoryGoogleCloudDriver(),
     firebase: new MemoryFirebaseDriver(),
     sentry: new MemorySentryProjectsDriver(),
-    vault: new MemoryVaultWriterDriver(),
   };
 });
 
@@ -183,7 +179,6 @@ describe("onboardMobile", () => {
       "ensureServiceAccount commerce eas-fcm roles/firebasecloudmessaging.admin",
       "createKey commerce eas-fcm@commerce.iam.gserviceaccount.com",
     ]);
-    expect(ports.vault.names).toEqual(["prod:/ci/store/commerce/FCM_SERVICE_ACCOUNT_JSON"]);
     expect(ports.firebase.calls).toEqual([
       "addFirebase commerce",
       "createApp commerce ios com.figentra.commerce.staff Commerce Staff",
@@ -292,6 +287,9 @@ describe("onboardMobile", () => {
     });
     expect(taken.steps.find((step) => step.key === "store-keys")?.detail).toContain(
       "ASC_API_KEY_ID",
+    );
+    expect(taken.steps.find((step) => step.key === "store-keys")?.manual).toContain(
+      "pnpm secrets:put ASC_API_KEY_ID --scope ci/production/store",
     );
     const runway = parse(readFileSync(join(repository, "runway.yaml"), "utf8")) as {
       mobile: { staff: { google: { project?: string } } };

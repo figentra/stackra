@@ -6,7 +6,9 @@
  *          with no element of that id on its target page, by page.
  * Boundary: reads only under `client`; writes nothing. External URLs (`https:`, `//host`, `mailto:` and the like) are
  *           not fetched. A page's URL is its path without `index.html` and with no trailing slash, as the Worker
- *           serves it (`html_handling: "drop-trailing-slash"`).
+ *           serves it (`html_handling: "drop-trailing-slash"`). An HTML file under `assets/` is a file the site
+ *           serves (a brand email template with placeholder links), not a page: a link may point at it, and its own
+ *           links are not checked.
  * Runtime: node
  * Governing contract: ADR 0514; STA-2026 (FR-005, research R8: code in @stackra/cli, no new dependency).
  */
@@ -64,7 +66,7 @@ export function checkDocsLinks(
 ): { readonly page: string; readonly link: string; readonly reason: string }[] {
   const files = walk(client);
   const pages = new Map<string, string>();
-  for (const file of files.filter((path) => path.endsWith(".html")))
+  for (const file of files.filter((path) => path.endsWith(".html") && !path.startsWith("assets/")))
     pages.set(urlOf(file), readFileSync(join(client, file), "utf8"));
   const redirects = new Set(
     existsSync(join(client, "_redirects"))

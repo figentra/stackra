@@ -96,7 +96,8 @@ async function checkHistory(session: MigrationSession, version: number): Promise
   const appliedFiles = session.files.filter((file) => file.version <= version);
   for (const file of appliedFiles) {
     const row = recorded.get(file.version);
-    if (row !== undefined && row.checksum !== file.checksum)
+    // a row recorded before lint lines were left out of the checksum holds the whole file's digest; both stand
+    if (row !== undefined && row.checksum !== file.checksum && row.checksum !== file.legacyChecksum)
       throw new Error(
         `${file.name} was edited after it was applied (checksum ${row.checksum.slice(0, 12)} recorded, ${file.checksum.slice(0, 12)} now): a frozen migration never changes, add a new one`,
       );

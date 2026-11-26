@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `isSettingValue`, whether a value fits one setting key: its type, its nullability and its bounds. The
+ * Purpose: `isSettingValue`, whether a value fits one setting key: its type, its nullability, its bounds and its options. The
  *          reader checks a page write with it and the form checks typed input with it before writing.
  * Boundary: pure; it checks one key's own metadata, never a cross-field rule (those are the class schema's). A
  *           connection key takes a `conn_` public id, never a credential. Internal: not exported from the entry.
@@ -21,6 +21,13 @@ export function isSettingValue(key: SettingKeyInput, value: unknown): value is S
   if (value === null) return key.nullable === true;
   if (key.type === SettingType.Boolean) return typeof value === "boolean";
   if (key.type === SettingType.String) return typeof value === "string";
+  if (key.type === SettingType.Choice)
+    return typeof value === "string" && (key.options?.includes(value) ?? true);
+  if (key.type === SettingType.List)
+    return (
+      Array.isArray(value) &&
+      value.every((item) => typeof item === "string" && (key.options?.includes(item) ?? true))
+    );
   if (key.type === SettingType.Connection)
     return typeof value === "string" && value.startsWith("conn_");
   if (typeof value !== "number" || !Number.isFinite(value)) return false;

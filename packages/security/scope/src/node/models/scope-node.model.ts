@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `ScopeNode`, one node of the scope tree as persisted: its public id (`scp_…`, the scope id other tables
  *          carry as `scope_id`), the key of its level, its materialised path and its display name.
- * Boundary: data and indexes. Key `scope.scope_node`, table `scope.scope_nodes` (the package's Postgres schema). The
+ * Boundary: data and indexes. Key `scope.scope_node`, table `scope.scope_nodes` (the package's Postgres schema), a
+ *           platform table (`Model.global`): outside this package only the `ScopeTree` port's allowed readers read it
+ *           (ADR 0239 amendment, item 2). The
  *           path is the tree: a node's ancestors are the prefixes of its path and its descendants the paths below it,
  *           so there is no parent column. The level is text, never an enum column, so a level added to
  *           `ScopeConfig.levels` needs no migration (ADR 0327 d2). Nodes are added through `ScopeNodeService.add`,
@@ -20,7 +22,7 @@ import { HasPublicId, Model, Timestamps } from "@stackra/model";
  * the two apart.
  */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class ScopeNode extends Model.with(HasPublicId("scp"), Timestamps) {
+export class ScopeNode extends Model.global(HasPublicId("scp"), Timestamps) {
   /** The key of the level the node sits at, one of `ScopeConfig.levels`. */
   level!: string;
 

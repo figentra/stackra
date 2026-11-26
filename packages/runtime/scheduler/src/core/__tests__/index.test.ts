@@ -18,6 +18,8 @@ describe("@stackra/scheduler", () => {
       "InvalidTimeZoneError",
       "MemoryCronScopesDriver",
       "MemoryScheduleDriver",
+      "ScheduleClaimNotLoadedError",
+      "ScheduleRowIsolationMissingError",
       "SchedulerConfig",
       "SchedulerConfig$",
       "SchedulerOptions",

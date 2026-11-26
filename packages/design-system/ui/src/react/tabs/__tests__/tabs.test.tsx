@@ -5,7 +5,8 @@
  *          moves and selects with the arrow, Home and End keys while skipping a disabled tab, refuses a disabled tab and
  *          a disabled list from the pointer and the keyboard, lays out by `orientation` and `variant`, shows the empty
  *          state or a named busy spinner when there are no tabs, passes unknown props and the ref through, and refuses
- *          HeroUI's `selectedKey`, children and a selection mode.
+ *          HeroUI's `selectedKey`, children and a selection mode; the `steps` variant draws arrowed words with no
+ *          indicator and keeps the arrow keys (STA-2041).
  * Boundary: jsdom with real HeroUI and React Aria; the theme CSS is not loaded, so classes are checked, not looks.
  * Runtime: browser
  * Governing contract: ADR 0302 (decision 3); ADR 0313; ADR 0022 (test placement).
@@ -245,5 +246,29 @@ describe("Tabs (web)", () => {
       '[data-slot="tabs-indicator"], .tabs__indicator',
     );
     expect(indicator?.style.transitionDuration).toBe("var(--duration-indicator)");
+  });
+
+  it("draws steps as arrowed words with no indicator, keeping the arrow keys", () => {
+    const { container } = render(
+      <Tabs
+        items={[
+          { id: "action", label: "Action", content: "class" },
+          { id: "endpoint", label: "Endpoint", content: "route" },
+          { id: "client", label: "Client", content: "call" },
+        ]}
+        label="Write it once"
+        variant="steps"
+      />,
+    );
+    expect(container.querySelector('[data-slot="tabs-indicator"], .tabs__indicator')).toBeNull();
+    expect(tab("Endpoint").className).toContain("before:content-['→'_/_'']");
+    // The selected step is marked by more than colour: weight and an underline.
+    expect(tab("Action").className).toContain("data-[selected=true]:font-semibold");
+    expect(tab("Action").className).toContain("data-[selected=true]:underline");
+    // The arrow is hidden decoration: the step's name is its words alone.
+    expect(screen.getByRole("tab", { name: "Endpoint" })).toBeTruthy();
+    key(tab("Action"), "ArrowRight");
+    expect(selected()).toEqual(["Endpoint"]);
+    expect(screen.getByRole("tabpanel").textContent).toBe("route");
   });
 });

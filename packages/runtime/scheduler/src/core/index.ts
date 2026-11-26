@@ -15,6 +15,8 @@ export { MemoryCronScopesDriver } from "#core/drivers/memory-cron-scopes.driver"
 export { MemoryScheduleDriver } from "#core/drivers/memory-schedule.driver";
 export { InvalidCronError } from "#core/errors/invalid-cron.error";
 export { InvalidTimeZoneError } from "#core/errors/invalid-time-zone.error";
+export { ScheduleClaimNotLoadedError } from "#core/errors/schedule-claim-not-loaded.error";
+export { ScheduleRowIsolationMissingError } from "#core/errors/schedule-row-isolation-missing.error";
 export { cronRuns } from "#core/functions/cron-runs.function";
 export { encoreCronJobs } from "#core/functions/encore-cron-jobs.function";
 export { parseCron } from "#core/functions/parse-cron.function";

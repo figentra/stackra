@@ -3,7 +3,9 @@
  * Purpose: `checkTableIndexes`, the resource-table index refusals of ADR 0307 rule 2: `sort_not_indexed` (a sortable
  *          column, the default sort or a tiebreak key on a path no index leads with) and `filter_not_indexed` (a
  *          declared filter on such a path). An own model's indexed paths are the primary key and public id, the
- *          leading property of each `@Index`, and every `@Searchable` filter, read through its own base models too.
+ *          leading property of each `@Index` (and the next one when the index leads with the scope column, `tenantId`
+ *          or `scopeId`, since row-level security already narrows a scoped table to one scope), and every `@Searchable`
+ *          filter, read through its own base models too.
  * Boundary: pure; reads `ir.classes`, `ir.shapes` and the recorded resource trees under the `ui.resources` (by
  *           `<module>.<model>`) of the manifest this run derives (`resourcesOf`, from the trees `readResourceTrees`
  *           read), so a path is judged in the run that adds it, committed or not; with no recorded tree there is
@@ -23,6 +25,9 @@ import type { MemberIR } from "#core/types/member-ir.type";
 
 /** The paths every model reads by index: its primary key and its public id. */
 const ALWAYS_INDEXED = ["id", "publicId"];
+
+/** The scope columns an index of a scoped table leads with; the next property is the one a filter is served by. */
+const SCOPE_COLUMNS = new Set(["tenantId", "scopeId"]);
 
 /** The part of a recorded table this check reads. */
 interface RecordedTable {
@@ -80,8 +85,11 @@ export function checkTableIndexes(ir: MemberIR, manifest?: StackraManifest): Gen
       for (const facet of each.facets) {
         if (facet.target !== "class") continue;
         if (facet.name === "Index" && Array.isArray(facet.options)) {
-          const [leading] = facet.options as readonly unknown[];
+          const [leading, next] = facet.options as readonly unknown[];
           if (typeof leading === "string") indexed.add(leading);
+          // why: row-level security already narrows a scoped table to the call's scope, so (scope, x) serves x
+          if (typeof leading === "string" && SCOPE_COLUMNS.has(leading) && typeof next === "string")
+            indexed.add(next);
         }
         if (facet.name === "Searchable")
           for (const path of (objectOf(facet.options)?.["filters"] as unknown[] | undefined) ?? [])

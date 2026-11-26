@@ -1,0 +1,81 @@
+{
+  "generatedFrom": {
+    "hash": "38778bc50a5b31f7",
+    "propsFiles": ["ui/src/react/approval-card/approval-card.props.ts"]
+  },
+  "importLine": "import { ApprovalCard } from \"@stackra/ui/react\";",
+  "key": "free/approval-card",
+  "parts": [
+    {
+      "events": [
+        {
+          "description": "Called when the person approves the call.",
+          "name": "onApprove",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        },
+        {
+          "description": "Called when the person denies the call.",
+          "name": "onDeny",
+          "required": true,
+          "source": "stackra",
+          "type": "() => void"
+        }
+      ],
+      "name": "ApprovalCard",
+      "props": [
+        {
+          "description": "What will run, for example the action's label; defaults to \"Tamo wants to run this\".",
+          "name": "title",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The call's input, in order.",
+          "name": "fields",
+          "required": true,
+          "source": "stackra",
+          "type": "readonly ApprovalCardField[]"
+        },
+        {
+          "description": "A short risk level, for example \"L3\"; left out, no risk is shown.",
+          "name": "risk",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Where the approval stands: only `requested` shows Approve and Deny.",
+          "name": "status",
+          "required": true,
+          "source": "stackra",
+          "type": "\"requested\" | \"approved\" | \"denied\" | \"expired\""
+        },
+        {
+          "description": "True while the answer is being sent: Approve and Deny are disabled.",
+          "name": "isPending",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Why the call was denied, shown under a denied status.",
+          "name": "reason",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Classes added to the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

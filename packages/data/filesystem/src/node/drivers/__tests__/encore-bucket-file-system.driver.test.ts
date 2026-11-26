@@ -14,6 +14,7 @@ import { describe, expect, it } from "@stackra/testing";
 import { EncoreBucket } from "#contracts/ports/encore-bucket.port";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { RetentionUnsupportedError } from "#core/errors/retention-unsupported.error";
 import { EncoreBucketFileSystemDriver } from "#node/drivers/encore-bucket-file-system.driver";
 
 /** An Encore bucket held in a Map, recording the last signed-URL call. */
@@ -88,6 +89,15 @@ describe("EncoreBucketFileSystemDriver", () => {
     expect(bucket.objects.get("exports/orders.csv")?.contentType).toBe("text/csv");
     expect(new TextDecoder().decode(await files.read("exports/orders.csv"))).toBe("a,b");
     expect(await files.exists("exports/orders.csv")).toBe(true);
+  });
+
+  it("refuses a retained write rather than store an unprotected file", async () => {
+    const bucket = new MemoryBucket();
+    const files = new EncoreBucketFileSystemDriver(bucket);
+    await expect(
+      files.write("archive/inv.pdf", "pdf", { retainUntil: new Date("2033-01-01") }),
+    ).rejects.toThrow(RetentionUnsupportedError);
+    expect(bucket.objects.has("archive/inv.pdf")).toBe(false);
   });
 
   it("maps a missing object to FileNotFoundError", async () => {

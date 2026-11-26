@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `resolveRef(value, config?)`, a runway value as the Pulumi program uses it: a literal stays as it is, and
  *          `ref:<path>` is read from the stack config of the private stacks repository, the first path segment being
- *          the config key and the rest a walk into its structured value (`ref:infisical.workspace` reads key
- *          `infisical`, then `workspace`).
+ *          the config key and the rest a walk into its structured value (`ref:ids.workspace` reads key `ids`,
+ *          then `workspace`).
  * Boundary: internal; reads the stack config only, never an environment variable, a file or a secret. A `ref:` value
  *           here is an id, so a missing or non-scalar one fails the program before any resource is planned.
  * Runtime: node
@@ -21,9 +21,9 @@ const REF = "ref:";
  * @param config - the stack config to read; defaults to the project's (`new pulumi.Config()`).
  * @throws Error when the config key is missing (Pulumi's config error) or the path ends on no string or number.
  * @example
- * // Pulumi.production.yaml: acme-platform:infisical: { workspace: "4f1c…" }
- * resolveRef("ref:infisical.workspace"); // "4f1c…"
- * resolveRef("https://eu.infisical.com"); // "https://eu.infisical.com"
+ * // Pulumi.production.yaml: acme-platform:ids: { workspace: "4f1c…" }
+ * resolveRef("ref:ids.workspace"); // "4f1c…"
+ * resolveRef("https://example.com"); // "https://example.com"
  */
 export function resolveRef(value: string, config: pulumi.Config = new pulumi.Config()): string {
   if (!value.startsWith(REF)) return value;

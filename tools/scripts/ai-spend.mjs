@@ -5,13 +5,15 @@
  * Boundary: reads `.agents/routing.yaml` and runs `opencode stats`; writes nothing.
  * Runtime: node
  * Governing contract: ADR 0066 (delegation to OpenCode by routing matrix).
- * Exit: 0 under the cap, 1 at or over it. Spend comes from `opencode stats --cost --json` (field `cost`, USD).
+ * Exit: 0 under the cap, 1 at or over it; with `--context` (session.contextCommands) always 0, so the hook keeps
+ *       the OVER CAP line. Spend comes from `opencode stats --cost --json` (field `cost`, USD).
  * Pure functions (parseBudget, costOf, evaluate, formatLine) take injected data; only `main` shells out.
  * Secrets: forbidden — stats carry token counts and cost, never credentials.
  */
-import { spawnSync } from "node:child_process";
+import { execFile, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 export const DEFAULT_BUDGET = { dailyUsd: 150, warnAt: 0.8 };
 
@@ -57,6 +59,16 @@ export function fetchStats(days, { timeout = 30_000 } = {}) {
   return JSON.parse(r.stdout);
 }
 
+/** Async `fetchStats`, so `--context` runs both windows at once inside the hook's single 4 s kill. */
+async function fetchStatsAsync(days, { timeout = 30_000 } = {}) {
+  const args = ["stats", "--days", String(days), "--cost", "--json"];
+  const { stdout } = await promisify(execFile)("opencode", args, {
+    timeout,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return JSON.parse(stdout);
+}
+
 export function loadBudget(routingPath) {
   try {
     return parseBudget(readFileSync(routingPath, "utf8"));
@@ -67,6 +79,18 @@ export function loadBudget(routingPath) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const routing = new URL("../../.agents/routing.yaml", import.meta.url);
+  if (process.argv.includes("--context")) {
+    // Best effort for SessionStart: the line at every level, nothing on failure, exit 0 either way.
+    try {
+      const [today, week] = await Promise.all(
+        [0, 7].map((d) => fetchStatsAsync(d, { timeout: 3500 }).then(costOf)),
+      );
+      console.log(formatLine(evaluate({ today, week }, loadBudget(routing))));
+    } catch {
+      // the spend line is left out
+    }
+    process.exit(0);
+  }
   try {
     const result = evaluate(
       { today: costOf(fetchStats(0)), week: costOf(fetchStats(7)) },

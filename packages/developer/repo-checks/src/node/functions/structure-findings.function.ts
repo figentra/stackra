@@ -3,7 +3,7 @@
  * Purpose: `structureFindings(context, options)`, the `structure` phase of `stackra check` (what `pnpm validate` ran
  *          as validate-repository.mjs, minus the config and catalogue checks): test placement and forbidden files,
  *          the runway schemas and files, member imports, raw SQL reasons, the Expo form factor and window sizing, the
- *          native module packages (ADR 0478), the brand NOTICE, and
+ *          native module packages (ADR 0478), row-security tests in the integration tier (ADR 0239), the brand NOTICE, public id prefixes across apps and services, and
  *          per member its manifest, required files and service shape, a notice listing every anonymous-callable call
  *          not in REVIEWED_ANONYMOUS_SURFACES (STA-2025), and in the Stackra repository its npm and
  *          `stackra` metadata.
@@ -13,7 +13,8 @@
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0025; ADR 0090; ADR 0124; ADR 0177; ADR 0195; ADR 0233; ADR 0296; STA-461;
  *                     ADR 0024 (decision 2: the brand NOTICE); ADR 0453 (decision 11, amendment of 2026-10-27); ADR 0478;
- *                     ADR 0160 (decision 1: the `raw-sql` reason, stackra-288).
+ *                     ADR 0160 (decision 1: the `raw-sql` reason, stackra-288); ADR 0135 (public id prefixes);
+ *                     ADR 0239 (decision 1: row-security tests run on Postgres).
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -22,13 +23,20 @@ import { pathToFileURL } from "node:url";
 
 import { REVIEWED_ANONYMOUS_SURFACES } from "#node/constants/reviewed-anonymous-surfaces.constant";
 import { RAW_SQL_BASELINE } from "#node/constants/raw-sql-baseline.constant";
+import { TEST_FILE_PATTERN } from "#node/constants/test-file-pattern.constant";
 import { checkImports } from "#node/functions/check-imports.function";
 import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.function";
+import { checkIsolationTier } from "#node/functions/check-isolation-tier.function";
 import { checkMemberFiles } from "#node/functions/check-member-files.function";
 import { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
 import { checkRawSql } from "#node/functions/check-raw-sql.function";
+import { checkForkingPeers } from "#node/functions/check-forking-peers.function";
+import { checkHostedPeers } from "#node/functions/check-hosted-peers.function";
+import { checkEncoreService } from "#node/functions/check-encore-service.function";
+import { encoreReferenceVersion } from "#node/functions/encore-reference-version.function";
 import { checkMember } from "#node/functions/check-member.function";
 import { checkNativeModules } from "#node/functions/check-native-modules.function";
+import { checkPublicIdPrefixes } from "#node/functions/check-public-id-prefixes.function";
 import { checkRunwayFiles } from "#node/functions/check-runway-files.function";
 import { checkRunwaySchemas } from "#node/functions/check-runway-schemas.function";
 import { checkRunwayUnreadFields } from "#node/functions/check-runway-unread-fields.function";
@@ -37,6 +45,7 @@ import { checkTestPlacement } from "#node/functions/check-test-placement.functio
 import { checkWranglerOperationalKeys } from "#node/functions/check-wrangler-operational-keys.function";
 import { checkWindowSizing } from "#node/functions/check-window-sizing.function";
 import { checkWorkflowTriggers } from "#node/functions/check-workflow-triggers.function";
+import { checkMiseActionVersion } from "#node/functions/check-mise-action-version.function";
 import { fillTemplateTokens } from "#node/functions/fill-template-tokens.function";
 import { isExpoAppConfig } from "#node/functions/is-expo-app-config.function";
 import { isMemberSource } from "#node/functions/is-member-source.function";
@@ -123,13 +132,38 @@ export async function structureFindings(
     existsSync(join(root, p)) ? text(p) : undefined;
   const members = listMembers(root);
 
+  const manifests = members.flatMap(({ dir }) => {
+    const file = `${dir}/stackra.manifest.json`;
+    if (!(dir.startsWith("services/") || dir.startsWith("apps/")) || !files.includes(file))
+      return [];
+    const source = text(file);
+    try {
+      return [{ dir, manifest: JSON.parse(source) as unknown }];
+    } catch {
+      // Other checks report malformed manifests.
+      return [];
+    }
+  });
+  report("public-id-prefixes", "", checkPublicIdPrefixes(manifests));
+
   report("test-placement", "", checkTestPlacement(files));
+  for (const p of files.filter((f) => TEST_FILE_PATTERN.test(f)))
+    report("isolation-tier", "", checkIsolationTier(p, text(p)));
   report(
     "workflow-triggers",
     "",
     checkWorkflowTriggers(
       files
         .filter((p) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(p))
+        .map((p): [string, string] => [p, text(p)]),
+    ),
+  );
+  report(
+    "mise-action-version",
+    "",
+    checkMiseActionVersion(
+      files
+        .filter((p) => /^\.github\/(?:workflows\/[^/]+|actions\/[^/]+\/action)\.ya?ml$/.test(p))
         .map((p): [string, string] => [p, text(p)]),
     ),
   );
@@ -220,6 +254,7 @@ export async function structureFindings(
     options.warn(
       `validate: ${unreviewed.length} anonymous-callable action(s) and query(ies) not yet reviewed, past the permission and record-policy steps for a caller with no session (not in REVIEWED_ANONYMOUS_SURFACES of @stackra/repo-checks): ${unreviewed.join(", ")}`,
     );
+  const catalogEncore = encoreReferenceVersion(maybe("package.json"), maybe("pnpm-workspace.yaml"));
   for (const { dir, path } of members) {
     const at = (f: string): unknown =>
       existsSync(join(path, f)) ? readJsonc(join(path, f)) : undefined;
@@ -267,6 +302,32 @@ export async function structureFindings(
           licenseText: read("LICENSE"),
           rootLicense,
           stackra: isStackraRepo,
+        }),
+      );
+    // A library's peers never fork its dependents' installs (FORKING_PEERS).
+    if (tierFor(dir) === "tier:lib") report("forking-peers", dir, checkForkingPeers(pkg));
+    // A library takes the packages whose values carry an identity in the host as peers (HOSTED_PEER_PACKAGES).
+    if (tierFor(dir) === "tier:lib")
+      report(
+        "hosted-peers",
+        dir,
+        checkHostedPeers({
+          pkg,
+          sources: files
+            .filter(
+              (p) => p.startsWith(`${dir}/src/`) && /\.tsx?$/.test(p) && !p.includes("/__tests__/"),
+            )
+            .map((p) => readFileSync(join(root, p), "utf8")),
+        }),
+      );
+    if (tierFor(dir) === "tier:service")
+      report(
+        "service",
+        dir,
+        checkEncoreService({
+          pkg,
+          tsconfig: at("tsconfig.json") as Parameters<typeof checkEncoreService>[0]["tsconfig"],
+          catalogEncore,
         }),
       );
     if (tierFor(dir) === "tier:service")

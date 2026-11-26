@@ -47,7 +47,39 @@ const Settings = settingKeys({
   },
 });
 
+/** Two sections sharing a field name, keyed `<section>.<name>` as gen writes them (STA-2192). */
+const Sectioned = settingKeys({
+  orders: {
+    "cancellation.windowDays": {
+      type: SettingType.Integer,
+      default: 14,
+      section: "cancellation",
+      scopes: CASCADE,
+      label: label("cancellation.windowDays"),
+    },
+    "returns.windowDays": {
+      type: SettingType.Integer,
+      default: 30,
+      section: "returns",
+      scopes: CASCADE,
+      label: label("returns.windowDays"),
+    },
+  },
+});
+
 describe("settingKeys", () => {
+  it("keeps a section's field name and path when gen keys it by section (STA-2192)", () => {
+    expect(Sectioned.orders["cancellation.windowDays"]).toMatchObject({
+      name: "windowDays",
+      path: "orders.cancellation.windowDays",
+    });
+    expect(Sectioned.orders["returns.windowDays"]).toMatchObject({
+      name: "windowDays",
+      path: "orders.returns.windowDays",
+    });
+    expectTypeOf(Sectioned.orders["returns.windowDays"].name).toEqualTypeOf<"windowDays">();
+  });
+
   it("derives each key's module, name and full path", () => {
     expect(Settings.orders.autoCancelAfterMinutes).toMatchObject({
       module: "orders",

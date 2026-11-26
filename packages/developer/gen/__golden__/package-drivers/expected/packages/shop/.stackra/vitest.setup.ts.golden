@@ -5,6 +5,7 @@
  * Runtime: node
  */
 import "@stackra/clients/testing";
+import "@stackra/actions/testing";
 import "#stackra/registrations";
 import "./gen/schemas/shop.ts";
 import { wiring } from "#stackra/wiring";

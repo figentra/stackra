@@ -5,10 +5,11 @@
  * Boundary: made with `createDecorator`, so it records the name and installs no accessor; `buildConfig` resolves the
  *           value and keeps it off every serialisation. Typed against its field, so tsc refuses it on a field that is
  *           not a string. The name is SCREAMING_SNAKE (ADR 0231), checked when the class is defined; gen fails a bare
- *           `@Secret` with `secret_name_missing`.
+ *           `@Secret` with `secret_name_missing`. The optional second argument (`refuse`, `environments`) is read by gen
+ *           into the manifest's `env` section for `runway env check --values`; nothing reads it at run time.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (R6; 2026-10-23 item 2); ADR 0305 (rule 34: the field sits on the schema class);
- *                     ADR 0173; ADR 0231 (secret names).
+ *                     ADR 0173 (amendment 2026-11-04, STA-2104); ADR 0231 (secret names).
  */
 import { createDecorator, DecoratorTarget } from "@stackra/container";
 import type { FieldDecorator } from "@stackra/validation";
@@ -24,18 +25,31 @@ const SECRET = createDecorator<string>({
 const SECRET_NAME = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
 
 /**
- * Marks a string field as the secret `name`; the name is the address of the value, never the value.
+ * Marks a string field as the secret `name`; the name is the address of the value, never the value. `options.refuse`
+ * lists, per runway environment, the value prefixes refused there, and `options.environments` narrows where the secret
+ * is needed (every environment by default); runway checks both, never printing the value.
  *
+ * @param name - the secret name.
+ * @param _options - read by gen, as constants.
  * @throws TypeError when `name` is not SCREAMING_SNAKE.
  * @example
  * ```ts
  * export class CommerceOptions extends Schema {
  *   @Secret("PRICING_API_KEY")
  *   pricingApiKey!: string;
+ *
+ *   @Secret("STRIPE_SECRET_KEY", { refuse: { staging: ["sk_live_"], production: ["sk_test_"] } })
+ *   stripeSecretKey!: string;
  * }
  * ```
  */
-export function Secret(name: string): FieldDecorator<string> {
+export function Secret(
+  name: string,
+  _options?: {
+    readonly refuse?: Readonly<Record<string, readonly string[]>>;
+    readonly environments?: readonly string[];
+  },
+): FieldDecorator<string> {
   if (!SECRET_NAME.test(name))
     throw new TypeError(
       `@Secret("${name}"): a secret name is SCREAMING_SNAKE, such as RESEND_API_KEY`,

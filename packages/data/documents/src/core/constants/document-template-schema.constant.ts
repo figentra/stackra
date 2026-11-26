@@ -109,6 +109,9 @@ export const DOCUMENT_TEMPLATE_SCHEMA = z
       .max(2),
     layout: z.enum(["single", "side-by-side", "stacked"]).default("single"),
     blocks: z.array(BLOCK),
+    // the brand slot: paths into the render data for a logo above the first block and an accent colour; a brand only
+    // adds, it never changes a block
+    brand: z.object({ logo: PATH.optional(), accent: PATH.optional() }).optional(),
   })
   .superRefine((template, context) => {
     const wanted = template.layout === "single" ? 1 : 2;

@@ -1,0 +1,51 @@
+{
+  "generatedFrom": {
+    "hash": "7d3069efd32af697",
+    "propsFiles": ["ui/src/react/blueprint-section/blueprint-section.props.ts"]
+  },
+  "importLine": "import { BlueprintSection } from \"@stackra/ui/react\";",
+  "key": "free/blueprint-section",
+  "parts": [
+    {
+      "name": "BlueprintSection",
+      "props": [
+        {
+          "description": "The section's element id, the target of a `SectionDock` link.",
+          "name": "id",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The section's spoken name; given, the section is a named region landmark.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The section's heading and drawing.",
+          "name": "children",
+          "required": true,
+          "source": "stackra",
+          "type": "ReactNode"
+        },
+        {
+          "description": "Draws the `+` marks at the two top corners. Defaults to true.",
+          "name": "hasMarks",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "Styles the section, such as its padding.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

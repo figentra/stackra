@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `runProcess`: piped output reaches the io, the exit code is returned, arguments are not
- *          shell-parsed, a missing program resolves 127, and `node_modules/.bin` above the directory is on `PATH`.
+ *          shell-parsed, a missing program resolves 127, `node_modules/.bin` above the directory is on `PATH`, and a
+ *          process past its `timeoutMs` is stopped and resolves 124 while one that ends first keeps its code.
  * Boundary: test only; starts `node` and throwaway scripts in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5).
@@ -53,6 +54,29 @@ describe("runProcess", () => {
     );
     expect(output()).toBe("$HOME; echo hi");
   });
+
+  it.skipIf(process.platform === "win32")(
+    "stops a process still running at its deadline and resolves 124",
+    async () => {
+      const { io, output } = captureIo();
+      const started = Date.now();
+      expect(
+        await runProcess({ command: "sleep", args: ["10"], cwd: root, timeoutMs: 200 }, io),
+      ).toBe(124);
+      expect(Date.now() - started).toBeLessThan(5000);
+      expect(output()).toContain("sleep gave no answer in 200 ms");
+    },
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "keeps the exit code of a process that ends before its deadline",
+    async () => {
+      const { io } = captureIo();
+      expect(await runProcess({ command: "true", args: [], cwd: root, timeoutMs: 5000 }, io)).toBe(
+        0,
+      );
+    },
+  );
 
   it("resolves 127 when the program cannot start", async () => {
     const { io, output } = captureIo();

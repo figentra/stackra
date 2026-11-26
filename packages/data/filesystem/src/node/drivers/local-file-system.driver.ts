@@ -24,6 +24,7 @@ import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { FileRetainedError } from "#core/errors/file-retained.error";
 import { normalizePath } from "#core/functions/normalize-path.function";
 import { normalizePrefix } from "#core/functions/normalize-prefix.function";
 import { publicUrl } from "#core/functions/public-url.function";
@@ -46,6 +47,11 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
   readonly root: string;
 
   private readonly base: string | null;
+
+  // shortcut: retention is kept in this process only (the local disk is for development and tests); a file written with
+  // retainUntil is changeable again after a restart. Persist it beside the file if a host ever keeps archives on disk.
+  /** Normalised key to the time its file is retained until. */
+  private readonly retained = new Map<string, Date>();
 
   /**
    * @param config - the folder (`root`, resolved against the working directory) and the public base URL (`url`).
@@ -93,8 +99,14 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
     return Readable.toWeb(handle.createReadStream()) as unknown as ReadableStream<Uint8Array>;
   }
 
-  /** Writes `contents` to a temporary file beside the target, then renames it into place; no content type is kept. */
-  async write(path: string, contents: Uint8Array | string, _options?: WriteOptions): Promise<void> {
+  /**
+   * Writes `contents` to a temporary file beside the target, then renames it into place; no content type is kept. A
+   * `retainUntil` is recorded, and the file refuses a change until then.
+   *
+   * @throws FileRetainedError when the file under `path` is still retained.
+   */
+  async write(path: string, contents: Uint8Array | string, options?: WriteOptions): Promise<void> {
+    this.assertChangeable(normalizePath(path));
     const target = this.pathOf(path);
     await mkdir(dirname(target), { recursive: true });
     const temporary = `${target}.${randomUUID()}.tmp`;
@@ -105,11 +117,19 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
       await rm(temporary, { force: true });
       throw error;
     }
+    if (options?.retainUntil !== undefined)
+      this.retained.set(normalizePath(path), options.retainUntil);
   }
 
-  /** Renames the file under `from` to `to`, making `to`'s folder first. */
+  /**
+   * Renames the file under `from` to `to`, making `to`'s folder first.
+   *
+   * @throws FileRetainedError when either file is still retained.
+   */
   override async move(from: string, to: string): Promise<void> {
     const key = normalizePath(from);
+    this.assertChangeable(key);
+    this.assertChangeable(normalizePath(to));
     const target = this.pathOf(to);
     await mkdir(dirname(target), { recursive: true });
     try {
@@ -120,8 +140,13 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
     }
   }
 
-  /** Removes the file under `path`; false when there was none. */
+  /**
+   * Removes the file under `path`; false when there was none.
+   *
+   * @throws FileRetainedError when the file is still retained.
+   */
   async delete(path: string): Promise<boolean> {
+    this.assertChangeable(normalizePath(path));
     if (!(await this.exists(path))) return false;
     await rm(this.pathOf(path));
     return true;
@@ -183,5 +208,12 @@ export class LocalFileSystemDriver extends Driver(FileSystem) {
   /** The absolute path of a key. */
   private pathOf(path: string): string {
     return join(this.root, normalizePath(path));
+  }
+
+  /** Refuses a change of the file under `key` while it is retained. */
+  private assertChangeable(key: string): void {
+    const retainUntil = this.retained.get(key);
+    if (retainUntil !== undefined && Date.now() < retainUntil.getTime())
+      throw FileRetainedError.create({ path: key, retainUntil });
   }
 }

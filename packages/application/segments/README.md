@@ -35,7 +35,7 @@ zod. The package names no subject model and knows no commerce.
 | `Segment`, `SegmentMembership`        | `./node`      | the models: `segments.segments` and `segments.segment_memberships`                       |
 | `SEGMENT_FACTS`                       | `.`           | the fact source `segments.ids` a rules registry registers (`rules.register`)             |
 | `SegmentFactProviderDriver`           | `./node`      | the `FactProvider` driver: a subject's segment ids, for `factsFrom` of @stackra/rules    |
-| `SegmentPermissions`                  | `./node`      | `segments.segment.recompute`, system-held (`Permission.L1.system()`), the job's          |
+| `SegmentPermissions`                  | `./node`      | `segments.segment.recompute`, system-held (`Permission.L2.system()`), the job's          |
 | `SEGMENTS_TESTING_PLUGIN`             | `./testing`   | connects a testing app's `SegmentService` to the app                                     |
 
 ## Covering a subject model

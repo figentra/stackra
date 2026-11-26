@@ -17,6 +17,8 @@ import { UnauthenticatedError } from "@stackra/errors";
 
 import { DeviceTokenStatus, IdpAdmin } from "#contracts/index";
 import type {
+  ClaimsActionInput,
+  ClaimsActionInstall,
   DeviceAuthorization,
   DeviceTokenResult,
   IdpMachineCredential,
@@ -64,6 +66,11 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
 
   /** Passkey id to its user id and, once registered, its name. */
   readonly passkeys = new Map<string, { readonly userId: string; name?: string }>();
+
+  /** The installed claims action: where it calls, and the key it signs with; unset until the first install. */
+  claimsAction:
+    | { readonly targetId: string; endpoint: string; readonly signingKey: string }
+    | undefined;
 
   /** Device code to its state. */
   private readonly devices = new Map<string, DeviceTokenStatus>();
@@ -181,6 +188,20 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     });
   }
 
+  /** See `IdpAdmin.installClaimsAction`; the key is answered on the first install only. */
+  async installClaimsAction(input: ClaimsActionInput): Promise<ClaimsActionInstall> {
+    if (this.claimsAction !== undefined) {
+      this.claimsAction.endpoint = input.endpoint;
+      return { targetId: this.claimsAction.targetId };
+    }
+    this.claimsAction = {
+      targetId: `target_${randomToken()}`,
+      endpoint: input.endpoint,
+      signingKey: randomToken(),
+    };
+    return { targetId: this.claimsAction.targetId, signingKey: this.claimsAction.signingKey };
+  }
+
   /** See `IdpAdmin.findUserId`; a user created without a Stackra id is never found. */
   async findUserId(stackraUserId: string): Promise<string | undefined> {
     for (const [userId, user] of this.users)
@@ -196,12 +217,14 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
     return found[0]?.stackraUserId;
   }
 
-  /** See `IdpAdmin.startPasskeySignIn`; opens the session at once, as the memory provider checks nothing. */
+  /**
+   * See `IdpAdmin.startPasskeySignIn`; opens the session at once, as the memory provider checks nothing. An unknown
+   * login gets a decoy of the same shape whose session is never opened, so `finishPasskeySignIn` refuses it.
+   */
   async startPasskeySignIn(loginName: string): Promise<PasskeySignInChallenge> {
     const userId = [...this.users].find(([, user]) => user.username === loginName)?.[0];
-    if (userId === undefined) throw UnauthenticatedError.create();
     return {
-      sessionId: this.openSession(userId),
+      sessionId: userId === undefined ? `ses_${randomToken()}` : this.openSession(userId),
       options: { challenge: randomToken(), rpId: "id.example", userVerification: "required" },
     };
   }

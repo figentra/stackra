@@ -4,7 +4,8 @@
  *          service's stored conditions may test (an Access deny on `orders.order` testing `record.channelId`), with its
  *          rules type, label and, for an enum, its codes.
  * Boundary: data only. Key `rules.condition_field`, table `rules.condition_fields`, public ids `rcf_…`. A platform row,
- *           not tenant-owned: no scope column and no row-level security. Written only by `ConditionFieldService.sync`,
+ *           not tenant-owned: no scope column and no row-level security, so `Model.global` and a platform-list table of
+ *           the audit (ADR 0239 amendment, group (c): a field registry). Written only by `ConditionFieldService.sync`,
  *           which replaces one model's rows from the owning service's published `FactSource$` documents; the label is
  *           the owning service's lang key, stored, never translated. Source and field keys are camelCase
  *           (`FIELD_KEY`), the one casing. Rows are added through the service, never with `new`.
@@ -22,7 +23,7 @@ import type { FieldType } from "#contracts/index";
 
 /** A registered field. Traits add `id` and the timestamps; the unique index is the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class ConditionField extends Model.with(HasPublicId("rcf"), Timestamps) {
+export class ConditionField extends Model.global(HasPublicId("rcf"), Timestamps) {
   /** An enum field's codes, each with its lang key; null for any other type. */
   // reason: `I18nKey` ships no `I18nKey$` (owner call, STA-1363), so the code-to-key map is a jsonb hatch
   @Field(

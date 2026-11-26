@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ClientsOptions`, the fields of `ClientsConfig`: where the HTTP transport sends calls (one base URL, and
- *          one per producer module), the header a call's scope travels in, the API version it pins, how long a request may take and how many attempts a safe call gets.
+ *          one per producer module), the token audience per producer module for a service's calls, the header a call's scope travels in, the API version it pins, how long a request may take and how many attempts a safe call gets.
  * Boundary: a schema class whose initializers equal the shipped schema's defaults; the schema is registered here until
  *           gen compiles it. A host overrides fields in `src/config/clients.config.ts`.
  * Runtime: isomorphic
@@ -34,6 +34,12 @@ export class ClientsOptions extends Schema {
 
   /** The base URL per producer module key (`{ orders: "https://orders.internal" }`); a module not listed uses `baseUrl`. */
   producers: Readonly<Record<string, string>> = {};
+
+  /**
+   * The audience per producer module key (`{ pay: "<pay's project id>" }`): the project a service-to-service call's
+   * service token is issued for, which the producer's bearer settings expect. Read only by a service's session.
+   */
+  audiences: Readonly<Record<string, string>> = {};
 
   /** The header a call's explicit scope path travels in; `@stackra/scope` reads `X-Scope-Path` (`SCOPE_PATH_HEADER`). */
   scopeHeader = "X-Scope-Path";

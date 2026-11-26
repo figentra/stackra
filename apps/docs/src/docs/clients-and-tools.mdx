@@ -1,0 +1,74 @@
+---
+title: "Clients and MCP tools"
+description: "The typed client gen writes per consumed service, the MCP tool collected from an action, the caller's permissions, and risky writes with a named approver."
+icon: "plug"
+---
+
+{/* Stackra file contract: Purpose: the reader's page on consuming a service: generated clients, the React hooks, the offline queue, and actions as MCP tools under the caller's permissions. Boundary: an introduction that cites @stackra/clients, @stackra/mcp and the ADRs. Runtime: docs. Governing contract: ADR 0260; ADR 0155; ADR 0360; STA-2676. */}
+
+A service is consumed through a client that `stackra gen` writes from the producer's committed manifest, never through
+a hand-written fetch ([ADR 0260](/adr/0260-cross-service-calls-through-injected-clients-and-events)). The same
+manifest makes every user-facing action an MCP tool, filtered by the caller's permissions
+([ADR 0155](/adr/0155-queries-are-mcp-tools-and-all-ai-code-is-free)).
+
+## The generated client
+
+Gen writes one subpath per consumed service, `#stackra/clients/<service>`, each class under its producer's own name:
+
+```ts .stackra/gen/clients/commerce.ts (generated)
+export class CancelOrderAction extends actionRef("orders.order.cancel@1", {
+  input: CancelOrderInput,
+  output: CancelOrderOutput,
+  http: { method: HttpMethod.Put, path: "/orders/:orderId/cancel" },
+  risk: Risk.L2,
+  confirm: I18n.orders.actions.order.cancel.confirm,
+}) {}
+```
+
+A ref's statics are the call: the key, the derived permission, the input and output schemas and the endpoint. A call
+rejects only with a `ClientError`: a decoded refusal the producer declared, `InputInvalidError` with field errors, or
+`TransportError`; never with a raw response. A service's client of another service is a `ServiceClient` the container
+injects, so a service never knows another's URL.
+
+## From a component
+
+```ts
+const kpis = useQuery(OrderKpisQuery, { range: TimeRange.Today });
+const cancel = useAction(CancelOrderAction, { invalidates: [GetOrderQuery, ListOrdersQuery] });
+const result = await cancel.run({ orderId }); // { queued: false, data } or { queued: true }
+```
+
+The hooks of `@stackra/clients/react` resolve the transport and the server-state cache from the container. A query
+with `invalidateOn` is live and refetches on each broadcast; one with a `replica` is available offline. Offline, an
+action the offline map allows is queued and `run` resolves `{ queued: true }`; the queue replays it later in device
+order with the `Idempotency-Key` minted at queue time, so a reconnect never repeats a write.
+
+## Actions as MCP tools
+
+Gen decides what is a tool: every action a user can perform, unless it declares `tool: false` with a `// reason:`
+line, and every query ([ADR 0360](/adr/0360-the-ai-chain-four-layers-one-spine-approval-modes-and-the-never-bypass-floor)
+decision 4). The hosted gateway builds its tool table from the committed manifests with `@stackra/mcp`'s
+`toolTable`, and `filterTools` drops a tool the caller lacks the permission for on their record, drops one the AI
+permission matrix switches off there, and marks one the tenant's plan does not include as locked. A tool call runs
+the same pipeline as any other call, under the caller's own permissions; nothing is hand-added.
+
+## Risky writes and the named approver
+
+A tool's descriptor carries the action's risk and effect tags. An action whose risk asks for it, or that declares
+`approval: true`, does not commit until its named approver has voted: the pipeline's approval step waits for the
+bound `ApprovalGate`, and an action that declares approval fails closed without one. How a second approver is
+declared and who runs the call after the last vote is on [Approvals](/build/approvals).
+
+## The developer MCP
+
+Inside a repository, `stackra mcp` serves a local MCP over stdio for an assistant: `manifest` reads the committed
+manifests by member and section, and `new`, `gen`, `validate` and `verify` run the CLI's own commands through its
+gates. Its configuration is `.mcp.yaml`, rendered to `.mcp.json` by `stackra mcp sync`; a server that needs a secret
+is started with `stackra mcp exec --`, which hands the value to the process without anyone reading it
+([ADR 0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)).
+
+## Read next
+
+- `@stackra/clients` and `@stackra/mcp`: the package READMEs, entry by entry.
+- [Actions](/actions): the pipeline the client's call runs through.
+- [Security](/constitution/security): one authenticated principal per request, server-side authorisation.

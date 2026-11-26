@@ -4,7 +4,8 @@
  *          memory, each change stored as JSON as Postgres stores it, positions a zero-padded counter.
  * Boundary: no transaction: an append is kept at once and readable at once (the Postgres driver is the transactional
  *           one and holds back entries of running transactions). There are no scope settings in memory, so an entry
- *           keeps the scope it is appended with, if any. Maintenance drops expired entries; it has no partitions.
+ *           keeps the scope it is appended with, if any, and no tenant: every claim is a platform row's. Maintenance
+ *           drops expired entries itself; it has no partitions, so `expired` claims none after it.
  * Runtime: isomorphic
  * Governing contract: ADR 0078 and ADR 0221 (2026-10-28 amendment); ADR 0142 (drivers behind ports); ADR 0266 (memory
  *                     first).
@@ -13,7 +14,13 @@ import { Driver } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 
 import { ChangeFeed } from "#contracts/index";
-import type { ChangeCursor, ChangeLogReport, ChangeRecord, RowChange } from "#contracts/index";
+import type {
+  ChangeClaim,
+  ChangeCursor,
+  ChangeLogReport,
+  ChangeRecord,
+  RowChange,
+} from "#contracts/index";
 
 /** A position: the counter padded so positions sort as text. */
 function positionOf(counter: number): string {
@@ -48,20 +55,27 @@ export class MemoryChangeFeedDriver extends Driver(ChangeFeed) {
     return Promise.resolve();
   }
 
-  /** Implements `ChangeFeed.read`, documented there. */
-  read(
+  /** Implements `ChangeFeed.claim`, documented there. */
+  claim(
     after: string | undefined,
     models: readonly string[],
     limit: number,
-  ): Promise<readonly ChangeRecord[]> {
+  ): Promise<readonly ChangeClaim[]> {
     return Promise.resolve(
       this.entries
         .filter(
           (entry) =>
             (after === undefined || entry.position > after) && models.includes(entry.change.model),
         )
-        .slice(0, limit),
+        .slice(0, limit)
+        .map((entry) => Object.freeze({ position: entry.position })),
     );
+  }
+
+  /** Implements `ChangeFeed.load`, documented there. */
+  load(positions: readonly string[]): Promise<readonly ChangeRecord[]> {
+    const wanted = new Set(positions);
+    return Promise.resolve(this.entries.filter((entry) => wanted.has(entry.position)));
   }
 
   /** Implements `ChangeFeed.positionAt`, documented there. */
@@ -89,6 +103,23 @@ export class MemoryChangeFeedDriver extends Driver(ChangeFeed) {
     const dropped = this.entries.length - kept.length;
     this.entries = kept;
     return Promise.resolve({ created: 0, dropped });
+  }
+
+  /** Implements `ChangeFeed.expired`, documented there: none once `maintain` ran, which drops every older entry. */
+  expired(before: Date, limit: number): Promise<readonly ChangeClaim[]> {
+    return Promise.resolve(
+      this.entries
+        .filter((entry) => entry.occurredAt.getTime() < before.getTime())
+        .slice(0, limit)
+        .map((entry) => Object.freeze({ position: entry.position })),
+    );
+  }
+
+  /** Implements `ChangeFeed.remove`, documented there. */
+  remove(positions: readonly string[]): Promise<void> {
+    const gone = new Set(positions);
+    this.entries = this.entries.filter((entry) => !gone.has(entry.position));
+    return Promise.resolve();
   }
 
   /** Every entry kept, in log order; for a test's assertions. */

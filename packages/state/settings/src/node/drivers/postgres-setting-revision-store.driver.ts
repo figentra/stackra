@@ -38,6 +38,7 @@ function revisionOf(row: StoredSettingRevision): SettingRevision {
     effectiveAt: row.effectiveAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     decidedBy: row.decidedBy,
+    ...(row.approvalRole === null ? {} : { approvalRole: row.approvalRole }),
     appliedAt: row.appliedAt === null ? null : row.appliedAt.toISOString(),
   };
 }

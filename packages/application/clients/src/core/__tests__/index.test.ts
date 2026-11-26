@@ -42,6 +42,7 @@ describe("@stackra/clients", () => {
       "ServerRefusalError",
       "ServiceClient",
       "TransportError",
+      "TransportPlanServiceChannelDriver",
       "actionRef",
       "clientModule",
       "eventRef",

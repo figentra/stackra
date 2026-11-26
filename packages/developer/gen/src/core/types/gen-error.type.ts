@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: `GenError`, one refusal gen reports: a snake_case code, where it is, what it is about and the fix, so an
- *          author or an agent can correct it without reading gen's source.
- * Boundary: a type only. Gen collects every error of a run before it stops, and writes nothing when one exists.
+ * Purpose: `GenError`, one finding gen reports, a refusal or a warning: a snake_case code, where it is, what it is
+ *          about and the fix, so an author or an agent can correct it without reading gen's source.
+ * Boundary: a type only. Gen collects every finding of a run before it stops, and writes nothing when a refusal (no
+ *           `severity`) exists; a warning prints and never stops writing (STA-340).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 22 and 26); ADR 0305 (rules 1, 6 and 13: the first gen checks); ADR 0231
- *                     (snake_case machine codes).
+ *                     (snake_case machine codes); ADR 0101 (Enforcement: gen warns).
  */
 
-/** One gen refusal. */
+/** One gen finding: a refusal, or a warning when `severity` says so. */
 export interface GenError {
   /** The machine code, such as `shape_number_kind` or `identity_collision`. */
   readonly code: string;
@@ -30,4 +31,7 @@ export interface GenError {
 
   /** What to write instead. */
   readonly fix: string;
+
+  /** `"warning"` for a finding that prints but never blocks writing; absent for a refusal. */
+  readonly severity?: "warning";
 }

@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresQueueDriver`: one statement per method on the running context's entity manager,
- *          every value a bound parameter (input, origin and failure as JSON), a reservation through `FOR UPDATE SKIP
- *          LOCKED` filtered by queue only when one is named, a unique conflict read as `false`, rows read back into
- *          jobs (scope, origin, keys and failure), redrive guarded by the unique key, the fair pick (priority, then the
- *          scope with the fewest running jobs, skipping a scope at its cap), the fairness columns written and read
- *          back, a throttle release that gives the attempt back, and batches counted in place.
+ *          every value a bound parameter (input, origin and failure as JSON), a reservation and a dead-letter claim
+ *          through their system functions answering ids and owners (none for a platform job), a unique conflict read
+ *          as `false`, a load reading the row back into a job (scope, origin, keys and failure), redrive guarded by the
+ *          unique key read through `queue.unique_key_holders`, the fairness columns written and read back, a throttle
+ *          release that gives the attempt back, and batches counted in place. The fair pick's SQL is the migration's
+ *          (`queue.reserve_job`), tested there and in the integration tier.
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -151,23 +152,13 @@ describe(PostgresQueueDriver, () => {
       "jbt_1",
       '[{"key":"card.receipt","input":{"cardId":"crd_1"}}]',
     ]);
-    expect(await driver.reserve(undefined, NOON)).toMatchObject({
+    expect(await driver.load("job_a")).toMatchObject({
       priority: 5,
       scopeConcurrency: 2,
       throttle: { perMinute: 60, key: "stripe" },
       batchId: "jbt_1",
       chain: [{ key: "card.receipt", input: { cardId: "crd_1" } }],
     });
-  });
-
-  it("picks by priority, then the least busy scope, and skips a scope at its cap", async () => {
-    const { database, statements } = databaseWith([]);
-    await new PostgresQueueDriver(database).reserve("delivery", NOON);
-    const sql = statements[0]?.sql ?? "";
-    expect(sql).toContain("cross join lateral");
-    expect(sql).toContain("other.scope_id is not distinct from job.scope_id");
-    expect(sql).toContain("running.load < job.scope_concurrency");
-    expect(sql).toContain("order by job.priority desc, running.load, job.run_at, job.id");
   });
 
   it("releases a throttled job with its attempt given back", async () => {
@@ -198,10 +189,30 @@ describe(PostgresQueueDriver, () => {
     await expect(new PostgresQueueDriver(database).push(job)).resolves.toBe(false);
   });
 
-  it("reserves with SKIP LOCKED, filtered by queue only when one is named, and reads the row back", async () => {
-    const { database, statements } = databaseWith([ROW]);
+  it("reserves through the system function, filtered by queue only when one is named, as a claim", async () => {
+    const { database, statements } = databaseWith([{ id: "job_a", tenant_id: "scp_acme" }]);
     const driver = new PostgresQueueDriver(database);
-    expect(await driver.reserve("delivery", NOON)).toEqual({
+    expect(await driver.reserve("delivery", NOON)).toEqual({ id: "job_a", ownerId: "scp_acme" });
+    await driver.reserve(undefined, NOON);
+    const [named, any] = statements;
+    expect(named?.sql).toBe(
+      "select id, tenant_id from queue.reserve_job(?::varchar, ?::timestamptz)",
+    );
+    expect(named?.params).toEqual(["delivery", NOON]);
+    expect(any?.params).toEqual([null, NOON]);
+    expectBound(statements);
+  });
+
+  it("claims a platform job with no owner", async () => {
+    const { database } = databaseWith([{ id: "job_a", tenant_id: null }]);
+    expect(await new PostgresQueueDriver(database).reserve(undefined, NOON)).toEqual({
+      id: "job_a",
+    });
+  });
+
+  it("loads a job under the caller's row security and reads the row back", async () => {
+    const { database, statements } = databaseWith([ROW]);
+    expect(await new PostgresQueueDriver(database).load("job_a")).toEqual({
       id: "job_a",
       queue: "delivery",
       key: "messages.message.deliver@1",
@@ -215,13 +226,30 @@ describe(PostgresQueueDriver, () => {
       runAt: NOON,
       lease: "PT6M",
     });
-    await driver.reserve(undefined, NOON);
-    const [named, any] = statements;
-    expect(named?.sql).toContain("for update of job skip locked");
-    expect(named?.sql).toContain("job.queue = ?");
-    expect(named?.params).toEqual([NOON, NOON, "delivery", NOON, NOON]);
-    expect(any?.sql).not.toContain("job.queue = ?");
-    expect(any?.params).toEqual([NOON, NOON, NOON, NOON]);
+    expect(statements[0]?.sql).toContain('from "queue"."jobs" where id = ?');
+    expect(statements[0]?.params).toEqual(["job_a"]);
+    const gone = databaseWith([]);
+    await expect(new PostgresQueueDriver(gone.database).load("job_a")).resolves.toBeUndefined();
+  });
+
+  it("claims dead letters through the system function by id, queue and limit", async () => {
+    const { database, statements } = databaseWith([
+      { id: "job_a", tenant_id: "scp_acme" },
+      { id: "job_b", tenant_id: null },
+    ]);
+    const driver = new PostgresQueueDriver(database);
+    expect(await driver.claimDead({ queue: "delivery", limit: 10 })).toEqual([
+      { id: "job_a", ownerId: "scp_acme" },
+      { id: "job_b" },
+    ]);
+    await driver.claimDead({ id: "job_a", limit: 1 });
+    expect(statements[0]?.sql).toBe(
+      "select id, tenant_id from queue.claim_dead_jobs(?::varchar, ?::varchar, ?::integer)",
+    );
+    expect(statements.map((statement) => statement.params)).toEqual([
+      [null, "delivery", 10],
+      ["job_a", null, 1],
+    ]);
     expectBound(statements);
   });
 
@@ -267,7 +295,9 @@ describe(PostgresQueueDriver, () => {
     await expect(new PostgresQueueDriver(redriven.database).redrive("job_a", NOON)).resolves.toBe(
       true,
     );
-    expect(redriven.statements[0]?.sql).toContain("not exists");
+    expect(redriven.statements[0]?.sql).toContain(
+      "not exists (select 1 from queue.unique_key_holders(job.unique_key))",
+    );
     expect(redriven.statements[0]?.params).toEqual([NOON, "job_a"]);
     expectBound(redriven.statements);
     const refused = databaseWith([]);

@@ -46,6 +46,7 @@ const starter = (extra: Record<string, string | Uint8Array> = {}) =>
       ".github/workflows/ci.yml": "on: push\n",
       "package.json": '{"name":"acme-platform","scripts":{"dev":"stackra dev"}}',
       "pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
+      ".infisical.yaml": "workspaceId: template-project\n",
       "pnpm-workspace.yaml":
         '# the catalogs\ncatalogs:\n  stackra:\n    "@stackra/cli": ^0.3.0 # the CLI\n    "@stackra/gen": ^0.3.0\n',
       "runway.yaml": "project: acme-platform\nproduct:\n  key: acme\nsurfaces: {}\n",
@@ -81,6 +82,8 @@ test("a profile writes only its paths, its overlays and never the starter's own 
   assert.equal(full.has("apps/docs/package.json"), true);
   // `**` keeps dotfiles too (path.matchesGlob alone skips them).
   assert.equal(full.has(".github/workflows/ci.yml"), true);
+  // The template's Infisical binding never rides along, even in a profile that takes every file.
+  assert.equal(full.has(".infisical.yaml"), false);
 });
 
 test("the rename list, the catalog pin and the registry line apply; binary files pass untouched", () => {
@@ -191,9 +194,10 @@ test("genTree has one node per member, a child per kind with its count and note,
     "services/example/stackra.manifest.json",
     "services/example/.stackra/gen/wiring.ts",
     "services/example/.stackra/gen/schemas/example.ts",
-    "services/example/.stackra/encore/encore.app",
-    "services/example/.stackra/encore/example/encore.service.ts",
+    "services/example/stackra-encore/example/api.ts",
+    "services/example/stackra-encore/example/encore.service.ts",
     "services/example/.stackra/entry/node.ts",
+    "services/example/encore.app",
     "apps/console/.stackra/gen/routes.ts",
     "apps/console/.stackra/vitest.config.ts",
     "apps/console/vitest.config.ts",
@@ -227,15 +231,16 @@ test("genTree has one node per member, a child per kind with its count and note,
           ],
         },
         {
-          label: ".stackra/encore/",
-          note: "the Encore app",
+          label: "stackra-encore/",
+          note: "the Encore services",
           count: 2,
           children: [
-            { label: ".stackra/encore/encore.app" },
-            { label: ".stackra/encore/example/encore.service.ts" },
+            { label: "stackra-encore/example/api.ts" },
+            { label: "stackra-encore/example/encore.service.ts" },
           ],
         },
         { label: ".stackra/entry/node.ts", note: "an entry" },
+        { label: "member root", note: "encore.app" },
       ],
     },
   ]);

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ActionRegistration`, one row gen hands `registerActions`: an action or query class with the identity gen
- *          derived and locked in the manifest (key, permission, risk) and its input schema class.
+ *          derived and locked in the manifest (key, permission, risk) and its input and output schema classes.
  * Boundary: a type only. The module key and the permission are derived from folders and statics, which are gone at
  *           runtime, so this row is how the pipeline knows them. Without a row the pipeline uses the written key, asks
  *           `AccessControl` with no permission name and does not validate the input.
@@ -34,4 +34,7 @@ export interface ActionRegistration {
 
   /** The input schema class, whose generated schema the pipeline validates the input with. */
   readonly input?: AnyClass;
+
+  /** The output schema class, whose `@ShownOnce` fields the idempotency store never keeps (STA-2568). */
+  readonly output?: AnyClass;
 }

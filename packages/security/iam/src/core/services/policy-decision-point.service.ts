@@ -224,6 +224,35 @@ export class PolicyDecisionPointService extends Service {
   }
 
   /**
+   * Whether a deny rule of `actor`'s own snapshot refuses `permission` where the call acts: the policy an API key's caller
+   * (`api_client`) is held to beside its scopes, since it holds no grant the full check could find (ADR 0278, amendment
+   * of 2026-11-09). A breakable deny counts too (a key has no break-glass), and a principal with no published snapshot
+   * (version 0) is refused: fail closed.
+   *
+   * @throws TypeError when `permission` is a static gen has not registered.
+   * @throws Error when the source cannot be reached.
+   * @example
+   * await pdp.denied(apiClient, "payments.refund.create", { scope }); // true when the tenant denies refunds
+   */
+  async denied(
+    actor: Actor,
+    permission: Permission | string,
+    options: CheckOptions = {},
+  ): Promise<boolean> {
+    const key = permissionKey(permission);
+    const at = options.at ?? this.clock.now();
+    const snapshot = await this.source.snapshot(actor);
+    if (snapshot.version === 0) return true;
+    const grants = snapshot.grants.filter((grant) => applies(grant, options.scope, at));
+    return snapshot.denies.some(
+      (deny) =>
+        coversPermission(deny.permission, key, true) &&
+        inAudience(deny.audience, grants, options.scope) &&
+        conditionHolds(deny.condition, options.record, at, this.live, true),
+    );
+  }
+
+  /**
    * The decision of `check` with its reason, for the audit record and the explain query.
    *
    * @throws TypeError when `permission` is a static gen has not registered.

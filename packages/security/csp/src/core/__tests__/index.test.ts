@@ -16,9 +16,13 @@ describe("@stackra/csp", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(csp).sort()).toEqual([
       "CspConfig",
+      "RICH_TEXT_HTML_POLICY",
       "contentSecurityPolicy",
       "createNonce",
       "cspHeaderName",
+      "frameAncestorOrigin",
+      "frameAncestorsEntry",
+      "sanitizeHtml",
       "securityHeaders",
     ]);
   });

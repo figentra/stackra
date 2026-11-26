@@ -23,6 +23,7 @@ import { MemorySettingFloorSourceDriver } from "#core/drivers/memory-setting-flo
 import { MemorySettingValueStoreDriver } from "#core/drivers/memory-setting-value-store.driver";
 import { SettingScope } from "#core/enums/setting-scope.enum";
 import { SettingType } from "#core/enums/setting-type.enum";
+import { SettingScopeRefusedError } from "#core/errors/setting-scope-refused.error";
 import { SettingValueInvalidError } from "#core/errors/setting-value-invalid.error";
 import { SettingsLockedError } from "#core/errors/settings-locked.error";
 import { settingKeys } from "#core/functions/setting-keys.function";
@@ -206,6 +207,29 @@ describe(SettingsReader, () => {
       "orders.unknown": "setting_value_invalid",
     });
     await expect(store.layers("orders", {})).resolves.toEqual([]);
+  });
+
+  it("refuses a key at a level its scopes leave out, and writes nothing", async () => {
+    const store = new MemorySettingValueStoreDriver();
+    const reader = new SettingsReader(store);
+    const refused = await reader
+      .write(
+        settingsPage("orders", { scope: "store" }),
+        { acceptingOrders: false },
+        { scope: ACME },
+      )
+      .catch((error: unknown) => error);
+    expect(isRefusal(refused, SettingScopeRefusedError)).toBe(true);
+    expect(refused).toMatchObject({
+      level: "store",
+      paths: ["acceptingOrders"],
+      fieldErrors: { acceptingOrders: "setting_scope_refused" },
+    });
+    // A user's own layer is the `user` level, which these Platform+Product keys leave out.
+    await expect(
+      reader.write(PAGE, { acceptingOrders: false }, { user: USER }),
+    ).rejects.toBeInstanceOf(SettingScopeRefusedError);
+    await expect(store.layers("orders", { scope: ACME, user: USER })).resolves.toEqual([]);
   });
 
   it("passes the store's lock refusal on", async () => {

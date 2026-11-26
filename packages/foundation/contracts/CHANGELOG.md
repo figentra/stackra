@@ -1,5 +1,228 @@
 # @stackra/contracts
 
+## 0.33.1
+
+### Patch Changes
+
+- bf2c6ea: A product can ship its own `KeyProvider` driver. `@stackra/tenancy` declared a closed `DriverRegistry` entry for the
+  port (`"ephemeral" | "kms"`), so a member's generated wiring that also names a product's driver failed with TS2717,
+  and the shipped `TenantKeysConfig$` refused the name at config parse.
+  
+  - The `KeyProvider` port has no `~key` brand, and tenancy declares no registry entry for it: the member's generated
+    wiring declares the names it has, as for identity's `AppApprovalChallenges`.
+  - `TenantKeysConfig$.driver` takes any non-empty driver name (default `ephemeral`); the container refuses a name no
+    driver has when it resolves the port.
+
+## 0.33.0
+
+### Minor Changes
+
+- 93d63bb: Tenancy ships the per-tenant `KeyProvider` (ADR 0188 decision 2, amendment 2026-11-09). `TenantKeysConfig` (`tenancy.tenant_keys`) picks the driver: `ephemeral` (the default, random keys per tenant in memory, for dev and tests) or `kms`, which keeps each tenant's data keys wrapped by a regional AWS KMS key under the encryption context of tenant and key id, mints `k1` on a tenant's first seal, rotates to `k<n+1>` and never retires an old key, so data sealed earlier still opens. The wrapped keys live behind the new `TenantDataKeyStore` port: `memory`, or `postgres` in the append-only, tenant-owned `tenancy.tenant_data_keys` (row-level security on `tenant_id`), and each mint records `TenantDataKeyMinted`. Both drivers refuse a platform call: a tenant data key needs `withTenant`. Unwrapped keys are cached per tenant (`cacheSeconds`, `cacheTenants`). Contracts gives `KeyProvider` its driver key and exports `kmsKeyContext`.
+
+### Patch Changes
+
+- 93d63bb: `SignerConfig` has a `driver` field that picks the `Signer` driver: `ephemeral` by default, or `kms`. Before, no config field selected one, so a member that injected `Signer` (os audit) failed to boot with `UnresolvedPortError: ... its drivers are ephemeral, kms, and no config field selects one`, in production too.
+  
+  Production sets `driver: kms` with `kmsKeyId` in its runway values. `Signer` also declares its type-only port key (`contracts.Signer`), so `DriverName<Signer>` narrows to these two names.
+  
+  `SecretsConfig` is new: keyed `secrets` in this package, and exported with `SecretsConfig$` and `SecretsOptions`. Its `store` field picks the `SecretStore` driver: `memory` by default, or `aws_secrets_manager`. Nothing selected one before, and no runway environment sets one today, so `memory` keeps today's boots. A deployment that reads AWS Secrets Manager sets `store: aws_secrets_manager` in its runway values.
+
+## 0.32.0
+
+No changes in this release.
+
+## 0.31.0
+
+No changes in this release.
+
+## 0.30.0
+
+### Minor Changes
+
+- 17fafdd: A ninth actor kind, `ActorKind.ApiClient` (`api_client`): a tenant's server calling with an API key. An action or query
+  declares `public: true` or `public: { scopes, publishable }` to answer one; every other operation refuses it, and so
+  does a call without a key. `CallOptions.credential` carries the verified key (id, scopes, publishable, version pin) onto
+  the descriptor with `descriptor.public` (the required scopes and whether only exact keys count: L3 and above, approval
+  or step-up). iam's `AccessControl` checks an `api_client` call's scopes (`keyCovers`: exact keys, or selectors below
+  L3); a publishable key calls a public write only when it opts in.
+- 4ce80a2: An anonymous call acts in the tenant the edge Worker signed (`EdgeHeader.Scope`, ADR 0437): `EdgeHeaderGuard` records
+  the scope once the signature and the request id verify, and `serveGuardedCall` gives it to the anonymous actor as its
+  `scopeId`, its visitor id kept. A credential's tenant wins; a token or an API key whose tenant differs from the signed
+  one is refused with the generic 403; no signed scope means no tenant. A signed scope that is not an `scp_` public id
+  is refused (fail closed). `@stackra/contracts` adds `isPublicId(value, prefix)`, a type guard for a string in public id
+  form.
+- 8c17109: Two new ports, `IdempotencyRetentionSource` (how long an Idempotency-Key is kept) and `VersionSupportSource` (how many
+  months an API version stays supported), so an operator's settings can set both without `@stackra/actions` or
+  `@stackra/versioning` depending on `@stackra/settings`.
+- ef49e63: The rate-limit step can read a scope's limits from settings, so an operator lowers them without a deploy. When a
+  `RateLimitCapSource` (new port in `@stackra/contracts`) is bound, each area bucket number and each default action
+  bucket is the lower of its own and the scope's cap; a cap never raises a limit, and a failed read fails the call.
+  `@stackra/settings` ships the driver, `SettingsRateLimitCapSourceDriver`, over the new `RateLimitSettings` group
+  (`rate_limit.<area>PerMinute`, `<area>Burst`, `actionPerScope`, `actionPerAddress`; `null` caps nothing). With no
+  source bound, nothing changes.
+
+## 0.29.0
+
+No changes in this release.
+
+## 0.28.0
+
+No changes in this release.
+
+## 0.27.0
+
+No changes in this release.
+
+## 0.26.0
+
+No changes in this release.
+
+## 0.25.0
+
+No changes in this release.
+
+## 0.24.0
+
+No changes in this release.
+
+## 0.23.0
+
+No changes in this release.
+
+## 0.22.0
+
+No changes in this release.
+
+## 0.21.0
+
+### Minor Changes
+
+- a785356: The geospatial field kit on PostGIS (ADR 0314, STA-1432):
+  
+  - `@stackra/contracts`: the `GeoPolygon` and `GeoLine` types beside `GeoPoint`.
+  - `@stackra/validation`: the `geoPoint()`, `geoPolygon()` and `geoLine()` schemas.
+  - `@stackra/model`: the `GeoPointType`, `GeoPolygonType` and `GeoLineType` column types (EWKT in, `ST_AsGeoJSON` out).
+  - `@stackra/database`: `t.point()`, `t.polygon()` and `t.line()` with default GiST indexes, the `areaCovers`,
+    `withinMetresOf` and `intersectsArea` conditions, the `HasLocation` trait, and PostGIS in the PGlite memory driver
+    and `db diff` when a member installs `@electric-sql/pglite-postgis`.
+  - `@stackra/gen`: the `geo` kind, mapped to `geography(<shape>,4326)` columns, entity column types and the schemas.
+- f184d12: A service can now call for a user (ADR 0209, amendment of 2026-11-07). The calling service sends its own token as
+  `Authorization: Bearer` and the user's own access token in `Stackra-On-Behalf-Of`. `CallAuthenticator` verifies both
+  with the same issuer, audience and leeway, and the call becomes the service acting for that user:
+  `{ kind: "service", id: "svc_…", scopeId?, onBehalfOf: <the user> }`. The forwarded token itself is never kept; only
+  the user it names travels. A forward is refused when it sits beside a user token or no token, when it has expired or
+  names another audience, when it is a service's token, or when the service is bound to a tenant other than the user's.
+  
+  The call then runs in the user's tenant: `actingScopeId` gives a service with no tenant of its own the tenant of the
+  user it calls for, as it already did for an agent. `CallIsolationDriver` treats a service like an agent: it refuses
+  one whose own tenant differs from its user's, and one with a tenant whose scope sits above every tenant or is not in
+  the scope tree (`tenant_scope_mismatch`). A service with no tenant and no user stays a platform call, as before.
+
+## 0.20.0
+
+No changes in this release.
+
+## 0.19.0
+
+### Minor Changes
+
+- bac874e: The last Infisical uses in the developer packages move to sops and figentra/secrets (ADR 0525).
+  
+  - `stackra mcp exec -- <argv>` decrypts each `$NAME` the command names with `sops exec-env` from the `agents` scope of
+    the local figentra/secrets clone (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`), one nested call per secret,
+    instead of `infisical run`. Its `--env` and `--path` flags are gone; `McpExecOptions` is now `{ secretsDir? }`.
+  - Mobile onboarding no longer writes the FCM key to a vault: it goes only to EAS, its one reader, and running the
+    `push` step again replaces a lost key. `InfisicalVaultWriterDriver` is removed, and `MobileOnboardRequest` has no
+    `vault` port. A missing root-kit name prints `pnpm secrets:put <NAME> --scope ci/production/store` as its owner step.
+  - gen's `env` manifest rows no longer carry `home` (the Infisical folder `/runtime/<member>`), and the field is gone
+    from the `StackraManifest` type; runway already ignored it. Products regenerate their manifests after the release.
+  - `stackra dev --tunnel` names the sops way to start with `CLOUDFLARE_TUNNEL_TOKEN`, and the service template's
+    `runway.yaml` header names figentra/secrets.
+
+### Patch Changes
+
+- 58e3066: `actingScopeId(actor)` and `claimedScopeIds(actor)` move to `@stackra/contracts`: the one answer to which tenant a call acts
+  in (an agent's own `scopeId`, else the tenant of the human it acts for; any other actor's own `scopeId`). Every place
+  that read `actor.scopeId` as the call's tenant now reads it: the pipeline's `CallDescriptor.scopeId` and `ctx.scopeId`
+  (so rate limits, meters, idempotency, query cache keys, approvals and audit entries follow), the queue's job actor and
+  unique key, IAM's node lookup, the automation principal check, the access-log outbox sink's `scopeId` stamp, and
+  `PostgresAuditTrailDriver`, which now records an agent with no tenant of its own in its human's tenant instead of
+  skipping it. A platform agent and every other actor kind are unchanged.
+
+## 0.18.1
+
+No changes in this release.
+
+## 0.18.0
+
+No changes in this release.
+
+## 0.17.2
+
+No changes in this release.
+
+## 0.17.1
+
+No changes in this release.
+
+## 0.17.0
+
+No changes in this release.
+
+## 0.16.0
+
+No changes in this release.
+
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+No changes in this release.
+
+## 0.10.0
+
+### Minor Changes
+
+- e57b9a1: `stackra gen` writes an `env` section into `stackra.manifest.json` (ADR 0173 amendment 2026-11-04, STA-2104): one
+  row per environment name the member's configuration classes declare (`Config({ env })` names and `@Secret` fields),
+  with its kind (`secret`, `public`, `config`), type, rules, refused prefixes and environments; a service adds its
+  hosted packages' rows, an app only their public rows, and each gets the Infisical path `/runtime/<member>`. `@Secret` takes an optional second
+  argument, `{ refuse, environments }`, read by gen. `StackraManifest` types the section.
+
 ## 0.9.0
 
 ### Minor Changes

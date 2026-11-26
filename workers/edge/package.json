@@ -52,7 +52,9 @@
   "devDependencies": {
     "@stackra/app": "workspace:*",
     "@stackra/cli": "workspace:*",
+    "@stackra/config": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/csp": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",

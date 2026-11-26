@@ -77,6 +77,7 @@ describe("@stackra/integrations", () => {
       "VOICE_METERS",
       "VoiceMeter",
       "VoicePack",
+      "WebhookEventIdMissingError",
       "assertBalanced",
       "assertPayInputs",
       "audioSeconds",
@@ -122,10 +123,22 @@ describe("@stackra/integrations", () => {
     expectTypeOf<ConnectionHostCalls>().toHaveProperty("token");
     expectTypeOf<IntegrationWebhooks["recipe"]>().toEqualTypeOf<WebhookSchemeRecipe | undefined>();
     expectTypeOf<keyof WebhookSchemeRecipe>().toEqualTypeOf<
-      "header" | "query" | "path" | "fields" | "decimals" | "algorithm" | "ivHeader" | "tagHeader"
+      | "header"
+      | "query"
+      | "path"
+      | "fields"
+      | "decimals"
+      | "algorithm"
+      | "secretAt"
+      | "separator"
+      | "bodyFormat"
+      | "ivHeader"
+      | "tagHeader"
+      | "labelledFields"
+      | "currencyDecimals"
     >();
     expectTypeOf<WebhookSchemeRecipe["algorithm"]>().toEqualTypeOf<
-      "SHA-256" | "SHA-512" | undefined
+      "SHA-1" | "SHA-256" | "SHA-512" | undefined
     >();
     // `Pass({ key })` returns a class of `PassBase`, so a consumer's declaration emit can name its base (STA-1220).
     expectTypeOf<InstanceType<ReturnType<typeof integrations.Pass>>>().toEqualTypeOf<PassBase>();

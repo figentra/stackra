@@ -1,0 +1,1 @@
+export declare const ServiceAcked: { create(input: { subject: string; service: string }): { subject: string; service: string } };

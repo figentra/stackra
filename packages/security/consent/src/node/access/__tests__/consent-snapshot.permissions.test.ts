@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `ConsentSnapshotPermissions`: it is a `Permissions` class and `issue` is a grantable L0
+ * Purpose: unit tests of `ConsentSnapshotPermissions`: it is a `Permissions` class and `issue` is a grantable L2
  *          permission.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -12,10 +12,10 @@ import { describe, expect, it } from "@stackra/testing";
 import { ConsentSnapshotPermissions } from "#node/access/consent-snapshot.permissions";
 
 describe("ConsentSnapshotPermissions", () => {
-  it("declares issue as a grantable L0 permission", () => {
+  it("declares issue as a grantable L2 permission", () => {
     expect(Object.getPrototypeOf(ConsentSnapshotPermissions)).toBe(Permissions);
     expect(ConsentSnapshotPermissions.issue).toBeInstanceOf(Permission);
-    expect(ConsentSnapshotPermissions.issue.risk).toBe(Risk.L0);
+    expect(ConsentSnapshotPermissions.issue.risk).toBe(Risk.L2);
     expect(ConsentSnapshotPermissions.issue.isSystem).toBe(false);
   });
 });

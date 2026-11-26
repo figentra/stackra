@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/workflow (the `Workflow` and `Signal` kind bases, `@Step`, the
  *          two status enums, the run and step types, the native engine with its journal port and memory journal, the
  *          configuration and the key registration; the building-block registry, the automation document kind with its
- *          check and dry run, the workflow template pack and their refusals) until `stackra gen` writes the entry
+ *          check and dry run, the automation quota port with its unlimited driver and skip event, the workflow template pack
+ *          and their refusals) until `stackra gen` writes the entry
  *          barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schemas are re-exported under their generated names
  *           (`WorkflowConfig$`, `AutomationDocument$`, `WorkflowTemplatePack$`, `KeptRecords$`). The plans, keys, id minting and
@@ -21,13 +22,16 @@ export { AUTOMATION_DOCUMENT_SCHEMA as AutomationDocument$ } from "#core/constan
 export { CHECKLIST_CUSTOMIZATION_SCHEMA as ChecklistCustomization$ } from "#core/constants/checklist-customization-schema.constant";
 export { CHECKLIST_TEMPLATE_SCHEMA as ChecklistTemplate$ } from "#core/constants/checklist-template-schema.constant";
 export { INDUSTRY_PROFILE_SCHEMA as IndustryProfile$ } from "#core/constants/industry-profile-schema.constant";
-export { KEPT_RECORDS_SCHEMA as KeptRecords$ } from "#core/constants/kept-records-schema.constant";
+export { KEPT_RECORDS_SCHEMA as KeptRecords$ } from "#contracts/constants/kept-records-schema.constant";
 export { WORKFLOW_CONFIG_SCHEMA as WorkflowConfig$ } from "#core/constants/workflow-config-schema.constant";
 export { WORKFLOW_TEMPLATE_PACK_SCHEMA as WorkflowTemplatePack$ } from "#core/constants/workflow-template-pack-schema.constant";
 export { Step } from "#core/decorators/step.decorator";
 export { MemoryPublisherAccessDriver } from "#core/drivers/memory-publisher-access.driver";
 export { MemoryWorkflowJournalDriver } from "#core/drivers/memory-workflow-journal.driver";
 export { NativeWorkflowRunnerDriver } from "#core/drivers/native-workflow-runner.driver";
+export { UnlimitedAutomationQuotaDriver } from "#core/drivers/unlimited-automation-quota.driver";
+export { AutomationQuotaAnswer } from "#core/enums/automation-quota-answer.enum";
+export { AutomationStart } from "#core/enums/automation-start.enum";
 export { BlockKind } from "#core/enums/block-kind.enum";
 export { ChecklistAudience } from "#core/enums/checklist-audience.enum";
 export { DryRunOutcome } from "#core/enums/dry-run-outcome.enum";
@@ -39,12 +43,15 @@ export { AutomationExceedsPublisherError } from "#core/errors/automation-exceeds
 export { AutomationInvalidError } from "#core/errors/automation-invalid.error";
 export { AutomationNotDryRunError } from "#core/errors/automation-not-dry-run.error";
 export { AutomationPrincipalMismatchError } from "#core/errors/automation-principal-mismatch.error";
+export { AutomationQuotaUnavailableError } from "#core/errors/automation-quota-unavailable.error";
 export { ForEachItemsInvalidError } from "#core/errors/for-each-items-invalid.error";
+export { RunNotFoundError } from "#core/errors/run-not-found.error";
 export { ChecklistInvalidError } from "#core/errors/checklist-invalid.error";
 export { AutomationPaused } from "#core/events/automation-paused.event";
+export { AutomationRunSkipped } from "#core/events/automation-run-skipped.event";
 export { ChecklistCompleted } from "#core/events/checklist-completed.event";
 export { ChecklistStepCompleted } from "#core/events/checklist-step-completed.event";
-export { ServiceAcked } from "#core/events/service-acked.event";
+export { ServiceAcked } from "#contracts/events/service-acked.event";
 export { WorkflowRunEnded } from "#core/events/workflow-run-ended.event";
 export { WorkflowRunStarted } from "#core/events/workflow-run-started.event";
 export { buildingBlocks } from "#core/functions/building-blocks.function";
@@ -54,6 +61,7 @@ export { checklistView } from "#core/functions/checklist-view.function";
 export { dryRun } from "#core/functions/dry-run.function";
 export { registerBlocks } from "#core/functions/register-blocks.function";
 export { registerWorkflows } from "#core/functions/register-workflows.function";
+export { AutomationQuota } from "#core/ports/automation-quota.port";
 export { PublisherAccess } from "#core/ports/publisher-access.port";
 export { WorkflowJournal } from "#core/ports/workflow-journal.port";
 export { WorkflowEngineOptions } from "#core/schemas/workflow-engine-options.schema";
@@ -69,15 +77,19 @@ export type { DryRun } from "#core/types/dry-run.type";
 export type { DryRunStep } from "#core/types/dry-run-step.type";
 export type { HeldSignal } from "#core/types/held-signal.type";
 export type { IndustryProfile } from "#core/types/industry-profile.type";
-export type { KeptRecords } from "#core/types/kept-records.type";
+export type { KeptRecords } from "#contracts/types/kept-records.type";
 export type { ResultsOf } from "#core/types/results-of.type";
 export type { Run } from "#core/types/run.type";
 export type { RunChain } from "#core/types/run-chain.type";
+export type { RunClaim } from "#core/types/run-claim.type";
 export type { RunOrigin } from "#core/types/run-origin.type";
+export type { SignalClaim } from "#core/types/signal-claim.type";
 export type { StepContext } from "#core/types/step-context.type";
 export type { StepDecorator } from "#core/types/step-decorator.type";
 export type { StepName } from "#core/types/step-name.type";
 export type { StepOptions } from "#core/types/step-options.type";
+export type { StepRetry } from "#core/types/step-retry.type";
+export type { StepRetryValues } from "#core/types/step-retry-values.type";
 export type { WorkflowClass } from "#core/types/workflow-class.type";
 export type { WorkflowError } from "#core/types/workflow-error.type";
 export type { WorkflowOptions } from "#core/types/workflow-options.type";

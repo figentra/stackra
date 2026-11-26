@@ -24,8 +24,9 @@ import {
   WidthType,
 } from "docx";
 
+import { decodeBase64 } from "@stackra/support";
+
 import { InvalidDocumentTemplateError } from "#core/errors/invalid-document-template.error";
-import { bytesOfBase64 } from "#core/functions/bytes-of-base64.function";
 import { encodeQrPng } from "#core/functions/encode-qr-png.function";
 import type { ImageAsset } from "#core/types/image-asset.type";
 import type { ResolvedDocument } from "#core/types/resolved-document.type";
@@ -295,5 +296,8 @@ export async function renderDocx(document: ResolvedDocument): Promise<Uint8Array
       },
     ],
   });
-  return bytesOfBase64(await Packer.toBase64String(file));
+  const bytes = decodeBase64(await Packer.toBase64String(file));
+  // docx always writes valid Base64, so this is a docx defect, never a caller's mistake.
+  if (bytes === undefined) throw new TypeError("docx wrote a file that is not valid Base64");
+  return bytes;
 }

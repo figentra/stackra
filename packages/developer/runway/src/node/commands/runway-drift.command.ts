@@ -15,6 +15,7 @@ import { runRunwayDrift } from "#node/functions/run-runway-drift.function";
 /** Lists Worker settings drift. */
 export class RunwayDriftCommand extends Command({
   name: "drift",
+  bin: true,
   description: "List where each Worker's live settings differ from runway.yaml (read-only)",
   examples: ["runway drift", "runway drift staging"],
 }) {

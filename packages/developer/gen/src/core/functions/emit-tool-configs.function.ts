@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: `emitToolConfigs`, the tool configs gen writes into `.stackra/` for a package or a service: tsdown with one
  *          entry per generated entry file, Vitest on the decorators preset with the shared coverage gate and the unit
- *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database` or
- *          `@stackra/clients`) that package's testing entry, registers the member's wiring for `createTestingModule`,
- *          imports each generated schemas file statically (through Vite, so its `#` imports and decorators resolve as in
- *          source; STA-2032) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>`
- *          with its model; and the root
+ *          tier, and the Vitest setup that loads the registrations and (for a member on `@stackra/database`,
+ *          `@stackra/clients`, `@stackra/actions`, `@stackra/workflow`, `@stackra/tenancy` or `@stackra/scope`) that
+ *          package's testing entry,
+ *          registers the member's wiring for
+ *          `createTestingModule`, imports each generated schemas file statically (through Vite, so its `#` imports and
+ *          decorators resolve as in source; STA-2032) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>`
+ *          with its model; the root
  *          `vitest.config.ts` shim that re-exports the generated config, since `vitest run` reads only the member root
- *          (STA-1296).
+ *          (STA-1296); and, for a service, `TYPECHECK_TSCONFIG`, its tsconfig without the `paths` that exist for
+ *          Encore (STA-2681).
  * Boundary: pure. Paths are relative to the member root, which is where the tools run; Vitest's root is set to it
  *           explicitly. Apps and workers get none here: their Vite, Expo, Metro and Wrangler files come with their
  *           `defineApp` sections. Factory pairs live only in the test setup, so a server never loads a factory.
@@ -19,16 +22,33 @@
  *                     `@stackra/container`, `usesContainer`, gets a setup without the wiring, the schemas and
  *                     `@stackra/container/testing`).
  */
+import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { ROOT_TSDOWN_SHIM } from "#core/constants/root-tsdown-shim.constant";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
+import { TYPECHECK_TSCONFIG } from "#core/constants/typecheck-tsconfig.constant";
 import { importLines } from "#core/functions/import-lines.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
+import { tokenExpression } from "#core/functions/token-expression.function";
+import type { ClassRef } from "#core/types/class-ref.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { usesContainer } from "#core/functions/uses-container.function";
 import type { MemberIR } from "#core/types/member-ir.type";
+
+/** A short string array on one line, as oxfmt writes it in JSON (`["a", "b"]`). */
+const inline = (items: readonly string[]): string =>
+  `[${items.map((item) => JSON.stringify(item)).join(", ")}]`;
+
+/** The service preset's `include` (`@stackra/typescript-config/service`), from `.stackra/`. */
+const SERVICE_TYPECHECK_INCLUDE = [
+  "../src",
+  "../stackra.config.ts",
+  "../.stackra/gen",
+  "../.stackra/entry",
+  "../.stackra/*.config.ts",
+];
 
 /**
  * The tool configs of `ir`.
@@ -143,9 +163,8 @@ export function emitToolConfigs(
       : [],
   );
   const pairs: string[] = [];
-  for (const declared of ir.classes) {
+  for (const declared of factoryPairsOf(ir)) {
     const model = declared.partner;
-    if (declared.kind !== "factory" || model === undefined) continue;
     for (const target of [{ name: declared.name, from: declared.importPath }, model])
       imports.set(
         target.from,
@@ -155,6 +174,25 @@ export function emitToolConfigs(
   }
   if (pairs.length > 0)
     imports.set("@stackra/database", new Map([["registerModelPartners", false]]));
+  // A seeder is not a binding: the setup registers the tokens its constructor takes, so `.seed()` injects them
+  // (STA-1698). Only a member on the database seeds.
+  const use = (target: ClassRef): string => {
+    imports.set(
+      target.from,
+      (imports.get(target.from) ?? new Map<string, boolean>()).set(target.name, false),
+    );
+    return target.name;
+  };
+  const seederDeps: string[] = [];
+  if (ir.packages?.includes("@stackra/database") === true)
+    for (const declared of ir.classes) {
+      if (declared.kind !== "seeder" || declared.deps.length === 0) continue;
+      use({ name: declared.name, from: declared.importPath });
+      seederDeps.push(
+        `  [${declared.name}, [${declared.deps.map((dep) => tokenExpression(dep, use)).join(", ")}]],`,
+      );
+    }
+  if (seederDeps.length > 0) use({ name: "registerSeederDeps", from: "@stackra/database/testing" });
   const setup = [
     generatedHeader({
       from: `${container ? "#stackra/wiring, " : ""}#stackra/registrations and the factories under src/`,
@@ -170,6 +208,23 @@ export function emitToolConfigs(
     ...(ir.packages?.includes("@stackra/clients") === true
       ? ['import "@stackra/clients/testing";']
       : []),
+    // The memory `AccessControl` and the actions testing plugin, so a `useDrivers("memory")` test that only queues
+    // work or runs an action finds its permission check.
+    ...(ir.packages?.includes("@stackra/actions") === true
+      ? ['import "@stackra/actions/testing";']
+      : []),
+    // The workflow testing plugin, so a `useDrivers("memory")` test that starts a workflow (`ctx.run`) finds its runner.
+    ...(ir.packages?.includes("@stackra/workflow") === true
+      ? ['import "@stackra/workflow/testing";']
+      : []),
+    // The memory `CallIsolation`, so a `useDrivers("memory")` call runs as its actor's tenant, as in production.
+    ...(ir.packages?.includes("@stackra/tenancy") === true
+      ? ['import "@stackra/tenancy/testing";']
+      : []),
+    // The scope testing plugin, so a `useDrivers("memory")` scope tree reads the stored scope nodes.
+    ...(ir.packages?.includes("@stackra/scope") === true
+      ? ['import "@stackra/scope/testing";']
+      : []),
     ...(generated.registrations ? ['import "#stackra/registrations";'] : []),
     // Each schemas file registers its shapes. Imported here, the setup Vite transforms loads them through Vite too; a
     // package's `loadMemberSchemas` would import them from node_modules, which Vitest leaves to Node: no fallback in
@@ -180,6 +235,7 @@ export function emitToolConfigs(
     // So the testing module's `compile()` does not import them again through Node.
     ...(container ? ["registerWiring(wiring);", "markMemberSchemasLoaded();"] : []),
     ...(pairs.length > 0 ? ["registerModelPartners([", ...pairs, "]);"] : []),
+    ...(seederDeps.length > 0 ? ["registerSeederDeps([", ...seederDeps, "]);"] : []),
     "",
   ].join("\n");
 
@@ -218,21 +274,39 @@ export function emitToolConfigs(
 
   // The member's program plus the entries gen writes; tests and the hand-written entries directly in `src/` (which no
   // barrel re-exports) ship no declarations.
-  const dtsTsconfig = `${JSON.stringify(
-    {
-      $comment: `${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus .stackra/entry.`,
-      extends: "./tsconfig.json",
-      include: ["src", ".stackra/entry"],
-      exclude: ["src/**/__tests__/**", "src/*.ts", "src/*.tsx"],
-    },
-    null,
-    2,
-  )}\n`;
+  // Written in oxfmt's layout, so a member's format check passes on the file as gen writes it.
+  const dtsTsconfig = [
+    "{",
+    `  "$comment": ${JSON.stringify(`${GENERATED_NOTICE}; from the generated entry files. Purpose: the declaration build of ${ir.package}: the member's tsconfig plus .stackra/entry.`)},`,
+    `  "extends": "./tsconfig.json",`,
+    `  "include": ${inline(["src", ".stackra/entry"])},`,
+    `  "exclude": ${inline(["src/**/__tests__/**", "src/*.ts", "src/*.tsx"])}`,
+    "}",
+    "",
+  ].join("\n");
+
+  // A service's tsconfig carries `paths` for Encore; tsc would apply them to every package the service compiles, so its
+  // typecheck reads the same tsconfig with none, and each package's `#` imports resolve through its own package.json.
+  // The service preset's `include` names its files from `${configDir}`, which is this config's folder here, so this one
+  // names the same files from the member root. A wildcard would not do: tsc's `**` skips dot folders, and losing
+  // `.stackra/gen` drops the entity augmentations gen writes there.
+  const typecheckTsconfig = [
+    "{",
+    `  "$comment": ${JSON.stringify(`${GENERATED_NOTICE}; from the member's tsconfig. Purpose: the typecheck program of a service: its tsconfig without the paths that exist for Encore.`)},`,
+    `  "extends": "../tsconfig.json",`,
+    `  "include": ${inline(SERVICE_TYPECHECK_INCLUDE)},`,
+    `  "compilerOptions": {`,
+    `    "paths": {}`,
+    `  }`,
+    "}",
+    "",
+  ].join("\n");
 
   return [
     ...(entries.length > 0 ? [{ path: ".stackra/tsdown.config.ts", content: tsdown }] : []),
     { path: ".stackra/vitest.config.ts", content: vitest },
     { path: ".stackra/vitest.setup.ts", content: setup },
+    ...(ir.layout === "service" ? [{ path: TYPECHECK_TSCONFIG, content: typecheckTsconfig }] : []),
     { path: ROOT_VITEST_SHIM, content: shim },
     // A service builds nothing with tsdown (Encore builds it at deploy), so only a package gets the shim.
     ...(entries.length > 0 && ir.layout === "package"

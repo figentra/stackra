@@ -81,7 +81,8 @@ What gen derives, so you never write it:
 - **The class name** `CancelOrderAction` matches the file `cancel-order.action.ts`.
 
 Other options: `idempotency: Idempotency.Required`, `job:` (a queue or cron schedule; jobs are actions, not a kind),
-`intents: [...]` (palette and AI triggers), `auth: false` (a public endpoint), `version: 2`.
+`intents: [...]` (palette and AI triggers), `actors: [ActorKind.Anonymous, ActorKind.User]` (open to callers
+without a session; there is no `auth` option), `version: 2`.
 
 ## What the pipeline does for you (ADR 0138 as amended)
 
@@ -143,5 +144,5 @@ six months (ADR 0131, 0136). Never change the shape of a published version.
 
 ## Check
 
-`pnpm --filter <member> test typecheck build`, then `pnpm verify` (and `stackra gen --check` once gen ships). Review:
+`pnpm turbo run test typecheck build --filter=<member>`, then `pnpm verify` (and `stackra gen --check` once gen ships). Review:
 `api-contract-reviewer`.

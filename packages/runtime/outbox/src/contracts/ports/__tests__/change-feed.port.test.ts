@@ -12,6 +12,7 @@ import { Port } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import { ChangeFeed } from "#contracts/ports/change-feed.port";
+import type { ChangeClaim } from "#contracts/types/change-claim.type";
 import type { ChangeCursor } from "#contracts/types/change-cursor.type";
 import type { ChangeLogReport } from "#contracts/types/change-log-report.type";
 import type { ChangeRecord } from "#contracts/types/change-record.type";
@@ -20,7 +21,11 @@ import type { ChangeRecord } from "#contracts/types/change-record.type";
 class NullChangeFeed extends Driver(ChangeFeed) {
   async append(): Promise<void> {}
 
-  async read(): Promise<readonly ChangeRecord[]> {
+  async claim(): Promise<readonly ChangeClaim[]> {
+    return [];
+  }
+
+  async load(): Promise<readonly ChangeRecord[]> {
     return [];
   }
 
@@ -37,6 +42,12 @@ class NullChangeFeed extends Driver(ChangeFeed) {
   async maintain(): Promise<ChangeLogReport> {
     return { created: 0, dropped: 0 };
   }
+
+  async expired(): Promise<readonly ChangeClaim[]> {
+    return [];
+  }
+
+  async remove(): Promise<void> {}
 }
 
 describe("ChangeFeed", () => {
@@ -44,10 +55,16 @@ describe("ChangeFeed", () => {
     const feed: ChangeFeed = new NullChangeFeed();
     expect(feed).toBeInstanceOf(ChangeFeed);
     expect(feed).toBeInstanceOf(Port);
-    await expect(feed.read(undefined, ["Product"], 10)).resolves.toEqual([]);
+    await expect(feed.claim(undefined, ["Product"], 10)).resolves.toEqual([]);
+    await expect(feed.load(["1:1"])).resolves.toEqual([]);
+    await expect(feed.expired(new Date(), 10)).resolves.toEqual([]);
   });
 
   it("is keyed outbox.ChangeFeed", () => {
     expectTypeOf<ChangeFeed["~key"]>().toEqualTypeOf<"outbox.ChangeFeed">();
+  });
+
+  it("claims positions and owners, never a row", () => {
+    expectTypeOf<keyof ChangeClaim>().toEqualTypeOf<"position" | "ownerId">();
   });
 });

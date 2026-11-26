@@ -5,6 +5,8 @@
  *          `health.critical` is off, so `/readyz` fails a deploy whose the search engine does not answer.
  * Boundary: `Driver(HealthIndicator)`, so `/readyz` finds it among the bound `HealthIndicator`s. It probes through
  *           the `SearchDriver` port only; it indexes and removes nothing. A failure reports the error's name, never its message, and never throws.
+ *           An unset `health.table` is `down` on every check (a deploy without it fails `/readyz`), never a constructor
+ *           error, so a testing container that binds every indicator still compiles.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16 and 17), ADR 0184, registry gap R-27; gap analysis devx-ops "Health
  *                     checks" (P0, owner D10).
@@ -26,33 +28,39 @@ export class SearchHealthIndicatorDriver extends Driver(HealthIndicator) {
 
   private readonly health: SearchConfig["health"];
 
-  private readonly table: SearchTable;
+  /** The probe table; undefined while `health.table` is not set. */
+  private readonly table: SearchTable | undefined;
 
   /**
    * @param engine - the bound `SearchDriver`.
-   * @param config - `health` holds the timeout and whether a failure is critical.
-   * @throws TypeError when `health.table` is empty: runway names the table the probe searches.
+   * @param config - `health` holds the probe table, the timeout and whether a failure is critical.
    */
   constructor(engine: SearchDriver, config: SearchConfig) {
     super();
     const [schema, table] = config.health.table.includes(".")
       ? config.health.table.split(".", 2)
       : [undefined, config.health.table];
-    if (table === undefined || table === "")
-      throw new TypeError(
-        "search health.table is empty: runway names the table the probe searches",
-      );
-    this.table = {
-      ...(schema === undefined ? {} : { schema }),
-      table,
-      primaryKey: config.health.primaryKey,
-    };
+    this.table =
+      table === undefined || table === ""
+        ? undefined
+        : {
+            ...(schema === undefined ? {} : { schema }),
+            table,
+            primaryKey: config.health.primaryKey,
+          };
     this.engine = engine;
     this.health = config.health;
   }
 
-  /** Searches the probe table for one id. */
+  /** Searches the probe table for one id; down, without a search, while `health.table` is not set. */
   override async check(): Promise<HealthReport> {
+    // A missing probe table fails readiness, not construction, so a container that never probes (a test) still builds.
+    if (this.table === undefined)
+      return {
+        status: HealthStatus.Down,
+        detail: "search health.table is not set: runway names the table the probe searches",
+      };
+    const table = this.table;
     const started = Date.now();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const late = new Promise<never>((_, reject) => {
@@ -63,7 +71,7 @@ export class SearchHealthIndicatorDriver extends Driver(HealthIndicator) {
     });
     try {
       await Promise.race([
-        this.engine.search(this.table, { words: [], filters: {}, offset: 0, limit: 1 }),
+        this.engine.search(table, { words: [], filters: {}, offset: 0, limit: 1 }),
         late,
       ]);
       return { status: HealthStatus.Up, latency: Duration.seconds((Date.now() - started) / 1000) };

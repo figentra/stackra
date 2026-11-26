@@ -1,5 +1,141 @@
 # @stackra/testing
 
+## 0.33.1
+
+No changes in this release.
+
+## 0.33.0
+
+### Minor Changes
+
+- 41a5ff0: `./e2e` gains `packageE2ePreset` (the Playwright config of a package: Chromium and `ar-SA` Chromium, Firefox and WebKit opt-in, a Vite page server on port 5199) and `packageE2eVite` (that server's Vite config). `vite` is a new optional peer.
+  
+  Behaviour change: the `test` of `./e2e` now fails a test whose page logged a console error or threw an uncaught error, so existing app e2e specs that render with console errors start failing. Fix the error, or opt a file out with `test.use({ consoleErrors: "allow" })`.
+
+## 0.32.0
+
+No changes in this release.
+
+## 0.31.0
+
+No changes in this release.
+
+## 0.30.0
+
+No changes in this release.
+
+## 0.29.0
+
+No changes in this release.
+
+## 0.28.0
+
+No changes in this release.
+
+## 0.27.0
+
+No changes in this release.
+
+## 0.26.0
+
+No changes in this release.
+
+## 0.25.0
+
+No changes in this release.
+
+## 0.24.0
+
+No changes in this release.
+
+## 0.23.0
+
+No changes in this release.
+
+## 0.22.0
+
+No changes in this release.
+
+## 0.21.0
+
+No changes in this release.
+
+## 0.20.0
+
+No changes in this release.
+
+## 0.19.0
+
+No changes in this release.
+
+## 0.18.1
+
+No changes in this release.
+
+## 0.18.0
+
+No changes in this release.
+
+## 0.17.2
+
+No changes in this release.
+
+## 0.17.1
+
+No changes in this release.
+
+## 0.17.0
+
+No changes in this release.
+
+## 0.16.0
+
+No changes in this release.
+
+## 0.15.0
+
+No changes in this release.
+
+## 0.14.4
+
+No changes in this release.
+
+## 0.14.3
+
+No changes in this release.
+
+## 0.14.2
+
+No changes in this release.
+
+## 0.14.1
+
+No changes in this release.
+
+## 0.14.0
+
+No changes in this release.
+
+## 0.13.0
+
+No changes in this release.
+
+## 0.12.0
+
+No changes in this release.
+
+## 0.11.1
+
+No changes in this release.
+
+## 0.11.0
+
+No changes in this release.
+
+## 0.10.0
+
+No changes in this release.
+
 ## 0.9.0
 
 No changes in this release.

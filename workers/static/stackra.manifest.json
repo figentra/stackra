@@ -23,5 +23,6 @@
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "roles": [],
   "schemas": {}
 }

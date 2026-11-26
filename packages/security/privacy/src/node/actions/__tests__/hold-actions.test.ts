@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PlaceHoldAction`, `ReleaseHoldAction` and `ListHoldsQuery`: user and service callers, no
- *          tool; placing stores a new `lgh_` hold in the session's partition with the actor and the call's time;
- *          releasing marks only a live hold and says whether one matched; listing filters live holds by default, by
- *          record when asked, and maps rows to `LegalHold`s.
+ *          tool; placing stores a new `lgh_` hold with the actor and the call's time, its owner left to the column;
+ *          releasing marks only a live hold of the call's owner and says whether one matched; listing reads the call's
+ *          own holds, live ones by default, by record when asked, and maps rows to `LegalHold`s.
  * Boundary: test only; the database is a stand-in that records each statement.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0134 (holds); data-layer gap gov20 (stackra-332).
@@ -44,7 +44,7 @@ describe("legal hold actions", () => {
     }
   });
 
-  it("places a hold in the session's partition with the actor and time", async () => {
+  it("places a hold with the actor and time, its owner the column's default", async () => {
     const { db, executed } = database();
     const ctx = fakeActionContext({ now: () => new Date(NOW) });
     const { holdId } = await new PlaceHoldAction(db).handle(
@@ -53,7 +53,8 @@ describe("legal hold actions", () => {
     );
     expect(holdId).toMatch(/^lgh_/);
     expect(executed[0]?.[0]).toContain('insert into "privacy"."legal_holds"');
-    expect(executed[0]?.[0]).toContain("current_setting('app.tenant_id', true)");
+    expect(executed[0]?.[0]).not.toContain("tenant_id");
+    expect(executed[0]?.[0]).not.toContain("scope_id");
     expect(executed[0]?.[1]).toEqual([holdId, "Invoice", "inv_1", "Matter 14", ctx.actor.id, NOW]);
     expect(ctx.recorded.audit).toEqual({ holdId, model: "Invoice", recordId: "inv_1" });
   });
@@ -63,7 +64,9 @@ describe("legal hold actions", () => {
     const input = ReleaseHoldInput.create({ holdId: "lgh_1", reason: "Matter closed" });
     const ctx = fakeActionContext({ now: () => new Date(NOW) });
     expect((await new ReleaseHoldAction(live.db).handle(input, ctx)).released).toBe(true);
-    expect(live.executed[0]?.[0]).toContain("released_at is null returning id");
+    expect(live.executed[0]?.[0]).toContain(
+      "tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '') and released_at is null returning id",
+    );
     expect(live.executed[0]?.[1]).toEqual([NOW, ctx.actor.id, "Matter closed", "lgh_1"]);
     const gone = database([]);
     expect((await new ReleaseHoldAction(gone.db).handle(input, ctx)).released).toBe(false);
@@ -93,7 +96,9 @@ describe("legal hold actions", () => {
         releasedAt: null,
       },
     ]);
-    expect(executed[0]?.[0]).toContain("and released_at is null order by placed_at desc");
+    expect(executed[0]?.[0]).toContain(
+      "where tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '') and released_at is null order by placed_at desc",
+    );
     await query.handle(ListHoldsInput.create({ recordId: "inv_1", includeReleased: true }));
     expect(executed[1]?.[0]).not.toContain("released_at is null");
     expect(executed[1]?.[1]).toEqual(["inv_1"]);

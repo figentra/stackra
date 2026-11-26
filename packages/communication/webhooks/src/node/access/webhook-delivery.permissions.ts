@@ -17,5 +17,5 @@ import { Permission, Permissions } from "@stackra/iam";
  */
 export class WebhookDeliveryPermissions extends Permissions {
   /** Deliver one event to one receiver; the delivery job runs it, so it is held only by the platform. */
-  static readonly send = Permission.L1.system();
+  static readonly send = Permission.L4.system();
 }

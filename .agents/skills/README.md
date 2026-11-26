@@ -1,13 +1,13 @@
 # `.agents/skills/`
 
 Invocable skills, one folder per skill with a `SKILL.md` (Agent Skills format: `name` and `description` frontmatter,
-then the instructions). `pnpm agents:sync` symlinks each folder into `.claude/skills/`; OpenCode reads this folder
-directly. The Figentra Flow skills (`flow-*`) are here too, but rendered by `pnpm spec:sync` (`figentra-flow sync`) and
+then the instructions). `pnpm spec:sync` (`fflow sync`) symlinks each folder into `.claude/skills/`; OpenCode reads this folder
+directly. The Figentra Flow skills (`flow-*`) are here too, but rendered by `pnpm spec:sync` (`fflow sync`) and
 recorded in `.flow/lock.json`: never edit them in place; override in `.flow/overrides/` (ADR 0510).
 
 | Family                 | Skills                                                                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Monorepo and release   | `pnpm`, `turborepo`, `changesets`, `vitest`, `tdd`, `test-infra`                                                                        |
+| Monorepo and release   | `pnpm`, `turborepo`, `vitest`, `tdd`, `test-infra`                                                                          |
 | Web UI                 | `heroui-react`, `frontend-design`, `accessibility`, `playwright-best-practices`                                             |
 | Mobile                 | `heroui-native`, `react-native-best-practices`, `expo-*` (animation, data-fetching, design-system, dev-client, upgrade), `eas-*` (app-stores, update, workflows) |
 | Services and vendors   | `resend` (behind the mail driver), `stripe-best-practices` (billing work only)                                              |
@@ -24,8 +24,8 @@ recorded in `.flow/lock.json`: never edit them in place; override in `.flow/over
 - The Encore skills are not here. They teach hand-written Encore.ts, which this repository rejects for authors (Encore
   is only the generated target in `.stackra/encore/`, [ADR 0124](../../apps/docs/src/docs/adr/0124-encore-is-the-generated-runtime-target.mdx)),
   so they are fenced in [`../reference/encore`](../reference/encore), read only by `compiler-engineer` (ADR 0258).
-- A skill that names rejected technology fails `pnpm agents:check` unless `SKILL_TECH_ALLOWED` in
-  `figentra agents sync` (@figentra/cli) records why the mention is harmless (ADR 0258). Where a skill and
+- A skill that names rejected technology fails `pnpm validate` unless `SKILL_TECH_ALLOWED` in
+  `@stackra/repo-checks` records why the mention is harmless (ADR 0258). Where a skill and
   [`AGENTS.md`](../../AGENTS.md) disagree, `AGENTS.md` wins.
 - oxfmt and oxlint skip this folder and `../reference` (`.oxfmtrc.jsonc`, `.oxlintrc.jsonc`, `lefthook.yml`).
 - Retired (ADR 0258): `encore-getting-started`, `encore-migrate`, `encore-frontend`, `sanity-best-practices` (Sanity is

@@ -8,6 +8,7 @@ import { library } from "@stackra/tsdown-config";
 
 const config: ReturnType<typeof library> = library({
   "server": ".stackra/entry/server.ts",
+  "seed": ".stackra/entry/seed.ts",
 });
 
 export default config;

@@ -156,12 +156,12 @@ Agents run `pulumi preview` at most; `pulumi up` is the owner's. Before the firs
 - creates the ZITADEL Cloud instance and its custom domain (the root runway's `domain`; the CNAME is Cloudflare's);
 - creates the provisioner, a machine user with `IAM_OWNER`, and sets its key as the secret stack config value
   `zitadel:jwtProfileJson`;
-- after `up`, creates each machine user's key and imports it into Infisical through `pnpm secrets:import` (ADR 0173);
+- after `up`, creates each machine user's key and imports it into sops through `pnpm secrets:import` (ADR 0525);
   the `identity` machine's token is `@stackra/identity`'s `IDENTITY_IDP_ADMIN_TOKEN` (the `IdpAdmin` ZITADEL driver);
 - turns on token exchange on the instance when an app asks for it;
 - for Sign in with Apple (STA-1557): in the Apple Developer account, enables Sign in with Apple on each app id,
   creates a services id with ZITADEL's Apple return URL (`https://<domain>/ui/login/login/externalidp/callback/form`, as ZITADEL's Apple guide gives it) and the instance
   domain as its domain, creates a Sign in with Apple key, puts the team id, services id and key id in the seed's
-  `appleSignIn`, and sets the `.p8` key as the secret stack config value `zitadel:<privateKeySecret>` (Infisical
-  first, ADR 0173 and ADR 0257);
+  `appleSignIn`, and sets the `.p8` key as the secret stack config value `zitadel:<privateKeySecret>` (sops
+  first, ADR 0525 and ADR 0257);
 - adds the other external sign-in providers and uploads the logos (not in this stack).

@@ -1,0 +1,21 @@
+{
+  "slug": "push-primer",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["native"],
+  "packageName": "@stackra/notifications",
+  "exportName": "PushPrimer",
+  "parts": ["PushPrimer"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 420
+    }
+  ],
+  "related": ["free/card", "free/button", "free/alert"],
+  "tokens": ["color.surface", "color.accent"],
+  "keywords": ["push", "notifications", "permission", "onboarding", "opt in", "kit"],
+  "status": "new"
+}

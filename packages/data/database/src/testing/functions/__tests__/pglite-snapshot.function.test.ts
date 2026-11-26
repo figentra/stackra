@@ -34,6 +34,7 @@ const file = (name: string, sql: string): MigrationFile => ({
   timeout: undefined,
   sql,
   checksum: "",
+  legacyChecksum: "",
   inverse: undefined,
 });
 

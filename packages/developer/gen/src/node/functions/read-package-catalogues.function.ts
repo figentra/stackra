@@ -7,10 +7,14 @@
  * Boundary: reads only the packages' `assets/lang` folders, found by `dependencyPath` like their manifests; writes
  *           nothing. A Stackra package is a `@stackra/*` one or any that ships `stackra.manifest.json`, so a third-party
  *           folder that happens to be named `assets/lang` is never merged. A package without the folder is skipped;
- *           an invalid catalogue throws with its path.
+ *           an invalid catalogue throws with its path. A dependency that is a service member (its package.json
+ *           `stackra.tier` is `service`, as when a member depends on a service for its contract) is read as that
+ *           service's catalogues, keyed by its manifest's `member`, so a namespace the member also has moves under
+ *           the service's name (`payments.plans`, `clientNamespace`) instead of clashing.
  * Runtime: node
  * Governing contract: ADR 0080 (as amended by 0305 conventions 1); ADR 0268 (R15: typed keys); STA-1298.
  */
+import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -30,7 +34,7 @@ export function readPackageCatalogues(
   root: string,
   dependencies: readonly string[],
 ): NonNullable<MemberIR["packageCatalogues"]> {
-  const found: { package: string; catalogues: NonNullable<MemberIR["catalogues"]> }[] = [];
+  const found: NonNullable<MemberIR["packageCatalogues"]>[number][] = [];
   for (const dependency of new Set(dependencies)) {
     if (
       !dependency.startsWith("@stackra/") &&
@@ -39,7 +43,22 @@ export function readPackageCatalogues(
       continue;
     const lang = dependencyPath(root, dependency, "assets/lang");
     const catalogues = lang === undefined ? undefined : readCatalogues(dirname(dirname(lang)));
-    if (catalogues !== undefined) found.push({ package: dependency, catalogues });
+    if (catalogues === undefined) continue;
+    const service = serviceOf(root, dependency);
+    found.push({ package: dependency, ...(service === undefined ? {} : { service }), catalogues });
   }
   return found;
+}
+
+/** The member key of `dependency` when it is a service member (package.json `stackra.tier: "service"`), else undefined. */
+function serviceOf(root: string, dependency: string): string | undefined {
+  const manifest = dependencyPath(root, dependency, "stackra.manifest.json");
+  const pkg = dependencyPath(root, dependency, "package.json");
+  if (manifest === undefined || pkg === undefined) return undefined;
+  const { stackra } = JSON.parse(readFileSync(pkg, "utf8")) as {
+    readonly stackra?: { readonly tier?: unknown };
+  };
+  if (stackra?.tier !== "service") return undefined;
+  const { member } = JSON.parse(readFileSync(manifest, "utf8")) as { readonly member?: unknown };
+  return typeof member === "string" && member !== "" ? member : undefined;
 }

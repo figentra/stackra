@@ -17,6 +17,7 @@ import { repositoryRoot } from "#node/functions/repository-root.function";
 /** Prints a deploy plan. */
 export class RunwayPlanCommand extends Command({
   name: "plan",
+  bin: true,
   description: "Print what a deploy of an environment does, as JSON (names only)",
   examples: ["runway plan", "runway plan staging --json"],
 }) {

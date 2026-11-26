@@ -13,7 +13,7 @@ import { Duration } from "@stackra/contracts";
 import type { PublicId } from "@stackra/contracts";
 
 import { JobStatus } from "#contracts/index";
-import type { QueuedJob } from "#contracts/index";
+import type { QueueDriver, QueuedJob } from "#contracts/index";
 import type { QueueConformanceCase } from "#testing/types/queue-conformance-case.type";
 
 /** Noon on 2026-10-24 plus `seconds`. */
@@ -41,6 +41,16 @@ function same(label: string, got: unknown, want: unknown): string[] {
     : [`${label}: expected ${JSON.stringify(want)}, got ${JSON.stringify(got)}`];
 }
 
+/** The job `driver` reserves of `queue` at `now`, loaded as the claim names it. */
+async function reserved(
+  driver: QueueDriver,
+  queue: string | undefined,
+  now: Date,
+): Promise<QueuedJob | undefined> {
+  const claim = await driver.reserve(queue, now);
+  return claim === undefined ? undefined : driver.load(claim.id);
+}
+
 /** A scope node. */
 const scope = (id: PublicId<"scp">) => ({ id, path: `platform.${id}` });
 
@@ -59,10 +69,10 @@ export const QUEUE_CONFORMANCE_CASES: readonly QueueConformanceCase[] = [
     id: "queue.retry-waits",
     run: async (driver) => {
       await driver.push(jobOf("job_a"));
-      const first = await driver.reserve("conformance", at(1));
+      const first = await reserved(driver, "conformance", at(1));
       await driver.retry("job_a", at(30), failure);
-      const early = await driver.reserve("conformance", at(10));
-      const late = await driver.reserve("conformance", at(30));
+      const early = await reserved(driver, "conformance", at(10));
+      const late = await reserved(driver, "conformance", at(30));
       return [
         ...same("first attempt", first?.attempts, 1),
         ...same("before its time", early?.id, undefined),
@@ -77,7 +87,7 @@ export const QUEUE_CONFORMANCE_CASES: readonly QueueConformanceCase[] = [
       await driver.push(jobOf("job_high", { runAt: at(5), priority: 10 }));
       return same(
         "highest priority first",
-        (await driver.reserve(undefined, at(10)))?.id,
+        (await reserved(driver, undefined, at(10)))?.id,
         "job_high",
       );
     },
@@ -89,8 +99,8 @@ export const QUEUE_CONFORMANCE_CASES: readonly QueueConformanceCase[] = [
       await driver.push(jobOf("job_b1", { scope: busy, runAt: at(0) }));
       await driver.push(jobOf("job_b2", { scope: busy, runAt: at(1) }));
       await driver.push(jobOf("job_q1", { scope: scope("scp_quiet"), runAt: at(2) }));
-      const first = await driver.reserve(undefined, at(10));
-      const second = await driver.reserve(undefined, at(10));
+      const first = await reserved(driver, undefined, at(10));
+      const second = await reserved(driver, undefined, at(10));
       return [
         ...same("oldest first while no scope runs", first?.id, "job_b1"),
         ...same("then the scope with fewer running jobs", second?.id, "job_q1"),
@@ -103,10 +113,10 @@ export const QUEUE_CONFORMANCE_CASES: readonly QueueConformanceCase[] = [
       const capped = scope("scp_capped");
       await driver.push(jobOf("job_c1", { scope: capped, scopeConcurrency: 1, runAt: at(0) }));
       await driver.push(jobOf("job_c2", { scope: capped, scopeConcurrency: 1, runAt: at(1) }));
-      const first = await driver.reserve(undefined, at(10));
-      const blocked = await driver.reserve(undefined, at(10));
+      const first = await reserved(driver, undefined, at(10));
+      const blocked = await reserved(driver, undefined, at(10));
       await driver.remove("job_c1");
-      const freed = await driver.reserve(undefined, at(10));
+      const freed = await reserved(driver, undefined, at(10));
       return [
         ...same("first of the scope", first?.id, "job_c1"),
         ...same("none past the cap", blocked?.id, undefined),
@@ -118,10 +128,10 @@ export const QUEUE_CONFORMANCE_CASES: readonly QueueConformanceCase[] = [
     id: "queue.release",
     run: async (driver) => {
       await driver.push(jobOf("job_a"));
-      await driver.reserve(undefined, at(1));
+      await reserved(driver, undefined, at(1));
       await driver.release("job_a", at(20));
-      const early = await driver.reserve(undefined, at(10));
-      const later = await driver.reserve(undefined, at(20));
+      const early = await reserved(driver, undefined, at(10));
+      const later = await reserved(driver, undefined, at(20));
       return [
         ...same("waits until released time", early?.id, undefined),
         ...same("the attempt was given back", later?.attempts, 1),
@@ -132,16 +142,23 @@ export const QUEUE_CONFORMANCE_CASES: readonly QueueConformanceCase[] = [
     id: "queue.dead-letter",
     run: async (driver) => {
       await driver.push(jobOf("job_a"));
-      await driver.reserve(undefined, at(1));
+      await reserved(driver, undefined, at(1));
       await driver.deadLetter("job_a", failure);
       const dead = await driver.deadLetters("conformance", 10);
+      const claimed = await driver.claimDead({ queue: "conformance", limit: 10 });
+      const one = await driver.claimDead({ id: "job_a", limit: 1 });
       const redriven = await driver.redrive("job_a", at(5));
-      const again = await driver.reserve(undefined, at(5));
+      const again = await reserved(driver, undefined, at(5));
       return [
         ...same(
           "dead letters",
           dead.map((job) => [job.id, job.status]),
           [["job_a", "dead"]],
+        ),
+        ...same(
+          "claimed",
+          [claimed.map((claim) => claim.id), one.map((claim) => claim.id)],
+          [["job_a"], ["job_a"]],
         ),
         ...same("redrive", redriven, true),
         ...same("redriven attempt", again?.attempts, 1),

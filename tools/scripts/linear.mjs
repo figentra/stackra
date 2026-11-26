@@ -18,8 +18,8 @@
  * Token: the "Stackra Agent" OAuth app (actor=app, so actions show as the app; it becomes the issue's delegate,
  *   never its assignee) is preferred: LINEAR_AGENT_TOKEN, re-minted from LINEAR_AGENT_CLIENT_ID and
  *   LINEAR_AGENT_CLIENT_SECRET (client_credentials) when it expires or is absent. LINEAR_API_KEY (personal key)
- *   is the fallback. They reach the process only through `infisical run --env=dev --path=/agents` (the
- *   `pnpm linear` script) or CI repo secrets. Never printed.
+ *   is the fallback. They reach the process only through `secrets-exec.mjs`, from the `agents` scope of figentra/secrets
+ *   (the `pnpm linear` script) or CI repo secrets. Never printed.
  * Network: through bot-token.mjs (STA-302): reads, issue updates and the token mint retry on transient errors; a
  *   comment carries a client-chosen id and is re-sent only when a read finds no comment with it (any other read error
  *   fails, outcome unknown); other writes run once.
@@ -114,7 +114,7 @@ export function client({ env = process.env, fetch = netFetch } = {}) {
     return { res, json: await res.json().catch(() => ({})) };
   };
   const gql = async (query, variables = {}) => {
-    if (!a) throw new Error("no Linear token (run under `infisical run --env=dev --path=/agents`)");
+    if (!a) throw new Error("no Linear token (run it as `pnpm linear`, which decrypts the token)");
     if (!state.header) await refresh();
     let { res, json } = await post(query, variables);
     if (isAuthError(res, json) && state.app && (state.mintable || env.LINEAR_API_KEY)) {

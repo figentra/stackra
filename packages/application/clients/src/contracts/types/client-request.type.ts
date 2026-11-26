@@ -22,7 +22,7 @@ import type { ZodType } from "zod";
  * One call handed to a transport.
  *
  * @example
- * { key: "orders.order.cancel@1", kind: "action", endpoint: { method: "PUT", path: "/orders/:orderId/cancel" },
+ * { key: "orders.order.cancel@1", kind: "action", endpoint: { method: "PUT", path: "/app/orders/:orderId/cancel" },
  *   input: { orderId: "ord_01H2J3K4L5M6N7P8Q9R0S1T2V3" }, output: CancelOrderOutput$ }
  */
 export interface ClientRequest {

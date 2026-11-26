@@ -62,6 +62,14 @@ const live =
     if (node?.ownerDocument.defaultView && !node.closest("template")) keep(node);
   };
 
+/**
+ * The `steps` look: plain words, an arrow before every step but the first (pointing the reading way), no indicator,
+ * and the selected step told apart by more than colour (WCAG 1.4.1): foreground, semibold and a steel underline. The
+ * arrow is an inline block, so the underline never runs under it.
+ */
+const STEP_CLASS_NAME =
+  "bg-transparent px-1 text-muted data-[selected=true]:font-semibold data-[selected=true]:text-foreground data-[selected=true]:underline data-[selected=true]:decoration-accent data-[selected=true]:decoration-2 data-[selected=true]:underline-offset-8 [&:not(:first-child)]:before:inline-block [&:not(:first-child)]:before:me-3 [&:not(:first-child)]:before:text-muted [&:not(:first-child)]:before:content-['→'_/_''] rtl:[&:not(:first-child)]:before:content-['←'_/_'']";
+
 /** Keeps a press on the close mark from reaching the tab, which would select it. */
 const stop = (event: SyntheticEvent) => event.stopPropagation();
 
@@ -125,6 +133,7 @@ export function Tabs({
     readonly shown: readonly string[];
   }>();
   const isMenu = overflow === "menu" && orientation !== "vertical";
+  const isSteps = variant === "steps";
   const ids = items.map((item) => item.id).join("\n");
   const shown = fitted?.ids === ids ? fitted.shown : null;
 
@@ -179,6 +188,7 @@ export function Tabs({
               key={item.id}
               id={item.id}
               data-tab-id={item.id}
+              {...(isSteps ? { className: STEP_CLASS_NAME } : {})}
               {...(canClose
                 ? {
                     "aria-describedby": `${baseId}-close-${item.id}`,
@@ -213,7 +223,9 @@ export function Tabs({
                   </span>
                 </span>
               ) : null}
-              <HeroTabs.Indicator {...(motion === "full" ? { style: INDICATOR_STYLE } : {})} />
+              {isSteps ? null : (
+                <HeroTabs.Indicator {...(motion === "full" ? { style: INDICATOR_STYLE } : {})} />
+              )}
             </HeroTabs.Tab>
           );
         })}
@@ -223,7 +235,13 @@ export function Tabs({
   return (
     <HeroTabs
       {...rest}
-      {...omitUndefined({ orientation, variant, isDisabled, selectedKey: selected })}
+      {...omitUndefined({
+        orientation,
+        // HeroUI has no steps look: it draws on the flat one, restyled per tab.
+        variant: isSteps ? "secondary" : variant,
+        isDisabled,
+        selectedKey: selected,
+      })}
       disabledKeys={items.filter((item) => item.isDisabled).map((item) => item.id)}
       onSelectionChange={(key) => select(String(key))}
     >

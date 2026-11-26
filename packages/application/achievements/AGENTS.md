@@ -42,7 +42,8 @@ with a QR code and certificate fields for `@stackra/documents` (ADR 0368, OS ADR
   token hash, an award id and a scope, nothing else: never add personal data or the token to it.
 - Every award write goes through `AwardService`, which records `AwardGranted`/`AwardRevoked` on the row and keeps the
   verification row in step (written on grant, deleted on revoke) in one flush.
-- `verify` and `verifyCode` open a scope session (`Database.withScope`); never call it from a method another action's transaction runs.
+- `verify` and `verifyCode` read the award in `CallIsolation` as a system actor in the award's scope, so the session
+  carries that scope and the tenant it resolves to; call them from their own public query.
 - No tenant word is declared here (R-59, ADR 0323): a scope is a `ScopeRef`. No parameter properties and no `#private`
   fields (services typecheck this source under `erasableSyntaxOnly`). Never import `@mikro-orm/*` (ADR 0097 d2).
 - `AwardPass` builds content only, from the certificate fields; signing and issuing are `@stackra/integrations/node`'s.

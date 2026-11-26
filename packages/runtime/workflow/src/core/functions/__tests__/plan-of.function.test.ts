@@ -9,7 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 18); ADR 0151 (0294 note).
  */
-import { Backoff } from "@stackra/contracts";
+import { Backoff, Duration } from "@stackra/contracts";
 import { DomainEvent } from "@stackra/events";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -17,6 +17,9 @@ import { Signal } from "#core/bases/signal.base";
 import { Workflow } from "#core/bases/workflow.base";
 import { Step } from "#core/decorators/step.decorator";
 import { planOf } from "#core/functions/plan-of.function";
+
+/** A live retry reader that changes nothing. */
+const live = async (): Promise<undefined> => undefined;
 
 class Collected extends Signal {}
 
@@ -108,6 +111,18 @@ describe(planOf, () => {
     }
     expect(() => planOf(MissingAfterWorkflow)).toThrow(TypeError);
     expect(() => planOf(CycleWorkflow)).toThrow(/cycle/);
+  });
+
+  it("carries a step's first wait and its live retry reader into the plan (STA-2610)", () => {
+    class LiveWorkflow extends Workflow({}) {
+      @Step({ retry: { attempts: 3, base: Duration.seconds(2), live } })
+      async ship(): Promise<void> {}
+    }
+    expect(planOf(LiveWorkflow).steps[0]).toMatchObject({
+      attempts: 3,
+      base: Duration.seconds(2),
+      live,
+    });
   });
 
   it("refuses a retry budget below one and a waitFor that is not a signal", () => {

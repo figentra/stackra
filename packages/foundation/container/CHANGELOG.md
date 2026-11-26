@@ -1,5 +1,235 @@
 # @stackra/container
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/contracts@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/contracts@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- f6a087c: A record policy's method is found by the name of the `Permission` static behind the call's permission
+  (`static readonly confirmByCode` → `confirmByCode()`), so a multi-word verb's method runs. `registerPermissions`
+  records each key's static name in `PERMISSION_MEMBERS`. For one release the old lookup by the key's last segment
+  (`confirm_by_code`) is still tried when the policy has no method of the static's name.
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+
+## 0.29.0
+
+### Patch Changes
+
+- b4b6422: The container now builds `Container` itself, as gen's `CONTAINER_BUILT` already assumed: a class that injects
+  `Container` (to read an optional binding at call time, such as `CallIsolation` in outbox's `PruneOutboxAction`,
+  `MaintainChangeLogAction` and `WarehouseChangeSink`) gets the root container, at the root and inside a request scope.
+  Before this, resolving such a class threw `UnboundTokenError: Nothing binds Container`, at boot for an exported
+  singleton. A wiring's `deps` (bindings, replacements and drivers) also accept `Container`, whose private constructor
+  made `deps: [Container]` a type error. Skip `@stackra/*` 0.28.0 in a host that uses data-maintenance or data-transfer; take 0.28.1.
+- @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/contracts@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/contracts@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/contracts@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/contracts@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/contracts@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/contracts@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/contracts@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- a7b7e58: `@Replaces(Port)` now builds the replacement with its constructor dependencies: gen writes the replacement's
+  constructor tokens on each `replaces` row (`deps`), and the container passes them, as it does for any driver. Before,
+  the replacement was built with none and its injected fields were silently undefined.
+- @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/contracts@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/contracts@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/contracts@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/contracts@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/contracts@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/contracts@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/contracts@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/contracts@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- 896c8a3: The kind registry and the permission registry live on `globalThis` under `Symbol.for` keys, so two installed copies of
+  `@stackra/container` (a React peer variant, or a second version) share them. A member that pins React for React Native
+  got a second container copy beside `@stackra/console`'s, and `stackra gen` crashed with "`@str` may mark … AddCommand
+  is of no kind".
+- @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/contracts@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/contracts@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/contracts@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/contracts@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/contracts@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/contracts@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

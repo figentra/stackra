@@ -1,16 +1,17 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreEvents`, the events target of a service: `.stackra/encore/<member>/events.ts`, one Encore Pub/Sub
+ * Purpose: `emitEncoreEvents`, the events target of a service: `stackra-encore/<member>/events.ts`, one Encore Pub/Sub
  *          `Topic` per integration event its manifest publishes, registered with `registerBrokerTopics` under the
  *          event's `<module>.<name>.v<n>` wire name so the outbox's broker publisher reaches it; and, for a service with
- *          a relay listener, `.stackra/encore/<member>/relay.ts`, one `Subscription` per integration topic of the
+ *          a relay listener, `stackra-encore/<member>/relay.ts`, one `Subscription` per integration topic of the
  *          product (its own and every publishing sibling's) that hands the envelope to its `InboxService`; and, for a
- *          service whose listeners take a `#stackra/clients/<service>` event, `.stackra/encore/<member>/subscriptions.ts`,
+ *          service whose listeners take a `#stackra/clients/<service>` event, `stackra-encore/<member>/subscriptions.ts`,
  *          one `Subscription` per consumed event on the producer's generated topic, into the same inbox, which runs the
  *          typed listeners; a local listener of the service's own integration event gets one on its own topic too
  *          (STA-1302), so the broker driver still delivers it once, after commit.
  * Boundary: pure; reads the manifest's integration events (hosted packages' included, as the outbox publishes them)
- *           and `ir.publishers`. No producer is edited to add a subscriber: the relay service imports each producer's
+ *           and `ir.publishers`. A producer read from a contract package gets no subscription: its events reach the
+ *           service through the generated inbox (`emitInbox`, ADR 0511 decisions 14 and 18). No producer is edited to add a subscriber: the relay service imports each producer's
  *           generated topic, so a new publishing service is heard on the relay's next gen run. A wire name two
  *           publishers share is subscribed once (the first, by service key). Delivery is at least once; the inbox
  *           claims the envelope id, so a redelivery runs nothing twice. Which `EventPublisher` driver runs is runtime
@@ -25,9 +26,11 @@
 import type { StackraManifest } from "@stackra/contracts";
 import { camelCase, kebabCase } from "@stackra/support";
 
+import { BROKER_MESSAGE_IMPORT } from "#core/constants/broker-message-import.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -61,9 +64,9 @@ function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
     ...encoreDatabaseImport(ir),
     'import type { EventEnvelope } from "@stackra/outbox/contracts";',
     'import { InboxService } from "@stackra/outbox/node";',
-    'import type { BrokerMessage } from "@stackra/queue/contracts";',
     'import { Subscription } from "encore.dev/pubsub";',
     "",
+    BROKER_MESSAGE_IMPORT,
     ENCORE_APP_IMPORT,
     ...imports,
     "",
@@ -82,7 +85,7 @@ function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
  * publishes, relays nor consumes another service's event.
  *
  * @example
- * emitEncoreEvents(ir, manifest).map((file) => file.path); // [".stackra/encore/orders/events.ts"]
+ * emitEncoreEvents(ir, manifest).map((file) => file.path); // ["stackra-encore/orders/events.ts"]
  */
 export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): GeneratedFile[] {
   if (ir.layout !== "service") return [];
@@ -98,12 +101,13 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
       runtime: "node",
     });
     files.push({
-      path: `.stackra/encore/${ir.member}/events.ts`,
+      path: `${encoreServiceFolder(ir.member)}/events.ts`,
       content: [
         header,
         'import { registerBrokerTopics } from "@stackra/queue";',
-        'import type { BrokerMessage } from "@stackra/queue/contracts";',
-        'import { Topic } from "encore.dev/pubsub";',
+        'import { Publisher, Topic } from "encore.dev/pubsub";',
+        "",
+        BROKER_MESSAGE_IMPORT,
         "",
         ...own.flatMap((wire) => [
           `/** The \`${wire}\` integration event. */`,
@@ -112,8 +116,12 @@ export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): Gener
           "});",
           "",
         ]),
+        // Encore refuses a bare topic handed around as a value ("invalid topic usage"); a publisher ref is how it may go.
         "registerBrokerTopics([",
-        ...own.map((wire) => `  { name: ${JSON.stringify(wire)}, topic: ${topicConst(wire)} },`),
+        ...own.map(
+          (wire) =>
+            `  { name: ${JSON.stringify(wire)}, topic: ${topicConst(wire)}.ref<Publisher<BrokerMessage>>() },`,
+        ),
         "]);",
         "",
       ].join("\n"),
@@ -138,7 +146,7 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
     ...(ir.publishers ?? [])
       .filter((publisher) => publisher.member !== ir.member)
       .map((publisher) => ({
-        from: `../../../../${publisher.folder}/.stackra/encore/${publisher.member}/events`,
+        from: `../../../${publisher.folder}/${encoreServiceFolder(publisher.member)}/events`,
         wires: wireNames(publisher.manifest),
       })),
   ];
@@ -162,7 +170,7 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
     runtime: "node",
   });
   files.push({
-    path: `.stackra/encore/${ir.member}/relay.ts`,
+    path: `${encoreServiceFolder(ir.member)}/relay.ts`,
     content: [
       header,
       ...inboxPreamble(ir, imports),
@@ -200,7 +208,7 @@ function emitSubscriptions(
     const service = event.from.startsWith(CLIENTS_SPECIFIER)
       ? event.from.slice(CLIENTS_SPECIFIER.length)
       : ir.member;
-    // A service from a contract package has no sibling folder to import a topic from; `emitClients` refuses it.
+    // A contract-only producer lives in another app: its events come through the inbox, never a topic (ADR 0511 d14).
     if (ir.services?.find((candidate) => candidate.member === service)?.package !== undefined)
       continue;
     const events = service === ir.member ? manifest.events : serviceManifest(ir, service)?.events;
@@ -228,7 +236,7 @@ function emitSubscriptions(
     const from =
       service === ir.member
         ? "./events"
-        : `../../../../${folder}/.stackra/encore/${service}/events`;
+        : `../../../${folder}/${encoreServiceFolder(service)}/events`;
     imports.push(`import { ${fresh.map(topicConst).join(", ")} } from ${JSON.stringify(from)};`);
     subscribed.push(...fresh);
   }
@@ -241,7 +249,7 @@ function emitSubscriptions(
     runtime: "node",
   });
   files.push({
-    path: `.stackra/encore/${ir.member}/subscriptions.ts`,
+    path: `${encoreServiceFolder(ir.member)}/subscriptions.ts`,
     content: [
       header,
       ...inboxPreamble(ir, imports),

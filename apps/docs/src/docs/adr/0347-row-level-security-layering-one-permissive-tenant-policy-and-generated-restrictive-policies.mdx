@@ -4,6 +4,15 @@ description: "Accepted · 2026-10-24"
 ---
 
 <Note>
+  Read with the amendment of 2026-11-07 to
+  [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) ("platform tables
+  and system readers", STA-2561): the catalogue audit of decision 5 sorts a table without the owner
+  column into three groups (ancestor, `scope_id` or `isolation_scope_id` equality, system table),
+  warns in 0.19 and fails from 0.20; the `@stackra/database` tables use `isolation_scope_id` as
+  their owner column.
+</Note>
+
+<Note>
   Amends [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) (decision
   1: the equality policy is the only permissive policy, and narrowing is a restrictive layer; the
   Enforcement audit) by a Note. Reads with [0231](/adr/0231-naming-and-casing-standard) as amended

@@ -7,13 +7,18 @@
  *           per scope: both tables are the service's, read across scopes). The only actor is the system, so it gets no
  *           endpoint and no tool. The change log has its own job (`data_maintenance.change_log.maintain`). Its
  *           permission is `OutboxMessagePermissions.prune`, system-held at L4. Gen registers it with
- *           `registerScheduledJobs`.
+ *           `registerScheduledJobs`. The tables are tenant-owned: `pruneOutbox` claims the dead letters of every
+ *           tenant and deletes each in its own tenant's isolation, the `CallIsolation` read optionally from the
+ *           injected `Container` (`boundIsolation`), so an app without tenancy still boots and prunes its platform
+ *           rows.
  * Runtime: node
  * Governing contract: data-layer gap gov6 (the outbox prune); ADR 0078 (decision 4); ADR 0189 (decision 4: data is
- *                     kept no longer than needed); ADR 0305 (rule 28: the job surface); ADR 0462 (decision 1).
+ *                     kept no longer than needed); ADR 0305 (rule 28: the job surface); ADR 0462 (decision 1); ADR
+ *                     0239 (2026-11-07 amendment, gap A).
  */
-import { Action } from "@stackra/actions";
+import { Action, boundIsolation } from "@stackra/actions";
 import type { ActionContext } from "@stackra/actions";
+import type { Container } from "@stackra/container";
 import { ActorKind } from "@stackra/contracts";
 import { pruneOutbox } from "@stackra/outbox";
 import type { OutboxConfig } from "@stackra/outbox";
@@ -46,16 +51,26 @@ export class PruneOutboxAction extends Action({
   /** The prune window, read at run time so an override applies on the next tick. */
   private readonly config: OutboxConfig;
 
+  /** The container the bound `CallIsolation`, if any, is read from at run time. */
+  private readonly container: Container;
+
   /**
    * @param outbox - the message store.
    * @param inbox - the received event ids.
    * @param config - the outbox configuration.
+   * @param container - the container whose `CallIsolation` each tenant's dead letters are deleted in.
    */
-  constructor(outbox: OutboxDriver, inbox: InboxDriver, config: OutboxConfig) {
+  constructor(
+    outbox: OutboxDriver,
+    inbox: InboxDriver,
+    config: OutboxConfig,
+    container: Container,
+  ) {
     super();
     this.outbox = outbox;
     this.inbox = inbox;
     this.config = config;
+    this.container = container;
   }
 
   /** Deletes what is older than `pruneAfterDays` before the call's instant. */
@@ -65,6 +80,7 @@ export class PruneOutboxAction extends Action({
       this.inbox,
       this.config.pruneAfterDays,
       ctx.now(),
+      boundIsolation(this.container),
     );
     return PruneOutboxOutput.create(report);
   }

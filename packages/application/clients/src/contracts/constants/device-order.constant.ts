@@ -29,5 +29,5 @@ export const DEVICE_ORDER = Object.freeze({
   /** The locked key of the query that answers the device's last acknowledged sequence. */
   acknowledgedQuery: "devices.device.acknowledged@1",
   /** Its route (`GET`); it answers `{ sequence: number | null }`. */
-  acknowledgedPath: "/devices/acknowledged",
+  acknowledgedPath: "/app/devices/acknowledged",
 });

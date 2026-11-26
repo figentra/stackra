@@ -14,4 +14,6 @@ export const DEVICE_STORAGE_KEYS = Object.freeze({
   deviceId: "devices.device_id",
   /** `secrets`: the access token from pairing. */
   token: "devices.device_token",
+  /** `secrets`: the open pairing's secret, kept until the credential is picked up. */
+  pairingSecret: "devices.pairing_secret",
 });

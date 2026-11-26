@@ -2,7 +2,7 @@
 // Purpose: the Cloudflare Worker `stackra-edge` (ADR 0437): its script (dist/main.mjs, built by tsdown), the host map,
 //          the origin and the token settings as Worker vars, and observability.
 // Owner: release-operations · Secrets: EDGE_SIGNING_SECRET is a Worker secret (the newest edge signing key, the one the
-//        API's EdgeSigningKeys lists first) set by CI from Infisical (ADR 0173); no secret is in this file.
+//        API's EdgeSigningKeys lists first) set by CI from sops (ADR 0525); no secret is in this file.
 // Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
@@ -28,6 +28,71 @@
     "EDGE_OIDC_KEYS_SECONDS": 3600,
     // Clock skew allowed on a token's exp and nbf.
     "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+    // "<product>.<surface>" -> @stackra/csp CspConfig values (extraConnectSrc, frameAncestors, reportOnly, ...); a
+    // surface not listed gets the baseline, frame-ancestors 'none'. Interim until runway emits Workers config.
+    // Pay's checkout, for one: { "pay.checkout": { "frameAncestors": { "/c/*": "request" } } }. Its payment widgets'
+    // origins (pay#151) are scripts of consent category `necessary`, frame and connect sources: HyperPay's sandbox
+    // outside production, its live host in production only, and Geidea's regional hosts.
+    "EDGE_CSP": "{}",
+    // How long the owning product's answer for one "request" path's framers is kept in the isolate.
+    "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+  },
+  // Wrangler does not inherit `vars` into an environment, so each repeats them; only EDGE_CSP differs (runway's
+  // dev, preview, staging and production).
+  "env": {
+    "dev": {
+      // Pay's checkout: its pages are framed by Pay's console only, `/c/*` by the merchant site Pay names per request.
+      "vars": {
+        "EDGE_ORIGIN": "https://origin.invalid",
+        "EDGE_HOST_MAP": "{}",
+        "EDGE_OIDC_ISSUER": "",
+        "EDGE_OIDC_AUDIENCE": "",
+        "EDGE_OIDC_KEYS_SECONDS": 3600,
+        "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.dev.figentra.com\"]},\"thirdPartyScripts\":{\"https://eu-test.oppwa.com\":\"necessary\",\"https://www.ksamerchant.geidea.net\":\"necessary\",\"https://www.merchant.geidea.net\":\"necessary\",\"https://payments.geidea.ae\":\"necessary\"},\"extraFrameSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"],\"extraConnectSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"]}}",
+        "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+      },
+    },
+    "preview": {
+      // A PR's console host is `console-pr-<n>.pay.preview.figentra.com`; no origin can be listed and @stackra/csp refuses
+      // wildcards, so Pay answers `/preview` per request with the console of the same PR (STA-2562).
+      "vars": {
+        "EDGE_ORIGIN": "https://origin.invalid",
+        "EDGE_HOST_MAP": "{}",
+        "EDGE_OIDC_ISSUER": "",
+        "EDGE_OIDC_AUDIENCE": "",
+        "EDGE_OIDC_KEYS_SECONDS": 3600,
+        "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":\"request\"},\"thirdPartyScripts\":{\"https://eu-test.oppwa.com\":\"necessary\",\"https://www.ksamerchant.geidea.net\":\"necessary\",\"https://www.merchant.geidea.net\":\"necessary\",\"https://payments.geidea.ae\":\"necessary\"},\"extraFrameSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"],\"extraConnectSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"]}}",
+        "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+      },
+    },
+    "staging": {
+      // As dev, on staging's console.
+      "vars": {
+        "EDGE_ORIGIN": "https://origin.invalid",
+        "EDGE_HOST_MAP": "{}",
+        "EDGE_OIDC_ISSUER": "",
+        "EDGE_OIDC_AUDIENCE": "",
+        "EDGE_OIDC_KEYS_SECONDS": 3600,
+        "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.staging.figentra.com\"]},\"thirdPartyScripts\":{\"https://eu-test.oppwa.com\":\"necessary\",\"https://www.ksamerchant.geidea.net\":\"necessary\",\"https://www.merchant.geidea.net\":\"necessary\",\"https://payments.geidea.ae\":\"necessary\"},\"extraFrameSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"],\"extraConnectSrc\":[\"https://eu-test.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"]}}",
+        "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+      },
+    },
+    "production": {
+      // As dev, on the production console.
+      "vars": {
+        "EDGE_ORIGIN": "https://origin.invalid",
+        "EDGE_HOST_MAP": "{}",
+        "EDGE_OIDC_ISSUER": "",
+        "EDGE_OIDC_AUDIENCE": "",
+        "EDGE_OIDC_KEYS_SECONDS": 3600,
+        "EDGE_TOKEN_LEEWAY_SECONDS": 60,
+        "EDGE_CSP": "{\"pay.checkout\":{\"frameAncestors\":{\"/c/*\":\"request\",\"/preview\":[\"https://console.pay.figentra.com\"]},\"thirdPartyScripts\":{\"https://eu-prod.oppwa.com\":\"necessary\",\"https://www.ksamerchant.geidea.net\":\"necessary\",\"https://www.merchant.geidea.net\":\"necessary\",\"https://payments.geidea.ae\":\"necessary\"},\"extraFrameSrc\":[\"https://eu-prod.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"],\"extraConnectSrc\":[\"https://eu-prod.oppwa.com\",\"https://www.ksamerchant.geidea.net\",\"https://www.merchant.geidea.net\",\"https://payments.geidea.ae\"]}}",
+        "EDGE_FRAME_ANCESTORS_SECONDS": 60,
+      },
+    },
   },
   // No route or custom domain yet: the owner decides which hosts this Worker fronts and adds them here.
   "routes": [],

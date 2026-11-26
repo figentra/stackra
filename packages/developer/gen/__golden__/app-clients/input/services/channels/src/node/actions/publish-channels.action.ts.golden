@@ -3,7 +3,7 @@ import { Action } from "@stackra/actions";
 import { PublishChannelsInput } from "#node/schemas/publish-channels-input.schema";
 import { PublishChannelsOutput } from "#node/schemas/publish-channels-output.schema";
 
-export class PublishChannelsAction extends Action({ key: "channels.publish", actors: ["user"] }) {
+export class PublishChannelsAction extends Action({ key: "channels.publish", actors: ["user"], idempotency: "optional" }) {
   async handle(input: PublishChannelsInput): Promise<PublishChannelsOutput> {
     return PublishChannelsOutput.create({ status: "live" });
   }

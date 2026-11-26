@@ -13,13 +13,14 @@ import { Idempotency } from "#core/enums/idempotency.enum";
 
 describe("Idempotency", () => {
   it("holds its snake_case codes in order", () => {
-    expect(Enum.values(Idempotency)).toEqual(["optional", "required", "derived"]);
+    expect(Enum.values(Idempotency)).toEqual(["optional", "required", "derived", "never"]);
     expect(Idempotency.Optional).toBe("optional");
     expect(Idempotency.Required).toBe("required");
     expect(Idempotency.Derived).toBe("derived");
+    expect(Idempotency.Never).toBe("never");
   });
 
   it("types its values", () => {
-    expectTypeOf<Idempotency>().toEqualTypeOf<"optional" | "required" | "derived">();
+    expectTypeOf<Idempotency>().toEqualTypeOf<"optional" | "required" | "derived" | "never">();
   });
 });

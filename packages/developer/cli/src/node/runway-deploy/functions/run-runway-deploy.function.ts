@@ -10,15 +10,16 @@
  *          of an environment runs at a time on a host (`withDeployLock` over `fileDeployLock`). In a product
  *          repository (a root runway with `surfaces` or `mobile`), the web and mobile kinds ship through the
  *          product publish (`runDeployProduct`, the former `--product` path, which stays as an alias) inside the
- *          same lock, and the other kinds through `deploy()`. A runway with `secrets.sync: on-deploy` syncs the
- *          services' secrets from Infisical into Encore (`syncSecrets`) first, inside the lock, whenever the deploy
- *          ships services, and then the Workers provider reads a Worker's secrets from Infisical too; a dry run prints
- *          the sync's names and writers.
+ *          same lock, and the other kinds through `deploy()`; with `--member` the named Worker members ship through
+ *          the Workers provider and the product publish does not run. A runway with `secrets.sync: on-deploy` syncs the
+ *          services' secrets into Encore (`syncSecrets`, from the job's environment, where `.github/actions/
+ *          secrets-decrypt` put the product's sops scope) first, inside the lock, whenever the deploy ships services,
+ *          and the Workers provider reads a Worker's declared secrets the same way; a dry run prints the sync's names
+ *          and writers. `--from-env` is accepted and ignored (deprecated): the job's environment is the only source.
  * Boundary: the CLI picks the providers and prints; every change is a provider's. Logins are each provider CLI's own
- *           (OIDC in CI), and Worker ids and vars are read by the provider from this process's environment (its
- *           secrets too, unless the runway syncs on deploy).
+ *           (OIDC in CI), and Worker ids, vars and secrets are read by the provider from this process's environment.
  * Runtime: node
- * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0173; STA-1921; STA-606.
+ * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0525; STA-1921; STA-606.
  */
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -85,18 +86,28 @@ export async function runRunwayDeploy(context: CliContext): Promise<number> {
   if (unknown.length > 0)
     throw new CliUsageError(`unknown --kind ${unknown.join(", ")}: one of ${known.join(", ")}`);
 
+  if (values["from-env"] === true)
+    io.err(
+      "--from-env is deprecated and ignored: the secret sync always reads the job's environment\n",
+    );
   const root = readRunway(join(cwd, "runway.yaml"), "root");
-  const providers = runwayProviders(root, cwd, list(values["member"]));
+  const members = list(values["member"]);
+  const providers = runwayProviders(root, cwd, members);
   const sha =
     typeof values["sha"] === "string"
       ? values["sha"]
       : (await runProgram("git", ["rev-parse", "HEAD"], { cwd })).trim();
   // A product's web surfaces and mobile apps ship through the product publish (edge KV, R2, EAS submit), not a
-  // Runway provider; every other kind goes through `deploy()` (STA-1972).
-  const productKinds = [
-    ...(root.surfaces === undefined ? [] : [DeployKind.Web]),
-    ...(root.mobile === undefined ? [] : [DeployKind.Mobile]),
-  ].filter((kind) => kinds === undefined || kinds.includes(kind));
+  // Runway provider; every other kind goes through `deploy()` (STA-1972). `--member` names Worker members, which ship
+  // through the Workers provider, so it never starts the product publish nor asks for its facts.
+  const productKinds = (
+    members !== undefined
+      ? []
+      : [
+          ...(root.surfaces === undefined ? [] : [DeployKind.Web]),
+          ...(root.mobile === undefined ? [] : [DeployKind.Mobile]),
+        ]
+  ).filter((kind) => kinds === undefined || kinds.includes(kind));
   const only = (kinds ?? (Object.values(DeployKind) as string[])).filter(
     (kind) => !(productKinds as string[]).includes(kind),
   ) as DeployKind[];

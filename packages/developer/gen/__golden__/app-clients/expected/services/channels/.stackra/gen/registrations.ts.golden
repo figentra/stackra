@@ -14,6 +14,7 @@ import { ChannelsPermissions } from "#node/access/channels.permissions";
 import { PublishChannelsAction } from "#node/actions/publish-channels.action";
 import { ChannelsPublished } from "#node/events/channels-published.event";
 import { PublishChannelsInput } from "#node/schemas/publish-channels-input.schema";
+import { PublishChannelsOutput } from "#node/schemas/publish-channels-output.schema";
 import { registerActions } from "@stackra/actions";
 import { registerPermissions } from "@stackra/container";
 import { registerEventNames } from "@stackra/events";
@@ -27,5 +28,5 @@ registerPermissions([
 ]);
 
 registerActions([
-  { type: PublishChannelsAction, key: "channels.channels.publish@1", permission: "channels.channels.publish", risk: "L2", input: PublishChannelsInput },
+  { type: PublishChannelsAction, key: "channels.channels.publish@1", permission: "channels.channels.publish", risk: "L2", input: PublishChannelsInput, output: PublishChannelsOutput },
 ]);

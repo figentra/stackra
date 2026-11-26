@@ -24,7 +24,7 @@ import { MenuKind } from "#core/enums/menu-kind.enum";
 import { navigationItemsOf } from "#core/functions/navigation-items-of.function";
 import type { RunnableMenu } from "#core/types/runnable-menu.type";
 import { useMenuResolver } from "#native/menu/use-menu-resolver";
-import { useMenus } from "#native/menu/use-menus";
+import { useMenus } from "#react/menu/use-menus";
 import type { ModuleMenuProps } from "#native/module-menu/module-menu.props";
 
 /**

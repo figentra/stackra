@@ -46,10 +46,15 @@ export function settingKeys<
   const out: Record<string, unknown> = { pick };
   for (const [module, inputs] of Object.entries(tree)) {
     const group: Record<string, SettingKey> = {};
-    for (const [name, input] of Object.entries(inputs)) {
+    for (const [entry, input] of Object.entries(inputs)) {
+      // gen keys a section's field `<section>.<name>` (STA-2192); an older generated file keys it `<name>`.
+      const name =
+        input.section !== undefined && entry.startsWith(`${input.section}.`)
+          ? entry.slice(input.section.length + 1)
+          : entry;
       const path =
         input.section === undefined ? `${module}.${name}` : `${module}.${input.section}.${name}`;
-      group[name] = Object.freeze({ ...input, module, name, path });
+      group[entry] = Object.freeze({ ...input, module, name, path });
     }
     SETTING_KEY_REGISTRY.set(module, Object.freeze(Object.values(group)));
     out[module] = Object.freeze(group);

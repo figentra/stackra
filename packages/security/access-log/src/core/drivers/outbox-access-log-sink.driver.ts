@@ -5,13 +5,14 @@
  *          chains them per tenant and stores them with the rest of the evidence.
  * Boundary: no store and no chain of its own: the audit service chains on receipt (ADR 0212 decision 3), and the relay
  *           delivers at least once, so it deduplicates by the event id. The write joins the caller's transaction when
- *           there is one, so a read audited inside an action commits with it. The event's metadata carries the actor's
- *           tenant and the call id as its correlation id. An outbox failure rejects, and `AccessLogService` then fails
+ *           there is one, so a read audited inside an action commits with it. The event's metadata carries the call's
+ *           tenant (`record.scopeId`, else the actor's own) and the call id as its correlation id. An outbox failure rejects, and `AccessLogService` then fails
  *           open or closed by the class.
  * Runtime: isomorphic
  * Governing contract: ADR 0212 (decisions 1, 3, 4 and 5); ADR 0141; ADR 0294 (decision 16); ADR 0409; STA-821.
  */
 import { Driver } from "@stackra/container";
+import { actingScopeId } from "@stackra/contracts";
 import type { EventOutbox } from "@stackra/events/contracts";
 
 import { AccessLogSink } from "#contracts/ports/access-log-sink.port";
@@ -49,13 +50,14 @@ export class OutboxAccessLogSinkDriver extends Driver(AccessLogSink) {
       subjects: [...record.subjects],
       at: record.at.toISOString(),
     });
+    const scopeId = record.scopeId ?? actingScopeId(record.actor);
     await this.outbox.write([
       {
         event,
         meta: {
           id: mintAccessEventId(),
           occurredAt: record.at,
-          ...(record.actor.scopeId === undefined ? {} : { scopeId: record.actor.scopeId }),
+          ...(scopeId === undefined ? {} : { scopeId }),
           actor: record.actor,
           correlationId: record.callId,
         },

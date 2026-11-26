@@ -121,7 +121,7 @@ interface BasicAuth {
   readonly type: typeof AuthType.Basic;
   /** The user name, usually a placeholder (`"{accountSid}"`). */
   readonly username: string;
-  /** The password, usually a placeholder (`"{authToken}"`). */
+  /** The password, usually a placeholder (`"{authToken}"`); `""` for a provider whose key is the whole credential. */
   readonly password: string;
 }
 

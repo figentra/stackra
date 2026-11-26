@@ -46,8 +46,8 @@ Standard Webhooks signing and verification, the inbound receiver of `WebhookEven
   fallback between the two.
 - Compare signatures only through `crypto.subtle.verify` (constant time); never compare signature strings. A token,
   shared value or plain digest is compared through `sameBytes` (MACs both under a one-call random key, then verifies).
-- The regional gateway schemes (`body_token`, `aes_gcm_body`, `ordered_field_hmac`, `keyed_field_digest`,
-  `shared_header`, `jwt_hs256`, STA-1357) read their data from `webhooks.recipe`; `authenticBody` is the one place the
+- The regional gateway schemes (`body_token`, `aes_gcm_body`, `ordered_field_hmac`, `labelled_field_hmac`,
+  `keyed_field_digest`, `shared_header`, `jwt_hs256`, STA-1357) read their data from `webhooks.recipe`; `authenticBody` is the one place the
   receiver picks a verifier, and `RECIPE_FIELDS` in `registerWebhookEvents` lists the fields each needs. They stay
   marked certification pending (owner decision D3) until certified against a sandbox; vendor field lists and header
   names are OS integrations data, never constants here.

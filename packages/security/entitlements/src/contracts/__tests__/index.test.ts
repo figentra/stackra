@@ -19,6 +19,7 @@ describe("@stackra/entitlements/contracts", () => {
       "EntitlementSource",
       "EntitlementUsage",
       "MeterTotals",
+      "PlanServiceChannel",
       "PlanSnapshots",
       "QuotaWarnings",
       "SeatLedger",

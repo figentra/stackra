@@ -1,5 +1,489 @@
 # @stackra/infra-aws-runtime
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+  - @stackra/runway@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/infra-tools@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 0f7448f: A root runway can declare one `gotenberg` resource, the PDF engine `@stackra/documents` renders through. Runway runs it
+  as an internal Fargate workload:
+  
+  - the Chromium image pinned by digest and pulled through the ECR pull-through registry named in
+    `shared.network.registry`;
+  - basic auth on, no URL fetching;
+  - its own 443-only egress group;
+  - FARGATE_SPOT outside production.
+  
+  `ensureGotenbergCredentials` writes the password once and hands every consumer `DOCUMENTS_GOTENBERG_URL` and
+  `DOCUMENTS_GOTENBERG_AUTHORIZATION`.
+
+### Patch Changes
+
+- b33fb9d: A public workload's load balancer keeps a quiet connection for 180 s instead of the ALB default of 60, so an AI answer
+  streamed as server-sent events (60 to 120 s, a ping every 15 s) is not cut mid-stream.
+- 5ca7ec9: The runtime stack reads the VPC from the root runway's `environments.<env>.shared.network.vpcId` (an id or a
+  `ref:<path>`, resolved from the stack config) and passes it to `awsRuntime`. Before, `awsRuntimeStack` passed no VPC,
+  so every plan with a workload or a database failed with "Name the VPC (network.vpcId)". `runtimeNetwork` reports a
+  `vpcId` that is not one id or `ref:`.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0f7448f]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/runway@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/infra-tools@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/infra-tools@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 670f75c: A workload can name `migrate: { command, timeoutMinutes? }`: a one-off task with the workload's image, env, secrets
+  and resources that runs once per new revision before the service rolls, and stops the apply when it fails or times
+  out (15 minutes by default). On AWS it is a second Fargate task definition run by a Pulumi dynamic resource through
+  `@aws-sdk/client-ecs`, which the stacks repository must list beside `@pulumi/aws`.
+
+### Patch Changes
+
+- Updated dependencies [5585893]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+  - @stackra/runway@0.31.0
+  - @stackra/infra-tools@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- a3a3190: A service runway's `environments.<env>.database.extensions` now takes only the Postgres extensions ADR 0160 approves:
+  vector, pg_trgm, ltree, citext, pgcrypto, postgis, pg_stat_statements and btree_gist. `@stackra/runway` exports them
+  as the `PostgresExtension` enum and the frozen `APPROVED_POSTGRES_EXTENSIONS` list, and the shipped
+  `schema/service.json` carries them as an `enum` on `extensions.items`. Any other name is refused with its path.
+  
+  The AWS runtime plan carries each Postgres server's extensions (`DatabasePlan.extensions`, the names its member
+  consumers list, once and sorted) and those it preloads (`preloadLibraries`). A server that preloads one gets its own
+  parameter group (a cluster parameter group on Aurora) setting `shared_preload_libraries`, applied at the next reboot.
+  
+  `@stackra/database`'s `Extension` adds `BtreeGist`, so a migration may run `schema.createExtension(Extension.BtreeGist)`.
+- f4df473: A worker workload needs no port: `port` and `health` are optional unless the workload is `public`, and an internal
+  worker may name `healthCommand`, which becomes its Fargate container's health check (no port mapping is declared).
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [0765ecc]
+- Updated dependencies [f4df473]
+  - @stackra/contracts@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/runway@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/infra-tools@0.30.0
+
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [b4b6422]
+  - @stackra/container@0.29.0
+  - @stackra/runway@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/infra-tools@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/runway@0.28.0
+  - @stackra/infra-tools@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/runway@0.27.0
+  - @stackra/infra-tools@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/runway@0.26.0
+  - @stackra/infra-tools@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/runway@0.25.0
+  - @stackra/infra-tools@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/runway@0.24.0
+  - @stackra/infra-tools@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/runway@0.23.0
+  - @stackra/infra-tools@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/runway@0.22.0
+  - @stackra/infra-tools@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [2974e54]
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/runway@0.21.0
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/infra-tools@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [671c9fd]
+- Updated dependencies [3b48b0f]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/runway@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/infra-tools@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- e105174: The infrastructure and developer packages describe sops and figentra/secrets instead of Infisical (ADR 0525).
+  
+  - `@stackra/infra-aws-runtime`: the RDS Proxy login secret's description names the vault, not Infisical, so the next
+    apply updates that description in place. The docs name the vault and runway's secrets sync.
+  - `@stackra/infra-tools`: the tools-stack secrets sync is the vault's (`secretsSync` keeps its shape: `source`,
+    `principal`, `externalId`); the missing external id error names the secrets sync.
+  - `@stackra/infra-github`, `@stackra/infra-cloudflare`, `@stackra/infra-identity`, `@stackra/infra-observability`,
+    `@stackra/runway`, `@stackra/mcp`, `@stackra/cli`, `@stackra/fiscal`, `@stackra/licensing`: docs and comments only.
+    `githubPlan` still turns `providers.infisical` into the `INFISICAL_*` CI variables until plan phase P6.
+- Updated dependencies [58e3066]
+- Updated dependencies [2933e48]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [e105174]
+- Updated dependencies [c239773]
+- Updated dependencies [414586e]
+- Updated dependencies [7a83de3]
+- Updated dependencies [1f33c82]
+  - @stackra/contracts@0.19.0
+  - @stackra/runway@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/infra-tools@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/validation@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- Updated dependencies [baee3a3]
+  - @stackra/runway@0.18.1
+  - @stackra/infra-tools@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- Updated dependencies [15cd10c]
+- Updated dependencies [dbf1c33]
+  - @stackra/runway@0.18.0
+  - @stackra/infra-tools@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- Updated dependencies [2da4d9d]
+  - @stackra/runway@0.17.2
+  - @stackra/infra-tools@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/runway@0.17.1
+  - @stackra/infra-tools@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- Updated dependencies [4c6bf13]
+  - @stackra/runway@0.17.0
+  - @stackra/infra-tools@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [89d4633]
+- Updated dependencies [08be546]
+- Updated dependencies [5bf8ad3]
+  - @stackra/runway@0.16.0
+  - @stackra/validation@0.16.0
+  - @stackra/infra-tools@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/runway@0.15.0
+  - @stackra/infra-tools@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [fda1d53]
+  - @stackra/runway@0.14.4
+  - @stackra/infra-tools@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- Updated dependencies [3ccf74a]
+- Updated dependencies [64e4840]
+  - @stackra/runway@0.14.3
+  - @stackra/infra-tools@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/runway@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/infra-tools@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- Updated dependencies [857a7fb]
+  - @stackra/runway@0.14.1
+  - @stackra/infra-tools@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [54e05c6]
+  - @stackra/runway@0.14.0
+  - @stackra/infra-tools@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [dc4b3f0]
+- Updated dependencies [5d10209]
+- Updated dependencies [6e61084]
+  - @stackra/runway@0.13.0
+  - @stackra/infra-tools@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [e36505c]
+  - @stackra/runway@0.12.0
+  - @stackra/infra-tools@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/runway@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/infra-tools@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/infra-tools@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [a15cacf]
+- Updated dependencies [4c0eead]
+- Updated dependencies [4749967]
+- Updated dependencies [f511762]
+- Updated dependencies [e57b9a1]
+- Updated dependencies [ea40871]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [242ebe4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [c4348cd]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+  - @stackra/runway@0.10.0
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/infra-tools@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

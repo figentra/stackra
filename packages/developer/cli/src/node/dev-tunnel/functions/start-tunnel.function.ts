@@ -36,8 +36,9 @@ export function startTunnel(
   const token = env[tokenVariable];
   if (token === undefined || token === "")
     throw new CliUsageError(
-      `--tunnel needs ${tokenVariable} (this machine's tunnel token): start it through ` +
-        "`infisical run --env=dev --path=/agents -- stackra dev --tunnel`",
+      `--tunnel needs ${tokenVariable} (this machine's tunnel token, in the agents scope of figentra/secrets): ` +
+        `in core, start it through \`node tools/scripts/secrets-exec.mjs --names ${tokenVariable} -- stackra dev --tunnel\`; ` +
+        `elsewhere, \`sops exec-env ~/.stackra/secrets/agents/${tokenVariable}.enc.yaml 'stackra dev --tunnel'\``,
     );
   Reflect.deleteProperty(env, tokenVariable);
 

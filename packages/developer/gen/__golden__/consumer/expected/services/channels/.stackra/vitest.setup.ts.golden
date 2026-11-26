@@ -6,6 +6,7 @@
  * Runtime: node
  */
 import "@stackra/clients/testing";
+import "@stackra/actions/testing";
 import "#stackra/registrations";
 import { wiring } from "#stackra/wiring";
 import { markMemberSchemasLoaded, registerWiring } from "@stackra/container/testing";

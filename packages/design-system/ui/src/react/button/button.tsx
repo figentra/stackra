@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: the web `Button` on HeroUI v3: maps the shared contract onto HeroUI's button (`isLoading` to `isPending`
  *          with a hidden current-colour spinner in the start slot, `isFullWidth` to `fullWidth`, `label` to
- *          `aria-label`) and passes every other HeroUI prop through unchanged.
+ *          `aria-label`) and passes every other HeroUI prop through unchanged. With `href` (and not disabled or
+ *          loading) it is React Aria's `Link` with the same HeroUI classes, the composition `PageActions` uses, so it
+ *          navigates through the nearest `RouterProvider`; `target` reaches the `<a>`.
  * Boundary: `shortcut` or `action` register the key with the nearest ShortcutProvider and draw the hint (ADR 0508);
  *          no styling of its own; the look is HeroUI's, themed by `@stackra/tokens`. An icon-only button is built
  *          through `IconButton`, whose type requires the accessible name, so `isIconOnly` is not a prop here.
@@ -12,12 +14,14 @@
  */
 import type { ReactElement } from "react";
 import { Button as HeroButton, Spinner, cn } from "@heroui/react";
+import { Link as RouterLink } from "react-aria-components";
 
 import { omitUndefined } from "#core/functions/omit-undefined.function";
 import { plainTextOf } from "#react/hooks/plain-text-of.function";
 import { useActionShortcut } from "#react/hooks/use-action-shortcut";
 import { SlotIcon } from "#react/slot-icon/slot-icon";
 import type { ButtonProps } from "#react/button/button.props";
+import { glassButtonClasses } from "#react/button/glass-button-classes.function";
 import { heroButtonVariant } from "#react/button/hero-button-variant.function";
 
 /**
@@ -43,6 +47,8 @@ export function Button({
   shortcut,
   shortcutId,
   action,
+  href,
+  target,
   ...rest
 }: ButtonProps): ReactElement {
   const press = onPress ?? action?.run;
@@ -56,6 +62,42 @@ export function Button({
     isDisabled: (isDisabled ?? false) || (isLoading ?? false),
     canInline: (rest as { isIconOnly?: boolean }).isIconOnly !== true,
   });
+  const content = (
+    <>
+      {isLoading ? (
+        <Spinner color="current" size="sm" aria-hidden="true" />
+      ) : (
+        <SlotIcon icon={startIcon ?? action?.icon} />
+      )}
+      {text}
+      <SlotIcon icon={endIcon} />
+      {keys.hint}
+      {keys.badge}
+    </>
+  );
+  // shortcut: a link takes the contract props, `href`, `target` and `className`, not HeroUI's button-only props (or
+  // its ref), and its key shortcut runs `onPress`, not the navigation; upgrade when a caller needs either.
+  if (href !== undefined && isDisabled !== true && isLoading !== true)
+    return keys.wrap(
+      <RouterLink
+        href={href}
+        {...keys.aria}
+        {...omitUndefined({
+          target,
+          onPress: press,
+          className: cn(
+            glassButtonClasses(variant ?? "primary", size),
+            shape === "pill" && "rounded-[var(--radius-pill)]",
+            isFullWidth === true && "button--full-width",
+            keys.badge !== null && "relative overflow-visible",
+            className,
+          ),
+        })}
+        {...(label ? { "aria-label": label } : {})}
+      >
+        {content}
+      </RouterLink>,
+    );
   return keys.wrap(
     <HeroButton
       {...rest}
@@ -79,15 +121,7 @@ export function Button({
       fullWidth={isFullWidth ?? false}
       {...(label ? { "aria-label": label } : {})}
     >
-      {isLoading ? (
-        <Spinner color="current" size="sm" aria-hidden="true" />
-      ) : (
-        <SlotIcon icon={startIcon ?? action?.icon} />
-      )}
-      {text}
-      <SlotIcon icon={endIcon} />
-      {keys.hint}
-      {keys.badge}
+      {content}
     </HeroButton>,
   );
 }

@@ -8,15 +8,8 @@
  */
 
 /**
- * `agents`: the agent tooling (claude, opencode, agents:check, the AWS `bedrock` profile); `infisical`: the Infisical
- * login; `services`: Docker, Encore and their ports; `infra`: Pulumi; `mobile`: Xcode and a simulator; `stackra` and
- * `figentra`: reading that scope from the Stackra registry.
+ * `agents`: the agent tooling (claude, opencode, agents:check, the AWS `bedrock` profile, and sops with a Google login
+ * for the `agents` scope of figentra/secrets); `services`: Docker, Encore and their ports; `infra`: Pulumi; `mobile`:
+ * Xcode and a simulator; `stackra` and `figentra`: reading that scope from the Stackra registry.
  */
-export type DoctorNeed =
-  | "agents"
-  | "infisical"
-  | "services"
-  | "infra"
-  | "mobile"
-  | "stackra"
-  | "figentra";
+export type DoctorNeed = "agents" | "services" | "infra" | "mobile" | "stackra" | "figentra";

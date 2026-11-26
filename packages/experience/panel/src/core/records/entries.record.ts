@@ -14,6 +14,7 @@ import type { Built } from "#core/types/built.type";
 import type { ElementOf } from "#core/types/element-of.type";
 import type { EntryFactory } from "#core/types/entry-factory.type";
 import type { EntryNode } from "#core/types/entry-node.type";
+import type { ListEntryOptions } from "#core/types/list-entry-options.type";
 import type { Path } from "#core/types/path.type";
 import type { PathValue } from "#core/types/path-value.type";
 
@@ -38,14 +39,7 @@ export class EntriesRecord<R> implements EntryFactory<R> {
   list<K extends Path<R>>(
     key: K,
     columns: readonly Path<ElementOf<NonNullable<PathValue<R, K>>>>[],
-    options?: {
-      readonly currency?: Path<R>;
-      readonly labels?: Readonly<
-        Partial<
-          Record<Path<ElementOf<NonNullable<PathValue<R, K>>>>, Readonly<Record<string, I18nKey>>>
-        >
-      >;
-    },
+    options?: ListEntryOptions<R, K>,
   ): Built<EntryNode> {
     const { currency, labels } = options ?? {};
     return {

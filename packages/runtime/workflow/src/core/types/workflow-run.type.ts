@@ -42,6 +42,12 @@ export interface WorkflowRun {
   /** The scope it runs in; absent for a platform run. */
   readonly scope?: ScopeRef;
 
+  /**
+   * The tenant that owns its journal rows (their `tenant_id`, the starting call's tenant); absent for a platform run.
+   * The engine saves and loads the run in this owner's isolation; a journal never writes it from here.
+   */
+  readonly ownerId?: PublicId<"scp">;
+
   /** Why it compensated or failed. */
   readonly error?: WorkflowError;
 

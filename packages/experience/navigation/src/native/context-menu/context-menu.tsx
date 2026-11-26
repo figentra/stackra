@@ -26,7 +26,7 @@ import { instanceOf } from "#core/functions/instance-of.function";
 import type { MenuItem } from "#core/types/menu-item.type";
 import { ActionRunners } from "#native/context-menu/action-runners";
 import type { ContextMenuProps } from "#native/context-menu/context-menu.props";
-import { useFlagCheck } from "#native/flags/use-flag-check";
+import { useFlagCheck } from "#react/flags/use-flag-check";
 import { useNavigate } from "#native/navigate/use-navigate";
 
 // shortcut: English until the package ships its `navigation::menus.*` catalogue; swap in the key then.

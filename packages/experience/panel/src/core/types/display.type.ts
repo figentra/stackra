@@ -8,12 +8,11 @@
  */
 import type { Built } from "#core/types/built.type";
 import type { DisplayNode } from "#core/types/display-node.type";
-import type { ElementOf } from "#core/types/element-of.type";
 import type { KpiBuilder } from "#core/types/kpi-builder.type";
+import type { ListDisplayOptions } from "#core/types/list-display-options.type";
 import type { ListPath } from "#core/types/list-path.type";
 import type { ListingBuilder } from "#core/types/listing-builder.type";
 import type { MetricPath } from "#core/types/metric-path.type";
-import type { Path } from "#core/types/path.type";
 
 /**
  * Builds a widget's display over query output `O`.
@@ -25,23 +24,16 @@ import type { Path } from "#core/types/path.type";
  */
 export interface Display<O> {
   /** One metric field. */
-  kpi: (path: MetricPath<O>) => KpiBuilder;
+  kpi: (path: MetricPath<O>) => KpiBuilder<O>;
 
   /** Several KPIs in one tile. */
-  kpiGroup: (kpis: readonly KpiBuilder[]) => Built<DisplayNode>;
+  kpiGroup: (kpis: readonly KpiBuilder<O>[]) => Built<DisplayNode>;
 
   /** One metric field against its target. */
   progress: (path: MetricPath<O>) => Built<DisplayNode>;
 
   /** The rows of the list field `path`. */
-  list: <K extends ListPath<O>>(
-    path: K,
-    options: {
-      readonly primary: Path<ElementOf<NonNullable<O[K]>>>;
-      readonly secondary?: Path<ElementOf<NonNullable<O[K]>>>;
-      readonly meta?: Path<ElementOf<NonNullable<O[K]>>>;
-    },
-  ) => ListingBuilder;
+  list: <K extends ListPath<O>>(path: K, options: ListDisplayOptions<O, K>) => ListingBuilder;
 
   /** The resource view `name` of the resource whose list query this is. */
   view: (name: string) => ListingBuilder;

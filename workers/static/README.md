@@ -58,9 +58,8 @@ Never run `wrangler deploy` by hand. CI deploys.
 
 `.github/workflows/deploy-static.yml` runs on a push to `main` that touches this member or `tools/schemas/`, on a pushed
 `schemas@*` tag reachable from `main`, and by hand (`workflow_dispatch`). It checks out with every tag, runs the tests,
-builds, fetches `CLOUDFLARE_API_TOKEN` from Infisical `/ci` (environment `prod`) through GitHub OIDC, and runs
-`wrangler deploy`. Until the owner prerequisites below exist, the job prints a notice and skips the deploy, so `main`
-stays green.
+builds, decrypts `CLOUDFLARE_API_TOKEN` from the sops scope `ci/deploy` as itself over GitHub OIDC (the shared
+`secrets-decrypt` action, ADR 0525), and runs `wrangler deploy`.
 
 To publish a schema release: tag a commit on `main` `schemas@1.0.0` and push the tag. Never move or delete a
 `schemas@*` tag: the exact-version paths are rebuilt from tags on every deploy.
@@ -77,11 +76,10 @@ outside (root `runway.yaml` `observability.uptime` entry `static`, applied by `a
    Account · Workers Scripts · Edit (all Workers: the first deploy creates `stackra-static`, which a per-Worker scope
    cannot), and Zone · Workers Routes · Edit on `figentra.com` (attaching the Custom Domain, which also creates its DNS
    record and certificate).
-2. Store it in Infisical, environment `prod`, path `/ci`, secret `CLOUDFLARE_API_TOKEN`.
-3. An Infisical machine identity with OIDC auth for GitHub: issuer `https://token.actions.githubusercontent.com`,
-   subject `repo:figentra/stackra:environment:static`, audience `https://github.com/figentra`; read access to `/ci` in
-   `prod` only (STA-15).
-4. GitHub repository variable `INFISICAL_CI_IDENTITY_ID` = that identity's id (an id, not a secret).
-5. GitHub environment `static`, restricted to `main` and `schemas@*` tags.
+2. Store it in the sops scope `ci/deploy` as `CLOUDFLARE_API_TOKEN` (`pnpm secrets:put CLOUDFLARE_API_TOKEN --scope
+   ci/deploy`).
+3. In `figentra/infra`, grant the GitHub OIDC subject of the `static` environment the `ci/deploy` scope
+   (`estate/secret-callers.mjs`).
+4. GitHub environment `static`, restricted to `main` and `schemas@*` tags.
 
 The account id lives in `wrangler.jsonc`; it identifies the account and grants nothing.

@@ -124,6 +124,12 @@ describe(PostgresSearchDriver, () => {
       "linen shi",
       "linen shi",
       filter,
+      // the partial lane: any of the words, ranked then matched per vector, under the same narrowing
+      "linen:* | shi:*",
+      "linen:* | shi:*",
+      "linen:* | shi:*",
+      "linen:* | shi:*",
+      filter,
       21,
       20,
     ]);
@@ -225,7 +231,7 @@ describe(PostgresSearchDriver, () => {
     expect(statements.at(-1)?.params).toEqual(["mug:*", "mug", "mug", 5, 0]);
   });
 
-  it("ORs a word's alternatives in both lanes and narrows both by the visibility subquery", async () => {
+  it("ORs a word's alternatives in every lane and narrows each by the visibility subquery", async () => {
     const { database, statements } = databaseWith(["search_vector"]);
     await new PostgresSearchDriver(database).search(PRODUCTS, {
       words: ["7abibi", "mug"],
@@ -247,6 +253,9 @@ describe(PostgresSearchDriver, () => {
       "7abibi mug",
       "حبيبي mug",
       1,
+      "(7abibi:* | حبيبي:*) | mug:*",
+      "(7abibi:* | حبيبي:*) | mug:*",
+      1,
       5,
       0,
     ]);
@@ -256,7 +265,8 @@ describe(PostgresSearchDriver, () => {
     expect(search?.sql).toContain(
       `(search.fold(t."search_text") %> ? or search.fold(t."search_text") %> ?)`,
     );
-    expect(search?.sql.match(/ and t\."id" in \(select "visible"\."id"/g)).toHaveLength(2);
+    // the full-text, trigram and partial lanes each narrow by it
+    expect(search?.sql.match(/ and t\."id" in \(select "visible"\."id"/g)).toHaveLength(3);
     expect(search?.sql.match(/\?/g)).toHaveLength(search?.params.length ?? -1);
   });
 
@@ -277,6 +287,8 @@ describe(PostgresSearchDriver, () => {
       "blue sofa",
       "blue couch",
       "blue settee",
+      "blue:* | (sofa:* | couch:* | settee:*)",
+      "blue:* | (sofa:* | couch:* | settee:*)",
       5,
       0,
     ]);
@@ -291,6 +303,25 @@ describe(PostgresSearchDriver, () => {
       5,
     ]);
     expect(count?.sql.match(/\?/g)).toHaveLength(count?.params.length ?? -1);
+  });
+
+  it("adds the partial lane for a multi-word query only, ranked after every full match (ADR 0221)", async () => {
+    const { database, statements } = databaseWith(["search_vector"]);
+    const driver = new PostgresSearchDriver(database);
+    await driver.search(PRODUCTS, { words: ["linen", "shirt"], filters: {}, offset: 0, limit: 5 });
+    const multi = statements.at(-1)?.sql ?? "";
+    expect(multi).toContain("part as (");
+    expect(multi).toContain(
+      "case when coalesce(fts.id, trigram.id) is null then 1 else 0 end as tier",
+    );
+    expect(multi).toContain(
+      "order by fused.tier asc, fused.score desc, fused.part asc nulls last, fused.id",
+    );
+    expect(multi).not.toMatch(/coalesce\(1\.0 \/ \(\d+ \+ part\.rank\)/);
+    await driver.search(PRODUCTS, { words: ["linen"], filters: {}, offset: 0, limit: 5 });
+    const single = statements.at(-1)?.sql ?? "";
+    expect(single).not.toContain("part as (");
+    expect(single).not.toContain("tier");
   });
 
   it("caps the trigram phrases at eight", async () => {

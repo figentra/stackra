@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `checkTestPlacement(paths)`, ADR 0022: every test file sits directly in `__tests__/` and is named `.test`, never
- *          `.spec`; no forbidden file (Storybook stories) exists. `.old/` is archived code.
+ *          `.spec`; a package's `.e2e.page.tsx` also sits directly in `__tests__/`; no forbidden file (Storybook stories) exists. `.old/` is archived code.
  * Boundary: pure: paths only.
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0126 (no Storybook).
  */
+import { E2E_PAGE_PATTERN } from "#node/constants/e2e-page-pattern.constant";
 import { FORBIDDEN_FILES } from "#node/constants/forbidden-files.constant";
 import { SPEC_PATTERN } from "#node/constants/spec-pattern.constant";
 import { TEST_FILE_PATTERN } from "#node/constants/test-file-pattern.constant";
@@ -23,6 +24,8 @@ export function checkTestPlacement(paths: readonly string[]): string[] {
     if (p.startsWith(".old/")) continue;
     for (const forbidden of FORBIDDEN_FILES)
       if (forbidden.pattern.test(p)) out.push(`${p}: ${forbidden.hint}`);
+    if (E2E_PAGE_PATTERN.test(p) && p.split("/").at(-2) !== "__tests__")
+      out.push(`${p}: an e2e page goes in a __tests__/ folder (ADR 0022)`);
     if (!TEST_FILE_PATTERN.test(p)) continue;
     const parts = p.split("/");
     if (parts.at(-2) !== "__tests__")

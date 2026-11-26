@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `readMigratedSchema` on PGlite: a replayed table comes back with its columns, types and
  *          nullability, its unique partial index with columns in order, its foreign key; the primary key is not an
- *          index; a failing step names its file; a schema outside the list is not read.
+ *          index; a failing step names its file; a schema outside the list is not read; PostGIS geography columns
+ *          replay with their GiST index.
  * Boundary: unit tier: PGlite runs in this process, no Docker; it needs the optional peer `@electric-sql/pglite`
  *           (a devDependency of this package), so it runs wherever the repository's PGlite tests run.
  * Runtime: node (vitest)
@@ -70,5 +71,26 @@ describe("readMigratedSchema", () => {
     await expect(
       readMigratedSchema([step("0001_billing_0001_bad", "create table (")], ["billing"]),
     ).rejects.toThrow(/^0001_billing_0001_bad failed:/);
+  });
+
+  it("replays geography columns and their GiST index with PostGIS loaded (ADR 0314)", async () => {
+    const schema = await readMigratedSchema(
+      [
+        step(
+          "0001_places_0001_create",
+          `create schema "places";
+           create table "places"."zones" ("id" varchar(33) primary key, "area" geography(Polygon,4326) not null, "depot" geography(Point,4326));
+           create index "idx_zones_area" on "places"."zones" using gist ("area")`,
+        ),
+      ],
+      ["places"],
+    );
+
+    expect(
+      schema.columns.filter((column) => column.table === "zones").map((column) => column.type),
+    ).toEqual(["character varying(33)", "geography(Polygon,4326)", "geography(Point,4326)"]);
+    expect(schema.indexes).toEqual([
+      expect.objectContaining({ name: "idx_zones_area", columns: ["area"], method: "gist" }),
+    ]);
   });
 });

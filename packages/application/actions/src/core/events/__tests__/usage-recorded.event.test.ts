@@ -27,4 +27,21 @@ describe("UsageRecorded", () => {
     });
     expect(event).toMatchObject({ meter: "messages.sent", value: 1 });
   });
+
+  it("carries rating dimensions and refuses free text in them", () => {
+    const call = {
+      meter: "notify.sms",
+      kind: MeterKind.Count,
+      value: 1,
+      key: "delivery.message.send@1",
+      callId: "c3",
+    };
+    expect(UsageRecorded.create({ ...call, dimensions: { market: "eg" } }).dimensions).toEqual({
+      market: "eg",
+    });
+    expect(() => UsageRecorded.create({ ...call, dimensions: { "Market Name": "eg" } })).toThrow();
+    expect(() => UsageRecorded.create({ ...call, dimensions: { market: "" } })).toThrow();
+    const many = Object.fromEntries([...Array(9).keys()].map((n) => [`d${n}`, "x"]));
+    expect(() => UsageRecorded.create({ ...call, dimensions: many })).toThrow();
+  });
 });

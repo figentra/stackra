@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `GITHUB_PROVIDER_SCHEMA`, the root runway's `providers.github` block: the org and repository, its
- *          visibility, the repository Actions variables, and the deployment environments with their reviewers, the
+ *          visibility, its description, topics and homepage (the repository metadata standard), the repository Actions
+ *          variables, and the deployment environments with their reviewers, the
  *          branch and tag patterns that may deploy to them and their own variables.
  * Boundary: internal; `githubPlan` reads the block with it. The root runway schema keeps the block open, and this
  *           package, its one reader, checks it strictly, so a misspelt key fails `stackra infra gen`. Values are
  *           public names, ids or `ref:<path>`; never a secret value (ADR 0173).
  * Runtime: isomorphic
  * Governing contract: ADR 0171 (decision 2), ADR 0170 (decision 6: production behind a GitHub environment), ADR 0284
- *                     (decisions 6 and 7: the `static` environment and the `INFISICAL_CI_IDENTITY_ID` variable),
+ *                     (decisions 6 and 7: the `static` environment and the CI identity variable),
  *                     ADR 0231 (SCREAMING_SNAKE; `GITHUB_` is GitHub's).
  */
 import { Enum } from "@stackra/contracts";
@@ -48,6 +49,14 @@ const ENVIRONMENT = z.strictObject({
   variables: VARIABLES.optional(),
 });
 
+/** A GitHub topic: lower case, digits and hyphens, at most 50 characters (GitHub's own rule). */
+const TOPIC = z
+  .string()
+  .regex(
+    /^[a-z0-9][a-z0-9-]{0,49}$/,
+    "Expected a lower-case GitHub topic of at most 50 characters",
+  );
+
 /** The `providers.github` block. */
 export const GITHUB_PROVIDER_SCHEMA = z.strictObject({
   org: z
@@ -57,6 +66,13 @@ export const GITHUB_PROVIDER_SCHEMA = z.strictObject({
   visibility: z
     .enum(Enum.values(GithubVisibility) as [GithubVisibility, ...GithubVisibility[]])
     .default(GithubVisibility.Private),
+  description: z.string().trim().min(1).max(350, "GitHub allows 350 characters").optional(),
+  topics: z
+    .array(TOPIC)
+    .max(20, "GitHub allows 20 topics")
+    .refine((topics) => new Set(topics).size === topics.length, "List each topic once")
+    .optional(),
+  homepage: z.string().url("Expected an absolute URL").optional(),
   variables: VARIABLES.optional(),
   environments: z
     .record(

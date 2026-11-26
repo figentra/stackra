@@ -9,9 +9,11 @@
  * Governing contract: ADR 0136 (decision 3); ADR 0396 (decision 2); ADR 0022; ADR 0269.
  */
 import { Duration } from "@stackra/contracts";
+import { ErrorKind } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
 import { compileMigration } from "#core/functions/compile-migration.function";
+import { AddIdempotencyRefusalMigration } from "#node/database/migrations/0008-add-idempotency-refusal.migration";
 import { CreateActionStoreTablesMigration } from "#node/database/migrations/0002-create-action-store-tables.migration";
 import { PostgresIdempotencyStoreDriver } from "#node/drivers/postgres-idempotency-store.driver";
 import { usePostgres } from "#testing/use-postgres";
@@ -20,6 +22,7 @@ const postgres = usePostgres({
   entities: [],
   migrations: [
     compileMigration(CreateActionStoreTablesMigration, { schema: "database", createsSchema: true }),
+    compileMigration(AddIdempotencyRefusalMigration, { schema: "database" }),
   ],
 });
 
@@ -73,5 +76,34 @@ describe(PostgresIdempotencyStoreDriver, () => {
     await expect(postgres.database.transaction(call)).rejects.toThrow();
     // the claim and the completion rolled back with the outer commit: the retry runs, it does not replay
     expect(await store().claim("a:-:usr_1:k5", "f5", Duration.hours(24))).toBeUndefined();
+  });
+
+  it("keeps a refusal recorded after the call's transaction rolled back, and replays it", async () => {
+    const refusal = {
+      kind: ErrorKind.Conflict,
+      code: "out_of_stock",
+      category: "conflict",
+      retryable: false,
+      details: { sku: "a" },
+    } as const;
+    const call = async () => {
+      expect(await store().claim("a:-:usr_1:k6", "f6", Duration.hours(24))).toBeUndefined();
+      throw new Error("refused");
+    };
+    await expect(postgres.database.transaction(call)).rejects.toThrow("refused");
+    // the claim rolled back with the call, so the refusal is an insert, not an update
+    await store().completeRefused("a:-:usr_1:k6", "f6", refusal, Duration.hours(24));
+    expect(await store().claim("a:-:usr_1:k6", "f6", Duration.hours(24))).toEqual({
+      fingerprint: "f6",
+      done: true,
+      refusal,
+    });
+    // a held key becomes the refusal too
+    await store().claim("a:-:usr_1:k7", "f7", Duration.hours(24));
+    await store().completeRefused("a:-:usr_1:k7", "f7", refusal, Duration.hours(24));
+    expect(await store().claim("a:-:usr_1:k7", "f7", Duration.hours(24))).toMatchObject({
+      done: true,
+      refusal,
+    });
   });
 });

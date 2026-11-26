@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `Shipment`, what a carrier returns for a bought label: its shipment id, the tracking numbers, the service,
- *          the label documents and the charge.
+ *          the label documents, the charge and, through an aggregator, the carrier that delivers.
  * Boundary: a type in the leaf entry. `shipmentId` is the carrier's; cancel and tracking calls take it back.
  * Runtime: isomorphic
  * Governing contract: ADR 0369 (decisions 2 and 5).
@@ -31,4 +31,10 @@ export interface Shipment {
 
   /** What the carrier charged, when it says at purchase. */
   readonly charge?: Money;
+
+  /**
+   * The carrier that delivers, when the connection is an aggregator booking with many (`smsa`): a known provider code,
+   * else the aggregator's name for it. Left out by a direct carrier.
+   */
+  readonly carrier?: string;
 }

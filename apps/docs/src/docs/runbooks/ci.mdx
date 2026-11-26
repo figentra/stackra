@@ -75,7 +75,7 @@ Nothing in `pnpm verify` reads a vault, a `.env` or a token. If a step seems to 
   </Step>
   <Step title="No secrets in verify">
     The `verify` job has no vault identity and no stored secret. Only deploy and release jobs may
-    log in, through OIDC ([Secrets](/runbooks/secrets#ci-reads-ci-through-oidc-one-step-at-a-time)).
+    log in, through OIDC ([Secrets](/runbooks/secrets#reading-in-ci)).
   </Step>
   <Step title="Scope with affected, never skip">
     A pull request may use `--affected` for turbo steps. `main` and release tags run everything.

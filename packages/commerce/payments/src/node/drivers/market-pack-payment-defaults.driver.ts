@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `MarketPackPaymentDefaultsDriver`, the production `MarketPaymentDefaults`: the providers a Market offers,
- *          read from its market pack's `payments.byo-providers` list in force today, live entries only, in the pack's
+ *          read from its market pack's `payments.byo_providers` list in force today, live entries only, in the pack's
  *          order, each with the platform Connection the deployment runs for it (none for a provider only a tenant's
  *          own account serves).
  * Boundary: the driver named `market-pack`. It reads the pack through `PaymentPackSource` and `valueOf`, the public API
@@ -20,7 +20,7 @@ import type { PaymentPackSource } from "#contracts/ports/payment-pack-source.por
 import type { ProviderChoice } from "#contracts/types/provider-choice.type";
 
 /** The pack key that lists a Market's payment providers. */
-const PROVIDERS_KEY = "payments.byo-providers";
+const PROVIDERS_KEY = "payments.byo_providers";
 
 /** The provider code of a live list entry, or undefined. */
 function liveProviderOf(entry: unknown): string | undefined {

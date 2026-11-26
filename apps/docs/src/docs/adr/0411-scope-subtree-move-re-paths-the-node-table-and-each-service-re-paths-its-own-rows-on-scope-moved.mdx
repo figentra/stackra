@@ -1,7 +1,15 @@
 ---
 title: "0411 — Scope subtree move: the node table re-paths itself and each service re-paths its own rows on ScopeMoved"
-description: "Proposed · 2026-10-26"
+description: "Superseded by 0239 · 2026-11-07"
 ---
+
+<Note>
+  Superseded 2026-11-07 by the amendment of
+  [0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views) ("platform tables
+  and system readers", STA-2561): equality on the tenant is the one permissive policy, so no
+  `ancestor` policy carries an organisation's grants, and decision 4 below no longer holds. A scope
+  move, if still needed, is proposed again on top of that amendment.
+</Note>
 
 <Note>
   Proposed (STA-841). It extends

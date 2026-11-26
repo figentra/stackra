@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `IssueConsentSnapshotAction`: a public, non-tool `POST /consent/snapshots` for anonymous
+ * Purpose: unit tests of `IssueConsentSnapshotAction`: a public, non-tool `POST /public/consent/snapshots` for anonymous
  *          visitors and users, on `CONSENT_SNAPSHOT_PATH`; it answers the issuer's token and expiry and binds a
  *          signed-in user's id, never an anonymous actor's.
  * Boundary: test only; the issuer is an in-test fake.

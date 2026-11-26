@@ -32,7 +32,7 @@ describe(VerifyAwardQuery, () => {
       key: "award.verify",
       actors: [ActorKind.Anonymous, ActorKind.User, ActorKind.Service],
       area: ApiArea.Public,
-      endpoint: { method: HttpMethod.Get, path: "/awards/verify" },
+      endpoint: { method: HttpMethod.Get, path: "/public/awards/verify" },
       tool: false,
     });
   });

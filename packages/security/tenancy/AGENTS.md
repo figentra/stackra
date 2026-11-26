@@ -47,7 +47,15 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   single scope the driver resolves the tenant through the `ScopeTree` first (STA-1823, ADR 0495 note of 2026-11-01): a
   `job` or `system` actor takes the tenant of its platform-written scope (`tenantOf`, a branch resolves to its parent
   tenant; a scope the tree does not show is refused, `TenantScopeUnresolvedError`); any other actor keeps its own
-  `scopeId` and is refused (`TenantScopeMismatchError`) when the scope's tenant differs. The tree is read in a session
+  `scopeId` and is refused (`TenantScopeMismatchError`) when the scope's tenant differs; a user with a tenant, or an agent
+  or a service with one (its own, or else its user's), is also refused in a scope above every tenant or one the tree
+  does not show (never fail open on an unknown scope); a platform user, agent or service (no tenant) stays a platform
+  call. An agent or a service with no `scopeId` of its own runs in the tenant of the user it acts for (`actingScopeId`,
+  used by both `withTenant` and the driver), and one whose own tenant differs from that user's is refused (ADR 0209,
+  amendment of 2026-11-07, condition 3). Every tenant a user, agent or service claims is read through the tree
+  (`tenantOf`), so a branch stands for its tenant and the isolation runs as the tenant; a claimed scope the tree does
+  not show, or one above every tenant, is refused, and a tree read that fails fails the call. Never compare raw
+  `scopeId`s for these kinds. The tree is read in a session
   over the root label of the scope's path, because row security hides a branch's tenant ancestor from the branch's own.
   `TenantScopeOwnershipDriver` is the `ScopeOwnership` the inbox and the automation service use to distrust an actor
   whose tenant does not own the scope it comes with. `pnpm validate` refuses a session-level `app.*` setting
@@ -65,8 +73,9 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   registry's row); the deployment's region only from `DatabaseConfig.region` (runway data). Never hard-code a region
   key or a cell, and never let the region guard or the placement resolver pass or fall back when a placement is
   missing: both fail closed.
-- `asTenant(tenantId, work)` (`./testing`) runs the real isolation on the current database; `runAsTenant` stays the
-  database-free fill. Isolation is proven on real Postgres in `*.int.test.ts` (`pnpm --filter @stackra/tenancy test:int`,
+- `asTenant(tenantId, work)` (`./testing`) runs the real isolation on the current database; `runAsTenant` fills the
+  trait and sets `app.tenant_id` transaction-locally in each transaction started inside it (its subscriber, the one
+  testing path on the session-setting allow list), so setup rows pass the policy; it never proves isolation. Isolation is proven on real Postgres in `*.int.test.ts` (`pnpm --filter @stackra/tenancy test:int`,
   Docker), as a role that is neither the owner nor `BYPASSRLS`.
 - `tenantIsolationOptions()` (`./testing`, stackra-258) is data for `@stackra/database/testing`'s
   `assertRowSecurity`; this entry never imports another package's `./testing`, so the generated test joins them.

@@ -17,11 +17,12 @@
  *           `tsdown.config.ts` the same way when gen writes a tsdown config (STA-1306). A root `*.extend.ts` hatch
  *           outside the closed set (vite, expo, metro, desktop, pwa) or without
  *           a `Reason:` header is refused as `tool_reason_missing` (STA-1306); whether a hatch changes an owned key is
- *           not checked, since gen does not apply hatches yet. A docs app (`src/config/docs.config.ts`) takes the
- *           docs-site run instead (`generateDocsSite`, STA-1316): it has no module graph, writes only
+ *           not checked, since gen does not apply hatches yet. A docs app (`src/config/docs.config.ts`) and, since
+ *           ADR 0514 amendment of 2026-11-09, a docs member (`"stackra": { "kind": "docs" }`, the second input) take
+ *           the docs-site run instead (`generateDocsSite`, STA-1316): it has no module graph, writes only
  *           `.stackra/site/`, and its manifest pass writes nothing. A service's full run also writes
- *           `.stackra/encore/encore.app` from the root runway's `providers.encore.app` (`encore_app_missing` without
- *           it), and any run refuses an `encore.app` at the member or repository root (`encore_app_stray`, STA-1322).
+ *           `encore.app` at the member root from the root runway's `providers.encore.app` (`encore_app_missing` without
+ *           it), and any run refuses an `encore.app` at the repository root (`encore_app_stray`, STA-1322).
  *           A service's full run also refuses a job queue its `runway.yaml` leaves out of an environment
  *           (`queue_unprovisioned`, STA-1727).
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
@@ -29,13 +30,16 @@
  *           leftover one.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
+ *           and `.stackra/playwright.e2e.config.ts` (`emitE2ePageFiles`, ADR 0022 amendment of 2026-11-09).
+ *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
  *           A member that declares a resource has each tree read through `loader` before the manifest is built
  *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
  *                     allowed at the manifest level); ADR 0091 (decision 2) and ADR 0029 (the Encore app file); ADR 0159
- *                     (the compiled migrations).
+ *                     (the compiled migrations); ADR 0514 (amendment of 2026-11-09: the docs member).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -47,8 +51,12 @@ import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
+import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
+import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
+import { encoreMigrationSql } from "#core/functions/encore-migration-sql.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generateMember } from "#core/functions/generate-member.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -56,6 +64,8 @@ import { compileMigrations } from "#node/functions/compile-migrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
+import { hasE2ePages } from "#node/functions/has-e2e-pages.function";
+import { isDocsMember } from "#node/functions/is-docs-member.function";
 import { hasIntTests } from "#node/functions/has-int-tests.function";
 import { readResourceTrees } from "#node/functions/read-resource-trees.function";
 import { runwayQueues } from "#node/functions/runway-queues.function";
@@ -190,10 +200,14 @@ export async function generate(
     readonly backend?: "tsgo" | "ts6";
     readonly pass?: "manifests";
     readonly loader?: ModuleLoader;
+    /** The staged checks refuse instead of warning; default `STACKRA_GEN_STRICT=1` (STAGED_REFUSAL_CODES). */
+    readonly strict?: boolean;
   } = {},
 ): Promise<GenerateResult> {
-  // A docs app has no classes to discover: its run assembles the Mintlify site (ADR 0002, 2026-10-27 amendment).
-  if (existsSync(join(root, DOCS_CONFIG_FILE)))
+  const strict = options.strict ?? process.env["STACKRA_GEN_STRICT"] === "1";
+  // A docs app or a docs member has no classes to discover: its run assembles the site (ADR 0002, 2026-10-27
+  // amendment; ADR 0514 amendment of 2026-11-09).
+  if (existsSync(join(root, DOCS_CONFIG_FILE)) || isDocsMember(root))
     return options.pass === "manifests"
       ? { errors: [], files: [], changed: [] }
       : generateDocsSite(root, options.check === undefined ? {} : { check: options.check });
@@ -221,22 +235,27 @@ export async function generate(
   let result = generateMember(
     ir,
     previous,
-    options.pass === undefined ? {} : { pass: options.pass },
+    options.pass === undefined ? { strict } : { pass: options.pass, strict },
   );
   const partial: string[] = [];
   if (result.errors.length > 0 && !check && options.pass === undefined) {
-    const clients = generateMember(ir, previous, { pass: "clients" });
+    const clients = generateMember(ir, previous, { pass: "clients", strict });
     if (clients.errors.length === 0) partial.push(...write(root, clients.files, false));
     if (partial.length > 0) {
       ir = await discover();
-      result = generateMember(ir, previous);
+      result = generateMember(ir, previous, { strict });
     }
     // Still refused: the manifest alone, when only workspace services still to come stand in its way.
     const manifest =
-      result.errors.length > 0 ? generateMember(ir, previous, { pass: "manifests" }) : undefined;
+      result.errors.length > 0
+        ? generateMember(ir, previous, { pass: "manifests", strict })
+        : undefined;
     if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
   }
-  if (result.errors.length > 0) return { errors: result.errors, files: [], changed: partial };
+  // A warning of the full pass prints beside the outcome and never blocks it (STA-340).
+  const warnings = result.warnings ?? [];
+  if (result.errors.length > 0)
+    return { errors: result.errors, warnings, files: [], changed: partial };
   // A package ships its manifest: a host's gen reads it under node_modules (ADR 0158, STA-1308).
   if (check && ir.layout === "package") {
     const { files } = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
@@ -255,6 +274,7 @@ export async function generate(
             fix: `add "${MANIFEST_FILE}" to \`files\` in package.json`,
           },
         ],
+        warnings,
         files: [],
         changed: partial,
       };
@@ -262,8 +282,8 @@ export async function generate(
   // An authored root tool config is never overwritten. One that merges the generated config is kept (and the vitest
   // shim is not written); any other is refused (STA-1296, STA-1297; every generated tool config since STA-1306). A
   // code hatch outside the closed set or without its `Reason:` header is refused too.
-  // The Encore app file of a service, from the root runway's `providers.encore.app`; a stray encore.app outside
-  // `.stackra/encore` is refused (STA-1322).
+  // The Encore app file of a service, from the root runway's `providers.encore.app`; a stray encore.app at the repository root
+  // is refused (STA-1322).
   // A v2 service (authored src/main.ts, STA-344) is not an Encore app yet, so it gets no encore.app.
   const encore = encoreApp(
     root,
@@ -295,11 +315,38 @@ export async function generate(
         ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
       ]
     : migrations.files;
+  // Encore reads migrations only from a local folder, so a
+  // service's compiled files are copied under its Encore service too. Encore runs each file in one transaction, so
+  // an online step's copy builds in its plain form (ADR 0159, amendment of 2026-11-10).
+  const encoreFiles =
+    encore.files.length === 0
+      ? []
+      : [
+          ...encore.files,
+          ...migrations.files.map((file) => ({
+            ...file,
+            path: file.path.replace(
+              `${MIGRATIONS_DIR}/`,
+              `${encoreServiceFolder(ir.member)}/migrations/`,
+            ),
+            content: encoreMigrationSql(file.content),
+          })),
+        ];
   const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
-  let files = [...result.files, ...encore.files, ...migrationFiles];
-  // A member with an `.int.test.ts` gets the integration-tier config beside the unit one (`stackra test --tier int`).
-  if (files.some((file) => file.path === ".stackra/vitest.config.ts") && hasIntTests(root))
+  let files = [...result.files, ...encoreFiles, ...migrationFiles];
+  // A member with an `.int.test.ts`, its own or gen's, gets the integration-tier config beside the unit one
+  // (`stackra test --tier int`), so the generated tenant-isolation test runs with no authored int test beside it.
+  if (
+    files.some((file) => file.path === ".stackra/vitest.config.ts") &&
+    hasIntTests(
+      root,
+      files.map((file) => file.path),
+    )
+  )
     files.push(emitIntTierConfig(ir.package));
+  // A package with a `<name>.e2e.page.tsx` gets the Vite app that renders it and the Playwright config that runs the
+  // `.e2e.test.ts` specs against it (`stackra test --tier e2e`; ADR 0022, 2026-11-09).
+  if (ir.layout === "package" && hasE2ePages(root)) files.push(...emitE2ePageFiles(ir.package));
   for (const tool of TOOL_CONFIGS) {
     const config = `${tool}.config.ts`;
     if (
@@ -362,11 +409,14 @@ export async function generate(
         ),
       );
   }
-  if (errors.length > 0) return { errors, files: [], changed: partial };
+  if (errors.length > 0) return { errors, warnings, files: [], changed: partial };
   result = { ...result, files };
+  // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910).
+  const reported = [...warnings, ...(options.pass === undefined ? checkSubscriptions(ir) : [])];
   return {
     errors: [],
     files: result.files,
+    ...(reported.length > 0 ? { warnings: reported } : {}),
     changed: [
       ...new Set([
         ...partial,

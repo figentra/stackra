@@ -15,6 +15,11 @@ description: "Accepted · 2026-10-30"
   [0492](/adr/0492-one-ai-runtime-and-mcp-gateway-behind-the-edge-hybrid-retrieval-with-a-reranker-and-python-only-as-tools-stack-workers).
 </Note>
 
+<Note>
+  Note 2026-11-03 (STA-340): derived routes now carry their API area, so the client-result action
+  below is `PUT /app/runs/:runId/client-result` (`CLIENT_RESULT_ACTION`).
+</Note>
+
 ## Context
 
 Server tools exist: gen projects every L0 and L1 query and every action a user can perform (unless it says `tool: false` with a reason, 0360 decision 4) into the tool table, with the

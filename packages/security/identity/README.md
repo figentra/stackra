@@ -35,6 +35,7 @@ screen reads, and the claims mapping that turns a provider's token into a Stackr
 | `.`           | `StaffPinService`, `StorageStaffPinStoreDriver`, `MemoryStaffPinStoreDriver`                                                  | staff PIN quick-switch and manager override on a shared device                                 |
 | `.`           | `ApiKeyKind`, `mintApiKey`, `parseApiKey`, `checkPublishableKey`, `isOriginAllowed`                                           | secret and publishable keys; the origin-bound Storefront key                                   |
 | `.`           | `ApiKeyVerifierService`, `hashApiKey`, `MemoryApiKeyStoreDriver`                                                              | the gateway's verification of a key by its hash, over the `ApiKeyStore` port                   |
+| `./node`      | `ZitadelServiceTokensDriver`, `ServiceTokensConfig`                                                                           | the `ServiceTokens` port: this service's own token per project audience (JWT profile, cached)  |
 | `.`           | `ZitadelIdpAdminDriver`, `MemoryIdpAdminDriver`, `IdpAdminConfig`                                                             | the `IdpAdmin` port: users, machine users, sessions, device flow, login policy, methods        |
 | `.`           | `signInWithPasskey`, `registerPasskey`                                                                                        | a `Passkeys` driver wired to the passkey actions (the client half)                             |
 | `./node`      | `BffService`, `BffConfig`, `BffOptions`, `BffConfig$`                                                                         | the BFF's login, callback, session and logout routes with server-side sign-out                 |
@@ -92,6 +93,11 @@ export class IdentityConfig extends BaseIdentityConfig {
   override idleMinutes = 30; // a forgotten shared till signs out
 }
 ```
+
+`IdentityConfig.sessionStore` (`memory` by default) and `IdentityConfig.approvalChallenges` (`memory` by default) pick the
+`SessionStore` and `AppApprovalChallenges` drivers where gen gives none, so a service boots with no identity config; a
+service's own session store is this field, while an app takes its flow's driver (`bff`, `pkce`) through gen. A product
+that ships its own challenge driver selects it by name in `approvalChallenges` in production.
 
 The flow per target picks the `SessionStore` driver gen wires for that target. A browser holds no client credential;
 a device is a public client whose `issuer` and `clientId` are public values that runway's `config.identity` layer sets

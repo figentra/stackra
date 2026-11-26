@@ -1,11 +1,16 @@
 /**
  * Stackra file contract:
- * Purpose: `readSettings`: the edge Worker's settings from its vars, the host map included.
+ * Purpose: `readSettings`: the edge Worker's settings from its vars, the host map and each surface's security
+ *          policy (`EDGE_CSP`, validated as `CspConfig`) included.
  * Boundary: parsing only; the values live in wrangler.jsonc. A missing, malformed or out-of-range var throws a
  *           `RangeError` naming the var, so a misconfigured Worker fails every request instead of guessing.
  * Runtime: worker
  * Governing contract: ADR 0437 (decisions 2 and 6); ADR 0206 (decision 8).
  */
+import { buildConfig } from "@stackra/config";
+import type { ConfigValues } from "@stackra/config";
+import { CspConfig } from "@stackra/csp";
+
 import type { EdgeEnv } from "#src/interfaces/edge-env.interface";
 import type { EdgeSettings } from "#src/interfaces/edge-settings.interface";
 import type { HostEntry } from "#src/interfaces/host-entry.interface";
@@ -56,6 +61,26 @@ const hostsOf = (env: EdgeEnv): Record<string, HostEntry> => {
   return hosts;
 };
 
+/** The surface policy var: a JSON object of `<product>.<surface>` to `CspConfig` values (STA-2562). */
+const cspOf = (env: EdgeEnv): Record<string, CspConfig> => {
+  const map: unknown = JSON.parse(text(env, "CSP"));
+  if (typeof map !== "object" || map === null || Array.isArray(map))
+    throw new RangeError("EDGE_CSP must be a JSON object");
+  const surfaces: Record<string, CspConfig> = {};
+  for (const [surface, values] of Object.entries(map as Record<string, unknown>)) {
+    if (typeof values !== "object" || values === null || Array.isArray(values))
+      throw new RangeError(`EDGE_CSP["${surface}"] must be an object`);
+    try {
+      surfaces[surface] = buildConfig(CspConfig, {
+        values: values as Partial<ConfigValues<CspConfig>>,
+      });
+    } catch (error) {
+      throw new RangeError(`EDGE_CSP["${surface}"] is not a valid CspConfig: ${String(error)}`);
+    }
+  }
+  return surfaces;
+};
+
 /**
  * The edge Worker's settings from its vars.
  *
@@ -75,5 +100,8 @@ export function readSettings(env: EdgeEnv): EdgeSettings {
     audience: text(env, "OIDC_AUDIENCE"),
     keysSeconds: count(env, "OIDC_KEYS_SECONDS", 60),
     leewaySeconds: count(env, "TOKEN_LEEWAY_SECONDS", 0),
+    csp: cspOf(env),
+    baselineCsp: buildConfig(CspConfig),
+    frameAncestorsSeconds: count(env, "FRAME_ANCESTORS_SECONDS", 0),
   };
 }

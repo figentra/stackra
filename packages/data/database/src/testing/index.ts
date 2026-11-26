@@ -17,6 +17,7 @@ export { DATABASE_TESTING_PLUGIN } from "#testing/constants/database-testing-plu
 export { MemoryDatabaseDriver } from "#testing/drivers/memory-database.driver";
 export { assertRowSecurity } from "#testing/functions/assert-row-security.function";
 export { checkMigrations } from "#testing/functions/check-migrations.function";
+export { registerSeederDeps } from "#testing/functions/register-seeder-deps.function";
 export { strictLoading } from "#testing/functions/strict-loading.function";
 export type { Counted } from "#testing/types/counted.type";
 export type { Faker } from "#testing/types/faker.type";

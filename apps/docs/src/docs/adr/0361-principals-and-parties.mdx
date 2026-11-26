@@ -104,3 +104,25 @@ access terms (OS-49, OS-50), which amend [0211](/adr/0211-memberships-and-suppor
 chat, 2026-10-25, in `os/owner-answers.md`: OS-25 (round 3), OS-43 (round 5), OS-351 and OS-352 (round 7), round 22
 (device ports); Commerce answers 31 to 33 (`questionnaire-commerce.md`); the principals table of
 `360/payments-devices-entitlements-principals.md` section 4.
+
+## Amendment 2026-11-08: sign-in on the Shopify model
+
+**Context.** The owner decided sign-in follows the Shopify model: a Figentra-hosted, per-merchant branded login, an
+Enterprise merchant's own identity provider, and staff and customers in separate realms. Two of this ADR's open
+questions are answered, and decision 6 changes. Source: the owner's decision and answers of 2026-11-08 (owner ledger).
+
+**Decision.**
+
+1. **Customers: one ZITADEL organisation per merchant** (realm `customer`). Decision 6 changes: an end customer signs
+   in to each merchant separately, with that merchant's login, branding and policy. There is no shared customer login
+   across merchants. A customer's party at the merchant still links to that login only by sign-up or consent
+   (decision 4).
+2. **Staff: one shared staff organisation per region** (realm `tenant`), Figentra-branded. A person has one staff
+   login and is invited to any number of merchants; access per merchant is IAM memberships and grants (decision 2),
+   carried in the token's `memberships` claim, never the organisation. This answers "Staff accounts per region": one
+   account per region, matching one instance per region.
+3. **Enterprise SSO** is a dedicated staff organisation for an Enterprise merchant, with its verified domains and its own
+   SAML or OIDC IdP ([0372](/adr/0372-national-digital-id-sign-in-as-zitadel-external-identity-providers) amendment
+   2026-11-08). Its users keep one login and can still be invited to other merchants.
+4. **Customer realm** (the open question) is answered by 1. Per-merchant branding is the customer organisation's label
+   policy; a custom login domain is a paid-tier option; free and basic plans use the branded Figentra login page.

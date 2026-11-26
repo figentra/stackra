@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `IDENTITY_CLAIMS`: the four Stackra claim names under one `urn:stackra:` namespace, frozen;
+ * Purpose: unit tests of `IDENTITY_CLAIMS`: the five Stackra claim names under one `urn:stackra:` namespace, frozen;
  *          the scope path one is @stackra/scope's `SCOPE_PATH_CLAIM`.
  * Boundary: test only.
  * Runtime: node (vitest)
@@ -15,6 +15,7 @@ describe("IDENTITY_CLAIMS", () => {
   it("names the Stackra claims", () => {
     expect(IDENTITY_CLAIMS).toEqual({
       userId: "urn:stackra:user_id",
+      realm: "urn:stackra:realm",
       memberships: "urn:stackra:memberships",
       scopePath: "urn:stackra:scope_path",
       permissions: "urn:stackra:permissions",

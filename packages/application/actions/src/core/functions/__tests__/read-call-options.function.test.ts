@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `readCallOptions`: the shared defaults (version 1, area `app`, no interceptors) and every
- *          shared refusal, for an action and for a query.
+ * Purpose: unit tests of `readCallOptions`: the shared defaults (version 1, area `app`, `public` for an anonymous-only
+ *          call, no interceptors) and every shared refusal, for an action and for a query.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 21); ADR 0305 (rule 30).
@@ -36,6 +36,15 @@ describe(readCallOptions, () => {
         interceptors: [AuditInterceptor],
       }),
     ).toEqual({ version: 2, area: ApiArea.Admin, interceptors: [AuditInterceptor] });
+  });
+
+  it("defaults an anonymous-only call to the public area, and any other to app (STA-2650)", () => {
+    const anonymous = { ...base, actors: [ActorKind.Anonymous] };
+    expect(readCallOptions("Query", anonymous).area).toBe(ApiArea.Public);
+    expect(readCallOptions("Query", { ...anonymous, area: ApiArea.App }).area).toBe(ApiArea.App);
+    expect(
+      readCallOptions("Query", { ...base, actors: [ActorKind.User, ActorKind.Anonymous] }).area,
+    ).toBe(ApiArea.App);
   });
 
   it("refuses a malformed key or actor list", () => {

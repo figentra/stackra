@@ -8,7 +8,7 @@
  * Governing contract: ADR 0308 (rule 1: `Integration({ provider, category, ... })`); ADR 0231 (snake_case codes); ADR
  *                     0422 (decision 5: payroll); app-shells D14 (app stores); ADR 0447 (decision 1: the connector
  *                     shelves `edi`, `fraud`, `food_delivery`, `courier`, `document_management`, `esl`, `scales` and
- *                     `court`).
+ *                     `court`, and the `tax` shelf it was amended with, STA-2607).
  */
 import { Enum } from "@stackra/contracts";
 
@@ -67,6 +67,8 @@ export const IntegrationCategory = Enum.of({
   Scales: "scales",
   /** Court systems that take filings and report case events. */
   Court: "court",
+  /** Tax authorities, e-invoicing clearance and reporting networks, and tax engines. */
+  Tax: "tax",
   /** Anything no other shelf fits. */
   Other: "other",
 });

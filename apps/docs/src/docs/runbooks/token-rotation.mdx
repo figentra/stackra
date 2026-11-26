@@ -10,10 +10,11 @@ a screenshot. Treat it as public. This page is the exposure path; the overlap st
 
 ## How it happens
 
-The incident of 2026-10-22 (STA-303): an agent ran `pnpm linear get` (which wraps `infisical run`) and a `ps` listing
+The incident of 2026-10-22 (STA-303): an agent ran `pnpm linear get` (which then wrapped `infisical run`) and a `ps` listing
 in the same command. The process table showed the arguments and environment of the child that held the injected
 `/agents` and `/ci` values, and `TURBO_TOKEN` and the Uniwind token were printed into the transcript. The owner rolled
-both.
+both. The same risk holds today for `tools/scripts/secrets-exec.mjs`, which puts the named `agents` values in its
+child's environment.
 
 Since then `guard-bash` and the OpenCode guard (shared rules in `.agents/hooks/_rules.mjs`) deny:
 
@@ -28,8 +29,9 @@ allowed on their own. The guard is an accident guard, not a boundary, so the rul
 
 A value belongs in a child's environment or stdin, never on its argv, where any `ps` shows it. The bot wrappers
 (`figentra bot gh`, `figentra pr merge`) pass the token as `GH_TOKEN` in the child's environment, `figentra linear`
-reads its token from the environment, and `figentra secrets import` writes through `NAME=@file`. The exception today is `mcp.sh`:
-it expands `$NAME` references from `.mcp.yaml` into the MCP server's arguments (`--api-key`, header values), so
+reads its token from the environment, and `pnpm secrets:put`, `secrets:generate` and `secrets:import` hand each value
+to `sops` on stdin. The exception today is `mcp.sh`: through `secrets-exec.mjs --expand-args` it expands `$NAME`
+references from `.mcp.yaml` into the MCP server's arguments (`--api-key`, header values), so
 those servers carry a token on argv for as long as they run (STA-303 audit; STA-1617 moves them to environment
 variables).
 
@@ -37,19 +39,26 @@ variables).
 
 <Steps>
   <Step title="Stop and tell the owner">
-    Name the token (never its value), where it was printed and the command that printed it. An agent
-    stops its task here: it never rotates, reads or re-sets a value itself.
+    Name the token (never its value), its scope, where it was printed and the command that printed
+    it. An agent stops its task here: it never reads or re-puts a human value itself.
   </Step>
-  <Step title="Revoke or roll at the vendor">
+  <Step title="Rotate a generated value">
+    A name whose catalog `kind` is `generated` (a webhook or signing secret we make) needs no
+    vendor: `pnpm secrets:rotate NAME --scope S` replaces it through a self-merging pull request in
+    `figentra/secrets`. Then go on to "Prove it works".
+  </Step>
+  <Step title="Revoke or roll a human token at the vendor">
     The owner creates the new value and revokes the old one where it is issued (the self-hosted
     Turborepo cache for `TURBO_TOKEN`, Uniwind for `UNIWIND_AUTH_TOKEN`, the GitHub App for a bot
     key). Where the vendor holds two values, follow the overlap in
     [Rotation](/runbooks/secrets#rotation); a token printed into a transcript is already public, so
     keep the overlap short.
   </Step>
-  <Step title="Set the new value in Infisical">
-    The owner writes it to `/ci` or `/agents`, or drops it in the secrets inbox for `pnpm
-    secrets:import` ([ADR-0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox)).
+  <Step title="Re-put the new value">
+    The owner runs `pnpm secrets:put NAME --scope S` for each scope `catalog.yaml` lists for the
+    name, or drops the file in the secrets inbox for `pnpm secrets:import`
+    ([ADR-0257](/adr/0257-secret-manager-agent-and-the-secrets-inbox)). A runtime value reaches the
+    runtime on the next deploy, whose `runway secrets sync` writes it.
   </Step>
   <Step title="Prove it works">
     One real use of the new value: a CI run that hits the remote cache, a Quality Gate install, a
@@ -60,12 +69,19 @@ variables).
     is why the old value is revoked first.
   </Step>
   <Step title="Close the gap">
-    Record the roll (name, environment, date, who) as in [Rotation](/runbooks/secrets#rotation),
-    open a Linear issue for the command that leaked it, and add the pattern to `guard-bash` with a
-    deny test in `.agents/hooks/__tests__/guard-bash.test.mjs` and
+    The merged pull request in `figentra/secrets` records the roll. Open a Linear issue for the
+    command that leaked it, and add the pattern to `guard-bash` with a deny test in
+    `.agents/hooks/__tests__/guard-bash.test.mjs` and
     `.opencode/plugins/guard/__tests__/decide.test.ts`.
   </Step>
 </Steps>
+
+## Scheduled rotation
+
+Rotation without an exposure starts from an issue. Once a day `figentra/secrets`' `reminders.yml` opens one in
+figentra/infra for each generated secret past its catalog `rotateDays` (label `secrets-rotation`, with the
+`pnpm secrets:rotate` command) and each human secret that expires within 30 days (label `secrets-expiry`, with the
+`pnpm secrets:put` command). See [Secrets: Reminders](/runbooks/secrets#reminders).
 
 ## Checks that back this page
 

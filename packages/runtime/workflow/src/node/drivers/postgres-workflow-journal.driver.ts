@@ -2,17 +2,20 @@
  * Stackra file contract:
  * Purpose: `PostgresWorkflowJournalDriver`, the durable `WorkflowJournal` (ADR 0292's Postgres journal): runs, their
  *          steps and held signals are rows of `workflow.runs`, `workflow.steps` and `workflow.signals`; a run's writes
- *          commit in transactions of their own inside the run's scope session, and the worker's scan reads across
- *          scopes.
+ *          commit in transactions of their own inside the run's scope session, and the worker's tick claims across
+ *          tenants through the system functions `workflow.claim_due_runs` and `workflow.claim_expired_signals`.
  * Boundary: raw SQL on the running context's entity manager, every value a bound parameter and every result row read
- *           through zod. No table has a row-level-security policy (the worker advances every scope's runs); a held
- *           signal is matched to a run of the same scope by its `scope_id`, and `take` locks the row it removes
- *           (`for update skip locked`) so two runners never take one signal. JSON columns are `jsonb`; scope paths are
+ *           through zod. The three tables are tenant-owned in the platform form (migration 0012): `tenant_id` is filled
+ *           from the session's `app.tenant_id` by its default and never written here, and every statement but the two
+ *           claims sees only the session's tenant and the platform's rows. A held signal is matched to a run of the
+ *           same scope by its `scope_id`, and `take` locks the row it removes (`for update skip locked`) so two runners
+ *           never take one signal. JSON columns are `jsonb`; scope paths are
  *           `ltree`, read back as text. A run's pinned version is `version` (migration 0002; 1 for older rows); the
  *           automation a run runs is `automation_id` (migration 0007, null for other runs).
  * Runtime: node
  * Governing contract: ADR 0102 (decision 1); ADR 0292 (decision 2); ADR 0160 (raw SQL is parameterised and typed with
- *                     zod); ADR 0142 (drivers behind ports); ADR 0327 (decisions 3 and 9: the scope session).
+ *                     zod); ADR 0142 (drivers behind ports); ADR 0327 (decisions 3 and 9: the scope session); ADR 0239
+ *                     (2026-11-07 amendment, gaps A and C).
  */
 import { Driver } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
@@ -22,6 +25,8 @@ import { z } from "zod";
 
 import { StepStatus, WorkflowJournal, WorkflowRunStatus } from "#core/index";
 import type { HeldSignal, RunOrigin, WorkflowRun, WorkflowStepRecord } from "#core/index";
+import type { RunClaim } from "#core/types/run-claim.type";
+import type { SignalClaim } from "#core/types/signal-claim.type";
 
 /** The run table, in the package's schema. */
 const RUNS = '"workflow"."runs"';
@@ -35,7 +40,7 @@ const SIGNALS = '"workflow"."signals"';
 /** The columns a run is read from. */
 const RUN_COLUMNS =
   "id, workflow, version, automation_id, status, input, origin, error, scope_id, " +
-  "scope_path::text as scope_path, started_at, deadline_at, ended_at";
+  "scope_path::text as scope_path, tenant_id, started_at, deadline_at, ended_at";
 
 /** The columns a step is read from. */
 const STEP_COLUMNS =
@@ -60,6 +65,7 @@ const RUN = z.object({
   error: FAILURE.nullable(),
   scope_id: z.string().nullable(),
   scope_path: z.string().nullable(),
+  tenant_id: z.string().nullable(),
   started_at: z.coerce.date(),
   deadline_at: z.coerce.date().nullable(),
   ended_at: z.coerce.date().nullable(),
@@ -98,6 +104,28 @@ const SCOPE = z.object({ scope_id: z.string().nullable(), scope_path: z.string()
 /** Run ids. */
 const IDS = z.array(z.object({ id: z.string().startsWith("wfr_") }));
 
+/** The session's tenant setting. */
+const OWNER = z.array(z.object({ owner: z.string().nullable() }));
+
+/** What `workflow.claim_due_runs` returns. */
+const RUN_CLAIMS = z.array(
+  z.object({
+    id: z.string().startsWith("wfr_"),
+    tenant_id: z.string().nullable(),
+    started_at: z.coerce.date(),
+  }),
+);
+
+/** What `workflow.claim_expired_signals` returns. */
+const SIGNAL_CLAIMS = z.array(
+  z.object({ id: z.string().startsWith("wfs_"), tenant_id: z.string().nullable() }),
+);
+
+/** The owner field of a claim or run whose `tenant_id` is `owner` (none for a platform row). */
+function ownerOf(owner: string | null): { readonly ownerId?: PublicId<"scp"> } {
+  return owner === null ? {} : { ownerId: owner as PublicId<"scp"> };
+}
+
 /** The scope of a row's two columns, when both are set. */
 function scopeOf(id: string | null, path: string | null): { readonly scope?: ScopeRef } {
   return id === null || path === null ? {} : { scope: { id: id as PublicId<"scp">, path } };
@@ -133,6 +161,7 @@ function runOf(row: z.infer<typeof RUN>, steps: readonly z.infer<typeof STEP>[])
     input: row.input,
     origin: row.origin as unknown as RunOrigin,
     ...scopeOf(row.scope_id, row.scope_path),
+    ...ownerOf(row.tenant_id),
     ...(row.error === null ? {} : { error: row.error }),
     startedAt: row.started_at,
     ...(row.deadline_at === null ? {} : { deadlineAt: row.deadline_at }),
@@ -192,7 +221,18 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return row === undefined ? undefined : scopeOf(row.scope_id, row.scope_path).scope;
   }
 
-  /** See `WorkflowJournal.save`: inserts or updates the run and each of its steps. */
+  /** See `WorkflowJournal.currentOwner`: the caller's transaction's `app.tenant_id` (`''` reads as none). */
+  async currentOwner(): Promise<PublicId<"scp"> | undefined> {
+    // raw-sql: the tenant setting is session state, which only SQL reads
+    const [row] = OWNER.parse(
+      await this.database
+        .em()
+        .execute("select nullif(current_setting('app.tenant_id', true), '') as owner"),
+    );
+    return (row?.owner ?? undefined) as PublicId<"scp"> | undefined;
+  }
+
+  /** See `WorkflowJournal.save`: inserts or updates the run and each of its steps; `tenant_id` comes from its default. */
   async save(run: WorkflowRun): Promise<void> {
     const em = this.database.em();
     // raw-sql: the journal has no model; one upsert for the run and one for all its steps
@@ -346,25 +386,43 @@ export class PostgresWorkflowJournalDriver extends Driver(WorkflowJournal) {
     return row === undefined ? undefined : signalOf(row);
   }
 
-  /** See `WorkflowJournal.due`: the runs to advance now, oldest first. */
-  async due(now: Date, limit: number): Promise<readonly PublicId<"wfr">[]> {
-    // raw-sql: the journal has no model; the worker reads across scopes, oldest run first
-    const rows = await this.database
-      .em()
-      .execute(
-        `select r.id from ${RUNS} r where r.status in ('running', 'compensating') or (r.status = 'waiting' and ` +
-          `(r.deadline_at <= ? or exists (select 1 from ${STEPS} s where s.run_id = r.id and s.status = 'waiting' ` +
-          `and (s.wake_at <= ? or exists (select 1 from ${SIGNALS} g where g.signal = s.signal ` +
-          "and g.correlation = s.correlation and g.scope_id is not distinct from r.scope_id))))) " +
-          "order by r.started_at, r.id limit ?",
-        [now, now, limit],
-      );
-    return IDS.parse(rows).map((row) => row.id as PublicId<"wfr">);
+  /** See `WorkflowJournal.due`: every tenant's runs to advance now, oldest first, through the system function. */
+  async due(now: Date, limit: number): Promise<readonly RunClaim[]> {
+    // raw-sql: the claim reads across tenants through the audited system function (migration 0012)
+    const rows = RUN_CLAIMS.parse(
+      await this.database
+        .em()
+        .execute("select id, tenant_id, started_at from workflow.claim_due_runs(?, ?)", [
+          now,
+          limit,
+        ]),
+    );
+    return rows.map((row) => ({
+      id: row.id as PublicId<"wfr">,
+      ...ownerOf(row.tenant_id),
+      startedAt: row.started_at,
+    }));
   }
 
-  /** See `WorkflowJournal.expire`: drops the held signals that lapsed. */
-  async expire(now: Date): Promise<void> {
-    // raw-sql: the journal has no model; one parameterised delete
-    await this.database.em().execute(`delete from ${SIGNALS} where expires_at <= ?`, [now]);
+  /** See `WorkflowJournal.expired`: every tenant's lapsed signals, through the system function. */
+  async expired(now: Date, limit: number): Promise<readonly SignalClaim[]> {
+    // raw-sql: the claim reads across tenants through the audited system function (migration 0012)
+    const rows = SIGNAL_CLAIMS.parse(
+      await this.database
+        .em()
+        .execute("select id, tenant_id from workflow.claim_expired_signals(?, ?)", [now, limit]),
+    );
+    return rows.map((row) => ({ id: row.id as PublicId<"wfs">, ...ownerOf(row.tenant_id) }));
+  }
+
+  /** See `WorkflowJournal.remove`: one delete of the ids, which row security keeps to the session's own. */
+  async remove(ids: readonly PublicId<"wfs">[]): Promise<void> {
+    if (ids.length === 0) return;
+    // raw-sql: the journal has no model; the ids are one bound JSON array
+    await this.database
+      .em()
+      .execute(`delete from ${SIGNALS} where id in (select jsonb_array_elements_text(?::jsonb))`, [
+        JSON.stringify(ids),
+      ]);
   }
 }

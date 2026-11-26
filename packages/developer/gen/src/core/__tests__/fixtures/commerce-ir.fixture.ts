@@ -50,7 +50,7 @@ export const COMMERCE_IR: MemberIR = {
       facets: [],
       methods: [],
       refusals: [],
-      statics: { read: "Permission.L0", create: "Permission.L1", cancel: "Permission.L2" },
+      statics: { read: "Permission.L0", create: "Permission.L2", cancel: "Permission.L2" },
       traits: [],
     },
     {
@@ -59,7 +59,7 @@ export const COMMERCE_IR: MemberIR = {
       module: "orders",
       file: "src/modules/orders/actions/cancel-order.action.ts",
       importPath: "#modules/orders/actions/cancel-order.action",
-      options: { key: "order.cancel", actors: ["user", "agent"], idempotency: { ttl: "PT24H" } },
+      options: { key: "order.cancel", actors: ["user", "agent"], idempotency: "required" },
       deps: [{ class: { name: "OrderService", from: "#modules/orders/services/order.service" } }],
       facets: [],
       methods: ["handle"],

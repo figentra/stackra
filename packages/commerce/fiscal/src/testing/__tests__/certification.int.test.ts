@@ -6,7 +6,7 @@
  * Boundary: integration tier (`.int`), skipped unless `STACKRA_FISCAL_SANDBOX` holds the sandbox config: JSON keyed
  *           by case id, each `{ options, seller?, buyer?, headers? }` (endpoints issued with the access, the
  *           registered issuer, and the credential headers, e.g. an ETA POS bearer token). The value is a secret: it
- *           comes from Infisical on ci-box, never from a file. The transport here is plain fetch and the other ports
+ *           comes from sops on the testbed, never from a file. The transport here is plain fetch and the other ports
  *           are the recorded fakes, so it serves the cases whose only secret is a header (ETA e-receipt); a case
  *           that needs mutual TLS (Verifactu), a real signing key (ZATCA XAdES with its CSID, RKSV) or a device (TSE)
  *           is run by the host's suite with its own bindings through `runCertification`. Until a run passes, every

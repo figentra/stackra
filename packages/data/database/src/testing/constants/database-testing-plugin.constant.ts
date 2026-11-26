@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `DATABASE_TESTING_PLUGIN`, the testing-module plugin of @stackra/database: every compile connects a fresh
  *          `MemoryDatabaseDriver` (PGlite) unless another database is connected, `.seed(...seeders)` runs each seeder
- *          in its own transaction once the module compiles (taken from the container, so its injected services are
- *          there), `app.transaction(work)` runs work in a transaction of the connected database,
+ *          in its own transaction once the module compiles (taken from the container when bound, else built with the
+ *          constructor tokens the generated test setup registered, so its injected services are there),
+ *          `app.transaction(work)` runs work in a transaction of the connected database,
  *          `app.repository(Model)` hands out the model's repository, and a test that picks the `memory` drivers gets
  *          `DatabaseUnitOfWorkDriver` as its `UnitOfWork`, so each action runs in a transaction. Every compile also
  *          connects the app as the reads' visibility resolver, as a service's boot does (`connectVisibilityFilter`,
@@ -27,6 +28,8 @@ import type { AnyClass } from "@stackra/container";
 
 import type { Seeder } from "#core/bases/seeder.base";
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
+import { seederOf } from "#node/functions/seeder-of.function";
+import { SEEDER_DEPS } from "#testing/constants/seeder-deps.constant";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
 import { repositoryOf } from "#core/functions/repository-of.function";
 import { Database } from "#core/ports/database.port";
@@ -92,10 +95,8 @@ export const DATABASE_TESTING_PLUGIN: TestingPlugin = {
     seed(this: TestingModuleBuilder, ...seeders: readonly AnyClass<Seeder>[]) {
       return this.onCompile(async (app) => {
         for (const SeederClass of seeders) {
-          // a wired seeder gets its constructor's services; an unwired one has none to get
-          const seeder = app.has(SeederClass)
-            ? app.get(SeederClass)
-            : (Reflect.construct(SeederClass, []) as Seeder);
+          // a bound seeder comes from the container, else it is built with the tokens the test setup registered
+          const seeder = seederOf(app, SeederClass, SEEDER_DEPS.get(SeederClass));
           await Database.current().transaction(() => seeder.run());
         }
       });

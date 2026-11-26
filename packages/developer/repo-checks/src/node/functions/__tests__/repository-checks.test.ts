@@ -232,6 +232,13 @@ test("missing files, PII, license drift, manifest hygiene", () => {
   assert.equal(f.length, 9); // the replaced manifest also lacks repository and publishConfig
 });
 
+test("an @figentra-oss member keeps its own open-source LICENSE in a product repository", () => {
+  const widget = { ...filesOk, licenseText: "MIT", rootLicense: "Proprietary", stackra: false };
+  const check = (name: string) => checkMemberFiles({ ...widget, pkg: { ...filesOk.pkg, name } });
+  assert.deepEqual(check("@figentra-oss/pay-widget"), []);
+  assert.deepEqual(check("@figentra/pay-sdk"), ["LICENSE differs from the root LICENSE"]);
+});
+
 test("apps and services are UNLICENSED with no LICENSE file (ADR 0195)", () => {
   const app = { dir: "apps/console", pkg: { description: "x", license: "UNLICENSED" } };
   assert.deepEqual(
@@ -375,6 +382,10 @@ test("checkTestPlacement: test files must sit directly in __tests__/", () => {
     checkTestPlacement(["src/__tests__/x.int.test.ts", "src/__tests__/x.e2e.test.ts"]),
     [],
   );
+  assert.deepEqual(checkTestPlacement(["packages/a/b/src/__tests__/x.e2e.page.tsx"]), []);
+  assert.deepEqual(checkTestPlacement(["packages/a/b/src/x.e2e.page.tsx"]), [
+    "packages/a/b/src/x.e2e.page.tsx: an e2e page goes in a __tests__/ folder (ADR 0022)",
+  ]);
   assert.deepEqual(checkTestPlacement(["src/x/x.stories.tsx"]), [
     "src/x/x.stories.tsx: no Storybook; test the component in __tests__/",
   ]);
@@ -399,15 +410,21 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "apps/mobile/capabilities.json",
       "workers/edge/edge.json",
       "apps/docs/src/docs.json",
+      "docs/content/meta.json",
+      "docs/content/guides/advanced/meta.json",
+      "packages/developer/gen/schema/docs.json",
       ".claude/settings.json",
       ".changeset/config.json",
       "assets/landing/index.json",
       "services/billing/assets/seeds/plans/price-levels.json",
       "assets/seeds/credits.json",
+      "services/orders/assets/ai/orders/explain-order.eval.json",
       "brand.json",
       "apps/mobile/brand.json",
       "apps/playground/src/constants/brand-themes/jute.json",
       "packages/design-system/showcase/api/react/free/button.json",
+      "packages/connectors/here/src/node/drivers/__tests__/fixtures/here-matrix-dubai.json",
+      "src/__tests__/fixtures/v2/order.json",
       ".agents/skills/x/scripts/package.json",
       "apps/console/turbo.jsonc",
       ".oxlintrc.jsonc",
@@ -421,6 +438,9 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
     "knip.json",
     ".agents/models.json",
     "packages/x/brand.json",
+    "packages/x/fixtures/order.json",
+    "docs/content/guides/nav.json",
+    "services/orders/assets/ai/orders/notes.json",
   ];
   assert.deepEqual(
     checkJsonConfigs(flagged).map((m) => m.split(":")[0]),
@@ -635,6 +655,19 @@ test("checkYamlFlowMaps: names file and line of a flow mapping; allows block map
     (checkYamlFlowMaps("x.yml", "a: [")[0] ?? "").startsWith("x.yml: not valid YAML"),
     true,
   );
+});
+
+test("checkJsonConfigs: a service's assets/defaults JSON stays JSON (imported as a JSON module)", () => {
+  assert.deepEqual(checkJsonConfigs(["services/notifications/assets/defaults/rule-sets.json"]), []);
+  assert.equal(checkJsonConfigs(["services/notifications/config.json"]).length, 1);
+});
+
+test("checkYamlFlowMaps: reads every document of a multi-document file (a Maestro flow)", () => {
+  const flow = "appId: com.figentra.os\n---\n- launchApp\n- tapOn:\n    text: Sign in\n";
+  assert.deepEqual(checkYamlFlowMaps("flow.yaml", flow), []);
+  assert.deepEqual(checkYamlFlowMaps("flow.yaml", "appId: x\n---\n- tapOn: { text: Go }\n"), [
+    "flow.yaml:3: flow mapping; write a block mapping (YAML standard, STA-299)",
+  ]);
 });
 
 test("isRepoOwnedYaml: skips generated and vendored YAML", () => {

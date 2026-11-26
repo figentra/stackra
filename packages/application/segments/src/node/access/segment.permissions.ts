@@ -19,5 +19,5 @@ import { Permission, Permissions } from "@stackra/iam";
  */
 export class SegmentPermissions extends Permissions {
   /** Recompute segment membership; the hourly job runs it, so it is held only by the platform. */
-  static readonly recompute = Permission.L1.system();
+  static readonly recompute = Permission.L2.system();
 }

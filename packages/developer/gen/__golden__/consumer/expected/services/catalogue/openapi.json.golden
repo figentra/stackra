@@ -7,7 +7,7 @@
     "x-stackra-member": "catalogue"
   },
   "paths": {
-    "/catalogues/publish": {
+    "/app/catalogues/publish": {
       "post": {
         "operationId": "catalogue_catalogue_publish",
         "summary": "PublishCatalogueAction",
@@ -15,6 +15,7 @@
         "x-stackra-action": "catalogue.catalogue.publish@1",
         "x-stackra-permission": "catalogue.catalogue.publish",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "requestBody": {
           "required": true,
           "content": {

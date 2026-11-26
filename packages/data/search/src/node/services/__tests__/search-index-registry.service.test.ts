@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `SearchIndexRegistry`: every statement binds its values; `list` reads rows back into statuses
- *          (scope, cursor and rebuild time only when stored); `invalidateChanged` names the models whose facet changed
- *          and refuses a model that is not `@Searchable`; `begin` records the version it builds and keeps a stopped rebuild's cursor only for the same
- *          facet and answers it; `progress` and `finish` record the run.
+ *          through `search.index_statuses` (owner, scope, cursor and rebuild time only when stored);
+ *          `invalidateChanged` names the models whose facet changed and refuses a model that is not `@Searchable`;
+ *          `begin` records the version it builds and keeps a stopped rebuild's cursor only for the same facet and
+ *          answers it; `progress` and `finish` record the run in the call's own row (a NULL scope key for a
+ *          platform-wide index).
  * Boundary: test only; a stand-in entity manager records each statement and answers fixed rows, so no database runs.
  *           The SQL itself runs in the integration tier.
  * Runtime: node (vitest)
@@ -59,9 +61,10 @@ const scope = { id: "scp_1", path: "platform.acme" } as const;
 describe(SearchIndexRegistry, () => {
   it("lists every index as its status", async () => {
     const rebuiltAt = new Date(Date.UTC(2026, 9, 28));
-    const { registry } = registryWith([
+    const { registry, statements } = registryWith([
       {
         model: "Product",
+        tenant_id: "scp_1",
         scope_id: "scp_1",
         scope_path: "platform.acme",
         state: "rebuilding",
@@ -73,6 +76,7 @@ describe(SearchIndexRegistry, () => {
       },
       {
         model: "Product",
+        tenant_id: null,
         scope_id: null,
         scope_path: null,
         state: "valid",
@@ -86,6 +90,7 @@ describe(SearchIndexRegistry, () => {
     expect(await registry.list()).toEqual([
       {
         model: "Product",
+        ownerId: "scp_1",
         scope,
         state: SearchIndexState.Rebuilding,
         facetHash: "abc",
@@ -96,6 +101,7 @@ describe(SearchIndexRegistry, () => {
       },
       { model: "Product", state: SearchIndexState.Valid, facetHash: "abc", docCount: 3 },
     ]);
+    expect(statements[0]?.sql).toContain('from "search"."index_statuses"()');
   });
 
   it("marks invalid the indexes whose facet changed", async () => {
@@ -132,7 +138,8 @@ describe(SearchIndexRegistry, () => {
     expectBound(resumed.statements);
     const fresh = registryWith([{ cursor: null, doc_count: 0 }]);
     expect(await fresh.registry.begin("Product", undefined, "abc")).toEqual({ docCount: 0 });
-    expect(fresh.statements[0]?.params.slice(1, 4)).toEqual(["-", null, null]);
+    expect(fresh.statements[0]?.params.slice(1, 4)).toEqual([null, null, null]);
+    expect(fresh.statements[0]?.sql).toContain("on conflict (tenant_id, model, scope_key)");
     const versioned = registryWith([{ cursor: null, doc_count: 0 }]);
     await versioned.registry.begin("Product", scope, "abc", 2);
     expect(versioned.statements[0]?.params.at(-1)).toBe(2);
@@ -149,6 +156,12 @@ describe(SearchIndexRegistry, () => {
       [812, "Product", "scp_1"],
     ]);
     expect(statements[1]?.sql).toContain("state = 'valid', cursor = null");
+    for (const statement of statements)
+      expect(statement.sql).toContain(
+        "scope_key is not distinct from ? and tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '')",
+      );
+    await registry.finish("Product", undefined, 3);
+    expect(statements[2]?.params).toEqual([3, "Product", null]);
     expectBound(statements);
   });
 });

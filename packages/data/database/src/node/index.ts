@@ -7,7 +7,7 @@
  *          durable Postgres drivers of `@stackra/actions`' idempotency and rate-limit ports; `ServiceHoldRegistryDriver`,
  *          the `HoldRegistry` every service binds over its `HoldChannel`; `DatabaseRunner`, the three `db:*` commands (`DbMigrateCommand`, `DbRollbackCommand`, `DbStatusCommand`, STA-1731) and `SeedPackStatusCommand` (`seed-pack:status`, STA-1852); `migrate` and `rollback`, the runner
  *          `stackra db` calls; `seedState` and `applySeed`, the runner `stackra seed-pack` calls; `runSeeders`,
- *          `runSeedEntry` and `seederLedger`, the seeder runner a service's generated seed entry calls (STA-1709);
+ *          `runSeedEntry`, `seederLedger` and `seederOf`, the seeder runner a service's generated seed entry calls (STA-1709);
  *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
  *          `ConnectionResolver` (stackra-310); `DatabaseQueryBudgetDriver`, the action pipeline's `QueryBudget` (N+1
  *          guard), and `LoggerQueryObserverDriver`, the slow-statement log (stackra-282). The partition upkeep,
@@ -47,3 +47,4 @@ export { runSeedEntry } from "#node/functions/run-seed-entry.function";
 export { runSeeders } from "#node/functions/run-seeders.function";
 export { seedState } from "#node/functions/seed-state.function";
 export { seederLedger } from "#node/functions/seeder-ledger.function";
+export { seederOf } from "#node/functions/seeder-of.function";

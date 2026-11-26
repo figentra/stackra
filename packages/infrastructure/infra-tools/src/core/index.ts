@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/infra-tools until `stackra gen` writes the entry barrels
  *          (STA-339): `toolsStackPlan`, which derives one environment's per-region tools stacks from the root runway,
  *          the default catalogue and OpenStreetMap extracts, and the plan types (`ToolEndpoint` is what OS integrations
- *          turns into a managed Connection; `ToolDatabase` and `ToolsSecretSync` are the databases and the Infisical
+ *          turns into a managed Connection; `ToolDatabase` and `ToolsSecretSync` are the databases and the vault
  *          folders).
  * Boundary: names each re-export and declares nothing. Pure and Pulumi-free; the Pulumi program and the runway file
  *           reader are `./node`'s. The runway schema stays internal.

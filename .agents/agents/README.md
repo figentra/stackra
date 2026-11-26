@@ -1,6 +1,6 @@
 # Agents
 
-Canonical agent definitions for Stackra. `pnpm agents:sync` renders them into `.claude/agents` and
+Canonical agent definitions for Stackra. `pnpm spec:sync` (`fflow sync`) renders them into `.claude/agents` and
 `.opencode/agents`; edit the source here, never the generated copies.
 
 Every agent is defined here; no plugin supplies roles to this repository (ADR 0121 D3). The roster is ADR 0258
@@ -25,17 +25,17 @@ explicit tier. Builders (executor) implement from a brief, reviewers and guardia
    blocks: true | false # true = its FAIL stops the merge
    tools: [Read, Grep, Glob, Bash]
    assistants: [claude] # optional: only these assistants get it
-   reviewer: true # optional: may run `pnpm bot:review` (ADR 0230, 0293)
+   reviewer: true # optional: marks a verdict-posting reviewer (ADR 0230, 0293)
    ---
    ```
 
 3. Body sections: Mission, Owns, Checks, Never, Hand-offs. Keep it under about 80 lines.
 4. A reviewer or guardian gets no `Write`/`Edit`. Only list `Bash` if the body runs commands. Set `reviewer: true`
-   only when the body posts a verdict with `pnpm bot:review`; `guard-bash` denies it to every other agent type.
+   only when the body posts a review verdict (advisory since the stackra-reviewer App retired, ADR 0523).
 5. Tier to model lives in `models.yaml`; change a model there, not in an agent. OpenCode has rows only for the
    steward and executor tiers, so reviewers, guardians and the lead are never projected there; add
    `assistants: [claude]` to keep an executor or steward off OpenCode too (ADR 0258).
-6. Run `pnpm exec figentra agents sync --lint`, then `pnpm agents:sync`.
+6. Run `pnpm spec:sync`; `pnpm validate` lints the source.
 
 ## Roster in this folder
 

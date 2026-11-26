@@ -4,8 +4,7 @@
  *          ES256 token and reads and registers bundle ids; Play opens, reads and closes an edit (404 is no app); Expo
  *          finds a project (NOT_FOUND is none), reads credentials and hands over the FCM key; Google Cloud creates a
  *          project (409 is taken), grants a role and decodes a created key; Firebase reads a config file and answers
- *          false on a 403 Analytics link; Sentry reads a DSN; Infisical writes blind and replaces an existing secret.
- *          No secret value from the environment or a key appears in any error.
+ *          false on a 403 Analytics link; Sentry reads a DSN. No secret value from the environment or a key appears in any error.
  * Boundary: test only; every request goes to the fake, which answers by method and URL; keys are generated in the test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0482 (decisions 4 to 7); ADR 0173.
@@ -20,7 +19,6 @@ import { ExpoGraphqlProjectsDriver } from "#node/drivers/expo-graphql-projects.d
 import { FirebaseManagementDriver } from "#node/drivers/firebase-management.driver";
 import { GoogleCloudDriver } from "#node/drivers/google-cloud.driver";
 import { GooglePlayConsoleDriver } from "#node/drivers/google-play-console.driver";
-import { InfisicalVaultWriterDriver } from "#node/drivers/infisical-vault-writer.driver";
 import { SentryApiProjectsDriver } from "#node/drivers/sentry-api-projects.driver";
 
 /** One recorded request. */
@@ -322,46 +320,5 @@ describe("SentryApiProjectsDriver", () => {
       "https://k@o1.ingest.sentry.io/2",
     );
     expect(await sentry.findProject("figentra", "nope")).toBeNull();
-  });
-});
-
-describe("InfisicalVaultWriterDriver", () => {
-  const env = { INFISICAL_TOKEN: SECRET, INFISICAL_PROJECT_ID: "W1" };
-
-  // @covers sta-1623:FR-006
-  it("creates the folders and replaces a secret that exists, never putting the value in an error", async () => {
-    const { fetch, sent } = fakeFetch({
-      "POST https://app.infisical.com/api/v1/folders": [400, { message: "exists" }],
-      "POST https://app.infisical.com/api/v3/secrets/raw/FCM_SERVICE_ACCOUNT_JSON": [
-        400,
-        { message: "exists" },
-      ],
-      "PATCH https://app.infisical.com/api/v3/secrets/raw/FCM_SERVICE_ACCOUNT_JSON": [200, {}],
-    });
-    const vault = Object.assign(new InfisicalVaultWriterDriver(), { env, fetch });
-
-    await vault.write("prod:/ci/store/commerce", "FCM_SERVICE_ACCOUNT_JSON", "value-canary");
-
-    expect(sent.filter((request) => request.url.endsWith("/folders"))).toHaveLength(3);
-    expect(JSON.parse(sent.at(-1)?.body ?? "{}")).toMatchObject({
-      environment: "prod",
-      secretPath: "/ci/store/commerce",
-      secretValue: "value-canary",
-    });
-  });
-
-  it("names the step and status of a failure without the value", async () => {
-    const { fetch } = fakeFetch({
-      "POST https://app.infisical.com/api/v1/folders": [400, {}],
-      "POST https://app.infisical.com/api/v3/secrets/raw/X": [500, { message: "down" }],
-    });
-    const vault = Object.assign(new InfisicalVaultWriterDriver(), { env, fetch });
-
-    const failure = await vault
-      .write("prod:/ci", "X", "value-canary")
-      .catch((error: unknown) => error);
-    expect(String(failure)).toContain("HTTP 500");
-    expect(String(failure)).not.toContain("value-canary");
-    expect(String(failure)).not.toContain(SECRET);
   });
 });

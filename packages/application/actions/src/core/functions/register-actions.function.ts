@@ -18,7 +18,7 @@ import type { ActionRegistration } from "#core/types/action-registration.type";
  * @throws TypeError when a row's class is not an action or a query, or its key is empty.
  * @example
  * registerActions([
- *   { type: CreateOrderAction, key: "orders.order.create@1", permission: "orders.order.create", risk: "L1", input: CreateOrderInput },
+ *   { type: CreateOrderAction, key: "orders.order.create@1", permission: "orders.order.create", risk: "L2", input: CreateOrderInput },
  * ]);
  */
 export function registerActions(rows: readonly ActionRegistration[]): void {

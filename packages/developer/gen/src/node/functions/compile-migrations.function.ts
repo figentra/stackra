@@ -16,7 +16,10 @@
  *           else; `generate` writes or checks the files. A migration that does not load or compile is refused
  *           (`migration_load_failed`, `migration_compile_failed`); so is a member with migrations and no
  *           `@stackra/database` (`migration_database_missing`), and an own `AppendOnly` model whose table no migration
- *           revokes `UPDATE` on (`append_only_not_revoked`, `checkAppendOnly`). No migration anywhere: no files and no import.
+ *           revokes `UPDATE` on (`append_only_not_revoked`, `checkAppendOnly`), and an own module with migrations whose
+ *           key a declared package's migrations need through its package.json dependencies, since that need would
+ *           resolve to the own module (`module_key_collision`, STA-2161; a shared key alone stays allowed, the hosting
+ *           rule of owner decisions 2026-10-26 round 3). No migration anywhere: no files and no import.
  * Runtime: node
  * Governing contract: ADR 0159 (decisions 1 to 3, as amended 2026-10-23 and 2026-10-24); ADR 0294 (decision 20: a
  *                     Postgres schema per module); ADR 0220 and data-layer gap db5 (the append-only revoke, stackra-256).
@@ -151,12 +154,16 @@ export async function compileMigrations(
   const packageNeeds = new Map<string, string[]>();
   // Each package whose `./node` macros the compiler needs, with the folder it resolves from.
   const macroPackages: { readonly name: string; readonly base: string }[] = [];
+  // The member's own modules that own a migration, by key, with their folder (`module_key_collision`, STA-2161).
+  const ownModules = new Map<string, string>();
+  // A key a declared package's migrations need that is also an own module's: the dependency and who needs it.
+  const collisions = new Map<string, { readonly dependency: string; readonly needers: string[] }>();
   for (const module of modulesOf(root)) {
     const dir = join(module.dir, "database/migrations");
     for (const name of filesOf(dir, ".migration.ts")) {
       const id = migrationId(module.key, name);
       // A misnamed file is check-conventions' `migration_numbering` refusal.
-      if (id !== undefined)
+      if (id !== undefined) {
         found.push({
           id,
           module: module.key,
@@ -164,6 +171,8 @@ export async function compileMigrations(
           path: join(dir, name),
           file: relative(root, join(dir, name)),
         });
+        ownModules.set(module.key, relative(root, module.dir));
+      }
     }
     const macros = join(module.dir, "database/macros");
     for (const name of filesOf(macros, ".macro.ts")) {
@@ -227,6 +236,14 @@ export async function compileMigrations(
       module,
       Object.keys(declared.dependencies ?? {}).map((dependency) => packageModuleKey(dependency)),
     );
+    // Such a need would resolve to the member's own module of the same key, not to the package (STA-2161).
+    for (const dependency of Object.keys(declared.dependencies ?? {})) {
+      const key = packageModuleKey(dependency);
+      if (!ownModules.has(key)) continue;
+      const collision = collisions.get(key) ?? { dependency, needers: [] };
+      collision.needers.push(name);
+      collisions.set(key, collision);
+    }
     for (const dependency of Object.keys(declared.dependencies ?? {}))
       if (
         !macroPackages.some((known) => known.name === dependency) &&
@@ -234,6 +251,20 @@ export async function compileMigrations(
       )
         macroPackages.push({ name: dependency, base });
   }
+  // Refused before anything compiles, so no `migration_cycle` follows from the misresolved need.
+  if (collisions.size > 0)
+    return {
+      files: [],
+      errors: [...collisions].map(([key, { dependency, needers }]) =>
+        refusal(
+          "module_key_collision",
+          "package.json",
+          key,
+          `${needers.map((needer) => `\`${needer}\``).join(", ")} (hosted) ${needers.length > 1 ? "need" : "needs"} \`${dependency}\`'s module \`${key}\`, but the member's own module \`${key}\` (${ownModules.get(key) ?? ""}) has the same key, so the need resolves to it`,
+          "rename the member module (its folder under src/modules and its key), so it no longer equals a package's module key",
+        ),
+      ),
+    };
   const blueprint = ir.layout === "service" ? emitBlueprintMacros(ownMacros) : [];
   if (found.length === 0) return { files: blueprint, errors: [] };
 

@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/skills/test-infra/SKILL.md
+file: skills/test-infra.md
+reason: "core's newer text, until the stackra preset carries it: a dropped connection does not end a testbed job (STA-2042)"
+owner: figentra-usr
+review: 2027-02-01

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/clients (the ref factories gen writes `#stackra/clients/<service>`
- *          over, `ServiceClient`, `DynamicClient` and `producerBaseUrl` for runtime keys, the config, the HTTP `ClientTransport` driver, the `MutationSender`,
+ *          over, `ServiceClient`, `DynamicClient` and `producerBaseUrl` for runtime keys, the config, the HTTP `ClientTransport` driver, the `PlanServiceChannel` driver over it, the `MutationSender`,
  *          `AcknowledgementReader` and `ReplicaSource` drivers of `@stackra/query`'s offline ports, the transport and
  *          server refusals, and the public types) until `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under the generated name
@@ -21,6 +21,7 @@ export { ClientAcknowledgementReaderDriver } from "#core/drivers/client-acknowle
 export { ClientMutationSenderDriver } from "#core/drivers/client-mutation-sender.driver";
 export { ClientReplicaSourceDriver } from "#core/drivers/client-replica-source.driver";
 export { HttpClientTransportDriver } from "#core/drivers/http-client-transport.driver";
+export { TransportPlanServiceChannelDriver } from "#core/drivers/transport-plan-service-channel.driver";
 export { ServerRefusalError } from "#core/errors/server-refusal.error";
 export { TransportError } from "#core/errors/transport.error";
 export { actionRef } from "#core/functions/action-ref.function";

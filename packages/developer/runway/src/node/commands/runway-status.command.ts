@@ -23,6 +23,7 @@ type Deployment = { readonly id: number; readonly sha: string; readonly created_
 /** Shows what each environment runs. */
 export class RunwayStatusCommand extends Command({
   name: "status",
+  bin: true,
   description: "Show what each GitHub environment runs, from GitHub's deployment records",
   examples: ["runway status", "runway status production --json"],
 }) {

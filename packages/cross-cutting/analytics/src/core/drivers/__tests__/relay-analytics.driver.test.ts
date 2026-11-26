@@ -42,7 +42,7 @@ const delivery = (name: string) => ({
 function answer(ingest = 200, snapshot = 200) {
   const fetch = vi.fn((url: string) =>
     Promise.resolve(
-      url.endsWith("/consent/snapshots")
+      url.endsWith("/public/consent/snapshots")
         ? new Response(
             JSON.stringify({ token: "csn.token", expiresAt: "2999-01-01T00:00:00.000Z" }),
             { status: snapshot },
@@ -83,8 +83,8 @@ describe("RelayAnalyticsDriver", () => {
     const fetch = answer();
     const deliveries = [delivery("screen.viewed"), delivery("lead.submitted")];
     await relay().send(deliveries);
-    const [url, init] = firstCall(fetch, "/analytics/batches");
-    expect(url).toBe(`${ORIGIN}/analytics/batches`);
+    const [url, init] = firstCall(fetch, "/public/analytics/batches");
+    expect(url).toBe(`${ORIGIN}/public/analytics/batches`);
     expect(init.method).toBe("POST");
     expect(init.keepalive).toBe(true);
     expect(init.headers).toMatchObject({ "Stackra-Consent": "csn.token" });
@@ -97,7 +97,7 @@ describe("RelayAnalyticsDriver", () => {
     const driver = relay();
     await driver.send([delivery("a")]);
     await driver.send([delivery("b")]);
-    const snapshots = calls(fetch, "/consent/snapshots");
+    const snapshots = calls(fetch, "/public/consent/snapshots");
     expect(snapshots).toHaveLength(1);
     expect(JSON.parse(String(snapshots[0]?.[1].body)).subject).toBe(
       "anon_01jbadk0g0bbbbbbbbbbbbbbbb",
@@ -117,7 +117,7 @@ describe("RelayAnalyticsDriver", () => {
   it("still posts, without the header, when the consent endpoint fails", async () => {
     const fetch = answer(200, 503);
     await relay().send([delivery("a")]);
-    const [, init] = firstCall(fetch, "/analytics/batches");
+    const [, init] = firstCall(fetch, "/public/analytics/batches");
     expect(init.headers).not.toHaveProperty("Stackra-Consent");
   });
 

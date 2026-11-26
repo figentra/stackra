@@ -1,0 +1,5 @@
+import { ServiceAcked } from "@stackra/workflow/contracts";
+
+export function ackOrderExport(subject: string): { subject: string; service: string } {
+  return ServiceAcked.create({ subject, service: "shop" });
+}

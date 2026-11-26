@@ -303,45 +303,13 @@
     }
   },
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/prompt-hints.mjs\"",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/session-context.mjs\"",
-            "timeout": 12
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Write|Edit|MultiEdit|NotebookEdit|Read|Grep|Glob",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/guard-bash.mjs\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Read|Grep|Glob",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/guard-paths.mjs\"",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/fflow-guard.mjs\" PreToolUse",
             "timeout": 5
           }
         ]
@@ -353,8 +321,30 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/post-write-checks.mjs\"",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/fflow-guard.mjs\" PostToolUse",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/fflow-guard.mjs\" UserPromptSubmit",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/fflow-guard.mjs\" SessionStart",
+            "timeout": 12
           }
         ]
       }

@@ -10,6 +10,7 @@
 import { fakeActionContext } from "@stackra/actions/testing";
 import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
+import type { Container } from "@stackra/container";
 import { ActorKind } from "@stackra/contracts";
 import { OutboxConfig } from "@stackra/outbox";
 import type { InboxDriver, OutboxDriver } from "@stackra/outbox/contracts";
@@ -17,6 +18,9 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { PruneOutboxAction } from "#node/actions/prune-outbox.action";
 import { PruneOutboxInput } from "#node/schemas/prune-outbox-input.schema";
+
+/** A container that binds no `CallIsolation`: an app without tenancy, whose rows are all the platform's. */
+const NO_ISOLATION = { has: () => false, get: () => undefined } as unknown as Container;
 
 describe("PruneOutboxAction", () => {
   it("is a system-only daily job", () => {
@@ -27,12 +31,19 @@ describe("PruneOutboxAction", () => {
     });
   });
 
-  it("prunes both stores at the configured window", async () => {
+  it("prunes both stores at the configured window, deleting each claimed dead letter", async () => {
     const cutoffs: Date[] = [];
+    const removed: string[] = [];
     const outbox = {
-      pruneDead: async (before: Date) => {
+      claimDead: async (before: Date) => {
         cutoffs.push(before);
-        return 2;
+        return [
+          { id: "evt_1", availableAt: before },
+          { id: "evt_2", availableAt: before },
+        ];
+      },
+      remove: async (id: string) => {
+        removed.push(id);
       },
     } as unknown as OutboxDriver;
     const inbox = {
@@ -44,11 +55,13 @@ describe("PruneOutboxAction", () => {
       outbox,
       inbox,
       buildConfig(OutboxConfig, { values: { pruneAfterDays: 10 } }),
+      NO_ISOLATION,
     ).handle(
       PruneOutboxInput.create({}),
       fakeActionContext({ now: () => new Date("2026-10-28T00:00:00Z") }),
     );
     expect(output.dead).toBe(2);
+    expect(removed).toEqual(["evt_1", "evt_2"]);
     expect(cutoffs).toEqual([new Date("2026-10-18T00:00:00Z"), new Date("2026-10-18T00:00:00Z")]);
   });
 });

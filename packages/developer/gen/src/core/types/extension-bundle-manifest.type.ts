@@ -36,6 +36,13 @@ export interface ExtensionBundleManifest {
   /** The bare specifiers the bundle imports from the shell's import map, sorted. */
   readonly imports: readonly string[];
 
+  /**
+   * Each emitted file (relative to the bundle folder) to its Subresource Integrity value, `sha384-<base64>`: the edge
+   * pins every modulepreload, stylesheet and import-map URL with it, and the publish step refuses a file that no
+   * longer matches. Absent in a manifest built before STA-2562's SRI.
+   */
+  readonly integrity?: Readonly<Record<string, string>>;
+
   /** `types-only` when HeroUI Pro was resolved for types only: the shell must serve Pro on this host. Absent otherwise. */
   readonly pro?: "types-only";
 }

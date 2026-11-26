@@ -14,4 +14,6 @@ export { FILESYSTEM_CONFIG_SCHEMA as FilesystemConfig$ } from "#core/constants/f
 export { FilesystemHealthIndicatorDriver } from "#core/drivers/filesystem-health-indicator.driver";
 export { MemoryFileSystemDriver } from "#core/drivers/memory-file-system.driver";
 export { FileNotFoundError } from "#core/errors/file-not-found.error";
+export { FileRetainedError } from "#core/errors/file-retained.error";
+export { RetentionUnsupportedError } from "#core/errors/retention-unsupported.error";
 export { FilesystemOptions } from "#core/schemas/filesystem-options.schema";

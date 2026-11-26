@@ -1,5 +1,975 @@
 # @stackra/cli
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: `stackra dev --surface` and `stackra dev --product` go on when `stackra gen` refuses a member. gen already runs every
+  member and writes what it can before it exits 1, so one member's refusal no longer stops every surface: dev names the
+  refusal on stderr and serves with what gen wrote. Any other gen failure still stops dev, and a surface whose own
+  config gen did not write still stops as before. `stackra build` and `stackra gen --check` keep stopping on a refusal.
+- e885a38: A service whose configuration reads a required `@Secret` at boot starts under a local `stackra dev`. New command:
+  `stackra dev secrets init [--rotate] [--from <file>]` writes a random dev value for each required secret the
+  workspace's running members declare, and for each name a member's runway lists under `environments.dev.secrets`
+  (optional in the configuration or not), to `.stackra/dev-secrets.json` (gitignored, mode 600). It prints names, never a
+  value, and lists the names a random value would break (a connection string, the events relay's key pair) as needing
+  a value. An existing file only gains its missing names unless `--rotate`; `--from` copies a name shared with another
+  repository. `stackra dev` adds the file's values for a member's own declared names to its tool run. The testbed upload
+  excludes the file (ADR 0525, amendment of 2026-11-10).
+- d60f9d5: A service's Encore app resolves its `#` imports, and its typecheck no longer resolves a compiled workspace package's
+  `#` imports into the service. Encore honours only the first `./` target of a tsconfig `paths` key, so
+  `stackra encore:prepare` writes, and `stackra validate --repository` expects, each package.json `imports` key with its
+  first target only (`pathsOfImports`). And because tsc applies `paths` to every package a service compiles, gen writes
+  the service's `.stackra/tsconfig.typecheck.json` (its tsconfig without `paths`), and `stackra typecheck` runs on it in a
+  service. After upgrading, run `stackra encore:prepare` in each service and regenerate (ADR 0091, rule 4 as corrected
+  2026-11-10).
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- Updated dependencies [d60f9d5]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+  - @stackra/repo-checks@0.33.1
+  - @stackra/gen@0.33.1
+  - @stackra/runway@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/mcp@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/skills@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 41a5ff0: `stackra test --tier e2e` runs in a package too: it uses the `.stackra/playwright.e2e.config.ts` gen writes for a package that has a `.e2e.page.tsx`, and refuses with a hint when there is none. A service or a worker still refuses.
+
+### Patch Changes
+
+- 0ed69c1: The duplicate-export check now exempts five names that two packages each declare for a different concept: `FooterLink`, `RawBody`, `Surface`, `SurfaceKind` and `settingsKeyOf`. Each entry gives its reason. `validate` on main no longer reports them.
+- 89253a8: `stackra duplicate-exports` allows five names that today's kit blocks share with older exports, each with its reason:
+  
+  - `CalendarSystem`: ui derives its picker list from i18n's enum.
+  - `LocaleSwitcher` and `LocaleSwitcherProps`: ui's drawn switcher, and i18n's headless kit block that binds it.
+  - `PushPermission` and `PushRegistration`: notifications' registration port and its answer, and platform's push address and permission hook.
+  
+  Main's `validate --repository` reported them.
+- 6186329: A service's tsconfig no longer needs `baseUrl` for Encore. TypeScript 7 removed `baseUrl` (TS5102), so the rule from 0.30.0 broke typecheck in a TS 7 repository (INVOICING).
+  
+  - **The service check:** it now requires only `compilerOptions.paths` equal to package.json `imports`, which resolve from the tsconfig's folder. It refuses a `baseUrl`.
+  - **`stackra encore:prepare`:**
+    - it removes an existing `baseUrl`;
+    - it writes package.json and tsconfig.json with gen's `formatJson`, now exported from `@stackra/gen`, in the repository formatter's layout, so the format check passes after it.
+  
+  Bump step: run `stackra encore:prepare` in each service, or delete `"baseUrl": "."` from its tsconfig.
+  
+  `stackra encore:prepare` also keeps a tsconfig's file contract written inside the braces (NOTIFY's services). Before, it kept only the `//` lines above the object, so the contract was dropped and the format check failed. `encore.dev` stays the literal catalog version (ADR 0091 rule 3): Encore rewrites `catalog:` to `^<version>`, which breaks the frozen install.
+- 6186329: The `encore.dev` version a service pins can live in the root package.json as `stackra.encore`, so a repository whose
+  services pin the literal keeps no unused catalog entry for it. `encoreReferenceVersion` (exported from
+  `@stackra/repo-checks/node`) reads `stackra.encore` first and falls back to the default catalog's `encore.dev`; the
+  service check and `stackra encore:prepare` use it. A repository that keeps the version in its catalog needs no change.
+- 03da426: `runAsTenant` (`@stackra/tenancy/testing`) now sets `app.tenant_id` transaction-locally in every transaction that starts inside it on a connected database (a factory's flush, a `database.transaction`), so a test's setup rows pass the tenant policy under a role without `BYPASSRLS`, instead of being refused by row-level security. It still opens no transaction itself, sets no scope setting and proves nothing about isolation (`asTenant` does). The session-setting check allows this one testing path.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [6186329]
+- Updated dependencies [6186329]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [3c47a3a]
+- Updated dependencies [2e3e323]
+- Updated dependencies [93d63bb]
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4bf092e]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [93d63bb]
+- Updated dependencies [7d0e16f]
+- Updated dependencies [6186329]
+- Updated dependencies [52d2593]
+- Updated dependencies [0f7448f]
+- Updated dependencies [89253a8]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/repo-checks@0.33.0
+  - @stackra/gen@0.33.0
+  - @stackra/runway@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/mcp@0.33.0
+  - @stackra/skills@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+- Updated dependencies [597e3e8]
+- Updated dependencies [ba6eed7]
+  - @stackra/config@0.32.0
+  - @stackra/gen@0.32.0
+  - @stackra/repo-checks@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/mcp@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/skills@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [73ea174]
+- Updated dependencies [5585893]
+- Updated dependencies [2ba26cd]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+- Updated dependencies [137a7f9]
+  - @stackra/gen@0.31.0
+  - @stackra/runway@0.31.0
+  - @stackra/repo-checks@0.31.0
+  - @stackra/mcp@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/skills@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 5b064da: New `stackra encore:prepare`: in a service, pins `encore.dev` to the default catalog's version and writes tsconfig `baseUrl` and `paths` from package.json `imports`, the two things Encore needs to build the app at the member root. Run `pnpm install` after a pin change.
+- 0765ecc: Runway publishes a pull request's preview (STA-1907, ADR 0289 decision 7).
+  
+  - `publishProduct({ environment: "preview", pullRequest: n })` uploads the console bundle and writes
+    `host:<product>-pr-<n>.figentra.cloud` and `release:<product>:console:pr-<n>`, both expiring after 7 days, with no canary; the
+    answer carries `host`. A host row another product holds is refused before any upload. `pullRequestPreviewHost(product, n)` and `PULL_REQUEST_PREVIEW_SETTINGS` are exported.
+  - `EdgeKvWriter.put(key, value, ttlSeconds?)` takes an optional expiry; `WranglerEdgeKvDriver` passes it as `--ttl`.
+  - `EdgeKvWriter.read(key)` answers the row or `null`; every driver implements it (wrangler's `kv key get --text`,
+    where the API's 404 is `null`).
+  - The product command takes `--pr <n>` (or `STACKRA_PULL_REQUEST`) with `--env preview` (digits only), and prints the host.
+
+### Patch Changes
+
+- be079e7: `stackra testbed run` gives every health and slot probe a 60 s deadline, as `testbed` does since figentra/testbed#22.
+  One box that keeps its SSH session open without answering (still booting, or a wedged Session Manager session) no
+  longer stalls a waiting run forever: that box counts as unhealthy for one look, and the next look tries it again.
+- c8e7592: `StoredSetting` and `StoredSettingRevision` are owned: both take `BelongsToTenantOrPlatform`, so a row's `tenant_id` is the running `withTenant` call's tenant, or NULL in a platform call. `@stackra/settings` now depends on `@stackra/tenancy`. The `settings:diff` and `settings:apply` runner writes through `TenantIsolationService.withTenant` as a system actor inside its `withScope` transaction, at a tenant node as that tenant and at the root or a product node as the platform, and no longer sets `app.tenant_id` itself. `@stackra/cli` drops the runner from `SESSION_SETTING_ALLOWED`.
+- 11def65: The settings tables are tenant-owned in the platform form (migration `settings.0004_contract_settings_tenancy`):
+  `stored_settings` and `stored_setting_revisions` get a nullable `tenant_id`, filled from `app.tenant_id` by default (a
+  NULL row is the platform's), forced row-level security and the platform policies. The migration backfills a row at a
+  tenant node (`nlevel(scope_path) = 3`) from its scope and keeps a row at the root or a product node as a platform row.
+  A user's row is now keyed `(tenant_id, group_key, user_id)` (NULLs not distinct), and every user lookup names the
+  session's own owner. New system function `settings.claim_due_revisions` (no runtime caller yet).
+  
+  The `settings:diff` and `settings:apply` runner (`openSettingsSession`) now sets `app.tenant_id` by the same rule: a
+  tenant node is its own owner, the root and a product node are the platform's, and a node below a tenant node is refused
+  (the runner cannot read its tenant without the scope tree yet). `@stackra/cli`'s session-settings check allows that one
+  write.
+  
+  Upgrade: the migration refuses, changing nothing, while a setting or revision sits below a tenant node or belongs to a
+  user (a user row names no scope, so its tenant cannot be read, and as a platform row every tenant could read it).
+  Record those values, delete the rows (`nlevel(scope_path) > 3`, or `user_id is not null`) from both tables, migrate,
+  then write the values again from a session in each node's or user's tenant.
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [04d04e4]
+- Updated dependencies [0bf0a7f]
+- Updated dependencies [7d60f82]
+- Updated dependencies [418e195]
+- Updated dependencies [e1e95d1]
+- Updated dependencies [5b064da]
+- Updated dependencies [dab9009]
+- Updated dependencies [e1e1b5e]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+- Updated dependencies [5b064da]
+- Updated dependencies [a3a3190]
+- Updated dependencies [0765ecc]
+- Updated dependencies [f4df473]
+- Updated dependencies [cd2496b]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+  - @stackra/gen@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/repo-checks@0.30.0
+  - @stackra/runway@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/mcp@0.30.0
+  - @stackra/skills@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/support@0.30.0
+
+## 0.29.0
+
+### Minor Changes
+
+- 6f43cd8: `stackra constitution` writes `.flow/constitution.md` (the file Figentra Flow's `flow-*` commands read) from the docs
+  laws, and `stackra validate --repository` reports it missing or out of date (`constitution`). It was rendered by core's
+  agents-sync script, which retires now that Flow projects `.agents/` (STA-2098 H6).
+  
+  The stackra preset's workspace-layout rule and guard hint name the docs site as Fumadocs on a Worker (ADR 0514), not
+  Mintlify.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [f069f95]
+- Updated dependencies [edc2781]
+- Updated dependencies [b26036e]
+- Updated dependencies [8ad5f87]
+- Updated dependencies [75ec6eb]
+- Updated dependencies [856207e]
+- Updated dependencies [1b727b9]
+- Updated dependencies [45afd22]
+- Updated dependencies [25b99da]
+- Updated dependencies [6f43cd8]
+  - @stackra/gen@0.29.0
+  - @stackra/repo-checks@0.29.0
+  - @stackra/runway@0.29.0
+  - @stackra/console@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/mcp@0.29.0
+  - @stackra/skills@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [f0be8d8]
+- Updated dependencies [7a87018]
+  - @stackra/gen@0.28.0
+  - @stackra/runway@0.28.0
+  - @stackra/mcp@0.28.0
+  - @stackra/console@0.28.0
+  - @stackra/repo-checks@0.28.0
+  - @stackra/skills@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/support@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [fb1ae38]
+  - @stackra/gen@0.27.0
+  - @stackra/runway@0.27.0
+  - @stackra/mcp@0.27.0
+  - @stackra/console@0.27.0
+  - @stackra/repo-checks@0.27.0
+  - @stackra/skills@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [e9d32d7]
+- Updated dependencies [ec00fd8]
+- Updated dependencies [081989b]
+- Updated dependencies [b1603a7]
+- Updated dependencies [5c0aafc]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [15b5fd2]
+  - @stackra/repo-checks@0.26.0
+  - @stackra/gen@0.26.0
+  - @stackra/runway@0.26.0
+  - @stackra/mcp@0.26.0
+  - @stackra/console@0.26.0
+  - @stackra/skills@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Minor Changes
+
+- 8f8ddcf: System workers and pre-tenant routes can now find tenant rows before they know the tenant, through one narrow,
+  audited way in (ADR 0239 amendment, gap A).
+  
+  A migration gives a tenant table `t.systemAccess({ select, update, reason })`. This lets the new
+  `stackra_system_access` role read the `select` columns and write the `update` columns, and nothing else. The role
+  cannot log in, does not bypass row-level security, and no one is a member of it, so no session can become it. The
+  package then writes its lookup or claim with `schema.systemFunction({ name, args, returns, sql, reason })`. The
+  function runs as that role with a fixed search path, returns only the columns it declares (ids and the tenant id),
+  and only the service may call it. The worker then loads each row in that row's tenant.
+  
+  `assertRowSecurity`, and so every service's generated isolation test, refuses anything looser: a policy for anyone
+  but the role, a member of the role, a role that bypasses row-level security, a grant beyond the declared columns, or
+  a function that is not `SECURITY DEFINER`, does not pin its search path, or that anyone may call.
+  `stackra row-security-declarations` lists both declarations with their reasons for review.
+  
+  Deployment: the database user that runs migrations needs `CREATEROLE` the first time a migration uses either
+  declaration. A managed Postgres master user (RDS) has it; RUNWAY's deploy role must have it too.
+
+### Patch Changes
+
+- Updated dependencies [689c37b]
+- Updated dependencies [8a8fa6f]
+- Updated dependencies [e997ead]
+  - @stackra/gen@0.25.0
+  - @stackra/repo-checks@0.25.0
+  - @stackra/runway@0.25.0
+  - @stackra/mcp@0.25.0
+  - @stackra/console@0.25.0
+  - @stackra/skills@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Minor Changes
+
+- 2df7162: The row-security audit learns the group (c) decisions (ADR 0239 amendment).
+  
+  `assertRowSecurity` now accepts a table that keeps its tenant in `scope_id`, when its one permissive policy is exactly
+  the `equals` or `equalsOrUnset` policy `t.rowLevelSecurity` writes on the tenant setting. It then checks that table
+  like any owned one, with the two-tenant probe on `scope_id`. A looser policy, such as one that adds `or true`, or a
+  second permissive policy, is still refused. Core payments' three tables pass this way, with no migration.
+  
+  Migrations gain two declarations, each with a required one-line reason:
+  
+  - `t.platformTable(reason)`: no row of this table can ever belong to a tenant. Compiling refuses it on a table that
+    also writes a scope id, an isolation scope id, a column filled from a setting, or a policy. The audit refuses it once
+    the table holds the tenant column, a scope id or an isolation scope id.
+  - `t.reviewedPolicy(reason, policies)`: the table's policies have a reviewed shape the audit cannot derive. The audit
+    still requires row-level security enabled and forced, and every named policy present. Only the tenant-policy checks
+    and the probe are left out.
+  
+  The compiled migration carries each declaration as a comment line. Gen's generated isolation test now passes its
+  migrations folder to the audit (`migrationsDirectory`), which reads them.
+  
+  `PLATFORM_TABLES` gains the platform-list tables: `outbox.inbox`, `outbox.change_cursors`, `queue.job_batches`,
+  `scheduler.watermarks`, `workflow.service_ack_sets`, `rules.condition_fields`, `database.seed_records` and
+  `scope.scope_nodes`, each with its reason.
+  
+  New command `stackra row-security-declarations` lists every declaration with its reason. It and
+  `stackra validate --repository` fail on a declaration that is not in the reviewed list
+  `tools/scripts/row-security-declarations.yaml` with that reason.
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [b4c2501]
+- Updated dependencies [2df7162]
+  - @stackra/gen@0.24.0
+  - @stackra/runway@0.24.0
+  - @stackra/mcp@0.24.0
+  - @stackra/console@0.24.0
+  - @stackra/repo-checks@0.24.0
+  - @stackra/skills@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- c8998d9: A new service scaffolded outside a workspace now names `@electric-sql/pglite` 0.5.15 and `@electric-sql/pglite-pgvector`
+  0.0.16, as the catalog does since PostGIS support.
+- 4e4b61a: `stackra gen` and `stackra gen --check` at a workspace root now print the warnings of every member, also members
+  that pass, and end with a line such as `gen: N warning(s) in M member(s)`. Before, a member's warnings only showed
+  when that member failed. Warnings never change the exit code.
+- a002570: The session-settings check now allows the shared replay of the `withScope` settings (used by a replica read and a
+  `requiresNew` transaction) instead of the Postgres database driver, which no longer writes a setting itself.
+- Updated dependencies [7ff4969]
+- Updated dependencies [926faa4]
+- Updated dependencies [96374f4]
+- Updated dependencies [557809c]
+- Updated dependencies [c26fb86]
+- Updated dependencies [8b42c02]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [f790fa1]
+- Updated dependencies [fb6e2b3]
+  - @stackra/gen@0.23.0
+  - @stackra/repo-checks@0.23.0
+  - @stackra/runway@0.23.0
+  - @stackra/mcp@0.23.0
+  - @stackra/console@0.23.0
+  - @stackra/skills@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [157ddff]
+- Updated dependencies [e41d9a1]
+- Updated dependencies [4663a61]
+- Updated dependencies [3a9a6be]
+  - @stackra/repo-checks@0.22.0
+  - @stackra/gen@0.22.0
+  - @stackra/runway@0.22.0
+  - @stackra/mcp@0.22.0
+  - @stackra/console@0.22.0
+  - @stackra/skills@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [2974e54]
+- Updated dependencies [ae9cb23]
+- Updated dependencies [d25a7a0]
+- Updated dependencies [9feea9d]
+- Updated dependencies [00a2477]
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+- Updated dependencies [4242bbb]
+  - @stackra/gen@0.21.0
+  - @stackra/runway@0.21.0
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/mcp@0.21.0
+  - @stackra/console@0.21.0
+  - @stackra/repo-checks@0.21.0
+  - @stackra/skills@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [671c9fd]
+- Updated dependencies [3b48b0f]
+- Updated dependencies [6623da1]
+- Updated dependencies [667a3b5]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/runway@0.20.0
+  - @stackra/gen@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/mcp@0.20.0
+  - @stackra/console@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/repo-checks@0.20.0
+  - @stackra/skills@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- bac874e: The last Infisical uses in the developer packages move to sops and figentra/secrets (ADR 0525).
+  
+  - `stackra mcp exec -- <argv>` decrypts each `$NAME` the command names with `sops exec-env` from the `agents` scope of
+    the local figentra/secrets clone (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`), one nested call per secret,
+    instead of `infisical run`. Its `--env` and `--path` flags are gone; `McpExecOptions` is now `{ secretsDir? }`.
+  - Mobile onboarding no longer writes the FCM key to a vault: it goes only to EAS, its one reader, and running the
+    `push` step again replaces a lost key. `InfisicalVaultWriterDriver` is removed, and `MobileOnboardRequest` has no
+    `vault` port. A missing root-kit name prints `pnpm secrets:put <NAME> --scope ci/production/store` as its owner step.
+  - gen's `env` manifest rows no longer carry `home` (the Infisical folder `/runtime/<member>`), and the field is gone
+    from the `StackraManifest` type; runway already ignored it. Products regenerate their manifests after the release.
+  - `stackra dev --tunnel` names the sops way to start with `CLOUDFLARE_TUNNEL_TOKEN`, and the service template's
+    `runway.yaml` header names figentra/secrets.
+- 1f33c82: Runway no longer reads Infisical (ADR 0525). The secret sync (`runway secrets sync`, and `stackra deploy` with
+  `secrets.sync: on-deploy`) and the Workers provider read every declared secret from the job's environment, where
+  `.github/actions/secrets-decrypt` put the product's sops scope. `--from-env` is still accepted on both commands but does
+  nothing and prints a deprecation note; it goes in the next minor release.
+  
+  - A product's runtime secrets live in the scope `products/<project>/<dev|staging|production>`; a preview reads dev's.
+    `deployPlan` gives `secretScope` in place of `infisicalEnvironment`, and a `SecretSyncEntry` gives `scope` in place
+    of `path`. The secret entries of `deployPlan(...).sync` no longer carry a `path`.
+  - `providers.infisical` is no longer typed in the root schema, and `secrets.defaultPath` is ignored. A runway.yaml that
+    still has either passes validation, and `runway validate` warns on each for one release: remove them.
+  - `runway env check` checks each name against the sops scope of its environment, and counts the `names:` of a
+    `secrets-decrypt` step as declared, in place of Infisical `secret-name:` steps. Names only, no login.
+  - `runway env check --values --env <env>` reads the values from the job's environment and checks only that
+    environment; `--project-id` is gone.
+  - `runway env orphans <env> [--dir <d>]` lists the scope's names from its ciphertext file names, decrypting nothing;
+    `--project-id` is gone.
+  - `readMemberSecrets` takes `env` and no longer takes `source` or `run`. `syncSecrets` no longer takes `fromEnv`.
+  - infra-github still sets the `INFISICAL_DOMAIN` and `INFISICAL_PROJECT_ID` variables from an untyped
+    `providers.infisical` block while CI logins need them.
+
+### Patch Changes
+
+- 4069d77: The docs link check treats an HTML file under `assets/` (a brand email template with placeholder links) as a file the
+  site serves, not a page: a link may point at it, and its own links are not checked.
+- e105174: The infrastructure and developer packages describe sops and figentra/secrets instead of Infisical (ADR 0525).
+  
+  - `@stackra/infra-aws-runtime`: the RDS Proxy login secret's description names the vault, not Infisical, so the next
+    apply updates that description in place. The docs name the vault and runway's secrets sync.
+  - `@stackra/infra-tools`: the tools-stack secrets sync is the vault's (`secretsSync` keeps its shape: `source`,
+    `principal`, `externalId`); the missing external id error names the secrets sync.
+  - `@stackra/infra-github`, `@stackra/infra-cloudflare`, `@stackra/infra-identity`, `@stackra/infra-observability`,
+    `@stackra/runway`, `@stackra/mcp`, `@stackra/cli`, `@stackra/fiscal`, `@stackra/licensing`: docs and comments only.
+    `githubPlan` still turns `providers.infisical` into the `INFISICAL_*` CI variables until plan phase P6.
+- 5d6448a: `stackra doctor` no longer checks for the Infisical CLI and login (ADR 0525). A workspace whose root scripts run
+  `secrets-exec.mjs` is checked for the sops CLI, the Google Application Default Credentials file sops decrypts with
+  (its presence only; the credential is never read) and a `figentra/secrets` clone with an `agents` folder. The
+  `infisical` doctor need and the `DoctorWorkspace.infisical` field are gone. The testbed's toolchain test no longer
+  expects the Infisical CLI in `mise.toml`; the boxes keep their own pin until they read sops.
+- afd7846: Gen has warnings: a `GenError` with `severity: "warning"` prints as `<at> warning <code> ...` with its fix, never stops
+  gen writing, and comes back in `warnings` from `generateMember` and `generate`; `stackra gen` and `stackra gen --check`
+  print it and exit 0, while an error still exits 1. ADR 0101's checks run in the full pass as the new exported
+  `checkActionFirst`: `action_without_workflow` warns an action that takes another service's client, a sibling module's
+  service or `ConnectionStore` and starts no workflow, and `workflow_without_action` refuses a controller, command or
+  listener that takes a workflow or `WorkflowRunner`, or starts a workflow itself. The source reader records the
+  workflows a class starts as `DeclaredClass.workflows` (STA-340).
+- 41dcbf6: `stackra testbed` defaults to the `figentra` AWS profile, which replaces the old `academorix` profile name for the same
+  account. The key file keeps its live name; `STACKRA_TESTBED_AWS_PROFILE` still overrides the profile.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [2933e48]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [e105174]
+- Updated dependencies [ee00741]
+- Updated dependencies [5830168]
+- Updated dependencies [ef04935]
+- Updated dependencies [1cc3bd3]
+- Updated dependencies [afd7846]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [b800ae4]
+- Updated dependencies [3aaf758]
+- Updated dependencies [619099f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [fc845f4]
+- Updated dependencies [c239773]
+- Updated dependencies [414586e]
+- Updated dependencies [7a83de3]
+- Updated dependencies [1f33c82]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+  - @stackra/contracts@0.19.0
+  - @stackra/gen@0.19.0
+  - @stackra/runway@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/mcp@0.19.0
+  - @stackra/repo-checks@0.19.0
+  - @stackra/console@0.19.0
+  - @stackra/skills@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/support@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- Updated dependencies [2a7bc6d]
+- Updated dependencies [baee3a3]
+  - @stackra/gen@0.18.1
+  - @stackra/runway@0.18.1
+  - @stackra/mcp@0.18.1
+  - @stackra/console@0.18.1
+  - @stackra/repo-checks@0.18.1
+  - @stackra/skills@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/support@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- Updated dependencies [15cd10c]
+- Updated dependencies [79dcafb]
+- Updated dependencies [dbf1c33]
+  - @stackra/runway@0.18.0
+  - @stackra/gen@0.18.0
+  - @stackra/mcp@0.18.0
+  - @stackra/console@0.18.0
+  - @stackra/repo-checks@0.18.0
+  - @stackra/skills@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/support@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- ff88313: `stackra deploy` takes `--from-env`: the secret sync it runs before services ship reads the job's environment (a
+  decrypted sops scope, ADR 0525) instead of Infisical. And `--member` now always ships the named Worker members
+  through the Workers provider: in a repository whose root runway has `surfaces` (core), a Worker deploy no longer runs
+  the product publish or asks for `--assets-bucket`, `--assets-origin`, `--kv-namespace` and `--served`.
+- 2da4d9d: Fixes from typechecking os on 0.17.1. Runway's eleven commands and `stackra runway` are `bin` commands, so no member
+  hosts them (their classes are not exported from `@stackra/runway/node`), and gen hosts console commands only from a
+  member's runtime `dependencies`, never its devDependencies. A hosted package's entities carry no `~defaults` marker its
+  published types lack, and a package-base override no longer imports a field hatch it does not use.
+- Updated dependencies [2da4d9d]
+  - @stackra/gen@0.17.2
+  - @stackra/runway@0.17.2
+  - @stackra/mcp@0.17.2
+  - @stackra/console@0.17.2
+  - @stackra/repo-checks@0.17.2
+  - @stackra/skills@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/support@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/runway@0.17.1
+  - @stackra/mcp@0.17.1
+  - @stackra/console@0.17.1
+  - @stackra/gen@0.17.1
+  - @stackra/repo-checks@0.17.1
+  - @stackra/skills@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Minor Changes
+
+- 4c6bf13: `stackra runway <command>` runs every Runway command (ADR 0529 decision 4): the same options, exit codes and `--json`
+  output as the `runway` binary, which now prints a deprecation notice and stays only as an alias for one minor release.
+  `@stackra/runway/node` exports `RUNWAY_COMMANDS`.
+
+### Patch Changes
+
+- Updated dependencies [a32f323]
+- Updated dependencies [4c6bf13]
+  - @stackra/repo-checks@0.17.0
+  - @stackra/runway@0.17.0
+  - @stackra/mcp@0.17.0
+  - @stackra/console@0.17.0
+  - @stackra/gen@0.17.0
+  - @stackra/skills@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/support@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Minor Changes
+
+- 585f9de: `stackra validate --repository` checks the repository layout (ADR 0526): the root holds only its Flow preset's
+  template entries, its member folders, `tools/` with a README and the extras package.json `stackra.layout.allow`
+  declares with a reason; never a root `src/` or a `scripts/` or `bin/` folder, and no path named `figentra-flow`.
+
+### Patch Changes
+
+- e43a1a7: `stackra create` no longer copies the template's `.infisical.yaml` into a new app, so the app never binds
+  Figentra's Infisical project; it sets up its own secrets.
+- 64cfc1d: Cross-app events (ADR 0511 decisions 11 to 19, STA-1910). Gen lifts `client_event_remote_transport`: a listener of a
+  contract-only producer's event is registered like a sibling's and delivered through a generated inbox, never an
+  Encore subscription. Such a service gets `#stackra/inbox` (`InboundEventsController` on `POST /events/inbox` over
+  `RelayInboxService`, and `RelayInboxConfig` with the pinned producers' public keys and events), its Encore `api.raw`
+  adapter (`.stackra/encore/<member>/inbox.ts`, exposed, `auth: false`) and the boot's `RelayInboxService` connect. A
+  service whose `runway.yaml` has an `events` block gets the manifest's `relay` section (keys and subscribers per
+  environment, no origins), an `env` row for its signing key's secret name, `#stackra/events-relay`
+  (`EventsRelayConfig` picked by `STACKRA_ENVIRONMENT`), the wiring of `CrossAppFanOut`, `CrossAppRelayService` and
+  the Postgres `DeliveryDriver`, and the cross-app relay loop in its boot. The new warning `client_event_unsubscribed`
+  names a listener whose producer's contract does not list the service for that event; `GenerateResult.warnings`
+  carries it and `stackra gen` prints it. Members with neither keep the same output.
+- Updated dependencies [89d4633]
+- Updated dependencies [6ed8ab1]
+- Updated dependencies [585f9de]
+- Updated dependencies [31378e6]
+- Updated dependencies [33c88a5]
+- Updated dependencies [08be546]
+- Updated dependencies [c6e4715]
+- Updated dependencies [64cfc1d]
+- Updated dependencies [5bf8ad3]
+  - @stackra/runway@0.16.0
+  - @stackra/gen@0.16.0
+  - @stackra/repo-checks@0.16.0
+  - @stackra/validation@0.16.0
+  - @stackra/mcp@0.16.0
+  - @stackra/console@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/skills@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/runway@0.15.0
+  - @stackra/mcp@0.15.0
+  - @stackra/console@0.15.0
+  - @stackra/gen@0.15.0
+  - @stackra/repo-checks@0.15.0
+  - @stackra/skills@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- cc8dbb1: `stackra duplication` no longer counts committed generated files (`**/*.gen.ts`, such as `src/node/entities.gen.ts`)
+  in a member's source run.
+- Updated dependencies [fda1d53]
+  - @stackra/runway@0.14.4
+  - @stackra/mcp@0.14.4
+  - @stackra/console@0.14.4
+  - @stackra/gen@0.14.4
+  - @stackra/repo-checks@0.14.4
+  - @stackra/skills@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- Updated dependencies [3ccf74a]
+- Updated dependencies [64e4840]
+  - @stackra/runway@0.14.3
+  - @stackra/mcp@0.14.3
+  - @stackra/console@0.14.3
+  - @stackra/gen@0.14.3
+  - @stackra/repo-checks@0.14.3
+  - @stackra/skills@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/support@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/console@0.14.2
+  - @stackra/gen@0.14.2
+  - @stackra/runway@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/mcp@0.14.2
+  - @stackra/repo-checks@0.14.2
+  - @stackra/skills@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- 470d710: `stackra testbed` is deprecated in favour of `testbed` from `@figentra/testbed` (ADR 0522): it keeps working for
+  one release, then goes (ADR 0522 step 8). Install `@figentra/testbed` and call `testbed`; the verbs, flags, exit codes
+  and `--json` lines are the same.
+  The preset's ci-steward and flow-gate command name `testbed run`.
+- Updated dependencies [857a7fb]
+  - @stackra/runway@0.14.1
+  - @stackra/mcp@0.14.1
+  - @stackra/console@0.14.1
+  - @stackra/gen@0.14.1
+  - @stackra/repo-checks@0.14.1
+  - @stackra/skills@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [54e05c6]
+  - @stackra/runway@0.14.0
+  - @stackra/mcp@0.14.0
+  - @stackra/console@0.14.0
+  - @stackra/gen@0.14.0
+  - @stackra/repo-checks@0.14.0
+  - @stackra/skills@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/support@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [dc4b3f0]
+- Updated dependencies [5d10209]
+- Updated dependencies [6e61084]
+  - @stackra/runway@0.13.0
+  - @stackra/mcp@0.13.0
+  - @stackra/console@0.13.0
+  - @stackra/gen@0.13.0
+  - @stackra/repo-checks@0.13.0
+  - @stackra/skills@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [e36505c]
+  - @stackra/runway@0.12.0
+  - @stackra/mcp@0.12.0
+  - @stackra/console@0.12.0
+  - @stackra/gen@0.12.0
+  - @stackra/repo-checks@0.12.0
+  - @stackra/skills@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- 6212377: `stackra testbed` enables us-east-1, last (eu-west-1, eu-west-2, eu-central-1, us-east-1): box 1, whose on-demand
+  quota it shared, is terminated (2026-11-06). As figentra/testbed#12.
+- @stackra/console@0.11.1
+  - @stackra/gen@0.11.1
+  - @stackra/mcp@0.11.1
+  - @stackra/repo-checks@0.11.1
+  - @stackra/runway@0.11.1
+  - @stackra/skills@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [46951df]
+  - @stackra/runway@0.11.0
+  - @stackra/repo-checks@0.11.0
+  - @stackra/mcp@0.11.0
+  - @stackra/console@0.11.0
+  - @stackra/gen@0.11.0
+  - @stackra/skills@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/support@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Minor Changes
+
+- 242ebe4: Approvals and "CI only" are proved, never asserted (STA-2099 item 4). `proveGithubJob` asks the GitHub
+  Actions runner for an OIDC token (audience `stackra-runway`), checks GitHub's RS256 signature, the issuer,
+  the expiry and the repository, and, for an approval, that the job runs in that runway environment or in a
+  GitHub environment `providers.github.environments` declares with reviewers. The deploy, promote and
+  product deploy commands prove an environment's `deploy.approval` with it; `--approved` is still parsed
+  and proves nothing. Reading runtime secrets from Infisical and `stackra mobile onboard --check|--live`
+  need the proof instead of `GITHUB_ACTIONS=true`. A job needs `permissions: id-token: write`.
+
+### Patch Changes
+
+- 4b92f14: `stackra gen` at a workspace root skips a member that a filtered install left out (no `node_modules`), by
+  name, instead of refusing every class it cannot resolve. The Quality Gate installs without the playground,
+  so `//#gen:workspace` died on 297 `kind_unregistered_base` refusals there.
+- a15cacf: A `ref:` Cloudflare account id in `runway.yaml` (`providers.cloudflare.accountId: ref:cloudflare.accountId`) no longer
+  reaches wrangler as the account. The deploy job resolves a `ref:`, so the product publish and the edge KV writer now
+  leave the job's `CLOUDFLARE_ACCOUNT_ID` in place, and refuse before any upload or KV write when the job has none
+  (`RunwayUnresolvedError` names the variable). A literal id is set as before. Runway exports the decision as
+  `cloudflareAccountEnv` (STA-2124).
+- c4348cd: Runway's child-process helper is `runProgram` (was `runCommand`, file `run-program.function.ts`): a Command is a
+  CLI command only (ADR 0294 d23), and `@stackra/console` exports `runCommand` (one symbol, one owner, d15). Behaviour
+  unchanged. The duplicate-exports allowance for `runCommand` is gone.
+- ff36aea: `stackra testbed run` runs the job detached on the box and follows its log, so a dropped SSH-over-SSM connection no
+  longer kills a long job: it reattaches up to three times and takes the exit code from the box. Ctrl-C stops the job on
+  the box. SSH keepalives notice a dead session in two minutes. `--postgres` asks the box for a throwaway Postgres. The default regions are eu-west-1, eu-west-2 and
+  eu-central-1; us-east-1 joins once box 1 stops.
+- f5fa82c: `stackra testbed run` no longer uploads a worktree's `.cache` (its pnpm store, about 7.5 GB); the box agent's seed
+  refresh leaves it out too.
+- 1c7ab2d: `stackra testbed run` exits 75 at once, with AWS's reason, when no enabled region answers (a bad or expired AWS
+  profile), instead of waiting until the caller's own timeout; the GitHub fallback still goes first. As figentra/testbed#14.
+- b503e30: `stackra testbed` finds the aws CLI's Session Manager plugin itself: on `PATH`, else the mise-installed copy
+  (`mise which`, then mise's install folder), whose folder it puts first on `PATH` for the `aws` and `ssh` it starts.
+  Without the plugin, `run` exits 75 at once and says why instead of waiting on "no healthy testbed box" while the boxes
+  are healthy (what every run outside a mise-activated shell did from 2026-11-04), and `status` names the reason a box
+  did not answer.
+- Updated dependencies [a15cacf]
+- Updated dependencies [4c0eead]
+- Updated dependencies [4749967]
+- Updated dependencies [f511762]
+- Updated dependencies [e57b9a1]
+- Updated dependencies [05da3d4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [ea40871]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [242ebe4]
+- Updated dependencies [242ebe4]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [c4348cd]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+- Updated dependencies [0d65e3f]
+  - @stackra/runway@0.10.0
+  - @stackra/gen@0.10.0
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/repo-checks@0.10.0
+  - @stackra/mcp@0.10.0
+  - @stackra/console@0.10.0
+  - @stackra/skills@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes

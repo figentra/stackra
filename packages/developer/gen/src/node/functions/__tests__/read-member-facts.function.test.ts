@@ -28,6 +28,7 @@ describe("readMemberFacts", () => {
       layout: "package",
       dependencies: ["@stackra/contracts"],
       runtimeDependencies: ["@stackra/contracts"],
+      stackraSpecifier: "workspace:*",
     });
   });
 

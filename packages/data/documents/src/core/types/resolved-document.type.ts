@@ -8,6 +8,7 @@
  */
 import type { ParsedDocumentTemplate } from "#core/types/parsed-document-template.type";
 import type { ResolvedBlock } from "#core/types/resolved-block.type";
+import type { ResolvedBrand } from "#core/types/resolved-brand.type";
 
 /** A template filled with its data. */
 export interface ResolvedDocument {
@@ -16,4 +17,7 @@ export interface ResolvedDocument {
 
   /** Its blocks, resolved, in order. */
   readonly blocks: readonly ResolvedBlock[];
+
+  /** Its brand slot, resolved; both parts `null` when the template has none. */
+  readonly brand: ResolvedBrand;
 }

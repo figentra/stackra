@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "f40bfdbf7f07ffb3",
+    "hash": "3fa6a908daed22b8",
     "heroDoc": "vendor/heroui/react/list-box.json",
     "propsFiles": ["ui/src/react/listbox/listbox.props.ts"]
   },
@@ -38,7 +38,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\""
         },
         {
           "description": "The list's spoken name when it has no visible label.",

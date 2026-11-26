@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `ToolsStackPlan`, what `toolsStackPlan` derives from the root runway for one environment: the tools stack
- *          of each region the environment deploys to, in release order, and the Infisical folders synced into the
+ *          of each region the environment deploys to, in release order, and the vault folders synced into the
  *          stack's parameters; none when the environment runs no stack.
  * Boundary: type only; plain data.
  * Runtime: isomorphic
@@ -20,6 +20,6 @@ export type ToolsStackPlan = {
   readonly environment: RunwayEnvironment;
   /** The tools stack of each region the environment deploys to, in release order. */
   readonly regions: readonly ToolsRegionPlan[];
-  /** The Infisical folders synced into the stack's parameter paths, one per tool with secrets. */
+  /** The vault folders synced into the stack's parameter paths, one per tool with secrets. */
   readonly secretsSync: readonly ToolsSecretSync[];
 };

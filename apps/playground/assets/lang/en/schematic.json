@@ -1,0 +1,11 @@
+{
+  "split_label": "One action, three surfaces",
+  "action": "Cancels a subscription at the end of its period.",
+  "endpoint": "An HTTP endpoint for the console",
+  "tool": "An MCP tool for agents",
+  "job": "A queued job for the dunning run",
+  "chain_label": "From the model to the contract",
+  "model": "The subscription model you write",
+  "gen": "Derives the keys, routes and clients",
+  "manifest": "The locked contract, committed"
+}

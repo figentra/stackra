@@ -5,7 +5,9 @@
  * Boundary: a `CrudService<StoredSetting>`, so every read and write runs in the caller's transaction. The node read
  *           takes the target's path, or the running scope session's `app.scope_path` (`Database.withScope`), which is
  *           the authenticated principal's; outside a session it finds no node row. It never reads a sibling's or a
- *           descendant's row. A store names its holder: a server write without a node or a user is a bug and throws.
+ *           descendant's row. A user's row is the session's own tenant's (or the platform's, outside a tenant), never
+ *           another owner's of the same user. A store names its holder: a server write without a node or a user is a
+ *           bug and throws.
  *           The lock check is the driver's.
  * Runtime: node
  * Governing contract: ADR 0213 (decisions 1 and 2); ADR 0327 (decisions 3, 5 and 9); ADR 0105 as amended by ADR
@@ -15,6 +17,14 @@ import { CrudService, sql } from "@stackra/database";
 
 import type { SettingTarget, SettingValue } from "#contracts/index";
 import type { StoredSetting } from "#node/models/stored-setting.model";
+
+/**
+ * The session's own owner: a user's row is kept per tenant (a platform session's is the NULL row), so a tenant's call
+ * never takes the platform's row of the same user, which it may read but not change.
+ */
+// raw-sql: the owner column is the migration's, filled from the call; the model does not map it
+const ownRow = () =>
+  sql`tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '')`;
 
 /** The holder columns of `target`'s own row. */
 function holderOf(target: SettingTarget): Pick<StoredSetting, "scopeId" | "scopePath" | "userId"> {
@@ -46,7 +56,7 @@ export class StoredSettingService extends CrudService<StoredSetting> {
       { orderBy: { scopePath: "asc" } },
     );
     if (target.user === undefined) return nodes;
-    const user = await this.findOne({ groupKey: group, userId: target.user });
+    const user = await this.findOne({ groupKey: group, userId: target.user, $raw: ownRow() });
     return user === null ? nodes : [...nodes, user];
   }
 
@@ -74,7 +84,7 @@ export class StoredSettingService extends CrudService<StoredSetting> {
     const row = await this.findOne(
       holder.userId === null
         ? { groupKey: group, scopeId: holder.scopeId }
-        : { groupKey: group, userId: holder.userId },
+        : { groupKey: group, userId: holder.userId, $raw: ownRow() },
     );
     if (row === null)
       return this.insert({
@@ -100,7 +110,7 @@ export class StoredSettingService extends CrudService<StoredSetting> {
     const row = await this.findOne(
       holder.userId === null
         ? { groupKey: group, scopeId: holder.scopeId }
-        : { groupKey: group, userId: holder.userId },
+        : { groupKey: group, userId: holder.userId, $raw: ownRow() },
     );
     if (row === null) return;
     const values = Object.fromEntries(

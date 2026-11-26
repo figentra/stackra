@@ -33,11 +33,11 @@ test("reportTotals gives the duplicated percentage to two decimals, 0 for an emp
   assert.equal(reportTotals({}).percentage, 0);
 });
 
-test("jscpdArgs scans src without tests, or the tests alone, at the given min-tokens into a JSON report", () => {
+test("jscpdArgs scans src without tests or generated files, or the tests alone, at the given min-tokens", () => {
   const src = jscpdArgs("packages/data/a/src", "src", 50, "/tmp/out");
   assert.equal(src[0], "packages/data/a/src");
   assert.equal(src[src.indexOf("--min-tokens") + 1], "50");
-  assert.equal(src[src.indexOf("--ignore") + 1], "**/__tests__/**");
+  assert.equal(src[src.indexOf("--ignore") + 1], "**/__tests__/**,**/*.gen.ts");
   assert.equal(src[src.indexOf("--reporters") + 1], "json");
   assert.equal(src[src.indexOf("--output") + 1], "/tmp/out");
   const tests = jscpdArgs("packages/data/a/src", "tests", 50, "/tmp/out");

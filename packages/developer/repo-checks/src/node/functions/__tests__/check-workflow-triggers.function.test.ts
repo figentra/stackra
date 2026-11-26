@@ -91,16 +91,16 @@ test("checkWorkflowTriggers: a deploy identity in a job with no environment fail
     /job `test` has no environment .* `ENCORE_APP`/,
   );
   const step =
-    "    runs-on: ubuntu-latest\n    steps:\n      - run: x\n        env:\n          ID: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}";
+    "    runs-on: ubuntu-latest\n    steps:\n      - run: x\n        env:\n          ID: ${{ vars.SECRETS_DEPLOY_SCOPE }}";
   assert.equal(checkWorkflowTriggers([wf("  pull_request:", step)]).length, 1);
 });
 
 test("checkWorkflowTriggers: a deploy identity read in a step's with or run fails", () => {
   const withed =
-    "    runs-on: ubuntu-latest\n    steps:\n      - uses: Infisical/secrets-action@v1\n        with:\n          project-id: ${{ vars.INFISICAL_DEPLOY_PROJECT_ID }}";
+    "    runs-on: ubuntu-latest\n    steps:\n      - uses: acme/secrets-action@v1\n        with:\n          scope: ${{ vars.SECRETS_DEPLOY_SCOPE }}";
   assert.match(
     checkWorkflowTriggers([wf("  pull_request:", withed)])[0] ?? "",
-    /reads the deploy identity `vars\.INFISICAL_DEPLOY_PROJECT_ID`/,
+    /reads the deploy identity `vars\.SECRETS_DEPLOY_SCOPE`/,
   );
   const inline =
     "    runs-on: ubuntu-latest\n    steps:\n      - run: wrangler deploy --token ${{ secrets.CLOUDFLARE_API_TOKEN }}";
@@ -109,7 +109,7 @@ test("checkWorkflowTriggers: a deploy identity read in a step's with or run fail
     /`secrets\.CLOUDFLARE_API_TOKEN`/,
   );
   const gate =
-    "    runs-on: ubuntu-latest\n    steps:\n      - run: x\n        with:\n          id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}";
+    "    runs-on: ubuntu-latest\n    steps:\n      - run: x\n        with:\n          id: ${{ vars.SECRETS_GATE_SCOPE }}";
   assert.equal(checkWorkflowTriggers([wf("  pull_request:", gate)]).length, 0);
 });
 

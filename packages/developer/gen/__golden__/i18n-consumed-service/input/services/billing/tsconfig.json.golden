@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "customConditions": ["@stackra/source"],
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": []
+  },
+  "include": ["src"]
+}

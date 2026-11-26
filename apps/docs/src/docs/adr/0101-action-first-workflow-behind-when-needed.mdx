@@ -14,8 +14,10 @@ description: "Accepted, amended by 0265, 0294 · 2026-10-19"
   decision 3 are unchanged. The reads of decision 5 are `Query` classes, and cross-module reads
   follow [0104](/adr/0104-links-and-query-graph) as amended.
 
-Enforcement of this note: planned — STA-340 (gen warns when an action calls another module's
-client without a workflow, and fails a workflow reachable from an adapter).
+Enforcement of this note: gen's `checkActionFirst` (STA-340) warns `action_without_workflow` when an
+action takes another service's client, a sibling module's service or `ConnectionStore` and starts no
+workflow, and refuses `workflow_without_action` when a controller, command or listener takes a
+workflow or `WorkflowRunner`, or starts a workflow itself.
 
 </Note>
 
@@ -55,8 +57,12 @@ write. The owner asked which rule is the right standard for all heavy developmen
 
 ## Enforcement
 
-Planned: the gen validation pass warns when an action handler calls a client of another module or an outbound HTTP driver
-without a workflow, and fails a `@Workflow` reachable from an adapter without an action. Nothing checks this today.
+Gen's full pass runs `checkActionFirst` (STA-340). It warns `action_without_workflow` when an action's constructor
+takes another service's generated client (`#stackra/clients/<service>`), a service of a sibling module, or the
+integrations `ConnectionStore` (the managed outbound client), and its body starts no workflow with `ctx.run`; the
+warning prints and `stackra gen` still writes and exits 0. It refuses `workflow_without_action` when a controller, a
+command or a listener takes a workflow class or the `WorkflowRunner` port, or starts a workflow in its body. A one-step
+workflow that meets none of the criteria stays a reviewer's call.
 
 ## Supersedes and sources
 

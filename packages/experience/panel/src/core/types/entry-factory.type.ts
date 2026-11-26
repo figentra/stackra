@@ -5,12 +5,12 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 1).
  */
-import type { I18nKey } from "@stackra/i18n";
 
 import type { Built } from "#core/types/built.type";
 import type { ElementOf } from "#core/types/element-of.type";
 import type { EntryBuilder } from "#core/types/entry-builder.type";
 import type { EntryNode } from "#core/types/entry-node.type";
+import type { ListEntryOptions } from "#core/types/list-entry-options.type";
 import type { Path } from "#core/types/path.type";
 import type { PathValue } from "#core/types/path-value.type";
 import type { SectionBuilder } from "#core/types/section-builder.type";
@@ -34,14 +34,7 @@ export interface EntryFactory<R> {
   list: <K extends Path<R>>(
     key: K,
     columns: readonly Path<ElementOf<NonNullable<PathValue<R, K>>>>[],
-    options?: {
-      readonly currency?: Path<R>;
-      readonly labels?: Readonly<
-        Partial<
-          Record<Path<ElementOf<NonNullable<PathValue<R, K>>>>, Readonly<Record<string, I18nKey>>>
-        >
-      >;
-    },
+    options?: ListEntryOptions<R, K>,
   ) => Built<EntryNode>;
 
   /** A titled group of entries. */

@@ -13,7 +13,7 @@ import type { EndpointOptions } from "@stackra/actions";
  * A registered key and route.
  *
  * @example
- * { key: "orders.order.import_rows@1", kind: "action", endpoint: { method: "POST", path: "/orders/import-rows" } }
+ * { key: "orders.order.import_rows@1", kind: "action", endpoint: { method: "POST", path: "/app/orders/import-rows" } }
  */
 export interface DynamicCall {
   /** The producer's versioned key (`orders.order.import_rows@1`). */

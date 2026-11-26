@@ -8,6 +8,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0136 (decision 3).
  */
 import { Clock, Duration } from "@stackra/contracts";
+import { ErrorKind } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 
 import { IdempotencyStore } from "#contracts/index";
@@ -57,5 +58,23 @@ describe("MemoryIdempotencyStoreDriver", () => {
     await store.complete("k", 1);
     clock.time += Duration.toMilliseconds(DAY);
     expect(await store.claim("k", "f", DAY)).toBeUndefined();
+  });
+
+  it("keeps a refusal whether or not the claim is still held, and frees it with the time to live", async () => {
+    const clock = new MovableClock();
+    const store = new MemoryIdempotencyStoreDriver(clock);
+    const refusal = {
+      kind: ErrorKind.Conflict,
+      code: "out_of_stock",
+      category: "conflict",
+      retryable: false,
+    } as const;
+    await store.completeRefused("gone", "f", refusal, DAY);
+    expect(await store.claim("gone", "f", DAY)).toEqual({ fingerprint: "f", done: true, refusal });
+    await store.claim("held", "f", DAY);
+    await store.completeRefused("held", "f", refusal, DAY);
+    expect(await store.claim("held", "f", DAY)).toMatchObject({ done: true, refusal });
+    clock.time += Duration.toMilliseconds(DAY);
+    expect(await store.claim("gone", "f", DAY)).toBeUndefined();
   });
 });

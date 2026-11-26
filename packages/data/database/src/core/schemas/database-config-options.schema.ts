@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `DatabaseConfigOptions`, the shape of `DatabaseConfig`: `health` tunes `DatabaseHealthIndicatorDriver`, the
+ * Purpose: `DatabaseConfigOptions`, the shape of `DatabaseConfig`: `driver` selects the `Database` driver (`postgres`
+ *          by default; `memory` is the testing driver); `health` tunes `DatabaseHealthIndicatorDriver`, the
  *          `/readyz` probe (how long `select 1` may take, and whether a failure fails readiness); `timeouts` are the
  *          statement, lock and idle-in-transaction timeouts every runtime session starts with; `pool` is the connection
  *          pool of one instance, whose `max` the boot replaces with the instance's share of the runway `poolBudget`;
@@ -15,10 +16,14 @@
  *                     owner D10); ADR 0473 (decision 2: the pool); STA-1504 (the read-your-writes window); ADR
  *                     0172 (decision 3: the tenant region) and ADR 0353 (decision 1: region keys), stackra-310.
  */
+import "#core/types/database-driver-names.type";
+
+import type { DriverName } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
 
 import { DATABASE_CONFIG_SCHEMA } from "#core/constants/database-config-schema.constant";
+import type { Database } from "#core/ports/database.port";
 import type { DatabasePool } from "#core/types/database-pool.type";
 import type { QueryGuard } from "#core/types/query-guard.type";
 import type { SessionTimeouts } from "#core/types/session-timeouts.type";
@@ -28,7 +33,7 @@ import type { SessionTimeouts } from "#core/types/session-timeouts.type";
  *
  * @example
  * export class DatabaseConfig extends BaseDatabaseConfig {
- *   override health = { timeout: Duration.seconds(1), critical: true };
+ *   override health = { timeout: Duration.seconds(1), critical: true, rowSecurity: true };
  * }
  */
 export class DatabaseConfigOptions extends Schema {
@@ -40,7 +45,13 @@ export class DatabaseConfigOptions extends Schema {
     timeout: Duration;
     /** Whether a failed probe fails readiness; `false` reports `degraded` instead. */
     critical: boolean;
-  } = { timeout: Duration.seconds(2), critical: true };
+    /**
+     * Whether readiness also fails when the connected role can bypass row-level security, own a table with it, act
+     * as `stackra_system_access` or create roles or databases. Runway turns it on once the service connects as its
+     * own runtime role.
+     */
+    rowSecurity: boolean;
+  } = { timeout: Duration.seconds(2), critical: true, rowSecurity: false };
 
   /** The timeouts every runtime session starts with; the boot hands them to `connect` as `DatabaseOptions.timeouts`. */
   // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
@@ -74,6 +85,12 @@ export class DatabaseConfigOptions extends Schema {
   // reason: a nested option a host override replaces whole; the shipped config schema holds its rules
   @Field(DATABASE_CONFIG_SCHEMA.shape.queries)
   queries: QueryGuard = { slow: Duration.seconds(0.5), repeats: 10, strict: false };
+
+  /**
+   * Which `Database` driver runs: `postgres` (the connected MikroORM database, the default) or `memory`, the testing
+   * driver, which tests pick with `useDrivers` and no deployment selects.
+   */
+  driver: DriverName<Database> = "postgres";
 
   /**
    * The runway region key of this deployment (`eu`, `me`); runway's `config.database` layer sets it per stack. Empty

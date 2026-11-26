@@ -25,6 +25,9 @@ export type PackageManifest = {
   /** Must be `false` in a library. */
   readonly sideEffects?: unknown;
 
+  /** The `#` import aliases (a service mirrors them in its tsconfig `paths`). */
+  readonly imports?: unknown;
+
   /** The conditional exports map, or a plain string. */
   readonly exports?: unknown;
 
@@ -96,6 +99,11 @@ export type PackageManifest = {
 
   /** Compatible ranges a consumer provides. */
   readonly peerDependencies?: Readonly<Record<string, string>> | undefined;
+
+  /** Per peer, whether a consumer may leave it out. */
+  readonly peerDependenciesMeta?:
+    | Readonly<Record<string, { readonly optional?: boolean | undefined }>>
+    | undefined;
 
   /** Dependencies an install may skip. */
   readonly optionalDependencies?: Readonly<Record<string, string>> | undefined;

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Stackra file contract:
- * Purpose: the `runway` binary (package.json `bin`, built to `dist/runway.mjs`; `pnpm runway` is its alias): runs
+ * Purpose: the `runway` binary, deprecated for `stackra runway` (ADR 0529 decision 4, STA-2214) and kept as an alias
+ *          for one minor release (package.json `bin`, built to `dist/runway.mjs`; `pnpm runway` is its alias): runs
  *          `RUNWAY_COMMANDS` on @stackra/console (ADR 0506 decision 8): plan, deploy, promote, rollback, status,
  *          validate, drift and `secrets sync`, in the repository the working directory is in. Usage errors exit 2,
  *          failures 1, drift and validation findings 1; `--json` gives each command's data in the envelope.
@@ -33,6 +34,11 @@ function runwayVersion(): string {
     if (dirname(folder) === folder) return "0.0.0";
   }
 }
+
+// ADR 0529 decision 4 (STA-2214): Runway folds into `stackra runway`; this binary is an alias for one minor release.
+process.stderr.write(
+  "runway: deprecated, use `stackra runway <command>`; this alias goes in the next minor release (ADR 0529)\n",
+);
 
 process.exitCode = await createConsole({
   name: "runway",

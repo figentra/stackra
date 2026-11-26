@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "02a8978bcf27c9f2",
+    "hash": "6d38bf26b7308a30",
     "propsFiles": ["ui/src/react/tree-select/tree-select.props.ts"]
   },
   "importLine": "import { TreeSelect } from \"@stackra/ui/react\";",
@@ -37,7 +37,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\""
         },
         {
           "description": "With `multiple`: ticking a row ticks every row under it, and a partly ticked row shows a dash. Defaults to true.",

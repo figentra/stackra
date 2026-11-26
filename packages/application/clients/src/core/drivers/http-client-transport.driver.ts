@@ -3,9 +3,9 @@
  * Purpose: `HttpClientTransportDriver`, the `http` driver of `ClientTransport`: sends a client's calls over `fetch` to
  *          the producer's base URL (per module key, else the API's), with the session's headers, the call's scope, the pinned `Stackra-Version`, an Idempotency-Key on every write, a
  *          per-request timeout and retries of what is safe to repeat.
- * Boundary: the driver of apps and Workers; a service reaches another service through the in-process or RPC driver gen
- *           writes per topology. The session's headers are asked once per call, so a refreshed credential is used at
- *           once. Middleware order: version, idempotency key (outside retry, so every attempt has the same key),
+ * Boundary: the driver of apps, Workers and services; a service's `ClientSession` (`ServiceClientSessionDriver` of
+ *           `@stackra/app/server`) sends its service token and the user's it may forward. The session's headers are asked
+ *           once per call, with the call, so a refreshed credential is used at once. Middleware order: version, idempotency key (outside retry, so every attempt has the same key),
  *           retry, timeout.
  * Runtime: isomorphic
  * Governing contract: ADR 0142 (transport through drivers); ADR 0260 (decision 6, and the 2026-10-26 note); ADR 0138; ADR 0118; ADR 0140.
@@ -62,7 +62,7 @@ export class HttpClientTransportDriver extends Driver(ClientTransport) {
     return httpCall(request, {
       baseUrl: producerBaseUrl(request.key, this.config),
       transport: this.transport,
-      headers: await this.session.headers(),
+      headers: await this.session.headers(request),
       scopeHeader: this.config.scopeHeader,
     });
   }
@@ -76,7 +76,7 @@ export class HttpClientTransportDriver extends Driver(ClientTransport) {
     await httpCall(request, {
       baseUrl: producerBaseUrl(request.key, this.config),
       transport: this.transport,
-      headers: await this.session.headers(),
+      headers: await this.session.headers(request),
       scopeHeader: this.config.scopeHeader,
       queue: true,
     });

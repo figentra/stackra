@@ -37,6 +37,7 @@ describe("ClientsConfig", () => {
     expect({ ...buildConfig(ClientsConfig) }).toEqual({
       baseUrl: "",
       producers: {},
+      audiences: {},
       scopeHeader: "X-Scope-Path",
       apiVersion: "",
       timeoutSeconds: 30,
@@ -64,6 +65,9 @@ describe("ClientsConfig", () => {
     expect(() =>
       buildConfig(ClientsConfig, { values: { producers: { Orders: "https://orders.example" } } }),
     ).toThrow(ConfigInvalidError);
+    expect(() => buildConfig(ClientsConfig, { values: { audiences: { pay: "" } } })).toThrow(
+      ConfigInvalidError,
+    );
     expect(() => buildConfig(ClientsConfig, { values: { scopeHeader: "X Scope" } })).toThrow(
       ConfigInvalidError,
     );

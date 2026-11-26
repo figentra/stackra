@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `DeviceAcknowledgedQuery`, `devices.device.acknowledged@1` (`GET /devices/acknowledged`): a device's last
+ * Purpose: `DeviceAcknowledgedQuery`, `devices.device.acknowledged@1` (`GET /app/devices/acknowledged`): a device's last
  *          acknowledged sequence, the highest one the action pipeline applied or rejected. The calling device reads
  *          its own as proof of a sync; the shop reads a lost or revoked device's, so its unsent loss is known.
  * Boundary: read only, over `@stackra/actions`' `DeviceSequenceStore`. With no input it answers for `ctx.deviceId`,

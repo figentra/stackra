@@ -61,6 +61,8 @@ export const CATALOGUE_MANIFEST_SCHEMA = z
             // gen writes `{ name, default, hints }`; a hand-written manifest may say `true`.
             tool: z.union([z.boolean(), z.object({ name: TEXT }).loose()]).exactOptional(),
             toolOff: TEXT.exactOptional(),
+            // the data class it handles, a built-in code or a product's key; the AI gateway routes by it (STA-2594)
+            dataClass: KEY.exactOptional(),
           })
           .loose(),
       )

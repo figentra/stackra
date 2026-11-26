@@ -1,0 +1,49 @@
+---
+title: "runway rollback"
+description: "Returns production to an earlier commit of origin/main."
+---
+
+Returns production to an earlier commit of origin/main.
+
+```bash
+stackra runway rollback <sha> [--dry-run]
+```
+
+| Argument or option | Kind     | Meaning                                                |
+| ------------------ | -------- | ------------------------------------------------------ |
+| `sha`              | argument | A full commit SHA on origin/main, older than its head. |
+| `--dry-run`        | option   | Print the `gh` commands and dispatch nothing.          |
+
+## What it does
+
+Fetches origin/main and refuses its head (shipping the head is a [`promote`](/runway/promote)), then runs the promote
+path with the earlier commit. The callers record `rollback to <sha>` as the provider's deployment message.
+
+## What it prints
+
+The same as `promote`: the commit, the record message and each workflow run it started.
+
+## Exit codes
+
+| Code | Means                                                      |
+| ---- | ---------------------------------------------------------- |
+| 0    | Dispatched, or printed for a dry run.                      |
+| 1    | The commit is not on origin/main, or `git` or `gh` failed. |
+| 2    | The commit is the head of origin/main, or a usage error.   |
+
+## Where it runs
+
+The owner's, like `promote`: the same environment protection and owner gate apply.
+
+## Examples
+
+```bash
+stackra runway rollback <sha> --dry-run
+```
+
+## See also
+
+[0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step),
+[0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

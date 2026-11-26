@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `asTenant`: it runs the work through the isolation on `Database.current()` with the tenant's
  *          `app.tenant_id` (a platform call with `''`), the options' scope and read-only flag, new `BelongsToTenant` rows
- *          taking the tenant, and the work's result passing through; with no database it fails.
+ *          taking the tenant, and the work's result passing through; a scope option, the tenant's own or a branch
+ *          of it, is shown by the helper's tree and runs; with no database it fails.
  * Boundary: test only; a fake `Database` records the statements, so no database runs. The real settings and the rows
  *           they hide are proven on Postgres in `call-isolation.driver.int.test.ts`.
  * Runtime: node (vitest)
@@ -82,6 +83,17 @@ describe(asTenant, () => {
       // the driver's tenant check reads the tree in a session over the path's root label, then the call's own scope
       expect(scopes).toEqual([{ id: scope.id, path: "platform" }, scope]);
       expect(transactions[0]).toEqual({ readOnly: true });
+    } finally {
+      restore();
+    }
+  });
+
+  it("runs a tenant in a branch scope of its own", async () => {
+    const { scopes, restore } = connect();
+    try {
+      const branch: ScopeRef = { id: fakeTenantId(), path: "platform.acme.riyadh" };
+      await expect(asTenant(fakeTenantId(), async () => 7, { scope: branch })).resolves.toBe(7);
+      expect(scopes.at(-1)).toBe(branch);
     } finally {
       restore();
     }

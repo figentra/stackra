@@ -30,4 +30,14 @@ export const WORKFLOW_CONFIG_SCHEMA = z.object({
     .default("7d"),
   forEachLimit: z.int().min(1).max(10_000).default(1000),
   maxChainDepth: z.int().min(1).max(20).default(3),
+  retryInlineMax: z
+    .string()
+    .refine((text) => {
+      try {
+        return Duration.toMilliseconds(duration(text)) <= 60_000;
+      } catch {
+        return false;
+      }
+    }, "Expected a duration up to 1m, such as 0s")
+    .default("0s"),
 });

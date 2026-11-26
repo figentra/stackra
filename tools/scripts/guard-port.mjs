@@ -111,7 +111,7 @@ const GIT_INTERNALS_WHY =
 /** port: the Stackra checkout and its worktrees: the bot wrappers run from there with every /agents value. */
 const STACKRA_TREE = /^\/Users\/akouta\/Projects\/stackra(?:\/|$)/i;
 const STACKRA_WHY =
-  "The Stackra checkout is not this repository's: its bot wrappers (package.json, tools/scripts/bot-*.mjs, pr-merge.mjs, .infisical.yaml) run with every /agents value, so no session here writes, moves or checks out anything under /Users/akouta/Projects/stackra. Change Stackra from a session rooted there.";
+  "The Stackra checkout is not this repository's: its bot wrappers (package.json, tools/scripts/bot-*.mjs, pr-merge.mjs, secrets-exec.mjs) run with the agents' secrets, so no session here writes, moves or checks out anything under /Users/akouta/Projects/stackra. Change Stackra from a session rooted there.";
 /** port: temporary folders: a copy of config there that is no checkout (\`cp -r .claude <scratchpad>\`) is no guard. */
 const TEMP = /^\/(?:private\/)?(?:tmp|var\/folders)\//;
 /** port: true when the absolute path matches the config pattern rx anywhere but in a temporary copy. */

@@ -13,6 +13,7 @@ export { Explorer } from "#core/bases/explorer.base";
 export { Module } from "#core/bases/module.base";
 export { Permissions } from "#core/bases/permissions.base";
 export { Service } from "#core/bases/service.base";
+export { PERMISSION_MEMBERS } from "#core/constants/permission-members.constant";
 export { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
 export { Lifetime } from "#core/decorators/lifetime.decorator";
 export { Replaces } from "#core/decorators/replaces.decorator";

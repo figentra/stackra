@@ -12,3 +12,4 @@ export { Misfire } from "#contracts/enums/misfire.enum";
 export { CronScopes } from "#contracts/ports/cron-scopes.port";
 export { ScheduleDriver } from "#contracts/ports/schedule-driver.port";
 export type { Schedule } from "#contracts/types/schedule.type";
+export type { ScheduleClaim } from "#contracts/types/schedule-claim.type";

@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: `emitBoot`, a service's `#stackra/boot` (`.stackra/gen/boot.ts`): one `boot(container, { signal })`
  *          that connects what needs the booted container, in order: the record policies (`connectPolicies`, when the
- *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the bound
+ *          manifest lists one, so `ctx.authorize(record)` builds each with its dependencies; STA-2045), the extension
+ *          slots (`connectExtensions`, when the service declares an extension, so a slot builds each one), the bound
  *          `HoldRegistry` and `SequenceTimeZone` drivers (or none), the container itself as the reads' visibility
  *          resolver (`connectVisibilityFilter`, so reads AND the bound `VisibilityFilter`'s conditions, writes stamp
  *          the call's actor and the call's time zone is read; ADR 0333 decision 4, STA-2044),
  *          `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
- *          `database` provides (`emitEncoreDatabase`; boot never imports `.stackra/encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
+ *          `database` provides (`emitEncoreDatabase`; boot never imports `stackra-encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
  *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
  *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` and, when bound, the `KeyProvider` its blind indexes need (when a model, own or a declared package's, has
@@ -15,15 +16,19 @@
  *          native-write watcher (`connectNativeWriteWatcher`, so a native `CrudService` write reaches the change log;
  *          STA-2047),
  *          `segments.connect(container)`, `AutomationService#connect` (so a published automation's principal is checked
- *          against its scope, ADR 0495, when the service runs `@stackra/workflow`), `EventBus#connect` and
+ *          against its scope, ADR 0495, when the service runs `@stackra/workflow`), `QueueWorkerService#connect` (so a
+ *          job a generated Encore subscription delivers, or `queue:work` reserves, runs through the pipeline, when the
+ *          service runs `@stackra/queue`; STA-2046), `EventBus#connect` and
  *          `InboxService#connect` (the
  *          registered listeners and relays, disconnected when the signal aborts), the live queries' refresh (one
  *          `liveQueryRoutes` call per query with `cache.invalidateOn`, each route subscribed on the bus and sent through
  *          `RealtimeRelay` or `RealtimeBroadcaster`, when the service runs `@stackra/realtime`; STA-1445), then `relay.connect(container)` and
- *          the relay's `work` loop until the signal aborts. A signal already aborted when `boot` starts connects
+ *          the relay's `work` loop until the signal aborts, beside it the cross-app relay's (`CrossAppRelayService`, for
+ *          a producer with a runway `events` block) and, before them, `RelayInboxService#connect` for a service with the
+ *          cross-app inbox (STA-1910). A signal already aborted when `boot` starts connects
  *          nothing; one that aborts while the database connects disconnects the bus and inbox at once.
  * Boundary: pure. Each step is written only when the service runs its package (`@stackra/database` or a model,
- *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`, `@stackra/workflow`); nothing to connect means no file. The connection
+ *           `@stackra/outbox`, `@stackra/segments`, `@stackra/events`, `@stackra/workflow`, `@stackra/queue`); nothing to connect means no file. The connection
  *           strings are the runtime's (Encore's database, and `DATABASE_REPLICA_URLS` when the runtime provides
  *           one; runway does not set it for `readReplica` yet: Runway plan PR 10/11, STA-2001), never logged; `@stackra/app/server` calls `boot` once it hands the entry its container.
  * Runtime: isomorphic
@@ -38,6 +43,8 @@
 import type { StackraManifest } from "@stackra/contracts";
 
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { hasEncryptedFields } from "#core/functions/has-encrypted-fields.function";
+import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
 import { traitSubscribers } from "#core/functions/trait-subscribers.function";
 import { usesDatabase } from "#core/functions/uses-database.function";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -113,25 +120,31 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     ir.dependencies.some((dependency) => dependency.package === name);
   const database = usesDatabase(ir);
   // A model with `HasEncryptedFields` (own or a declared package's) is sealed by the subscriber, never written in clear.
-  const encrypted =
-    ir.classes.some(
-      (declared) =>
-        declared.kind === "model" &&
-        declared.traits.some((trait) => trait.name === "HasEncryptedFields"),
-    ) ||
-    ir.dependencies.some(({ manifest }) =>
-      (manifest.models ?? []).some((model) => model.traits.includes("HasEncryptedFields")),
-    );
+  const encrypted = hasEncryptedFields(ir);
   // Trait subscribers (`TreeSubscriber`, ...) run before the encrypted fields are sealed.
   const traits = traitSubscribers(ir);
   const outbox = uses("@stackra/outbox");
   const segments = uses("@stackra/segments");
   const workflow = uses("@stackra/workflow");
+  // The worker runs each delivered or reserved job through the container's pipeline (ADR 0148 decision 6, STA-2046).
+  const queue = uses("@stackra/queue");
   // The outbox depends on the bus, so a service with an outbox has one to connect.
   const events = outbox || uses("@stackra/events");
   // A record policy is built from the booted container when `ctx.authorize(record)` runs it (ADR 0132, STA-2045).
   const policies = ((built?.["policies"] ?? []) as readonly unknown[]).length > 0;
-  if (!database && !outbox && !segments && !workflow && !events && !policies) return undefined;
+  // A slot builds each registered extension from the booted container, so the slots need it connected (ADR 0305).
+  const extensions = ir.classes.some((declared) => declared.kind === "extension");
+  if (
+    !database &&
+    !outbox &&
+    !segments &&
+    !workflow &&
+    !queue &&
+    !events &&
+    !policies &&
+    !extensions
+  )
+    return undefined;
   // Live queries refresh their clients through realtime after each invalidating event commits (ADR 0315 decision 1).
   const live = events && uses("@stackra/realtime") ? liveQueryRows(built) : [];
 
@@ -140,6 +153,10 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   if (policies) {
     imports.push('import { connectPolicies } from "@stackra/iam";');
     steps.push("  connectPolicies(container);");
+  }
+  if (extensions) {
+    imports.push('import { connectExtensions } from "@stackra/actions";');
+    steps.push("  connectExtensions(container);");
   }
   if (database) {
     imports.push(
@@ -176,9 +193,13 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     // hears of it through the watcher, or search, segments and change consumers keep stale rows (STA-2047).
     if (outbox) steps.push("  connectNativeWriteWatcher(container.get(OutboxWriterService));");
   }
+  // The cross-app relay (STA-1910): a producer with a runway `events` block delivers; a consumer of a contract-only
+  // producer's events has the inbox route, whose refusals log through the container.
+  const crossApp = outbox && ir.eventsRelay !== undefined;
+  const relayInbox = outbox && inboxProducersOf(ir).length > 0;
   if (outbox)
     imports.push(
-      'import { InboxService, OutboxRelayService, OutboxWriterService } from "@stackra/outbox/node";',
+      `import { ${[...(crossApp ? ["CrossAppRelayService"] : []), "InboxService", "OutboxRelayService", "OutboxWriterService", ...(relayInbox ? ["RelayInboxService"] : [])].join(", ")} } from "@stackra/outbox/node";`,
     );
   if (segments) {
     imports.push('import { SegmentService } from "@stackra/segments/node";');
@@ -187,6 +208,10 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   if (workflow) {
     imports.push('import { AutomationService } from "@stackra/workflow/node";');
     steps.push("  container.get(AutomationService).connect(container);");
+  }
+  if (queue) {
+    imports.push('import { QueueWorkerService } from "@stackra/queue/node";');
+    steps.push("  container.get(QueueWorkerService).connect(container);");
   }
   if (events) {
     imports.push(
@@ -219,6 +244,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
   }
   if (outbox)
     steps.push("  const inbox = container.get(InboxService);", "  inbox.connect(container);");
+  if (relayInbox) steps.push("  container.get(RelayInboxService).connect(container);");
   if (events)
     steps.push(
       "  const disconnect = (): void => {",
@@ -235,6 +261,13 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
       "    const relay = container.get(OutboxRelayService);",
       "    relay.connect(container);",
       "    void relay.work({ signal: options.signal });",
+      ...(crossApp
+        ? [
+            "    const crossApp = container.get(CrossAppRelayService);",
+            "    crossApp.connect(container);",
+            "    void crossApp.work({ signal: options.signal });",
+          ]
+        : []),
       "  }",
     );
 

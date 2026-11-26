@@ -33,6 +33,8 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `poolMaxOf(root, service, member, environment)`                                                                                                             | one instance's share of the service's `poolBudget`, handed over as `DATABASE_POOL_MAX` (ADR 0473)                                                                      |
 | `.`         | `previewDatabaseOf(root, branch)`, `previewSeedStep(database, product)`, `PreviewDatabaseBrancher`, `PreviewDatabaseSource`                                 | how a pull request's preview gets its database (seed pack or Neon branch), its seed command, and the branching port                                                    |
 | `.`         | `checkRegions(root)`, `regionsOf(root, environment)`                                                                                                        | region failures for `stackra validate`; an environment's resolved regions                                                                                              |
+| `.`         | `environmentSizesOf(root, env)`, `TIER_SIZES`, `EnvironmentTier`, `CacheMode`, `EnvironmentSizes` | the sizes an environment runs at: its `tier` (production defaults to `launch`, the rest to `staging`; the finance tiers of 2026-11-06) with its own `shared.database`, `shared.cache` and `shared.network` keys over it. Encore Cloud applies them from its dashboard, so they are the desired values a drift report compares |
+| `.`         | `checkEnvironmentRegion(root)`, `deprecatedFields(root)`, `unusedCloudOptIns(root)`, `RegionKey` | a product's staging or production with no `region` (`me`, `eu`, `ksa`; ADR 0524), a ksa environment without `providers.gcp.project: true`, or a t4g or m6g cache class in `me` (me-central-1 lacks them); deprecated fields still set (`providers.aws.region`, `providers.aws.accounts`, an environment's `cloud`, the Mintlify blocks and destination) and an AWS account opt-in (`providers.aws.account: true`) no me or eu environment uses, which `validate` warns about |
 | `.`         | `checkPorts(root, members)`, `PortIssue`                                                                                                                    | every duplicate effective dev port across the repository lanes, both owners                                                                                            |
 | `.`         | `RunwayCloud`                                                                                                                                               | `aws`, `gcp`: the cloud a region names                                                                                                                                 |
 | `.`         | `runwayJsonSchema(kind)`                                                                                                                                    | the zod schemas as JSON Schema, tested against the shipped canonical files                                                                                             |
@@ -43,16 +45,16 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `RunwayConfig`, `RunwayConfig$`                                                                                                                             | what the providers need beyond the runway: the Encore app id and tree, the mobile and docs folders (key `runway`)                                                      |
 | `./node`    | `EncoreCloudProviderDriver`, `EasProviderDriver`, `MintlifyProviderDriver`                                                                                  | the `encore-cloud`, `eas` and `mintlify` providers                                                                                                                     |
 | `./node`    | `runProgram`, `CommandRunner`                                                                                                                               | how a provider runs its CLI, with no shell                                                                                                                             |
-| `./node`    | `runMobileJob(request)`, `MobileJobRequest`, `MobileJobResult`                                                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                                                                             |
+| `./node`    | `runMobileJob(request)`, `startWhiteLabelJob(request)` (the `white_label.build.requested.v1` starter), `whiteLabelVariantOf(event)`, `MobileJobRequest`, `MobileJobResult`                                                                                              | the mobile job: Expo config from `mobile`, capability stripping, EAS build                                                                                             |
 | `./node`    | `onboardMobile(request)`, `MobileOnboardRequest`, `MobileOnboard`, `OnboardStep`, `easJsonOf`, `toolVersionOf`                                              | mobile onboarding (ADR 0482): ids, EAS, Apple, Google, Firebase, Sentry, signing, push, stores; see below                                                              |
-| `./node`    | `Asc…`, `GooglePlay…`, `ExpoGraphql…`, `GoogleCloud…`, `FirebaseManagement…`, `SentryApi…`, `InfisicalVaultWriter…` drivers, and a `Memory…` driver of each | the real and memory drivers of the onboarding ports (`.`: `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects`, `VaultWriter`) |
+| `./node`    | `Asc…`, `GooglePlay…`, `ExpoGraphql…`, `GoogleCloud…`, `FirebaseManagement…`, `SentryApi…` drivers, and a `Memory…` driver of each (`MemoryVaultWriter…` only for `VaultWriter`) | the real and memory drivers of the onboarding ports (`.`: `AppleDeveloper`, `PlayConsole`, `ExpoProjects`, `GoogleCloud`, `Firebase`, `SentryProjects`, `VaultWriter`) |
 | `./node`    | `checkoutLine(request)`, `shellReleaseOf`, `LINE_CHECKOUT_SETTINGS`, `LineSource`, `LineCheckout`, `ShellManifest`                                          | the template line step: a line's highest release from the registry (or a local checkout) into a folder (ADR 0481)                                                      |
 | `./node`    | `dryRunCommand(options)`, `DryRunEdgeKvDriver`                                                                                                              | dry runs: every command and KV write recorded, local outputs still written                                                                                             |
 | `./node`    | `runBrandStep(request)`, `committedBrandOutputs`, `BRAND_STEP_SETTINGS`, `BrandStepRequest`, `BrandStepRun`                                                 | the brand step: @stackra/brand-kit per surface, app and white-label scope; the committed-outputs check                                                                 |
 | `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, …                                           | the store-screenshot capture job on a Mac CI runner                                                                                                                    |
 | `./node`    | `smokePreview(request)`, `PlaywrightSmokeDriver`, `MaestroSmokeDriver`, `ElectronSmokeDriver`, `SmokePreviewRequest`                                        | the smoke step after a preview deploy (STA-265); the `SmokeDriver` port and smoke types are `.`'s                                                                      |
 | `./node`    | `launchCheckJob(request)`, `runLaunchCheck`, `LAUNCH_CHECK_DEFAULTS`, `LaunchCheckJob`, `LaunchCheckRequest`                                                | the mobile launch check: Maestro flows on a CI simulator or emulator (STA-265)                                                                                         |
-| `./node`    | `publishProduct(request)`, `ProductPublishRequest`, `ProductPublishResult`                                                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary                                                              |
+| `./node`    | `publishProduct(request)`, `pullRequestPreviewHost(product, n)`, `PULL_REQUEST_PREVIEW_SETTINGS`, `ProductPublishRequest`, `ProductPublishResult`                                                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary                                                              |
 | `./node`    | `publishShell`, `promoteCanary`, `canaryVerdict`, `EDGE_PUBLISH_SETTINGS`, `EdgeCanary`, `CanarySample`, …                                                  | the shell canary list and health-gated promotion of release and shell canaries                                                                                         |
 | `./node`    | `checkShellCompatibility(request)`, `checkOpsReview(review)`                                                                                                | the shell compatibility gate and the ops second-reviewer gate                                                                                                          |
 | `./node`    | `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`                                                                                             | the publish step's parts: rows from the root runway, built bundles, the R2 upload, the surfaces that bundle                                                            |
@@ -215,8 +217,9 @@ on the edge, and the app id pattern check of ADR 0439 decision 6.
 `blocked`: `identity` (fills absent ids from `mobileIdsOf`), `eas-project`, `eas-profiles`, `apple-bundle`,
 `apple-app-record`, `google-project`, `firebase`, `analytics-link`, `sentry`, `signing`, `push`, `store-keys`,
 `play-app`. Every external call goes through a port; `dryRun` reads only and writes nothing. It writes `runway.yaml`
-(comments kept) and the Firebase config files. The FCM key it creates goes straight to `VaultWriter` and EAS and is
-never returned. `stackra mobile onboard` is the command; the runbook is `runbooks/mobile-onboarding`.
+(comments kept) and the Firebase config files. The FCM key it creates goes straight to EAS, its one reader, and is
+never returned or stored elsewhere; a missing root-kit name comes back as a manual step with its
+`pnpm secrets:put <NAME> --scope ci/production/store` command. `stackra mobile onboard` is the command; the runbook is `runbooks/mobile-onboarding`.
 
 ```ts
 import { MemoryAppleDeveloperDriver, onboardMobile /* , … */ } from "@stackra/runway/node";
@@ -231,7 +234,6 @@ const result = await onboardMobile({
   google,
   firebase,
   sentry,
-  vault,
 });
 result.steps.filter((step) => step.state === "manual");
 ```
@@ -350,6 +352,24 @@ checkout it runs the `compatibility` build with the next shell's import map, the
 edge will not serve or whose imports the next map does not resolve, listing every break at once. Every threshold,
 window, folder, command and header is in `EDGE_PUBLISH_SETTINGS`.
 
+### A pull request's preview
+
+`publishProduct` with `pullRequest: <n>` and `environment: "preview"` (the product command's `--env preview --pr <n>`,
+or `STACKRA_PULL_REQUEST`) publishes that pull request's preview instead (ADR 0289 decision 7 and its 2026-11-01 note,
+STA-1907). Only the console bundle is uploaded (its asset keys carry the commit, so pull requests never overwrite each
+other). It writes two rows, both with a 7-day expiry (`PULL_REQUEST_PREVIEW_SETTINGS.ttlSeconds`, wrangler's `--ttl`),
+so a preview nobody pushes to cleans itself up:
+
+| Row                                | Holds                                                                                              |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `host:<product>-pr-<n>.figentra.cloud` | an `EdgeHostRow` (product, surface `console`, region, status, realm, canonical) plus `pullRequest` |
+| `release:<product>:console:pr-<n>` | the console's `EdgeRelease`, written directly: a preview has no canary                             |
+
+The answer's `host` is `<product>-pr-<n>.figentra.cloud` (`pullRequestPreviewHost(product, n)`): the product is in the label because every product repository numbers its pull requests from 1, and the publish refuses a host row another product already holds (ADR 0289's 2026-11-09 note). No app-link file and no ops review run,
+and the shared `preview` environment's rows are untouched. The router Worker that serves the host (`/api/*` to the
+Encore Cloud preview, the console at `/`) is not built here; the asset-store objects are not expired (a bucket
+lifecycle rule is infrastructure's).
+
 Not built here: the registry manifest publish (ADR 0109) and the registry's own release refusal, the landing seed
 import, removing rows of hosts a runway no longer lists, the metrics query that fills a `CanarySample`, and the CI
 workflows that call these functions.
@@ -454,9 +474,13 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 | `runway promote <sha> [--dry-run]`           | Dispatches every production caller that takes a `sha`, for a commit of origin/main; the record is `rollback to <sha>`                       | 0                        |
 | `runway rollback <sha> [--dry-run]`          | The same for an earlier commit; refuses the head of origin/main (ADR 0352)                                                                   | 0; 2 on the head         |
 | `runway status [env]`                        | What each GitHub environment runs, from GitHub's deployment records: commit, time, state                                                     | 0                        |
-| `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), service `requires` | 0; 1 with each finding   |
+| `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), a product's staging and production `region` and a ksa environment's GCP project (ADR 0524), service `requires`; deprecated fields and an unused AWS account opt-in warn | 0; 1 with each finding   |
 | `runway drift [env]`                         | Each Cloudflare Worker's live settings against what runway.yaml renders (read-only, `CLOUDFLARE_API_TOKEN_READ`)                            | 0; 1 when a Worker drifted |
-| `runway secrets sync <env> [--dry-run]`      | The member secrets of `env` from Infisical into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves                 | 0                        |
+| `runway secrets sync <env> [--dry-run]` (alias `runway env sync`) | The member secrets of `env`, and the names each member's manifest declares (STA-2104), from the job's environment (the sops scope `products/<project>/<env>` that `.github/actions/secrets-decrypt` decrypted, ADR 0525) into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves. `--from-env` is accepted and ignored (deprecated) | 0                        |
+| `runway secrets decrypt --scope <s> [--dir <d>] [--names A,B]` | One figentra/secrets scope (ADR 0525), decrypted with the job's own Cloud KMS identity from the ciphertext `.github/actions/secrets-decrypt` downloads, masked and exported into `GITHUB_ENV`; names only on output, and it refuses to run without `GITHUB_ENV` | 0; throws on a bad scope, a missing name or a refused key |
+| `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, the `names:` of a `secrets-decrypt` step) has a sops scope (`products/<project>/<dev\|staging\|production>`; a preview reads dev's); a raw read of an undeclared name warns. Names only, no login | 1 on an error |
+| `runway env check --values --env <env>` | CI only: each declared name of `<env>`, read from the job's environment after `secrets-decrypt`, checked against its rules; prints names, the scope, pass or the broken rule and a SHA-256 prefix, never a value | 1 on an error |
+| `runway env orphans <env> [--dir <d>]` | CI only: warns on each name in `<env>`'s sops scope (its ciphertext file names under `<d>`, default `.secrets`) that no code declares; decrypts nothing | 0 |
 
 Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
 by a flag or `GITHUB_ACTIONS`; a deploy job needs `permissions: id-token: write`. A destination is one of

@@ -1,0 +1,52 @@
+---
+title: "runway deploy"
+description: "Ships one target from the head of origin/main by dispatching its caller workflows."
+---
+
+Ships one target from the head of origin/main by dispatching its caller workflows.
+
+```bash
+stackra runway deploy <target> [--dry-run]
+```
+
+| Argument or option | Kind     | Meaning                                                                              |
+| ------------------ | -------- | ------------------------------------------------------------------------------------ |
+| `target`           | argument | The target: a key of the root runway's `targets` (for example `cloudflare-workers`). |
+| `--dry-run`        | option   | Print the `gh` commands and dispatch nothing.                                        |
+
+## What it does
+
+Fetches origin/main, takes a clean copy of its head, prints that commit, then dispatches each caller workflow of the
+target with `gh workflow run`. The run, its GitHub environment and its deployment record live on GitHub; nothing is
+built or shipped on the machine that runs the command.
+
+## What it prints
+
+The commit it dispatched, and each workflow run it started (or, with `--dry-run`, each `gh` command it would run).
+
+## Exit codes
+
+| Code | Means                                        |
+| ---- | -------------------------------------------- |
+| 0    | Dispatched, or printed for a dry run.        |
+| 1    | Not on origin/main, or `git` or `gh` failed. |
+| 2    | Usage error (no target).                     |
+
+## Where it runs
+
+With the person's own `gh` login. The agent guard asks the owner before an agent runs it. Production never ships from
+here: that is [`promote`](/runway/promote).
+
+## Examples
+
+```bash
+stackra runway deploy cloudflare-workers --dry-run
+```
+
+## See also
+
+[0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted),
+[0352](/adr/0352-runway-is-the-one-deployment-tool-pulumi-is-its-infrastructure-engine-gen-is-its-build-step),
+[0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval) and
+[the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of `stackra runway <command>` and goes
+in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

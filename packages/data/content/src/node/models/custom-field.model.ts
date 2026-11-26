@@ -13,7 +13,15 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps, Translatable, type Translated } from "@stackra/model";
+import {
+  HasPublicId,
+  Model,
+  MovesWithScope,
+  Timestamps,
+  Translatable,
+  type Translated,
+} from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Field } from "@stackra/validation";
 import { z } from "zod";
 
@@ -23,8 +31,10 @@ import type { CustomFieldDefinition, CustomFieldType } from "#core/index";
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
 export class CustomField extends Model.with(
   HasPublicId("cfd"),
+  BelongsToTenant,
   Timestamps,
   Translatable(["label"]),
+  MovesWithScope,
 ) {
   /** The type's choices and bounds, as `checkCustomFieldDefinition` accepted them. */
   // reason: checkCustomFieldDefinition checks the whole definition before it is stored, and the refinements of
@@ -63,5 +73,5 @@ export class CustomField extends Model.with(
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface CustomField {
   /** The fields an insert may leave out: minted ids, trait-filled columns and defaulted fields. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

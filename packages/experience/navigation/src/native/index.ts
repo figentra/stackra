@@ -14,7 +14,7 @@
 export { ContextMenu } from "#native/context-menu/context-menu";
 export type { ContextMenuProps } from "#native/context-menu/context-menu.props";
 export { useMenu } from "#native/menu/use-menu";
-export { useMenus } from "#native/menu/use-menus";
+export { useMenus } from "#react/menu/use-menus";
 export { ModuleMenu } from "#native/module-menu/module-menu";
 export type { ModuleMenuProps } from "#native/module-menu/module-menu.props";
 export type { LayoutLoaderState } from "#native/layout-loader/layout-loader-state.type";

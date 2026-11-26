@@ -5,7 +5,8 @@
  *          images also from `data:` and `blob:`; no plugins, no `<base>`, forms post to the origin only, and no page
  *          may frame the app.
  * Boundary: a host never edits it. `contentSecurityPolicy` adds the nonce and the configured sources to the source
- *           lists of `script-src`, `style-src`, `connect-src`, `frame-src` and `img-src` only; every other directive
+ *           lists of `script-src`, `style-src`, `connect-src`, `frame-src` and `img-src` only, and replaces
+ *           `frame-ancestors 'none'` only on a path whose `frameAncestors` entry allows framers; every other directive
  *           is fixed. `style-src-attr 'unsafe-inline'` allows inline `style` attributes only, which server-rendered
  *           React markup carries; it never allows a `<style>` element or a script. Internal: not exported.
  * Runtime: isomorphic

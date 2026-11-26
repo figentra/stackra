@@ -1,0 +1,54 @@
+---
+title: "مقدمة"
+description: "ما هي ستاكرا وكيف يُنظَّم هذا المستودع."
+icon: "house"
+---
+
+{/* Stackra file contract: Purpose: the Arabic twin of the docs index, the root of the /ar tree, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same cards as the English page, no more. Runtime: docs. Governing contract: ADR 0514; STA-2676. */}
+
+ستاكرا مستودع أحادي على pnpm وTurborepo. يضم حزم `@stackra/*`، والتطبيقات التي تستهلكها (لوحة التحكم وموقع التوثيق
+هذا)، وخدمات مرجعية بلغة TypeScript خالصة يولّد منها `stackra gen` تطبيق Encore.
+
+<CardGroup cols={2}>
+  <Card title="البداية السريعة" icon="rocket" href="/quickstart">
+    ثبّت سلسلة الأدوات وشغّل لوحة التحكم والتوثيق محليًّا.
+  </Card>
+  <Card title="بنية المستودع" icon="folder-tree" href="/guides/structure">
+    أين تسكن التطبيقات والحزم والخدمات، ولماذا.
+  </Card>
+  <Card title="فئات الحزم" icon="boxes" href="/guides/packages">
+    كيف يُنظَّم `packages/<category>/<name>`.
+  </Card>
+  <Card title="القرارات" icon="landmark" href="/adr">
+    سجلات القرارات المعمارية وراء هذا التخطيط.
+  </Card>
+</CardGroup>
+
+## الإطار
+
+<CardGroup cols={2}>
+  <Card title="نموذج البرمجة" icon="shapes" href="/programming-model">
+    الأنواع، ومجلد كل نوع، وما يشتقّه gen، والبيان بوصفه حقيقة ملتزَمًا بها.
+  </Card>
+  <Card title="الإجراءات" icon="zap" href="/actions">
+    المفتاح والمخططات والصلاحية المشتقة والتماثل وخط المعالجة.
+  </Card>
+  <Card title="العملاء وأدوات MCP" icon="plug" href="/clients-and-tools">
+    العميل المولَّد لكل خدمة؛ والإجراءات أدواتٍ تحت صلاحيات المستدعي.
+  </Card>
+  <Card title="نظام التصميم" icon="palette" href="/design-system">
+    الرموز، وسمة لكل منتج، والمكوّنات، ومن اليمين إلى اليسار.
+  </Card>
+  <Card title="وثائق التجربة" icon="layout-template" href="/experience">
+    الكتل والوثائق والمصيّرات وعدّة صفحات الهبوط.
+  </Card>
+  <Card title="Runway" icon="plane-takeoff" href="/runway">
+    ملفان، وأربع بيئات، ومعاينات، وموافقة واحدة قبل الإنتاج.
+  </Card>
+  <Card title="سطر الأوامر" icon="terminal" href="/cli">
+    `stackra` كل يوم، للمنتجات، وللوكلاء، وأين تعمل الأشياء.
+  </Card>
+  <Card title="مرجع الواجهة البرمجية" icon="book-open-text" href="/api">
+    يولَّد من بيان كل خدمة الملتزَم به؛ ولا يُكتب يدويًّا أبدًا.
+  </Card>
+</CardGroup>

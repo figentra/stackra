@@ -4,7 +4,7 @@
  *          `registerWebhookEvents` accepts. Standard Webhooks is HMAC-SHA256 over
  *          `<webhook-id>.<webhook-timestamp>.<body>`, as Svix (and so Resend) signs; `hmac` is any HMAC whose recipe
  *          (header, layout, hash, encoding, signed text, tolerance) is the Integration's `webhooks.signature` data.
- *          The six regional gateway schemes (STA-1357) are not an HMAC over the raw body; each reads its data from
+ *          The regional gateway schemes (STA-1357) are not an HMAC over the raw body; each reads its data from
  *          the Integration's `webhooks.recipe` and is certification pending (owner decision D3).
  * Boundary: an `Enum.of` value plus the type of the same name. A provider whose signature is an HMAC over the body
  *           (Stripe, Checkout.com, GitHub) declares a recipe under `hmac`; only a scheme that is not an HMAC over the
@@ -32,6 +32,8 @@ export const SignatureScheme = Enum.of({
   AesGcmBody: "aes_gcm_body",
   /** A hex HMAC over the joined values of ordered body fields (`recipe.fields`, `algorithm`; Paymob). */
   OrderedFieldHmac: "ordered_field_hmac",
+  /** A hex HMAC over each label followed by its body field's value (`recipe.labelledFields`, `algorithm`). */
+  LabelledFieldHmac: "labelled_field_hmac",
   /** A hex digest of ordered body fields followed by the secret (`recipe.fields`, `algorithm`; Fawry). */
   KeyedFieldDigest: "keyed_field_digest",
   /** A header whose value is the secret the merchant registered (`recipe.header`; Tabby). */

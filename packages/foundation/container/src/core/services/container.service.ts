@@ -38,12 +38,14 @@ import type { NamedToken } from "#core/types/named-token.type";
 import type { Token } from "#core/types/token.type";
 import type { Wiring } from "#core/types/wiring.type";
 import type { WiringBinding } from "#core/types/wiring-binding.type";
+import type { WiringReplacement } from "#core/types/wiring-replacement.type";
 
 /** How one token is built: the class, its lifetime and its constructor tokens, or a built-in's factory. */
 interface Recipe {
   readonly type: AnyClass;
   readonly lifetime: Lifetime;
-  readonly deps: readonly Token[];
+  /** The constructor's tokens; `Container` among them is the container itself (its constructor is private). */
+  readonly deps: readonly (Token | typeof Container)[];
   readonly create?: (container: Container) => object;
 }
 
@@ -60,7 +62,7 @@ interface MergedDriver {
   named: string | undefined;
   default: string | undefined;
   readonly candidates: Record<string, () => Promise<AnyClass<Port>>>;
-  readonly deps: Record<string, readonly Token[]>;
+  readonly deps: Record<string, readonly (Token | typeof Container)[]>;
 }
 
 /** One config class, merged across wirings. */
@@ -81,7 +83,7 @@ interface Graph {
   readonly configs: Map<string, MergedConfig>;
   readonly configByToken: Map<AnyClass, MergedConfig>;
   readonly drivers: Map<AnyClass, MergedDriver>;
-  readonly replaces: Map<AnyClass, AnyClass>;
+  readonly replaces: Map<AnyClass, WiringReplacement>;
   readonly overrides: ReadonlyMap<Token, object>;
   readonly loaded: Map<Token, Recipe>;
   readonly exported: Set<AnyClass>;
@@ -164,7 +166,7 @@ function mergeWirings(wirings: readonly Wiring[], overrides: ReadonlyMap<Token, 
       Object.assign(driver.deps, entry.deps);
       graph.drivers.set(entry.port, driver);
     }
-    for (const entry of wiring.replaces ?? []) graph.replaces.set(entry.provide, entry.override);
+    for (const entry of wiring.replaces ?? []) graph.replaces.set(entry.provide, entry);
   }
   for (const config of graph.configs.values()) {
     graph.configByToken.set(config.provide, config);
@@ -384,7 +386,7 @@ export class Container {
         recipe.create === undefined
           ? (Reflect.construct(
               recipe.type,
-              recipe.deps.map((dependency) => this.resolve(dependency)),
+              recipe.deps.map((dependency) => this.resolve(dependency as Token)),
             ) as object)
           : recipe.create(this);
       if (recipe.lifetime !== Lifetime.Transient) {
@@ -412,13 +414,24 @@ export class Container {
     if (config !== undefined)
       return { key: config.provide, ...this.recipeFor(config.override ?? config.provide) };
     const replacement = graph.replaces.get(token);
-    if (replacement !== undefined) return { key: token, ...this.recipeFor(replacement) };
+    if (replacement !== undefined)
+      return { key: token, ...this.recipeFor(replacement.override, replacement.deps) };
     const driver = graph.loaded.get(token);
     if (driver !== undefined) return { key: token, ...driver };
     for (const [port, loaded] of graph.loaded)
       if (!isNamed(port) && loaded.type === token) return { key: port, ...loaded };
     if (graph.bindings.has(token) || graph.exported.has(token))
       return { key: token, ...this.recipeFor(token) };
+    // The container itself, for a class that reads an optional binding at call time (`has` then `get`): the root, so
+    // a request scope's class gets the container its singletons live in.
+    if ((token as unknown) === Container)
+      return {
+        key: token,
+        type: Container as unknown as AnyClass,
+        lifetime: Lifetime.Singleton,
+        deps: [],
+        create: (container) => container,
+      };
     if (token === DiscoveryService)
       return {
         key: token,
@@ -438,7 +451,7 @@ export class Container {
   }
 
   /** The recipe of a class: its wiring row, else its `@Lifetime` and no dependencies. */
-  private recipeFor(type: AnyClass, deps?: readonly Token[]): Recipe {
+  private recipeFor(type: AnyClass, deps?: readonly (Token | typeof Container)[]): Recipe {
     const binding = this.graph.bindings.get(type);
     return {
       type,

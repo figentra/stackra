@@ -10,6 +10,7 @@ import { Driver } from "@stackra/container";
 import { Duration, Port } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import type { StoredRefusal } from "@stackra/errors";
 import type { IdempotencyRecord } from "#contracts/types/idempotency-record.type";
 import { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 
@@ -31,6 +32,15 @@ class MapDriver extends Driver(IdempotencyStore) {
     const known = this.records.get(key);
     if (known !== undefined)
       this.records.set(key, { fingerprint: known.fingerprint, done: true, output });
+  }
+
+  async completeRefused(
+    key: string,
+    fingerprint: string,
+    refusal: StoredRefusal,
+    _ttl: Duration,
+  ): Promise<void> {
+    this.records.set(key, { fingerprint, done: true, refusal });
   }
 
   async release(key: string): Promise<void> {

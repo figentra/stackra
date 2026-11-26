@@ -4,15 +4,15 @@
  *          the configured secrets in batches of twenty with the runtime's AWS role and keeps them in memory; `get(name)`
  *          answers from that copy. A JSON-object secret gives one secret per string member; any other value is one
  *          secret under the secret's name.
- * Boundary: server only (the AWS SDK). `get` is synchronous by the port's contract, so the runtime awaits `load()` at
- *           boot (and again after a rotation); a `get` before the first load throws. Values live in a private map, are
+ * Boundary: server only. The AWS SDK is an optional peer imported on the first `load`, so loading `./node` never
+ *           needs it installed. `get` is synchronous by the port's contract, so the runtime awaits `load()` at boot (and
+ *           again after a rotation); a `get` before the first load throws. Values live in a private map, are
  *           never listed, logged or put in an error: a failed load names the secret ids that failed, never a value. No
  *           credential is configured: the SDK's default chain (the role) signs every call.
  * Runtime: node
  * Governing contract: ADR 0173 (nobody reads a value; secrets by name); ADR 0146 as amended by 0305 (rule 34); ADR
  *                     0294 (decision 16); ADR 0171 (AWS accounts per product and region).
  */
-import { BatchGetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { Driver } from "@stackra/container";
 
 import type { AwsSecretsManagerConfig } from "#config/aws-secrets-manager.config";
@@ -66,6 +66,9 @@ export class AwsSecretsManagerSecretStoreDriver extends Driver(SecretStore) {
       throw new Error(
         "The aws-secrets-manager secret store needs a region and at least one secret id",
       );
+    // The SDK is an optional peer, imported here so a host that never loads this store never needs it installed.
+    const { BatchGetSecretValueCommand, SecretsManagerClient } =
+      await import("@aws-sdk/client-secrets-manager");
     const client = new SecretsManagerClient({ region });
     const values = new Map<string, string>();
     const failed: string[] = [];

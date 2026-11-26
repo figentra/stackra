@@ -6,7 +6,7 @@
  *          region's OpenStreetMap extract in the geocoders' variables, each secret's parameter, where its volume lives
  *          (EFS, or EBS on one EC2 instance), its Valkey variable, its GPU
  *          instance type and its endpoint; per region the Valkey, the tools'
- *          databases on the shared Postgres server and the Infisical role; and the Infisical folders to sync.
+ *          databases on the shared Postgres server and the secrets sync role; and the vault folders to sync.
  * Boundary: pure and isomorphic; reads the parsed root runway only. Every missing fact (a region's definition,
  *           network or extract, an unknown extract, a tool image no upstream builds, a required tool turned off, a
  *           sync principal without an external id) is collected and thrown at once as `RunwayInvalidError` naming its
@@ -73,7 +73,7 @@ export function toolsStackPlan(root: RootRunway, environment: RunwayEnvironment)
   if (sync.principal !== undefined && sync.externalId === undefined)
     issues.push({
       path: "providers.tools.secretsSync.externalId",
-      message: "Name the external id Infisical presents when it assumes the sync role",
+      message: "Name the external id the secrets sync presents when it assumes the sync role",
     });
   const catalogue: Readonly<Record<string, ToolDefinition>> = TOOLS_CATALOGUE;
   const isEnabled = (key: string): boolean =>

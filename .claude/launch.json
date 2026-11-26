@@ -11,15 +11,6 @@
       "port": 4173
     },
     {
-      "name": "docs",
-      "runtimeExecutable": "sh",
-      "runtimeArgs": [
-        "-c",
-        "pnpm turbo run build --output-logs=errors-only --filter=@figentra/docs^... && exec pnpm --filter @figentra/docs run dev"
-      ],
-      "port": 3333
-    },
-    {
       "name": "mobile",
       "runtimeExecutable": "sh",
       "runtimeArgs": [
@@ -36,6 +27,15 @@
         "pnpm turbo run build --output-logs=errors-only --filter=@figentra/playground^... && exec pnpm --filter @figentra/playground run dev"
       ],
       "port": 3710
+    },
+    {
+      "name": "worker-docs",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "pnpm turbo run build --output-logs=errors-only --filter=@figentra/docs... && exec pnpm --filter @figentra/docs run dev"
+      ],
+      "port": 3333
     },
     {
       "name": "worker-static",

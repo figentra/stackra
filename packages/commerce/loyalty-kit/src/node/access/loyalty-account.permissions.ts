@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `LoyaltyAccountPermissions`, the permissions of the loyalty account model: `loyalty_kit.loyalty_account.<verb>`,
- *          each with its risk.
+ * Purpose: `LoyaltyAccountPermissions`, the permissions of the loyalty account model:
+ *          `loyalty_kit.loyalty_account.<verb>`, each with its risk.
  * Boundary: statics only; the value is the risk and nothing else. Keys are derived from the module, the class (minus
  *           `Permissions`) and the static, and labels are the derived i18n keys
  *           `loyalty_kit::permissions.loyalty_account.<verb>`. The kit's action keys name other aggregates (`account`,
@@ -22,17 +22,17 @@ export class LoyaltyAccountPermissions extends Permissions {
   static readonly read = Permission.L0;
 
   /** Enroll a principal; a customer may only enroll themselves. */
-  static readonly enroll = Permission.L1;
+  static readonly enroll = Permission.L2;
 
   /** Freeze or unfreeze an account for review; L2, so a person confirms it first. */
   static readonly freeze = Permission.L2;
 
   /** Spend points; the policy limits a customer to their own account and refuses a frozen one. */
-  static readonly redeem = Permission.L1;
+  static readonly redeem = Permission.L3;
 
-  /** Expire stale points in bulk; held only by the platform, so no role may grant it. */
-  static readonly expire = Permission.L2.system();
+  /** Expire stale points in bulk (L3, it moves balances); held only by the platform, so no role may grant it. */
+  static readonly expire = Permission.L3.system();
 
   /** Stamp a member's card for a visit; staff and services only, never a customer role. */
-  static readonly stamp = Permission.L1;
+  static readonly stamp = Permission.L3;
 }

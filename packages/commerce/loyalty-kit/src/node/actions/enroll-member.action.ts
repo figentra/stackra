@@ -4,7 +4,7 @@
  *          Inline `handle`, one transaction, reachable over HTTP, as an MCP tool, from the intent router and through a
  *          host's generated client.
  * Boundary: the action is the contract: key, input and output (the types of `handle`, schemas in `schemas/`),
- *           permission, actors and its surfaces; its risk is the permission's (L1), and `AccountService` does the
+ *           permission, actors and its surfaces; its risk is the permission's (L2), and `AccountService` does the
  *           work. The key's aggregate (`account`) is not the model's, so the permission is named. The sample's path is
  *           kept, so `endpoint` is written. `tool: true` exposes it as `loyalty_kit_account_enroll`; `intent: true`
  *           takes its phrases from `loyalty_kit::actions.account.enroll.intents` in every locale.
@@ -12,7 +12,7 @@
  * Governing contract: ADR 0294 (decisions 2, 3, 16 and 21); ADR 0305 (rules 28 and 30); ADR 0098; ADR 0136; ADR 0155;
  *                     ADR 0245 (intents).
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind, HttpMethod, Realm } from "@stackra/contracts";
 
 import { NotOwnPrincipalError } from "#core/errors/not-own-principal.error";
@@ -33,7 +33,8 @@ export class EnrollMemberAction extends Action({
   key: "account.enroll",
   permission: LoyaltyAccountPermissions.enroll,
   actors: [ActorKind.User, ActorKind.Agent, ActorKind.Service],
-  endpoint: { method: HttpMethod.Put, path: "/loyalty/accounts/:accountId" },
+  idempotency: Idempotency.Optional,
+  endpoint: { method: HttpMethod.Put, path: "/app/loyalty/accounts/:accountId" },
   tool: true,
   intent: true,
 }) {

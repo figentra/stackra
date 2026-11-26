@@ -1,17 +1,24 @@
 /**
  * Stackra file contract:
- * Purpose: `PostgresQueueDriver`, the server's `QueueDriver`: jobs are rows of `queue.jobs`; a reservation is one
- *          `UPDATE … WHERE id = (SELECT … FOR UPDATE SKIP LOCKED LIMIT 1)`, so concurrent workers never take the same
- *          job and never wait on each other; a unique job's conflict is the partial unique index on `unique_key`. The
- *          pick is fair: priority, then the scope with the fewest running jobs on the queue (a lateral count), then
- *          `run_at`, skipping a scope at its `scope_concurrency`. Batches are rows of `queue.job_batches`.
+ * Purpose: `PostgresQueueDriver`, the server's `QueueDriver`: jobs are rows of `queue.jobs`; a reservation is the system
+ *          function `queue.reserve_job`, one `UPDATE … WHERE id = (SELECT … FOR UPDATE SKIP LOCKED LIMIT 1)`, so
+ *          concurrent workers never take the same job and never wait on each other; a unique job's conflict is the
+ *          partial unique index on `unique_key`, global across owners. The pick is fair: priority, then the scope with
+ *          the fewest running jobs on the queue (a lateral count), then `run_at`, skipping a scope at its
+ *          `scope_concurrency`. Batches are rows of `queue.job_batches`.
  * Boundary: raw SQL on the running context's entity manager, one statement per method, every value a bound parameter
  *           and every result row read through zod. A push inside an action's transaction joins it, so the job commits
- *           with the action's writes or not at all. The table is the platform's job store, read by workers across
- *           scopes; the worker opens each job's scope session itself. Input, origin and last error are `jsonb`.
+ *           with the action's writes or not at all. The table is tenant-owned in the platform form (`queue.0003`):
+ *           `reserve` and `claimDead` go through the system functions `queue.reserve_job` (which writes the lease
+ *           columns only) and `queue.claim_dead_jobs`, which return ids and owners only; every other statement runs
+ *           under the caller's row-level security, so a job is read or changed only in its owner's isolation (a
+ *           platform job in the platform's). A redrive's check for a live job holding the same unique key reads every
+ *           owner through `queue.unique_key_holders`. `tenant_id` is never written here: its default takes the call's
+ *           `app.tenant_id`. Input, origin and last error are `jsonb`.
  * Runtime: node
- * Governing contract: ADR 0148 (decisions 1, 2 and 3: fair queues, Postgres with SKIP LOCKED); ADR 0160 (raw SQL is parameterised and
- *                     typed with zod); ADR 0142 (drivers behind ports); ADR 0294 (decision 16).
+ * Governing contract: ADR 0148 (decisions 1, 2 and 3: fair queues, Postgres with SKIP LOCKED); ADR 0239 (2026-11-07
+ *                     amendment, gaps A and C); ADR 0160 (raw SQL is parameterised and typed with zod); ADR 0142
+ *                     (drivers behind ports); ADR 0294 (decision 16).
  */
 import { Driver } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
@@ -20,7 +27,14 @@ import type { Database } from "@stackra/database";
 import { z } from "zod";
 
 import { JobStatus, QueueDriver } from "#contracts/index";
-import type { ChainedJob, JobBatch, JobError, JobThrottle, QueuedJob } from "#contracts/index";
+import type {
+  ChainedJob,
+  JobBatch,
+  JobClaim,
+  JobError,
+  JobThrottle,
+  QueuedJob,
+} from "#contracts/index";
 
 /** The job table, in the package's schema. */
 const TABLE = '"queue"."jobs"';
@@ -73,6 +87,21 @@ const ROWS = z.array(ROW);
 
 /** Rows that carry only the job id. */
 const IDS = z.array(z.object({ id: z.string() }));
+
+/** Rows of a claim function. */
+const CLAIMS = z.array(
+  z.object({ id: z.string().startsWith("job_"), tenant_id: z.string().nullable() }),
+);
+
+/** The claims of `rows`, a claim function's result. */
+function claimsOf(rows: unknown): readonly JobClaim[] {
+  return CLAIMS.parse(rows).map((row) =>
+    Object.freeze({
+      id: row.id as PublicId<"job">,
+      ...(row.tenant_id === null ? {} : { ownerId: row.tenant_id as PublicId<"scp"> }),
+    }),
+  );
+}
 
 /** The job of one row. */
 function jobOf(row: z.infer<typeof ROW>): QueuedJob {
@@ -161,32 +190,31 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
   }
 
   /**
-   * Reserves the next due job of `queue`, as `QueueDriver.reserve` describes.
+   * Reserves the next due job of `queue` across owners, as `QueueDriver.reserve` describes: its id and owner.
    *
    * shortcut: the scope load is a lateral count per due row and two workers reserving at the same instant may each let
    * one job past a scope's cap; keep a per-scope running counter row when a queue holds tens of thousands of due jobs.
    */
-  async reserve(queue: string | undefined, now: Date): Promise<QueuedJob | undefined> {
-    const filter = queue === undefined ? "" : "job.queue = ? and ";
-    const params = queue === undefined ? [now, now, now, now] : [now, now, queue, now, now];
-    // raw-sql: FOR UPDATE SKIP LOCKED hands each due job to one worker without blocking the others (ADR 0148 d3); the
-    // lateral count orders scopes by their running jobs, so one scope cannot starve the others (ADR 0148 d2)
-    const rows = await this.database
-      .em()
-      .execute(
-        `update ${TABLE} set status = 'running', attempts = attempts + 1, ` +
-          "locked_until = ?::timestamptz + lease::interval, updated_at = now() " +
-          `where id = (select job.id from ${TABLE} as job cross join lateral ` +
-          `(select count(*)::int as load from ${TABLE} as other where other.queue = job.queue ` +
-          "and other.scope_id is not distinct from job.scope_id and other.status = 'running' " +
-          `and other.locked_until > ?) as running where ${filter}` +
-          "((job.status = 'waiting' and job.run_at <= ?) or (job.status = 'running' and job.locked_until <= ?)) " +
-          "and (job.scope_concurrency is null or running.load < job.scope_concurrency) " +
-          "order by job.priority desc, running.load, job.run_at, job.id limit 1 for update of job skip locked) " +
-          `returning ${COLUMNS}`,
-        params,
-      );
-    const [row] = ROWS.parse(rows);
+  async reserve(queue: string | undefined, now: Date): Promise<JobClaim | undefined> {
+    // raw-sql: the system function leases across owners with FOR UPDATE SKIP LOCKED (ADR 0148 d3), which no owner's
+    // session may read; it hands back the id and owner only
+    const [claim] = claimsOf(
+      await this.database
+        .em()
+        .execute("select id, tenant_id from queue.reserve_job(?::varchar, ?::timestamptz)", [
+          queue ?? null,
+          now,
+        ]),
+    );
+    return claim;
+  }
+
+  /** Job `id` as the caller's isolation reads it (see `QueueDriver.load`). */
+  async load(id: PublicId<"job">): Promise<QueuedJob | undefined> {
+    // raw-sql: the job table has no model; one parameterised read under the caller's row-level security
+    const [row] = ROWS.parse(
+      await this.database.em().execute(`select ${COLUMNS} from ${TABLE} where id = ?`, [id]),
+    );
     return row === undefined ? undefined : jobOf(row);
   }
 
@@ -246,16 +274,33 @@ export class PostgresQueueDriver extends Driver(QueueDriver) {
     return ROWS.parse(rows).map(jobOf);
   }
 
+  /** Claims dead-lettered jobs across owners (see `QueueDriver.claimDead`). */
+  async claimDead(options: {
+    readonly queue?: string;
+    readonly id?: PublicId<"job">;
+    readonly limit: number;
+  }): Promise<readonly JobClaim[]> {
+    // raw-sql: the system function claims dead letters across owners (ids and owners); each loads in its owner
+    return claimsOf(
+      await this.database
+        .em()
+        .execute(
+          "select id, tenant_id from queue.claim_dead_jobs(?::varchar, ?::varchar, ?::integer)",
+          [options.id ?? null, options.queue ?? null, options.limit],
+        ),
+    );
+  }
+
   /** Makes dead job `id` wait again from `now`; `false` when it cannot. */
   async redrive(id: PublicId<"job">, now: Date): Promise<boolean> {
-    // raw-sql: the unique-key guard is a correlated NOT EXISTS, which a typed filter cannot express
+    // raw-sql: the unique-key guard is a correlated NOT EXISTS over every owner's live jobs, read through the system
+    // function, which a typed filter cannot express
     const rows = await this.database
       .em()
       .execute(
         `update ${TABLE} as job set status = 'waiting', attempts = 0, run_at = ?, locked_until = null, ` +
           "updated_at = now() where job.id = ? and job.status = 'dead' and (job.unique_key is null or not exists " +
-          `(select 1 from ${TABLE} as other where other.unique_key = job.unique_key ` +
-          "and other.status in ('waiting', 'running'))) returning job.id as id",
+          "(select 1 from queue.unique_key_holders(job.unique_key))) returning job.id as id",
         [now, id],
       );
     return IDS.parse(rows).length > 0;

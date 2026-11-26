@@ -20,6 +20,7 @@ import { app } from "electron";
 import type { FilesystemConfig } from "#config/filesystem.config";
 import { FileSystem } from "#contracts/ports/file-system.port";
 import type { FileStat } from "#contracts/types/file-stat.type";
+import type { WriteOptions } from "#contracts/types/write-options.type";
 import { normalizePath } from "#core/functions/normalize-path.function";
 import { LocalFileSystemDriver } from "#node/drivers/local-file-system.driver";
 
@@ -65,9 +66,9 @@ export class ElectronFileSystemDriver extends Driver(FileSystem) {
     return this.local.readStream(path);
   }
 
-  /** Writes `contents` under `path`, never leaving a half-written file. */
-  write(path: string, contents: Uint8Array | string): Promise<void> {
-    return this.local.write(path, contents);
+  /** Writes `contents` under `path`, never leaving a half-written file; a `retainUntil` is kept as the local disk keeps it. */
+  write(path: string, contents: Uint8Array | string, options?: WriteOptions): Promise<void> {
+    return this.local.write(path, contents, options);
   }
 
   /** Removes the file under `path`; false when there was none. */

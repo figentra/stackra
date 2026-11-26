@@ -1,7 +1,14 @@
 ---
 title: "0209 — IAM enforcement: the pipeline gate, an SQL predicate, an embedded PDP and service-to-service calls"
-description: "Accepted · 2026-10-20"
+description: "Accepted · 2026-10-20 · amended 2026-11-07 (STA-2558)"
 ---
+
+<Note>
+  Amended 2026-11-07 (STA-2558), in the section "Amendment 2026-11-07: A8, how onBehalfOf travels"
+  below: the caller sends its own service token and, when it acts for a user, forwards that user's
+  access token in `Stackra-On-Behalf-Of`; the receiver verifies both and checks both grants. RFC
+  8693 token exchange is the upgrade path. Decisions 1, 2 and 4 stand.
+</Note>
 
 ## Context
 
@@ -26,3 +33,33 @@ planned — a test checks that every list action carries the predicate, and the 
 ## Supersedes and sources
 
 Supersedes: none. Sources: owner IAM enforcement answers A5, A6, A8, A9 (`stackra-decisions-2026-10-19.md` L622–626, 2026-10-20).
+
+## Amendment 2026-11-07: A8, how onBehalfOf travels (STA-2558)
+
+Decision 3 says a service call carries the service token and `onBehalfOf`, and that both grants are checked. It does
+not say how `onBehalfOf` travels. The leader decided it on 2026-11-07:
+
+1. **Two tokens.** The caller sends its own service token (its ZITADEL service account, one per service) as
+   `Authorization: Bearer`. When it acts for a user, it also forwards that user's own access token in the
+   `Stackra-On-Behalf-Of` header. The receiver verifies both tokens against JWKS. It accepts the forwarded token only
+   together with a valid service token. A bare user id in a header is never accepted: call facts come from credentials
+   ([0098](/adr/0098-actions-are-the-unit)).
+2. **Conditions on the forwarded token.**
+   1. Its audience must include the receiving product's project.
+   2. Its expiry is enforced with no extension. The receiver never refreshes it.
+   3. The tenant comes from the user token and must equal the call's tenant, or the call is refused.
+   4. It is never logged or stored.
+   5. One hop by default: the receiver may not forward it further, unless the action allows a second hop.
+3. **Both grants.** The policy decision point checks the service's grant and, when `onBehalfOf` is set, the user's
+   grant too.
+4. **Unknown scope.** A Service actor whose scope is unknown, or above every tenant, is refused with
+   `tenant_scope_mismatch` (as for users and agents in stackra#658 and #664).
+5. **One auth handler.** One generated Encore `authHandler` authenticates user calls and service calls alike
+   (wp-114, built under STA-2558).
+6. **Upgrade path.** RFC 8693 token exchange (one token with an `act` claim) replaces the two tokens once ZITADEL
+   token exchange is on. Turning it on is a later owner step.
+
+Enforcement: planned (STA-2558), the generated `authHandler` and its tests: a forwarded token without a valid service
+token, with the wrong audience, expired, or for another tenant is refused; a bare user id header is ignored; a
+second hop is refused unless the action allows it; a Service actor with an unknown scope or one above every tenant
+gets `tenant_scope_mismatch`.

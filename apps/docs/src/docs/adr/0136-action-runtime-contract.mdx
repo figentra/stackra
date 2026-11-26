@@ -55,8 +55,9 @@ cache; the owner moved the store to the cache package (C-34) and fixed the contr
 
 ## Enforcement
 
-planned — a lint flags network calls in `handle()`; gen rejects a client write action with no idempotency declaration; the
-audit step is part of the action pipeline. The idempotency rule is also an item for `.agents/rules/http-conventions.md` (final pass).
+Enforced — gen refuses a client write action (one with an endpoint or a tool) with no idempotency declaration,
+`idempotency_missing` (`checkCallShape`, STA-340); a written `Idempotency.Optional` is a declaration. Planned — a lint
+flags network calls in `handle()`; the audit step is part of the action pipeline. The idempotency rule is also an item for `.agents/rules/http-conventions.md` (final pass).
 
 ## Alternatives
 

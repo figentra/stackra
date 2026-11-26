@@ -99,6 +99,12 @@ settingKeys({
       scopes: [SettingScope.User],
       label: "messages::settings.digest_hour.label" as I18nKey,
     },
+    topics: {
+      type: SettingType.List,
+      default: [],
+      scopes: [SettingScope.User],
+      label: "messages::settings.topics.label" as I18nKey,
+    },
   },
 });
 const PAGE = settingsPage("messages", { scope: SettingScope.User });
@@ -138,6 +144,19 @@ describe("SettingsForm", () => {
     fireEvent.blur(hour);
     expect(settings.writes).toEqual([
       { page: PAGE, scope: SettingScope.User, values: { digestHour: 8 } },
+    ]);
+  });
+
+  it("edits a list key as comma-separated text", async () => {
+    const settings = fakeSettings();
+    held.reader = settings;
+    render(<SettingsForm page={PAGE} />);
+    await act(async () => {});
+    const topics = await screen.findByLabelText("messages::settings.topics.label");
+    fireEvent.change(topics, { target: { value: "news, offers" } });
+    fireEvent.blur(topics);
+    expect(settings.writes).toEqual([
+      { page: PAGE, scope: SettingScope.User, values: { topics: ["news", "offers"] } },
     ]);
   });
 

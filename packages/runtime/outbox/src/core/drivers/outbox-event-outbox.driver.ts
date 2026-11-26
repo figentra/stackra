@@ -4,7 +4,9 @@
  *          integration events (a unit of work, a workflow staging its events) writes them through it into the outbox,
  *          in its own transaction, exactly as the flush writer stores a model's events.
  * Boundary: works over the `OutboxDriver` port, so it joins the caller's transaction when the store is Postgres. It
- *           takes integration events only; a domain event stays in process and is refused.
+ *           takes integration events only; a domain event stays in process and is refused. The message takes the
+ *           caller's tenant; one written with no tenant is a platform message, which no tenant's erasure can rewrite,
+ *           so a platform caller never puts personal data in an event.
  * Runtime: isomorphic
  * Governing contract: ADR 0078 (decisions 3 and 4); ADR 0141 (decision 3); ADR 0305 (rule 21: a domain event leaves
  *                     only as an integration event).

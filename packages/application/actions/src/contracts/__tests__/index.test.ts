@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry: the twenty-four ports (with `ConsentCheck`, `ReplicaReads` and `QueryBudget`) of the pipeline's steps and stores and
- *          the `ReviewReason`, `Effect`, `ApproverRefusal`, `CallOriginKind` and `ConsentRefusal` enums and the `CALL_HEADERS` names are exported, nothing else is as a value,
+ *          the `ReviewReason`, `Effect`, `ApproverRefusal`, `CallOriginKind` and `ConsentRefusal` enums and the `CALL_HEADERS` names and the `DETACHED_RUNS` registry are exported, nothing else is as a value,
  *          and the exchanged types resolve (`AssuranceLevel` is @stackra/contracts', STA-1383).
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -19,6 +19,8 @@ import type {
   CallDescriptor,
   CallOrigin,
   CallOriginKind,
+  DetachedRun,
+  DetachedStep,
   DeviceOrder,
   DeviceSequence,
   IdempotencyRecord,
@@ -52,6 +54,7 @@ describe("@stackra/actions/contracts", () => {
       "ConsentCheck",
       "ConsentRefusal",
       "ContextStorage",
+      "DETACHED_RUNS",
       "DeviceSequenceStore",
       "DeviceStatusReader",
       "Effect",
@@ -81,11 +84,15 @@ describe("@stackra/actions/contracts", () => {
     expectTypeOf<CallDescriptor["actor"]>().toEqualTypeOf<Actor>();
     expectTypeOf<CallDescriptor["kind"]>().toEqualTypeOf<"action" | "query">();
     expectTypeOf<CallDescriptor["origin"]>().toEqualTypeOf<CallOrigin | undefined>();
+    expectTypeOf<ReturnType<DetachedStep>>().toEqualTypeOf<Promise<unknown>>();
+    expectTypeOf<Parameters<DetachedRun>[0]>().toEqualTypeOf<DetachedStep>();
     expectTypeOf<CallOrigin["kind"]>().toEqualTypeOf<CallOriginKind>();
     expectTypeOf<AuditEntry["fields"]>().toEqualTypeOf<Readonly<Record<string, Json>>>();
     expectTypeOf<AuditEntry["outcome"]>().toEqualTypeOf<"ok" | "refused">();
     expectTypeOf<IdempotencyRecord["fingerprint"]>().toEqualTypeOf<string>();
-    expectTypeOf<Extract<IdempotencyRecord, { done: true }>["output"]>().toEqualTypeOf<unknown>();
+    expectTypeOf<
+      Extract<IdempotencyRecord, { output: unknown }>["output"]
+    >().toEqualTypeOf<unknown>();
     expectTypeOf<RateLimitBucket["tokensPerSecond"]>().toEqualTypeOf<number>();
     expectTypeOf<RateLimitDecision["allowed"]>().toEqualTypeOf<boolean>();
     expectTypeOf<DeviceOrder["sequence"]>().toEqualTypeOf<number | undefined>();

@@ -12,6 +12,7 @@
  */
 import { Permission } from "@stackra/contracts";
 
+import { PERMISSION_MEMBERS } from "#core/constants/permission-members.constant";
 import { PERMISSION_REGISTRY } from "#core/constants/permission-registry.constant";
 import { kindOf } from "#core/functions/kind-of.function";
 import type { PermissionRegistration } from "#core/types/permission-registration.type";
@@ -46,6 +47,7 @@ export function registerPermissions(rows: readonly PermissionRegistration[]): vo
       if (!KEY.test(key))
         throw new TypeError(`registerPermissions: "${key}" is not a <module>.<model>.<verb> key`);
       PERMISSION_REGISTRY.set(key, permission);
+      PERMISSION_MEMBERS.set(key, verb);
     }
   }
 }

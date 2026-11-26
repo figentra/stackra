@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the `StepUpCheck` port: the step-up part of the permission step. For an action that declares `stepUp`, it
+ * Purpose: the `StepUpCheck` port: the step-up part of the permission step. For an action that declares `stepUp`,
+ *          called by a user (the pipeline asks no other actor kind, ADR 0406 as amended), it
  *          decides whether the call's verified assurance reaches that level and is recent enough, and refuses
  *          `step_up_required` when it does not.
  * Boundary: an abstract class that is its own token, keyed `actions.StepUpCheck`. How recent is recent enough is the

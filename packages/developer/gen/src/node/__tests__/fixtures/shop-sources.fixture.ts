@@ -149,7 +149,7 @@ export const SHOP_SOURCES: Readonly<Record<string, string>> = {
     'import { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";',
     'import { CancelOrderOutput } from "#node/schemas/cancel-order-output.schema";',
     "",
-    'export class CancelOrderAction extends Action({ key: "order.cancel", actors: ["user"] }) {',
+    'export class CancelOrderAction extends Action({ key: "order.cancel", actors: ["user"], idempotency: "optional" }) {',
     "  constructor(private readonly shop: ShopService) {",
     "    super();",
     "  }",

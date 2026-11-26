@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `checkTableIndexes`: a recorded resource table that sorts (a sortable column, the default sort,
  *          a tiebreak key) or filters on a path no index leads with is refused (`sort_not_indexed`,
- *          `filter_not_indexed`) with a fix; an `@Index` leading column, a `@Searchable` filter, the primary key, an own
- *          base model's index, a relation path and the trashed filter pass; no recorded tree means no refusal; and
+ *          `filter_not_indexed`) with a fix; an `@Index` leading column (or the column after a leading scope column), a
+ *          `@Searchable` filter, the primary key, an own base model's index, a relation path and the trashed filter
+ *          pass; no recorded tree means no refusal; and
  *          `generateMember` refuses on a tree read this run with no committed manifest, never on a tree only the
  *          committed manifest holds (STA-2066).
  * Boundary: test only; pure IR in, refusals out.
@@ -141,6 +142,23 @@ describe(checkTableIndexes, () => {
       [CUSTOMER_SHAPE],
     );
     expect(refused(ir, recorded("orders.ledger", TABLE))).toEqual([]);
+  });
+
+  it("counts the column after a leading scope column, and only after a scope column", () => {
+    const scoped = irOf(
+      [
+        model("Ledger", [
+          facet("Index", ["tenantId", "status"]),
+          facet("Index", ["scopeId", "total"]),
+          facet("Index", ["tenantId", "rank"]),
+          facet("Index", ["note", "placedAt"]),
+        ]),
+      ],
+      [CUSTOMER_SHAPE],
+    );
+    expect(refused(scoped, recorded("orders.ledger", TABLE))).toEqual([
+      "filter_not_indexed orders.ledger.table.filter.placedAt",
+    ]);
   });
 
   it("checks nothing without a recorded tree", () => {

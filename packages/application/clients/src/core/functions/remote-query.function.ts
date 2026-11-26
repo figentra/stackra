@@ -21,7 +21,7 @@ import type { SchemaOf } from "#core/types/schema-of.type";
  * export const QuotePriceQuery = remoteQuery("pricing.price.quote@1", {
  *   input: QuoteInput$,
  *   output: QuoteOutput$,
- *   endpoint: { method: HttpMethod.Post, path: "/prices/quote" },
+ *   endpoint: { method: HttpMethod.Get, path: "/app/prices/quote" },
  * });
  */
 export function remoteQuery<I extends RefSchema, O extends RefSchema>(

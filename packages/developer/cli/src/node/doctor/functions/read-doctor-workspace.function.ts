@@ -2,8 +2,7 @@
  * Stackra file contract:
  * Purpose: `readDoctorWorkspace(root, within?)`, the `DoctorWorkspace` of the pnpm workspace at `root`: the root and
  *          member package.json files (only the members at or under `within`, when given, so `stackra dev` in one
- *          member checks that member's needs), the root scripts, the root runway, `.infisical.yaml` and each member's
- *          dev port.
+ *          member checks that member's needs), the root scripts, the root runway and each member's dev port.
  * Boundary: reads files; writes nothing. An unreadable runway is treated as absent.
  * Runtime: node
  * Governing contract: STA-1952 spec FR-015 and FR-019.
@@ -58,7 +57,6 @@ export function readDoctorWorkspace(root: string, within = root): DoctorWorkspac
     ],
     scripts: rootManifest.scripts ?? {},
     runway: readYaml(join(root, "runway.yaml")),
-    infisical: existsSync(join(root, ".infisical.yaml")),
     devPorts,
   };
 }

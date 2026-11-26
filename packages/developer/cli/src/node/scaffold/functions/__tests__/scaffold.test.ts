@@ -322,9 +322,13 @@ test("apps come out in the v3 shape: config, root module, route folders, config 
     );
   }
   // The docs app (ADR 0002, 2026-10-27 amendment): member files at the root, pages in src/docs, no docs.json, no module.
-  const docs = render("app:docs", "handbook").files;
+  const rendered = render("app:docs", "handbook");
+  const docs = rendered.files;
   for (const f of ["stackra.config.ts", "src/config/docs.config.ts", "src/docs/index.mdx"])
     assert.ok(docs.includes(f), `app:docs: ${f}`);
+  // Its lint builds the site too, so it waits for the member's build: run together, the two raced on .stackra/site.
+  const turbo = json<{ tasks?: { lint?: { dependsOn?: string[] } } }>(rendered.dest, "turbo.jsonc");
+  assert.ok(turbo.tasks?.lint?.dependsOn?.includes("build"), "app:docs: lint must depend on build");
   assert.ok(
     !docs.some(
       (f) => f.endsWith(".module.ts") || f.endsWith("docs.json") || /^src\/.*README\.md$/.test(f),

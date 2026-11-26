@@ -6,12 +6,13 @@
  * Runtime: node
  * Governing contract: ADR 0294 (the v3 shape); ADR 0500 (decision 3).
  */
-import { Action, ActorKind } from "@stackra/actions";
+import { Action, ActorKind, Idempotency } from "@stackra/actions";
 
 /** Adds a note. */
 export class AddGateNoteAction extends Action({
   key: "note.add",
   actors: [ActorKind.User],
+  idempotency: Idempotency.Optional,
 }) {
   /** Echoes the note. */
   async handle(input: { text: string }): Promise<{ text: string }> {

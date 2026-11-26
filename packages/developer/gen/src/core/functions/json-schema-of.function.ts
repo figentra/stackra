@@ -92,6 +92,18 @@ function typeSchema(
         },
       };
     }
+    case "geo": {
+      const point = {
+        type: "object",
+        required: ["latitude", "longitude"],
+        properties: {
+          latitude: { type: "number", minimum: -90, maximum: 90 },
+          longitude: { type: "number", minimum: -180, maximum: 180 },
+        },
+      };
+      if (type.shape === "point") return point;
+      return { type: "array", items: point, minItems: type.shape === "polygon" ? 3 : 2 };
+    }
     case "json": {
       return {};
     }

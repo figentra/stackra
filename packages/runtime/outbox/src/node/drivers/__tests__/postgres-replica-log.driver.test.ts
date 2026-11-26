@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `PostgresReplicaLogDriver`: it is the `ReplicaLog` port; an append locks the partition, reads
- *          the head and inserts the batch numbered after it with the scope; a read refuses a position above the head
+ *          the head through `outbox.replica_bounds` (every owner's rows) and inserts the batch numbered after it with
+ *          the scope and no owner column (its default takes the call's); a read refuses a position above the head
  *          or below what is kept, filters by the caller's scope path when it has one, and reports the next position and
  *          whether more follow.
  * Boundary: test only; a stand-in entity manager answers the bounds and rows a test sets, so no database runs.
@@ -21,7 +22,7 @@ function database(head: number, first: number, rows: readonly object[] = []) {
     em: () => ({
       execute: async (sql: string, params: readonly unknown[] = []) => {
         statements.push({ sql, params });
-        if (sql.includes("max(position)")) return [{ head: String(head), first: String(first) }];
+        if (sql.includes("replica_bounds")) return [{ head: String(head), first: String(first) }];
         if (sql.startsWith("select position")) return rows;
         return [];
       },
@@ -45,7 +46,12 @@ describe(PostgresReplicaLogDriver, () => {
     );
     expect(head).toBe(6);
     expect(statements[0]?.sql).toContain("pg_advisory_xact_lock");
+    expect(statements[1]).toEqual({
+      sql: "select head, oldest as first from outbox.replica_bounds(?::varchar)",
+      params: ["sales.sale.recent@1|le_sa"],
+    });
     const insert = statements.at(-1);
+    expect(insert?.sql).not.toContain("tenant_id");
     expect(insert?.params.slice(0, 4)).toEqual([
       "sales.sale.recent@1|le_sa",
       4,

@@ -46,7 +46,7 @@ describe("ClientAcknowledgementReaderDriver", () => {
     expect(transport.sent[0]).toMatchObject({
       key: "devices.device.acknowledged@1",
       kind: "query",
-      endpoint: { method: "GET", path: "/devices/acknowledged" },
+      endpoint: { method: "GET", path: "/app/devices/acknowledged" },
       input: {},
       device: { deviceId: "device-1" },
     });

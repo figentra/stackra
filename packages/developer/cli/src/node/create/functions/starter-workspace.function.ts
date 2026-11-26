@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `starterWorkspace(files)`, the `DoctorWorkspace` of an app not written yet, from the files `starterFiles`
- *          returned: every package.json, the root scripts and runway, `.infisical.yaml` and each member's dev port,
+ *          returned: every package.json, the root scripts and runway, and each member's dev port,
  *          so `stackra create` runs the doctor's checks for exactly what the chosen profile needs.
  * Boundary: pure; an unreadable file counts as absent.
  * Runtime: node
@@ -48,7 +48,6 @@ export function starterWorkspace(files: ReadonlyMap<string, Uint8Array>): Doctor
     manifests,
     scripts: root?.scripts ?? {},
     runway: read("runway.yaml", parse),
-    infisical: files.has(".infisical.yaml"),
     devPorts,
   };
 }

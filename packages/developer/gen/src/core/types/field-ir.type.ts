@@ -37,6 +37,19 @@ export interface FieldIR {
   /** The `DataClassification` code `@Classified(...)` gives the field (`personal`), when it has one (stackra-262). */
   readonly classified?: string;
 
+  /**
+   * `@Secret("NAME", { refuse, environments })`: the secret's name, the value prefixes refused per environment and the
+   * environments that need it, as constants (ADR 0173 amendment 2026-11-04, STA-2104).
+   */
+  readonly secret?: {
+    readonly name: string;
+    readonly refuse?: Readonly<Record<string, readonly string[]>>;
+    readonly environments?: readonly string[];
+  };
+
   /** `@Hidden`: the field never goes out on the wire, so `X$` and the manifest's JSON Schema leave it out (stackra-260). */
   readonly hidden?: true;
+
+  /** `@ShownOnce`: the caller sees the field once; the idempotency store never keeps it (STA-2568). */
+  readonly shownOnce?: true;
 }

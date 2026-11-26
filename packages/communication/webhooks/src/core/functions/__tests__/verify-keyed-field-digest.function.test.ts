@@ -3,7 +3,9 @@
  * Purpose: unit tests of `verifyKeyedFieldDigest` (the `keyed_field_digest` scheme): a Fawry-shaped V2 notification
  *          whose `messageSignature` is the SHA-256 hex of its ordered fields (amounts with two decimals) followed by
  *          the secure key verifies; a changed amount, a wrong key, a non-hex or missing signature, a field that is an
- *          object and a recipe with no algorithm answer false.
+ *          object and a recipe with no algorithm answer false; the default keeps its fixed vector. A recipe with the
+ *          secret first, colon-joined, SHA-1 over a form body (values percent-decoded, a missing one empty) verifies its
+ *          fixed vector and refuses a changed value.
  * Boundary: test only; the field list and payload shape follow Fawry's public server notification documentation and
  *           every digest is made here (no captured delivery, no vendor value quoted): certification pending (owner
  *           decision D3).
@@ -43,6 +45,24 @@ const FIELDS = {
   paymentRefNumber: "pay-0001",
 };
 const SIGNED = "9990001ord-0001100.00100.00PAIDPayAtFawrypay-0001";
+
+/** SHA-256 of `SIGNED` followed by `SECURE_KEY`, computed outside this test: the default recipe's fixed vector. */
+const DEFAULT_DIGEST = "874a02f0b82becb16539cfdce5180c015b4045b139c926c1c2217aabe7f5e5c1";
+
+const FORM_SECRET = "sk_test_keyed_digest_secret";
+
+/** The secret first, colon-joined, SHA-1 over a form body whose signature is a form field. */
+const FORM_RECIPE: WebhookSchemeRecipe = {
+  path: "signature",
+  algorithm: "SHA-1",
+  fields: ["order_id", "amount", "note", "status"],
+  secretAt: "start",
+  separator: ":",
+  bodyFormat: "form",
+};
+
+/** SHA-1 of `sk_test_keyed_digest_secret:ord 1:10.50::paid`, computed outside this test (`note` is missing). */
+const FORM_DIGEST = "264475ea7660f3c6fa21efe58467206a7c3c94d6";
 
 /** The SHA-256 hex of `text`. */
 async function sha256Hex(text: string): Promise<string> {
@@ -87,5 +107,34 @@ describe(verifyKeyedFieldDigest, () => {
     await expect(verifyKeyedFieldDigest(nested, RECIPE, [SECURE_KEY])).resolves.toBe(false);
     const { algorithm: _algorithm, ...noAlgorithm } = RECIPE;
     await expect(verifyKeyedFieldDigest(good, noAlgorithm, [SECURE_KEY])).resolves.toBe(false);
+  });
+
+  it("keeps the default's fixed vector: values joined with nothing, the secret last, SHA-256", async () => {
+    await expect(sha256Hex(`${SIGNED}${SECURE_KEY}`)).resolves.toBe(DEFAULT_DIGEST);
+    const request = { headers: {}, body: bodyOf(FIELDS, DEFAULT_DIGEST) };
+    await expect(verifyKeyedFieldDigest(request, RECIPE, [SECURE_KEY])).resolves.toBe(true);
+  });
+
+  it("verifies the secret first, colon-joined, SHA-1 over a form body, a missing value empty", async () => {
+    const body = `order_id=ord%201&amount=10.50&status=paid&signature=${FORM_DIGEST}`;
+    await expect(
+      verifyKeyedFieldDigest({ headers: {}, body }, FORM_RECIPE, ["older", FORM_SECRET]),
+    ).resolves.toBe(true);
+    await expect(
+      verifyKeyedFieldDigest({ headers: {}, body: body.replace("10.50", "10.51") }, FORM_RECIPE, [
+        FORM_SECRET,
+      ]),
+    ).resolves.toBe(false);
+    // The same fields read as JSON are a different body format, and the secret last a different text.
+    await expect(
+      verifyKeyedFieldDigest({ headers: {}, body }, { ...FORM_RECIPE, bodyFormat: "json" }, [
+        FORM_SECRET,
+      ]),
+    ).resolves.toBe(false);
+    await expect(
+      verifyKeyedFieldDigest({ headers: {}, body }, { ...FORM_RECIPE, secretAt: "end" }, [
+        FORM_SECRET,
+      ]),
+    ).resolves.toBe(false);
   });
 });

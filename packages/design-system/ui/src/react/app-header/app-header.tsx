@@ -4,7 +4,9 @@
  *          is a direct child of the shell. From the inline start it holds `startContent` (the button that opens the
  *          sidebar), the `title` (the app's name or logo), the `search` slot taking the room left over, `endContent`
  *          (the bar's actions) and the `userMenu`, so right-to-left mirrors the whole bar without a physical side
- *          written anywhere. `label` names the landmark and every other `header` attribute passes through.
+ *          written anywhere. `label` names the landmark and every other `header` attribute passes through. The
+ *          `transparent` variant (a marketing site's) is sticky and see-through until the page scrolls, then takes the
+ *          nav-bar material over a hairline (STA-2041).
  * Boundary: HeroUI has no application bar (its Navbar is HeroUI Pro's), so this is the documented adapted form on a
  *           flex row and theme tokens. It imports no other shell piece: each part is a node the app fills (ADR 0317
  *           decision 4). A string title is drawn as semibold text and truncated; any other node is drawn as it is. The
@@ -33,17 +35,22 @@ export function AppHeader({
   userMenu,
   label,
   className,
+  variant = "solid",
   ...rest
 }: AppHeaderProps): ReactElement {
   const isScrolled = useIsScrolled();
+  const isClear = variant === "transparent" && !isScrolled;
   return (
     <header
       {...rest}
       {...(isScrolled ? { "data-scrolled": "" } : {})}
       {...(label ? { "aria-label": label } : {})}
+      data-variant={variant}
       className={cn(
         // The nav-bar role: solid in studio until the page scrolls under it, glass in front (ADR 0320 as amended).
-        "material-role-nav-bar flex min-h-14 items-center gap-3 border-b border-separator px-4 py-2 text-foreground",
+        "flex min-h-14 items-center gap-3 border-b px-4 py-2 text-foreground",
+        isClear ? "border-transparent bg-transparent" : "material-role-nav-bar border-separator",
+        variant === "transparent" && "sticky top-0 z-(--z-sticky)",
         className,
       )}
     >

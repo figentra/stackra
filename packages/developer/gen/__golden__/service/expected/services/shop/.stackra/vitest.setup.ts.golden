@@ -7,10 +7,17 @@
  */
 import "@stackra/database/testing";
 import "@stackra/clients/testing";
+import "@stackra/actions/testing";
 import "#stackra/registrations";
 import "./gen/schemas/shop.ts";
+import { OrderFactory } from "#node/database/factories/order.factory";
+import { Order } from "#node/models/order.model";
 import { wiring } from "#stackra/wiring";
 import { markMemberSchemasLoaded, registerWiring } from "@stackra/container/testing";
+import { registerModelPartners } from "@stackra/database";
 
 registerWiring(wiring);
 markMemberSchemasLoaded();
+registerModelPartners([
+  [OrderFactory, Order],
+]);

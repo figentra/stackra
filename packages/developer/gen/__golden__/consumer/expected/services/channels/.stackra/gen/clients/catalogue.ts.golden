@@ -34,7 +34,7 @@ export class CataloguePublished extends remoteEvent("catalogue.item.published.v1
 export class CatalogueModule extends moduleRef("catalogue", "catalogue") {}
 export class CataloguePermissions extends permissionsRef("catalogue.catalogue", ["read","publish"]) {}
 
-export const PublishCatalogueAction = remoteAction("catalogue.catalogue.publish@1", { input: PublishCatalogueInput, output: PublishCatalogueOutput, endpoint: { method: HttpMethod.Post, path: "/catalogues/publish" } });
+export const PublishCatalogueAction = remoteAction("catalogue.catalogue.publish@1", { input: PublishCatalogueInput, output: PublishCatalogueOutput, endpoint: { method: HttpMethod.Post, path: "/app/catalogues/publish" } });
 
 /** The catalogue service, injected. */
 export class CatalogueClient extends ServiceClient {

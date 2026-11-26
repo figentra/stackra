@@ -4,11 +4,11 @@
  *          and reports each as done, planned, manual or blocked: identity (fills absent store ids), the EAS project,
  *          the EAS profiles' toolchain pin, the Apple bundle id and its capabilities, the App Store Connect app record,
  *          the Google project, Firebase with its apps and config files, the Analytics link, the Sentry project,
- *          signing, push (the FCM key created in the job, written blind to the vault and handed to EAS), the store key
- *          names, and the Play app with its first upload.
+ *          signing, push (the FCM key created in the job and handed only to EAS, its one reader; a lost key is
+ *          replaced by running onboarding again), the store key names, and the Play app with its first upload.
  * Boundary: every external call goes through the request's ports; a dry run makes reads only, writes no file and
  *           plans every change. Writes `runway.yaml` (comments kept) and the Firebase config files into the app's
- *           `assets` folder. A generated key lives only in a local of this function, on its way to the vault and EAS;
+ *           `assets` folder. A generated key lives only in a local of this function, on its way to EAS;
  *           secrets in `env` are checked by NAME and never read into the output. Steps never stop the run: one that
  *           needs an earlier step's result is blocked until it is done.
  * Runtime: node
@@ -45,7 +45,7 @@ type Platform = "ios" | "android";
  */
 export async function onboardMobile(request: MobileOnboardRequest): Promise<MobileOnboard> {
   const repository = resolve(request.repository);
-  const { app, apple, play, expo, google, firebase, sentry, vault } = request;
+  const { app, apple, play, expo, google, firebase, sentry } = request;
   const root = readRunway(join(repository, "runway.yaml"), "root");
   const entry = root.mobile?.[app];
   if (entry === undefined)
@@ -347,14 +347,11 @@ export async function onboardMobile(request: MobileOnboardRequest): Promise<Mobi
       state = OnboardStepState.Planned;
     }
     if (platforms.includes("android") && !credentials.android.push) {
-      const path = `${settings.vaultPath}/${product}`;
       if (!googleReady) {
         parts.push("the Android FCM key waits on the Google project");
         state = OnboardStepState.Blocked;
       } else if (dry) {
-        parts.push(
-          `would create the ${settings.fcmAccount} key, write it to ${path}/${settings.fcmKey} and hand it to EAS`,
-        );
+        parts.push(`would create the ${settings.fcmAccount} key and hand it to EAS`);
         state = OnboardStepState.Planned;
       } else {
         const email = await google.ensureServiceAccount(
@@ -363,11 +360,8 @@ export async function onboardMobile(request: MobileOnboardRequest): Promise<Mobi
           settings.fcmRole,
         );
         const key = await google.createKey(googleId, email);
-        await vault.write(path, settings.fcmKey, key);
         await expo.uploadFcmKey(project as string, ids.packageName, key);
-        parts.push(
-          `created the ${settings.fcmAccount} key, wrote ${path}/${settings.fcmKey} and handed it to EAS`,
-        );
+        parts.push(`created the ${settings.fcmAccount} key and handed it to EAS`);
       }
     }
     step("push", state, parts.length === 0 ? "EAS holds the push keys" : parts.join("; "));
@@ -385,9 +379,12 @@ export async function onboardMobile(request: MobileOnboardRequest): Promise<Mobi
   else if (absent.length === 0)
     step("store-keys", OnboardStepState.Done, `${names.join(", ")} are set`);
   else
-    step("store-keys", OnboardStepState.Manual, `${absent.join(", ")} not set`, [
-      `Add ${absent.join(", ")} to Infisical ${settings.vaultPath} through ~/Secrets-inbox and pnpm secrets:import (ADR 0480 root kit)`,
-    ]);
+    step(
+      "store-keys",
+      OnboardStepState.Manual,
+      `${absent.join(", ")} not set`,
+      absent.map((key) => `pnpm secrets:put ${key} --scope ${settings.storeScope}`),
+    );
 
   // play-app: Play can neither create the app nor take its first bundle.
   if (platforms.includes("android")) {

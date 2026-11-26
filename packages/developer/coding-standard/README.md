@@ -60,6 +60,7 @@ The package has the one entry `.` (ADR 0127, 2026-10-24 note). Until `stackra ge
 | `no-literal-duration`         | No `duration-<n>`, `delay-<n>`, arbitrary easing or numeric `duration`/`delay` in script; timing comes from the motion steps                                                                                  | no  | ADR 0501             |
 | `no-literal-z-index`          | No `z-<n>` or numeric `zIndex`; stacking comes from the `--z-*` layers                                                                                                                                        | no  | ADR 0501             |
 | `no-literal-length`           | No arbitrary `[<n>px]` or `[<n>rem]` utility, nor a numeric `fontSize`, `lineHeight`, `letterSpacing` or `borderWidth`                                                                                        | no  | ADR 0501             |
+| `no-raw-env` | No named read of `process.env` or `import.meta.env` (`.X`, `["X"]`, computed, destructure); declare the name in a `Config({ schema, env })` class or with `@Secret` (configuration classes and tool configs, generated code, tooling and tests are exempt; at warn while reads migrate) | no | ADR 0173 (amendment 2026-11-04), STA-2104 |
 | `no-raw-key-literal`          | No string literal in an `icon`, `columnKey`, `routeKey` or `permission(s)` property; use the generated constant (generated files and a `*.constant.*` file's exported SCREAMING_SNAKE definitions are exempt) | no  | owner R-56, ADR 0322 |
 
 ### What the rules do not check

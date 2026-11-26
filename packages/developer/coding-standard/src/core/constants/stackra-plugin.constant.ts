@@ -33,6 +33,7 @@ import { NO_LITERAL_RADIUS_RULE } from "./no-literal-radius-rule.constant.ts";
 import { NO_LITERAL_SHADOW_RULE } from "./no-literal-shadow-rule.constant.ts";
 import { NO_LITERAL_Z_INDEX_RULE } from "./no-literal-z-index-rule.constant.ts";
 import { NO_PARAMETER_DECORATOR_RULE } from "./no-parameter-decorator-rule.constant.ts";
+import { NO_RAW_ENV_RULE } from "./no-raw-env-rule.constant.ts";
 import { NO_RAW_KEY_LITERAL_RULE } from "./no-raw-key-literal-rule.constant.ts";
 import { NO_TENANT_VOCABULARY_RULE } from "./no-tenant-vocabulary-rule.constant.ts";
 import { ONE_DECLARATION_PER_FILE_RULE } from "./one-declaration-per-file-rule.constant.ts";
@@ -72,6 +73,7 @@ export const STACKRA_PLUGIN: Plugin = {
     "no-literal-shadow": NO_LITERAL_SHADOW_RULE,
     "no-literal-z-index": NO_LITERAL_Z_INDEX_RULE,
     "no-parameter-decorator": NO_PARAMETER_DECORATOR_RULE,
+    "no-raw-env": NO_RAW_ENV_RULE,
     "no-raw-key-literal": NO_RAW_KEY_LITERAL_RULE,
     "no-tenant-vocabulary": NO_TENANT_VOCABULARY_RULE,
     "one-declaration-per-file": ONE_DECLARATION_PER_FILE_RULE,

@@ -6,9 +6,9 @@
 #          KVM). A failed job fails the call, so a caller's promote job that `needs` it does not run. Evidence
 #          (screenshots, JUnit reports) is uploaded per job.
 #          A caller is a thin job after its preview deploy; another repository pins
-#          `figentra/stackra/.github/workflows/runway-smoke.yml@<sha> # runway-v<n>` (runbooks/deploys).
-# Secrets: none of the caller's. Each job reads STACKRA_REGISTRY_TOKEN from Infisical /ci/registry over OIDC when the
-#          org has the INFISICAL_GATE_* variables, so the caller grants `id-token: write`. Build URLs are EAS artifact
+#          `stackra-inc/stackra/.github/workflows/runway-smoke.yml@<sha> # runway-v<n>` (runbooks/deploys).
+# Secrets: none of the caller's. Each job decrypts STACKRA_REGISTRY_TOKEN from the sops scope ci/build/registry
+#          (ADR 0525), so the caller grants `id-token: write`. Build URLs are EAS artifact
 #          links the caller passes; preview hosts are public.
 # Owner: release-operations
 name: Runway smoke
@@ -60,11 +60,11 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read # checkout
-      id-token: write # the registry read token from Infisical over OIDC
+      id-token: write # the registry read token, decrypted from the sops scope ci/build/registry (ADR 0525)
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
@@ -74,24 +74,19 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: node pnpm
 
       # A product's install of @stackra and @figentra packages needs the registry read token; pnpm 12 ignores a token in
-      # the repository's .npmrc. Read from /ci/registry over OIDC when the caller's org has the INFISICAL_GATE_*
-      # variables, as runway-mintlify.yml does; a workspace-only install needs none, so a refused lookup does not stop.
-      - name: Registry token (Infisical OIDC)
-        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
+      # the repository's .npmrc. Decrypted from ci/build/registry, which every figentra repository may read; a
+      # workspace-only install needs none, so a refused decrypt does not stop.
+      - name: Registry token (sops)
         continue-on-error: true
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/registry
-          secret-name: STACKRA_REGISTRY_TOKEN
-          export-type: env
+          scope: ci/build/registry
+          names: STACKRA_REGISTRY_TOKEN
 
       - name: Registry token (user .npmrc)
         if: env.STACKRA_REGISTRY_TOKEN != ''
@@ -119,7 +114,7 @@ jobs:
 
       - name: Evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: smoke-web
           path: .stackra/smoke
@@ -134,10 +129,10 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read # checkout
-      id-token: write # the registry read token from Infisical over OIDC
+      id-token: write # the registry read token, decrypted from the sops scope ci/build/registry (ADR 0525)
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
@@ -147,24 +142,19 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: node pnpm maestro
 
       # A product's install of @stackra and @figentra packages needs the registry read token; pnpm 12 ignores a token in
-      # the repository's .npmrc. Read from /ci/registry over OIDC when the caller's org has the INFISICAL_GATE_*
-      # variables, as runway-mintlify.yml does; a workspace-only install needs none, so a refused lookup does not stop.
-      - name: Registry token (Infisical OIDC)
-        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
+      # the repository's .npmrc. Decrypted from ci/build/registry, which every figentra repository may read; a
+      # workspace-only install needs none, so a refused decrypt does not stop.
+      - name: Registry token (sops)
         continue-on-error: true
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/registry
-          secret-name: STACKRA_REGISTRY_TOKEN
-          export-type: env
+          scope: ci/build/registry
+          names: STACKRA_REGISTRY_TOKEN
 
       - name: Registry token (user .npmrc)
         if: env.STACKRA_REGISTRY_TOKEN != ''
@@ -209,7 +199,7 @@ jobs:
 
       - name: Evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: smoke-ios
           path: .stackra/launch-check
@@ -222,10 +212,10 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read # checkout
-      id-token: write # the registry read token from Infisical over OIDC
+      id-token: write # the registry read token, decrypted from the sops scope ci/build/registry (ADR 0525)
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
@@ -234,24 +224,19 @@ jobs:
       - name: Toolchain (mise)
         uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
         with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
           install_args: node pnpm maestro
 
       # A product's install of @stackra and @figentra packages needs the registry read token; pnpm 12 ignores a token in
-      # the repository's .npmrc. Read from /ci/registry over OIDC when the caller's org has the INFISICAL_GATE_*
-      # variables, as runway-mintlify.yml does; a workspace-only install needs none, so a refused lookup does not stop.
-      - name: Registry token (Infisical OIDC)
-        if: vars.INFISICAL_GATE_IDENTITY_ID != '' && vars.INFISICAL_GATE_PROJECT_ID != ''
+      # the repository's .npmrc. Decrypted from ci/build/registry, which every figentra repository may read; a
+      # workspace-only install needs none, so a refused decrypt does not stop.
+      - name: Registry token (sops)
         continue-on-error: true
-        uses: Infisical/secrets-action@d2e351f16c6ca20d17c85e6c992e04bdeb64e87d # v1.0.18
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
-          method: oidc
-          identity-id: ${{ vars.INFISICAL_GATE_IDENTITY_ID }}
-          domain: https://eu.infisical.com
-          project-id: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
-          env-slug: prod
-          secret-path: /ci/registry
-          secret-name: STACKRA_REGISTRY_TOKEN
-          export-type: env
+          scope: ci/build/registry
+          names: STACKRA_REGISTRY_TOKEN
 
       - name: Registry token (user .npmrc)
         if: env.STACKRA_REGISTRY_TOKEN != ''
@@ -304,7 +289,7 @@ jobs:
 
       - name: Evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: smoke-android
           path: .stackra/launch-check

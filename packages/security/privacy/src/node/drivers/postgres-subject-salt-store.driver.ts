@@ -4,12 +4,14 @@
  *          row of `privacy.subject_salts`, created on the subject's first seal and deleted on erasure.
  * Boundary: implements the port only. It runs in the caller's transaction (the flush that seals, the erasure step that
  *           destroys), so a salt created for a row that rolls back goes with it and the table's policy sees the
- *           session's tenant (`-` outside one). `obtain` is an insert that does nothing on a conflict followed by a
- *           read, so two racing first seals agree on one salt. Every statement names the session's partition as well,
- *           so a role that bypasses row-level security still reads and destroys only its own tenant's salt. Raw SQL with every value bound (ADR 0160). The salt is
- *           never logged.
+ *           session's tenant (a NULL owner, the platform's, outside one). `obtain` is an insert that does nothing on a
+ *           conflict of `(tenant_id, subject)` followed by a read, so two racing first seals agree on one salt; the
+ *           owner is the column's default, never written here. Every statement names the call's own owner as well, so
+ *           a tenant never takes the platform's salt the policy lets it read, and a role that bypasses row-level
+ *           security still reads and destroys only its own owner's salt. Raw SQL with every value bound (ADR 0160).
+ *           The salt is never logged.
  * Runtime: node
- * Governing contract: ADR 0188 (decision 2); ADR 0212 (crypto-shredding); ADR 0239; ADR 0160; gap gov2 (stackra-263).
+ * Governing contract: ADR 0188 (decision 2); ADR 0212 (crypto-shredding); ADR 0239 (2026-11-07 amendment, gap C); ADR 0160; gap gov2 (stackra-263).
  */
 import { Driver } from "@stackra/container";
 import type { Database } from "@stackra/database";
@@ -19,8 +21,8 @@ import { SubjectSaltStore } from "#contracts/ports/subject-salt-store.port";
 /** The table. */
 const SALTS = '"privacy"."subject_salts"';
 
-/** The session's partition, as the table's policy reads it. */
-const PARTITION = "coalesce(nullif(current_setting('app.tenant_id', true), ''), '-')";
+/** The call's own rows: its tenant's, or the platform's outside a tenant, as the table's policy writes them. */
+const OWN = "tenant_id is not distinct from nullif(current_setting('app.tenant_id', true), '')";
 
 /** The length of a new salt, in bytes. */
 const SALT_BYTES = 32;
@@ -54,8 +56,8 @@ export class PostgresSubjectSaltStoreDriver extends Driver(SubjectSaltStore) {
   /** Implements `SubjectSaltStore.find`, documented there. */
   async find(subject: string): Promise<Uint8Array | undefined> {
     const [row] = (await this.sql().execute(
-      // raw-sql: the subject's salt in the session's partition, named as well as enforced by the policy
-      `select salt from ${SALTS} where scope_id = ${PARTITION} and subject = ?`,
+      // raw-sql: the subject's salt in the call's own owner, named as well as enforced by the policy
+      `select salt from ${SALTS} where ${OWN} and subject = ?`,
       [subject],
     )) as readonly SaltRow[];
     return row === undefined ? undefined : new Uint8Array(Buffer.from(row.salt, "base64"));
@@ -65,9 +67,9 @@ export class PostgresSubjectSaltStoreDriver extends Driver(SubjectSaltStore) {
   async obtain(subject: string): Promise<Uint8Array> {
     const salt = globalThis.crypto.getRandomValues(new Uint8Array(SALT_BYTES));
     await this.sql().execute(
-      // raw-sql: a racing first seal keeps the row already there
-      `insert into ${SALTS} (scope_id, subject, salt, created_at) values (${PARTITION}, ?, ?, now()) ` +
-        "on conflict (scope_id, subject) do nothing",
+      // raw-sql: a racing first seal keeps the row already there; the owner is the column's default
+      `insert into ${SALTS} (subject, salt, created_at) values (?, ?, now()) ` +
+        "on conflict (tenant_id, subject) do nothing",
       [subject, Buffer.from(salt).toString("base64")],
     );
     const held = await this.find(subject);
@@ -78,8 +80,8 @@ export class PostgresSubjectSaltStoreDriver extends Driver(SubjectSaltStore) {
   /** Implements `SubjectSaltStore.destroy`, documented there. */
   async destroy(subject: string): Promise<boolean> {
     const rows = (await this.sql().execute(
-      // raw-sql: erasure deletes the salt row of the session's partition
-      `delete from ${SALTS} where scope_id = ${PARTITION} and subject = ? returning subject`,
+      // raw-sql: erasure deletes the salt row of the call's own owner
+      `delete from ${SALTS} where ${OWN} and subject = ? returning subject`,
       [subject],
     )) as readonly unknown[];
     return rows.length > 0;

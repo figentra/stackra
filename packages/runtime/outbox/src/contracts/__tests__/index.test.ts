@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: the consumer contract of the `./contracts` entry: the four ports and the two enums are its only values,
+ * Purpose: the consumer contract of the `./contracts` entry: the eight ports and the three enums are its only values,
  *          and the stored message, envelope, row change, change record, cursor and change consumer types travel with
  *          them.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
@@ -15,11 +15,16 @@ describe("@stackra/outbox/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
       "ChangeFeed",
+      "DeliveryDriver",
+      "DeliveryState",
       "EventPublisher",
+      "EventSigner",
       "InboxDriver",
+      "InboxVerifier",
       "MessageKind",
       "OutboxDriver",
       "RowChangeKind",
+      "SubscriberSource",
     ]);
   });
 
@@ -33,6 +38,10 @@ describe("@stackra/outbox/contracts", () => {
     expectTypeOf<contracts.EventEnvelope["occurredAt"]>().toEqualTypeOf<string>();
     expectTypeOf<contracts.ChangeRecord["change"]>().toEqualTypeOf<contracts.RowChange>();
     expectTypeOf<contracts.ChangeCursor["position"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<contracts.Delivery["envelope"]>().toEqualTypeOf<contracts.CrossAppEnvelope>();
+    expectTypeOf<contracts.PinnedProducer["keys"][string]>().toEqualTypeOf<
+      readonly contracts.RelayKey[]
+    >();
     expectTypeOf<contracts.RowChange["after"]>().toEqualTypeOf<
       Readonly<Record<string, unknown>> | undefined
     >();

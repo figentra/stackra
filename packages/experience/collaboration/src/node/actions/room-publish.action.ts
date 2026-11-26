@@ -11,7 +11,7 @@
  * Runtime: node
  * Governing contract: ADR 0346 (decision 5); ADR 0294 (decisions 2, 3, 16 and 21); ADR 0305 (rule 28); ADR 0098.
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 import type { RealtimeRooms } from "@stackra/realtime";
 
@@ -26,6 +26,7 @@ import type { RoomPublishInput } from "#node/schemas/room-publish-input.schema";
 export class RoomPublishAction extends Action({
   key: "room.publish",
   actors: [ActorKind.User],
+  idempotency: Idempotency.Optional,
   // reason: a room message is a live editor's, not something an agent sends as a tool call
   tool: false,
 }) {

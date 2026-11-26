@@ -83,6 +83,7 @@ describe("@stackra/container", () => {
       "Explorer",
       "Lifetime",
       "Module",
+      "PERMISSION_MEMBERS",
       "PERMISSION_REGISTRY",
       "Permissions",
       "Replaces",

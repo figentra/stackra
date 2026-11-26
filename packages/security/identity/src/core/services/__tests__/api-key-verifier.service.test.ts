@@ -15,7 +15,7 @@ import { Clock } from "@stackra/contracts";
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { IdentityConfig } from "#config/identity.config";
-import { ApiKeyStore } from "#contracts/index";
+import { ApiKeyMode, ApiKeyStore } from "#contracts/index";
 import type { ApiKeyRecord } from "#contracts/index";
 import { MemoryApiKeyStoreDriver } from "#core/drivers/memory-api-key-store.driver";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
@@ -51,8 +51,12 @@ describe(ApiKeyVerifierService, () => {
   let verifier: ApiKeyVerifierService;
 
   /** Mints a key of `kind`, stores its record with `extra`, and resolves to the key. */
-  async function issue(kind: ApiKeyKind, extra: Partial<ApiKeyRecord> = {}): Promise<string> {
-    const key = mintApiKey(kind, config);
+  async function issue(
+    kind: ApiKeyKind,
+    extra: Partial<ApiKeyRecord> = {},
+    mode: ApiKeyMode = ApiKeyMode.Live,
+  ): Promise<string> {
+    const key = mintApiKey(kind, config, mode);
     store.add({
       id: "key_1",
       hash: await hashApiKey(key),
@@ -60,6 +64,7 @@ describe(ApiKeyVerifierService, () => {
       scopeId: "ten_1",
       scopes: ["catalogue.product.read"],
       origins: [SHOP],
+      mode,
       ...extra,
     });
     return key;
@@ -78,6 +83,33 @@ describe(ApiKeyVerifierService, () => {
     });
     const publishable = await issue(ApiKeyKind.Publishable);
     expect((await verifier.verify(publishable, SHOP)).kind).toBe(ApiKeyKind.Publishable);
+  });
+
+  it("answers a test key's mode and version pin, and refuses a text whose mode is not the stored one", async () => {
+    const test = await issue(
+      ApiKeyKind.Secret,
+      { mode: ApiKeyMode.Test, versionPin: "2026-11-09" },
+      ApiKeyMode.Test,
+    );
+    expect(await verifier.verify(test)).toMatchObject({
+      mode: ApiKeyMode.Test,
+      record: { versionPin: "2026-11-09" },
+    });
+    expect((await verifier.verify(await issue(ApiKeyKind.Secret))).mode).toBe(ApiKeyMode.Live);
+    const relabelled = await issue(ApiKeyKind.Secret, { mode: ApiKeyMode.Live }, ApiKeyMode.Test);
+    await expect(verifier.verify(relabelled)).rejects.toBeInstanceOf(ApiKeyRejectedError);
+  });
+
+  it("never assumes a mode: a record without one is refused, so live comes only from a live key", async () => {
+    const unmoded = mintApiKey(ApiKeyKind.Secret, config, ApiKeyMode.Live);
+    store.add({
+      id: "key_3",
+      hash: await hashApiKey(unmoded),
+      principal: "usr_bot",
+      scopes: [],
+      origins: [],
+    });
+    await expect(verifier.verify(unmoded)).rejects.toBeInstanceOf(ApiKeyRejectedError);
   });
 
   it("refuses a malformed key without a lookup", async () => {
@@ -134,6 +166,7 @@ describe(ApiKeyVerifierService, () => {
       principal: "usr_bot",
       scopes: [],
       origins: [],
+      mode: ApiKeyMode.Live,
     });
     const lenient = new ApiKeyVerifierService(broken, config, new FixedClockDriver());
     expect((await lenient.verify(key)).record.id).toBe("key_2");

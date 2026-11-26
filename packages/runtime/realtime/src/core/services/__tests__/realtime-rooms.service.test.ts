@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `RealtimeRooms`: a one-time token joins its grant's room in the session's tenant and gets a
  *          stamped `welcome`; messages relay to the other members (never the sender, never another tenant's room) and
- *          to the fanout; a viewer's update is refused `forbidden`; a full room, an oversized or too-fast member is
+ *          to the fanout; a viewer's update is refused `forbidden`, and so is an update whose re-checked edit right is
+ *          gone (or whose re-check fails), from then on; a full room, an oversized or too-fast member is
  *          refused `room_limit_reached` and dropped; leaving announces `left`; frames from another instance are
  *          delivered and this instance's own are skipped; a socket is accepted or closed with the right code; members
  *          close at token expiry and idle; a member joins over an event stream (or gets 401, 426 or 429) and publishes
@@ -35,6 +36,11 @@ function grant(principalId: string, mayEdit = true, scopeId = "ten_1"): RoomGran
     mayEdit,
   };
 }
+
+/** An edit re-check whose store is down. */
+const failing = async (): Promise<boolean> => {
+  throw new TypeError("store down");
+};
 
 /** A peer that records frames and its close. */
 function peer() {
@@ -138,6 +144,31 @@ describe(RealtimeRooms, () => {
     expect(() => viewer?.publish({ t: "update", data: "AAE=" })).toThrow(ForbiddenError);
     expect(() => viewer?.publish({ t: "awareness", data: { x: 1 } })).not.toThrow();
     expect(rooms.size("ten_1:pag_1")).toBe(1);
+  });
+
+  it("re-checks the edit right before each update and refuses from the first failed check on", async () => {
+    const { rooms } = roomsOf({ maxMessagesPerSecond: 10, maxMembers: 5 });
+    let holds = true;
+    const recheckEdit = vi.fn(async () => holds);
+    const a = peer();
+    const alice = rooms.join(rooms.issueToken({ ...grant("usr_a"), recheckEdit }).token, a);
+    const b = peer();
+    rooms.join(rooms.issueToken(grant("usr_b")).token, b);
+    await alice?.publish({ t: "update", data: "AAE=" });
+    expect(b.frames.at(-1)).toMatchObject({ t: "update", data: "AAE=" });
+    holds = false;
+    await expect(alice?.publish({ t: "update", data: "AgM=" })).rejects.toThrow(ForbiddenError);
+    expect(() => alice?.publish({ t: "update", data: "BAU=" })).toThrow(ForbiddenError);
+    expect(recheckEdit).toHaveBeenCalledTimes(2);
+    expect(alice?.publish({ t: "awareness", data: 1 })).toBeUndefined();
+    expect(b.frames.filter((frame) => frame.t === "update")).toHaveLength(1);
+    expect(rooms.size("ten_1:pag_1")).toBe(2);
+    const c = peer();
+    const carol = rooms.join(
+      rooms.issueToken({ ...grant("usr_c"), recheckEdit: failing }).token,
+      c,
+    );
+    await expect(carol?.publish({ t: "update", data: "AAE=" })).rejects.toThrow(ForbiddenError);
   });
 
   it("refuses a full room and drops a member over the size or rate cap", () => {

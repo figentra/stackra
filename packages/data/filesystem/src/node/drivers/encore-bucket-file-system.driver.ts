@@ -23,6 +23,7 @@ import type { SignedUpload } from "#contracts/types/signed-upload.type";
 import type { UploadRequest } from "#contracts/types/upload-request.type";
 import type { WriteOptions } from "#contracts/types/write-options.type";
 import { FileNotFoundError } from "#core/errors/file-not-found.error";
+import { RetentionUnsupportedError } from "#core/errors/retention-unsupported.error";
 import { normalizePath } from "#core/functions/normalize-path.function";
 import { normalizePrefix } from "#core/functions/normalize-prefix.function";
 
@@ -54,8 +55,14 @@ export class EncoreBucketFileSystemDriver extends Driver(FileSystem) {
     return new Uint8Array(await this.bucket.download(await this.existing(path)));
   }
 
-  /** Uploads `contents` under `path`, with its content type when given. */
+  /**
+   * Uploads `contents` under `path`, with its content type when given.
+   *
+   * @throws RetentionUnsupportedError for a `retainUntil`: an Encore bucket cannot keep a file unchangeable.
+   */
   async write(path: string, contents: Uint8Array | string, options?: WriteOptions): Promise<void> {
+    if (options?.retainUntil !== undefined)
+      throw RetentionUnsupportedError.create({ disk: "encore_bucket" });
     await this.bucket.upload(
       normalizePath(path),
       typeof contents === "string" ? new TextEncoder().encode(contents) : contents,

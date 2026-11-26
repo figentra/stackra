@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `ClientResultInput`, the input of `ai.run.client_result` (`PUT /runs/:runId/client-result`): the run, the
+ * Purpose: `ClientResultInput`, the input of `ai.run.client_result` (`PUT /app/runs/:runId/client-result`): the run, the
  *          tool call it answers, and either the screen's result or a refusal code.
  * Boundary: a shape class; it registers this package's own schema for itself when the module loads. The action that
  *           takes it is the OS ai service's wrapper over `AgentRuntime.resolveClientTool`; it is idempotent by

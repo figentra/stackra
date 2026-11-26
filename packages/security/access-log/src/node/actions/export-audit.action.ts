@@ -13,7 +13,7 @@
  * Governing contract: ADR 0465 (decision 4); ADR 0212 (decision 3); ADR 0294 (decisions 16 and 21); ADR 0305 (rule 28:
  *                     the job surface); ADR 0462 (permissions in @stackra/iam's idiom); STA-1579.
  */
-import { Action } from "@stackra/actions";
+import { Action, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 import type { Repository } from "@stackra/database";
 
@@ -38,6 +38,7 @@ export class ExportAuditAction extends Action({
   key: "audit_log_entry.export",
   permission: AuditLogEntryPermissions.export,
   actors: [ActorKind.User, ActorKind.Service, ActorKind.System],
+  idempotency: Idempotency.Optional,
   job: { timeout: "15m" },
 }) {
   /** The audit reader whose paging the export reuses. */

@@ -14,11 +14,17 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
+import { BelongsToTenant } from "@stackra/tenancy/node";
 
 /** An award kind. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class AwardKind extends Model.with(HasPublicId("awk"), Timestamps) {
+export class AwardKind extends Model.with(
+  HasPublicId("awk"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The scope node the kind belongs to. */
   scopeId!: PublicId<"scp">;
 
@@ -59,5 +65,5 @@ export class AwardKind extends Model.with(HasPublicId("awk"), Timestamps) {
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: the generated `[OptionalProps]` augmentation merges into the model, as gen's entity files do
 export interface AwardKind {
   /** The trait timestamps, which the database fills in. */
-  [OptionalProps]?: "createdAt" | "updatedAt";
+  [OptionalProps]?: "createdAt" | "tenantId" | "updatedAt";
 }

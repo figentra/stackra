@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MarketPackPaymentDefaultsDriver`: the Market's `payments.byo-providers` list in force on the
+ * Purpose: unit tests of `MarketPackPaymentDefaultsDriver`: the Market's `payments.byo_providers` list in force on the
  *          clock's date gives live providers in order with their platform Connection (none for a BYO-only one),
  *          skips planned, malformed and repeated entries, and a Market whose pack lists none offers none.
  * Boundary: test only; the pack source is an in-test stand-in over a hand-made resolved pack of the made-up Market
@@ -31,7 +31,7 @@ const PACK = {
       version: "1.0.0",
       entries: [
         {
-          key: "payments.byo-providers",
+          key: "payments.byo_providers",
           from: "2026-01-01",
           value: [
             { provider: "stripe", status: "live" },
@@ -42,7 +42,7 @@ const PACK = {
             "stripe",
           ],
         },
-        { key: "payments.byo-providers", from: "2026-11-01", value: ["later"] },
+        { key: "payments.byo_providers", from: "2026-11-01", value: ["later"] },
       ],
     },
   ],

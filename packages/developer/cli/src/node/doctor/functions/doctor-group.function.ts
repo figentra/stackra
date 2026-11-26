@@ -14,15 +14,17 @@ const GROUPS: Readonly<Record<string, DoctorGroup>> = {
   "pulumi CLI": "Tools",
   "claude CLI": "Tools",
   "opencode CLI": "Tools",
+  "sops CLI": "Tools",
   "Xcode command-line tools": "Tools",
   "iOS simulator": "Tools",
   "pnpm install done": "Repo",
   "agents:check clean": "Repo",
   ".mcp.json present": "Repo",
+  "figentra/secrets clone": "Repo",
   "@stackra registry readable": "Registries",
   "@figentra registry readable": "Registries",
   "GitHub CLI signed in": "Accounts",
-  "infisical logged in": "Accounts",
+  "Google login for sops": "Accounts",
   "aws bedrock profile": "Accounts",
 };
 

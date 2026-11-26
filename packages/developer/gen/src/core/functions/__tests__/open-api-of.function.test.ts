@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `openApiOf`: one operation per endpoint with its path and query parameters, body, responses,
  *          refusal reference and `x-stackra-*` extensions, `auth: false` as an empty security list, the manifest's
- *          shapes as components with rewritten references, and a deterministic projection.
+ *          shapes as components with rewritten references, a stream action as `text/event-stream`, and a deterministic
+ *          projection.
  * Boundary: test only; projects the manifest built from the commerce IR fixture.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 10); ADR 0158; ADR 0140.
@@ -35,13 +36,13 @@ describe("openApiOf", () => {
   });
 
   it("projects an action with a path parameter and a body", () => {
-    expect(document.paths["/orders/{orderId}/cancel"]?.["put"]).toMatchObject({
+    expect(document.paths["/app/orders/{orderId}/cancel"]?.["put"]).toMatchObject({
       operationId: "orders_order_cancel",
       tags: ["orders"],
       "x-stackra-action": "orders.order.cancel@1",
       "x-stackra-permission": "orders.order.cancel",
       "x-stackra-risk": "L2",
-      "x-stackra-idempotency": { ttl: "PT24H" },
+      "x-stackra-idempotency": "required",
       "x-stackra-refusals": ["order_not_cancellable"],
       parameters: [
         {
@@ -72,7 +73,7 @@ describe("openApiOf", () => {
   });
 
   it("projects a query with query parameters and a public endpoint", () => {
-    expect(document.paths["/orders"]?.["get"]).toMatchObject({
+    expect(document.paths["/app/orders"]?.["get"]).toMatchObject({
       parameters: [
         { name: "cursor", in: "query", required: false, schema: { type: "string" } },
         {
@@ -83,12 +84,25 @@ describe("openApiOf", () => {
         },
       ],
     });
-    expect(document.paths["/orders"]?.["get"]).not.toHaveProperty("requestBody");
+    expect(document.paths["/app/orders"]?.["get"]).not.toHaveProperty("requestBody");
     const open = openApiOf({
       ...manifest,
       actions: (manifest.actions ?? []).map((action) => ({ ...action, anonymous: true })),
     });
-    expect(open.paths["/orders"]?.["get"]).toMatchObject({ security: [] });
+    expect(open.paths["/app/orders"]?.["get"]).toMatchObject({ security: [] });
+  });
+
+  it("answers a stream action as text/event-stream (G1b)", () => {
+    const streamed = {
+      ...manifest,
+      actions: (manifest.actions ?? []).map((action) =>
+        action["key"] === "orders.order.cancel@1" ? { ...action, stream: true } : action,
+      ),
+    };
+    const operation = openApiOf(streamed).paths["/app/orders/{orderId}/cancel"]?.["put"] as {
+      readonly responses: Record<string, { readonly content?: Record<string, unknown> }>;
+    };
+    expect(Object.keys(operation.responses["200"]?.content ?? {})).toEqual(["text/event-stream"]);
   });
 
   it("is deterministic", () => {

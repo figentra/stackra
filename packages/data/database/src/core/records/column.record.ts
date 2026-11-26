@@ -121,6 +121,24 @@ export class ColumnRecord implements ForeignKeyColumn {
     return this;
   }
 
+  /**
+   * Implements `ColumnDefinition.defaultSetting`, documented there.
+   *
+   * @throws TypeError on a generated or `uuid` column, or for a setting that is not `<prefix>.<name>`.
+   */
+  defaultSetting(setting: string): this {
+    if (this.generated !== undefined)
+      throw new TypeError(`${this.name} is generated, so it takes no default`);
+    if (!/^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/.test(setting))
+      throw new TypeError(`"${setting}" is not a custom setting: <prefix>.<name>`);
+    // shortcut: a uuid column needs the public-id decode, whose subquery a DEFAULT refuses; write a decode without one
+    // when a host stores uuid public ids
+    if (this.type === "uuid")
+      throw new TypeError(`${this.name} is uuid, so it takes no setting default`);
+    this.defaultSql = `nullif(current_setting(${sqlLiteral(setting)}, true), '')::${this.type}`;
+    return this;
+  }
+
   /** Implements `ColumnDefinition.index`, documented there. */
   index(): this {
     this.indexed = true;

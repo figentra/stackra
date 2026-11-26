@@ -49,6 +49,7 @@ export function renderWranglerConfig(
     cache: settings.cache === undefined ? undefined : { enabled: settings.cache },
     upload_source_maps: settings.uploadSourceMaps,
     keep_vars: settings.keepVars,
+    routes: settings.customDomains?.map((pattern) => ({ pattern, custom_domain: true })),
   });
   const clash = Object.keys(rendered).filter((key) => key in code);
   if (clash.length > 0)

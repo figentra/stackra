@@ -19,10 +19,13 @@ type DefaultedKeys<T> = T extends { readonly "~defaults"?: infer D }
   : never;
 
 /** A field's value with every nested shape replaced by its input fields. */
-type InputValue<V> = V extends Schema
+// `D` counts nested arrays: `Json` holds `Json[]`, so without a bound it maps back into itself (TS2589, STA-2215).
+type InputValue<V, D extends readonly unknown[] = []> = V extends Schema
   ? InputFields<V>
   : V extends readonly unknown[]
-    ? { [I in keyof V]: InputValue<V[I]> }
+    ? D["length"] extends 4
+      ? V
+      : { [I in keyof V]: InputValue<V[I], [...D, unknown]> }
     : V;
 
 /** One object type from an intersection, so the result reads and compares as a plain shape. */
@@ -31,7 +34,8 @@ type Flat<T> = { [K in keyof T]: T[K] };
 /** The keys that are data: no methods and not the brand. */
 type DataKey<T, K extends keyof T> = T[K] extends (...args: never[]) => unknown
   ? never
-  : K extends "~defaults"
+  : // `~defaults`, and a config's `~kind` and `~config` (STA-2215): type-only brands, never data.
+    K extends `~${string}`
     ? never
     : K;
 

@@ -1,5 +1,860 @@
 # @stackra/webhooks
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/scheduler@0.33.1
+  - @stackra/queue@0.33.1
+  - @stackra/iam@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/integrations@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- 628b60d: The scope-pathed models of these packages opt into `MovesWithScope`, so their rows follow a moved scope subtree (`scope.node.moved.v1`) in every service that hosts them: award kinds, awards and their verifications, rule sets, segments and their memberships, webhook endpoints and deliveries, custom fields, their value sets and content revisions, comment threads, comments, their revisions and mentions, automations, checklists and their progress, and stored settings and their revisions. The audit log (append-only, its history kept) and the scope tree itself (moved by `moveSubtree`) stay out.
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/iam@0.33.0
+  - @stackra/queue@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/integrations@0.33.0
+  - @stackra/scheduler@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/integrations@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/queue@0.32.0
+  - @stackra/scheduler@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/iam@0.32.0
+  - @stackra/money@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/integrations@0.31.0
+  - @stackra/queue@0.31.0
+  - @stackra/scheduler@0.31.0
+  - @stackra/iam@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/money@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- d5a7d0a: **Breaking route change.** Every action and query route now sits under its API area. Gen prefixes each derived route with `/<area>`: the
+  action's or query's `area`, else the service's own `defineService({ area })`, else `app` (`PUT
+  /app/orders/:orderId/cancel`). Every manifest action entry records its `area`, so the committed manifests,
+  `openapi.json` and the SDKs move to the prefixed paths.
+  
+  Gen also refuses, in its full pass (STA-340):
+  
+  - `endpoint_collision`: two calls on one method and path once parameter names are erased (`GET /app/orders/:orderId`
+    and `GET /app/orders/:id`). Until now `openapi.json` silently kept only one of them.
+  - `endpoint_versioned`: a `v<digits>` path segment (paths stay unversioned; API versions are dates).
+  - `endpoint_area_mismatch`: an `endpoint: { method, path }` override outside its area's prefix.
+  - `endpoint_method_mismatch`: a query not on `GET`, an action on `GET`, or a transition overridden away from `PUT`.
+  - `job_without_system_actor`: a `job` without the `system` or `job` actor.
+  - `cron_input_invalid`: a `job.cron.input` property the input schema does not have, a required one it omits, or a
+    value of another JSON type.
+  - `intent_phrases_missing`: `intent: true` without a non-empty `actions.<key>.intents` list in a base-language
+    catalogue.
+  
+  The routes outside their area move under it: loyalty-kit's five overrides to `/app/loyalty/...`, the award
+  verification to `GET /public/awards/verify`, `CONSENT_SNAPSHOT_PATH` to `/public/consent/snapshots`,
+  `ANALYTICS_INGEST_PATH` to `/public/analytics/batches`, `DEVICE_ORDER.acknowledgedPath` to
+  `/app/devices/acknowledged` and `CLIENT_RESULT_ACTION.path` to `/app/runs/:runId/client-result`. The committed
+  `stackra.manifest.json` of every package with a route (access-log, collaboration, data-maintenance, devices, identity,
+  media, privacy, segments, tenancy, webhooks and the packages above) records each entry's `area` and its prefixed path.
+  
+  The identity lock accepts this move once: an endpoint whose new route is exactly `/<its own area>` plus the locked
+  path, with the same method, keeps its identity without `@Renamed`. A move to another area, a method change, or a route
+  that already started with an area moving again is still refused with `identity_changed`.
+  
+  What a product does on its bump: run `stackra gen` and commit the regenerated `stackra.manifest.json` and
+  `openapi.json` of each member. Nothing else; no `@Renamed`. Clients regenerate from the new manifests, so a caller
+  pinned to an old path (none before launch) would need the prefixed one.
+
+### Patch Changes
+
+- e1e1b5e: `WebhookReceiver` refuses an event with `WebhookEventIdMissingError` when its signature `idHeader` is missing or empty and no complete `eventId` parts stand in for it, or when its Integration names neither. Such an event used to be keyed by `""`, so the inbox kept only the first one.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [a426842]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [98a8940]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/iam@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/queue@0.30.0
+  - @stackra/scheduler@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/tenancy@0.30.0
+  - @stackra/integrations@0.30.0
+  - @stackra/money@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/support@0.30.0
+
+## 0.29.0
+
+### Minor Changes
+
+- 1b88340: `webhooks.eventId` can name several parts, `{ parts: [{ path }, { header }] }`, joined with `:` into one inbox id, for a provider whose events carry no unique id of their own (an order id plus its state plus the delivery timestamp). The receiver refuses an event whose named part is missing with `WebhookEventIdMissingError` instead of keying it by an empty id, which would have deduplicated every such event as one; this applies to the single `{ path }` form too.
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [4cc17e5]
+- Updated dependencies [11a19a7]
+- Updated dependencies [45afd22]
+- Updated dependencies [1b88340]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/integrations@0.29.0
+  - @stackra/tenancy@0.29.0
+  - @stackra/queue@0.29.0
+  - @stackra/scheduler@0.29.0
+  - @stackra/iam@0.29.0
+  - @stackra/money@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/events@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/scheduler@0.28.0
+  - @stackra/integrations@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/queue@0.28.0
+  - @stackra/iam@0.28.0
+  - @stackra/tenancy@0.28.0
+  - @stackra/money@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/events@0.28.0
+  - @stackra/support@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- 7d284f2: `WebhookReceiver` parses a verified body by its recipe's `bodyFormat`: `json` (the default) as before, or `form`, an
+  `application/x-www-form-urlencoded` body read into percent-decoded string values, which route the event
+  (`eventType.path`), key it (`eventId.path`) and create it. A verified form-encoded delivery no longer throws a
+  `SyntaxError` before routing. `WebhookSchemeRecipe.bodyFormat` now documents that it governs both the verifier and the
+  receiver.
+- Updated dependencies [4a4d817]
+- Updated dependencies [df74e1d]
+- Updated dependencies [7d284f2]
+  - @stackra/database@0.27.0
+  - @stackra/integrations@0.27.0
+  - @stackra/queue@0.27.0
+  - @stackra/scheduler@0.27.0
+  - @stackra/iam@0.27.0
+  - @stackra/tenancy@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/money@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/events@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Minor Changes
+
+- 031a1f7: `keyed_field_digest` takes four optional recipe fields, each defaulting to today's behaviour so existing recipes are
+  unchanged: `secretAt: "start" | "end"` (default `end`), `separator` (default nothing), `algorithm` now also `SHA-1`,
+  and `bodyFormat: "json" | "form"` (default `json`), where a form body is read as
+  `application/x-www-form-urlencoded` with its values percent-decoded. A missing value is an empty string.
+  `WebhookSchemeRecipe` gains the fields.
+- 9d0dd67: A new `labelled_field_hmac` signature scheme: a hex HMAC (SHA-256 or SHA-512) over each label followed by its body
+  field's value, in order, carried in a header or a query parameter and compared in constant time
+  (`verifyLabelledFieldHmac`). The recipe names the fields as `labelledFields: [{ label, path }]` and may set
+  `currencyDecimals: { path, currencyPath }`, which writes that amount with the minor-unit decimals of the ISO 4217
+  currency at `currencyPath` from `@stackra/money`'s table (3 for KWD, BHD and OMR, 0 for JPY). A missing field, or an
+  amount the currency cannot hold, does not verify. `WebhookSchemeRecipe` gains both fields.
+
+### Patch Changes
+
+- 9b02a7c: A host binds the actions and queries of each package module it hosts, as it does that package's services: they are
+  the module's surface, so a test or a client can call one by class (`run(EnrollMemberAction, …)`) without a host class
+  injecting it. A published package's manifest lists its actions and queries in `services` with their constructor
+  tokens, and the host wiring binds each one with them.
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [ceceef3]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [031a1f7]
+- Updated dependencies [9d0dd67]
+  - @stackra/database@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/integrations@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/iam@0.26.0
+  - @stackra/queue@0.26.0
+  - @stackra/scheduler@0.26.0
+  - @stackra/money@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/events@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Minor Changes
+
+- 3942ab1: Webhook endpoints and their delivery log now belong to a tenant (ADR 0239 amendment, group (c)).
+  
+  Migration `webhooks.0003` gives `webhook_endpoints` and `webhook_deliveries` a `tenant_id` column. It is required,
+  filled from the running tenant call by default, and indexed. Each table gets one row-level-security policy: a call sees
+  and writes only its own tenant's rows. Before, neither table had a policy; the endpoint service filtered by scope.
+  
+  Existing rows get their tenant in the same migration. An endpoint registered at a top-level tenant node takes that
+  node, and each delivery takes its endpoint's tenant. If any row is left without a tenant (an endpoint at the root, at a
+  product, or below a tenant), the migration refuses before changing anything and names each table's count. Delete or
+  re-register those endpoints, then migrate again.
+  
+  `WebhookEndpoint` and `WebhookDelivery` carry `BelongsToTenant`. Every read and write of these tables must now run in a
+  tenant call; the pipeline, the delivery job and the inbox already do. The package ships an int test tier (`test:int`).
+  
+  `CrudService` writes that use `requiresNew` (`insert`, `insertMany`, `upsert`, `update`) now carry the caller's scope
+  and tenant into their own transaction, as `Database.transaction` with `requiresNew` already did. Before, such a write
+  ran on a new connection with no tenant, so row security refused it on a tenant-owned table.
+
+### Patch Changes
+
+- 1d7bbc1: The contract migrations (database 0007, achievements 0004, rules 0005, segments 0003, content 0006, collaboration
+  0004, workflow 0011 and webhooks 0003) now carry a reviewed squawk ignore, with its reason, above each `SET NOT NULL`
+  that the migration's pre-flight checked, so a product that hosts them lints clean. The runner hashes a migration
+  without its lint lines, so no checksum changes, and nothing runs differently.
+  
+  New contract steps can set NOT NULL without scanning the table under an exclusive lock:
+  `t.belongsToTenant({ contract: true, safeNotNull: true })`, or `t.change(column).notNull({ safe: true })`, adds a
+  `NOT VALID` check, then validates it, sets NOT NULL and drops the check in a later step. The released migrations keep
+  their form.
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/queue@0.25.0
+  - @stackra/scheduler@0.25.0
+  - @stackra/iam@0.25.0
+  - @stackra/integrations@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/events@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/integrations@0.24.0
+  - @stackra/queue@0.24.0
+  - @stackra/scheduler@0.24.0
+  - @stackra/iam@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/events@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [d002763]
+- Updated dependencies [c0237a4]
+- Updated dependencies [6edeee4]
+- Updated dependencies [1d76993]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+  - @stackra/database@0.23.0
+  - @stackra/integrations@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/queue@0.23.0
+  - @stackra/scheduler@0.23.0
+  - @stackra/iam@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/events@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- 3a9a6be: `@stackra/integrations` is a peer of every library that uses its values (payments, webhooks, documents, notifications,
+  pricing, achievements, loyalty-kit), no longer a dependency. As a dependency, pnpm resolved a second copy in a product,
+  so a Connection's base and `makeConnection` came from different copies and every Stripe call failed with "StripeConnection
+  was not loaded by a ConnectionStore". `stackra validate` refuses the mistake (`hosted-peers`, `HOSTED_PEER_PACKAGES`).
+- Updated dependencies [41f3da5]
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [ae24e3c]
+- Updated dependencies [acbee14]
+  - @stackra/integrations@0.22.0
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/events@0.22.0
+  - @stackra/queue@0.22.0
+  - @stackra/scheduler@0.22.0
+  - @stackra/iam@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/scheduler@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/integrations@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/events@0.21.0
+  - @stackra/queue@0.21.0
+  - @stackra/iam@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/integrations@0.20.0
+  - @stackra/queue@0.20.0
+  - @stackra/scheduler@0.20.0
+  - @stackra/iam@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/events@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 58a8fa5: Every write action's permission is at least L2 (STA-2096, owner decision 2026-11-04). gen refuses an action whose
+  permission is L0 or L1 with `action_risk_below_write`. Raised: `collaboration.room.publish`, `media.upload.create`,
+  `data_maintenance.synonym.create` and `.update`, `analytics.analytics_batch.ingest`, `consent.consent_snapshot.issue`,
+  `identity.passkey.challenge`, `loyalty_kit.loyalty_account.enroll` to L2;
+  `segments.segment.recompute` and `privacy.subject.export` to L2 (system); `loyalty_kit.loyalty_account.redeem` and
+  `.stamp` to L3 (a points balance); `loyalty_kit.loyalty_account.expire` to L3 (system); `panel.view.share` to L2;
+  `identity.passkey.verify` (it mints a session) and `identity.passkey.confirm` (it keeps a new key) to L4;
+  `webhooks.webhook_delivery.send` (an external send) and `access_log.access_log_entry.purge` (it deletes for good) to L4
+  (system).
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [d2b3d22]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/queue@0.19.0
+  - @stackra/iam@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/integrations@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/events@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/scheduler@0.19.0
+  - @stackra/support@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/scheduler@0.18.1
+  - @stackra/iam@0.18.1
+  - @stackra/integrations@0.18.1
+  - @stackra/actions@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/events@0.18.1
+  - @stackra/support@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/queue@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/scheduler@0.18.0
+  - @stackra/iam@0.18.0
+  - @stackra/integrations@0.18.0
+  - @stackra/actions@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/events@0.18.0
+  - @stackra/support@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/queue@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/scheduler@0.17.2
+  - @stackra/iam@0.17.2
+  - @stackra/integrations@0.17.2
+  - @stackra/actions@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/events@0.17.2
+  - @stackra/support@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/queue@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/integrations@0.17.1
+  - @stackra/iam@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/events@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/queue@0.17.1
+  - @stackra/scheduler@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/integrations@0.17.0
+  - @stackra/database@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/events@0.17.0
+  - @stackra/support@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/queue@0.17.0
+  - @stackra/scheduler@0.17.0
+  - @stackra/iam@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/scheduler@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/integrations@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/events@0.16.0
+  - @stackra/queue@0.16.0
+  - @stackra/iam@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/integrations@0.15.0
+  - @stackra/iam@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/events@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/queue@0.15.0
+  - @stackra/scheduler@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/integrations@0.14.4
+  - @stackra/iam@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/events@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/queue@0.14.4
+  - @stackra/scheduler@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/integrations@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/events@0.14.3
+  - @stackra/support@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/queue@0.14.3
+  - @stackra/scheduler@0.14.3
+  - @stackra/iam@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/integrations@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/events@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/queue@0.14.2
+  - @stackra/scheduler@0.14.2
+  - @stackra/iam@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/integrations@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/events@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/queue@0.14.1
+  - @stackra/scheduler@0.14.1
+  - @stackra/iam@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/integrations@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/events@0.14.0
+  - @stackra/support@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/queue@0.14.0
+  - @stackra/scheduler@0.14.0
+  - @stackra/iam@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/integrations@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/events@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/queue@0.13.0
+  - @stackra/scheduler@0.13.0
+  - @stackra/iam@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/integrations@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/events@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/queue@0.12.0
+  - @stackra/scheduler@0.12.0
+  - @stackra/iam@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/integrations@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/events@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/queue@0.11.1
+  - @stackra/scheduler@0.11.1
+  - @stackra/iam@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/integrations@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/events@0.11.0
+  - @stackra/support@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/queue@0.11.0
+  - @stackra/scheduler@0.11.0
+  - @stackra/iam@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/scheduler@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/integrations@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/queue@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/events@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/iam@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

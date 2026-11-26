@@ -11,17 +11,16 @@ import { ListingRecord } from "#core/records/listing.record";
 import type { Built } from "#core/types/built.type";
 import type { Display } from "#core/types/display.type";
 import type { DisplayNode } from "#core/types/display-node.type";
-import type { ElementOf } from "#core/types/element-of.type";
 import type { KpiBuilder } from "#core/types/kpi-builder.type";
+import type { ListDisplayOptions } from "#core/types/list-display-options.type";
 import type { ListPath } from "#core/types/list-path.type";
 import type { MetricPath } from "#core/types/metric-path.type";
-import type { Path } from "#core/types/path.type";
 
 /** Builds a widget's display over query output `O`. */
 export class DisplayRecord<O> implements Display<O> {
   /** One metric field. */
-  kpi(path: MetricPath<O>): KpiRecord {
-    return new KpiRecord(path);
+  kpi(path: MetricPath<O>): KpiRecord<O> {
+    return new KpiRecord<O>(path);
   }
 
   /**
@@ -29,7 +28,7 @@ export class DisplayRecord<O> implements Display<O> {
    *
    * @throws RangeError when no KPI is given.
    */
-  kpiGroup(kpis: readonly KpiBuilder[]): Built<DisplayNode> {
+  kpiGroup(kpis: readonly KpiBuilder<O>[]): Built<DisplayNode> {
     if (kpis.length === 0) throw new RangeError("kpiGroup(kpis) needs at least one KPI");
     return { toNode: () => WidgetDisplay.kpiGroup(kpis.map((kpi) => kpi.toNode())) };
   }
@@ -40,14 +39,7 @@ export class DisplayRecord<O> implements Display<O> {
   }
 
   /** The rows of a list field. */
-  list<K extends ListPath<O>>(
-    path: K,
-    options: {
-      readonly primary: Path<ElementOf<NonNullable<O[K]>>>;
-      readonly secondary?: Path<ElementOf<NonNullable<O[K]>>>;
-      readonly meta?: Path<ElementOf<NonNullable<O[K]>>>;
-    },
-  ): ListingRecord {
+  list<K extends ListPath<O>>(path: K, options: ListDisplayOptions<O, K>): ListingRecord {
     return new ListingRecord((flags) => WidgetDisplay.list({ path, ...options, ...flags }));
   }
 

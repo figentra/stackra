@@ -40,4 +40,10 @@ describe("packageSpecifier", () => {
     expect(packageSpecifier("@acme/kit", undefined)).toBe("@acme/kit/node");
     expect(packageSpecifier("@acme/kit", "src/modules/a/a.model.ts")).toBe("@acme/kit/node");
   });
+
+  it("sends a dependency's generated file to the host's own #stackra alias, which derives it again", () => {
+    expect(packageSpecifier("@stackra/loyalty-kit", ".stackra/gen/search.ts")).toBe(
+      "#stackra/search",
+    );
+  });
 });

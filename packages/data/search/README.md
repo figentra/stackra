@@ -517,7 +517,7 @@ uses no test framework and never throws for a miss: a thrown error becomes that 
 | ------------ | ------- | ------------------------------------------------------------------------------------ |
 | `timeout`    | `PT2S`  | How long the probe may take before it counts as failed.                              |
 | `critical`   | `true`  | A failed probe is `down` and fails `/readyz`; `false` reports `degraded`.            |
-| `table`      | `""`    | The table the probe searches, `schema.table` or `table`; empty refuses to construct. |
+| `table`      | `""`    | The table the probe searches, `schema.table` or `table`; empty is `down` on every probe. |
 | `primaryKey` | `id`    | That table's primary key column.                                                     |
 
 A failed probe never throws; its detail names the error type only.

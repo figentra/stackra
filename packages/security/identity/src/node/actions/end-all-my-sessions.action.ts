@@ -9,7 +9,7 @@
  * Runtime: node
  * Governing contract: ADR 0206; ADR 0462; ADR 0294 (decisions 16 and 21); STA-1580.
  */
-import { Action, type ActionContext } from "@stackra/actions";
+import { Action, type ActionContext, Idempotency } from "@stackra/actions";
 import { ActorKind } from "@stackra/contracts";
 import { ForbiddenError, UnauthenticatedError } from "@stackra/errors";
 
@@ -26,6 +26,7 @@ import type { SessionsInput } from "#node/schemas/sessions-input.schema";
 export class EndAllMySessionsAction extends Action({
   key: "session.end_all",
   actors: [ActorKind.User],
+  idempotency: Idempotency.Optional,
   // reason: the account owner's own security settings, never an agent's
   tool: false,
 }) {

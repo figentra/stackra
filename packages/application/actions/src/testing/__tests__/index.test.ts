@@ -31,6 +31,8 @@ describe("@stackra/actions/testing", () => {
       "MemoryActorStatusCheckDriver",
       "MemoryApprovalBindingStoreDriver",
       "MemoryApprovalGateDriver",
+      "MemoryJobDispatcherDriver",
+      "MemoryStepUpCheckDriver",
       "RecordingAuditTrailDriver",
       "denyPermission",
       "describeApprovalBindingStoreConformance",

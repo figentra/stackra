@@ -4,7 +4,8 @@
  *          `last` is the latest start, the greater id within one instant; `byAutomation` lists one
  *          automation's runs newest first and pages by start; `take` removes the oldest held signal of the
  *          same key, correlation and scope that arrived in time; `due` lists running and compensating runs and waiting
- *          runs whose deadline, wait or signal came; `expire` drops lapsed signals; there is no transaction or scope.
+ *          runs whose deadline, wait or signal came, each claim with its run's owner and start; `expired` claims lapsed
+ *          signals oldest lapse first and `remove` drops them; there is no transaction, scope or owner session.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0102 (decision 1).
@@ -85,6 +86,7 @@ describe(MemoryWorkflowJournalDriver, () => {
     expect(journal).toBeInstanceOf(WorkflowJournal);
     expect(await journal.transaction(SCOPE, async () => 7)).toBe(7);
     expect(await journal.currentScope()).toBeUndefined();
+    expect(await journal.currentOwner()).toBeUndefined();
   });
 
   it("keeps a copy of each saved run", async () => {
@@ -141,22 +143,38 @@ describe(MemoryWorkflowJournalDriver, () => {
     await journal.save(runOf("wfr_done", { status: WorkflowRunStatus.Completed }));
     await journal.save(waitingRun("wfr_waiting"));
     await journal.save(waitingRun("wfr_overdue", { deadlineAt: NOON }));
-    expect(await journal.due(NOON, 10)).toEqual(["wfr_running", "wfr_compensating", "wfr_overdue"]);
-    expect(await journal.due(LATER, 10)).toEqual([
+    const ids = async (at: Date, limit: number) =>
+      (await journal.due(at, limit)).map((claim) => claim.id);
+    expect(await ids(NOON, 10)).toEqual(["wfr_running", "wfr_compensating", "wfr_overdue"]);
+    expect(await ids(LATER, 10)).toEqual([
       "wfr_running",
       "wfr_compensating",
       "wfr_waiting",
       "wfr_overdue",
     ]);
     await journal.hold(heldSignal("wfs_1"));
-    expect(await journal.due(NOON, 2)).toEqual(["wfr_running", "wfr_compensating"]);
-    expect(await journal.due(NOON, 10)).toContain("wfr_waiting");
+    expect(await ids(NOON, 2)).toEqual(["wfr_running", "wfr_compensating"]);
+    expect(await ids(NOON, 10)).toContain("wfr_waiting");
   });
 
-  it("drops lapsed signals", async () => {
+  it("claims a due run with the owner it was saved with and its start", async () => {
     const journal = new MemoryWorkflowJournalDriver();
-    await journal.hold(heldSignal("wfs_1"));
-    await journal.expire(LATER);
-    expect(await journal.take("Confirmed", "c1", undefined, LATER)).toBeUndefined();
+    await journal.save(runOf("wfr_owned", { ownerId: "scp_acme" }));
+    await journal.save(runOf("wfr_platform"));
+    expect(await journal.due(NOON, 10)).toEqual([
+      { id: "wfr_owned", ownerId: "scp_acme", startedAt: NOON },
+      { id: "wfr_platform", startedAt: NOON },
+    ]);
+  });
+
+  it("claims lapsed signals oldest lapse first, and removes the given ones", async () => {
+    const journal = new MemoryWorkflowJournalDriver();
+    await journal.hold(heldSignal("wfs_later", { expiresAt: LATER }));
+    await journal.hold(heldSignal("wfs_noon", { expiresAt: NOON }));
+    expect(await journal.expired(NOON, 10)).toEqual([{ id: "wfs_noon" }]);
+    expect(await journal.expired(LATER, 1)).toEqual([{ id: "wfs_noon" }]);
+    await journal.remove(["wfs_noon"]);
+    expect(await journal.expired(LATER, 10)).toEqual([{ id: "wfs_later" }]);
+    expect((await journal.take("Confirmed", "c1", undefined, LATER))?.id).toBe("wfs_later");
   });
 });

@@ -19,12 +19,21 @@ describe("SETTINGS_PACK_SCHEMA", () => {
     });
   });
 
-  it("refuses a lock without a value and an object value", () => {
+  it("refuses a lock without a value, an object value and a list of non-strings", () => {
     expect(
       SETTINGS_PACK_SCHEMA.safeParse({ groups: { o: { values: {}, locked: ["a"] } } }).success,
     ).toBe(false);
-    expect(SETTINGS_PACK_SCHEMA.safeParse({ groups: { o: { values: { a: [] } } } }).success).toBe(
+    expect(
+      SETTINGS_PACK_SCHEMA.safeParse({ groups: { o: { values: { a: { b: 1 } } } } }).success,
+    ).toBe(false);
+    expect(SETTINGS_PACK_SCHEMA.safeParse({ groups: { o: { values: { a: [1] } } } }).success).toBe(
       false,
     );
+  });
+
+  it("parses a list value (STA-2056)", () => {
+    expect(
+      SETTINGS_PACK_SCHEMA.parse({ groups: { o: { values: { tags: ["basic", "premium"] } } } }),
+    ).toEqual({ groups: { o: { values: { tags: ["basic", "premium"] }, locked: [] } } });
   });
 });

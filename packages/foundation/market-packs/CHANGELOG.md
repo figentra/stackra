@@ -1,5 +1,484 @@
 # @stackra/market-packs
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/assets@0.33.1
+  - @stackra/filesystem@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 26a2d54: An interim `bundled` `ResolvedPackSource` (ADR 0386, amended 2026-11-09). It serves only the packs this package
+  bundles whose content hash the host pins in `packHashes`, and only `live` ones: an unpinned file is never read, and a
+  pin with no bundled pack, a changed file or a pinned draft is refused (`not_stored`, `hash_mismatch`, `not_live`). It
+  loads each pinned market lazily. In production it refuses at construction (`BundledPackSourceRefusedError`) unless the
+  host sets `allowBundledInProduction`, and warns once when that is set. `BUNDLED_PACK_HASHES` lists the live bundled
+  packs for a host to copy its pins from. `MarketPacksOptions` gains `environment` (`STACKRA_ENVIRONMENT`) and
+  `allowBundledInProduction`, and `PackRejection` gains `not_live`.
+
+### Patch Changes
+
+- 7c34d68: The bundled `ae` pack (0.2.0, still `draft`) authors the UAE's `fiscal.invoice` mandate from 2027-01-01, the first
+  mandatory group's date: the `peppol` driver with PINT AE's specification identifier `urn:peppol:pint:billing-1@ae-1`
+  and business process `urn:peppol:bis:billing`, the `Asia/Dubai` time zone, no separate reporting window (the document
+  is sent through the accredited service provider when it is issued) and a five-year retention. Each business brings its
+  own ASP, so `accessPointUrl` is the unit's option, never the pack's. It is served only once its reviewers sign it off
+  and it turns `live`.
+- 7c34d68: The bundled `eg` pack (0.2.0, still `draft`) authors ETA's `fiscal.invoice` mandate from 2020-11-15: the `eta` driver
+  with the production System API's submission and document details paths, `documentTypeVersion` 1.0, amounts in EGP, the
+  UNCL 5305 categories mapped to T1 subtypes (S → V009, Z → V001, E → V003, O → V004), a same-day (24-hour) submission
+  window and a five-year retention. The issuer's `activityCode` is the unit's own option, never the pack's. It is served
+  only once its reviewers sign it off and it turns `live`.
+- 7c34d68: The bundled `sa` pack (0.2.0, still `draft`) authors ZATCA's `fiscal.invoice` mandate from 2023-01-01: the `zatca`
+  driver with Fatoora's production gateway paths, a 24-hour reporting window for simplified invoices and a six-year
+  retention. It is served only once its reviewers sign it off and it turns `live`.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/assets@0.33.0
+  - @stackra/filesystem@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/assets@0.32.0
+  - @stackra/filesystem@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/support@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/assets@0.31.0
+  - @stackra/filesystem@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/support@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8084b3a]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a03990d]
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/filesystem@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/assets@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/support@0.30.0
+
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [b4b6422]
+  - @stackra/container@0.29.0
+  - @stackra/assets@0.29.0
+  - @stackra/filesystem@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+  - @stackra/support@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/assets@0.28.0
+  - @stackra/filesystem@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/support@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/assets@0.27.0
+  - @stackra/filesystem@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/support@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/assets@0.26.0
+  - @stackra/filesystem@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/support@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/assets@0.25.0
+  - @stackra/filesystem@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/support@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/assets@0.24.0
+  - @stackra/filesystem@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/support@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/assets@0.23.0
+  - @stackra/filesystem@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/support@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/assets@0.22.0
+  - @stackra/filesystem@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/support@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/assets@0.21.0
+  - @stackra/filesystem@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/support@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [a7b7e58]
+- Updated dependencies [667a3b5]
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/assets@0.20.0
+  - @stackra/filesystem@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/contracts@0.20.0
+  - @stackra/support@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/filesystem@0.19.0
+  - @stackra/assets@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/support@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/assets@0.18.1
+  - @stackra/filesystem@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/support@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/assets@0.18.0
+  - @stackra/filesystem@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/support@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/assets@0.17.2
+  - @stackra/filesystem@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/support@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- 0b917cf: Market packs list payment providers under `payments.byo_providers` (the old hyphenated key failed the pack key
+  grammar), and the ae, sa and eg packs list their launch providers.
+- @stackra/assets@0.17.1
+  - @stackra/filesystem@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/support@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/assets@0.17.0
+  - @stackra/filesystem@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/support@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/filesystem@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/assets@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+  - @stackra/support@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/assets@0.15.0
+  - @stackra/filesystem@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/support@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/assets@0.14.4
+  - @stackra/filesystem@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/support@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/assets@0.14.3
+  - @stackra/filesystem@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/support@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/assets@0.14.2
+  - @stackra/filesystem@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+  - @stackra/support@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/assets@0.14.1
+  - @stackra/filesystem@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/support@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/assets@0.14.0
+  - @stackra/filesystem@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/support@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/assets@0.13.0
+  - @stackra/filesystem@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/support@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/assets@0.12.0
+  - @stackra/filesystem@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/support@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/assets@0.11.1
+  - @stackra/filesystem@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/support@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/assets@0.11.0
+  - @stackra/filesystem@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/support@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/assets@0.10.0
+  - @stackra/filesystem@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+  - @stackra/support@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

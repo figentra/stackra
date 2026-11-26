@@ -1,5 +1,740 @@
 # @stackra/search
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/settings@0.33.1
+  - @stackra/outbox@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [628b60d]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/i18n@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/settings@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/outbox@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/outbox@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/settings@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [0f05f60]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/i18n@0.31.0
+  - @stackra/settings@0.31.0
+  - @stackra/outbox@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 265a3ee: The search index registry and the privacy tables are tenant-owned in the platform form: a nullable `tenant_id`,
+  filled from `app.tenant_id` by default (a NULL row is the platform's), forced row-level security and the platform
+  policies. Cross-tenant readers go through audited system functions that return ids, owners and status columns only.
+  
+  `@stackra/search` (migration `search.0010_contract_search_index_tenancy`): `search.indexes` backfills a row at a tenant
+  node (`nlevel(scope_path) = 3`) from its scope and keeps a row with no scope, at the root or at a product node, as a
+  platform row. A NULL scope key replaces the `-` of a platform-wide index under the key `(tenant_id, model, scope_key)`
+  (NULLs not distinct). `SearchIndexRegistry.list` (`search:status`) reads every tenant's indexes through
+  `search.index_statuses`, and `SearchIndexStatus` gains `ownerId`. `begin`, `progress` and `finish` change only the
+  call's own row.
+  
+  Upgrade, search: the migration refuses, changing nothing, while an index registry row sits below a tenant node; delete
+  those rows (they hold only a rebuild's state and counts), migrate, then run `search:reindex` in each node's tenant.
+  
+  `@stackra/privacy` (migration `privacy.0003_contract_privacy_tenancy`): `subject_salts`, `legal_holds` and
+  `legal_hold_refusals` copy their `scope_id` partition exactly into `tenant_id` (`-` becomes NULL) and drop its policy;
+  no driver or action reads or writes the `-` partition any more. A salt is keyed `(tenant_id, subject)` (NULLs not
+  distinct).
+  
+  Breaking, privacy: `PostgresHoldRegistryDriver` takes the `Container` as its second argument and reads the
+  `CallIsolation` from it optionally. In a system run (no tenant, as `maintainPartitions` runs) it claims the live holds
+  of every tenant through `privacy.claim_live_holds`, then checks and logs each owner's holds in that owner; a claimed
+  hold that does not load throws `ClaimNotLoadedError` and a tenant's hold with no isolation bound throws
+  `RowIsolationMissingError` (both from `@stackra/outbox`): a held record is never let go by a skip. An app without
+  tenancy still boots; its platform holds run as before.
+  
+  Rolling deploy: both migrations are expand steps, so the previous release keeps working beside this one for one
+  release.
+  
+  - Search keeps a plain unique index on `(model, scope_key)` (NULLs distinct) for the previous release's
+    `on conflict (model, scope_key)`, and `-` stays a valid key.
+  - Privacy keeps `scope_id` (now nullable, unused by this release). `privacy.fill_legacy_scope_id` fills it on insert
+    from `tenant_id` (`-` for a platform row), and the salts' primary key becomes a unique index on
+    `(scope_id, subject)`.
+  
+  Later contract step, once no previous release runs:
+  
+  - Search: set each remaining `-` key to NULL (deleting one whose owner already has a NULL row), then drop
+    `idx_indexes_model_scope_key`.
+  - Privacy: drop the three `trg_*_legacy_scope_id` triggers, `privacy.fill_legacy_scope_id`,
+    `idx_subject_salts_scope_id_subject` and the `scope_id` columns.
+
+### Patch Changes
+
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [98a8940]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [c8e7592]
+- Updated dependencies [11def65]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/settings@0.30.0
+  - @stackra/outbox@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/tenancy@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/i18n@0.30.0
+  - @stackra/validation@0.30.0
+
+## 0.29.0
+
+### Patch Changes
+
+- Updated dependencies [3361957]
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [11a19a7]
+- Updated dependencies [1b727b9]
+- Updated dependencies [b26036e]
+- Updated dependencies [45afd22]
+  - @stackra/actions@0.29.0
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/tenancy@0.29.0
+  - @stackra/settings@0.29.0
+  - @stackra/outbox@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/config@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/i18n@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- Updated dependencies [2b6f88c]
+  - @stackra/actions@0.28.0
+  - @stackra/database@0.28.0
+  - @stackra/outbox@0.28.0
+  - @stackra/tenancy@0.28.0
+  - @stackra/settings@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/config@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/i18n@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+- Updated dependencies [8a70552]
+  - @stackra/database@0.27.0
+  - @stackra/outbox@0.27.0
+  - @stackra/tenancy@0.27.0
+  - @stackra/settings@0.27.0
+  - @stackra/actions@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/config@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/i18n@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [9b02a7c]
+- Updated dependencies [9cee75d]
+- Updated dependencies [a9f21b6]
+  - @stackra/database@0.26.0
+  - @stackra/tenancy@0.26.0
+  - @stackra/actions@0.26.0
+  - @stackra/outbox@0.26.0
+  - @stackra/settings@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/config@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/tenancy@0.25.0
+  - @stackra/outbox@0.25.0
+  - @stackra/settings@0.25.0
+  - @stackra/actions@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/config@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [35959f6]
+- Updated dependencies [f86dec4]
+- Updated dependencies [2df7162]
+  - @stackra/actions@0.24.0
+  - @stackra/database@0.24.0
+  - @stackra/outbox@0.24.0
+  - @stackra/tenancy@0.24.0
+  - @stackra/settings@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/config@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- 12f4836: The tenancy contract step of `search.vector_items` and `search.queries`, in the platform form. Migration
+  `search.0009_contract_search_tenancy` keeps `tenant_id` nullable: a NULL row is the platform's (the global corpus).
+  A tenant session reads its own rows and the platform's rows, and writes only its own. It cannot update, delete or take
+  over a platform row. A platform session reads and writes only NULL rows. The scope path still narrows a tenant's rows.
+  A tenant reads the platform rows at the root and at its own product's node, never another product's.
+  
+  The migration first refuses, before changing anything, while a row has no tenant but sits at or below a tenant node
+  (deeper than a product node). Such a row belongs to a tenant and was written in the expand step outside a tenant call.
+  An environment with such rows runs the tenant backfill (RUNWAY 4c) first. A NULL row at the root or at a product node
+  is a platform row and stays.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [1083617]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [a42a80c]
+- Updated dependencies [fb6e2b3]
+- Updated dependencies [12f4836]
+  - @stackra/database@0.23.0
+  - @stackra/tenancy@0.23.0
+  - @stackra/actions@0.23.0
+  - @stackra/settings@0.23.0
+  - @stackra/outbox@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/config@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+- Updated dependencies [786848c]
+- Updated dependencies [227dd7a]
+- Updated dependencies [940e198]
+  - @stackra/database@0.22.0
+  - @stackra/actions@0.22.0
+  - @stackra/tenancy@0.22.0
+  - @stackra/outbox@0.22.0
+  - @stackra/settings@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/config@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- d3e77e0: `SearchHealthIndicatorDriver` no longer throws when `health.table` is empty. It builds, and every `check()` reports
+  `down` with "search health.table is not set", without searching. A deploy without the setting still fails `/readyz`,
+  and a testing container that binds every indicator (gen's wiring) compiles again; commerce catalogue and os parties
+  lost every module-booting test to the constructor error.
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/tenancy@0.21.0
+  - @stackra/actions@0.21.0
+  - @stackra/config@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/outbox@0.21.0
+  - @stackra/settings@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [667a3b5]
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/actions@0.20.0
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/outbox@0.20.0
+  - @stackra/tenancy@0.20.0
+  - @stackra/settings@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/config@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Minor Changes
+
+- 9063bb3: A multi-word search also returns the rows that hold only some of its words, after every full match: the Postgres
+  driver adds a partial lane and ranks its rows below every row a full lane found, so full matches keep their order and
+  partial ones fill the tail. A one-word search is unchanged. The evaluation set's recall@50 now reaches its threshold.
+
+### Patch Changes
+
+- d76d1ed: The expand step of tenancy audit gap D: each scope-path table gains a nullable, indexed `tenant_id` that every insert
+  fills from `app.tenant_id` (`t.belongsToTenant({ expand: true })`), with no policy change, so no session reads a row
+  more or less. Migrations: `achievements.0003_add_tenancy` (`award_kinds`, `awards`), `rules.0004_add_tenancy`
+  (`rule_sets`), `segments.0002_add_tenancy` (`segments`, `segment_memberships`), `content.0005_add_tenancy`
+  (`custom_fields`, `custom_field_value_sets`, `revisions`), `search.0008_add_tenancy` (`vector_items`, `queries`),
+  `collaboration.0003_add_tenancy` (the four comment tables) and `workflow.0010_add_tenancy` (`automations`, `checklists`,
+  `checklist_progresses`). Each package now depends on `@stackra/tenancy` for the macro. Older rows stay null until a
+  backfill job sets them; the contract step (NOT NULL, the tenant equality as the one permissive policy, the scope path
+  restrictive) follows in a later release.
+- 6ec440d: Each package's tenancy expand migration now carries the package's name, in its class and its file
+  (`AddAchievementsTenancyMigration` in `0003-add-achievements-tenancy.migration.ts`, and so on), so no exported name is
+  declared in two packages. The SQL is unchanged. The migration ids change with the file names
+  (`achievements.0003_add_achievements_tenancy`); these migrations ship first in this release, so no database has
+  applied the old ids.
+- Updated dependencies [58e3066]
+- Updated dependencies [58a8fa5]
+- Updated dependencies [b59aa22]
+- Updated dependencies [cb26737]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [0da5f7a]
+- Updated dependencies [0921f1f]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [0e0de4f]
+- Updated dependencies [e5ac3d0]
+- Updated dependencies [d2b3d22]
+- Updated dependencies [eafb209]
+- Updated dependencies [d22e767]
+- Updated dependencies [e283a31]
+- Updated dependencies [27f2b3f]
+- Updated dependencies [15d8a1b]
+- Updated dependencies [bc5a0ab]
+  - @stackra/contracts@0.19.0
+  - @stackra/actions@0.19.0
+  - @stackra/tenancy@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/config@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/outbox@0.19.0
+  - @stackra/settings@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/actions@0.18.1
+  - @stackra/database@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/config@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/i18n@0.18.1
+  - @stackra/validation@0.18.1
+  - @stackra/outbox@0.18.1
+  - @stackra/settings@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/actions@0.18.0
+  - @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/config@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/i18n@0.18.0
+  - @stackra/validation@0.18.0
+  - @stackra/outbox@0.18.0
+  - @stackra/settings@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/actions@0.17.2
+  - @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/config@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/i18n@0.17.2
+  - @stackra/validation@0.17.2
+  - @stackra/outbox@0.17.2
+  - @stackra/settings@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/settings@0.17.1
+  - @stackra/actions@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/config@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/i18n@0.17.1
+  - @stackra/validation@0.17.1
+  - @stackra/outbox@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/actions@0.17.0
+  - @stackra/database@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/config@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/i18n@0.17.0
+  - @stackra/validation@0.17.0
+  - @stackra/outbox@0.17.0
+  - @stackra/settings@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [c6e4715]
+- Updated dependencies [5bf8ad3]
+  - @stackra/settings@0.16.0
+  - @stackra/validation@0.16.0
+  - @stackra/actions@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/config@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/outbox@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- Updated dependencies [0b0cf51]
+  - @stackra/outbox@0.15.0
+  - @stackra/actions@0.15.0
+  - @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/config@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/validation@0.15.0
+  - @stackra/settings@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [6406843]
+- Updated dependencies [cc150d2]
+  - @stackra/settings@0.14.4
+  - @stackra/actions@0.14.4
+  - @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/config@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/validation@0.14.4
+  - @stackra/outbox@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/actions@0.14.3
+  - @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/config@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/validation@0.14.3
+  - @stackra/outbox@0.14.3
+  - @stackra/settings@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/actions@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/config@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/outbox@0.14.2
+  - @stackra/settings@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/actions@0.14.1
+  - @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/config@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/validation@0.14.1
+  - @stackra/outbox@0.14.1
+  - @stackra/settings@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/actions@0.14.0
+  - @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/config@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/validation@0.14.0
+  - @stackra/outbox@0.14.0
+  - @stackra/settings@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/actions@0.13.0
+  - @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/config@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/validation@0.13.0
+  - @stackra/outbox@0.13.0
+  - @stackra/settings@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/actions@0.12.0
+  - @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/config@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/validation@0.12.0
+  - @stackra/outbox@0.12.0
+  - @stackra/settings@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/actions@0.11.1
+  - @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/config@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/validation@0.11.1
+  - @stackra/outbox@0.11.1
+  - @stackra/settings@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/actions@0.11.0
+  - @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/config@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/validation@0.11.0
+  - @stackra/outbox@0.11.0
+  - @stackra/settings@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/config@0.10.0
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/actions@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/outbox@0.10.0
+  - @stackra/settings@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

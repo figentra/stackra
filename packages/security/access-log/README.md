@@ -64,7 +64,7 @@ or query call throws, because `RequestContext` has no actor to log.
 | `./node`      | `PostgresAccessLogSinkDriver`, `AccessLogEntry`                       | the production sink and its tenant-owned, append-only table         |
 | `./node`      | `DataClassificationMacro`                                             | `t.dataClassification(column)` for any host table                   |
 | `./node`      | `PurgeAccessLogAction`, `PurgeAccessLogInput`, `PurgeAccessLogOutput` | the nightly retention job                                           |
-| `./node`      | `AccessLogEntryPermissions`                                           | `purge` (L2, system): the permission the retention job runs under   |
+| `./node`      | `AccessLogEntryPermissions`                                           | `purge` (L4, system): the permission the retention job runs under   |
 | `.`           | `linkAuditEntry`, `findAuditChainBreak`, `AUDIT_WRITE_SKIPPED`        | the audit chain's link and verifier; the skipped-write log event    |
 | `./contracts` | `AuditRecord`, `AuditLink`                                            | the stored write audit and its chain link                           |
 | `./node`      | `PostgresAuditTrailDriver`, `AuditLogEntry`                           | the `AuditTrail` store and its tenant-owned, append-only table      |

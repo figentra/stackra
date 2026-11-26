@@ -13,11 +13,13 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { WebhookDelivery } from "#node/models/webhook-delivery.model";
 
 describe("WebhookDelivery", () => {
-  it("is a model with the whd public id and the timestamps", () => {
+  it("is a model with the whd public id, the tenant and the timestamps", () => {
     expect(new WebhookDelivery()).toBeInstanceOf(Model);
     expect(traitsOf(WebhookDelivery).map((trait) => trait.name)).toEqual([
       "has_public_id",
+      "belongs_to_tenant",
       "timestamps",
+      "moves_with_scope",
     ]);
     expect(traitsOf(WebhookDelivery)[0]?.options).toEqual({ prefix: "whd" });
     expect(new WebhookDelivery().id).toMatch(/^whd_[0-9a-z]{26}$/);

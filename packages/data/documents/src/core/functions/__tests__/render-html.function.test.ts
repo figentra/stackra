@@ -90,7 +90,51 @@ const DATA = {
   signer: { image: SIGNATURE_IMAGE },
 };
 
+/** The page after its `<body>` tag: what the blocks and the brand rendered. */
+const bodyOf = (html: string): string => html.slice(html.indexOf("<body>") + "<body>".length);
+
 describe("renderHtml", () => {
+  it("adds a brand's logo and accent and leaves every block as it was", () => {
+    const plain = renderHtml(resolveDocument(parseDocumentTemplate(TEMPLATE), DATA));
+    const branded = renderHtml(
+      resolveDocument(
+        parseDocumentTemplate({
+          ...TEMPLATE,
+          brand: { logo: "brand.logo", accent: "brand.accent" },
+        }),
+        { ...DATA, brand: { logo: SIGNATURE_IMAGE, accent: "#1F6B4A" } },
+      ),
+    );
+
+    const logo =
+      '<figure class="brand-logo start"><img src="data:image/png;base64,iVBORw==" alt=""></figure>';
+    expect(bodyOf(branded)).toBe(`${logo}${bodyOf(plain)}`);
+    expect(branded).toContain("h1{color:#1F6B4A}th{border-bottom-color:#1F6B4A}");
+    expect(bodyOf(plain)).not.toContain("brand-logo");
+  });
+
+  it("ignores a brand value it cannot use, and never refuses for it", () => {
+    const html = renderHtml(
+      resolveDocument(
+        parseDocumentTemplate({
+          ...TEMPLATE,
+          brand: { logo: "brand.logo", accent: "brand.accent" },
+        }),
+        {
+          ...DATA,
+          brand: {
+            logo: { mediaType: "image/svg+xml", bytes: new Uint8Array(4) },
+            accent: "red;}body{",
+          },
+        },
+      ),
+    );
+
+    expect(bodyOf(html)).not.toContain("brand-logo");
+    expect(html).not.toContain("red;}");
+    expect(html).not.toContain("h1{color:");
+  });
+
   it("writes a self-contained right-to-left page", () => {
     const html = renderHtml(resolveDocument(parseDocumentTemplate(TEMPLATE), DATA));
     expect(html.startsWith('<!doctype html><html lang="ar" dir="rtl">')).toBe(true);

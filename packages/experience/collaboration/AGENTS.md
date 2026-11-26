@@ -36,7 +36,7 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./re
 - A peer's principal is stamped by the server driver; never accept one from a client.
 - The room publish action (`collaboration.room.publish`, `src/node/actions/`) passes the call's subject to
   `RealtimeRooms.publishFrom`; never a principal from the input. A publish key is the membership's secret: never log it.
-  Its permission is `RoomPermissions.publish` (L1), read by key.
+  Its permission is `RoomPermissions.publish` (L2), read by key.
 - `openRoom` falls back to the event stream only when the socket closed unopened, and stays on it for the link's life.
 - No offline queue, no record sync (ADR 0227): resend the full state on every open instead.
 - No tenant vocabulary: a room is a document `PublicId` and a `ScopeRef` (R-59).

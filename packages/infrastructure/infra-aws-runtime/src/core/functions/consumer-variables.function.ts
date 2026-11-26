@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `consumerVariables(plan)`, the resource variable names each consumer (a service member or a workload) gets,
- *          from the resources it uses: what the Infisical sync hands an Encore service and what a workload's task
+ *          from the resources it uses: what runway's secrets sync hands an Encore service and what a workload's task
  *          definition references.
  * Boundary: pure; names only, sorted per consumer.
  * Runtime: isomorphic

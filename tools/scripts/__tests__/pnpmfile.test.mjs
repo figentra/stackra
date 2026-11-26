@@ -3,7 +3,7 @@
  * Purpose: hold the workspace `.pnpmfile.mjs` to its contract: the packed manifest loses its `#` `imports` map and
  *          its `@stackra/source` export condition, a `dist` that still imports a `#` specifier fails the pack, and a
  *          `#` specifier in a comment does not; a Stackra package without `stackra.manifest.json` on disk and in
- *          `files` fails the pack, a tooling preset and another kind do not (STA-1362).
+ *          `files` fails the pack, a tooling preset, a data-only package and another kind do not (STA-1362).
  * Boundary: writes throwaway member folders under the OS temp directory and removes them.
  * Runtime: node
  * Governing contract: ADR 0177 (PK4 release checks); ADR 0453 (registry publish); ADR 0022 (tests live in tests folders).
@@ -114,6 +114,7 @@ test("beforePacking drops both the imports map and the source condition in one p
 const library = {
   name: "@stackra/w",
   files: ["dist", "stackra.manifest.json"],
+  exports: { ".": "./dist/index.mjs" },
   stackra: { kind: "package", tier: "lib" },
 };
 
@@ -163,11 +164,17 @@ test("beforePacking refuses a Stackra package whose files leave the manifest out
   }
 });
 
-test("beforePacking asks no manifest of a tooling preset, another kind or a non-Stackra member", () => {
+test("beforePacking asks no manifest of a preset, a data-only package or another kind", () => {
   const dir = stackraMember(false);
+  const dataOnly = { ...library, exports: undefined }; // no exports, no main: like flow-preset
   try {
+    assert.throws(
+      () => hooks.beforePacking({ ...dataOnly, main: "./dist/index.mjs" }, dir),
+      /no stackra\.manifest\.json/,
+    );
     for (const plain of [
       { ...library, stackra: { kind: "package", tier: "config" } },
+      { ...dataOnly, files: ["preset"] },
       { ...library, stackra: { kind: "skill" } },
       { name: "@stackra/v", files: ["dist"] },
     ])

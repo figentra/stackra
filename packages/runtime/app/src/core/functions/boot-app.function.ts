@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `bootApp`, the boot every target's `createApp` shares: it builds each configuration class of the wiring
  *          from the target's raw environment (secrets by name from the same source), binds the wiring itself as
- *          `AppWiring`, boots the container with those instances in place of their classes, and picks the error
- *          reporter.
+ *          `AppWiring`, binds the same secrets as the `SecretStore` port unless the caller overrides it, boots the
+ *          container with those instances in place of their classes, and picks the error reporter.
  * Boundary: boots; it starts nothing (no server, no window, no render). A configuration that breaks its rule or a
  *           required secret that is missing throws `ConfigInvalidError` naming it, and a port with no driver throws
  *           `UnresolvedPortError`, so a bad environment fails boot instead of a later call. A host override is built
@@ -16,6 +16,7 @@ import { buildConfig } from "@stackra/config";
 import type { Config } from "@stackra/config";
 import { Container } from "@stackra/container";
 import type { ContainerOptions, Token, Wiring } from "@stackra/container";
+import { SecretStore } from "@stackra/config/contracts";
 import { ErrorReporter } from "@stackra/errors/contracts";
 
 import { ConsoleErrorReporterDriver } from "#core/drivers/console-error-reporter.driver";
@@ -45,6 +46,8 @@ export async function bootApp(
     const type = (entry.override ?? entry.provide) as new () => Config;
     overrides.set(entry.provide, buildConfig(type, { env, secrets }));
   }
+  // A driver that reads a secret by name (an event signer, a webhook receiver) gets the same source as @Secret fields.
+  if (!overrides.has(SecretStore)) overrides.set(SecretStore, secrets);
   overrides.set(AppWiring, new AppWiring(wiring));
   const containerOptions: ContainerOptions =
     options.roots === undefined ? { overrides } : { overrides, roots: options.roots };

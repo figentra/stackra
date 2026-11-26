@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/skills/mobile-eas-setup/SKILL.md
+file: skills/mobile-eas-setup.md
+reason: "core's newer text, until the stackra preset carries it: pnpm 12.16.1 everywhere (core #384); keeps the preset's turbo run line (STA-2129)"
+owner: figentra-usr
+review: 2027-02-01

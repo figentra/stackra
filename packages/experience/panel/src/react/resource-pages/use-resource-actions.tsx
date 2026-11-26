@@ -29,10 +29,10 @@ import { PANEL_KEYS } from "#core/constants/panel-keys.constant";
 import { ActionPlace } from "#core/enums/action-place.enum";
 import { actionFormKeys } from "#core/functions/action-form-keys.function";
 import { actionLabelKey } from "#core/functions/action-label-key.function";
-import { idOf } from "#core/functions/id-of.function";
 import { placementsAt } from "#core/functions/placements-at.function";
 import { recordIdKey } from "#core/functions/record-id-key.function";
 import { resourceActionLook } from "#core/functions/resource-action-look.function";
+import { resourceActionsAt } from "#core/functions/resource-actions-at.function";
 import { shownWhen } from "#core/functions/shown-when.function";
 import { specText } from "#core/functions/spec-text.function";
 import type { PlacementNode } from "#core/types/placement-node.type";
@@ -42,6 +42,7 @@ import type { PageRef } from "#core/types/page-ref.type";
 import { useActionRunner } from "#react/action-runner/use-action-runner";
 import { useCan } from "#react/action-runner/use-can";
 import { ActionInputModal } from "#react/resource-pages/action-input-modal";
+import type { PendingAction } from "#react/resource-pages/pending-action.type";
 import type { PlacedAction } from "#react/resource-pages/placed-action.type";
 import type { ResourceActions } from "#react/resource-pages/resource-actions.type";
 
@@ -92,16 +93,7 @@ export function useResourceActions(
   const removeRef = typeof remove === "function" ? (remove as ActionRef) : undefined;
   const placed = (tree.actions ?? []).filter((node) => can(node.permission));
   const once = tree.table?.bulkActions?.runMode === "once";
-  const [pending, setPending] = useState<
-    | {
-        readonly action: ActionRef;
-        readonly idKey: string | undefined;
-        readonly ids: readonly string[] | undefined;
-        readonly record: object | undefined;
-        readonly keys: readonly string[];
-      }
-    | undefined
-  >();
+  const [pending, setPending] = useState<PendingAction | undefined>();
 
   /** A button that runs `action` once per id in `ids` (or once over them all), or once with no record. */
   const runner = (
@@ -178,48 +170,38 @@ export function useResourceActions(
         />
       ),
     at(place, record) {
-      const ids = record === undefined ? undefined : [idOf(record)];
-      const out: PlacedAction[] = [];
-      const recordId = ids?.[0];
-      if (place === ActionPlace.Row && recordId !== undefined && pages.view !== undefined)
-        out.push(link("view", t(PANEL_KEYS.panel.resources.view), pages.view, recordId));
-      if (
-        (place === ActionPlace.Row || place === ActionPlace.View) &&
-        recordId !== undefined &&
-        pages.edit !== undefined
-      )
-        out.push(link("edit", t(PANEL_KEYS.panel.resources.edit), pages.edit, recordId));
-      if (
-        (place === ActionPlace.ListHeader || place === ActionPlace.Empty) &&
-        pages.create !== undefined &&
-        !placed.some((node) => node.kind === "create")
-      )
-        out.push(link("create", t(PANEL_KEYS.panel.resources.create), pages.create));
-      placementsAt(placed, place, (action) => idKey(action) !== undefined)
+      return resourceActionsAt<PlacedAction>({
+        place,
+        record,
+        pages,
+        placements: placed,
+        takesRecord: (action) => idKey(action) !== undefined,
+        link: (id, to, recordId) => link(id, t(PANEL_KEYS.panel.resources[id]), to, recordId),
         // A record predicate reads the record; a place without one ignores it.
-        .filter((node) => record === undefined || shownWhen(node.visibleWhen, record))
-        .forEach((node) => {
+        placed: (node, _, ids) => {
+          if (record !== undefined && !shownWhen(node.visibleWhen, record)) return [];
           if (node.kind === "create" && pages.create !== undefined)
-            out.push({
-              ...link("create", t(PANEL_KEYS.panel.resources.create), pages.create),
-              ...lookOf(node),
-            });
+            return [
+              {
+                ...link("create", t(PANEL_KEYS.panel.resources.create), pages.create),
+                ...lookOf(node),
+              },
+            ];
           if (node.kind === "run")
-            out.push(
+            return [
               runner(node.action as ActionRef, ids, (node.action as ActionRef).key, record, node),
-            );
-        });
-      if (
-        removeRef !== undefined &&
-        recordId !== undefined &&
-        (place === ActionPlace.Row || place === ActionPlace.View)
-      )
-        out.push({
-          ...runner(removeRef, ids, "delete"),
-          label: t(PANEL_KEYS.panel.resources.delete),
-          tone: "danger",
-        });
-      return out;
+            ];
+          return [];
+        },
+        remove:
+          removeRef === undefined
+            ? undefined
+            : (ids) => ({
+                ...runner(removeRef, ids, "delete"),
+                label: t(PANEL_KEYS.panel.resources.delete),
+                tone: "danger",
+              }),
+      });
     },
     bulk(ids) {
       const out = placementsAt(

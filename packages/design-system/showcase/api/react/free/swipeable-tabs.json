@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "aa170d0bdffd16b7",
+    "hash": "5860860a8504e7a6",
     "propsFiles": ["ui/src/react/swipeable-tabs/swipeable-tabs.props.ts"]
   },
   "importLine": "import { SwipeableTabs } from \"@stackra/ui/react\";",
@@ -9,18 +9,18 @@
     {
       "events": [
         {
-          "description": "Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web.",
-          "name": "onClose",
-          "required": false,
-          "source": "stackra",
-          "type": "(id: string) => void"
-        },
-        {
           "description": "Called with the ids now selected each time the selection changes, in the order the items are in.",
           "name": "onSelectionChange",
           "required": false,
           "source": "stackra",
           "type": "(keys: readonly string[]) => void"
+        },
+        {
+          "description": "Called with a closable tab's id when its close mark is pressed, or Delete is pressed on it on web.",
+          "name": "onClose",
+          "required": false,
+          "source": "stackra",
+          "type": "(id: string) => void"
         }
       ],
       "name": "SwipeableTabs",
@@ -34,11 +34,11 @@
         },
         {
           "default": "primary",
-          "description": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one. Defaults to `primary`.",
+          "description": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one, and `steps` plain words\njoined by arrows with the selected step in the accent (a marketing switcher, such as Action → Endpoint → Client;\nnative draws it as `secondary`). Defaults to `primary`.",
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"primary\""
+          "type": "\"secondary\" | \"primary\" | \"steps\""
         },
         {
           "description": "True to show every tab but refuse selecting any of them.",
@@ -62,18 +62,18 @@
           "type": "boolean"
         },
         {
-          "description": "What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that\nfit and lists the rest in a \"More\" menu at the end (the selected tab always stays in the row). Native always scrolls.",
-          "name": "overflow",
-          "required": false,
-          "source": "stackra",
-          "type": "\"menu\" | \"scroll\""
-        },
-        {
           "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",
           "name": "loadingLabel",
           "required": false,
           "source": "stackra",
           "type": "string"
+        },
+        {
+          "description": "What happens to tabs that do not fit the row: `scroll` (the default) scrolls the row; `menu` keeps the tabs that\nfit and lists the rest in a \"More\" menu at the end (the selected tab always stays in the row). Native always scrolls.",
+          "name": "overflow",
+          "required": false,
+          "source": "stackra",
+          "type": "\"menu\" | \"scroll\""
         },
         {
           "description": "The ids of the selected items, for a controlled collection; pair it with `onSelectionChange`.",

@@ -11,6 +11,7 @@
 import { BridgeRejectedError } from "#core/errors/bridge-rejected.error";
 import { EntitlementRequiredError } from "#core/errors/entitlement-required.error";
 import { ForbiddenError } from "#core/errors/forbidden.error";
+import { IdempotencyKeyInProgressError } from "#core/errors/idempotency-key-in-progress.error";
 import { IdempotencyKeyReusedError } from "#core/errors/idempotency-key-reused.error";
 import { LiveReadOnlyError } from "#core/errors/live-read-only.error";
 import { NotFoundError } from "#core/errors/not-found.error";
@@ -28,6 +29,7 @@ export const CoreRefusals = Object.freeze({
   bridge_rejected: BridgeRejectedError,
   entitlement_required: EntitlementRequiredError,
   forbidden: ForbiddenError,
+  idempotency_key_in_progress: IdempotencyKeyInProgressError,
   idempotency_key_reused: IdempotencyKeyReusedError,
   live_read_only: LiveReadOnlyError,
   not_found: NotFoundError,

@@ -1,0 +1,15 @@
+{
+  "member": "actions",
+  "package": "@stackra/actions",
+  "version": "0.19.0",
+  "drivers": [
+    {
+      "port": "IdempotencyStore",
+      "key": "actions.IdempotencyStore",
+      "candidates": ["memory"],
+      "classes": {
+        "memory": { "class": "MemoryIdempotencyStoreDriver", "from": "@stackra/actions", "deps": [] }
+      }
+    }
+  ]
+}

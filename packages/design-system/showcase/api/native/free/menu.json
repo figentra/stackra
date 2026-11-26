@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "d549b0fb26bef6c4",
+    "hash": "47ad0c04038619ae",
     "heroDoc": "vendor/heroui/native/menu.json",
     "propsFiles": ["ui/src/native/menu/menu.props.ts"]
   },
@@ -53,7 +53,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The keys of the chosen actions, for a controlled menu; pair it with `onChange`.",

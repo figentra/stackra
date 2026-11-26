@@ -16,7 +16,8 @@ Governing contract: ADR 0294; ADR 0295; ADR 0260 (generated clients); ADR 0261; 
                     stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59);
                     STA-1363 (consumed services' lang, forms over remote shapes, `Settings.pick`, unresolved enum
                     cases); stackra-209 (the `#stackra/settings` keys and `Settings.pick` forms); STA-1365 (gen agrees with the
-                    base-matches-suffix lint, `I18nKey`, members off the container).
+                    base-matches-suffix lint, `I18nKey`, members off the container); ADR 0101 and STA-340 (gen
+                    warnings, the action-first checks).
 -->
 
 The Stackra compiler. Gen reads a member's source through the TypeScript compiler API, derives every identity and
@@ -50,12 +51,15 @@ the committed manifest is the IR, and source is read behind one host seam, never
 | `.`                   | `emitUiFacade`                                                               | `#stackra/ui`: `Component`, the class-component base from `@stackra/ui/react` or `/native`                              |
 | `.`                   | `reportsOf`, `emitReports`                                                   | the manifest's `reports` section and `#stackra/reports`: one query per `Report` (ADR 0470)                              |
 | `.`                   | `DocsConfig`, `emitDocsSite`, `DOCS_CONFIG_FILE`, `DOCS_SITE_DIR`            | a docs app's typed site config and the Mintlify site gen assembles (see below)                                          |
+| `.`                   | `navigationOfMeta`, `DOCS_APP_SOURCE`, `DOCS_MEMBER_SOURCE`                  | a docs member's navigation from its `meta.json` files, and where each input's source lives (see below)                |
 | `.`                   | `openApiOf`                                                                  | `openapi.json`, the projection of the manifest                                                                          |
 | `.`                   | `actionKey`, `eventName`, `permissionKey`, `modelKey`, `tableName`, ...      | the identity formulas of ADR 0294 decision 20                                                                           |
 | `.`                   | `integrationKey`, `webhookPath`, `sequenceKey`, `blockKey`, `routeKey`       | integration, webhook, sequence, block and route identities                                                              |
 | `.`                   | `toolHints`, `EFFECT_TAGS`, `INTEGRATION_ROLES`                              | derived MCP hints, the effect tags and the Integration roles the manifest accepts                                       |
 | `./node`              | `generate`, `ModuleLoader`                                                   | one run: write, or `{ check: true }` for `--check`; `loader` imports resource classes                                   |
 | `./node`              | `generateDocsSite`, `watchDocsSite`                                          | a docs app's run (`generate` takes it), and its watch for `stackra dev`                                                 |
+| `./node`              | `readDocsMember`, `isDocsMember`                                             | a docs member read for the docs-site run (`generate` takes it)                                                          |
+| `./schema/docs.json`  | the JSON Schema of `docs.yaml`                                               | for editors; a byte copy of `tools/schemas/docs.schema.json`                                                            |
 | `./node`              | `discoverMember`, `openHost`                                                 | discovery on TypeScript 7, falling back to TypeScript 6                                                                 |
 | `./node`              | `readServiceManifests`                                                       | the committed manifests of the services a member injects a client of                                                    |
 | `./node`              | `classComponents`                                                            | the Vite plugin of the class-component pass                                                                             |
@@ -83,7 +87,15 @@ workspace `.pnpmfile.mjs` refuses to pack a Stackra package whose `stackra.manif
 `stackra gen --manifests` and commit it first. Every JSON file gen commits (`stackra.manifest.json`, `openapi.json`,
 the graphs) is written in oxfmt's shape by `formatJson` (short arrays on one line within 100 columns, objects broken),
 so `oxfmt --check` passes on it without a format step (stackra-247). Every refusal carries a
-snake_case code, a position and the fix; when there is one, nothing is written.
+snake_case code, a position and the fix; when there is one, nothing is written. A warning (`GenError.severity:
+"warning"`) carries the same and prints as `<at> warning <code> ...`, but never blocks writing: the full pass returns
+it in `warnings`, and `stackra gen` and `stackra gen --check` print it and exit 0 (STA-340).
+
+Action first (ADR 0101, STA-340; `checkActionFirst`, full pass only): `action_without_workflow` warns an action whose
+constructor takes another service's client (`#stackra/clients/<service>`), a sibling module's service or the
+integrations `ConnectionStore`, and whose body starts no workflow (`ctx.run(XWorkflow, ...)`, which the reader records
+as `DeclaredClass.workflows`). `workflow_without_action` refuses a controller, command or listener that takes a
+workflow class or `WorkflowRunner`, or starts a workflow itself.
 
 The quality-gate refusals (STA-1306) hold the conventions gen can see: a kind class's file suffix and name
 (`kind_suffix_mismatch`, `kind_unregistered_base`, `kind_class_name`, `kind_base_name_reserved`), module files and
@@ -100,10 +112,33 @@ like a relation) and the manifest's JSON Schema, so it never reaches an action o
 
 `model_tenancy_missing` (`checkModelScope`, full pass only, stackra-258): in a service that declares
 `@stackra/tenancy`, a model with neither `BelongsToTenant`/`BelongsToTenantOrPlatform` nor a `Model.global(...)` base is
-refused (a model extending an own model takes its base's answer). The reader reads the traits of `Model.global(...)`
+refused (a model extending an own model takes its base's answer). A package's models are checked too, as errors
+(since the tenancy contract step); a table an ADR names (`MODEL_SCOPE_EXEMPTIONS`, today `achievements.award_verifications`, ADR 0368 d5) is
+skipped. `model_tenancy_migration_missing` (staged: a warning until 0.20 or `STACKRA_GEN_STRICT=1`) flags an owned model
+whose table some own migration touches but none calls `t.belongsToTenant()`. The reader reads the traits of `Model.global(...)`
 and marks the class `global`, which the manifest's model records. Such a service with an owned model and
 `@stackra/testing` also gets `.stackra/tests/tenant-isolation.int.test.ts` (`emitIsolationTest`): its compiled
-migrations, then `assertRowSecurity(postgres.database, tenantIsolationOptions())`.
+migrations, then `assertRowSecurity` with `tenantIsolationOptions()` and, as `platform`, the tables of its
+`Model.global` models and of `MODEL_SCOPE_EXEMPTIONS`, so every other table without `tenant_id` fails it (ADR 0347 d5).
+
+Shown-once output (STA-2568): `secret_output_kept` (`checkShownOnce`, full pass only) warns when an action that is not
+`Idempotency.Never` returns an output field named like a secret (`signingSecret`, `apiKey`, `accessToken`) that is
+neither `@ShownOnce` nor `@Hidden`: the idempotency store would keep it for a replay. Every `registerActions` row
+carries its output class, so the pipeline drops `@ShownOnce` fields before it stores the output.
+
+The endpoint convention and ADR 0305 rule 30 (STA-340): every derived route starts with its area, `/<area>`
+(`/app` when the action or query writes no `area`, or a service's own `defineService({ area })`), and every manifest
+action entry records `area`. `checkEndpoints` (full pass only) refuses `endpoint_collision` (two calls, own or hosted,
+on one method and path once parameter names are erased: `GET /app/orders/:orderId` and `GET /app/orders/:id`; each is
+named, and no `openapi.json` is written), `endpoint_versioned` (a `v<digits>` path segment, ADR 0118),
+`endpoint_area_mismatch` (a path neither `/<area>` nor under `/<area>/`; a public call may sit under RFC 8615's
+`/.well-known/`), `endpoint_method_mismatch` (a query not on
+`GET`, an action on `GET`, or a transition overridden away from `PUT`), `job_without_system_actor` (a `job` without
+the `system` or `job` actor), `cron_input_invalid` (a `job.cron.input` property the input's JSON Schema does not have,
+a required one it omits, or a value of another JSON type; a run without `input` gets `{}`, and a schema without
+`properties` has only `required` checked) and `intent_phrases_missing` (`intent: true` without a non-empty
+`actions.<key>.intents` list in each base-language catalogue that ships the module's namespace, or in
+`assets/lang/en/<module>.json` when none does).
 
 The query cache (ADR 0305 rule 31, STA-1445): `site_cache_reads_caller` (`checkQueryCache`, full pass only) refuses a
 query cached `per: CacheScope.Site` whose `handle` reads its caller from its context (`ctx.actor`, `scopeId`, `scope`,
@@ -219,6 +254,17 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
 `src/` under `mint dev`; `stackra build` runs `mint validate` and `stackra lint` runs `mint broken-links` and
 `mint a11y`, all in `.stackra/site/` (ADR 0002 amendment of 2026-10-27).
 
+A docs member is the second input (ADR 0514 amendment of 2026-11-09): a workspace member whose `package.json` has
+`"stackra": { "kind": "docs" }`, with no `src/config/docs.config.ts` and no `stackra.config.ts`. Its pages are
+`content/**/*.mdx|md`, its assets `content/assets/` and its snippets `content/snippets/`. Each folder's `meta.json`
+sets the navigation (`title`, `icon`, `pages`, `root`, `defaultOpen`): a `root` folder directly under `content/` is a
+tab, `---Label---` starts a group, a subfolder is a nested group and `...` is the rest, `index` first
+(`navigationOfMeta`). `docs.yaml` at the member root holds every other `DocsConfig` field (no `navigation`, no
+`theme`); editors read its shape from `@stackra/gen/schema/docs.json`. The site is always Fumadocs, written to
+`.stackra/site/` the same way, and the refusals name `content/`, `docs.yaml` and `content/**/meta.json`. Added
+refusals: `docs_meta_invalid`, `docs_meta_entry_invalid` (`!name`, `z...a`, links, an entry naming nothing) and
+`docs_meta_root_nested`.
+
 ## Tools, effects, listings and replacements
 
 - **Tools by default (ADR 0360 decision 4).** A query, or an action whose `actors` include `user`, gets a `tool`
@@ -228,11 +274,25 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
   as `toolOff`.
 - **Query permissions.** A query takes `<module>.<model>.read`, unless its Permissions class declares the verb of its
   key (`audit_record.search` with `static readonly search`): then it takes that one. A `permission` option wins.
+- **Call shape (STA-340).** `checkCallShape` refuses, from the manifest pass: a query whose permission is L2 or above
+  (`query_above_l1`; an unknown permission is `permission_unknown` only), a query with `preconditions`
+  (`query_precondition`), an action with `cache` (`action_cache`), an L3 or L4 action whose `actors` include `user`
+  with no `stepUp` (`step_up_missing`; the pipeline asks step-up of a user caller only, ADR 0406 as amended) and a
+  client write, an action with an endpoint or a tool, with no written `idempotency` (`idempotency_missing`;
+  `Idempotency.Optional` written out is a declaration, ADR 0136 decision 3). A written `idempotency` also sets the
+  tool's `idempotentHint`.
+- **Write floor (STA-2096).** An action's permission is at least L2: gen refuses an action whose permission is L0 or
+  L1 with `action_risk_below_write`, since ADR 0360 decision 3 lets an agent run L0 and L1 without approval. A query
+  keeps L0 or L1 unless it names an action's static, which carries that level.
 - **Effect tags (ADR 0099 decision 2, ADR 0360 decision 10).** `effects: [...]` is copied into the entry and feeds the
   hints; a tag outside `EFFECT_TAGS` is `effect_unknown`.
 - **Listings (ADR 0355 decision 1, ADR 0308 rule 21).** An Integration's `roles` (plus `webhooks` when it receives
   them) and its `listing` (the entitlement reference) land on its entry; a role outside `INTEGRATION_ROLES` is
   `integration_role_unknown`.
+- **Webhook event ids.** The inbox dedupes inbound webhooks by event id. Only Standard Webhooks carries one in its
+  `webhook-id` header, so an Integration whose `webhooks` use any other scheme (`hmac`, a regional gateway's) and name
+  neither `eventId` (a payload `path`, or `parts` of paths and headers) nor `signature.idHeader` is
+  `webhook_event_id_undeclared`: every event would share the id `""` and be kept once.
 - **Replacements.** Every `@Replaces(Base)` is listed in a `replaces` section.
 - **Agents and passes (STA-903, ADR 0399, ADR 0348 decision 5).** `agent` and `pass` are binding kinds. An
   `Agent({ key, task, tools })` lands in `agents` (tools as action keys) and a `Pass({ key })` in `passes`; both keys
@@ -240,7 +300,11 @@ first). Refusals: `docs_source_misplaced` (a `docs.json`, `README.md` or stray f
   `AgentRuntime`, the way an Integration gets `IntegrationRuntime`.
 - **Entitlements (STA-903, ADR 0215).** Each entitlement lands in `entitlements` with its derived key
   (`<module>.<snake name without Entitlement>`), kind, counted model, `where` filter and `gates`: a limit gates its
-  counted model's `create` actions, and an action or query naming it in an `entitlement` option is gated by it. The
+  counted model's `create` actions, a quota (`meter`, `per`) gates the actions whose `meter` names its meter, and an
+  action or query naming it in an `entitlement` option is gated by it (the action entry lists them in `entitlements`).
+  An entitlement or counted model a hosted package ships resolves through that package's manifest, and its merged
+  entry gates the host's calls too; a name that resolves to none is `entitlement_unknown` (an `entitlement` option) or
+  `entitlement_counts_unknown` (a limit's `counts`). The
   registrations file calls `registerEntitlements` with one row per entitlement, so `PlanSnapshotEntitlementSource`
   resolves every registered class. A class thunk option (`counts: () => Till`) is read as its class.
 
@@ -346,7 +410,7 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 
 | File                                                                      | For                                                   | Holds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `stackra.manifest.json`, `openapi.json`                                   | every member                                          | every locked identity: actions, events (a version bump passes), permissions, roles, config keys, schema names, endpoints, reports, refusals, models and prefixes, drivers, integrations, sequences, an app's blocks and routes (one `LOCKS` table in `check-identity-lock`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `stackra.manifest.json`, `openapi.json`                                   | every member                                          | every locked identity: actions, events (a version bump passes), permissions, roles, config keys, schema names, endpoints, reports, a member's `seeders` (key, module, profile, class, file, in module order) and `factories` (class, file, model) a host seeds from, refusals, models and prefixes, drivers, integrations, sequences, an app's blocks and routes (one `LOCKS` table in `check-identity-lock`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `.stackra/gen/schemas/<module>.ts`                                        | a member with a shape to register                     | `X$`, `X$Check`, `registerSchemas`, `registerChanges`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `src/node/entities.gen.ts` (committed, STA-1874)                          | a package with models                                 | `[OptionalProps]`, one `EntitySchema` per model, `<MODULE>_ENTITIES`, `registerEntities`; `gen --check` compares it like the manifest                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `.stackra/gen/entities/<module>.ts`                                       | a service's or app's module with models               | `[OptionalProps]`, one `EntitySchema` per model, `<MODULE>_ENTITIES`, `registerEntities`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -355,18 +419,21 @@ OpenAPI document and the generated clients type it. Any other output is `action_
 | `.stackra/gen/boot.ts`                                                    | service                                               | `boot(container, { signal })`: the database (at the Encore database's url, the `DATABASE_REPLICA_URLS` replicas, the `DatabaseConfig` timeouts and pool, `DATABASE_POOL_MAX` over its max) with the hold, stamp and outbox writer subscribers, `segments.connect`, `EventBus#connect` and `InboxService#connect` (disconnected when `signal` aborts), the live queries' refresh routes, the relay; nothing when `signal` has already aborted                                                                                                                                                                                                                                                                                                                 |
 | `.stackra/gen/encore-sqldb.d.ts`                                          | service with a database                               | the ambient `encore.dev/storage/sqldb` types boot's import of the Encore database file needs, so the service typechecks without `encore.dev`; the Encore program keeps the real types (STA-1795)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `.stackra/gen/webhooks.ts`                                                | service                                               | `InboundWebhooksController` on `/webhooks/<module>/<name>/:connectionId`, raw body and decoded query to `WebhookReceiver`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `.stackra/gen/inbox.ts` | service with a listener of a contract-only producer's event | `InboundEventsController` on `/events/inbox` (raw body to `RelayInboxService`), `RelayInboxConfig` with the pinned producers' keys and events |
+| `.stackra/encore/<member>/inbox.ts` | the same service | the `api.raw` `POST /events/inbox` adapter (exposed, `auth: false`) through `answerHttp` |
+| `.stackra/gen/events-relay.ts` | service whose `runway.yaml` has an `events` block | `EventsRelayConfig` with every environment's block, the running one picked by `STACKRA_ENVIRONMENT` |
 | `.stackra/gen/clients/<service>.ts`                                       | a client consumer                                     | the producer's enums, shapes, refusals and integration events, one `remoteAction`/`remoteQuery` per call, `<Service>Client`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `.stackra/gen/settings.ts`                                                | members with a settings class and `@stackra/settings` | `Settings = settingKeys({...})`: one key per setting field of each settings class, by module (stackra-209); `Settings.pick([...])` forms compile in `#stackra/schemas`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `.stackra/gen/settings.ts`                                                | members with a settings class and `@stackra/settings` | `Settings = settingKeys({...})`: one key per setting field of each settings class, by group (stackra-209); `Settings.pick([...])` forms compile in `#stackra/schemas`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `.stackra/gen/ui.ts`                                                      | members with `@stackra/ui`                            | `export { Component }` from `@stackra/ui/native` on an app that renders only on iOS and Android, `@stackra/ui/react` otherwise; the class-components compiler removes the import, so it only serves tsc (STA-2069)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `.stackra/gen/i18n.ts`                                                    | members with `assets/lang` and `@stackra/i18n`        | `I18n = keys({...})` from the base locale (`en`) plus the namespaces of declared Stackra packages (`@stackra/*`, or any that ships `stackra.manifest.json`) that ship `assets/lang` (`I18n.loyalty_kit.*`), `locales` from the member's locale folders, `catalogues` (one lazy JSON loader per namespace and locale file, a package's through its `./assets/*` export; runtime `dependencies` only) and `loadMessages(locale)` over them; `$comment` notes are not keys; a key no catalogue ships is refused (`i18n_key_missing`), and so is a namespace two owners ship (`i18n_namespace_clash`)                                                                                                                                                            |
 | `.stackra/gen/queues.ts`                                                  | services with a job action                            | `Queues = queues([...])` of `@stackra/queue` over the queues the job actions name (the hosted packages' included) plus `default`, so a job writes `queue: Queues.Billing`; the source reader reads `Queues.<Name>` as the snake_case name before the file exists, and a queue no job names any more drops out, so its references fail to compile; a queue with a part starting with a digit (`v_2`) keeps its string (STA-1723)                                                                                                                                                                                                                                                                                                                              |
 | `.stackra/gen/prefixes.ts`                                                | models with ids                                       | each public id prefix with the model that mints it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `.stackra/gen/{routes,blocks}/<runtime>.ts`                               | app                                                   | `registerRoutes(routeTable)` (and `registerPanelPages()`, `registerResources(...)` over the declared manifests' `ui.resources` and `resourceLabelKeys` on the browser with the panel), `registerBlocks`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `.stackra/entry/*.ts`                                                     | every member                                          | a package's entry barrels; a service's `server` (which hands `createApp` its `boot`), an app's `browser` and `native` entries                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `.stackra/entry/*.ts`                                                     | every member                                          | a package's entry barrels; a service's `server` (which hands `createApp` its `boot`), an app's `browser` and `native` entries; and, for a service with a boot and seeders (its own or a hosted package's), `seed`, which registers every factory pair (`registerModelPartners`) and runs the hosted packages' seeders, imported from each package's `./testing` entry, before its own, in module-dependency order                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `.stackra/{tsdown,vitest}.config.ts`, `vitest.setup.ts`                   | package, service                                      | the build, the unit tier on the coverage gate, and the setup with registrations, wiring, factory partners, `@stackra/database/testing` and `@stackra/clients/testing` (when declared) and `await loadMemberSchemas()` (the working directory, the member root vitest runs in)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `vitest.config.ts` (member root)                                          | package, service                                      | the gitignored shim re-exporting `.stackra/vitest.config.ts`, since `vitest run` reads only the root; written only when none exists. An authored one that imports `./.stackra/vitest.config` (`mergeConfig(generated, ...)`) is kept; any other is refused (`shim_authored`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `.stackra/gen/blueprint.ts` | service with own `database/macros/*.macro.ts` | the merged `Blueprint` augmentation: one member per own macro, typed from its `apply` parameters, so `t.<macro>(...)` type-checks in a migration (a package's macros carry their own) |
-| `.stackra/migrations/<seq>_<module>_<NNNN>_<stem>[_<step>].{up,down}.sql` | service                                               | every compiled migration step, the service's own and its declared packages', in apply order: number order per module, a module after the modules it depends on and the owners of the macros its migrations call (ai after tenancy), `Migration({ after })` ids first, packages first on a tie; `-- stackra:transactional=false` opens an online step; `.down.sql` only when the step has an inverse. Leftover `.sql` files are removed (reported by `--check`). Refusals: `migration_after_unknown`, `migration_cycle`, `migration_id_duplicate`, `migration_load_failed`, `migration_compile_failed`, `migration_database_missing`, `migration_import_forbidden` (a migration imports only `@stackra/database` and `#stackra/migrations`, checked before it loads), `append_only_not_revoked` (an own `AppendOnly` model whose table no `t.appendOnly()` revokes `UPDATE` on)                                                                                                                             |
+| `.stackra/migrations/<seq>_<module>_<NNNN>_<stem>[_<step>].{up,down}.sql` | service                                               | every compiled migration step, the service's own and its declared packages', in apply order: number order per module, a module after the modules it depends on and the owners of the macros its migrations call (ai after tenancy), `Migration({ after })` ids first, packages first on a tie; `-- stackra:transactional=false` opens an online step; `.down.sql` only when the step has an inverse. Leftover `.sql` files are removed (reported by `--check`). Refusals: `migration_after_unknown`, `migration_cycle`, `module_key_collision` (an own module with migrations whose key a declared package's migrations need, so the need would resolve to it; rename the own module), `migration_id_duplicate`, `migration_load_failed`, `migration_compile_failed`, `migration_database_missing`, `migration_import_forbidden` (a migration imports only `@stackra/database` and `#stackra/migrations`, checked before it loads), `append_only_not_revoked` (an own `AppendOnly` model whose table no `t.appendOnly()` revokes `UPDATE` on)                                                                                                                             |
 | `.stackra/graph.json`                                                     | every member                                          | the member's part of the system graph: modules, called services, events out and in, tables, packages, ports and driver candidates (ADR 0452)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Generated service clients
@@ -396,7 +463,7 @@ export class StorefrontService extends Service {
   `package.json` has `"stackra": { "kind": "contract" }` and whose manifest `member` is the service (published as
   `@figentra/<service>-contract`: manifest, OpenAPI and lang, no source; STA-1820). A service is never matched to an
   ordinary dependency by member name. A listener of an event of a contract-package service is
-  `client_event_remote_transport` until the event-transport ADR. Never the producer's source. An app (`apps/<app>`) also reads the repo's `services/<service>`. A consumed service without a manifest is
+  registered like a sibling's and delivered through the generated inbox (see "Cross-app events" below). Never the producer's source. An app (`apps/<app>`) also reads the repo's `services/<service>`. A consumed service without a manifest is
   `client_service_unknown`, and a client imported under another name than `<Service>Client` is `client_name_mismatch`.
 - **Consumers.** A service is consumed by an injected client, a listener of one of its events, or any own file
   (tests included) importing from `#stackra/clients/<service>`, so an app's route that reads a query gets the client.
@@ -440,11 +507,18 @@ export class StorefrontService extends Service {
   package's entries. A member off `@stackra/container` (`@stackra/testing`, rule 6c) gets no wiring, no member module
   and a setup without `@stackra/container/testing`.
 - **Settings keys (stackra-209).** `emitSettings` writes `#stackra/settings`: `Settings = settingKeys({...})` with one
-  key per setting field of each settings class (a section's fields flattened under the section), carrying its type
-  (`boolean`, `integer` for an `@Int` number, `number`, `string` for a string, enum or brand, `connection` for a
-  `PublicId<"conn">`), default, the class's scopes or the field's `@Setting({ scopes })`, `@Int`/`@Num` bounds,
+  key per setting field of each settings class (a section's fields flattened under the section), grouped by the key
+  `settingsKeyOf` derives from the class name as the runtime does (`OrdersSettings` is `orders`, `LoyaltyKitSettings`
+  `loyalty_kit`, `AccountSettings` `account`), carrying its type (`boolean`, `integer` for an `@Int` number, `number`,
+  `string` for a string or brand, `choice` with its `options` for an enum or `DriverName<Port>`, `list` for an array of
+  strings or brands, with `options` for an array of an enum, `connection` for a `PublicId<"conn">`), default, the class's scopes or the field's `@Setting({ scopes })`, `@Int`/`@Num` bounds,
   nullability, the other `@Setting` flags, section, earlier name (`@Renamed`) and the label key
-  `<module>::settings.<section.>name.label`. A field of any other type gets no key. `class OrderPolicyForm extends
+  `<module>::settings.<section.>name.label` (`<module>::settings.<group>.<section.>name.label` when the group is not
+  the module's). A field of any other type is `settings_unsupported_type`, never dropped. `settingsOf` also refuses
+  `settings_too_deep` (a section's field that is a schema), `settings_scope_widened` (a `@Setting({ scopes })` outside
+  its enclosing scopes), `settings_group_key_empty` and `settings_group_conflict` (two classes, or a class and a
+  dependency's group, with one key; a host override is exempt), and the manifest's `settings` section records each
+  group's class, file and keys, locked by `identity_changed` unless `@Renamed(old)` names the old key. `class OrderPolicyForm extends
 Settings.pick([Settings.orders.customersMayCancel])` compiles to an ordinary `OrderPolicyForm$` whose fields are the
   picked keys' fields, read from the member's own settings classes; a key written otherwise, or of a module whose
   settings class is not the member's own, is `settings_key_unresolved`.
@@ -500,10 +574,11 @@ Metro config sets `babelTransformerPath` to `@stackra/gen/metro-transformer`.
 
 ## Encore jobs and queues
 
-A service's full run writes `.stackra/encore/encore.app`, `{ "id": <app id>, "lang": "typescript" }`, so `encore run`
-in `.stackra/encore` (what `stackra dev` starts) finds its app (ADR 0091 decision 2). The id is the root runway's
+A service's full run writes `encore.app` at the member root, `{ "id": <app id>, "lang": "typescript" }`, gitignored; the
+Encore app root is the member, the generated services stay in `.stackra/encore/<svc>/` (ADR 0091 decision 2, amended
+2026-11-09). The id is the root runway's
 `providers.encore.app` (the `runway.yaml` beside `pnpm-workspace.yaml`); without it gen refuses with
-`encore_app_missing` rather than invent one. Any run refuses an `encore.app` at the member root or the repository root
+`encore_app_missing` rather than invent one. Any run refuses an `encore.app` at the repository root
 (`encore_app_stray`, ADR 0029): gen writes the only one (STA-1322).
 
 A service's full run also refuses `queue_unprovisioned` when an environment under `environments` in its `runway.yaml`
@@ -566,6 +641,26 @@ A model with a subscriber trait, own or a declared package's, adds its subscribe
 (`traitSubscribers`): `TreeSubscriber` for `HasTree` (STA-1419), then
 `ValidateOnFlushSubscriber` for `ValidateOnFlush` (STA-1410), so a row is checked in clear before it is sealed.
 
+## Cross-app events (ADR 0511 decisions 11 to 19, STA-1910)
+
+- **Consumer.** A listener of an event of a service read from a contract package is registered like a sibling's
+  (`registerEventNames`, `registerListeners`) but gets no Encore subscription: the producer's relay posts each event to
+  the service's generated inbox. Such a service gets `#stackra/inbox` (`InboundEventsController` on `/events/inbox`,
+  which hands the method, headers and raw body to `RelayInboxService.receive` and answers its status with no body, a
+  thrown error as 500) and `.stackra/encore/<member>/inbox.ts` (`api.raw`, exposed, `auth: false`, through
+  `answerHttp`). `RelayInboxConfig` (`outbox.relay_inbox`) is bound with each pinned producer's manifest `relay.keys`
+  (every environment) and its integration events' wire names; `environment` stays `STACKRA_ENVIRONMENT`. The boot
+  connects `RelayInboxService`. A service without such a listener gets none of this.
+- **Producer.** A service whose `runway.yaml` has an `events` block in an environment gets the manifest's `relay`
+  section (per environment: the public keys, current first, and each subscriber's member and events, never its inbox
+  origin), an `env` row for the signing key's secret name, `#stackra/events-relay` (`EventsRelayConfig` with every
+  environment's block, the running one picked by `STACKRA_ENVIRONMENT`, `dev` when unset), the wiring of
+  `CrossAppFanOut`, `CrossAppRelayService` and the Postgres `DeliveryDriver`, and the cross-app relay's `work` loop in
+  the boot beside the outbox relay's (both skipped by `relay: false`).
+- **Warning.** `client_event_unsubscribed`: the pinned contract of a listener's producer lists this service as a
+  subscriber of that event in no environment (or has no `relay` section), so nothing reaches the listener. Gen still
+  writes; the CLI prints it as `warning:`. An event the contract does not publish stays `client_event_unknown`.
+
 ## HTTP adapter, guards and health (STA-1385)
 
 A service that declares `@stackra/app` gets `.stackra/encore/<member>/http.ts`: `answerHttp(request, handle)`, which
@@ -591,29 +686,37 @@ filters, entries, sections, fields, steps; not relations or actions), for the ca
 
 A service gets `.stackra/encore/<member>/encore.service.ts` (`export default new Service("<member>")`, so the folder
 is one Encore service) and, when it has an own action or query with an endpoint, `.stackra/encore/<member>/api.ts`:
-one `api()` per such manifest entry, named by its camel-cased key and version (`shop.order.cancel@1` is
-`shopOrderCancelV1`), with the entry's derived `method` and `path` and `expose: true`, its parameter typed by the input
-schema class and its result by the output one (none, or `Promise<void>`, when the entry names none). It runs the call
-as `new ActionPipeline(container).execute(<class>, input, { actor })` inside `app.handlers.run` (STA-2063).
-
-The actor comes only from Encore's verified auth data, `getAuthData()` of `~encore/auth`, whose shape is
-`{ userID: string; actor: Actor }`. An entry is `auth: true` unless its `actors` list `ActorKind.Anonymous` (manifest
-`anonymous: true`, STA-2025): that one is `auth: false` and runs as the session's actor when one is presented,
-otherwise as `{ kind: ActorKind.Anonymous, id: mintPublicId("anon") }`. No adapter is written for an entry with no
-endpoint, a hosted package's entry (its manifest does not name the files of its schemas, the limit `registerActions`
-has), or one whose input or output schema is not a shape of the member (a generated search or report query's package
-shapes, a replica page). Encore binds each path parameter from the input field of that name, so the manifest build
-refuses a route whose parameter is no field of the input (`endpoint_param_unbound`), such as `x.get` with no `xId`.
-Waiting for the auth handler and gateway (wp-114): the handler that returns that auth data
-(until it lands, `encore build` refuses an `auth: true` endpoint), and the rest of `CallOptions`. A refusal surfaces as
-Encore's default error until refusal kinds map to `APIError`.
+one `api.raw()` per such manifest entry (and one per own `Controller`, method `*`, its `path`), named by its
+camel-cased key and version (`shop.order.cancel@1` is `shopOrderCancelV1`), with the entry's derived `method` and
+`path`, `expose: true` and `auth: false` to Encore (STA-2577). Every adapter is raw and calls the one helper,
+`answerCall` of the generated `http.ts`, so the edge signature covers the exact body bytes, which a typed `api()` never
+sees. `answerCall` hands the request to `serveGuardedCall` of `@stackra/app/server`, in a fixed order: the body is read
+once under `HttpConfig.maxBodyBytes` (1 MiB by default; larger is 413 before any guard); every `RequestGuard` runs over a
+request with those bytes (`app.handlers.guard`); the caller is authenticated, where an `Authorization` header is verified
+by `CallAuthenticator` (built per call over the call's container; a bad one is 401, never anonymous) and no header is the
+anonymous actor `{ kind: ActorKind.Anonymous, id: mintPublicId("anon") }` only for an entry whose `actors` list
+`ActorKind.Anonymous` (manifest `anonymous: true`, STA-2025), else 401; the input is parsed (the JSON body, or the query
+string for GET and DELETE, then the path parameters, which win); the call runs as `new ActionPipeline(container)
+.execute(<class>, input, { actor })`, which validates the input. A guard or authentication failure is one generic 401 or
+403 (`request_refused`) naming no check; a refusal of the call is its kind's status with its envelope; a rate limit is
+429 through `answerHttp`. A controller skips input parsing, runs `container.get(<class>).handle(request)` and is
+reachable without a credential (it is raw: its own login or callback logic), behind the same guards. No adapter is
+written for an entry with no endpoint or a hosted package's entry (its manifest does not name the files of its schemas,
+the limit `registerActions` has). The manifest build refuses a route whose path parameter is no field of the input
+(`endpoint_param_unbound`), such as `x.get` with no `xId`. No `auth.ts` or `Gateway` is written: no endpoint uses
+Encore's auth handler. A service that declares `@stackra/app` binds `JsonWebKeys` to `oidc` with `BearerConfig` by
+default; with no `ServicePrincipals` driver bound, every service token is refused and user tokens still pass. A service
+bearer with the user's own token in `Stackra-On-Behalf-Of` is that service acting for the user (`onBehalfOf`), in the
+user's tenant; a forward beside a user bearer, of a service token, or for another tenant than the service's is refused
+(all inside `CallAuthenticator`, ADR 0209 amendment of 2026-11-07). An issuer outage stays its own error. Still waiting:
+the rest of `CallOptions`.
 
 The full `CallOptions` of an endpoint come in two parts and nothing else: the verified facts from the credential
 (`actor`, then `scope`, `device`, `origin`, `sandbox`, `assurance`; ADR 0098, never a header or the body) and the
 header-borne values the pipeline checks itself, lifted by `requestCallOptions(request)` of `@stackra/actions`:
 `Idempotency-Key` onto `idempotencyKey` (the idempotency step, ADR 0138) and `Stackra-Consent` onto `consentSnapshot`
-(verified by `ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`. A typed
-`api()` sees no `Request`, so the generated endpoints pass only `actor` today; the rest come with the gateway.
+(verified by `ctx.consent()`, ADR 0472). The header names are `CALL_HEADERS` of `@stackra/actions/contracts`. The raw
+adapters now hold the `Request` (`serveGuardedCall` passes it to the call), so lifting these headers is the next step.
 
 ```ts
 await pipeline.execute(X, input, { actor, ...requestCallOptions(request) });

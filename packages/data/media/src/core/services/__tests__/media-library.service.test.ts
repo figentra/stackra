@@ -3,7 +3,8 @@
  * Purpose: unit tests of `MediaLibrary` over a `FileSystem` disk (ADR 0465): an upload is signed with its media type
  *          and its bucket key and expiry are recorded beside it, a bucket's type and size rules hold at signing and
  *          again at claim, a claim moves the file to its bucket path once and drops the record, a disk that cannot sign
- *          refuses, and a foreign, expired, missing, malformed or oversized upload is refused.
+ *          refuses, and a foreign, expired, missing, malformed or oversized upload, or one whose bytes are not its
+ *          declared type, is refused; `store` writes the server's bytes under the same rules and refuses each break.
  * Boundary: test only; the memory `FileSystem` disk stands in for S3 and receives the bytes as a browser's signed `PUT`
  *           would. A hand-moved clock drives expiry.
  * Runtime: node (vitest)
@@ -11,7 +12,7 @@
  */
 import { buildConfig } from "@stackra/config";
 import { Clock, Duration } from "@stackra/contracts";
-import { FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
+import { FileRetainedError, FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { MediaConfig } from "#config/media.config";
@@ -59,11 +60,18 @@ function setup(values: { uploadExpiresIn?: Duration } = {}) {
   return { clock, disk, media };
 }
 
-/** Puts `bytes` to the pending upload's signed URL as a browser would. */
+/** The first bytes of a real file of each media type these tests upload. */
+const HEADS: Readonly<Record<string, readonly number[]>> = {
+  "image/png": [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  "image/jpeg": [0xff, 0xd8, 0xff, 0xe0],
+  "application/pdf": [0x25, 0x50, 0x44, 0x46, 0x2d],
+};
+
+/** Puts `bytes` (by default a real head of the signed media type) to the pending upload's signed URL as a browser would. */
 async function put(
   disk: MemoryFileSystemDriver,
   pending: PendingUpload,
-  bytes = new Uint8Array(4),
+  bytes = new Uint8Array(HEADS[pending.headers["content-type"] ?? ""] ?? [0, 0, 0, 0]),
 ): Promise<void> {
   expect(await disk.receive(pending.url, pending.headers, bytes)).toBe(200);
 }
@@ -161,10 +169,10 @@ describe("MediaLibrary.claim", () => {
       path,
       url: `https://cdn.test/${path}`,
       mediaType: MediaType.Png,
-      size: 4,
+      size: 8,
     });
     expect(await disk.list("uploads/")).toEqual([]);
-    expect(await disk.stat(path)).toMatchObject({ size: 4, contentType: "image/png" });
+    expect(await disk.stat(path)).toMatchObject({ size: 8, contentType: "image/png" });
   });
 
   it("uses the key gen registered", async () => {
@@ -281,6 +289,21 @@ describe("MediaLibrary.claim", () => {
     expect(await disk.list("uploads/")).toEqual([]);
   });
 
+  it("refuses and deletes a file whose bytes are not the media type it declared", async () => {
+    const { disk, media } = setup();
+    const pending = await media.createUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 4,
+    });
+    // an SVG renamed to a PNG: the store keeps the signed type, the bytes say otherwise
+    await put(disk, pending, new TextEncoder().encode("<svg/>"));
+    await expect(media.claim(pending.upload, ProductImagesBucket)).rejects.toMatchObject({
+      code: "upload_rejected",
+      reason: "content",
+    });
+    expect(await disk.list("uploads/")).toEqual([]);
+  });
+
   it("stores a private bucket's file under private/ and links it for a while", async () => {
     const { disk, media } = setup();
     const pending = await media.createUpload(InvoicesBucket, {
@@ -293,5 +316,66 @@ describe("MediaLibrary.claim", () => {
     expect(await media.temporaryUrl(file, Duration.minutes(5))).toBe(
       `${file.url}?expires=2026-10-24T09%3A05%3A00.000Z`,
     );
+  });
+});
+
+describe("MediaLibrary.store", () => {
+  it("stores the server's bytes as a file of the bucket and returns it", async () => {
+    const { disk, media } = setup();
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]);
+
+    const file = await media.store(InvoicesBucket, pdf, MediaType.Pdf);
+
+    expect(file.path).toBe(`private/invoices/${file.id}.pdf`);
+    expect(file).toMatchObject({ bucket: "invoices", mediaType: MediaType.Pdf, size: 8 });
+    expect(await disk.read(file.path)).toEqual(pdf);
+    expect(await disk.stat(file.path)).toMatchObject({ contentType: "application/pdf" });
+  });
+
+  it("keeps a stored file unchangeable until its retention ends", async () => {
+    const { disk, media } = setup();
+    const retainUntil = new Date("2032-11-09T10:30:00Z");
+
+    const file = await media.store(
+      InvoicesBucket,
+      new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]),
+      MediaType.Pdf,
+      { retainUntil },
+    );
+
+    await expect(disk.delete(file.path)).rejects.toBeInstanceOf(FileRetainedError);
+    expect(await disk.exists(file.path)).toBe(true);
+  });
+
+  it("refuses a media type the bucket does not take, and writes nothing", async () => {
+    const { disk, media } = setup();
+
+    await expect(
+      media.store(InvoicesBucket, new Uint8Array([0x89, 0x50, 0x4e, 0x47]), MediaType.Png),
+    ).rejects.toMatchObject({ code: "upload_rejected", reason: "media_type" });
+    expect(await disk.list("private/")).toEqual([]);
+  });
+
+  it("refuses empty and oversized bytes, and writes nothing", async () => {
+    const { disk, media } = setup();
+
+    await expect(
+      media.store(InvoicesBucket, new Uint8Array(0), MediaType.Pdf),
+    ).rejects.toMatchObject({
+      reason: "size",
+    });
+    await expect(
+      media.store(InvoicesBucket, new Uint8Array(101).fill(0x25), MediaType.Pdf),
+    ).rejects.toMatchObject({ reason: "size" });
+    expect(await disk.list("private/")).toEqual([]);
+  });
+
+  it("refuses bytes that are not the declared type, and writes nothing", async () => {
+    const { disk, media } = setup();
+
+    await expect(
+      media.store(InvoicesBucket, new TextEncoder().encode("<html></html>"), MediaType.Pdf),
+    ).rejects.toMatchObject({ reason: "content" });
+    expect(await disk.list("private/")).toEqual([]);
   });
 });

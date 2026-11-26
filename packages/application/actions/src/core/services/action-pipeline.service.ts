@@ -8,7 +8,8 @@
  *          in sequence order, the `offline.cap` reconciliation, the review of offline-computed documents (`accepts`),
  *          the verified device (`ctx.deviceId`) and a replica query's answer (`ctx.replica`, by the input's `cursor`);
  *          and `propose`, an action's draft-only run (the steps up to validation, then a metered draft, no effects).
- *          The permission step includes an action's step-up (`stepUp`, through `StepUpCheck`), and the call context
+ *          The permission step includes an action's step-up (`stepUp`, through `StepUpCheck`, asked of a user caller
+ *          only), and the call context
  *          carries the caller's verified assurance (`ctx.assurance`), the sandbox flag (`ctx.sandbox`, also on the
  *          descriptor) and the network client (`ctx.client`, never on the descriptor or the audit entry; STA-1248),
  *          the request origin (`ctx.origin`, also on the descriptor, so the audit entry carries it) and an action's
@@ -19,15 +20,21 @@
  *          (`analytics.tracked`, through the outbox when its consent grants `analytics`). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
  *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output). `handle` runs inside
  *          `QueryBudget` when one is bound (the call's statements counted against its `queryBudget`), and `ctx.memo`
- *          keeps one answer per key for the call. Order (ADR 0138 as amended by ADR 0495): the tenancy check and the
+ *          keeps one answer per key for the call. `ctx.detach()` holds the call's isolation past its transaction: each
+ *          `isolated` step of a stream or loop is a new `CallIsolation` transaction with the descriptor's actor and
+ *          scope. Order (ADR 0138 as amended by ADR 0495): the tenancy check and the
  *          live-configuration guard run first; then, when a `CallIsolation` is bound, everything after them (permission,
  *          approval, idempotency, rate limit, interceptors, the unit of work and `handle`) runs inside it, in one
  *          transaction whose scope and tenant settings are transaction-local and from the verified actor (an action
- *          writable, a query read-only). The action's unit of work is then a savepoint of that transaction (the default
+ *          writable, a query read-only); the descriptor's and the context's `scopeId` are then the tenant the isolation
+ *          runs as (a branch user's parent tenant), so every tenant-labelled write, the rate-limit and idempotency keys
+ *          among them, is per tenant, and the branch stays on `descriptor.branchScopeId`. The action's unit of work is then a savepoint of that transaction (the default
  *          propagation: its `timeout` and its rollback hold, and it is not `requiresNew`), so a call commits once, when
  *          the isolation transaction ends. What waits for that commit runs after it: the idempotency `complete`, the
  *          offline cap record, the read-your-writes mark and `ctx.afterCommit` work. The audit's refusal entries and a
- *          query's analytics event are written outside it, and with none bound a call runs as before.
+ *          query's analytics event are written outside it, and with none bound a call runs as before. An action that
+ *          declares `credentials: "ignore"` runs a signed-in caller's call as a fresh anonymous actor, its request
+ *          stripped of what the credential gave, before the descriptor and context are built.
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
  *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
@@ -54,7 +61,8 @@
  *                     audit in the unit of work); ADR 0215 and owner round 3 item 18 (reserve-then-commit); STA-813
  *                     (an unbound approval step does not run); ADR 0406
  *                     (step-up assurance); STA-1277 (the area bucket sized by `RateLimitBudget`, a value entitlement);
- *                     STA-1588 (the default action buckets);
+ *                     STA-1588 (the default action buckets); ADR 0213 (decision 2: a scope's rate-limit caps, through
+ *                     `RateLimitCapSource`, are settings);
  *                     ADR 0456 (decisions 1 and 2: the request origin, an integration event without a model); STA-1380
  *                     (event ids from @stackra/contracts' `mintPublicId`); STA-1477 (the (app, scope) area key, the
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
@@ -67,25 +75,32 @@
 import { Cache } from "@stackra/cache/contracts";
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
+  actingScopeId,
+  type Actor,
   ActorKind,
   type ApiArea,
   ApprovalSettingsSource,
   AssuranceLevel,
   Clock,
   Duration,
+  IdempotencyRetentionSource,
   IdentityResolver,
   type Json,
   Logger,
   MeterKind,
   mintPublicId,
+  RateLimitCapSource,
   type TraceAttributes,
   Tracer,
 } from "@stackra/contracts";
 import {
   ForbiddenError,
+  IdempotencyKeyInProgressError,
   IdempotencyKeyReusedError,
   isRefusal,
   RateLimitedError,
+  refusalFromStored,
+  storedRefusal,
 } from "@stackra/errors";
 import type { Event } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
@@ -93,6 +108,7 @@ import { duration, schemaOf, validate } from "@stackra/validation";
 
 import { RateLimitConfig } from "#config/rate-limit.config";
 import { ApprovalExecution } from "#contracts/enums/approval-execution.enum";
+import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
 import { ConsentRefusal } from "#contracts/enums/consent-refusal.enum";
 import { ReviewReason } from "#contracts/enums/review-reason.enum";
 import { AccessControl } from "#contracts/ports/access-control.port";
@@ -100,6 +116,7 @@ import { ActorStatusCheck } from "#contracts/ports/actor-status-check.port";
 import { ApprovalBindingStore } from "#contracts/ports/approval-binding-store.port";
 import { ApprovalGate } from "#contracts/ports/approval-gate.port";
 import { AuditTrail } from "#contracts/ports/audit-trail.port";
+import { DETACHED_RUNS } from "#contracts/constants/detached-runs.constant";
 import { CallIsolation } from "#contracts/ports/call-isolation.port";
 import { ConsentCheck } from "#contracts/ports/consent-check.port";
 import { ContextStorage } from "#contracts/ports/context-storage.port";
@@ -123,11 +140,13 @@ import { TenancyCheck } from "#contracts/ports/tenancy-check.port";
 import { UnitOfWork } from "#contracts/ports/unit-of-work.port";
 import { WorkflowRunner } from "#contracts/ports/workflow-runner.port";
 import type { ApprovalBinding } from "#contracts/types/approval-binding.type";
+import type { DetachedStep } from "#contracts/types/detached-step.type";
 import type { ApprovalDraft } from "#contracts/types/approval-draft.type";
 import type { ApprovalRequirement } from "#contracts/types/approval-requirement.type";
 import type { AuditEntry } from "#contracts/types/audit-entry.type";
 import type { CallConsent } from "#contracts/types/call-consent.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
+import type { CallPublic } from "#contracts/types/call-public.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { Action } from "#core/bases/action.base";
@@ -142,6 +161,7 @@ import { APPROVAL_PARK_FAILED } from "#core/constants/approval-park-failed.const
 import { ANALYTICS_CONSENT_CATEGORY } from "#core/constants/analytics-consent-category.constant";
 import { ANALYTICS_SKIPPED } from "#core/constants/analytics-skipped.constant";
 import { CALL_DEFAULTS } from "#core/constants/call-defaults.constant";
+import { DETACHED_CALLS } from "#core/constants/detached-calls.constant";
 import { IDEMPOTENCY_TTL } from "#core/constants/idempotency-ttl.constant";
 import { PROPOSAL_METER } from "#core/constants/proposal-meter.constant";
 import { RATE_LIMITED_METER } from "#core/constants/rate-limited-meter.constant";
@@ -159,8 +179,10 @@ import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
 import { AnalyticsTracked } from "#core/events/analytics-tracked.event";
 import { UsageRecorded } from "#core/events/usage-recorded.event";
+import { publicOf } from "#core/functions/public-of.function";
 import { fingerprintOf } from "#core/functions/fingerprint-of.function";
 import { isOlderRuleVersion } from "#core/functions/is-older-rule-version.function";
+import { keptOutput } from "#core/functions/kept-output.function";
 import { limitedSettingsReader } from "#core/functions/limited-settings-reader.function";
 import { mergeApprovalRequirements } from "#core/functions/merge-approval-requirements.function";
 import { periodOf } from "#core/functions/period-of.function";
@@ -168,6 +190,7 @@ import { queryCacheKey } from "#core/functions/query-cache-key.function";
 import { startOfZonedDay } from "#core/functions/start-of-zoned-day.function";
 import { verifyApproval } from "#core/functions/verify-approval.function";
 import { ReplicaFeed } from "#core/services/replica-feed.service";
+import type { ActionPublic } from "#core/types/action-public.type";
 import type { ActionAccepts } from "#core/types/action-accepts.type";
 import type { ActionApproval } from "#core/types/action-approval.type";
 import type { ApprovalSettingsReader } from "#core/types/approval-settings-reader.type";
@@ -180,6 +203,7 @@ import type { ActionRegistration } from "#core/types/action-registration.type";
 import type { CallAnalytics } from "#core/types/call-analytics.type";
 import type { CallInput } from "#core/types/call-input.type";
 import type { CallOptions } from "#core/types/call-options.type";
+import type { DetachedCall } from "#core/types/detached-call.type";
 import type { OfflineOptions } from "#core/types/offline-options.type";
 import type { OutputOf } from "#core/types/output-of.type";
 import type { PeriodInput } from "#core/types/period-input.type";
@@ -196,6 +220,7 @@ interface Recorded {
   readonly interceptors: readonly AnyClass<Interceptor>[];
   readonly preconditions?: readonly AnyClass<Precondition>[];
   readonly idempotency?: Idempotency;
+  readonly idempotencyTtl?: Duration;
   readonly rateLimit?: ActionRateLimit;
   readonly offline?: OfflineOptions;
   readonly accepts?: ActionAccepts;
@@ -204,12 +229,33 @@ interface Recorded {
   readonly effects?: ActionEffects;
   readonly approval?: boolean | ActionApproval;
   readonly stepUp?: AssuranceLevel;
+  readonly public?: ActionPublic;
+  readonly stream?: boolean;
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
   readonly reads?: "primary" | "replica";
   readonly analytics?: CallAnalytics;
   readonly queryBudget?: number;
+  readonly credentials?: "ignore";
 }
+
+/**
+ * What a `credentials: "ignore"` call keeps of its request: nothing that comes from the caller's credential (the actor,
+ * scope, assurance, device, approval or read-your-writes mark). An allowlist, so a field added later is dropped.
+ */
+const UNCREDENTIALED: readonly (keyof CallOptions)[] = [
+  "idempotencyKey",
+  "locale",
+  "timeZone",
+  "currency",
+  "market",
+  "callId",
+  "abortSignal",
+  "sandbox",
+  "client",
+  "expectedVersion",
+  "consentSnapshot",
+];
 
 /** What one call accumulates while it runs. */
 interface CallState {
@@ -242,11 +288,13 @@ interface Call {
   readonly kind: "action" | "query";
   readonly options: Recorded;
   readonly registration: ActionRegistration | undefined;
-  readonly descriptor: CallDescriptor;
+  /** Replaced once, with the tenant the isolation runs as, when that is not the actor's own claim (`isolated`). */
+  descriptor: CallDescriptor;
   readonly request: CallOptions;
   readonly at: Date;
   readonly state: CallState;
-  readonly ctx: QueryContext | ActionContext;
+  /** Replaced with `descriptor`. */
+  ctx: QueryContext | ActionContext;
 }
 
 /** An instance whose `handle` the pipeline calls. */
@@ -256,6 +304,28 @@ const IAM = "bind an AccessControl driver (@stackra/iam); calls fail closed with
 
 const APPROVALS =
   "declares approval: true, so bind an ApprovalGate driver (the OS tasks-approvals service); it fails closed without one";
+
+/** The descriptor's `public` field, when the operation is public. */
+function publicField(open: CallPublic | undefined): { readonly public?: CallPublic } {
+  return open === undefined ? {} : { public: open };
+}
+
+/**
+ * Whether an `api_client` call may reach this operation at all: it is `public`, the call carries a key, and a
+ * publishable key calls a write only when the operation opts in (a read admits one unless it opts out).
+ */
+function keyMayCall(
+  descriptor: CallDescriptor,
+  options: { readonly public?: ActionPublic },
+  kind: "action" | "query",
+): boolean {
+  const open = options.public;
+  const key = descriptor.credential;
+  if (open === undefined || key === undefined) return false;
+  if (!key.publishable) return true;
+  const allowed = open === true ? undefined : open.publishable;
+  return allowed ?? kind === "query";
+}
 
 /**
  * Runs actions and queries.
@@ -376,16 +446,19 @@ export class ActionPipeline {
   }
 
   /** The call `type` makes under `request`: its options, identity, descriptor, state and context. */
-  private prepare(type: AnyClass<Action | Query>, request: CallOptions): Call {
+  private prepare(type: AnyClass<Action | Query>, given: CallOptions): Call {
     const record = kindOf(type);
     if (record?.kind !== "action" && record?.kind !== "query")
       throw new TypeError(
         `${type.name} is not an action or a query: extend Action({...}) or Query({...})`,
       );
     const options = record.options as unknown as Recorded;
+    const request = options.credentials === "ignore" ? this.uncredentialed(given) : given;
     const registration = ACTION_REGISTRY.get(type);
     const at = this.optional(Clock)?.now() ?? new Date();
     const { actor } = request;
+    // an agent with no tenant of its own acts in its human's (ADR 0360); a branch until the isolation names its tenant
+    const scopeId = actingScopeId(actor);
     const descriptor: CallDescriptor = Object.freeze({
       callId: request.callId ?? globalThis.crypto.randomUUID(),
       type,
@@ -397,11 +470,16 @@ export class ActionPipeline {
         ? {}
         : { effects: Object.freeze([...(registration?.effects ?? options.effects ?? [])]) }),
       actor,
-      ...(actor.scopeId === undefined ? {} : { scopeId: actor.scopeId }),
+      ...(scopeId === undefined ? {} : { scopeId, branchScopeId: scopeId }),
       ...(request.scope === undefined ? {} : { scope: request.scope }),
       area: options.area,
       ...(request.sandbox === true ? { sandbox: true as const } : {}),
       ...(request.origin === undefined ? {} : { origin: Object.freeze({ ...request.origin }) }),
+      ...(request.credential === undefined
+        ? {}
+        : { credential: Object.freeze({ ...request.credential }) }),
+      ...publicField(publicOf(options, registration?.permission, registration?.risk)),
+      ...(options.stream === true ? { stream: true as const } : {}),
     });
     const state: CallState = {
       idempotencyKey: undefined,
@@ -426,7 +504,7 @@ export class ActionPipeline {
    * then what waits for the isolation transaction's commit.
    */
   private async steps(call: Call, raw: unknown): Promise<unknown> {
-    const { descriptor, kind } = call;
+    const { kind } = call;
     await this.checkedTenancy(call);
     // read before the isolation opens its own: a call that joined a running transaction does not own the commit
     call.state.joined = kind === "action" && (this.optional(UnitOfWork)?.inTransaction() ?? false);
@@ -450,8 +528,16 @@ export class ActionPipeline {
         return this.intercepted(call, input);
       });
     } catch (error) {
-      if (taken.claim !== undefined && "held" in taken.claim)
-        await this.required(IdempotencyStore, "").release(taken.claim.held);
+      if (taken.claim !== undefined && "held" in taken.claim) {
+        const store = this.required(IdempotencyStore, "");
+        const { held, fingerprint, ttl, sent } = taken.claim;
+        // a refusal that retrying cannot change is the call's answer; it is written after the rollback, which
+        // took the claim row with it (a joined store). Anything else frees the key for a retry.
+        // only a key the caller sent: an input-derived key would replay the refusal to every later identical call
+        if (sent && isRefusal(error) && !error.retryable)
+          await store.completeRefused(held, fingerprint, storedRefusal(error), ttl);
+        else await store.release(held);
+      }
       // a parked request is a write the refusal's rollback would undo, so it is written after the transaction ends
       const failure = call.state.parking === undefined ? error : await this.parked(call, error);
       // a refused call's usage event is a write its rollback would undo, so it waits for the transaction to end
@@ -463,13 +549,16 @@ export class ActionPipeline {
     if (claim !== undefined && "replay" in claim) return output;
     try {
       if (kind === "action")
-        await this.optional(ReplicaReads)?.wrote(this.writerOf(descriptor), call.at);
+        await this.optional(ReplicaReads)?.wrote(this.writerOf(call.descriptor), call.at);
       if (claim !== undefined)
-        await this.required(IdempotencyStore, "").complete(claim.held, output);
+        await this.required(IdempotencyStore, "").complete(
+          claim.held,
+          keptOutput(call.registration?.output, output),
+        );
       if (amount !== undefined && call.request.device?.sequence !== undefined)
         await this.required(OfflineCapStore, "").record(
           call.request.device.deviceId,
-          descriptor.key,
+          call.descriptor.key,
           call.at,
           amount,
         );
@@ -494,13 +583,24 @@ export class ActionPipeline {
 
   /**
    * Runs `work` in the call's `CallIsolation` transaction, built from the verified actor and the call's scope (a
-   * query read-only, an action and a proposal writable); with none bound it runs as it is.
+   * query read-only, an action and a proposal writable); with none bound it runs as it is. When the isolation runs as
+   * another tenant than the actor claims (a branch's parent tenant), the call's descriptor and context take that tenant
+   * as `scopeId` first, so what the call writes carries the tenant the isolation set.
    */
   private isolated<T>(call: Call, work: () => Promise<T>): Promise<T> {
     const isolation = this.optional(CallIsolation);
     if (isolation === undefined) return work();
     const { actor, scope } = call.descriptor;
-    return isolation.run(actor, scope, work, { readOnly: call.kind === "query" });
+    // an isolation that hands no actor (a test stand-in) leaves the call as it was built
+    const settled = (runAs?: Actor): Promise<T> => {
+      const scopeId = runAs === undefined ? undefined : actingScopeId(runAs);
+      if (scopeId === undefined || scopeId === call.descriptor.scopeId) return work();
+      call.descriptor = Object.freeze({ ...call.descriptor, scopeId });
+      call.ctx = this.contextOf(call.descriptor, call.request, call.at, call.state);
+      const storage = this.optional(ContextStorage);
+      return storage === undefined ? work() : storage.run(call.ctx, work);
+    };
+    return isolation.run(actor, scope, settled, { readOnly: call.kind === "query" });
   }
 
   /**
@@ -534,7 +634,7 @@ export class ActionPipeline {
     if (merged === undefined) return;
     // the approver's step-up floor: an action's own `stepUp`, and every L3 or L4 action, whatever the tenant's rule says
     const floor =
-      options.stepUp ??
+      (typeof options.stepUp === "string" ? options.stepUp : undefined) ??
       (descriptor.risk === "L3" || descriptor.risk === "L4" ? AssuranceLevel.Aal2 : undefined);
     const need =
       floor === undefined
@@ -555,7 +655,7 @@ export class ActionPipeline {
     );
     const execute =
       declared === undefined ? ApprovalExecution.OnResubmit : ApprovalExecution.OnGrant;
-    const scopeId = descriptor.scopeId ?? descriptor.actor.scopeId;
+    const { scopeId } = descriptor;
     if (scopeId === undefined) throw ForbiddenError.create();
     call.state.parking = {
       binding: {
@@ -694,6 +794,30 @@ export class ActionPipeline {
     }
   }
 
+  /**
+   * The request of a `credentials: "ignore"` call: a fresh anonymous actor and the `UNCREDENTIALED` fields, plus a
+   * storefront origin (the public surface itself, which an anonymous visitor's call carries too). An anonymous
+   * caller's request is kept as it is, so it runs exactly as without the option.
+   */
+  private uncredentialed(request: CallOptions): CallOptions {
+    if (request.actor.kind === ActorKind.Anonymous) return request;
+    // an approval's key (`approval:<id>`, set by `keyed`) is the signed-in caller's, so it goes with the approval
+    const fields = UNCREDENTIALED.filter(
+      (field) =>
+        request[field] !== undefined &&
+        (field !== "idempotencyKey" || request.approvalId === undefined),
+    );
+    const kept = Object.fromEntries(fields.map((field) => [field, request[field]])) as Omit<
+      CallOptions,
+      "actor"
+    >;
+    return {
+      ...kept,
+      ...(request.origin?.kind === CallOriginKind.Storefront ? { origin: request.origin } : {}),
+      actor: { kind: ActorKind.Anonymous, id: mintPublicId("anon") },
+    };
+  }
+
   /** The request with the key an approved call runs under: `approval:<id>`, whatever the caller sent (C1, S1). */
   private keyed(request: CallOptions): CallOptions {
     if (request.approvalId !== undefined)
@@ -711,9 +835,23 @@ export class ActionPipeline {
    */
   private async checked(call: Call, raw: unknown): Promise<unknown> {
     const { descriptor, options, kind, ctx } = call;
-    if (!options.actors.includes(descriptor.actor.kind)) throw ForbiddenError.create();
+    // an API key's caller reaches a `public` operation only, with a key; its scopes are checked by AccessControl
+    const viaKey = descriptor.actor.kind === ActorKind.ApiClient;
+    if (
+      viaKey
+        ? !keyMayCall(descriptor, options, kind)
+        : !options.actors.includes(descriptor.actor.kind)
+    )
+      throw ForbiddenError.create();
     await this.required(AccessControl, IAM).require(descriptor);
-    const level = kind === "action" ? options.stepUp : undefined;
+    // step-up asks a user only: a service, job, system or agent call carries no assurance (ADR 0406 as amended)
+    // `{ exempt: "first-factor-enrolment" }` is no level: that action enforces its own step-up (STA-340)
+    const level =
+      kind === "action" &&
+      descriptor.actor.kind === ActorKind.User &&
+      typeof options.stepUp === "string"
+        ? options.stepUp
+        : undefined;
     if (level !== undefined) {
       // an approved call stands on the assurance its binding recorded, measured at the request (ADR 0509, FR-016)
       const bound = await this.bindingOf(call);
@@ -795,7 +933,12 @@ export class ActionPipeline {
       await settle();
       return output;
     } catch (error) {
-      if (isRefusal(error) && !isRefusal(error, IdempotencyKeyReusedError)) await settle();
+      if (
+        isRefusal(error) &&
+        !isRefusal(error, IdempotencyKeyReusedError) &&
+        !isRefusal(error, IdempotencyKeyInProgressError)
+      )
+        await settle();
       throw error;
     }
   }
@@ -844,17 +987,47 @@ export class ActionPipeline {
   private async claim(
     call: Call,
     input: unknown,
-  ): Promise<{ readonly held: string } | { readonly replay: unknown } | undefined> {
+  ): Promise<
+    | {
+        readonly held: string;
+        readonly fingerprint: string;
+        readonly ttl: Duration;
+        /** Whether the key is the caller's own, not derived from the input. */
+        readonly sent: boolean;
+      }
+    | { readonly replay: unknown }
+    | undefined
+  > {
     const policy = call.options.idempotency ?? Idempotency.Optional;
+    // its output must never be kept (a credential): a sent key is ignored, so nothing is stored or replayed
+    if (policy === Idempotency.Never) return undefined;
     const sent = call.request.idempotencyKey;
-    if (sent === undefined && policy === Idempotency.Required)
+    const { descriptor } = call;
+    // An API key's write needs its own key whatever the action declares (Pay FR-004, #850 G2); every other caller,
+    // jobs and workflows included, keeps the declared policy
+    const keyCaller =
+      descriptor.credential !== undefined ||
+      descriptor.actor.kind === ActorKind.ApiClient ||
+      call.request.origin?.kind === CallOriginKind.ApiKey;
+    if (sent === undefined && (policy === Idempotency.Required || keyCaller))
       throw IdempotencyKeyRequiredError.create();
     if (sent === undefined && policy !== Idempotency.Derived) return undefined;
-    const { descriptor } = call;
     const fingerprint = await fingerprintOf(descriptor.key, input);
-    const key = sent ?? `derived:${fingerprint}`;
+    // why: a generated client mints a fresh key per call, not per intent, so for any caller but an API key a Derived
+    // action keeps deduplicating by its input (a double click on Refund stays one refund); an API key sends its own
+    const derived = sent === undefined || (policy === Idempotency.Derived && !keyCaller);
+    const key = derived || sent === undefined ? `derived:${fingerprint}` : sent;
     call.state.idempotencyKey = key;
-    const scoped = [descriptor.key, descriptor.scopeId ?? "-", descriptor.actor.id, key].join(":");
+    // the API key and the mode belong to the scope, so a principal's test and live keys (or two of its keys) never
+    // share an answer
+    const scoped = [
+      descriptor.key,
+      descriptor.scopeId ?? "-",
+      descriptor.actor.id,
+      descriptor.credential?.id ?? call.request.origin?.id ?? "-",
+      descriptor.sandbox === true ? "test" : "live",
+      key,
+    ].join(":");
     const store = this.required(
       IdempotencyStore,
       `${descriptor.key} has an Idempotency-Key; bind a store (the memory driver ships with @stackra/actions)`,
@@ -862,10 +1035,25 @@ export class ActionPipeline {
     // a store outside the transaction would mark the key done before the outer commit, which may still fail
     if (call.state.joined && !store.joinsTransaction)
       throw IdempotencyStoreNotTransactionalError.create();
-    const earlier = await store.claim(scoped, fingerprint, IDEMPOTENCY_TTL);
-    if (earlier === undefined) return { held: scoped };
-    if (!earlier.done || earlier.fingerprint !== fingerprint)
-      throw IdempotencyKeyReusedError.create();
+    const own = call.options.idempotencyTtl;
+    // a bound source (settings) sets the window; a failed read fails the call. It and an action may shorten the
+    // window, never lengthen it past the 24 hours of ADR 0136
+    const configured =
+      (await this.optional(IdempotencyRetentionSource)?.retention(descriptor.scope)) ??
+      IDEMPOTENCY_TTL;
+    const window =
+      Duration.toMilliseconds(configured) < Duration.toMilliseconds(IDEMPOTENCY_TTL)
+        ? configured
+        : IDEMPOTENCY_TTL;
+    const ttl =
+      own !== undefined && Duration.toMilliseconds(own) < Duration.toMilliseconds(window)
+        ? own
+        : window;
+    const earlier = await store.claim(scoped, fingerprint, ttl);
+    if (earlier === undefined) return { held: scoped, fingerprint, ttl, sent: !derived };
+    if (earlier.fingerprint !== fingerprint) throw IdempotencyKeyReusedError.create();
+    if (!earlier.done) throw IdempotencyKeyInProgressError.create();
+    if ("refusal" in earlier) throw refusalFromStored(earlier.refusal);
     return { replay: earlier.output };
   }
 
@@ -876,7 +1064,9 @@ export class ActionPipeline {
    * address. The area bucket is keyed by (app, scope) (ADR 0217 decision 2): the app is the origin's id
    * (storefront, API key, agent) or, without one, the actor. A refusal carries
    * the refusing bucket's numbers and, when an `EventOutbox` is bound, writes one `count` usage event on
-   * `RATE_LIMITED_METER` ("limits are metered").
+   * `RATE_LIMITED_METER` ("limits are metered"). When a `RateLimitCapSource` is bound, each bucket's numbers are the
+   * lower of its own and the scope's caps (the scope's settings), so an operator lowers a scope's limits without a
+   * deploy; a failed caps read fails the call, never lets it through unlimited.
    */
   private async limit(call: Call): Promise<void> {
     const { descriptor, options, at } = call;
@@ -892,14 +1082,23 @@ export class ActionPipeline {
     const takes: [key: string, bucket: RateLimitBucket][] = [];
     const config = this.optional(RateLimitConfig);
     const area = config?.areas[descriptor.area];
-    const planned = await this.optional(RateLimitBudget)?.areaBucket(descriptor);
-    if (planned !== undefined) takes.push([areaKey, planned]);
-    else if (area !== undefined)
+    // shortcut: a cap only lowers a limit (min), so a scope that writes its own caps can only throttle itself; once the
+    // read-side level source (STA-2631) tells a platform cap from a scope's own, a platform cap may raise one.
+    const caps = await this.optional(RateLimitCapSource)?.caps(descriptor.area, descriptor.scope);
+    const planned =
+      (await this.optional(RateLimitBudget)?.areaBucket(descriptor)) ??
+      (area === undefined
+        ? undefined
+        : {
+            capacity: area.burst,
+            tokensPerSecond: area.requests / (Duration.toMilliseconds(area.per) / 1000),
+          });
+    if (planned !== undefined)
       takes.push([
         areaKey,
         {
-          capacity: area.burst,
-          tokensPerSecond: area.requests / (Duration.toMilliseconds(area.per) / 1000),
+          capacity: Math.min(planned.capacity, caps?.burst ?? Infinity),
+          tokensPerSecond: Math.min(planned.tokensPerSecond, (caps?.perMinute ?? Infinity) / 60),
         },
       ]);
     const own = options.rateLimit;
@@ -911,9 +1110,11 @@ export class ActionPipeline {
         { capacity: own.perMinute, tokensPerSecond: own.perMinute / 60 },
       ]);
     } else if (fallback !== undefined) {
+      const perScope = Math.min(fallback.perScope, caps?.actionPerScope ?? Infinity);
+      const perAddress = Math.min(fallback.perAddress, caps?.actionPerAddress ?? Infinity);
       takes.push([
         `action:${descriptor.key}:scope:${holder}`,
-        { capacity: fallback.perScope, tokensPerSecond: fallback.perScope / 60 },
+        { capacity: perScope, tokensPerSecond: perScope / 60 },
       ]);
       const address = call.request.client?.address;
       // The store sees a hash, never the address (CallClient goes to no port).
@@ -921,7 +1122,7 @@ export class ActionPipeline {
       if (address !== undefined)
         takes.push([
           `action:${descriptor.key}:address:${await fingerprintOf(address)}`,
-          { capacity: fallback.perAddress, tokensPerSecond: fallback.perAddress / 60 },
+          { capacity: perAddress, tokensPerSecond: perAddress / 60 },
         ]);
     }
     for (const [key, bucket] of takes) {
@@ -1377,6 +1578,7 @@ export class ActionPipeline {
     if (descriptor.kind === "query") return Object.freeze(query);
     const action: ActionContext = {
       ...query,
+      ...(request.attempt === undefined ? {} : { attempt: request.attempt }),
       ...(request.expectedVersion === undefined
         ? {}
         : { expectedVersion: request.expectedVersion }),
@@ -1409,8 +1611,46 @@ export class ActionPipeline {
           descriptor,
         ),
       publish: (event: Event) => this.published(descriptor, at, event),
+      detach: () => this.detachedOf(descriptor, action),
     };
     return Object.freeze(action);
+  }
+
+  /**
+   * The call's isolation held past its transaction (`ctx.detach()`): `run` stores a copy of the call's context, which
+   * `RequestContext.detached()` answers with this call, inside every wrapper of `DETACHED_RUNS` (the database leaves
+   * the call's finished transaction there and keeps the step for `CrudService`), and `isolated` opens a step through
+   * `CallIsolation` with the descriptor's actor and scope, as `isolated(call, ...)` does for the call itself, so its
+   * checks run again per step. A step opened outside `run` enters the wrappers first; inside `run` it does not, so a
+   * step inside a step joins it.
+   */
+  private detachedOf(descriptor: CallDescriptor, ctx: ActionContext): DetachedCall {
+    const storage = this.optional(ContextStorage);
+    // a copy, so the call's own context never reads as detached
+    const view: object = Object.freeze({ ...ctx });
+    const step: DetachedStep = <T>(work: () => Promise<T>): Promise<T> => {
+      const isolation = this.optional(CallIsolation);
+      return isolation === undefined
+        ? work()
+        : isolation.run(descriptor.actor, descriptor.scope, () => work(), { readOnly: false });
+    };
+    const within = <T>(work: () => Promise<T>): Promise<T> => {
+      // the first registered wrapper is the outermost
+      const next = [...DETACHED_RUNS].reduceRight<() => Promise<T>>(
+        (inner, wrapper) => () => wrapper(step, inner),
+        work,
+      );
+      return storage === undefined ? next() : storage.run(view, next);
+    };
+    const detached: DetachedCall = Object.freeze({
+      actor: descriptor.actor,
+      ...(descriptor.scope === undefined ? {} : { scope: descriptor.scope }),
+      run: within,
+      isolated: <T>(work: () => Promise<T>): Promise<T> =>
+        storage !== undefined && storage.current() === view ? step(work) : within(() => step(work)),
+    });
+    DETACHED_CALLS.set(view, detached);
+    return detached;
   }
 
   /**

@@ -42,6 +42,9 @@ export interface SourceReader {
   /** The services any own source file (tests included) imports from `#stackra/clients/<service>`, by service. */
   clientImports: () => { readonly service: string; readonly file: string }[];
 
+  /** The module specifiers each package is imported by across the own source files (tests included), by package name. */
+  packageImports: () => Map<string, Set<string>>;
+
   /** Every refusal reported so far. */
   readonly errors: readonly GenError[];
 }

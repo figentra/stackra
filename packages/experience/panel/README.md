@@ -30,7 +30,7 @@ route pages), `@stackra/query`, `@stackra/support` (`snakeCase`), `@stackra/tena
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | `.`        | `Resource<M, R?>`, `Widget<Q>` (`Widget.place`), `Document`, `Panel`                                                                                                            | the four kinds                                                 |
 | `.`        | `Table`, `Views`, `Form`, `Infolist`, `Relations`, `Actions`, `Display`, `CreateInput` (t)                                                                                      | what the builder members receive                               |
-| `.`        | `CountMetric`, `MoneyMetric`, `TimeRangeInput` and `CountMetric$`, `MoneyMetric$`, `TimeRangeInput$`                                                                            | metric output shapes and the period input, with their schemas  |
+| `.`        | `CountMetric`, `MoneyMetric`, `PercentMetric`, `TimeRangeInput` and `CountMetric$`, `MoneyMetric$`, `PercentMetric$`, `TimeRangeInput$`                                         | metric output shapes and the period input, with their schemas  |
 | `.`        | `ActionPlace`, `Count`, `DisplayKind`, `DocumentLayout`, `ExportFormat`, `FilterComparison`, `ImportMode`, `Place`, `PlacementLayer`, `ResourcePage`, `TimeRange`, `WidgetSize` | enums                                                          |
 | `.`        | `Bind`, `Drill`, `DateRange`, `Blocks`                                                                                                                                          | binds, drill-downs, date filter values, document blocks        |
 | `.`        | `Column`, `Filter`, `View`, `Entry`, `Section`, `Relation`, `Placement`, `FormField`, `FormStep`, `WidgetDisplay`                                                               | the data constructors gen writes into `#stackra/resources`     |
@@ -109,8 +109,34 @@ export class OrderKpisWidget extends Widget<OrderKpisQuery>({
 }
 ```
 
-- A KPI binds to an output field typed `MoneyMetric` or `CountMetric`; format, currency, trend and target come from the
-  type. The query builds them with `MoneyMetric.from(sum, { currency, series, target })`.
+- A KPI binds to an output field typed `MoneyMetric`, `CountMetric` or `PercentMetric`; format, currency, trend and
+  target come from the type. The query builds them with `MoneyMetric.from(sum, { currency, series, target })`.
+- A `PercentMetric` holds ratios (`0.67` is 67%) for its value, previous value, series and target, and carries
+  `format: "percent"` on the wire. The tile shows it as a percent in the reader's locale, and its trend chip moves in
+  percentage points (`+7 pts vs previous period` from 60% to 67%), not as a relative change. Build it with
+  `PercentMetric.from({ current, previous }, { series, target })`; the query computes the ratio. A progress display of
+  a percent without a target fills out of one. The ratio is not clamped to 0..1 on purpose: attainment over 100%
+  (`1.12`) and a negative margin (`-0.05`) are real values; only a non-finite number is refused.
+- `.note(path)` adds a short muted line under the value. `path` is a number or string field of the query output, and
+  the words come from the derived key `<module>::widgets.<widget>.<path>`, given `{count}` for a number (ICU, so it
+  takes plurals) or `{value}` for a string. An absent or null field, or a message that formats to nothing, shows no
+  line. For a main-currency total whose query reports `spendOtherCurrencies: number` (money is never added across
+  currencies):
+
+  ```ts
+  d.kpi("spend").icon("banknote").note("spendOtherCurrencies");
+  ```
+
+  ```json
+  {
+    "widgets": {
+      "shipment_kpis": {
+        "spend": "Spend",
+        "spendOtherCurrencies": "{count, plural, =0 {} one {+# other currency} other {+# other currencies}}"
+      }
+    }
+  }
+  ```
 - `refreshOn` is derived from the query's `cache.invalidateOn`; write it only for an uncached query. `refreshEvery` is at
   least 30 seconds.
 - `Widget.place(Base, { slot, order, size, params })` moves a widget it does not own. Placements replace one another by
@@ -313,5 +339,5 @@ enum labels (codes show), the native pages, and nesting the resource routes unde
 import pipeline with the `ImportMapper` port, gen emitting each resource's export action from `a.export()` and the List
 button that dispatches it, export column labels (headers are row paths), a per-download access record (the disk signs
 the link; its own logs record downloads), the Chart, Table, Timeline, Banner and
-Check displays, the `NumberMetric`, `PercentMetric` and `DurationMetric` shapes, the scope and user layouts (layers 4
+Check displays, the `NumberMetric` and `DurationMetric` shapes, the scope and user layouts (layers 4
 and 5) and the KPI drill-down links and sparklines. See the spec's open items.

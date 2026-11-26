@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `AwsToolsStack`, what `awsToolsStack` returns: the cluster and namespace ids, each tool's ECS service, the
  *          region's endpoints as plain data for the stack's outputs, and, when declared, the Valkey address, the
- *          database task the deploy runs, and the role Infisical's sync assumes.
+ *          database task the deploy runs, and the role the secrets sync assumes.
  * Boundary: type only.
  * Runtime: node
  * Governing contract: ADR 0444; ADR 0173; ADR 0238.
@@ -25,6 +25,6 @@ export type AwsToolsStack = {
   readonly cache?: pulumi.Output<string>;
   /** The one-shot task that creates the tools' databases; the deploy runs it with `aws ecs run-task`. */
   readonly databaseTask?: pulumi.Output<string>;
-  /** The role ARN the Infisical AWS connection assumes to write the parameters. */
+  /** The role ARN the secrets sync assumes to write the parameters. */
   readonly secretsSyncRole?: pulumi.Output<string>;
 };

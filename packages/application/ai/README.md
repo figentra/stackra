@@ -214,7 +214,7 @@ the token with `useValue` when the container builds it.
 `AgentRuntime` runs every bound `GuardrailLayer` (`DiscoveryService.getAll`, wiring order) on the prompt before it is
 stored and on the final answer before it is stored: a redaction is what the conversation keeps and the reply carries,
 and a block throws `GuardrailBlockedError` (a blocked prompt opens no run; a blocked answer fails the run with
-`guardrail_blocked`). A stream's `textStream` has already shown the unredacted answer; only its `reply` is checked.
+`guardrail_blocked`). A stream's `textStream` and `uiStream` have already shown the unredacted answer; only its `reply` is checked.
 
 ```ts
 const layers = [
@@ -299,7 +299,7 @@ await runtime.prompt(agent, text, {
 
 A client tool call parks the run as `waiting_client_tool` (`RunRecord.clientPending`), emits a `ClientToolPart` and arms a
 30 second timer (`CLIENT_TOOL_TIMEOUT_MS`). The surface runs the generated handler and answers through the ai service's
-`ai.run.client_result` action (`CLIENT_RESULT_ACTION`, `PUT /runs/:runId/client-result`, input `ClientResultInput`), which
+`ai.run.client_result` action (`CLIENT_RESULT_ACTION`, `PUT /app/runs/:runId/client-result`, input `ClientResultInput`), which
 calls `runtime.resolveClientTool(runId, answer)`. A result is checked against `ClientToolResult` (`done`, an optional code)
 and a bad one reaches the model as `client_result_invalid`. No answer in time: `expireClientTool` resumes with
 `client_unavailable`. An unknown or already answered tool call id is refused with `ClientToolNotPendingError`.

@@ -97,9 +97,9 @@ The design ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks),
 
 ## Secrets
 
-Code names a secret; it never holds a value. Production values live in Infisical and reach runtimes by sync on deploy;
-there are no `.env` files, and CI reads secrets through short-lived OIDC logins
-([0173](/adr/0173-secrets-infisical-is-the-source-of-production-secrets)). Every commit is scanned for secrets.
+Code names a secret; it never holds a value. Production values live encrypted (SOPS, keyed by Cloud KMS) and reach runtimes
+by sync on deploy; there are no `.env` files, and CI decrypts secrets through short-lived OIDC logins
+([0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical)). Every commit is scanned for secrets.
 
 ## Supply chain
 

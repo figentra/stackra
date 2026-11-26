@@ -5,7 +5,7 @@
  *          declares, so every call writes one access record.
  * Boundary: registration only; no global registry at import time. The decorator is its own metadata key, so the
  *           Explorer and gen look up the same thing, and the conformance test proves they agree. Inherited methods are
- *           not wrapped. The running call's id and actor come from `RequestContext`, which throws outside an action or
+ *           not wrapped. The running call's id, actor and tenant come from `RequestContext`, which throws outside an action or
  *           query call (a missing context is a bug, never an anonymous read). An async method resolves only once its
  *           record is written, so for a class that fails closed (ADR 0409) a lost record withholds the result with
  *           `access_log_write_failed`. A synchronous method stays synchronous: its record is written without being
@@ -72,9 +72,9 @@ export class AccessLogExplorer extends Explorer {
         const original = declared.bind(instance);
         const target = `${className}.${method}`;
         slots[method] = (...args: unknown[]): unknown => {
-          const { callId, actor } = this.request.current();
+          const { callId, actor, scopeId } = this.request.current();
           const write = (values: readonly unknown[]) =>
-            this.log.record(callId, actor, target, options, values);
+            this.log.record(callId, actor, target, options, values, scopeId);
           let result: unknown;
           try {
             result = original(...args);

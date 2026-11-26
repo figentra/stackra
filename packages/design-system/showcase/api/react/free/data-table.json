@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "669dc524258bc165",
+    "hash": "670696e177cb457f",
     "propsFiles": [
       "ui/src/react/data-table/collection-row-panel.props.ts",
       "ui/src/react/data-table/column-menu.props.ts",
@@ -220,7 +220,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "The spoken name of what loads, for example \"Loading orders\"; it is read only while `isLoading` is true.",

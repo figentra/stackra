@@ -59,6 +59,35 @@
   "models": [],
   "drivers": [
     {
+      "port": "EdgeSigningKeys",
+      "key": "app.EdgeSigningKeys",
+      "candidates": ["env", "memory"],
+      "classes": {
+        "env": {
+          "class": "EnvEdgeSigningKeysDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "EdgeConfig",
+                "from": "@stackra/app/server"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemoryEdgeSigningKeysDriver",
+          "from": "@stackra/app/server"
+        }
+      },
+      "selectedBy": "config:app.edge.keys",
+      "config": {
+        "class": "EdgeConfig",
+        "from": "@stackra/app/server"
+      },
+      "from": "@stackra/app"
+    },
+    {
       "port": "EdgeNonceStore",
       "key": "app.EdgeNonceStore",
       "candidates": ["memory"],
@@ -68,17 +97,10 @@
           "from": "@stackra/app/server"
         }
       },
-      "from": "@stackra/app"
-    },
-    {
-      "port": "EdgeSigningKeys",
-      "key": "app.EdgeSigningKeys",
-      "candidates": ["memory"],
-      "classes": {
-        "memory": {
-          "class": "MemoryEdgeSigningKeysDriver",
-          "from": "@stackra/app/server"
-        }
+      "selectedBy": "config:app.edge.nonces",
+      "config": {
+        "class": "EdgeConfig",
+        "from": "@stackra/app/server"
       },
       "from": "@stackra/app"
     },
@@ -98,13 +120,131 @@
             {
               "class": {
                 "name": "BearerConfig",
-                "from": "@stackra/app"
+                "from": "@stackra/app/server"
               }
             }
           ]
         }
       },
       "from": "@stackra/app"
+    },
+    {
+      "port": "ClientSession",
+      "key": "clients.ClientSession",
+      "candidates": ["service"],
+      "classes": {
+        "service": {
+          "class": "ServiceClientSessionDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "ServiceTokens",
+                "from": "@stackra/identity/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "ClientsConfig",
+                "from": "@stackra/clients"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/app"
+    },
+    {
+      "port": "Signer",
+      "key": "contracts.Signer",
+      "candidates": ["ephemeral", "kms"],
+      "classes": {
+        "ephemeral": {
+          "class": "EphemeralSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        },
+        "kms": {
+          "class": "KmsSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            },
+            {
+              "class": {
+                "name": "KmsClient",
+                "from": "@stackra/config/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "selectedBy": "config:config.signer.driver",
+      "config": {
+        "class": "SignerConfig",
+        "from": "@stackra/config"
+      },
+      "from": "@stackra/config"
+    },
+    {
+      "port": "SecretStore",
+      "key": "config.SecretStore",
+      "candidates": ["memory", "aws_secrets_manager"],
+      "classes": {
+        "memory": {
+          "class": "MemorySecretStoreDriver",
+          "from": "@stackra/config"
+        },
+        "aws_secrets_manager": {
+          "class": "AwsSecretsManagerSecretStoreDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "AwsSecretsManagerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      },
+      "selectedBy": "config:config.secrets.store",
+      "config": {
+        "class": "SecretsConfig",
+        "from": "@stackra/config"
+      },
+      "from": "@stackra/config"
+    },
+    {
+      "port": "KmsClient",
+      "key": "config.KmsClient",
+      "candidates": ["aws_sdk"],
+      "classes": {
+        "aws_sdk": {
+          "class": "AwsSdkKmsClientDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      },
+      "from": "@stackra/config"
     }
   ],
   "integrations": [],
@@ -113,5 +253,6 @@
   "agents": [],
   "passes": [],
   "entitlements": [],
+  "roles": [],
   "schemas": {}
 }

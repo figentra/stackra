@@ -3,7 +3,7 @@
  * Purpose: `refusedWriteMessage(error)`, the catalogue key that words a failed settings write: the package's own
  *          words for a refusal it names, `settings::form.not_saved` for anything else.
  * Boundary: pure; it returns a key, never words, so the host's catalogue translates it. Internal to the `./react`
- *           entry: `useSetting` and the web `SettingsForm` share it, and it is not exported.
+ *           entry: `useSetting` and `useSettingsForm` (both `SettingsForm`s) share it, and it is not exported.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 24); ADR 0140 (refusal codes); ADR 0504 (decision 4: catalogue words).
  */

@@ -7,7 +7,8 @@
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
- *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the `SmokeDriver` port of the smoke
+ *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the approved Postgres extensions (`PostgresExtension`,
+ *          `APPROVED_POSTGRES_EXTENSIONS`, ADR 0160), the `SmokeDriver` port of the smoke
  *          step (STA-265), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
@@ -15,17 +16,23 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 export { RunwayConfig } from "#config/runway.config";
+export { APPROVED_POSTGRES_EXTENSIONS } from "#core/constants/approved-postgres-extensions.constant";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
+export { TIER_SIZES } from "#core/constants/tier-sizes.constant";
 export { AppleCapability } from "#core/enums/apple-capability.enum";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
+export { CacheMode } from "#core/enums/cache-mode.enum";
 export { DeployKind } from "#core/enums/deploy-kind.enum";
+export { EnvironmentTier } from "#core/enums/environment-tier.enum";
 export { GoogleProjectState } from "#core/enums/google-project-state.enum";
 export { OnboardStepState } from "#core/enums/onboard-step-state.enum";
+export { PostgresExtension } from "#core/enums/postgres-extension.enum";
 export { PreviewDatabaseSource } from "#core/enums/preview-database-source.enum";
 export { ResourceKind } from "#core/enums/resource-kind.enum";
 export { ResourceSize } from "#core/enums/resource-size.enum";
 export { RequirementEngine } from "#core/enums/requirement-engine.enum";
 export { RunwayCloud } from "#core/enums/runway-cloud.enum";
+export { RegionKey } from "#core/enums/region-key.enum";
 export { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 export { RunwayKind } from "#core/enums/runway-kind.enum";
 export { WorkerPreset } from "#core/enums/worker-preset.enum";
@@ -38,7 +45,10 @@ export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
 export { checkPlacement } from "#core/functions/check-placement.function";
 export { checkDestinations } from "#core/functions/check-destinations.function";
+export { checkEnvironmentRegion } from "#core/functions/check-environment-region.function";
+export { deprecatedFields } from "#core/functions/deprecated-fields.function";
 export { checkHosts } from "#core/functions/check-hosts.function";
+export { environmentSizesOf } from "#core/functions/environment-sizes-of.function";
 export { surfaceHosts } from "#core/functions/surface-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";
 export { checkRequires } from "#core/functions/check-requires.function";
@@ -59,6 +69,7 @@ export { rollback } from "#core/functions/rollback.function";
 export { diffWorkerSettings } from "#core/functions/diff-worker-settings.function";
 export { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
+export { unusedCloudOptIns } from "#core/functions/unused-cloud-opt-ins.function";
 export { workerSettingsOf } from "#core/functions/worker-settings-of.function";
 export { updateFeed } from "#core/functions/update-feed.function";
 export { withDeployLock } from "#core/functions/with-deploy-lock.function";
@@ -80,6 +91,7 @@ export type { DeployResult } from "#core/types/deploy-result.type";
 export type { DeployStep } from "#core/types/deploy-step.type";
 export type { DeployTarget } from "#core/types/deploy-target.type";
 export type { DriftRow } from "#core/types/drift-row.type";
+export type { EnvironmentSizes } from "#core/types/environment-sizes.type";
 export type { WorkerDrift } from "#core/types/worker-drift.type";
 export type { DevPorts } from "#core/types/dev-ports.type";
 export type { EnvironmentCloud } from "#core/types/environment-cloud.type";

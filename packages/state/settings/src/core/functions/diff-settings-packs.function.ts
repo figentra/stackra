@@ -3,7 +3,7 @@
  * Purpose: `diffSettingsPacks`, what `settings:diff` and a settings promotion show: every path of every group whose
  *          value or lock differs between a base pack and the next one.
  * Boundary: pure; rows come sorted by group, then path, so the same two packs always give the same diff. Values are
- *           compared with `Object.is`.
+ *           compared by their JSON text, so two equal lists are the same value.
  * Runtime: isomorphic
  * Governing contract: ADR 0213 (decision 4); ADR 0280 (decision 4); ADR 0359 (decision 6).
  */
@@ -35,7 +35,7 @@ export function diffSettingsPacks(base: SettingsPack, next: SettingsPack): Setti
       const lockedAfter = to.locked.includes(path);
       if (
         had === has &&
-        Object.is(from.values[path], to.values[path]) &&
+        JSON.stringify(from.values[path]) === JSON.stringify(to.values[path]) &&
         lockedBefore === lockedAfter
       )
         continue;

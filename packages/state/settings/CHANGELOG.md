@@ -1,5 +1,637 @@
 # @stackra/settings
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: A service no longer refuses to boot with "its drivers are X, Y, and no config field selects one" for six ports: each now has a config field that picks its driver, with a default. `DatabaseConfig.driver` selects `Database` (`postgres`; `memory` stays the testing driver a test picks with `useDrivers`). The new `SettingsConfig` (key `settings`) holds `store` for `SettingValueStore` and `floors` for `SettingFloorSource`, both `memory`. The new `StorageConfig` (key `storage`) holds `driver` for `Storage` (`memory`; an app still gets `web` or `native` from gen's per-runtime defaults, which come first). `IdentityConfig` gains `sessionStore` for `SessionStore` and `approvalChallenges` for `AppApprovalChallenges`, both `memory`. The ports `Database`, `Storage` and `AppApprovalChallenges` declare their keys, so `DriverName<…>` narrows to their drivers. Production sets `settings.store`, `settings.floors`, `storage.driver` and `identity.approval_challenges` in config to choose its own drivers.
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/market-packs@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/icons@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- 628b60d: The scope-pathed models of these packages opt into `MovesWithScope`, so their rows follow a moved scope subtree (`scope.node.moved.v1`) in every service that hosts them: award kinds, awards and their verifications, rule sets, segments and their memberships, webhook endpoints and deliveries, custom fields, their value sets and content revisions, comment threads, comments, their revisions and mentions, automations, checklists and their progress, and stored settings and their revisions. The audit log (append-only, its history kept) and the scope tree itself (moved by `moveSubtree`) stay out.
+- Updated dependencies [4937622]
+- Updated dependencies [93d63bb]
+- Updated dependencies [7c34d68]
+- Updated dependencies [26a2d54]
+- Updated dependencies [7c34d68]
+- Updated dependencies [7c34d68]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/i18n@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/market-packs@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/icons@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [54db249]
+  - @stackra/ui@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/icons@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/i18n@0.32.0
+  - @stackra/market-packs@0.32.0
+  - @stackra/tenancy@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 0f05f60: Dates follow the tenant's calendar. `@stackra/i18n` adds `CalendarSystem` (`gregory`, `islamic-umalqura`, Intl's
+  names). `formatDateTime` and `dateTimeFormatIn` take a `calendar` (Gregorian by default; an explicit
+  `options.calendar` wins), and `I18nProvider` takes a `calendar` prop that `useDateTime` writes in. `@stackra/settings`
+  adds `DisplaySettings` (key `display`, platform, product and tenant scopes, sent to clients) with `calendar`,
+  Gregorian by default: the server reads it and passes it to `formatDateTime`, and an app passes it to `I18nProvider`.
+
+### Patch Changes
+
+- Updated dependencies [6473cf1]
+- Updated dependencies [0f05f60]
+- Updated dependencies [7179d1a]
+  - @stackra/database@0.31.0
+  - @stackra/i18n@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/tenancy@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/icons@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/market-packs@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 8c17109: Two new platform-scope settings groups with their source drivers. `IdempotencySettings` (`idempotency.retentionHours`,
+  1 to 24, default 24, the cap of ADR 0136) is served by `SettingsIdempotencyRetentionSourceDriver`; `VersioningSettings`
+  (`versioning.supportMonths`, at least 1, default 12) is served by `SettingsVersionSupportSourceDriver`.
+- ef49e63: The rate-limit step can read a scope's limits from settings, so an operator lowers them without a deploy. When a
+  `RateLimitCapSource` (new port in `@stackra/contracts`) is bound, each area bucket number and each default action
+  bucket is the lower of its own and the scope's cap; a cap never raises a limit, and a failed read fails the call.
+  `@stackra/settings` ships the driver, `SettingsRateLimitCapSourceDriver`, over the new `RateLimitSettings` group
+  (`rate_limit.<area>PerMinute`, `<area>Burst`, `actionPerScope`, `actionPerAddress`; `null` caps nothing). With no
+  source bound, nothing changes.
+- 11def65: The settings tables are tenant-owned in the platform form (migration `settings.0004_contract_settings_tenancy`):
+  `stored_settings` and `stored_setting_revisions` get a nullable `tenant_id`, filled from `app.tenant_id` by default (a
+  NULL row is the platform's), forced row-level security and the platform policies. The migration backfills a row at a
+  tenant node (`nlevel(scope_path) = 3`) from its scope and keeps a row at the root or a product node as a platform row.
+  A user's row is now keyed `(tenant_id, group_key, user_id)` (NULLs not distinct), and every user lookup names the
+  session's own owner. New system function `settings.claim_due_revisions` (no runtime caller yet).
+  
+  The `settings:diff` and `settings:apply` runner (`openSettingsSession`) now sets `app.tenant_id` by the same rule: a
+  tenant node is its own owner, the root and a product node are the platform's, and a node below a tenant node is refused
+  (the runner cannot read its tenant without the scope tree yet). `@stackra/cli`'s session-settings check allows that one
+  write.
+  
+  Upgrade: the migration refuses, changing nothing, while a setting or revision sits below a tenant node or belongs to a
+  user (a user row names no scope, so its tenant cannot be read, and as a platform row every tenant could read it).
+  Record those values, delete the rows (`nlevel(scope_path) > 3`, or `user_id is not null`) from both tables, migrate,
+  then write the values again from a session in each node's or user's tenant.
+
+### Patch Changes
+
+- c8e7592: `StoredSetting` and `StoredSettingRevision` are owned: both take `BelongsToTenantOrPlatform`, so a row's `tenant_id` is the running `withTenant` call's tenant, or NULL in a platform call. `@stackra/settings` now depends on `@stackra/tenancy`. The `settings:diff` and `settings:apply` runner writes through `TenantIsolationService.withTenant` as a system actor inside its `withScope` transaction, at a tenant node as that tenant and at the root or a product node as the platform, and no longer sets `app.tenant_id` itself. `@stackra/cli` drops the runner from `SESSION_SETTING_ALLOWED`.
+- Updated dependencies [85cd1b5]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [d5a7d0a]
+- Updated dependencies [15dba8d]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/tenancy@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/i18n@0.30.0
+  - @stackra/market-packs@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/icons@0.30.0
+
+## 0.29.0
+
+### Minor Changes
+
+- 1b727b9: Settings fields are never dropped: gen refuses a field no setting type holds with `settings_unsupported_type`, and writes an enum or driver name as a `choice` key and a string or enum array as a `list` key (`SettingType.Choice`, `SettingType.List`, `SettingKeyInput.options`, and `readonly string[]` as a `SettingValue`). Gen derives the group key from the class name as the runtime does (`AccountSettings` is `Settings.account`), refuses `settings_scope_widened`, `settings_too_deep`, `settings_group_key_empty` and `settings_group_conflict`, and records every group and key in a `settings` section of `stackra.manifest.json`; a group or key rename needs `@Renamed`. An enum setting field is now `choice` with its `options`, not `string`, and a group whose key is not its module's carries the group in its label key. Regenerate with `stackra gen`.
+
+### Patch Changes
+
+- b26036e: `SettingsResolver#write` and `SettingsReader#write` refuse a key whose `scopes` leave out the level written (the page's, or `user` for a user's own layer) with `setting_scope_refused` (`SettingScopeRefusedError`), before anything is written; break-glass does not lift it. The level comes from the page and the target alone, so no new binding is needed and reads are unchanged.
+- Updated dependencies [b4b6422]
+- Updated dependencies [09b2c41]
+- Updated dependencies [11a19a7]
+  - @stackra/container@0.29.0
+  - @stackra/database@0.29.0
+  - @stackra/model@0.29.0
+  - @stackra/icons@0.29.0
+  - @stackra/ui@0.29.0
+  - @stackra/errors@0.29.0
+  - @stackra/i18n@0.29.0
+  - @stackra/market-packs@0.29.0
+  - @stackra/validation@0.29.0
+  - @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/database@0.28.0
+  - @stackra/model@0.28.0
+  - @stackra/icons@0.28.0
+  - @stackra/ui@0.28.0
+  - @stackra/container@0.28.0
+  - @stackra/contracts@0.28.0
+  - @stackra/errors@0.28.0
+  - @stackra/i18n@0.28.0
+  - @stackra/market-packs@0.28.0
+  - @stackra/validation@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- Updated dependencies [4a4d817]
+  - @stackra/database@0.27.0
+  - @stackra/model@0.27.0
+  - @stackra/icons@0.27.0
+  - @stackra/ui@0.27.0
+  - @stackra/container@0.27.0
+  - @stackra/contracts@0.27.0
+  - @stackra/errors@0.27.0
+  - @stackra/i18n@0.27.0
+  - @stackra/market-packs@0.27.0
+  - @stackra/validation@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- Updated dependencies [93e358e]
+- Updated dependencies [a9f21b6]
+- Updated dependencies [e5da198]
+  - @stackra/database@0.26.0
+  - @stackra/ui@0.26.0
+  - @stackra/model@0.26.0
+  - @stackra/icons@0.26.0
+  - @stackra/container@0.26.0
+  - @stackra/contracts@0.26.0
+  - @stackra/errors@0.26.0
+  - @stackra/i18n@0.26.0
+  - @stackra/market-packs@0.26.0
+  - @stackra/validation@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [1d7bbc1]
+- Updated dependencies [dc9da69]
+- Updated dependencies [8f8ddcf]
+- Updated dependencies [3942ab1]
+  - @stackra/database@0.25.0
+  - @stackra/model@0.25.0
+  - @stackra/icons@0.25.0
+  - @stackra/ui@0.25.0
+  - @stackra/container@0.25.0
+  - @stackra/contracts@0.25.0
+  - @stackra/errors@0.25.0
+  - @stackra/i18n@0.25.0
+  - @stackra/market-packs@0.25.0
+  - @stackra/validation@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- Updated dependencies [2df7162]
+  - @stackra/database@0.24.0
+  - @stackra/model@0.24.0
+  - @stackra/icons@0.24.0
+  - @stackra/ui@0.24.0
+  - @stackra/container@0.24.0
+  - @stackra/contracts@0.24.0
+  - @stackra/errors@0.24.0
+  - @stackra/i18n@0.24.0
+  - @stackra/market-packs@0.24.0
+  - @stackra/validation@0.24.0
+
+## 0.23.0
+
+### Minor Changes
+
+- fb6e2b3: A role-gated setting approval: `@Setting({ approval: { by: SystemRole.Owner } })` holds a change until someone holding
+  that role approves it, beside the existing four-eyes `approval: true`. The revision records the role (`approvalRole`,
+  migration `settings.0003_add_setting_revision_approval_role`); `SettingsResolver.approve(id, approver, roles)` refuses
+  an approver without it (`SettingApproverRoleError`, forbidden) and fails closed when the calling action passes no roles.
+  The role is the control, so its holder may approve a change they wrote; `decidedBy` records who did. One change needs
+  one approving role. Gen treats a role-gated key as approval-marked too.
+
+### Patch Changes
+
+- Updated dependencies [12f4836]
+- Updated dependencies [82238da]
+- Updated dependencies [6edeee4]
+- Updated dependencies [a2c8821]
+- Updated dependencies [dee48f0]
+  - @stackra/database@0.23.0
+  - @stackra/ui@0.23.0
+  - @stackra/model@0.23.0
+  - @stackra/icons@0.23.0
+  - @stackra/container@0.23.0
+  - @stackra/contracts@0.23.0
+  - @stackra/errors@0.23.0
+  - @stackra/i18n@0.23.0
+  - @stackra/market-packs@0.23.0
+  - @stackra/validation@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies [b394912]
+  - @stackra/database@0.22.0
+  - @stackra/model@0.22.0
+  - @stackra/icons@0.22.0
+  - @stackra/ui@0.22.0
+  - @stackra/container@0.22.0
+  - @stackra/contracts@0.22.0
+  - @stackra/errors@0.22.0
+  - @stackra/i18n@0.22.0
+  - @stackra/market-packs@0.22.0
+  - @stackra/validation@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+  - @stackra/validation@0.21.0
+  - @stackra/model@0.21.0
+  - @stackra/database@0.21.0
+  - @stackra/ui@0.21.0
+  - @stackra/container@0.21.0
+  - @stackra/errors@0.21.0
+  - @stackra/i18n@0.21.0
+  - @stackra/market-packs@0.21.0
+  - @stackra/icons@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [80d121b]
+- Updated dependencies [a7b7e58]
+- Updated dependencies [19a9222]
+- Updated dependencies [667a3b5]
+  - @stackra/database@0.20.0
+  - @stackra/container@0.20.0
+  - @stackra/validation@0.20.0
+  - @stackra/model@0.20.0
+  - @stackra/icons@0.20.0
+  - @stackra/ui@0.20.0
+  - @stackra/errors@0.20.0
+  - @stackra/i18n@0.20.0
+  - @stackra/market-packs@0.20.0
+  - @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [58e3066]
+- Updated dependencies [b59aa22]
+- Updated dependencies [bac874e]
+- Updated dependencies [12f25aa]
+- Updated dependencies [e5f5432]
+- Updated dependencies [40fda23]
+- Updated dependencies [dd9427a]
+- Updated dependencies [4a23af8]
+- Updated dependencies [fc845f4]
+- Updated dependencies [d2b3d22]
+  - @stackra/contracts@0.19.0
+  - @stackra/database@0.19.0
+  - @stackra/model@0.19.0
+  - @stackra/ui@0.19.0
+  - @stackra/container@0.19.0
+  - @stackra/errors@0.19.0
+  - @stackra/i18n@0.19.0
+  - @stackra/market-packs@0.19.0
+  - @stackra/validation@0.19.0
+  - @stackra/icons@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/database@0.18.1
+  - @stackra/model@0.18.1
+  - @stackra/icons@0.18.1
+  - @stackra/ui@0.18.1
+  - @stackra/container@0.18.1
+  - @stackra/contracts@0.18.1
+  - @stackra/errors@0.18.1
+  - @stackra/i18n@0.18.1
+  - @stackra/market-packs@0.18.1
+  - @stackra/validation@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/database@0.18.0
+  - @stackra/model@0.18.0
+  - @stackra/icons@0.18.0
+  - @stackra/ui@0.18.0
+  - @stackra/container@0.18.0
+  - @stackra/contracts@0.18.0
+  - @stackra/errors@0.18.0
+  - @stackra/i18n@0.18.0
+  - @stackra/market-packs@0.18.0
+  - @stackra/validation@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/database@0.17.2
+  - @stackra/model@0.17.2
+  - @stackra/icons@0.17.2
+  - @stackra/ui@0.17.2
+  - @stackra/container@0.17.2
+  - @stackra/contracts@0.17.2
+  - @stackra/errors@0.17.2
+  - @stackra/i18n@0.17.2
+  - @stackra/market-packs@0.17.2
+  - @stackra/validation@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- Updated dependencies [0b917cf]
+  - @stackra/market-packs@0.17.1
+  - @stackra/database@0.17.1
+  - @stackra/model@0.17.1
+  - @stackra/icons@0.17.1
+  - @stackra/ui@0.17.1
+  - @stackra/container@0.17.1
+  - @stackra/contracts@0.17.1
+  - @stackra/errors@0.17.1
+  - @stackra/i18n@0.17.1
+  - @stackra/validation@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/database@0.17.0
+  - @stackra/model@0.17.0
+  - @stackra/icons@0.17.0
+  - @stackra/ui@0.17.0
+  - @stackra/container@0.17.0
+  - @stackra/contracts@0.17.0
+  - @stackra/errors@0.17.0
+  - @stackra/i18n@0.17.0
+  - @stackra/market-packs@0.17.0
+  - @stackra/validation@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- c6e4715: `#stackra/settings` keys a section's field `<section>.<name>`, so two sections of one module may share a field name
+  without a duplicate key (TS1117). `settingKeys` strips the section back off: each key keeps its `name` and its
+  `<module>.<section>.<name>` path, and files written by an older gen still work.
+- Updated dependencies [5bf8ad3]
+  - @stackra/validation@0.16.0
+  - @stackra/database@0.16.0
+  - @stackra/model@0.16.0
+  - @stackra/icons@0.16.0
+  - @stackra/ui@0.16.0
+  - @stackra/errors@0.16.0
+  - @stackra/i18n@0.16.0
+  - @stackra/market-packs@0.16.0
+  - @stackra/container@0.16.0
+  - @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/database@0.15.0
+  - @stackra/model@0.15.0
+  - @stackra/icons@0.15.0
+  - @stackra/ui@0.15.0
+  - @stackra/container@0.15.0
+  - @stackra/contracts@0.15.0
+  - @stackra/errors@0.15.0
+  - @stackra/i18n@0.15.0
+  - @stackra/market-packs@0.15.0
+  - @stackra/validation@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- 6406843: `SettingKeyInput` extends `SettingOptions` instead of repeating its fields. The shape is unchanged.
+- cc150d2: The native `SettingsForm`, `useMenu`, `useMenus` and the menu flag check now share their logic with the web entry
+  (`useSettingsForm`, `useMenuResolverWith`, `useMenuFrom`) instead of keeping copies. Behaviour and exports are unchanged.
+- @stackra/database@0.14.4
+  - @stackra/model@0.14.4
+  - @stackra/icons@0.14.4
+  - @stackra/ui@0.14.4
+  - @stackra/container@0.14.4
+  - @stackra/contracts@0.14.4
+  - @stackra/errors@0.14.4
+  - @stackra/i18n@0.14.4
+  - @stackra/market-packs@0.14.4
+  - @stackra/validation@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/database@0.14.3
+  - @stackra/model@0.14.3
+  - @stackra/icons@0.14.3
+  - @stackra/ui@0.14.3
+  - @stackra/container@0.14.3
+  - @stackra/contracts@0.14.3
+  - @stackra/errors@0.14.3
+  - @stackra/i18n@0.14.3
+  - @stackra/market-packs@0.14.3
+  - @stackra/validation@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [896c8a3]
+  - @stackra/container@0.14.2
+  - @stackra/database@0.14.2
+  - @stackra/model@0.14.2
+  - @stackra/icons@0.14.2
+  - @stackra/ui@0.14.2
+  - @stackra/errors@0.14.2
+  - @stackra/i18n@0.14.2
+  - @stackra/market-packs@0.14.2
+  - @stackra/validation@0.14.2
+  - @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/database@0.14.1
+  - @stackra/model@0.14.1
+  - @stackra/icons@0.14.1
+  - @stackra/ui@0.14.1
+  - @stackra/container@0.14.1
+  - @stackra/contracts@0.14.1
+  - @stackra/errors@0.14.1
+  - @stackra/i18n@0.14.1
+  - @stackra/market-packs@0.14.1
+  - @stackra/validation@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/database@0.14.0
+  - @stackra/model@0.14.0
+  - @stackra/icons@0.14.0
+  - @stackra/ui@0.14.0
+  - @stackra/container@0.14.0
+  - @stackra/contracts@0.14.0
+  - @stackra/errors@0.14.0
+  - @stackra/i18n@0.14.0
+  - @stackra/market-packs@0.14.0
+  - @stackra/validation@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/database@0.13.0
+  - @stackra/model@0.13.0
+  - @stackra/icons@0.13.0
+  - @stackra/ui@0.13.0
+  - @stackra/container@0.13.0
+  - @stackra/contracts@0.13.0
+  - @stackra/errors@0.13.0
+  - @stackra/i18n@0.13.0
+  - @stackra/market-packs@0.13.0
+  - @stackra/validation@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/database@0.12.0
+  - @stackra/model@0.12.0
+  - @stackra/icons@0.12.0
+  - @stackra/ui@0.12.0
+  - @stackra/container@0.12.0
+  - @stackra/contracts@0.12.0
+  - @stackra/errors@0.12.0
+  - @stackra/i18n@0.12.0
+  - @stackra/market-packs@0.12.0
+  - @stackra/validation@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/database@0.11.1
+  - @stackra/model@0.11.1
+  - @stackra/icons@0.11.1
+  - @stackra/ui@0.11.1
+  - @stackra/container@0.11.1
+  - @stackra/contracts@0.11.1
+  - @stackra/errors@0.11.1
+  - @stackra/i18n@0.11.1
+  - @stackra/market-packs@0.11.1
+  - @stackra/validation@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/database@0.11.0
+  - @stackra/model@0.11.0
+  - @stackra/icons@0.11.0
+  - @stackra/ui@0.11.0
+  - @stackra/container@0.11.0
+  - @stackra/contracts@0.11.0
+  - @stackra/errors@0.11.0
+  - @stackra/i18n@0.11.0
+  - @stackra/market-packs@0.11.0
+  - @stackra/validation@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- Updated dependencies [e57b9a1]
+- Updated dependencies [aea9b1d]
+  - @stackra/contracts@0.10.0
+  - @stackra/database@0.10.0
+  - @stackra/icons@0.10.0
+  - @stackra/ui@0.10.0
+  - @stackra/errors@0.10.0
+  - @stackra/i18n@0.10.0
+  - @stackra/market-packs@0.10.0
+  - @stackra/model@0.10.0
+  - @stackra/container@0.10.0
+  - @stackra/validation@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

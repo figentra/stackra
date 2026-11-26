@@ -44,14 +44,15 @@ The shape is Claude Code's `.mcp.json`: `mcpServers` keyed by a kebab-case name,
 ## Secrets
 
 `stackra mcp exec -- <argv>` starts `argv` unchanged when it names no secret. Otherwise it runs
-`infisical run --env=<dev> --path=</agents> --silent -- sh -c 'exec <line>'`: Infisical puts the values into that one
-process's environment, and the line, every literal single-quoted, expands each `$NAME` there and fails naming an unset
-one. No value passes through the Stackra process, its output or its arguments.
+`sops exec-env <clone>/agents/<NAME>.enc.yaml 'exec <line>'`, one nested `sops exec-env` per named secret, from a local
+clone of figentra/secrets (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`; ADR 0525): sops puts the values into
+that one process's environment, and the line, every literal single-quoted, expands each `$NAME` there and fails naming
+an unset one. No value passes through the Stackra process, its output or its arguments.
 
 ```ts
 import { execWithSecrets } from "@stackra/mcp/node";
 
-process.exitCode = await execWithSecrets(argv, { environment: "dev", path: "/agents" });
+process.exitCode = await execWithSecrets(argv); // or { secretsDir: "/path/to/figentra-secrets" }
 ```
 
 ## The local server

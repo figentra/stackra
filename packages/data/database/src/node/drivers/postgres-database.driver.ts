@@ -10,7 +10,9 @@
  *          store of `Cached` models.
  * Boundary: the only file that starts MikroORM. Gen writes every default and enum item into the entities, so default
  *           inference is off; the global entity manager is never used for work (each call gets the context's or a
- *           fork). `connect` makes it `Database.current()` until `close`. Reads stay on the primary
+ *           fork). `connect` makes it `Database.current()` until `close` and registers the detached-run wrapper; a detached
+ *           call's work runs on a fresh fork as the transaction context, outside the call's committed transaction, with
+ *           this instance's own step store (`runDetached`, `detached`). Reads stay on the primary
  *           unless `onReplica` asks (MikroORM's replica preference is off), because the scope settings live in the
  *           primary's transaction.
  * Runtime: node
@@ -19,17 +21,23 @@
  *                     data-layer gap mo6 (stackra-279: transaction options); gaps sc7 and sc8 (stackra-282: query
  *                     telemetry and the N+1 guard).
  */
+import { AsyncLocalStorage } from "node:async_hooks";
+
 import { RequestContext, TransactionContext } from "@mikro-orm/core";
 import { MikroORM } from "@mikro-orm/postgresql";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { Driver } from "@stackra/container";
+import type { DetachedStep } from "@stackra/actions/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
+import { connectDetachedRuns } from "#core/functions/connect-detached-runs.function";
 import { deleteFilters } from "#core/functions/delete-filters.function";
 import { poolConfig } from "#core/functions/pool-config.function";
-import { scopeSettings } from "#core/functions/scope-settings.function";
+import { readRowSecuritySettings } from "#core/functions/read-row-security-settings.function";
+import { replayRowSecuritySettings } from "#core/functions/replay-row-security-settings.function";
+import { runInScope } from "#core/functions/run-in-scope.function";
 import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
 import { runTransaction } from "#core/functions/run-transaction.function";
 import { EntityResultCacheAdapter } from "#core/orm/entity-result-cache.adapter";
@@ -50,6 +58,9 @@ import type { TransactionOptions } from "#core/types/transaction-options.type";
 export class PostgresDatabaseDriver extends Driver(Database) {
   /** The MikroORM instance. */
   readonly orm: MikroORM;
+
+  /** The step of each detached call running in this database (`runDetached`). */
+  private readonly detachedSteps = new AsyncLocalStorage<DetachedStep>();
 
   /**
    * @param orm - a connected MikroORM instance; use `connect` instead.
@@ -91,7 +102,21 @@ export class PostgresDatabaseDriver extends Driver(Database) {
     });
     const driver = new PostgresDatabaseDriver(orm);
     ACTIVE_DATABASE.current = driver;
+    connectDetachedRuns();
     return driver;
+  }
+
+  /** Implements `Database.detached`, documented there: this instance's own store, never another database's. */
+  override detached(): DetachedStep | undefined {
+    return this.detachedSteps.getStore();
+  }
+
+  /**
+   * Implements `Database.runDetached`, documented there: `work` runs on a fresh fork as the transaction context, so
+   * neither it nor a step it opens joins the call's committed transaction, which MikroORM keeps in the context.
+   */
+  override runDetached<T>(step: DetachedStep, work: () => Promise<T>): Promise<T> {
+    return this.detachedSteps.run(step, () => TransactionContext.create(this.orm.em.fork(), work));
   }
 
   /** Implements `Database.em`, documented there. */
@@ -113,20 +138,12 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   }
 
   /**
-   * Implements `Database.withScope`, documented there.
+   * Implements `Database.withScope`, documented there, through `runInScope`.
    *
    * @throws TypeError for a scope path that is not an `ltree` path.
    */
   withScope<T>(scopes: ScopeRef | readonly ScopeRef[], work: () => Promise<T>): Promise<T> {
-    const settings = scopeSettings(scopes);
-    return this.transaction(async () => {
-      // raw-sql: set_config is how a transaction carries the scope the row-level-security policies compare with
-      await this.em().execute(
-        `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
-        settings.flat(),
-      );
-      return work();
-    });
+    return runInScope(this, scopes, work);
   }
 
   /**
@@ -136,27 +153,15 @@ export class PostgresDatabaseDriver extends Driver(Database) {
    */
   override async onReplica<T>(work: () => Promise<T>): Promise<T> {
     if ((this.orm.config.get("replicas") ?? []).length === 0) return work();
-    const current = this.em();
-    // raw-sql: the `app.*` settings the row-level-security policies read, by name, because Postgres keeps custom
-    // settings out of pg_settings; an unset one is null and is not replayed
-    const settings: readonly { name: string; setting: string }[] = current.isInTransaction()
-      ? await current.execute(
-          "select name, setting from (select name, current_setting(name, true) as setting from unnest(array['app.scope_id', 'app.scope_path', 'app.scope_paths', 'app.tenant_id', 'app.owner_id', 'app.workspace_id']) as name) as s where setting is not null",
-        )
-      : [];
+    const settings = await readRowSecuritySettings(this.em());
     const connection = this.orm.em.getConnection("read");
     return connection.transactional(
       async (trx) => {
         const em = this.orm.em.fork();
         em.setTransactionContext(trx);
-        if (settings.length > 0)
-          // raw-sql: the same set_config withScope writes, replayed in the replica's transaction
-          await connection.execute(
-            `select ${settings.map(() => "set_config(?, ?, true)").join(", ")}`,
-            settings.flatMap(({ name, setting }) => [name, setting]),
-            "all",
-            trx,
-          );
+        await replayRowSecuritySettings(settings, (sql, params) =>
+          connection.execute(sql, params, "all", trx),
+        );
         return TransactionContext.create(em, work);
       },
       { readOnly: true },

@@ -1,5 +1,245 @@
 # @stackra/infra-testbed
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: A service whose configuration reads a required `@Secret` at boot starts under a local `stackra dev`. New command:
+  `stackra dev secrets init [--rotate] [--from <file>]` writes a random dev value for each required secret the
+  workspace's running members declare, and for each name a member's runway lists under `environments.dev.secrets`
+  (optional in the configuration or not), to `.stackra/dev-secrets.json` (gitignored, mode 600). It prints names, never a
+  value, and lists the names a random value would break (a connection string, the events relay's key pair) as needing
+  a value. An existing file only gains its missing names unless `--rotate`; `--from` copies a name shared with another
+  repository. `stackra dev` adds the file's values for a member's own declared names to its tool run. The testbed upload
+  excludes the file (ADR 0525, amendment of 2026-11-10).
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/contracts@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/contracts@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+
+## 0.29.0
+
+### Patch Changes
+
+- @stackra/contracts@0.29.0
+
+## 0.28.0
+
+### Patch Changes
+
+- @stackra/contracts@0.28.0
+
+## 0.27.0
+
+### Patch Changes
+
+- @stackra/contracts@0.27.0
+
+## 0.26.0
+
+### Patch Changes
+
+- @stackra/contracts@0.26.0
+
+## 0.25.0
+
+### Patch Changes
+
+- @stackra/contracts@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @stackra/contracts@0.24.0
+
+## 0.23.0
+
+### Patch Changes
+
+- @stackra/contracts@0.23.0
+
+## 0.22.0
+
+### Patch Changes
+
+- @stackra/contracts@0.22.0
+
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies [a785356]
+- Updated dependencies [f184d12]
+  - @stackra/contracts@0.21.0
+
+## 0.20.0
+
+### Patch Changes
+
+- @stackra/contracts@0.20.0
+
+## 0.19.0
+
+### Patch Changes
+
+- 5d6448a: `stackra doctor` no longer checks for the Infisical CLI and login (ADR 0525). A workspace whose root scripts run
+  `secrets-exec.mjs` is checked for the sops CLI, the Google Application Default Credentials file sops decrypts with
+  (its presence only; the credential is never read) and a `figentra/secrets` clone with an `agents` folder. The
+  `infisical` doctor need and the `DoctorWorkspace.infisical` field are gone. The testbed's toolchain test no longer
+  expects the Infisical CLI in `mise.toml`; the boxes keep their own pin until they read sops.
+- Updated dependencies [58e3066]
+- Updated dependencies [bac874e]
+  - @stackra/contracts@0.19.0
+
+## 0.18.1
+
+### Patch Changes
+
+- @stackra/contracts@0.18.1
+
+## 0.18.0
+
+### Patch Changes
+
+- @stackra/contracts@0.18.0
+
+## 0.17.2
+
+### Patch Changes
+
+- @stackra/contracts@0.17.2
+
+## 0.17.1
+
+### Patch Changes
+
+- @stackra/contracts@0.17.1
+
+## 0.17.0
+
+### Patch Changes
+
+- @stackra/contracts@0.17.0
+
+## 0.16.0
+
+### Patch Changes
+
+- @stackra/contracts@0.16.0
+
+## 0.15.0
+
+### Patch Changes
+
+- @stackra/contracts@0.15.0
+
+## 0.14.4
+
+### Patch Changes
+
+- @stackra/contracts@0.14.4
+
+## 0.14.3
+
+### Patch Changes
+
+- @stackra/contracts@0.14.3
+
+## 0.14.2
+
+### Patch Changes
+
+- @stackra/contracts@0.14.2
+
+## 0.14.1
+
+### Patch Changes
+
+- @stackra/contracts@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- @stackra/contracts@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- @stackra/contracts@0.13.0
+
+## 0.12.0
+
+### Patch Changes
+
+- @stackra/contracts@0.12.0
+
+## 0.11.1
+
+### Patch Changes
+
+- @stackra/contracts@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- @stackra/contracts@0.11.0
+
+## 0.10.0
+
+### Patch Changes
+
+- f5fa82c: `stackra testbed run` no longer uploads a worktree's `.cache` (its pnpm store, about 7.5 GB); the box agent's seed
+  refresh leaves it out too.
+- ff36aea: The job image's base, `ubuntu:24.04`, is pinned by its index digest.
+- ff36aea: Both testbed groups replace any box older than a day and publish their in-service count each minute, for the cost
+  alarm.
+- ff36aea: `awsTestbed` takes an optional `permissionsBoundary` and sets it on the box's and Image Builder's roles; the Pulumi
+  program reads it from the `permissionsBoundary` config key.
+- cfb684e: Every project's box job can read the registry: the plan grants `prod` `/ci/registry` of the CI project to every
+  project (the `*` key of `grants.json`, which the agent adds to each project's own paths), and the agent gives pnpm the
+  token under both names (`FIGENTRA_REGISTRY_TOKEN` first, `STACKRA_REGISTRY_TOKEN` second) with the repository's own
+  `.npmrc` as its auth file, since pnpm 12 ignores `${...}` in a project `.npmrc`. The agent is byte for byte
+  figentra/testbed's. Changes a hashed image input: the image is rebuilt.
+- 04d5dfd: testbed-agent: a job stopped while it cleans up (Ctrl-C, SIGTERM, `job stop`) still removes its workspace and drops
+  the box's scale-in protection, byte for byte as figentra/testbed#13. Seen live on 2026-11-05: a cancelled job left
+  both. A hashed image input: boxes get it with the next image build.
+- ff36aea: The testbed groups use only the default subnets in zones that offer the heavy instance type, so us-east-1e (none of
+  the three types) is left out.
+- Updated dependencies [e57b9a1]
+  - @stackra/contracts@0.10.0
+
 ## 0.9.0
 
 ### Patch Changes

@@ -4,7 +4,7 @@
  *          deletes every object older than it: the Turborepo remote cache expires after 7 days, matching turbo's local
  *          `cacheMaxAge`.
  * Boundary: declares Pulumi resources only. The cache Worker that serves Turborepo's API from the bucket deploys from
- *           CI with wrangler (ADR 0289 decisions 1 and 2), and its token and signature key live in Infisical `/ci`.
+ *           CI with wrangler (ADR 0289 decisions 1 and 2), and its token and signature key live in sops `ci/build/turbo`.
  * Runtime: node
  * Governing contract: ADR 0026 (decisions 1 and 2, and the expiry rule of its consequences), ADR 0171 (decisions 6
  *                     and 7).

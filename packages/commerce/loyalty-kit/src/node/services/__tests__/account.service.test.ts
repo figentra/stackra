@@ -316,4 +316,20 @@ describe("AccountService in the kit's container", () => {
     expect(accounts).toBeInstanceOf(AccountService);
     expect(Reflect.get(accounts, "extensions")).toBeInstanceOf(LoyaltyKitExtensionPoint);
   });
+
+  /** Gen's registrations put the kit's own extension on its slot, so the real point runs it: gold earns double. */
+  it("runs the kit's tier multiplier on the earnAdjust slot of the real point", async () => {
+    const app = await createTestingModule(LoyaltyKitModule)
+      .useDrivers("memory")
+      .override(LoyaltyMembers, LoyaltyMembersFake.with([]))
+      .compile();
+    const point = app.get(LoyaltyKitExtensionPoint);
+    const draft = {
+      memberId: memberId("usr_gold"),
+      amount: { minor: 10_000, currency: "SAR" },
+      tier: LoyaltyTier.Gold,
+    } as EarnDraft;
+
+    expect(await point.earnAdjust(100, draft, fakeExtensionContext())).toBe(200);
+  });
 });

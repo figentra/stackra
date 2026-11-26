@@ -12,8 +12,8 @@
 /** Catalog name to its entries; `default` is the unnamed `catalog:`. */
 export const SERVICE_CATALOGS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   default: {
-    "@electric-sql/pglite": "0.5.8",
-    "@electric-sql/pglite-pgvector": "0.0.9",
+    "@electric-sql/pglite": "0.5.15",
+    "@electric-sql/pglite-pgvector": "0.0.16",
     "@faker-js/faker": "10.6.0",
     "@mikro-orm/pglite": "7.2.5",
     "@testcontainers/postgresql": "12.2.0",

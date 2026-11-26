@@ -12,7 +12,7 @@ icon: "rocket"
 
 1. **Agents prepare and check; the owner runs every deploy.** Every deploy command is behind an approval prompt. Answer no and hand it to the owner, with the commit SHA, the gate result and the list of secret names the release needs.
 2. **Staging first, then production from the same commit**, after `pnpm verify` is green on that exact SHA ([CI](/runbooks/ci)). Never deploy a commit whose gate you did not see pass.
-3. **Secrets are named by the agent and set by a human**, in each environment, before the deploy. A missing secret fails provisioning, for example Encore's `secret key(s) not defined`. See [Secrets](/runbooks/secrets).
+3. **Secrets are named by the agent and put in `figentra/secrets` before the deploy**, in each environment's scope: a generated value with `pnpm secrets:generate`, a human value by the owner with `pnpm secrets:put`. The deploy's `runway secrets sync` writes them into the runtime, and a missing name fails the sync before anything ships. See [Secrets](/runbooks/secrets).
 4. **A rollback is a redeploy of an older recorded release, not a build.**
 5. **Production needs the owner's explicit approval each time.** Two-person approval is deferred until a second maintainer joins; until then `CODEOWNERS` and branch protection are the control.
 6. **Never skip the gate** (`--no-verify`, "skip tests") to save time. The break-glass path in [CI](/runbooks/ci#when-ci-is-down) gates locally instead.
@@ -35,9 +35,10 @@ icon: "rocket"
     every migration and say whether it is expand-only. Write the smoke-test checks. Hand all of it
     to the owner.
   </Step>
-  <Step title="Set secrets (human)">
-    The owner sets each named secret in the target environment. The agent never sets or reads a
-    value.
+  <Step title="Put secrets in">
+    Each new name goes into `products/<product>/<env>` of `figentra/secrets`: the agent runs `pnpm
+    secrets:generate` for a generated one, and the owner runs `pnpm secrets:put` for a human one.
+    Nobody reads a value, and nobody writes the runtime store by hand.
   </Step>
   <Step title="Deploy to staging (owner)">
     The owner deploys the full SHA to staging. A deploy is by commit hash, never by branch name.
@@ -101,12 +102,12 @@ by email, gives the role at the platform node once and audits the call (STA-1586
   <Step title="Mint the bootstrap credential (owner)">
     In that environment's ZITADEL, create a service account (machine user) named `ops-bootstrap` and give it a
     personal access token with a one-day expiry. The gateway verifies it into a `service` actor, the only kind the
-    bootstrap's system permission lets through. Put the token in Infisical, that environment, path `/ops`, as
-    `STACKRA_OPS_TOKEN`. The agent never sees it.
+    bootstrap's system permission lets through. Put the token with `pnpm secrets:put STACKRA_OPS_TOKEN --scope
+    agents`. The agent never sees it.
   </Step>
   <Step title="Dry run">
-    `infisical run --env=<env> --path=/ops -- stackra ops bootstrap-operator --env <environment> --email <email> --dry-run`
-    prints `would grant owner to usr_…`, or `no user with that email` (exit 1). `--api <origin>` overrides the origin
+    `node tools/scripts/secrets-exec.mjs --names STACKRA_OPS_TOKEN -- stackra ops bootstrap-operator --env <environment> --email <email> --dry-run`
+    (the owner runs it) prints `would grant owner to usr_…`, or `no user with that email` (exit 1). `--api <origin>` overrides the origin
     read from `runway.yaml` (`https://<edge.apiHost>.<environments.<env>.domains.zone>`).
   </Step>
   <Step title="Grant">
@@ -114,7 +115,8 @@ by email, gives the role at the platform node once and audits the call (STA-1586
     nothing written`. `--role <key>` gives another role than `owner`.
   </Step>
   <Step title="Revoke the credential">
-    Delete the token in ZITADEL and the secret in Infisical. Every further operator is added from the operator UI.
+    Delete the token in ZITADEL, then remove `agents/STACKRA_OPS_TOKEN.enc.yaml` from `figentra/secrets` with a pull
+    request. Every further operator is added from the operator UI.
   </Step>
 </Steps>
 
@@ -162,7 +164,7 @@ The kill switch is a `sw.js` that removes itself.
 | Gate green on the deployed SHA | CI `verify`                                    | Not built |
 | Owner approval for production  | Protected environment                          | Not built |
 | Migrations are expand-only     | Migration-safety check, once a database exists | Not built |
-| No agent sets a secret         | `guard-bash`                                   | Live      |
+| No runtime secret set by hand  | `guard-bash`                                   | Live      |
 | Preview smoke before promotion | `runway-smoke.yml`, `stackra smoke` (STA-265)  | Built     |
 | First operator without SQL     | `stackra ops bootstrap-operator` (STA-1586)    | Built     |
 

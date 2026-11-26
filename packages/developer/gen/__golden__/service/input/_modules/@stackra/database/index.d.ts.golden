@@ -1,0 +1,2 @@
+export declare class Seeder { run(): Promise<void> }
+export declare class Factory<M> { static new(): Factory<unknown>; create(): Promise<M> }

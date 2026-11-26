@@ -18,6 +18,8 @@ describe("@stackra/notifications/testing", () => {
       "ChatTransportFake",
       "InAppStoreFake",
       "MailTransportFake",
+      "MemoryNotificationPreferencesClientDriver",
+      "MemoryPushRegistrationDriver",
       "PushTransportFake",
       "SmsTransportFake",
       "WhatsAppTransportFake",

@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "979c344724b3cb39",
+    "hash": "e44c7c0d4d34e15d",
     "propsFiles": ["ui/src/react/sortable-list/sortable-list.props.ts"]
   },
   "importLine": "import { SortableList } from \"@stackra/ui/react\";",
@@ -101,7 +101,7 @@
           "name": "defaultSelectedKeys",
           "required": false,
           "source": "react-aria",
-          "type": "\"all\" | Iterable<Key>"
+          "type": "Iterable<Key> | \"all\""
         },
         {
           "description": "Values that should invalidate the item cache when using dynamic collections.",
@@ -191,7 +191,7 @@
           "name": "selectedKeys",
           "required": false,
           "source": "react-aria",
-          "type": "\"all\" | Iterable<Key>"
+          "type": "Iterable<Key> | \"all\""
         },
         {
           "default": "'toggle'",
@@ -206,7 +206,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "react-aria",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "Whether selection should occur on press up instead of press down.",

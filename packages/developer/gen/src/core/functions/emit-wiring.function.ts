@@ -17,7 +17,12 @@
  *          `OriginGuard` and `CsrfGuard` request guards with the `app.cors` and `app.csrf` config rows, and the six
  *          `HealthIndicator` drivers `/readyz` runs with their package config rows (STA-1385), and the query cache's
  *          `QueryCacheEvictorListener` with `@stackra/cache` (STA-1445), which `@stackra/actions`' own wiring never binds,
- *          and the `ReplicaReads` driver table when a query reads a replica (`replicaReadsPorts`, STA-1504). A host's
+ *          the pipeline's own ports for what a service declares (`pipelinePorts`, STA-2573),
+ *          and the `ReplicaReads` driver table when a query reads a replica (`replicaReadsPorts`, STA-1504), and the
+ *          cross-app relay (STA-1910): a consumer of a contract-only producer's events gets the inbox route
+ *          (`InboundEventsController` over `RelayInboxService`) and its `outbox.relay_inbox` override from
+ *          `#stackra/inbox`; a producer with a runway `events` block gets `CrossAppFanOut`, `CrossAppRelayService`,
+ *          the `outbox.events_relay` override from `#stackra/events-relay` and the Postgres `DeliveryDriver`. A host's
  *          follow-the-system ports (`systemDriverDefaults`) are listed with their config rows and default to the
  *          driver of its runtime (STA-1535, STA-1536); a web-and-native app also gets `nativeWiring`, whose defaults are
  *          the native drivers, for its native entry.
@@ -40,22 +45,28 @@
 import { snakeCase } from "@stackra/support";
 
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
+import { BOOT_SERVICES } from "#core/constants/boot-services.constant";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { MODEL_TOKENS } from "#core/constants/model-tokens.constant";
+import { CONTAINER_BUILT } from "#core/constants/container-built.constant";
 import { PLATFORM_BINDINGS } from "#core/constants/platform-bindings.constant";
 import { SERVER_CONTRIBUTIONS } from "#core/constants/server-contributions.constant";
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { configKeyOf } from "#core/functions/config-key-of.function";
 import { driverName } from "#core/functions/driver-name.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { hasEncryptedFields } from "#core/functions/has-encrypted-fields.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { modelKey } from "#core/functions/model-key.function";
 import { packageSpecifier } from "#core/functions/package-specifier.function";
+import { pipelinePorts } from "#core/functions/pipeline-ports.function";
 import { portKey } from "#core/functions/port-key.function";
 import { replicaReadsPorts } from "#core/functions/replica-reads-ports.function";
-import { moduleDependsOn } from "#core/functions/module-depends-on.function";
+import { moduleEdges } from "#core/functions/module-edges.function";
+import { topological } from "#core/functions/topological.function";
 import { rootModuleOf } from "#core/functions/root-module-of.function";
 import { systemDriverDefaults } from "#core/functions/system-driver-defaults.function";
+import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
 import { webhookIntegrations } from "#core/functions/webhook-integrations.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { ClassValue } from "#core/types/class-value.type";
@@ -87,6 +98,51 @@ function depsOf(declared: DeclaredClass): readonly TokenRef[] {
   if (declared.kind === "integration") return [INTEGRATION_RUNTIME];
   if (declared.kind === "agent") return [AGENT_RUNTIME];
   return declared.deps;
+}
+
+/** The cross-app inbox service a consumer's inbox route takes (ADR 0511 decision 18, STA-1910). */
+const RELAY_INBOX: ClassRef = { name: "RelayInboxService", from: "@stackra/outbox/node" };
+
+/**
+ * The field cipher a service with encrypted fields seals with: the port, its one implementation (a plain subclass in
+ * contracts, which sits below the container, so no manifest lists it as a driver) and the key provider it seals under.
+ */
+const FIELD_CIPHER: ClassRef = { name: "FieldCipher", from: "@stackra/contracts" };
+const AES_GCM_FIELD_CIPHER: ClassRef = {
+  name: "AesGcmFieldCipherDriver",
+  from: "@stackra/contracts",
+};
+const KEY_PROVIDER: ClassRef = { name: "KeyProvider", from: "@stackra/contracts" };
+
+/** The producer services that fan events out to other apps and deliver them (ADR 0511 decision 12, STA-1910). */
+const CROSS_APP_PRODUCER: readonly ClassRef[] = [
+  { name: "CrossAppFanOut", from: "@stackra/outbox/node" },
+  { name: "CrossAppRelayService", from: "@stackra/outbox/node" },
+];
+
+/**
+ * The generated config overrides of the cross-app relay, by config class of `@stackra/outbox`: the consumer's inbox
+ * table (`#stackra/inbox`) and the producer's runway `events` blocks (`#stackra/events-relay`).
+ */
+function relayConfigs(ir: MemberIR): { readonly key: string; readonly override: ClassRef }[] {
+  return [
+    ...(inboxProducersOf(ir).length > 0
+      ? [
+          {
+            key: "outbox.relay_inbox",
+            override: { name: "RelayInboxConfig", from: "#stackra/inbox" },
+          },
+        ]
+      : []),
+    ...(ir.layout === "service" && ir.eventsRelay !== undefined
+      ? [
+          {
+            key: "outbox.events_relay",
+            override: { name: "EventsRelayConfig", from: "#stackra/events-relay" },
+          },
+        ]
+      : []),
+  ];
 }
 
 /** The one dependency of a generated service client: the transport driver the topology picks (ADR 0260 d6). */
@@ -291,24 +347,6 @@ function dependencyConfigs(ir: MemberIR): Map<string, string> {
   return configs;
 }
 
-/** Sorts module keys so each comes after the modules it depends on; a cycle keeps source order. */
-function topological(
-  keys: readonly string[],
-  edges: ReadonlyMap<string, readonly string[]>,
-): string[] {
-  const out: string[] = [];
-  const state = new Map<string, "visiting" | "done">();
-  const visit = (key: string): void => {
-    if (state.has(key)) return;
-    state.set(key, "visiting");
-    for (const dependency of edges.get(key) ?? []) if (keys.includes(dependency)) visit(dependency);
-    state.set(key, "done");
-    out.push(key);
-  };
-  for (const key of keys) visit(key);
-  return out;
-}
-
 /**
  * The wiring file of `ir`.
  *
@@ -356,12 +394,14 @@ export function emitWiring(ir: MemberIR): string {
       ref(own(declared));
       ref(declared.base, "Base");
     }
+  // The cross-app relay's generated overrides take the plain names too (STA-1910).
+  const relayConfigLines = relayConfigs(ir).map(({ key, override }) => {
+    const name = ref(override);
+    return `    { key: ${JSON.stringify(key)}, provide: ${ref({ name: override.name, from: "@stackra/outbox" }, "Base")}, override: ${name} },`;
+  });
 
   // Modules, own then each dependency's, in dependency order.
-  const edges = new Map<string, string[]>();
-  for (const key of ir.modules) {
-    edges.set(key, moduleDependsOn(ir, key));
-  }
+  const edges = moduleEdges(ir);
   const moduleLines: string[] = [];
   for (const key of topological(ir.modules, edges)) {
     const moduleClass = ir.classes.find(
@@ -427,6 +467,52 @@ export function emitWiring(ir: MemberIR): string {
     );
   }
 
+  // A hosted package module's actions and queries are its surface, so the host binds each one whether or not a class
+  // injects it (a test or a client calls it by class), with its constructor tokens from the manifest's `services`; a
+  // service host binds its raw controllers too.
+  const hostedTokens: { readonly module: string; readonly dep: TokenRef }[] = [];
+  const hostedKeys: string[] = [];
+  const hostedServices = dependencyServices(ir);
+  for (const { package: name, manifest } of ir.dependencies) {
+    const entry = manifest.modules?.find((candidate) => candidate.key === manifest.member);
+    if (entry?.class === undefined || typeof entry["file"] !== "string" || manifest.kind === "app")
+      continue;
+    const key = dependencyKeys.get(manifest.member) ?? manifest.member;
+    const surface = Array.isArray(manifest["actions"]) ? (manifest["actions"] as unknown[]) : [];
+    for (const declared of surface) {
+      const { class: type, kind } = (declared ?? {}) as Record<string, unknown>;
+      if (typeof type !== "string" || (kind !== "action" && kind !== "query")) continue;
+      const services = Array.isArray(manifest["services"])
+        ? (manifest["services"] as unknown[])
+        : [];
+      const listed = services.find(
+        (candidate) => ((candidate ?? {}) as Record<string, unknown>)["class"] === type,
+      ) as Record<string, unknown> | undefined;
+      const tokens = hostedServices.get(`${name}#${type}`);
+      if (listed === undefined || typeof listed["from"] !== "string" || tokens === undefined)
+        continue;
+      bindingLines.push(
+        `    { module: ${JSON.stringify(key)}, kind: ${JSON.stringify(kind)}, provide: ${ref({ name: type, from: listed["from"] })}, deps: ${list(tokens.map(token))} },`,
+      );
+      for (const dep of tokens) hostedTokens.push({ module: key, dep });
+      hostedKeys.push(`:${listed["from"]}#${type}`);
+    }
+    // Its raw controllers (a `services` row with a `path`), which the host's Encore adapter serves.
+    if (ir.layout !== "service" || !Array.isArray(manifest["services"])) continue;
+    for (const listed of manifest["services"] as unknown[]) {
+      const { class: type, from, path } = (listed ?? {}) as Record<string, unknown>;
+      const tokens = hostedServices.get(`${name}#${String(type)}`);
+      if (typeof type !== "string" || typeof from !== "string" || typeof path !== "string")
+        continue;
+      if (tokens === undefined) continue; // a token the host cannot import, as for a hosted action
+      bindingLines.push(
+        `    { module: ${JSON.stringify(key)}, kind: "controller", provide: ${ref({ name: type, from })}, deps: ${list(tokens.map(token))} },`,
+      );
+      for (const dep of tokens) hostedTokens.push({ module: key, dep });
+      hostedKeys.push(`:${from}#${type}`);
+    }
+  }
+
   // A config class's key: an override keeps its base's key (ADR 0294 decision 20), read from the base package's
   // manifest, else derived from the base's own member.
   const packageConfigs = dependencyConfigs(ir);
@@ -459,6 +545,8 @@ export function emitWiring(ir: MemberIR): string {
     );
   }
 
+  configLines.push(...relayConfigLines);
+
   // Drivers per port: the member's own, then (in the worklist below) each declared package's table of a port the
   // member's bindings reach, read from that package's manifest (STA-1297). And the config fields that select them.
   const ports = new Map<string, PortTable>();
@@ -490,6 +578,19 @@ export function emitWiring(ir: MemberIR): string {
     entry.own.push(name);
     ports.set(key, entry);
   }
+  // A service with encrypted fields: its boot builds the EncryptedFieldsSubscriber from FieldCipher, whose one
+  // implementation gen names here, over the KeyProvider the worklist below links (STA-2664 (l)).
+  const encrypted = ir.layout === "service" && hasEncryptedFields(ir);
+  const cipherKey = portKey("contracts", FIELD_CIPHER.name);
+  if (encrypted && !ports.has(cipherKey))
+    ports.set(cipherKey, {
+      port: FIELD_CIPHER,
+      key: cipherKey,
+      candidates: [
+        { name: "aes_gcm", type: AES_GCM_FIELD_CIPHER, deps: [{ class: KEY_PROVIDER }] },
+      ],
+      own: [],
+    });
   const selectors = new Map<string, { selectedBy?: string; named?: string }>();
   for (const declared of ir.classes.filter((candidate) => candidate.kind === "config")) {
     const schema = declared.options["schema"];
@@ -523,6 +624,7 @@ export function emitWiring(ir: MemberIR): string {
   }
 
   // The declared packages' driver tables by port key, and the member of each package (STA-1297).
+  const server = ir.layout === "service" || ir.layout === "worker";
   const packageTables = dependencyDriverTables(ir);
   const configKeys = new Set(configLines.map((line) => /key: "([^"]+)"/.exec(line)?.[1]));
   const linked = new Set<string>();
@@ -547,8 +649,14 @@ export function emitWiring(ir: MemberIR): string {
     const table = packageTables.get(key);
     if (table === undefined || linked.has(key)) return brought;
     linked.add(key);
+    // A server never runs a browser, React Native or Electron driver, so its wiring lists none: a port with only
+    // those (`SignInBrowser`) stays out, else the boot fails choosing a driver nothing on the server asks for.
+    const candidates = server
+      ? table.candidates.filter((candidate) => !isClientEntry(candidate.type.from))
+      : table.candidates;
+    if (candidates.length === 0) return brought;
     const entry = ports.get(key) ?? { port: dep.class, key, candidates: [], own: [] };
-    for (const candidate of table.candidates)
+    for (const candidate of candidates)
       if (!entry.candidates.some((known) => known.name === candidate.name)) {
         entry.candidates.push(candidate);
         brought.push(...candidate.deps);
@@ -562,12 +670,16 @@ export function emitWiring(ir: MemberIR): string {
   // Bindings gen adds: one per per-model token, the inbound webhook route, and each platform service it knows where
   // it is injected. A worklist, so `journalOf(M)` brings `Locks` with it.
   const used: { readonly module: string; readonly dep: TokenRef }[] = [];
+  // A seeder is no binding (the setup registers its tokens for `.seed()`), but what it injects must be bound: a minimal
+  // seeder's `SettingsPackService` is wired by nothing else (os#256).
   for (const declared of ir.classes)
     if (
       (BINDING_KINDS.includes(declared.kind) && !contributed(ir, declared)) ||
-      declared.kind === "driver"
+      declared.kind === "driver" ||
+      declared.kind === "seeder"
     )
       for (const dep of depsOf(declared)) used.push({ module: declared.module, dep });
+  used.push(...hostedTokens);
   if (webhookIntegrations(ir).length > 0) {
     const receiver: TokenRef = { class: { name: "WebhookReceiver", from: "@stackra/webhooks" } };
     const route = ref({ name: "InboundWebhooksController", from: "#stackra/webhooks" });
@@ -576,6 +688,21 @@ export function emitWiring(ir: MemberIR): string {
     );
     used.push({ module: ir.member, dep: receiver });
   }
+  // The cross-app inbox route of a consumer of a contract-only producer (ADR 0511 decision 18).
+  if (inboxProducersOf(ir).length > 0) {
+    const inbox: TokenRef = { class: RELAY_INBOX };
+    const route = ref({ name: "InboundEventsController", from: "#stackra/inbox" });
+    bindingLines.push(
+      `    { module: ${JSON.stringify(ir.member)}, kind: "controller", provide: ${route}, deps: [${token(inbox)}] },`,
+    );
+    used.push({ module: ir.member, dep: inbox });
+  }
+  // A producer's fan-out and cross-app relay, from its runway `events` blocks (ADR 0511 decision 12).
+  const producer = ir.layout === "service" && ir.eventsRelay !== undefined;
+  const inbox = inboxProducersOf(ir).length > 0;
+  if (producer)
+    for (const service of CROSS_APP_PRODUCER)
+      used.push({ module: ir.member, dep: { class: service } });
   const contributedConfigs: { readonly key: string; readonly provide: ClassRef }[] = [];
   // A service's request guards and health indicators, from each declared package (STA-1385), with their config rows.
   if (ir.layout === "service") {
@@ -593,6 +720,15 @@ export function emitWiring(ir: MemberIR): string {
     }
     // The pipeline resolves ReplicaReads optionally, so a replica query's port is reached here (STA-1504).
     for (const dep of replicaReadsPorts(ir)) used.push({ module: ir.member, dep });
+    // The ports the pipeline itself requires for what the service declares, injected or not (STA-2573).
+    for (const dep of pipelinePorts(ir)) used.push({ module: ir.member, dep });
+    // What the generated boot resolves for a declared package; nothing injects it, so without these rows boot stops
+    // at "Nothing binds OutboxWriterService" (STA-2664 (n)).
+    for (const { packages, services } of BOOT_SERVICES)
+      if (packages.some(declares))
+        for (const service of services) used.push({ module: ir.member, dep: { class: service } });
+    // The cipher's key provider, which nothing injects either: its table comes from a declared package (tenancy's).
+    if (encrypted) used.push({ module: ir.member, dep: { class: KEY_PROVIDER } });
   }
   // The follow-the-system ports a host binds even where no constructor injects them (STA-1535, STA-1536).
   const systemDefaults = new Map<string, string>();
@@ -601,10 +737,12 @@ export function emitWiring(ir: MemberIR): string {
     used.push({ module: ir.member, dep: { class: port } });
     if (config !== undefined) used.push({ module: ir.member, dep: { class: config } });
   }
-  const added = new Set<string>();
+  const added = new Set<string>(hostedKeys);
   const packageServices = dependencyServices(ir);
   // The array iterator reads the live length, so the links pushed below are walked too.
   for (const { module, dep } of used) {
+    // A class the container builds itself stays in `platform` only (STA-2553).
+    if (CONTAINER_BUILT.has(`${packageOf(dep.class.from)}#${dep.class.name}`)) continue;
     for (const next of link(dep)) used.push({ module, dep: next });
     const factory = dep.of;
     const deps: readonly (ClassRef | TokenRef)[] | undefined =
@@ -650,18 +788,25 @@ export function emitWiring(ir: MemberIR): string {
         candidate.type.from.startsWith("#testing/") || candidate.type.from.endsWith("/testing"),
     );
     const system = systemDefaults.get(port.name);
+    // A producer's deliveries and a consumer's inbox claims are Postgres rows beside the outbox (STA-1910).
+    const forced =
+      (producer && key === "outbox.DeliveryDriver") || (inbox && key === "outbox.InboxDriver")
+        ? "postgres"
+        : undefined;
     const fallback =
-      system !== undefined && candidates.some((candidate) => candidate.name === system)
-        ? system
-        : ir.layout !== "package" || candidates.length < 2
-          ? undefined
-          : candidates.some((candidate) => candidate.name === "memory")
-            ? "memory"
-            : testing.length === 1
-              ? testing[0]?.name
-              : candidates.filter((candidate) => candidate.testDefault === true).length === 1
-                ? candidates.find((candidate) => candidate.testDefault === true)?.name
-                : undefined;
+      forced !== undefined && candidates.some((candidate) => candidate.name === forced)
+        ? forced
+        : system !== undefined && candidates.some((candidate) => candidate.name === system)
+          ? system
+          : ir.layout !== "package" || candidates.length < 2
+            ? undefined
+            : candidates.some((candidate) => candidate.name === "memory")
+              ? "memory"
+              : testing.length === 1
+                ? testing[0]?.name
+                : candidates.filter((candidate) => candidate.testDefault === true).length === 1
+                  ? candidates.find((candidate) => candidate.testDefault === true)?.name
+                  : undefined;
     const deps = candidates
       .filter((candidate) => candidate.deps.length > 0)
       .map((candidate) => `${JSON.stringify(candidate.name)}: ${list(candidate.deps.map(token))}`);
@@ -699,7 +844,8 @@ export function emitWiring(ir: MemberIR): string {
     for (const facet of declared.facets.filter((candidate) => candidate.name === "Replaces"))
       if (isClassValue(facet.options))
         replaceLines.push(
-          `    { provide: ${ref({ name: facet.options.$class, from: facet.options.from })}, override: ${ref(own(declared))} },`,
+          // the override is built from this row, so it carries the constructor tokens a binding row would (STA-2569)
+          `    { provide: ${ref({ name: facet.options.$class, from: facet.options.from })}, override: ${ref(own(declared))}, deps: ${list(depsOf(declared).map(token))} },`,
         );
     const partner = declared.partner;
     if (partner === undefined || declared.kind === "driver") continue;
@@ -793,4 +939,9 @@ export function emitWiring(ir: MemberIR): string {
     runtime: "isomorphic",
   });
   return [header, ...importLines(imports), "", ...lines].join("\n") + "\n";
+}
+
+/** Whether `from` is a client-only entry of a package (`@stackra/identity/native`, `/desktop`, `/react`). */
+function isClientEntry(from: string): boolean {
+  return /\/(?:react|native|desktop)(?:\/|$)/.test(from);
 }

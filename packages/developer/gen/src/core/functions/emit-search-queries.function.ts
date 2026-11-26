@@ -6,14 +6,31 @@
  * Boundary: pure; reads `ir.classes`. Undefined when the member has no own `@Searchable` model, or does not declare
  *           `@stackra/search`. A member class already named `Search<Model>Query` (a hand-written public search) takes
  *           the generated one's place, so that model is skipped (`searchQueriesOf`, which also declares the
- *           queries `generateMember` registers like authored ones, STA-1459).
+ *           queries `generateMember` registers like authored ones, STA-1459). A service also writes the search query
+ *           of each `searchable` model its hosted packages' manifests list: the package's own copy sits in its
+ *           unpublished `.stackra/gen`, so the host derives it again here, where its registrations import it.
  * Runtime: isomorphic
  * Governing contract: ADR 0221 (decisions 4 and 6); ADR 0294 (decisions 16 and 21); ADR 0155 (queries are MCP tools).
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
+import { packageSpecifier } from "#core/functions/package-specifier.function";
 import { searchQueriesOf } from "#core/functions/search-queries-of.function";
 import type { MemberIR } from "#core/types/member-ir.type";
+
+/** The searchable models of the packages a service hosts (each package's own, not those it reuses), with their entry. */
+function hostedSearchables(ir: MemberIR): { name: string; importPath: string; module: string }[] {
+  if (ir.layout !== "service") return [];
+  return ir.dependencies.flatMap(({ package: name, manifest }) =>
+    (manifest.models ?? [])
+      .filter((model) => model["searchable"] === true && model["from"] === undefined)
+      .map((model) => ({
+        name: String(model["class"]),
+        importPath: packageSpecifier(name, model["file"]),
+        module: String(model["key"]).split(".")[0] ?? name,
+      })),
+  );
+}
 
 /**
  * The `#stackra/search` file of `ir`, or undefined when there is nothing to write.
@@ -23,7 +40,9 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * emitSearchQueries(ir); // '... export class SearchProductQuery extends SearchQuery(Product) {}'
  */
 export function emitSearchQueries(ir: MemberIR): string | undefined {
-  const models = searchQueriesOf(ir).map((pair) => pair.model);
+  const own = searchQueriesOf(ir).map((pair) => pair.model);
+  const names = new Set(own.map((model) => model.name));
+  const models = [...own, ...hostedSearchables(ir).filter((model) => !names.has(model.name))];
   if (models.length === 0) return undefined;
   const imports = new Map<string, Map<string, boolean>>([
     ["@stackra/search/node", new Map([["SearchQuery", false]])],

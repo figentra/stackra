@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "24a49ebdc66e9d11",
+    "hash": "2fa4905088014543",
     "propsFiles": [
       "ui/src/react/data-view/collection-filter-editor.props.ts",
       "ui/src/react/data-view/collection-sort-editor.props.ts",
@@ -86,7 +86,7 @@
           "name": "selectionMode",
           "required": false,
           "source": "stackra",
-          "type": "\"none\" | \"multiple\" | \"single\""
+          "type": "\"single\" | \"multiple\" | \"none\""
         },
         {
           "description": "What a list row shows.",

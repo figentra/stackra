@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "1ed94af4da9923d9",
+    "hash": "b972ec605739ff55",
     "propsFiles": ["ui/src/react/checkbox-field/checkbox-field.props.ts"]
   },
   "importLine": "import { CheckboxField } from \"@stackra/ui/react\";",
@@ -131,20 +131,6 @@
           "type": "boolean"
         },
         {
-          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
-          "name": "name",
-          "required": false,
-          "source": "stackra",
-          "type": "string"
-        },
-        {
-          "description": "True to show the dash of a parent whose children are partly checked; a press still reports the new `value`.",
-          "name": "isIndeterminate",
-          "required": false,
-          "source": "stackra",
-          "type": "boolean"
-        },
-        {
           "description": "What is wrong, shown under the field while `isInvalid` is true, and read out with the field.",
           "name": "errorMessage",
           "required": false,
@@ -168,6 +154,20 @@
         {
           "description": "True to show the value but refuse changes; unlike disabled, the field keeps focus and is submitted.",
           "name": "isReadOnly",
+          "required": false,
+          "source": "stackra",
+          "type": "boolean"
+        },
+        {
+          "description": "The name the value is submitted under in a form, and the key a form adapter binds.",
+          "name": "name",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "True to show the dash of a parent whose children are partly checked; a press still reports the new `value`.",
+          "name": "isIndeterminate",
           "required": false,
           "source": "stackra",
           "type": "boolean"

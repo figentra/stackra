@@ -19,6 +19,7 @@ describe("SignatureScheme", () => {
       "body_token",
       "aes_gcm_body",
       "ordered_field_hmac",
+      "labelled_field_hmac",
       "keyed_field_digest",
       "shared_header",
       "jwt_hs256",
@@ -34,6 +35,7 @@ describe("SignatureScheme", () => {
       | "body_token"
       | "aes_gcm_body"
       | "ordered_field_hmac"
+      | "labelled_field_hmac"
       | "keyed_field_digest"
       | "shared_header"
       | "jwt_hs256"

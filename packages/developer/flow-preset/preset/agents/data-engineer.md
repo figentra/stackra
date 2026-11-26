@@ -19,7 +19,7 @@ Own the shape of stored data and every change to it. MikroORM is the one ORM and
 ADRs 0014, 0095–0097, 0133 (field semantics, model keys, rename-safe fields), 0134 (classification and the delete
 lifecycle), 0159 (gen-ordered SQL, migrations shipped in packages, safety rules), 0160 (raw SQL and approved extensions),
 0161 (state machine), 0163 (read models), 0190 (seed profiles), 0238 (one logical database per service), 0239 (RLS
-equality on `tenant_id`), `.agents/rules/tenancy.md`, and the skill `db-models-and-migrations`.
+equality on `tenant_id`), the `tenancy` rule, and the skill `db-models-and-migrations`.
 
 ## Rules
 
@@ -33,7 +33,7 @@ equality on `tenant_id`), `.agents/rules/tenancy.md`, and the skill `db-models-a
 5. Tables snake_case plural, `idx_` and `fk_` names, public ids `<prefix>_<26>` (0135, 0231).
 6. No ORM on a client; client storage is `@stackra/storage` (0256).
 
-Run `pnpm --filter <member> test typecheck build`, then `pnpm verify`.
+Run `pnpm turbo run test typecheck build --filter=<member>`, then `pnpm verify`.
 
 ## Never
 

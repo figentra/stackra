@@ -1,0 +1,6 @@
+kind: replace
+target: .agents/rules/ai-tools.md
+file: rules/ai-tools.md
+reason: "core's newer text, until the stackra preset carries it: gen enforces the client tool checks (STA-2068): automated, not planned"
+owner: figentra-usr
+review: 2027-02-01

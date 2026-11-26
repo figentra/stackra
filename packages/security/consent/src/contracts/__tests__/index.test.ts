@@ -50,7 +50,7 @@ describe("@stackra/consent/contracts", () => {
 
   it("names the snapshot header and types the snapshot (ADR 0472)", () => {
     expect(contracts.CONSENT_SNAPSHOT_HEADER).toBe("Stackra-Consent");
-    expect(contracts.CONSENT_SNAPSHOT_PATH).toBe("/consent/snapshots");
+    expect(contracts.CONSENT_SNAPSHOT_PATH).toBe("/public/consent/snapshots");
     expectTypeOf<contracts.ConsentSnapshot["granted"]>().toEqualTypeOf<readonly string[]>();
     expectTypeOf<contracts.ConsentSnapshot["region"]>().toEqualTypeOf<string | null>();
     expectTypeOf<

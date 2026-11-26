@@ -6,16 +6,28 @@
  *           6749 client as the managed client; the endpoint and the client are data (`TokenRequest`). A 4xx answer is
  *           a `ProviderRefusedError` carrying the OAuth error code (`invalid_grant`); no answer, a 408, a 429, a 5xx or
  *           an answer without an access token is a retryable `ProviderUnavailableError`. The answer body, which holds
- *           the tokens, is never put in an error.
+ *           the tokens, is never put in an error, and the OAuth error code is scrubbed against the client secret and
+ *           the grant's secret form fields before the refusal is built.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 6, 7 and 20); RFC 6749 (sections 2.3.1, 4.1.3, 4.4, 5 and 6).
  */
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import { ProviderUnavailableError } from "#core/errors/provider-unavailable.error";
 import { providerCodeOf } from "#core/functions/provider-code-of.function";
+import { redactSecrets } from "#core/functions/redact-secrets.function";
 import { tokenEndpointInit } from "#core/functions/token-endpoint-init.function";
 import type { OAuthTokens } from "#core/types/oauth-tokens.type";
 import type { TokenRequest } from "#core/types/token-request.type";
+
+/** The form fields of a grant that carry a credential. */
+const SECRET_FIELDS = [
+  "code",
+  "code_verifier",
+  "refresh_token",
+  "assertion",
+  "client_assertion",
+  "client_secret",
+] as const;
 
 /** The JSON object of `text`, or undefined. */
 function jsonOf(text: string): Readonly<Record<string, unknown>> | undefined {
@@ -61,7 +73,14 @@ export async function requestToken(request: TokenRequest): Promise<OAuthTokens> 
     throw ProviderRefusedError.create({
       provider,
       status,
-      ...(code === undefined ? {} : { code }),
+      ...(code === undefined
+        ? {}
+        : {
+            code: redactSecrets(code, [
+              request.clientSecret,
+              ...SECRET_FIELDS.map((field) => request.form[field]),
+            ]),
+          }),
     });
   }
   const accessToken = answer?.["access_token"];

@@ -1,0 +1,21 @@
+{
+  "slug": "site-footer",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "SiteFooter",
+  "parts": ["SiteFooter"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 320
+    }
+  ],
+  "related": ["free/footer", "free/link"],
+  "tokens": ["color.border", "color.foreground"],
+  "keywords": ["footer", "site", "links", "legal", "landing", "kit"],
+  "status": "new"
+}

@@ -42,6 +42,7 @@ describe("@stackra/database/node", () => {
       "runSeeders",
       "seedState",
       "seederLedger",
+      "seederOf",
     ]);
   });
 });

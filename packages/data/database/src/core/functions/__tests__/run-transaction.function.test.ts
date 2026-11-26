@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `runTransaction`: a plain call is a savepoint or a new transaction with no options; the
  *          statement and lock timeouts are set first, as whole milliseconds; isolation and read-only reach the ORM;
- *          `requiresNew` starts its own transaction; a serialization failure or deadlock runs the work again up to
+ *          `requiresNew` starts its own transaction, carrying the running one's row-security settings into it (none
+ *          outside a transaction); a serialization failure or deadlock runs the work again up to
  *          `retry` times and then leaves; any other error leaves at once; isolation, read-only and retry are refused
  *          inside a running transaction without `requiresNew`, and a retry outside 0 to 10 is refused; `retryDelay`
  *          stays under a doubling, capped ceiling.
@@ -62,6 +63,7 @@ describe("runTransaction", () => {
       readOnly: true,
     });
     expect(em.execute.mock.calls.map(([statement]) => statement)).toEqual([
+      expect.stringContaining("current_setting(name, true)"),
       "set local statement_timeout = 2000",
       "set local lock_timeout = 250",
     ]);
@@ -70,6 +72,34 @@ describe("runTransaction", () => {
       isolationLevel: "serializable",
       readOnly: true,
     });
+  });
+
+  it("replays the running transaction's row-security settings first in a requiresNew one", async () => {
+    const em = fakeEm(true);
+    const read = [
+      { name: "app.tenant_id", setting: "scp_01ja0000000000000000000001" },
+      { name: "app.scope_paths", setting: "platform.acme" },
+    ];
+    em.execute.mockResolvedValueOnce(read as never);
+    await runTransaction(em as unknown as EntityManager, async () => undefined, {
+      requiresNew: true,
+      lockTimeout: Duration.seconds(1),
+    });
+    expect(em.execute.mock.calls.slice(1)).toEqual([
+      [
+        "select set_config(?, ?, true), set_config(?, ?, true)",
+        ["app.tenant_id", "scp_01ja0000000000000000000001", "app.scope_paths", "platform.acme"],
+      ],
+      ["set local lock_timeout = 1000"],
+    ]);
+  });
+
+  it("reads no settings for a requiresNew transaction with none running", async () => {
+    const em = fakeEm(false);
+    await runTransaction(em as unknown as EntityManager, async () => undefined, {
+      requiresNew: true,
+    });
+    expect(em.execute).not.toHaveBeenCalled();
   });
 
   it("takes timeouts inside a running transaction, but refuses isolation, read-only and retry there", async () => {

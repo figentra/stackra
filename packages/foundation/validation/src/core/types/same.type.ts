@@ -27,7 +27,9 @@ export type Same<A, B> = [Loose<A>] extends [Loose<B>]
  * (`Json`, a shape that holds itself) never ends, which is TS2589 in its `X$Check` (STA-1682).
  */
 type Loose<T, D extends readonly unknown[] = []> = D["length"] extends MaxDepth
-  ? T
+  ? T extends readonly (infer E)[]
+    ? E[]
+    : T
   : T extends (...args: never[]) => unknown
     ? T
     : T extends Date
@@ -39,4 +41,4 @@ type Loose<T, D extends readonly unknown[] = []> = D["length"] extends MaxDepth
           : T;
 
 /** How deep `Loose` looks: far past any shape's nesting of readonly arrays. */
-type MaxDepth = 5;
+type MaxDepth = 8;

@@ -63,6 +63,7 @@ import { PaymentUnknownError } from "#core/errors/payment-unknown.error";
 import { PayoutHeldError } from "#core/errors/payout-held.error";
 import { PreVerificationCapExceededError } from "#core/errors/pre-verification-cap-exceeded.error";
 import { ResolutionReasonRequiredError } from "#core/errors/resolution-reason-required.error";
+import { assertApplicationFee } from "#core/functions/assert-application-fee.function";
 import { hasPaymentCapability } from "#core/functions/has-payment-capability.function";
 import { isLostAnswer } from "#core/functions/is-lost-answer.function";
 import { modeOf } from "#core/functions/mode-of.function";
@@ -135,6 +136,12 @@ export class PaymentService extends Service {
    * @throws PreVerificationCapExceededError when an unverified connected account would take more than its cap.
    */
   async checkout(market: string, request: CheckoutRequest): Promise<CheckoutSession> {
+    assertApplicationFee(
+      request.reference,
+      request.amount,
+      request.applicationFee,
+      request.platform !== undefined,
+    );
     const existing = await this.records.find(request.reference);
     if (existing !== null) {
       const open = await this.stillOpen(existing);
@@ -182,6 +189,7 @@ export class PaymentService extends Service {
    * @throws PreVerificationCapExceededError when an unverified connected account would take more than its cap.
    */
   async charge(request: TokenCharge): Promise<PaymentRecord> {
+    assertApplicationFee(request.reference, request.amount, request.applicationFee);
     return this.onToken(request, PaymentCapability.Tokens, (tokens) => tokens.charge(request));
   }
 
@@ -354,14 +362,18 @@ export class PaymentService extends Service {
   }
 
   /**
-   * Captures an authorised payment, in full unless `amount` says less (a pre-authorised tab captures what was spent).
+   * Captures an authorised payment, in full unless `amount` says less (a pre-authorised tab captures what was spent),
+   * with the platform's direct-charge `applicationFee` taken from what is captured when one is given.
    *
    * @throws PaymentUnknownError when its last answer was lost (and when this one is).
    * @throws CapabilityUnsupportedError when its provider takes payment at once.
+   * @throws ApplicationFeeInvalidError when the fee is in another currency, negative or above what is captured.
    */
-  async capture(reference: string, amount?: Money): Promise<PaymentRecord> {
+  async capture(reference: string, amount?: Money, applicationFee?: Money): Promise<PaymentRecord> {
     const record = await this.load(reference);
     this.assert(record, "capture", [PaymentStatus.Authorized]);
+    const taken = amount ?? totalOf(record);
+    assertApplicationFee(reference, taken, applicationFee);
     const gateway = await this.gateways.byConnection(record.provider, record.connectionId);
     const capturer = this.capable(gateway, PaymentCapability.Capture);
     const result = await this.guard(
@@ -369,8 +381,9 @@ export class PaymentService extends Service {
       () =>
         capturer.capture({
           payment: this.targetOf(record),
-          amount: amount ?? totalOf(record),
+          amount: taken,
           reference: `capture:${reference}`,
+          ...(applicationFee === undefined ? {} : { applicationFee }),
         }),
       false,
     );

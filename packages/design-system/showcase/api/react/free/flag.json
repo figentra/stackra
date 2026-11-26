@@ -1,0 +1,45 @@
+{
+  "generatedFrom": {
+    "hash": "49972a1c29af80af",
+    "propsFiles": ["ui/src/react/flag/flag.props.ts"]
+  },
+  "importLine": "import { Flag } from \"@stackra/ui/react\";",
+  "key": "free/flag",
+  "parts": [
+    {
+      "name": "Flag",
+      "props": [
+        {
+          "description": "An ISO 3166-1 alpha-2 country code (`sa`), or a language tag with a region (`ar-SA`), which shows the region's flag.\nA code with no flag shows the code itself.",
+          "name": "code",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The accessible name, for example the country's name; without it the flag is decorative and hidden from assistive technology.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "md",
+          "description": "The size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "Styles the root.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

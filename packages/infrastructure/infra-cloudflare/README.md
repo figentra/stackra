@@ -272,12 +272,12 @@ These touch accounts, purchases or secrets, so the owner does them; nothing here
 - Run `pulumi up` in `figentra/infra` after reviewing the preview (ADR 0171).
 - Create the GitHub OAuth app and the Access GitHub identity provider once, and set its id at the `ref:` the stack
   config names. The program references it; its client secret never passes through code.
-- Place each tunnel token in Infisical `/agents` and each Access service-token secret where its machine reads it,
+- Place each tunnel token in the sops `agents` scope and each Access service-token secret where its machine reads it,
   through the secrets inbox (ADR 0257). Neither is a stack output.
 - Import a phase entry-point ruleset made by hand before the first `up` on that zone (a zone holds one per phase).
 - Move a zone to Pro (a purchase) before setting `plan: pro`.
 - Buy the plan that includes waiting rooms and cookie or header rate-limit keys before a storefront uses them.
-- Place each edge-signing key value (`STACKRA_EDGE_SIGNING_KEY_<ID>`) in Infisical for the Worker and the API, and the
+- Place each edge-signing key value (`STACKRA_EDGE_SIGNING_KEY_<ID>`) in sops for the Worker and the API, and the
   Worker's origin service-token secret as a Worker secret; run each origin tunnel's cloudflared with its token.
 - Enable Cloudflare for SaaS and, for a regulated market, the regional services and data localisation add-on (a
   purchase) before a `regional` host or `jurisdiction` is set.

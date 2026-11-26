@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 
 import type { MigrationFile } from "#node/types/migration-file.type";
-import { PGLITE_EXTENSION_NAMES } from "#testing/constants/pglite-extension-names.constant";
+import { loadPglitePeers } from "#testing/functions/load-pglite-peers.function";
 
 /** The PGlite build, as its resolved path (the pnpm store path carries the version); resolved on first use. */
 let pgliteBuild: string | undefined;
@@ -18,7 +18,9 @@ let pgliteBuild: string | undefined;
 export function snapshotKey(files: readonly MigrationFile[]): string {
   // An optional peer: resolved here, not at import, so importing `./testing` never needs it (STA-1950).
   pgliteBuild ??= createRequire(import.meta.url).resolve("@electric-sql/pglite");
-  const hash = createHash("sha256").update(pgliteBuild).update(PGLITE_EXTENSION_NAMES.join(","));
+  const hash = createHash("sha256")
+    .update(pgliteBuild)
+    .update(Object.keys(loadPglitePeers().extensions).join(","));
   for (const file of files) hash.update(`\0${file.name}\0${file.sql}`);
   return hash.digest("hex");
 }

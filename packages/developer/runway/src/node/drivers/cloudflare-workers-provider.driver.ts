@@ -4,22 +4,25 @@
  *          checkout of the release commit it builds each Worker member of `targets.cloudflare-workers.members` that
  *          ships under the target's kind, swaps the placeholder binding ids in its `wrangler.jsonc` for the real ones
  *          (restored afterwards), applies its D1 migrations, renders the operational settings of runway.yaml into it (ADR 0519), uploads a version (`wrangler versions upload --message <sha>`) with its
- *          secrets on stdin, smoke-tests it at 0% by version override, then moves traffic to it in the member's `rollout`
+ *          secrets in a private temporary file, smoke-tests it at 0% by version override, then moves traffic to it in the member's `rollout`
  *          steps (production only), smoke-testing after each hold and putting the previous version back at 100% on a
  *          failure; a member with Durable Object migrations goes out through `wrangler deploy` at 100% instead. Current reads the commit back from `wrangler deployments list`, verify adds each
  *          member's smoke checks (retried while a new version or a new domain's certificate comes up), and rollback returns every member to the version recorded for a commit.
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
- *           with the job's `CLOUDFLARE_API_TOKEN` (OIDC from Infisical in CI) or the owner's session. Ids, vars and
- *           secrets are read by name from `env`; a secret value goes to wrangler on stdin only, never as an argument,
- *           a file or a log line. When `runways` is set, the secret values are read from Infisical
- *           (`readMemberSecrets`, in CI) before anything ships, instead of from `env` (ADR 0173). Agents and tests
+ *           with the job's `CLOUDFLARE_API_TOKEN` (decrypted from sops in CI) or the owner's session. Ids, vars and
+ *           secrets are read by name from `env`; a secret value goes to wrangler only in a 0600 file in a fresh temporary
+ *           folder, removed right after the upload (wrangler can't open /dev/stdin when it is a socket, as on Linux
+ *           runners), never as an argument or a log line. When `runways` is set, the member's declared secrets are read
+ *           from `env`, where the secrets-decrypt action put its sops scope (`readMemberSecrets`, in a proved CI job),
+ *           before anything ships (ADR 0525). Agents and tests
  *           never apply against a real account (ADR 0352 decision 6).
  * Runtime: node
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0284 (Workers members); ADR 0173 (no secret is an
  *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921; ADR 0519; STA-1989, STA-1990.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 
 import { Driver } from "@stackra/container";
@@ -97,7 +100,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   /** The environment ids, vars and secrets are read from; a test replaces it. */
   env: Readonly<Record<string, string | undefined>> = process.env;
 
-  /** The root and member runways; when set, secrets are read from Infisical, not `env` (STA-606). */
+  /** The root and member runways; when set, the declared secrets are read in a proved CI job (STA-606). */
   runways?: DeployRunways;
 
   /** A test's answer to "is this a proved CI job"; unset, the job's GitHub OIDC token proves it (STA-2100). */
@@ -192,8 +195,8 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         environment: target.environment,
         member: basename(member.path),
         runways: this.runways,
-        run: this.run,
         ci: this.ci,
+        env: this.env,
       });
       secrets.set(key, read);
     }
@@ -214,25 +217,35 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         // `render` already stripped the JSONC comments and trailing commas: `swapped` is strict JSON.
         const deployed = JSON.parse(swapped) as { name?: string; migrations?: unknown };
         const migrating = migrates(deployed);
-        const output = await this.run(
-          "pnpm",
-          this.uploadArgs(member, sha, (name) => this.env[name] ?? "", migrating),
-          {
-            cwd,
-            // The secrets ride the version, on stdin: no file, no argument.
-            input:
-              Object.keys(member.secrets).length === 0
-                ? undefined
-                : JSON.stringify(
-                    Object.fromEntries(
-                      Object.entries(member.secrets).map(([name, from]) => [
-                        name,
-                        secrets.get(key)?.get(name) ?? this.env[from],
-                      ]),
-                    ),
-                  ),
-          },
-        );
+        // The secrets ride the version in a private temporary file: never an argument, removed right after.
+        const folder =
+          Object.keys(member.secrets).length === 0
+            ? undefined
+            : await mkdtemp(join(tmpdir(), "runway-secrets-"));
+        let output: string;
+        try {
+          const file = folder === undefined ? undefined : join(folder, "secrets.json");
+          if (file !== undefined)
+            await writeFile(
+              file,
+              JSON.stringify(
+                Object.fromEntries(
+                  Object.entries(member.secrets).map(([name, from]) => [
+                    name,
+                    secrets.get(key)?.get(name) ?? this.env[from],
+                  ]),
+                ),
+              ),
+              { mode: 0o600 },
+            );
+          output = await this.run(
+            "pnpm",
+            this.uploadArgs(member, sha, (name) => this.env[name] ?? "", migrating, file),
+            { cwd },
+          );
+        } finally {
+          if (folder !== undefined) await rm(folder, { recursive: true, force: true });
+        }
         const version = VERSION.exec(output)?.[1];
         if (version === undefined)
           throw new RunwayUnresolvedError(
@@ -363,12 +376,13 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     return ["turbo", "run", "build", `--filter=./${member.path}`];
   }
 
-  /** `wrangler versions upload` with the commit as its message, each var from `valueOf` and the secrets from stdin. */
+  /** `wrangler versions upload` with the commit as its message, each var from `valueOf` and the secrets from `file`. */
   private uploadArgs(
     member: Member,
     sha: string,
     valueOf: (name: string) => string,
     migrating = false,
+    file = "<secrets-file>",
   ): string[] {
     return [
       ...WRANGLER,
@@ -376,7 +390,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       "--message",
       sha,
       ...member.vars.flatMap((name) => ["--var", `${name}:${valueOf(name)}`]),
-      ...(Object.keys(member.secrets).length === 0 ? [] : ["--secrets-file", "/dev/stdin"]),
+      ...(Object.keys(member.secrets).length === 0 ? [] : ["--secrets-file", file]),
     ];
   }
 
@@ -399,14 +413,19 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     key: string,
     cwd: string,
     version: string,
-    steps: readonly number[],
+    planned: readonly number[],
     sha: string,
     check: (() => Promise<string | undefined>) | undefined,
   ): Promise<void> {
+    let steps = planned;
     let before: string | undefined;
-    if (steps.length > 1 || steps[0] !== 100) {
+    if (planned.length > 1 || planned[0] !== 100) {
+      // A Worker that was never deployed has no status (code 10007); any other failure stops the deploy.
       const status = await this.run("pnpm", [...WRANGLER, "deployments", "status", "--json"], {
         cwd,
+      }).catch((error: unknown) => {
+        if (/10007|not found|does not exist/i.test(String(error))) return "{}";
+        throw error;
       });
       const served = (
         JSON.parse(status.slice(status.indexOf("{"))) as {
@@ -414,9 +433,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         }
       ).versions;
       before = served?.toSorted((a, b) => b.percentage - a.percentage)[0]?.version_id;
-      if (before === undefined)
-        throw new RunwayUnresolvedError("a gradual rollout needs a deployed version to split with");
     }
+    // A first deploy has no version to split with or go back to: it moves at once, as an all-at-once member does.
+    if (before === undefined) steps = [100];
     let moved = false;
     try {
       for (const [index, percent] of steps.entries()) {
@@ -520,7 +539,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         .filter((name) => (this.env[name] ?? "") === "")
         .map((name) => ({
           path: `${SETTINGS_PATH}.members.${key}.secrets`,
-          message: `Set ${name} in the deploy job's environment (Infisical over OIDC in CI)`,
+          message: `Set ${name} in the deploy job's environment (.github/actions/secrets-decrypt in CI)`,
         })),
       ...member.smoke
         .flatMap((smoke) => (smoke.bearer === undefined ? [] : [smoke.bearer]))

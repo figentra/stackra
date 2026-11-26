@@ -1,0 +1,166 @@
+{
+  "generatedFrom": {
+    "hash": "a8d0091fe72257e1",
+    "heroDoc": "vendor/heroui/react/color-swatch.json",
+    "propsFiles": ["ui/src/react/color-swatch/color-swatch.props.ts"]
+  },
+  "importLine": "import { ColorSwatch } from \"@stackra/ui/react\";",
+  "key": "free/color-swatch",
+  "parts": [
+    {
+      "extends": "ColorSwatch",
+      "name": "ColorSwatch",
+      "props": [
+        {
+          "description": "The colour shown: any CSS colour, for example `#0485f7`, `rgb(4 133 247)` or `var(--accent)`.",
+          "name": "color",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The colour's accessible name, for example \"Ocean blue\"; without it a parsable colour is described by React Aria in the user's language.",
+          "name": "label",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "default": "md",
+          "description": "The size. Defaults to `md`.",
+          "name": "size",
+          "required": false,
+          "source": "stackra",
+          "type": "\"sm\" | \"md\" | \"lg\""
+        },
+        {
+          "description": "Accessible label for the swatch",
+          "name": "aria-label",
+          "required": false,
+          "source": "heroui",
+          "type": "string"
+        },
+        {
+          "default": "'react-aria-ColorSwatch'",
+          "description": "Additional CSS classes",
+          "name": "className",
+          "required": false,
+          "source": "heroui",
+          "type": "ClassNameOrFunction<ColorSwatchRenderProps>"
+        },
+        {
+          "description": "Overrides the default DOM element with a custom render function.",
+          "name": "render",
+          "required": false,
+          "source": "heroui",
+          "type": "DOMRenderFunction<\"div\", ColorSwatchRenderProps>"
+        },
+        {
+          "description": "Inline styles or render props function with access to color",
+          "name": "style",
+          "required": false,
+          "source": "heroui",
+          "type": "StyleOrFunction<ColorSwatchRenderProps>"
+        },
+        {
+          "description": "Identifies the element (or elements) that describes the object.",
+          "name": "aria-describedby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that provide a detailed, extended description for the\nobject.",
+          "name": "aria-details",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Identifies the element (or elements) that labels the current element.",
+          "name": "aria-labelledby",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "The element's unique identifier. See\n[MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id).",
+          "name": "id",
+          "required": false,
+          "source": "react-aria",
+          "type": "string"
+        },
+        {
+          "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).",
+          "name": "ref",
+          "required": false,
+          "source": "react-aria",
+          "type": "Ref<HTMLDivElement>"
+        },
+        {
+          "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+          "name": "slot",
+          "required": false,
+          "source": "react-aria",
+          "type": "string | null"
+        },
+        {
+          "description": "",
+          "name": "...Attributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "Attributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMAttributes",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMAttributes"
+        },
+        {
+          "description": "",
+          "name": "...GlobalDOMEvents",
+          "required": false,
+          "source": "react-aria",
+          "type": "GlobalDOMEvents"
+        }
+      ]
+    }
+  ],
+  "platform": "react",
+  "slots": [
+    {
+      "description": "Base swatch styles with checkered background for transparency",
+      "name": ".color-swatch"
+    },
+    {
+      "description": "Circular shape (default)",
+      "name": ".color-swatch--circle"
+    },
+    {
+      "description": "Square shape with rounded corners",
+      "name": ".color-swatch--square"
+    },
+    {
+      "description": "Extra small (16px)",
+      "name": ".color-swatch--xs"
+    },
+    {
+      "description": "Small (24px)",
+      "name": ".color-swatch--sm"
+    },
+    {
+      "description": "Medium (32px, default)",
+      "name": ".color-swatch--md"
+    },
+    {
+      "description": "Large (36px)",
+      "name": ".color-swatch--lg"
+    },
+    {
+      "description": "Extra large (40px)",
+      "name": ".color-swatch--xl"
+    }
+  ]
+}

@@ -7,7 +7,7 @@
     "x-stackra-member": "channels"
   },
   "paths": {
-    "/channelses/publish": {
+    "/app/channelses/publish": {
       "post": {
         "operationId": "channels_channels_publish",
         "summary": "PublishChannelsAction",
@@ -15,6 +15,7 @@
         "x-stackra-action": "channels.channels.publish@1",
         "x-stackra-permission": "channels.channels.publish",
         "x-stackra-risk": "L2",
+        "x-stackra-idempotency": "optional",
         "requestBody": {
           "required": true,
           "content": {

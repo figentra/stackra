@@ -10,7 +10,9 @@
  * Governing contract: ADR 0294 (decisions 16, 20, 21 and 25); ADR 0305 (rules 2, 28 and 30); ADR 0098 (actions are the
  *                     unit); ADR 0136; ADR 0138 (as amended); ADR 0338 (decision 5: `offline.cap`); ADR 0337
  *                     (decisions 4 and 5: `accepts`); ADR 0360 (decision 4: the tool default); ADR 0099 (decision 2:
- *                     `effects`); STA-813 (`approval`; ADR 0509 for the declared stage); ADR 0406 (`stepUp`).
+ *                     `effects`); STA-813 (`approval`; ADR 0509 for the declared stage); ADR 0406 (`stepUp`);
+ *                     ADR 0098 (`credentials: "ignore"`, on an anonymous-only action only); Tamo spec
+ *                     generative-ui-tools-artifacts (G1b: `stream`, `stream_not_replayable`).
  */
 import { createKind } from "@stackra/container";
 import { ActorKind, AssuranceLevel, Duration, Enum, MeterKind } from "@stackra/contracts";
@@ -223,14 +225,64 @@ function read(options: ActionOptions) {
       `Action({ effects }) lists distinct Effect tags (${options.key}), got ${JSON.stringify(effects)}`,
     );
   const approval = readApproval(options);
-  if (options.stepUp !== undefined && !Enum.values(AssuranceLevel).includes(options.stepUp))
+  const stepUp: unknown = options.stepUp;
+  const exempt =
+    typeof stepUp === "object" &&
+    stepUp !== null &&
+    Object.keys(stepUp).length === 1 &&
+    (stepUp as { exempt?: unknown }).exempt === "first-factor-enrolment";
+  if (
+    stepUp !== undefined &&
+    !exempt &&
+    !Enum.values(AssuranceLevel).includes(stepUp as AssuranceLevel)
+  )
     throw new RangeError(
-      `Action({ stepUp }) takes an AssuranceLevel, got ${JSON.stringify(options.stepUp)}`,
+      `Action({ stepUp }) takes an AssuranceLevel or { exempt: "first-factor-enrolment" }, got ${JSON.stringify(stepUp)}`,
     );
   if (options.structural !== undefined && typeof options.structural !== "boolean")
     throw new TypeError(
       `Action({ structural }) is true or false, got ${JSON.stringify(options.structural)}`,
     );
+  const { onBehalfOf } = options;
+  if (
+    onBehalfOf !== undefined &&
+    (typeof onBehalfOf !== "object" ||
+      onBehalfOf === null ||
+      typeof onBehalfOf.secondHop !== "boolean" ||
+      Object.keys(onBehalfOf).length !== 1)
+  )
+    throw new TypeError(
+      `Action({ onBehalfOf }) is { secondHop: true } or { secondHop: false } (${options.key}), got ${JSON.stringify(onBehalfOf)}`,
+    );
+  const { credentials } = options;
+  if (credentials !== undefined && credentials !== "ignore")
+    throw new RangeError(
+      `Action({ credentials }) is "ignore" (${options.key}), got ${JSON.stringify(credentials)}`,
+    );
+  if (
+    credentials === "ignore" &&
+    (options.actors.length !== 1 || options.actors[0] !== ActorKind.Anonymous)
+  )
+    throw new TypeError(
+      `Action({ credentials: "ignore" }) needs actors: [ActorKind.Anonymous] exactly (${options.key})`,
+    );
+  const { stream } = options;
+  if (stream !== undefined && typeof stream !== "boolean")
+    throw new TypeError(`Action({ stream }) is true or false, got ${JSON.stringify(stream)}`);
+  const tool = options.tool ?? options.actors.includes(ActorKind.User);
+  if (stream === true) {
+    // A stream reaches one live caller once: nothing may queue it, replay it or hand it to a model as a tool's answer.
+    const clashes = [
+      ...(job === undefined ? [] : ["job"]),
+      ...(offline === undefined ? [] : ["offline"]),
+      ...(tool ? ["tool"] : []),
+      ...(idempotency === Idempotency.Never ? [] : ["idempotency other than Never"]),
+    ];
+    if (clashes.length > 0)
+      throw new TypeError(
+        `Action({ stream: true }) takes no ${clashes.join(", ")} (${options.key}): stream_not_replayable`,
+      );
+  }
   const { meter } = options;
   if (meter !== undefined) {
     if (typeof meter.name !== "string" || !METER_NAME.test(meter.name))
@@ -252,7 +304,7 @@ function read(options: ActionOptions) {
     preconditions: Object.freeze([...(options.preconditions ?? [])]),
     idempotency,
     // ADR 0360 d4, as gen derives it: an action a user can perform is a tool unless it says `tool: false`.
-    tool: options.tool ?? options.actors.includes(ActorKind.User),
+    tool,
     ...(effects === undefined ? {} : { effects: Object.freeze([...effects]) }),
     ...(approval === undefined ? {} : { approval }),
     intent: options.intent ?? false,

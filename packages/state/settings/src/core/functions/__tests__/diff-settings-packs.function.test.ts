@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `diffSettingsPacks`: added, changed, removed and relocked paths across groups, sorted, and no
- *          row for an unchanged path.
+ * Purpose: unit tests of `diffSettingsPacks`: added, changed, removed and relocked paths across groups, sorted, no row
+ *          for an unchanged path, and lists compared by content.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0213 (decision 4).
@@ -9,6 +9,9 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import { diffSettingsPacks } from "#core/functions/diff-settings-packs.function";
+
+/** A pack whose `orders` group holds the list `tags`. */
+const listPack = (tags: string[]) => ({ groups: { orders: { values: { tags }, locked: [] } } });
 
 describe("diffSettingsPacks", () => {
   it("lists each path whose value or lock differs, sorted by group then path", () => {
@@ -35,6 +38,20 @@ describe("diffSettingsPacks", () => {
         lockedAfter: false,
       },
       { group: "orders", path: "d", after: 4, lockedBefore: false, lockedAfter: false },
+    ]);
+  });
+
+  it("compares list values by content (STA-2056)", () => {
+    expect(diffSettingsPacks(listPack(["a", "b"]), listPack(["a", "b"]))).toEqual([]);
+    expect(diffSettingsPacks(listPack(["a"]), listPack(["a", "b"]))).toEqual([
+      {
+        group: "orders",
+        path: "tags",
+        before: ["a"],
+        after: ["a", "b"],
+        lockedBefore: false,
+        lockedAfter: false,
+      },
     ]);
   });
 

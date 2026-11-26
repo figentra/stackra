@@ -1,6 +1,6 @@
 ---
-title: "0500 — Four CLIs: stackra, runway, figentra-flow, figentra"
-description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510, 0522 · 2026-10-31"
+title: "0500 — Four CLIs: stackra, runway, fflow, figentra"
+description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510, 0522, 0526, 0529 (decision 1: runway folds into stackra) · 2026-10-31"
 ---
 
 <Note>Vellum is now Figentra Flow (renamed 2026-11-01).</Note>
@@ -30,6 +30,12 @@ description: "Accepted, amended 2026-10-31 (decision 12), amended by 0510, 0522 
 </Note>
 
 {/* Stackra file contract. Purpose: ADR 0500, the four CLIs (`stackra`, `runway`, `figentra-flow`, `figentra`): each CLI's scope, visibility, home repository and registry, the map of all 33 `tools/scripts` commands, the alias rule for `package.json` scripts, the move rules (behaviour kept, secret guards in the same commit), Figentra Flow's `.specify/` folder, no Claude Code plugin, and the rollout order. Boundary: decision text only; the moves are built per CLI on their own branches after Stackra 0.1.1 publishes. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0282, 0453, 0461; plan notes/plans/clis-and-vellum.md. */}
+
+<Note>
+  Amended 2026-11-06 by [0526](/adr/0526-repository-layout) and
+  [0529](/adr/0529-naming-product-keys-and-one-figentra-cli) (repo standards); since 2026-11-06
+  (STA-2214) `runway` folds into `stackra runway`, with `runway` an alias for a transition period.
+</Note>
 
 <Note>
   Accepted 2026-10-31: the owner decided the four CLIs and the script map on 2026-10-31 ("all 33+

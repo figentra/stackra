@@ -1,0 +1,21 @@
+{
+  "slug": "ask-ai",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/experience",
+  "exportName": "AskAi",
+  "parts": ["AskAi"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 200
+    }
+  ],
+  "related": ["free/search-field", "free/link"],
+  "tokens": ["color.field", "color.border", "radius.field"],
+  "keywords": ["ask ai", "assistant", "docs", "search", "landing", "kit"],
+  "status": "new"
+}

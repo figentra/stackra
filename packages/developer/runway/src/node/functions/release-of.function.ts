@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `releaseOf(bundle, product, origin)`, the edge `release:` row of one built bundle served from `origin`: its
- *          version, entry URL, folder URL, the shell line it targets, and its `modulepreload` and stylesheet URLs under
+ *          version, entry URL, folder URL, the shell line it targets, its `modulepreload` and stylesheet URLs, and each
+ *          file's SRI value by URL when the build recorded them, under
  *          `<origin>/<product>/<surface>/<version>/`.
  * Boundary: pure. `publishProduct` writes it to the edge KV; `previewServe` writes it to the local copy.
  * Runtime: node
@@ -26,5 +27,12 @@ export function releaseOf(bundle: EdgeBundle, product: string, origin: string): 
     targets: manifest.targets,
     modulepreload: manifest.modulepreload.map((file) => `${base}${file}`),
     css: manifest.css.map((file) => `${base}${file}`),
+    ...(manifest.integrity === undefined
+      ? {}
+      : {
+          integrity: Object.fromEntries(
+            Object.entries(manifest.integrity).map(([file, value]) => [`${base}${file}`, value]),
+          ),
+        }),
   };
 }

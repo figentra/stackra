@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `runCaptured(command, args, cwd)`, runs one tool for a check phase with its output captured (stdout and stderr
+ * Purpose: `runCaptured(command, args, cwd, timeoutMs)`, runs one tool for a check phase with its output captured (stdout and stderr
  *          apart), or resolves `undefined` when the tool is not installed, so the phase reports "skipped (not
  *          installed)" instead of failing.
  * Boundary: starts one process through `runProcess` (no shell; the member's own `node_modules/.bin` first).
@@ -16,6 +16,7 @@ import type { ToolOutput } from "#node/types/tool-output.type";
  * @param command - the program, found on `PATH` or in a `node_modules/.bin` above `cwd`.
  * @param args - its arguments.
  * @param cwd - the absolute directory it runs in.
+ * @param timeoutMs - how long it may run before it is stopped and answers 124; no limit when omitted.
  * @example
  * const result = await runCaptured("oxlint", ["-f", "json", "."], root);
  */
@@ -23,11 +24,12 @@ export async function runCaptured(
   command: string,
   args: readonly string[],
   cwd: string,
+  timeoutMs?: number,
 ): Promise<ToolOutput | undefined> {
   let stdout = "";
   let stderr = "";
   const code = await runProcess(
-    { command, args, cwd },
+    timeoutMs === undefined ? { command, args, cwd } : { command, args, cwd, timeoutMs },
     {
       out: (text) => {
         stdout += text;

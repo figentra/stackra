@@ -94,6 +94,11 @@ An action starts it with `ctx.run(RedeemPointsWorkflow, input)`; another action 
   signal, canonical correlation and scope, and taken by the next tick; one that arrives before the run parks, or before
   the wait times out however late the tick runs, still resumes it. Untaken signals are dropped after
   `workflow.signalRetention` (`7d` by default, from `1m` to `90d`).
+- **Tenants**: the journal is tenant-owned (migration 0012). A run belongs to the tenant of the call that starts it, a
+  signal to the tenant it is sent or delivered in, and a run takes only signals of its own tenant. So a run that waits
+  for acks or callbacks must start in the tenant they are sent in: a provisioning run starts in the tenant whose state
+  it provisions, never as a platform run, or its signals never reach it and it waits until its timeout. A system or
+  job caller that names no tenant runs its steps in the tenant that owns the run.
 - **Timeouts**: the run's `timeout` covers everything; a step's `timeout` bounds its wait, or aborts one attempt's
   `ctx.abortSignal`. `heartbeat` aborts a step that stops calling `ctx.heartbeat(progress)`; a retry reads
   `ctx.progress`.
