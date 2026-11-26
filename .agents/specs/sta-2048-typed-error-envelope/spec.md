@@ -177,4 +177,5 @@ None.
 - 2026-11-26 → Draft (from the PR's diff and tests; built in stackra#1108)
 - 2026-11-26 → Clarified (no open question: the design is ADR 0140 decisions 1 to 3 and ADR 0232 decision 8)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md; every task built in stackra#1108)

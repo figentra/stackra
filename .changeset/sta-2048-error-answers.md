@@ -21,3 +21,6 @@ retryable: false, correlationId }`) and `correlationIdOf` (the edge's request id
 - `@stackra/gen`: the generated `answerHttp` answers every error through `answerFailure` with `app.reporter` and one
   correlation id per request (over Encore's trace id), and hands that id to `serveGuardedCall`. A service no longer
   needs to declare `@stackra/errors` for its 429 answer. Run `stackra gen` to regenerate `stackra-encore/*/http.ts`.
+
+Behaviour change: an error answer no longer carries `message` or `internal_message`, and a `ServerApp` now needs a
+`reporter` (`ErrorReporter`).
