@@ -8,8 +8,8 @@
  *          `quick` keeps only what `stackra dev` needs before it starts: mise tools, Docker and the ports. `fresh` is a
  *          workspace not written yet (`stackra create` checks a starter): no install and no agents:check.
  * Boundary: runs read-only status commands (`mise ls`, `docker info`, `gh auth status`, `pnpm view`, `xcode-select
- *           -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes hosts and tries to bind ports (on a busy
- *           Encore dashboard port, asks who holds it); installs and changes nothing. Secrets: forbidden: output is
+ *           -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes hosts and tries to bind ports on the
+ *           wildcard and loopback addresses (`portFree`; on a busy Encore dashboard port, asks who holds it); installs and changes nothing. Secrets: forbidden: output is
  *           parsed, never printed; the registry check reads only the exit status of a version lookup, so no token is
  *           read or shown.
  * Runtime: node
@@ -18,7 +18,6 @@
  */
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { existsSync, statfsSync } from "node:fs";
-import { createServer } from "node:net";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -32,8 +31,10 @@ import { googleCredentialsPath } from "#node/doctor/functions/google-credentials
 import { publishedDependency } from "#node/doctor/functions/published-dependency.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
 import { ownEncoreDaemon } from "#node/doctor/functions/own-encore-daemon.function";
+import { portFree } from "#node/doctor/functions/port-free.function";
 import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
 import { simulatorAvailable } from "#node/doctor/functions/simulator-available.function";
+import type { DevPortsProbe } from "#node/doctor/types/dev-ports-probe.type";
 import type { DoctorNeed } from "#node/doctor/types/doctor-need.type";
 import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 import type { DoctorWorkspace } from "#node/doctor/types/doctor-workspace.type";
@@ -55,29 +56,25 @@ const sh = (cmd: string, args: string[], cwd?: string): SpawnSyncReturns<string>
   spawnSync(cmd, args, { encoding: "utf8", timeout: 30_000, ...(cwd ? { cwd } : {}) });
 const has = (cmd: string): boolean => !sh("which", [cmd]).status;
 
-/** Whether nothing listens on `port` on this machine. */
-function portFree(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const server = createServer();
-    server.once("error", () => resolve(false));
-    server.listen(port, () => server.close(() => resolve(true)));
-  });
-}
-
 /**
  * The checklist of a workspace.
  *
  * @param root - the workspace root.
  * @param workspace - the workspace as `readDoctorWorkspace` describes it.
  * @param options - `quick` keeps the checks `stackra dev` runs before it starts; `fresh` skips what needs the
- *                  workspace on disk (the install, agents:check).
+ *                  workspace on disk (the install, agents:check); `ports` replaces the port reads (`portFree`,
+ *                  `ownEncoreDaemon`), for a test.
  * @example
  * const results = await doctorChecks(root, readDoctorWorkspace(root));
  */
 export async function doctorChecks(
   root: string,
   workspace: DoctorWorkspace,
-  options: { readonly quick?: boolean; readonly fresh?: boolean } = {},
+  options: {
+    readonly quick?: boolean;
+    readonly fresh?: boolean;
+    readonly ports?: DevPortsProbe;
+  } = {},
 ): Promise<DoctorResult[]> {
   const needs = doctorNeeds(workspace);
   const quick = options.quick === true;
@@ -132,7 +129,11 @@ export async function doctorChecks(
   const ports = [...(needs.has("services") ? ENCORE_PORTS : []), ...workspace.devPorts];
   // The user's own Encore daemon keeps the dashboard port between runs, and `encore run` reuses it (STA-2794).
   const reusable = needs.has("services") ? [ENCORE_DASH_PORT] : [];
-  const portsLine = await devPortsResult(ports, reusable, { portFree, ownEncoreDaemon });
+  const portsLine = await devPortsResult(
+    ports,
+    reusable,
+    options.ports ?? { portFree, ownEncoreDaemon },
+  );
   if (portsLine !== undefined) add(portsLine);
 
   if (quick) return out;
