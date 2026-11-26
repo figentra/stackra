@@ -121,17 +121,32 @@ members (files plus catalog entries), reads the changesets the change adds or ed
 ### Files and folders
 
 ```text
+package.json                                             (changed: changeset:check, verify, verify:affected)
+.github/workflows/
+├── ci.yml                                               (changed: the Changeset check step)
+└── testbed-fallback.yml                                 (changed: full history for the merge base)
 tools/scripts/
-├── changeset-check.mjs                    (new)
-└── __tests__/changeset-check.test.mjs     (new)
-.agents/specs/sta-2604-changeset-check/
-└── spec.md                                (new)
+├── changeset-check.mjs                                  (new)
+├── README.md                                            (changed)
+└── __tests__/changeset-check.test.mjs                   (new)
 .changeset/
-└── changeset-check-in-verify.md           (new)
+├── README.md                                            (changed)
+└── changeset-check-in-verify.md                         (new)
+apps/docs/src/docs/
+├── adr/0013-versioning-and-release.mdx                  (changed: Enforcement)
+├── guides/definition-of-done.mdx                        (changed)
+└── runbooks/
+    ├── ci.mdx                                           (changed)
+    └── release.mdx                                      (changed)
+packages/developer/flow-preset/preset/agents/
+└── docs-changesets-steward.md                           (changed)
+.agents/agents/docs-changesets-steward.md                (projected by fflow update)
+.claude/agents/docs-changesets-steward.md                (projected by fflow update)
+.opencode/agents/docs-changesets-steward.md              (projected by fflow update)
+.flow/lock.json                                          (fflow update)
+.agents/specs/sta-2604-changeset-check/
+└── spec.md                                              (new)
 ```
-
-Changed: root `package.json`, `.github/workflows/ci.yml`, `.github/workflows/testbed-fallback.yml`, and the docs and
-agent files listed in Impact and the tasks.
 
 ### Data models and migrations
 
