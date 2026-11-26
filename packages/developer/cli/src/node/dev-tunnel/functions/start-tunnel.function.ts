@@ -7,7 +7,7 @@
  *           missing. The tunnel and its hosts exist in Cloudflare already (ADR 0290 decision 5), so it passes no
  *           config. A tunnel that exits while the dev run goes on is reported on `io.err`, and the dev run is left alone.
  * Runtime: node
- * Governing contract: ADR 0290 (decisions 4 and 5); ADR 0173 (secrets by name only).
+ * Governing contract: ADR 0290 (decisions 4 and 5); ADR 0173 (secrets by name only); STA-2859.
  */
 import { spawn } from "node:child_process";
 
@@ -36,9 +36,9 @@ export function startTunnel(
   const token = env[tokenVariable];
   if (token === undefined || token === "")
     throw new CliUsageError(
-      `--tunnel needs ${tokenVariable} (this machine's tunnel token, in the agents scope of figentra/secrets): ` +
-        `in core, start it through \`node tools/scripts/secrets-exec.mjs --names ${tokenVariable} -- stackra dev --tunnel\`; ` +
-        `elsewhere, \`sops exec-env ~/.stackra/secrets/agents/${tokenVariable}.enc.yaml 'stackra dev --tunnel'\``,
+      `--tunnel needs ${tokenVariable} in the environment (this machine's Cloudflare Tunnel token): set it for this ` +
+        `one run from your secret store, for example \`sops exec-env tunnel.enc.yaml 'stackra dev --tunnel'\`; ` +
+        `stackra removes it before the dev processes start`,
     );
   Reflect.deleteProperty(env, tokenVariable);
 

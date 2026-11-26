@@ -40,7 +40,9 @@ describe("mcpExecCommand", () => {
   });
 
   it("fails on a secret without a clone, and without a command", () => {
-    expect(() => mcpExecCommand(["mcp", "$A_KEY"])).toThrow(/no figentra\/secrets clone/);
+    expect(() => mcpExecCommand(["mcp", "$A_KEY"])).toThrow(
+      /no secrets checkout to read the secrets from \(STACKRA_SECRETS_DIR/,
+    );
     expect(() => mcpExecCommand([])).toThrow(/no command given/);
   });
 });

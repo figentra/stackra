@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `execWithSecrets(argv, options?)`, what `stackra mcp exec -- <argv>` does: starts the command
  *          `mcpExecCommand` builds with this process's stdio, so an MCP client talks straight to the server, and
- *          resolves with its exit code. The figentra/secrets clone is `options.secretsDir`, else
+ *          resolves with its exit code. The secrets checkout is `options.secretsDir`, else
  *          `$STACKRA_SECRETS_DIR`, else `~/.stackra/secrets`.
  * Boundary: never reads, prints or logs a value: sops decrypts each value into the child's environment and the
  *           child's shell expands them. A command naming no secret starts unchanged.
@@ -20,7 +20,7 @@ import type { McpExecOptions } from "#core/types/mcp-exec-options.type";
  * Runs `argv` with its secrets and resolves with the exit code.
  *
  * @param argv - the program and arguments written after `stackra mcp exec --`.
- * @param options - the figentra/secrets clone and the working directory.
+ * @param options - the secrets checkout and the working directory.
  * @throws Error when `argv` is empty, or rejects when the program (or `sops`) cannot start.
  * @example
  * process.exitCode = await execWithSecrets(["npx", "-y", "mcp-remote@0.14.3", url, "--header", "x-token:$TOKEN"]);

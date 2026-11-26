@@ -39,6 +39,8 @@ describe("DEV_COMMAND", () => {
 
   it("takes --tunnel in every mode and refuses it without the tunnel token, before any dev run", async () => {
     expect(DEV_COMMAND.usage).toContain("--tunnel");
+    expect(DEV_COMMAND.usage).toContain("CLOUDFLARE_TUNNEL_TOKEN in the environment");
+    expect(DEV_COMMAND.usage).not.toMatch(/figentra/i);
     const saved = process.env["CLOUDFLARE_TUNNEL_TOKEN"];
     delete process.env["CLOUDFLARE_TUNNEL_TOKEN"];
     try {

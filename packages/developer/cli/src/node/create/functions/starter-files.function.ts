@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `starterFiles(files, options)`, the files of a new app from a starter's files: the chosen profile's
- *          included paths with its overlays, the rename list applied to every text file, catalog `stackra` pinned to
+ *          included paths, less its excluded ones, with its overlays, the rename list applied to every text file, catalog `stackra` pinned to
  *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line in `.npmrc`.
  *          `stackra.starter.yaml`, `starter/` and `pnpm-lock.yaml` are never written: the install resolves fresh.
  *          Nor is `.infisical.yaml`: it binds the template's own Infisical project, never the app's (STA-2027).
  * Boundary: pure; returns the files and writes nothing. Refuses a manifest that does not match `StarterManifest`, an
  *           unknown profile, and an overlay whose source is missing.
  * Runtime: node
- * Governing contract: ADR 0515 (decisions 3 to 5); ADR 0453 (decision 10); STA-1952 spec FR-006 and FR-007.
+ * Governing contract: ADR 0515 (decisions 3 to 5); ADR 0453 (decision 10); STA-1952 spec FR-006 and FR-007;
+ *                     STA-2859 (`exclude`).
  */
 import { matchesGlob } from "node:path";
 
@@ -23,6 +24,10 @@ const MANIFEST = "stackra.starter.yaml";
 
 /** The path with each segment's leading dot dropped: `path.matchesGlob` never matches dotfiles with `*` or `**`. */
 const undot = (path: string): string => path.replaceAll(/(^|\/)\./g, "$1");
+
+/** Whether one of `globs` matches `path`, dot segments included. */
+const matches = (path: string, globs: readonly string[] | undefined): boolean =>
+  (globs ?? []).some((glob) => matchesGlob(undot(path), undot(glob)));
 
 /** A file of the starter, or of its own tooling or vault binding, that an app never gets. */
 const NEVER = (path: string) =>
@@ -62,12 +67,13 @@ function readManifest(files: ReadonlyMap<string, Uint8Array>): StarterManifest {
     !Object.values(value.profiles).every(
       (profile) =>
         strings(profile?.include) &&
+        (profile.exclude === undefined || strings(profile.exclude)) &&
         (profile.overlay === undefined ||
           Object.values(profile.overlay).every((source) => typeof source === "string")),
     )
   )
     throw new Error(
-      `${MANIFEST} is not a version 1 starter manifest (rename, profiles.<name>.include)`,
+      `${MANIFEST} is not a version 1 starter manifest (rename, profiles.<name>.include, optional exclude)`,
     );
   return value as StarterManifest;
 }
@@ -111,8 +117,9 @@ export function starterFiles(
 
   const picked = new Map<string, Uint8Array>();
   for (const [path, bytes] of files)
-    if (!NEVER(path) && profile.include.some((glob) => matchesGlob(undot(path), undot(glob))))
+    if (!NEVER(path) && matches(path, profile.include) && !matches(path, profile.exclude))
       picked.set(path, bytes);
+  // An overlay is written even over an excluded path: it is the profile's own file for that target.
   for (const [target, source] of Object.entries(profile.overlay ?? {})) {
     const bytes = files.get(source);
     if (bytes === undefined) throw new Error(`overlay ${target}: the starter has no ${source}`);

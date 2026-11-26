@@ -1,17 +1,21 @@
 /**
  * Stackra file contract:
- * Purpose: `doctorChecks(root, workspace, options?)`, the `stackra doctor` checklist of the workspace at `root`, in
- *          order: the base checks (mise tools, pnpm install, disk, network, GitHub), then one group per need
+ * Purpose: `doctorChecks(root, workspace, options?, deps?)`, the `stackra doctor` checklist of the workspace at `root`,
+ *          in order: the base checks (mise tools, pnpm install, disk, network, GitHub), then one group per need
  *          `doctorNeeds` finds (Docker, Encore and the Encore ports; the `@stackra` and `@figentra` registry reads;
- *          Pulumi; Xcode and a simulator; the agent tooling, sops and its Google login included), then the members' dev ports. `quick` keeps only
- *          what `stackra dev` needs before it starts: mise tools, Docker and the ports. `fresh` is a workspace not
- *          written yet (`stackra create` checks a starter): no install and no agents:check.
+ *          Pulumi; Xcode and a simulator; the agent tooling, sops, its Google login and the secrets checkout included),
+ *          then the members' dev ports. `quick` keeps only what `stackra dev` needs before it starts: mise tools,
+ *          Docker and the ports. `fresh` is a workspace not written yet (`stackra create` checks a starter): no install
+ *          and no agents:check. A tool counts as installed when `commandOnPath` finds it (no `which`, so Windows
+ *          works), and every fix names generic steps, never one organisation's tools, repositories or paths.
  * Boundary: runs read-only status commands (`mise ls`, `docker info`, `gh auth status`, `pnpm view`, `xcode-select
- *           -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes hosts and
- *           tries to bind ports; installs and changes nothing. Secrets: forbidden: output is parsed, never printed;
- *           the registry check reads only the exit status of a version lookup, so no token is read or shown.
+ *           -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes hosts (`deps.probe`, `probeHosts` by
+ *           default) and tries to bind ports; installs and changes nothing. Secrets: forbidden: output is parsed,
+ *           never printed; the registry check reads only the exit status of a version lookup, so no token is read or
+ *           shown.
  * Runtime: node
- * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121; STA-1952 spec FR-014 to FR-019; ADR 0515.
+ * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121; STA-1952 spec FR-014 to FR-019; ADR 0515;
+ *                     STA-2859.
  */
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { existsSync, statfsSync } from "node:fs";
@@ -21,10 +25,11 @@ import { join } from "node:path";
 
 import { DOCTOR_HOSTS } from "#node/doctor/constants/doctor-hosts.constant";
 import { awsIdentityOk } from "#node/doctor/functions/aws-identity-ok.function";
+import { commandOnPath } from "#node/doctor/functions/command-on-path.function";
 import { dockerState } from "#node/doctor/functions/docker-state.function";
 import { doctorNeeds } from "#node/doctor/functions/doctor-needs.function";
-import { droppedAddresses } from "#node/doctor/functions/dropped-addresses.function";
 import { googleCredentialsPath } from "#node/doctor/functions/google-credentials-path.function";
+import { networkCheck } from "#node/doctor/functions/network-check.function";
 import { publishedDependency } from "#node/doctor/functions/published-dependency.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
 import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
@@ -32,6 +37,7 @@ import { simulatorAvailable } from "#node/doctor/functions/simulator-available.f
 import type { DoctorNeed } from "#node/doctor/types/doctor-need.type";
 import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 import type { DoctorWorkspace } from "#node/doctor/types/doctor-workspace.type";
+import type { HostProbe } from "#node/doctor/types/host-probe.type";
 import { registryOrigin } from "#node/functions/registry-origin.function";
 
 /** Encore's local API and its development dashboard. */
@@ -40,12 +46,9 @@ const ENCORE_PORTS = [4000, 9400];
 /** Below this much free disk, an install or an image pull may fail. */
 const MIN_FREE_BYTES = 5 * 1024 ** 3;
 
-const WARP_FIX =
-  "use Cloudflare WARP in WARP mode, not DNS-only (https://one.one.one.one), then re-run stackra doctor";
-
 const sh = (cmd: string, args: string[], cwd?: string): SpawnSyncReturns<string> =>
   spawnSync(cmd, args, { encoding: "utf8", timeout: 30_000, ...(cwd ? { cwd } : {}) });
-const has = (cmd: string): boolean => !sh("which", [cmd]).status;
+const has = (cmd: string): boolean => commandOnPath(cmd);
 
 /** Whether nothing listens on `port` on this machine. */
 function portFree(port: number): Promise<boolean> {
@@ -63,6 +66,7 @@ function portFree(port: number): Promise<boolean> {
  * @param workspace - the workspace as `readDoctorWorkspace` describes it.
  * @param options - `quick` keeps the checks `stackra dev` runs before it starts; `fresh` skips what needs the
  *                  workspace on disk (the install, agents:check).
+ * @param deps - `probe` replaces the network probe (`probeHosts`), in tests.
  * @example
  * const results = await doctorChecks(root, readDoctorWorkspace(root));
  */
@@ -70,6 +74,7 @@ export async function doctorChecks(
   root: string,
   workspace: DoctorWorkspace,
   options: { readonly quick?: boolean; readonly fresh?: boolean } = {},
+  deps: { readonly probe?: (hosts: readonly string[]) => Promise<HostProbe[]> } = {},
 ): Promise<DoctorResult[]> {
   const needs = doctorNeeds(workspace);
   const quick = options.quick === true;
@@ -160,23 +165,7 @@ export async function doctorChecks(
 
   const groups: readonly (DoctorNeed | "base")[] = ["base", ...needs];
   const hosts = [...new Set(groups.flatMap((group) => DOCTOR_HOSTS[group] ?? []))];
-  const probes = await probeHosts(hosts);
-  const dropped = droppedAddresses(probes);
-  const down = hosts.filter((host) => !probes.some((probe) => probe.host === host && probe.ok));
-  add({
-    name: "network",
-    status: down.length ? "fail" : dropped.length ? "warn" : "ok",
-    detail:
-      [
-        down.length ? `unreachable: ${down.join(", ")}` : "",
-        dropped.length
-          ? `dropped while sibling addresses answer: ${dropped.map((probe) => `${probe.host} ${probe.address}`).join(", ")}`
-          : "",
-      ]
-        .filter(Boolean)
-        .join("; ") || undefined,
-    fix: WARP_FIX,
-  });
+  add(networkCheck(hosts, await (deps.probe ?? probeHosts)(hosts)));
 
   // The registry is named explicitly, so the check also works before the app (and its .npmrc) exists.
   const origin = registryOrigin(root, undefined);
@@ -210,8 +199,8 @@ export async function doctorChecks(
     add({
       name: "@figentra registry readable",
       status: name !== undefined && registry(name) ? "ok" : "fail",
-      detail: "the @figentra channel needs the registry read token",
-      fix: "load the registry read token from figentra/secrets the way the repository's README says (the token is never printed)",
+      detail: `@figentra packages need a read token for ${origin}`,
+      fix: `add your read token for ${origin} to the user-level ~/.npmrc (pnpm ignores a token in the project's .npmrc); the token is never printed`,
     });
   }
 
@@ -302,7 +291,7 @@ export async function doctorChecks(
     });
   }
 
-  // A root script that runs `secrets-exec.mjs` decrypts the `agents` scope of figentra/secrets (ADR 0525).
+  // A root script that runs `secrets-exec.mjs` decrypts the `agents` scope of a sops secrets checkout (ADR 0525).
   if (
     needs.has("agents") &&
     Object.values(workspace.scripts).some(
@@ -322,14 +311,14 @@ export async function doctorChecks(
       // Only the file's presence is checked: the credential is never read here.
       status: existsSync(googleCredentialsPath(env, homedir())) ? "ok" : "fail",
       detail: has("gcloud") ? undefined : "gcloud not installed",
-      fix: "gcloud auth application-default login, as the owner's Google account (only it decrypts the agents scope)",
+      fix: "gcloud auth application-default login, as a Google account the secrets' KMS key lets decrypt the agents scope",
     });
     const secretsDir = env["STACKRA_SECRETS_DIR"] || join(homedir(), ".stackra", "secrets");
     add({
-      name: "figentra/secrets clone",
+      name: "secrets checkout",
       status: existsSync(join(secretsDir, "agents")) ? "ok" : "fail",
       detail: secretsDir,
-      fix: `clone figentra/secrets to ${secretsDir} (or set STACKRA_SECRETS_DIR)`,
+      fix: `clone the repository that holds your sops-encrypted secrets to ${secretsDir}, or set STACKRA_SECRETS_DIR to where it is`,
     });
   }
   return out;

@@ -3,10 +3,11 @@
  * Purpose: unit tests of `serviceTemplate`: the file list of a plain service (root module, its `createTestingModule`
  *          test, no tool config, no `test:int`) and of a `--data` one (the example module with model, migration, unit
  *          and `.int` tests, the database test peers, `@stackra/testing` and `test:int`), and `--summary` landing in
- *          `stackra.summary` only when given.
+ *          `stackra.summary` only when given, and a runway.yaml header any product can keep.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (rule R12); ADR 0295 (no authored tool config); STA-1819.
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (rule R12); ADR 0295 (no authored tool config); STA-1819;
+ *                     STA-2859.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -55,6 +56,12 @@ describe("serviceTemplate", () => {
     const test = content(false, "src/__tests__/demo.module.test.ts");
     expect(test).toContain('from "@stackra/container/testing"');
     expect(test).toContain("await createTestingModule(DemoModule).compile()");
+  });
+
+  it("writes a runway.yaml whose header names no one organisation's secret repository", () => {
+    const runway = content(false, "runway.yaml");
+    expect(runway).toContain("secret values come from your secret store through runway (ADR 0525)");
+    expect(runway).not.toMatch(/figentra\/secrets/);
   });
 
   it("writes no tool config and no test:int without --data", () => {
