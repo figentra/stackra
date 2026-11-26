@@ -713,7 +713,7 @@ test("store image: digest-pinned base, tagged by base and lockfile, rebuilt when
   );
   const dockerfile = storeDockerfile({ baseImage: PINNED, pnpmVersion: "12.16.1" });
   assert.match(dockerfile, new RegExp(`^FROM ${PINNED}$`, "m"));
-  assert.match(dockerfile, /pnpm fetch --store-dir \/store/);
+  assert.match(dockerfile, /pnpm fetch --store-dir \/store --ignore-pnpmfile/);
   assert.match(dockerfile, /chown -R 1000:1000 \/store \/work/);
   assert.match(dockerfile, /COREPACK_HOME=\/opt\/corepack/);
   assert.equal(pnpmVersionOf('{"packageManager":"pnpm@12.16.1+sha512.abc"}'), "12.16.1");

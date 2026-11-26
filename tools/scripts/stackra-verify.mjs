@@ -3625,7 +3625,8 @@ export function storeDockerfile({ baseImage, pnpmVersion }) {
     "RUN git --version && tar --version && bash --version",
     "WORKDIR /seed",
     "COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./",
-    "RUN pnpm fetch --store-dir /store && rm -rf /seed",
+    // Only the manifests are in the seed, so the repo pnpmfile is absent: fetch must not try to load it.
+    "RUN pnpm fetch --store-dir /store --ignore-pnpmfile && rm -rf /seed",
     `RUN mkdir -p /work /prebuilt && chown -R ${CONTAINER_USER} /store /work /prebuilt`,
     "",
   ].join("\n");
