@@ -9,7 +9,10 @@
  *          recorded versions; invalid settings name their runway.yaml path. The STA-2786 block runs the driver against
  *          a fake Cloudflare that routes an override as Cloudflare does (honoured only for a version in the current
  *          deployment), or ignores it: it reproduces the old false pass (a smoke by override before the version is in
- *          the deployment reaches the old version with 200) and shows every smoke step now proves the version.
+ *          the deployment reaches the old version with 200) and shows every smoke step now proves the version. It
+ *          also shows current() still names the serving commit after a failed 50% or 100% step, verify of a version
+ *          older than the proof falls back to Cloudflare's deployment (header or /-/version 404), a step's smoke is
+ *          bounded by stepSmokeAttempts and the job's deadline, and a failed rollback is reported with its cause.
  * Boundary: test only; the command runner, environment and fetch are fakes, and the member is a temporary folder.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); ADR 0173; STA-1921; ADR 0536; STA-2786.
@@ -96,7 +99,7 @@ const ENV = {
 function deployments(...messages: string[]): string {
   return JSON.stringify(
     messages.map((message, index) => ({
-      created_on: `2026-11-01T00:00:0${index}Z`,
+      created_on: new Date(Date.UTC(2026, 10, 1, 0, 0, index)).toISOString(),
       annotations: { "workers/message": message },
     })),
   );
@@ -330,12 +333,18 @@ describe("CloudflareWorkersProviderDriver", () => {
     expect(moves).toHaveLength(1);
     expect(moves[0]).toContain(`${VERSION}@100`);
 
-    // Any other status failure stops the deploy before traffic moves.
-    const broken = workers(root, async (command, args, options) => {
-      if (args.includes("deployments") && args.includes("status")) throw new Error("rate limited");
-      return fakeRunner(root).run(command, args, options);
-    });
-    await expect(broken.apply(plain, SHA)).rejects.toThrow("rate limited");
+    // Any other status failure stops the deploy before traffic moves, a "not found" without code 10007 included (a
+    // wrong account or a renamed Worker must not take the first-deploy path straight to 100%).
+    for (const message of ["rate limited", "Worker not found", "Account does not exist"]) {
+      const calls: string[] = [];
+      const broken = workers(root, async (command, args, options) => {
+        if (args.includes("deployments") && args.includes("status")) throw new Error(message);
+        calls.push(args.join(" "));
+        return fakeRunner(root).run(command, args, options);
+      });
+      await expect(broken.apply(plain, SHA)).rejects.toThrow(message);
+      expect(calls.some((call) => call.includes("versions deploy"))).toBe(false);
+    }
   });
 
   it("puts the previous version back when a rollout step fails its smoke", async () => {
@@ -354,9 +363,15 @@ describe("CloudflareWorkersProviderDriver", () => {
     await expect(failure).rejects.toMatchObject({
       results: [{ record: { reference: `registry=${BEFORE}` } }],
     });
-    expect(calls.at(-1)).toContain(`wrangler rollback ${BEFORE} --message ${SHA}`);
-    // The 0% stage, 10% and the failed 50%.
-    expect(calls.filter((call) => call.includes("versions deploy"))).toHaveLength(3);
+    expect(calls.at(-1)).toContain(
+      `wrangler rollback ${BEFORE} --message ${SHA} (rolled back to ${BEFORE})`,
+    );
+    // The 0% stage, 10% and the failed 50%; only a 100% step would carry the bare SHA.
+    expect(
+      calls
+        .filter((call) => call.includes("versions deploy"))
+        .map((call) => call.split("--message ")[1]),
+    ).toEqual([`${SHA} (0% smoke) --yes`, `${SHA} (10%) --yes`, `${SHA} (50%) --yes`]);
 
     // A failing first move changes nothing, so nothing is reverted.
     const first = fakeRunner(root);
@@ -616,15 +631,24 @@ describe("CloudflareWorkersProviderDriver drift", () => {
  * deployment, and the edge routes each smoke request as Cloudflare does. An override (`Cloudflare-Workers-Version-
  * Overrides: <worker>="<id>"`) is honoured only for a version in the current deployment; any other request goes to the
  * version with the most traffic. `ignoresOverrides` drops every override (a Cloudflare that never honours one). The
- * versions in `broken` answer 503; every answer names the version that gave it, as the Workers now do.
+ * versions in `broken` answer 503; every answer names the version that gave it, as the Workers now do, except the
+ * versions in `unnamed` (uploaded before the proof existed): they send no header and have no `/-/version` route. The
+ * account starts with BEFORE serving 100%, deployed with the message OLD; each deployment's message is kept for
+ * `wrangler deployments list`.
  */
 function cloudflare(
   root: string,
-  options: { readonly ignoresOverrides?: boolean; readonly broken?: readonly string[] } = {},
+  options: {
+    readonly ignoresOverrides?: boolean;
+    readonly broken?: readonly string[];
+    readonly unnamed?: readonly string[];
+  } = {},
 ) {
   let deployment = new Map<string, number>([[BEFORE, 100]]);
   /** Each deployment change and each smoke answer, in order: `deploy <specs>` or `smoke <url> <served version>`. */
   const timeline: string[] = [];
+  /** Every deployment's message, oldest first. */
+  const messages: string[] = [OLD];
   const run: CommandRunner = async (command, args) => {
     if (command === "git") return `${SHA}\n`;
     const at = args.indexOf("--message");
@@ -634,11 +658,13 @@ function cloudflare(
       deployment = new Map(
         specs.map((spec) => [spec.split("@")[0] ?? "", Number(spec.split("@")[1])] as const),
       );
+      messages.push(args[at + 1] ?? "");
       timeline.push(`deploy ${specs.join(" ")}`);
       return "";
     }
     if (args[2] === "rollback") {
       deployment = new Map([[args[3] ?? "", 100]]);
+      messages.push(args[at + 1] ?? "");
       timeline.push(`rollback ${args[3]}`);
       return "";
     }
@@ -646,7 +672,7 @@ function cloudflare(
       return JSON.stringify({
         versions: [...deployment].map(([version_id, percentage]) => ({ version_id, percentage })),
       });
-    if (args[2] === "deployments") return deployments(SHA);
+    if (args[2] === "deployments") return deployments(...messages);
     return "";
   };
   const fetch = async (url: string, headers: Readonly<Record<string, string>> = {}) => {
@@ -658,12 +684,14 @@ function cloudflare(
     const served =
       asked !== undefined && !options.ignoresOverrides && deployment.has(asked) ? asked : routed;
     timeline.push(`smoke ${new URL(url).pathname} ${served === VERSION ? "new" : "old"}`);
+    if (options.unnamed?.includes(served))
+      return answer(url.endsWith("/-/version") ? 404 : 200, undefined);
     return answer(options.broken?.includes(served) ? 503 : 200, served, url);
   };
   const driver = workers(root, run);
   driver.fetch = fetch;
   driver.sleep = async () => {};
-  return { driver, timeline, deployment: () => Object.fromEntries(deployment) };
+  return { driver, timeline, messages, deployment: () => Object.fromEntries(deployment) };
 }
 
 describe("CloudflareWorkersProviderDriver version proof (STA-2786)", () => {
@@ -850,5 +878,187 @@ describe("CloudflareWorkersProviderDriver version proof (STA-2786)", () => {
       /after 2 attempts; no traffic moved; taking it out of the deployment failed too \(rate limited\)/,
     );
     expect(seen).toHaveLength(2);
+  });
+
+  it("keeps current() on the commit that serves after a failed 50% step and after a failed 100% step", async () => {
+    // From 50% on the edge ignores overrides and the old version answers: the 50% smoke fails.
+    const half = cloudflare(repository());
+    const honoured = half.driver.fetch;
+    half.driver.fetch = async (url, headers) =>
+      half.timeline.some((line) => line.startsWith(`deploy ${VERSION}@50`))
+        ? answer(200, BEFORE, url)
+        : honoured(url, headers);
+    await expect(half.driver.apply(REGISTRY, SHA)).rejects.toThrow(RunwayDeployFailedError);
+    expect(half.deployment()).toEqual({ [BEFORE]: 100 });
+    expect(half.messages).toEqual([
+      OLD,
+      `${SHA} (0% smoke)`,
+      `${SHA} (10%)`,
+      `${SHA} (50%)`,
+      `${SHA} (rolled back to ${BEFORE})`,
+    ]);
+    // BEFORE serves everything again: current() names its commit, not the failed one.
+    expect(await half.driver.current(REGISTRY)).toBe(OLD);
+
+    // The 100% step is a bare SHA; its rollback ends the attempt, so current() skips back past it.
+    const full = cloudflare(repository());
+    const fine = full.driver.fetch;
+    full.driver.fetch = async (url, headers) =>
+      full.timeline.includes(`deploy ${VERSION}@100`)
+        ? answer(503, VERSION, url)
+        : fine(url, headers);
+    await expect(full.driver.apply(REGISTRY, SHA)).rejects.toThrow(RunwayDeployFailedError);
+    expect(full.messages.slice(-2)).toEqual([SHA, `${SHA} (rolled back to ${BEFORE})`]);
+    expect(await full.driver.current(REGISTRY)).toBe(OLD);
+
+    // A later good deploy of the same commit is read again.
+    full.messages.push(`${SHA} (0% smoke)`, SHA);
+    expect(await full.driver.current(REGISTRY)).toBe(SHA);
+  });
+
+  it("verifies a rollback to a version older than the proof from Cloudflare's own deployment", async () => {
+    // BEFORE was uploaded before STA-2786: it names no version and has no /-/version route.
+    const sim = cloudflare(repository(), { unnamed: [BEFORE] });
+    const to = { target: REGISTRY.id, sha: OLD, reference: `registry=${BEFORE}` };
+    expect(await sim.driver.rollback(REGISTRY, to)).toEqual(to);
+    expect(await sim.driver.verify(REGISTRY, to)).toEqual({
+      status: "up",
+      detail: `registry smoke https://npm.stackra.figentra.com/-/ping, https://npm.stackra.figentra.com/-/npm/v1/keys named no version (a version older than the proof); Cloudflare serves ${BEFORE} at 100%`,
+    });
+
+    // Cloudflare's deployment does not hold the recorded version at 100%: down, naming the split.
+    await sim.driver.run(
+      "pnpm",
+      ["exec", "wrangler", "versions", "deploy", `${BEFORE}@90`, `${VERSION}@10`, "--message", OLD],
+      {},
+    );
+    const split = await sim.driver.verify(REGISTRY, to);
+    expect(split.status).toBe("down");
+    expect(split.detail).toContain(`not ${BEFORE}@100`);
+
+    // A version that names another version is still down: only a missing name falls back.
+    const other = cloudflare(repository());
+    other.driver.fetch = async (url) => answer(200, VERSION, url);
+    expect((await other.driver.verify(REGISTRY, to)).status).toBe("down");
+    // An unnamed answer that is not 2xx is down too.
+    const broken = cloudflare(repository());
+    broken.driver.fetch = async () => answer(503, undefined);
+    expect((await broken.driver.verify(REGISTRY, to)).detail).toMatch(/answered 503/);
+  });
+
+  it("verifies a static member's pre-proof version whose /-/version answers 404", async () => {
+    const root = repository();
+    const STATIC: DeployTarget = {
+      ...WEB,
+      settings: {
+        members: {
+          static: {
+            path: "workers/static",
+            smoke: [{ url: "https://static.test/schemas/index.json" }],
+            versionProof: "route",
+          },
+        },
+      },
+    };
+    const sim = cloudflare(root, { unnamed: [BEFORE] });
+    const to = { target: STATIC.id, sha: OLD, reference: `static=${BEFORE}` };
+    await sim.driver.rollback(STATIC, to);
+    const report = await sim.driver.verify(STATIC, to);
+    expect(report.status).toBe("up");
+    expect(report.detail).toContain("https://static.test/-/version named no version");
+
+    // In a deploy (no fallback) a /-/version 404 is another version: it fails after proofAttempts, not smokeAttempts.
+    const asked: string[] = [];
+    const strict = Object.assign(workers(root, fakeRunner(root).run), {
+      smokeAttempts: 60,
+      proofAttempts: 2,
+      fetch: async (url: string) => {
+        asked.push(url);
+        return answer(404, undefined);
+      },
+    });
+    await expect(strict.apply(STATIC, SHA)).rejects.toThrow(
+      /\/-\/version answered 404: a version without the \/-\/version route answered, not .* after 2 attempts; no traffic moved/,
+    );
+    expect(asked).toHaveLength(2);
+  });
+
+  it("bounds a promotion step's smoke to stepSmokeAttempts, while the 0% smoke keeps its full budget", async () => {
+    const sim = cloudflare(repository());
+    sim.driver.smokeAttempts = 60;
+    const honoured = sim.driver.fetch;
+    let stepAttempts = 0;
+    sim.driver.fetch = async (url, headers) => {
+      if (!sim.timeline.some((line) => line.startsWith(`deploy ${VERSION}@10`)))
+        return honoured(url, headers);
+      stepAttempts += 1;
+      return answer(503, VERSION, url);
+    };
+    await expect(sim.driver.apply(REGISTRY, SHA)).rejects.toThrow(/failed its smoke at 10%/);
+    expect(stepAttempts).toBe(6);
+    expect(sim.deployment()).toEqual({ [BEFORE]: 100 });
+  });
+
+  it("moves no traffic when the promotion's holds do not fit before the job's deadline", async () => {
+    const sim = cloudflare(repository());
+    // Ten minutes left: the holds take ten, plus the margin for the smokes and a rollback.
+    sim.driver.env = { ...ENV, RUNWAY_DEPLOY_DEADLINE: String(600) };
+    sim.driver.now = () => 0;
+    await expect(sim.driver.apply(REGISTRY, SHA)).rejects.toThrow(
+      `registry version ${VERSION} passed its 0% smoke but was not promoted: the job's deadline leaves 10 min, and the promotion holds 10 min; no traffic moved`,
+    );
+    expect(sim.timeline.filter((line) => line.startsWith("deploy"))).toEqual([
+      `deploy ${BEFORE}@100 ${VERSION}@0`,
+      `deploy ${BEFORE}@100`,
+    ]);
+    expect(sim.deployment()).toEqual({ [BEFORE]: 100 });
+  });
+
+  it("stops a step's smoke before the job's deadline and puts the previous version back", async () => {
+    const sim = cloudflare(repository());
+    const deadline = 14 * 60_000;
+    let clock = 0;
+    Object.assign(sim.driver, {
+      env: { ...ENV, RUNWAY_DEPLOY_DEADLINE: String(deadline / 1000) },
+      now: () => clock,
+      smokeIntervalMs: 10_000,
+      stepSmokeAttempts: 1000,
+      sleep: async (ms: number) => {
+        clock += ms;
+      },
+    });
+    const honoured = sim.driver.fetch;
+    sim.driver.fetch = async (url, headers) =>
+      sim.timeline.some((line) => line.startsWith(`deploy ${VERSION}@50`))
+        ? answer(503, VERSION, url)
+        : honoured(url, headers);
+    await expect(sim.driver.apply(REGISTRY, SHA)).rejects.toThrow(/failed its smoke at 50%/);
+    // The smoke gave up a minute before the deadline, leaving the rollback its time.
+    expect(clock).toBeLessThanOrEqual(deadline - 60_000);
+    expect(clock).toBeGreaterThan(deadline - 2 * 60_000);
+    expect(sim.timeline.at(-1)).toBe(`rollback ${BEFORE}`);
+    expect(sim.deployment()).toEqual({ [BEFORE]: 100 });
+  });
+
+  it("reports a failed rollback together with the smoke failure, and says traffic may still be split", async () => {
+    const sim = cloudflare(repository());
+    const honoured = sim.driver.fetch;
+    sim.driver.fetch = async (url, headers) =>
+      sim.timeline.some((line) => line.startsWith(`deploy ${VERSION}@10`))
+        ? answer(503, VERSION, url)
+        : honoured(url, headers);
+    const run = sim.driver.run;
+    sim.driver.run = async (command, args, options) => {
+      if (args[2] === "rollback") throw new Error("wrangler rollback failed: rate limited");
+      return run(command, args, options);
+    };
+    const failure = sim.driver.apply(REGISTRY, SHA);
+    await expect(failure).rejects.toThrow(RunwayDeployFailedError);
+    await expect(failure).rejects.toThrow(
+      new RegExp(
+        `${VERSION} could NOT be rolled back to ${BEFORE} \\(wrangler rollback failed: rate limited\\); traffic may still be split between ${VERSION} and ${BEFORE}: ${VERSION} failed its smoke at 10%`,
+      ),
+    );
+    expect(sim.deployment()).toEqual({ [VERSION]: 10, [BEFORE]: 90 });
   });
 });

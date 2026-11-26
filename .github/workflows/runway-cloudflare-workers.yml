@@ -112,12 +112,15 @@ jobs:
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
       # Every deploy is of a commit on main (ADR 0170 decision 6): a tag or an explicit SHA can name any commit, so
-      # the check runs before anything is built or any credential is read. The SHA is the release's identity.
+      # the check runs before anything is built or any credential is read. The SHA is the release's identity. The
+      # deadline (epoch seconds, 3 minutes inside the job's 30) bounds the promotion: Runway starts no traffic move
+      # whose holds do not fit and stops a step's smoke before it, so a timeout never kills the job mid-split.
       - name: Release commit
         id: commit
         run: |
           sha="$(git rev-parse HEAD)"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "deadline=$(( $(date +%s) + 27 * 60 ))" >> "$GITHUB_OUTPUT"
           git merge-base --is-ancestor "$sha" origin/main || {
             echo "::error title=Not on main::$sha is not on main; Runway deploys only commits of main."
             exit 1
@@ -221,14 +224,17 @@ jobs:
       # with the commit as the message and its secrets on stdin, stages the version at 0% beside the one serving and
       # smokes it by version override, then promotes it (10/50/100 for an `api` member in production) with a smoke at
       # each step. Each smoke must see the new version answer (`x-stackra-version`, or `/-/version` for a static
-      # member), so one that reaches the old version fails (STA-2786); it retries while a new domain's certificate
-      # comes up. `--kind web` with `--member` ships only the named Worker member (the docs site is the `docs` member).
+      # member), so one that reaches the old version fails (STA-2786); the 0% smoke retries while a new domain's
+      # certificate comes up, a promotion step's smoke only briefly and never past RUNWAY_DEPLOY_DEADLINE, after which
+      # the previous version goes back. `--kind web` with `--member` ships only the named Worker member (the docs site
+      # is the `docs` member).
       - name: Deploy (Runway)
         id: deploy
         env:
           MEMBER: ${{ inputs.member }}
           SHA: ${{ steps.commit.outputs.sha }}
           PRODUCT: ${{ inputs.product }}
+          RUNWAY_DEPLOY_DEADLINE: ${{ steps.commit.outputs.deadline }}
         run: |
           stackra=(node packages/developer/cli/dist/stackra.mjs)
           [ "$PRODUCT" = true ] && stackra=(pnpm exec stackra)

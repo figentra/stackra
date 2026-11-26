@@ -496,7 +496,8 @@ region in release order, then each dedicated tenant's services. A dedicated targ
 `dedicated: { key, scope }`, where `scope` is the id the runway's `tenant` field gives (ADR 0323). `deploy` applies and verifies each target through its
 provider and stops at the first one that is down; `promote` ships what the source environment runs to an environment
 with `deploy.on: promote`; `rollback` returns each target to its record from an earlier release (the caller reads the
-records from the release log, ADR 0352 decision 7).
+records from the release log, ADR 0352 decision 7). Going back is the safe direction, so `rollback` does not stop at a
+target that verifies down: it rolls every target back, then throws one `RunwayDeployFailedError` naming each that is.
 
 ```ts
 import { buildConfig } from "@stackra/config";
@@ -527,11 +528,19 @@ then takes traffic, in the member's `rollout` steps in production (10/50/100 by 
 smoke after every step. Every smoke proves the version that answered (STA-2786): each answer's `x-stackra-version`
 header must name the version under test (`versionProof: header`, the default), or, for a Worker whose answers are
 static assets, its `GET /-/version` route must, read before and after the member's checks (`versionProof: route`).
-Another version answering, or none named, fails the step; it is retried for a minute at most (`proofAttempts`), while
-a non-2xx answer is retried for ten (a new domain's certificate). A failed 0% smoke takes the version out of the
-deployment again and moves no traffic; a failed later step puts the previous version back. A member with no `smoke`
-entry is refused before anything ships. `WORKER_VERSION`, `WorkerVersionProof` and `servedVersionProblem` (`.`) are the
-names and the check, for another smoke to apply the same proof.
+Another version answering, or none named, fails the step (a route member's `/-/version` answering 404 is another
+version); it is retried for a minute at most (`proofAttempts`). In the 0% smoke a non-2xx answer is retried for ten
+minutes (a new domain's certificate); a promotion step's smoke gets `stepSmokeAttempts` (6) attempts per check and makes
+none after `RUNWAY_DEPLOY_DEADLINE` (epoch seconds) less a minute, and no traffic moves unless the holds fit before it, so
+a degraded step rolls back inside the job's timeout instead of being killed mid-split. A failed 0% smoke takes the
+version out of the deployment again and moves no traffic; a failed later step puts the previous version back, and a
+failed rollback is reported with the smoke failure and the split it may have left. A partial step's deployment message
+is `<sha> (<percent>%)` and the rollback's `<sha> (rolled back to <version>)`: only the 100% step carries the bare SHA,
+and `current` skips a failed attempt, so it always names the commit that serves. A member with no `smoke` entry is
+refused before anything ships. `verify` proves the version its record names; a version uploaded before the proof names
+none, so for it (a rollback to an older record) the answers must be 2xx and Cloudflare's own deployment
+(`wrangler deployments status`) must show it at 100%. `WORKER_VERSION`, `WorkerVersionProof` and
+`servedVersionProblem` (`.`) are the names and the check, for another smoke to apply the same proof.
 
 ```yaml
 targets:
