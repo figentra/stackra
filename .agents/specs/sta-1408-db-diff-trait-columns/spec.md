@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-26
 
-**Status**: Implementing <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
+**Status**: Tasked <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
 
 **Tier**: feature
 
@@ -142,13 +142,11 @@ expects `varchar(33)` `parent_id`, `ltree` `tree_path` (either nullable) and the
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
 - **AC-001**: WHEN a `HasTree` model's table was built by `t.tree()` THE `stackra db diff` SHALL report no difference.
-- **AC-002**: WHEN a trait's column or index differs in type, nullability or access method THE `stackra db diff` SHALL
-  report it.
-- **AC-003**: IF a table has `tree_path` or `metadata` and its model lacks the trait THEN `stackra db diff` SHALL report
-  `undeclared_column`.
-- **AC-004**: WHERE a model uses `Partitioned({ by })` THE `stackra db diff` SHALL expect an optional BRIN index over
-  the `by` column, also when another option is not constant.
+- **AC-002**: WHEN a trait's column or index differs in type, nullability or access method THE `stackra db diff` SHALL report it.
+- **AC-003**: IF a table has `tree_path` or `metadata` and its model lacks the trait THEN THE `stackra db diff` SHALL report `undeclared_column`.
+- **AC-004**: WHERE a model uses `Partitioned({ by })` THE `stackra db diff` SHALL expect an optional BRIN index over the `by` column, also when another option is not constant.
 - **AC-005**: WHILE a model lacks `Versioned` THE `stackra db diff` SHALL NOT type its `version` field as `integer`.
+- **AC-006**: THE `TRAIT_COLUMNS` table SHALL give each column-writing trait's columns and indexes with the type, nullability and access method its migration macro writes, keyed by registry code.
 
 ## Success Criteria _(mandatory)_
 
@@ -194,5 +192,4 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-1408 spec, batch 21) · written after the fact from the diff of PR #1130
 - 2026-11-26 · Draft → Clarified · Claude (STA-1408 spec, batch 21) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-1408 spec, batch 21) · plan.md
-- 2026-11-26 · Planned → Tasked · Claude (STA-1408 spec, batch 21) · tasks.md
-- 2026-11-26 · Tasked → Implementing · Claude (STA-1408 spec, batch 21) · T001 to T008 are the commit e9ac14487 on the branch
+- 2026-11-26 · Planned → Tasked · Claude (STA-1408 spec, batch 21) · tasks.md; the tasks marked done are already on the branch (PR); Implementing waits for the approver's Planned approval (ADR 0502)

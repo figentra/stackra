@@ -52,6 +52,8 @@ tolerance. `postgresTypeOf` stops typing `version` by name. Discovery keeps an o
 - **P-003**: for every model with a trait row, `expectedSchema` contains each of the row's columns with the row's type and nullability — Validates: FR-003
 - **P-004**: a snapshot built by the macro diffs empty against the model's expected schema — Validates: FR-004
 - **P-005**: `tree_path` / `metadata` without the trait are always reported — Validates: FR-005
+- **P-006**: for every field named `version`, `postgresTypeOf` returns no type of its own; only the `versioned` row types it — Validates: FR-006
+- **P-007**: for every trait object argument, each property whose value is a constant survives discovery, whatever the other properties are — Validates: FR-007
 
 ## Architecture overview
 
@@ -73,13 +75,25 @@ compares as before with the three new rules.
 ## Files and folders
 
 ```text
-packages/developer/gen/src/
-├── core/index.ts
-├── core/__tests__/index.test.ts
-├── core/constants/trait-columns.constant.ts
-├── core/types/{trait-columns,schema-snapshot}.type.ts
-├── core/functions/{trait-columns-of,expected-schema,diff-schemas,postgres-type-of}.function.ts (+ tests)
-└── node/functions/create-source-reader.function.ts (+ test)
+packages/developer/gen/
+├── package.json
+└── src/
+    ├── core/
+    │   ├── index.ts
+    │   ├── __tests__/index.test.ts
+    │   ├── constants/trait-columns.constant.ts
+    │   ├── types/
+    │   │   ├── trait-columns.type.ts
+    │   │   └── schema-snapshot.type.ts
+    │   └── functions/
+    │       ├── trait-columns-of.function.ts
+    │       ├── expected-schema.function.ts
+    │       ├── diff-schemas.function.ts
+    │       ├── postgres-type-of.function.ts
+    │       └── __tests__/
+    └── node/functions/
+        ├── create-source-reader.function.ts
+        └── __tests__/
 packages/developer/cli/README.md
 .changeset/db-diff-trait-columns.md
 ```
@@ -125,6 +139,7 @@ No data is read beyond the schema catalog of the replay database.
 - AC-003: `diff-schemas.function.test.ts` ("reports a migrated column no model declares, a trait's column included…").
 - AC-004: `expected-schema.function.test.ts` ("…gives Partitioned its optional BRIN index"),
   `create-source-reader.function.test.ts`, `trait-columns-of.function.test.ts`.
+- AC-006: `trait-columns-of.function.test.ts` ("TRAIT_COLUMNS" and "gives a trait's columns and indexes by its registry code").
 - AC-005: `expected-schema.function.test.ts` ("types version as integer only under Versioned…"),
   `postgres-type-of.function.test.ts`.
 - End to end: the PGlite replay of a generated app (7 false and 4 missed on `main`; exactly the 4 here).
