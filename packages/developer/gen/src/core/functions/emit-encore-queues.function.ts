@@ -9,10 +9,15 @@
  *           subscription names carry the member key, so two services' `default` queues never share a topic. Delivery
  *           is at least once: the worker's Idempotency-Key per job makes a repeat replay. The message body is the
  *           queued job as JSON; its `runAt` is read back into a date. Which driver publishes is runtime
- *           configuration; the topics cost nothing while no driver uses them.
+ *           configuration; the topics cost nothing while no driver uses them. A subscription's ack deadline is the
+ *           largest `visibilityTimeoutSeconds` the service's runway gives the queue in any environment
+ *           (`queueAckDeadline`), since Encore reads it when it builds the app; with none set, Encore's default
+ *           (30 seconds) applies. Encore always gives a subscription a dead-letter queue once its retries run out
+ *           (`checkQueueSettings` warns of a runway `dlq: false`).
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 1, 3 and 6: Encore Pub/Sub in SaaS); ADR 0266 (decision 4.3:
- *                     encore-pubsub); ADR 0136 (decision 3: jobs derive their Idempotency-Keys); ADR 0091 and 0124.
+ *                     encore-pubsub); ADR 0136 (decision 3: jobs derive their Idempotency-Keys); ADR 0091 and 0124;
+ *                     ADR 0296 (a member's runway sizes its own queues, STA-2050).
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { camelCase, kebabCase } from "@stackra/support";
@@ -23,6 +28,7 @@ import { encoreDatabaseImport } from "#core/functions/encore-database-import.fun
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { jobQueues } from "#core/functions/job-queues.function";
+import { queueAckDeadline } from "#core/functions/queue-ack-deadline.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -42,7 +48,8 @@ export function emitEncoreQueues(
 
   const rows = queues.map((queue) => {
     const name = `${kebabCase(ir.member)}-queue-${kebabCase(queue)}`;
-    return { queue, name, topic: camelCase(`queue_${queue.replaceAll(/[^A-Za-z0-9]+/g, "_")}`) };
+    const topic = camelCase(`queue_${queue.replaceAll(/[^A-Za-z0-9]+/g, "_")}`);
+    return { queue, name, topic, ackDeadline: queueAckDeadline(ir, queue) };
   });
   const header = generatedHeader({
     from: "stackra.manifest.json (the job actions and their queues)",
@@ -71,7 +78,7 @@ export function emitEncoreQueues(
       "  return { ...job, runAt: new Date(job.runAt) };",
       "}",
       "",
-      ...rows.flatMap(({ queue, name, topic }) => [
+      ...rows.flatMap(({ queue, name, topic, ackDeadline }) => [
         `/** The jobs of the \`${queue}\` queue. */`,
         `export const ${topic} = new Topic<BrokerMessage>(${JSON.stringify(name)}, {`,
         '  deliveryGuarantee: "at-least-once",',
@@ -83,6 +90,8 @@ export function emitEncoreQueues(
         "    app.handlers.run(async (container) => {",
         "      await container.get(QueueWorkerService).process(jobOf(message));",
         "    }),",
+        // The runway's visibility timeout: how long a delivery runs before Encore hands it out again.
+        ...(ackDeadline === undefined ? [] : [`  ackDeadline: "${ackDeadline}s",`]),
         "});",
         "",
       ]),

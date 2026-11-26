@@ -10,7 +10,7 @@
  *          `t.searchable` literals and tenant columns of its migrations (`readSearchableColumns`, data-layer gap se10;
  *          `readMigrationTables`) and an app's static
  *          `defineApp` data and icon sets (`readAppDefinition`), and a service's runway `events` blocks
- *          (`readRunwayEvents`, ADR 0511 d16 and d17): the
+ *          (`readRunwayEvents`, ADR 0511 d16 and d17) and `queues` blocks (`readRunwayQueues`, STA-2050): the
  *          `MemberIR` every gen output is a pure function of.
  * Boundary: reads the member; writes nothing. Refusals are collected into `errors`, never thrown; only an unreadable
  *           package.json, tsconfig, dependency manifest or catalogue throws. The program is always closed.
@@ -55,6 +55,7 @@ import { readSearchableColumns } from "#node/functions/read-searchable-columns.f
 import { readPackageCatalogues } from "#node/functions/read-package-catalogues.function";
 import { readPublisherManifests } from "#node/functions/read-publisher-manifests.function";
 import { readRunwayEvents } from "#node/functions/read-runway-events.function";
+import { readRunwayQueues } from "#node/functions/read-runway-queues.function";
 import { readServiceCatalogues } from "#node/functions/read-service-catalogues.function";
 import { readServiceManifests } from "#node/functions/read-service-manifests.function";
 
@@ -210,6 +211,8 @@ export async function discoverMember(
     const services = readServiceManifests(facts.root, consumed, facts.dependencies);
     // A producer's cross-app relay: the `events` block of each runway environment (ADR 0511 d16, d17).
     const eventsRelay = facts.layout === "service" ? readRunwayEvents(facts.root) : undefined;
+    // The settings of each queue in each runway environment, for the queues' Encore subscriptions (STA-2050).
+    const queueSettings = facts.layout === "service" ? readRunwayQueues(facts.root) : undefined;
     // The lang of each service it consumes through a client, after its packages' (STA-1363).
     const packageCatalogues = [
       ...shippedCatalogues,
@@ -314,6 +317,7 @@ export async function discoverMember(
         : {}),
       ...(services.length > 0 ? { services } : {}),
       ...(eventsRelay !== undefined ? { eventsRelay } : {}),
+      ...(queueSettings !== undefined ? { queueSettings } : {}),
       ...(publishers.length > 0 ? { publishers } : {}),
       ...(workspaceServices.length > 0 ? { workspaceServices } : {}),
       ...(clientImports.length > 0 ? { clientImports } : {}),

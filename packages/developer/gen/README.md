@@ -593,6 +593,14 @@ holds one Pub/Sub `Topic` and `Subscription` per queue its job actions name, reg
 broker-delivered queue driver, each delivery run through `QueueWorkerService.process`. Both reach the member through the
 server app's `handlers`.
 
+A queue's runway settings reach its subscription (STA-2050): the `ackDeadline` is the largest
+`environments.<env>.queues.<name>.visibilityTimeoutSeconds` the service's `runway.yaml` gives the queue (at least one
+second), because Encore reads a subscription's settings when it builds the app, so one value serves every
+environment; with none set, Encore's default of 30 seconds applies. The target cloud may clamp the value to its own
+range (Google Cloud Pub/Sub allows at most 10 minutes). Encore gives every subscription a dead-letter
+queue once its retries run out, so `dlq: true` holds as it is, and `dlq: false` on a job queue is the warning
+`queue_dlq_unsupported` (gen still writes). The jobs' own dead letters stay in `queue.jobs` either way.
+
 `.stackra/encore/<member>/events.ts` holds one Pub/Sub `Topic` per integration event the manifest publishes, registered
 under its `<module>.<name>.v<n>` wire name for the outbox's `broker` publisher. A service with a relay listener (the
 webhooks relay, ADR 0260 decision 4) also gets `.stackra/encore/<member>/relay.ts`: one `Subscription` per integration

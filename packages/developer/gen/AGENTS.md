@@ -347,6 +347,12 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
 - `runwayQueues` (STA-1727): a service's full run refuses `queue_unprovisioned` for each job queue (`default` aside)
   that an environment of the member's `runway.yaml` leaves out of `queues`; the file is read with `yamlKeyTree`, a
   block-YAML key reader, for the same reason as `encoreApp`.
+- `readRunwayQueues` (STA-2050): discovery reads each environment's `queues` block of a service's `runway.yaml` into
+  `MemberIR.queueSettings` (through `yamlValue`, for the same reason). `emitEncoreQueues` sets each queue's
+  subscription `ackDeadline` to the largest `visibilityTimeoutSeconds` any environment gives it (`queueAckDeadline`):
+  Encore parses subscription settings when it builds the app, so one value serves every environment. Encore always
+  dead-letters a subscription's message once its retries run out (a TypeScript subscription refuses a negative
+  `maxRetries`), so `checkQueueSettings` warns `queue_dlq_unsupported` for a `dlq: false` on a job queue.
 - `compileMigrations` (stackra-248, ADR 0159): a service's full run imports each migration file (Node 24 strips the
   types) and compiles it with the member's own `@stackra/database` `compileMigration`, so the classes and the compiler
   share one kind registry. Own migrations are `src/modules/<key>/database/migrations/`; a declared package's are its
