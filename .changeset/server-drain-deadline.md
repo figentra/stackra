@@ -7,3 +7,6 @@ The server `createApp` bounds its shutdown drain. `drain()` waits for calls in f
 `DrainTimeoutError` (the count still running and the deadline) through the `ErrorReporter` and resolves, so `close()`
 and SIGTERM still run the shutdown hooks (the outbox flush among them) before the platform's SIGKILL. Before, one hung
 call kept the process alive until it was killed. `DrainTimeoutError` is exported from `@stackra/app/server`.
+
+A long-lived response such as a server-sent events stream counts as a call in flight, so it is cut when the drain
+deadline passes.
