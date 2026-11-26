@@ -1,0 +1,84 @@
+# Stackra file contract:
+# Purpose: the bug report issue form: versions, runtime, what happened, a reproduction and the error output (STA-314).
+# Owner: docs-governance
+# Secrets: forbidden
+name: Bug report
+description: Something in a Stackra package, the CLI or the docs site does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Please search the [existing issues](https://github.com/stackra-inc/stackra/issues?q=is%3Aissue) first.
+        A security vulnerability goes to [private reporting](https://github.com/stackra-inc/stackra/security/advisories/new), never here.
+  - type: input
+    id: packages
+    attributes:
+      label: Packages and versions
+      description: The `@stackra/*` packages involved and their version (`pnpm why @stackra/<name>`). All Stackra packages share one version.
+      placeholder: "@stackra/cli 0.33.1, @stackra/actions 0.33.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Where it runs
+      multiple: true
+      options:
+        - Node.js service (generated Encore app)
+        - Stackra CLI (stackra gen, dev, new …)
+        - Browser (React)
+        - React Native / Expo
+        - Electron
+        - Docs site
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Node.js version, package manager and version, operating system.
+      placeholder: "Node.js 24.22.0, pnpm 12.16.1, macOS 26.3"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did and what you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: What you expected instead, with a link to the documentation that says so if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps, or a link to a small repository, that shows the problem.
+      placeholder: |
+        1. In a service with this module: …
+        2. Run: …
+        3. See: …
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output
+      description: The full error and stack trace, as text. It is formatted as code automatically.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues and this is not a duplicate.
+          required: true
+        - label: This report holds no secret value (key, token, password, `.env` contents) and no licence token.
+          required: true

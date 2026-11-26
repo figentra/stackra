@@ -1,0 +1,33 @@
+# Stackra file contract:
+# Purpose: the question issue form, for a usage question the documentation does not answer (STA-314).
+# Owner: docs-governance
+# Secrets: forbidden
+name: Question
+description: Ask how to do something the documentation does not answer.
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the [documentation](https://docs.stackra.figentra.com) and the [existing issues](https://github.com/stackra-inc/stackra/issues?q=is%3Aissue) first.
+        A question that shows a gap in the docs becomes a documentation fix.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What you are trying to do and where you are stuck.
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you tried
+      description: The code, commands or pages you already tried, and what happened.
+    validations:
+      required: true
+  - type: input
+    id: packages
+    attributes:
+      label: Packages and versions
+      description: The `@stackra/*` packages involved and their version, if any.
+      placeholder: "@stackra/actions 0.33.1"
