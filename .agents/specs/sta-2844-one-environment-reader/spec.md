@@ -122,5 +122,6 @@ that the safety pull requests rebase onto.
 
 - 2026-11-26 → Clarified (owner's go; the CTO's verdict; `encore test`'s report read in the container)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing (built in this branch; awaiting the CTO's approval)
