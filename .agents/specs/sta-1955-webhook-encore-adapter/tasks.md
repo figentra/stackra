@@ -25,7 +25,7 @@ description: "Tasks for STA-1955: the inbound webhook route is exposed through E
 
 - [x] T003 [US1] Test first: two adapters per Integration, own and hosted; no wildcard route; nothing without webhooks in `packages/developer/gen/src/core/functions/__tests__/emit-encore-api.function.test.ts` — covers: FR-001, FR-002, FR-003, FR-004, P-001, P-002, P-003, P-004, AC-001, AC-003, AC-004 — route: tests — deps: T002
 - [x] T004 [US1] Write the adapters from `webhookIntegrations(ir)` in `packages/developer/gen/src/core/functions/emit-encore-api.function.ts`, and say who writes which adapter in the file contracts of `packages/developer/gen/src/core/functions/emit-encore-inbox.function.ts` and `packages/developer/gen/src/core/functions/emit-webhooks.function.ts` — covers: FR-001, FR-002, FR-003, FR-004, P-001, P-002, P-003, P-004, EC-01, AC-001, AC-003, AC-004 — route: package — deps: T003
-- [x] T005 [US2] Test first, then accept and pass `credentials` in the generated `answerCall` in `packages/developer/gen/src/core/functions/emit-encore-http.function.ts` (test: `emit-encore-http.function.test.ts`; every `http.ts` golden under `packages/developer/gen/__golden__/` gains the line) — covers: FR-006, EC-04, AC-002 — route: package — deps: T004
+- [x] T005 [US2] Test first, then accept and pass `credentials` in the generated `answerCall` in `packages/developer/gen/src/core/functions/emit-encore-http.function.ts` (test: `emit-encore-http.function.test.ts`; every generated http.ts golden under `packages/developer/gen/__golden__/` gains the line) — covers: FR-006, P-006, EC-04, AC-002 — route: package — deps: T004
 
 ## Phase 3: End to end through gen
 

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-26
 
-**Status**: Implementing <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
+**Status**: Tasked <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
 
 **Tier**: feature
 
@@ -135,11 +135,9 @@ provider JWT>`, **When** `serveGuardedCall` runs it, **Then** no credential is v
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
-- **AC-001**: WHEN a service has a webhook Integration THE gen SHALL write its two raw adapters behind the request
-  guards and the body cap.
-- **AC-002**: WHEN a provider sends its own `Authorization` header THE call SHALL run anonymous without a 401, and the
-  receiver SHALL get the header.
-- **AC-003**: IF two services of one app receive webhooks THEN their routes SHALL NOT clash.
+- **AC-001**: WHEN a service has a webhook Integration THE gen SHALL write its two raw adapters behind the request guards and the body cap.
+- **AC-002**: WHEN a provider sends its own `Authorization` header THE call SHALL run anonymous without a 401, and the receiver SHALL get the header.
+- **AC-003**: IF two services of one app receive webhooks THEN THE gen SHALL write no route that both services claim.
 - **AC-004**: WHERE a service receives no webhook THE gen SHALL write no webhook adapter.
 
 ## Success Criteria _(mandatory)_
@@ -186,5 +184,4 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-1955 spec, batch 21) · written after the fact from the diff of PR #1146
 - 2026-11-26 · Draft → Clarified · Claude (STA-1955 spec, batch 21) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-1955 spec, batch 21) · plan.md
-- 2026-11-26 · Planned → Tasked · Claude (STA-1955 spec, batch 21) · tasks.md
-- 2026-11-26 · Tasked → Implementing · Claude (STA-1955 spec, batch 21) · T001 to T007 are the commit 3b4149aee on the branch
+- 2026-11-26 · Planned → Tasked · Claude (STA-1955 spec, batch 21) · tasks.md; the tasks marked done are already on the branch (PR); Implementing waits for the approver's Planned approval (ADR 0502)

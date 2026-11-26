@@ -52,6 +52,7 @@ Stackra credential. `emitEncoreHttp` writes the option into the generated `answe
 - **P-003**: no generated path contains `*rest` under `/webhooks` — Validates: FR-003
 - **P-004**: a service without webhook Integrations has no webhook adapter — Validates: FR-004
 - **P-005**: with `credentials: "ignore"`, `CallAuthenticator` is never called and the actor is anonymous — Validates: FR-005
+- **P-006**: for every endpoint the generated `answerCall` serves, the `credentials` it states reaches `serveGuardedCall` unchanged, and an endpoint that states none passes `undefined` — Validates: FR-006
 
 ## Architecture overview
 
@@ -73,24 +74,23 @@ it to `serveGuardedCall`. The runtime treats `credentials: "ignore"` from the ad
 ```text
 packages/developer/gen/
 ├── README.md
-├── __golden__/README.md
-├── __golden__/webhook-route/ (new fixture)
-├── __golden__/*/expected/services/*/stackra-encore/*/http.ts.golden
-└── src/{core/functions/{emit-encore-api,emit-encore-http,emit-encore-inbox,emit-webhooks}.function.ts, node/__tests__/golden.test.ts} (+ tests)
+├── package.json
+├── __golden__/
+└── src/
+    ├── core/functions/
+    │   ├── emit-encore-api.function.ts
+    │   ├── emit-encore-http.function.ts
+    │   ├── emit-encore-inbox.function.ts
+    │   ├── emit-webhooks.function.ts
+    │   └── __tests__/
+    └── node/__tests__/golden.test.ts
 packages/runtime/app/src/server/
-├── functions/serve-guarded-call.function.ts (+ test)
+├── functions/
+│   ├── serve-guarded-call.function.ts
+│   └── __tests__/
 └── types/guarded-call-options.type.ts
 .changeset/webhook-route-encore-adapters.md
 ```
-
-- `packages/developer/gen/src/core/functions/emit-encore-api.function.ts`
-- `packages/developer/gen/src/core/functions/emit-encore-http.function.ts`
-- `packages/developer/gen/src/core/functions/emit-encore-inbox.function.ts`
-- `packages/developer/gen/src/core/functions/emit-webhooks.function.ts`
-- `packages/runtime/app/src/server/functions/serve-guarded-call.function.ts`
-- `packages/runtime/app/src/server/types/guarded-call-options.type.ts`
-- `packages/developer/gen/README.md`, `packages/developer/gen/__golden__/README.md`,
-  `.changeset/webhook-route-encore-adapters.md`
 
 ## Data models and migrations
 
