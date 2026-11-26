@@ -7,7 +7,8 @@
 ## Summary
 
 Write one upgrade note per release line from 0.30 to 0.33 under `apps/docs/src/docs/customers/upgrading/`, from the
-changelog entries, with an index and a "Versions to skip" table. Add the `release-notes` rule to `@stackra/repo-checks`'
+changelog entries, and one for the pending 0.34 line from its pending changesets (STA-2797 marks a break in
+`IdempotencyStore`), with an index and a "Versions to skip" table. Add the `release-notes` rule to `@stackra/repo-checks`'
 `config` phase: `breakingReleases` finds each break-marked `@stackra/*` release from 0.30.0 on (and the pending one),
 `checkReleaseNotes` wants its line's note with the five sections and a breaking patch named.
 
@@ -88,6 +89,7 @@ apps/docs/src/docs/customers/upgrading/0-30.mdx
 apps/docs/src/docs/customers/upgrading/0-31.mdx
 apps/docs/src/docs/customers/upgrading/0-32.mdx
 apps/docs/src/docs/customers/upgrading/0-33.mdx
+apps/docs/src/docs/customers/upgrading/0-34.mdx
 apps/docs/src/docs/customers/changelog.mdx
 apps/docs/src/docs/runbooks/release.mdx
 apps/docs/src/docs/adr/0013-versioning-and-release.mdx

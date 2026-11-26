@@ -12,12 +12,16 @@ upgrade note here: what changes, the pins, the steps, how to verify and how to r
 
 ## The notes
 
-| Move            | Note                                         | Work for an app                                                                                         |
-| --------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 0.29.x → 0.30.x | [Upgrade to 0.30](/customers/upgrading/0-30) | the most: area routes, tenant-owned tables with migrations that refuse, custom drivers, Encore app root |
-| 0.30.x → 0.31.x | [Upgrade to 0.31](/customers/upgrading/0-31) | an automation quota driver; renamed tables for plural model names                                       |
-| 0.31.x → 0.32.x | [Upgrade to 0.32](/customers/upgrading/0-32) | only a service that injects `Signer`                                                                    |
-| 0.32.x → 0.33.1 | [Upgrade to 0.33](/customers/upgrading/0-33) | `stackra encore:prepare` and `stackra gen` in each service                                              |
+| Move                      | Note                                         | Work for an app                                                                                         |
+| ------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 0.29.x → 0.30.x           | [Upgrade to 0.30](/customers/upgrading/0-30) | the most: area routes, tenant-owned tables with migrations that refuse, custom drivers, Encore app root |
+| 0.30.x → 0.31.x           | [Upgrade to 0.31](/customers/upgrading/0-31) | an automation quota driver; renamed tables for plural model names                                       |
+| 0.31.x → 0.32.x           | [Upgrade to 0.32](/customers/upgrading/0-32) | only a service that injects `Signer`                                                                    |
+| 0.32.x → 0.33.1           | [Upgrade to 0.33](/customers/upgrading/0-33) | `stackra encore:prepare` and `stackra gen` in each service                                              |
+| 0.33.1 → 0.34.0 (pending) | [Upgrade to 0.34](/customers/upgrading/0-34) | only a custom `IdempotencyStore` (new signatures, `extend`) or a member that builds the PWA target      |
+
+A release marked pending is not published yet: its note is written ahead of it, from the changesets
+waiting on `main`, and is final when the release ships.
 
 To cross several releases, apply the notes in order, one release line at a time, and verify after
 each. Breaks released before 0.30.0 have no note; read the packages' `CHANGELOG.md` for those.
