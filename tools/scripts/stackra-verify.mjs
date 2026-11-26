@@ -136,14 +136,14 @@
  *   could alter the kept base or store image layers on disk without changing their ids.
  *   Start it directly from systemd, never through secrets-exec: it needs no stackra-bot secret, only its own key file.
  * Runbook (box 1): the unit runs as `User=stackra-verifyd` from the code clone /work/stackra/service with
- *     ExecStart=/usr/local/bin/node tools/scripts/stackra-verify.mjs daemon -R figentra/stackra -R figentra/stackra-template
+ *     ExecStart=/usr/local/bin/node tools/scripts/stackra-verify.mjs daemon -R stackra-inc/stackra -R stackra-inc/stackra-template
  *   and these settings (none is a secret; the files they name are):
  *     STACKRA_VERIFY_HOME=/work/stackra/verify (the daemon's home; set to 0711 at start, so the verify user can reach
  *       a run's inputs by name and never list it), STACKRA_VERIFY_RUN_AS=stackra-verify (uid 1003),
  *       STACKRA_VERIFY_DOCKER_HOST (that user's rootless Docker), STACKRA_VERIFY_DOCKER_ROOT=/work/stackra/verify-docker/data,
  *       STACKRA_VERIFY_BASE_IMAGE (name@sha256:…), STACKRA_VERIFY_CPUS=8 (a number, `docker --cpus`),
  *       STACKRA_VERIFY_CPUSET=0-7 (a CPU list, `docker --cpuset-cpus`), STACKRA_VERIFY_MEMORY, STACKRA_VERIFY_PIDS;
- *     STACKRA_VERIFY_APP_ID=5907714, STACKRA_VERIFY_INSTALLATION_ID=185462179, STACKRA_VERIFY_KEY_FILE (the App's
+ *     STACKRA_VERIFY_APP_ID=5907714, STACKRA_VERIFY_INSTALLATION_ID=186048982, STACKRA_VERIFY_KEY_FILE (the App's
  *       private key) and STACKRA_VERIFY_LICENCE_FILE=/etc/stackra-verify/uniwind.token (the Uniwind Pro CI token):
  *       /etc/stackra-verify is 0750 root:stackra-verifyd and each file in it 0400 stackra-verifyd;
  *     STACKRA_VERIFY_SHA256_ACTIONLINT, _ZIZMOR, _OSV_SCANNER, _GITLEAKS, _SHFMT, _SQUAWK, _SHELLCHECK (required: the
@@ -287,7 +287,7 @@ import {
   CODEQL_CHECK,
 } from "./pr-merge.mjs";
 
-export const DEFAULT_REPO = "figentra/stackra";
+export const DEFAULT_REPO = "stackra-inc/stackra";
 export const INSTALL_COMMAND =
   "pnpm install --frozen-lockfile --store-dir /store --ignore-scripts --ignore-pnpmfile";
 
