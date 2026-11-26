@@ -24,6 +24,18 @@ release runbook's rules table said "Script live; not in `verify`". Nothing in `p
 that a changed published member carried a changeset, so a package's code could change while its version and changelog
 did not, part of what let 0.33.0 and the partial 0.33.1 out.
 
+### Sources
+
+- `package.json` (`verify`, `verify:affected`, `changeset:status` before this change), `.changeset/config.json`
+  (`baseBranch`, `ignore`, the `fixed` group), `pnpm-workspace.yaml` (`catalog`, `catalogs`)
+- `apps/docs/src/docs/adr/0013-versioning-and-release.mdx` (Enforcement), ADR 0177 decision PK4, ADR 0502 (tiers),
+  `apps/docs/src/docs/runbooks/release.mdx` (rules table: "Script live; not in `verify`")
+- stackra#766 and #770 (one changeset for another package let a change ship with no note); STA-2043; PR 1128's review
+  notes (version-branch prefix match, empty-changeset waiver, catalog bumps)
+- FR-001 to FR-007: `tools/scripts/changeset-check.mjs` and its tests on this branch, the PR 1128 diff against `main`
+- Commands: `changeset status --since=main` and `node tools/scripts/changeset-check.mjs` on box 2
+  (`/work/stackra-b2/wt/sta-2604.proof2.sh`)
+
 ## Problem
 
 `changeset status` alone is not the check the rule needs: it passes when any changeset is pending, so one changeset
@@ -108,8 +120,18 @@ members (files plus catalog entries), reads the changesets the change adds or ed
 
 ### Files and folders
 
-`tools/scripts/changeset-check.mjs`, `tools/scripts/__tests__/changeset-check.test.mjs`, root `package.json`,
-`.github/workflows/ci.yml`, `.github/workflows/testbed-fallback.yml`, and the docs listed in Impact.
+```text
+tools/scripts/
+├── changeset-check.mjs                    (new)
+└── __tests__/changeset-check.test.mjs     (new)
+.agents/specs/sta-2604-changeset-check/
+└── spec.md                                (new)
+.changeset/
+└── changeset-check-in-verify.md           (new)
+```
+
+Changed: root `package.json`, `.github/workflows/ci.yml`, `.github/workflows/testbed-fallback.yml`, and the docs and
+agent files listed in Impact and the tasks.
 
 ### Data models and migrations
 
@@ -118,7 +140,20 @@ None.
 ### Contracts
 
 `pnpm changeset:check [--base <ref>]`; exit 0 covered or skipped, 1 missing or invalid changeset, 2 usage or an
-unresolvable explicit base.
+unresolvable explicit base. The module's exports, for its tests:
+
+```js
+export function parseChangeset(text: string): { releases: { name: string; type: string }[]; summary: string } | { error: string };
+export function workspaceDirs(root: string, globs: string[]): string[];
+export function publishedMembers(root: string, config: { ignore?: string[] }): { name: string; dir: string; manifest: object }[];
+export function countsAsChange(rel: string, patterns?: string[]): boolean;
+export function changedCatalogEntries(before: unknown, after: unknown): Map<string, Set<string>>;
+export function catalogTouches(members: { name: string; manifest?: object }[], changed: Map<string, Set<string>>): Map<string, string[]>;
+export function check(input: { changed: string[]; members: { name: string; dir: string }[]; changesets: { file: string; text: string }[]; changedFilePatterns?: string[]; catalogTouched?: Map<string, string[]> }): { ok: boolean; missing: { name: string; files: string[] }[]; invalid: string[]; waivedBy: string[]; waived: string[]; ignoredWaivers: string[]; covered: string[] };
+export function resolveBase(root: string, explicit: string | undefined, baseBranch: string): { sha: string } | { skip: string } | { fail: string };
+export function pullRequestRepos(eventPath?: string): { headRepo?: string; baseRepo?: string } | undefined;
+export function run(root: string, opts?: { base?: string; headRef?: string; pullRequest?: { headRepo?: string; baseRepo?: string } }): number;
+```
 
 ### Error handling
 
