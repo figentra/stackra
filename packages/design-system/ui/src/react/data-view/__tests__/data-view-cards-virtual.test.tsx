@@ -3,8 +3,9 @@
  * Purpose: proves the web `DataViewCards` when virtualised: the cards become one named listbox of options named by
  *          their title, Enter on a card opens it, and with `infinite` paging a scroll near the end asks for the next
  *          page, and not when the scroll is far from it.
- * Boundary: the cards over a real `useCollection` in server mode, in jsdom; the element sizes and
- *           `IntersectionObserver` are stand-ins so React Aria's virtualiser has a viewport to fill.
+ * Boundary: the cards over a real `useCollection` in server mode, in jsdom; the element sizes (the viewport and the
+ *           scroll size a card is measured by) and `IntersectionObserver` are stand-ins so React Aria's virtualiser
+ *           has a viewport to fill and cards with a height.
  * Runtime: browser
  * Governing contract: data-collection plan (owner, 2026-10-29); ADR 0022 (test placement); STA-1371.
  */
@@ -67,6 +68,10 @@ describe("DataViewCards virtualised (web)", () => {
       vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(800);
     for (const key of ["clientHeight", "offsetHeight"] as const)
       vi.spyOn(HTMLElement.prototype, key, "get").mockReturnValue(400);
+    // The virtualiser measures each card by its scroll size, which jsdom reports as 0: a card would collapse to no
+    // height, the list to none, and no card would be drawn.
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(800);
+    vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(120);
   });
 
   afterEach(() => {
