@@ -84,6 +84,7 @@ import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
 import { emitEncoreBrokerMessage } from "#core/functions/emit-encore-broker-message.function";
+import { emitEncoreEnvironment } from "#core/functions/emit-encore-environment.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
 import { emitEncoreInbox } from "#core/functions/emit-encore-inbox.function";
@@ -307,6 +308,7 @@ export function generateMember(
   for (const [path, content] of optional) if (content !== undefined) files.push({ path, content });
   for (const encore of [
     emitEncoreService(ir),
+    emitEncoreEnvironment(ir),
     emitEncoreApi(ir, manifest),
     emitEncoreCronJobs(ir, manifest),
     emitEncoreDatabase(ir),

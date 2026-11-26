@@ -11,7 +11,10 @@
  *          request's W3C `traceparent` and the edge's request id), so the call's spans join the caller's trace and
  *          carry `requestId` (ADR 0184 decision 1, STA-1572). `/readyz` runs the given
  *          `health` indicators plus every `HealthIndicator` the container binds (each package's health driver),
- *          resolved once after boot.
+ *          resolved once after boot. The configuration reads `process.env` with `STACKRA_ENVIRONMENT` set to the
+ *          running environment (`runningEnvironment`) of the runtime the generated Encore `environment.ts` provided, so
+ *          a deployment that cannot set the variable (Encore Cloud) never reads as `dev`, and one that sets `dev` or
+ *          `test` fails boot (ADR 0212 decisions 1 and 4, STA-1571).
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
@@ -19,7 +22,8 @@
  * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263 (decisions 1, 5 and 12); ADR 0124; ADR 0143 as amended
  *                     by 0263 (lifecycle); ADR 0014 (decision 5: the runtime provides the connection); ADR 0260
  *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards);
- *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here).
+ *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here); ADR
+ *                     0212 (decisions 1 and 4: no action unaudited in a deployment), STA-1571.
  */
 import type { AnyClass, ModuleClass } from "@stackra/container";
 import { HealthIndicator, Tracer } from "@stackra/contracts";
@@ -28,7 +32,9 @@ import type { TraceCarrier } from "@stackra/contracts";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { bootApp } from "#core/functions/boot-app.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
+import { RUNTIME_ENVIRONMENT_HOST } from "#server/constants/runtime-environment-host.constant";
 import { answerProbe } from "#server/functions/answer-probe.function";
+import { runningEnvironment } from "#server/functions/running-environment.function";
 import { AppDrainingError } from "#server/errors/app-draining.error";
 import type { ServerApp } from "#server/types/server-app.type";
 import type { ServerAppOptions } from "#server/types/server-app-options.type";
@@ -40,14 +46,19 @@ const STOP_SIGNALS = ["SIGTERM", "SIGINT"] as const;
 /**
  * Boots `root` and returns its server app.
  *
- * @throws ConfigInvalidError or UnresolvedPortError (as a rejection) when boot fails.
+ * @throws ConfigInvalidError or UnresolvedPortError (as a rejection) when boot fails, ConfigInvalidError too when a
+ *         deployed runtime names `dev` or `test`.
  * @example
  * export const app = await createApp(CommerceModule, { wiring, boot });
  */
 export async function createApp(root: ModuleClass, options: ServerAppOptions): Promise<ServerApp> {
+  const environment = runningEnvironment(RUNTIME_ENVIRONMENT_HOST.current, process.env);
   const { container, reporter, wiring } = await bootApp(options.wiring, {
     roots: [root],
-    env: process.env,
+    env:
+      environment === undefined
+        ? process.env
+        : { ...process.env, STACKRA_ENVIRONMENT: environment },
   });
   const shutdown = new AbortController();
   await options.boot?.(container, { signal: shutdown.signal });
