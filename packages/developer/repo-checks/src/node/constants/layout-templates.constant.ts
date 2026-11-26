@@ -72,6 +72,7 @@ const STACKRA = Object.freeze([
   "stackra.lock.yaml",
 ]);
 
+/** The root entries of each preset's template, by preset id and preset package name. */
 export const LAYOUT_TEMPLATES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   neutral: Object.freeze(NEUTRAL),
   stackra: STACKRA,

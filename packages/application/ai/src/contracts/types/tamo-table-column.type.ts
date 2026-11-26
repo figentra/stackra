@@ -12,7 +12,7 @@ export interface TamoTableColumn {
   /** The row field the column reads. */
   readonly id: string;
 
-  /** The heading. */
+  /** The column's heading. */
   readonly label: string;
 
   /** The value type, for example `money` or `date`, so the renderer formats it; left out, the value is shown as is. */

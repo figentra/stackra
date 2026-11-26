@@ -4,7 +4,7 @@
  *          the generated app is gitignored, so the source commit alone has no app. The repository root is the Encore
  *          app root, holding every service member of the product as one app (Pub/Sub topics and subscriptions only
  *          work inside one app, and a relay imports its producers' topics). In a temporary checkout of the source
- *          commit it adds each service member's generated outputs (`.stackra/`) and every workspace package's build
+ *          commit it adds each service member's generated outputs (`.stackra/` and the Encore services in `stackra-encore/`) and every workspace package's build
  *          output (`dist/`, `.stackra/`), rewrites each service member's `#` imports (package.json `imports`) to
  *          relative paths through that member's own map, since Encore resolves neither `imports` nor a per-member
  *          tsconfig, drops the members' `__tests__` folders (Encore parses every TypeScript file under the root),
@@ -38,14 +38,20 @@ import { workspacePackages } from "#node/functions/workspace-packages.function";
 import type { EncoreDeployTree } from "#node/types/encore-deploy-tree.type";
 import type { EncoreDeployTreeRequest } from "#node/types/encore-deploy-tree-request.type";
 
-/** The generated Encore app file of a service member, from the member root. */
-const GENERATED_APP = join(".stackra", "encore", "encore.app");
+/** The generated Encore app file of a service member, at the member root (ADR 0091, decision 2 as amended 2026-11-09). */
+const GENERATED_APP = "encore.app";
+
+/**
+ * A service member's generated Encore services (`@stackra/gen`'s `ENCORE_SERVICES_DIR`), outside `.stackra`: Encore skips
+ * dot folders when it discovers services.
+ */
+const ENCORE_SERVICES = "stackra-encore";
 
 /** The build outputs a deploy tree carries from each workspace package and service member. */
-const OUTPUTS = ["dist", ".stackra"] as const;
+const OUTPUTS = ["dist", ".stackra", ENCORE_SERVICES] as const;
 
 /** The folders of a service member whose TypeScript files may import through `#` aliases. */
-const SOURCES = ["src", ".stackra"] as const;
+const SOURCES = ["src", ".stackra", ENCORE_SERVICES] as const;
 
 /** A static, re-exported, side-effect or dynamic import of a `#` alias: lead, quote, specifier. */
 const ALIAS_IMPORT = /(from\s+|import\s*\(\s*|import\s+)(["'])(#[^"']+)\2/g;
@@ -187,7 +193,8 @@ export async function encoreDeployTree(
       throw new RunwayUnresolvedError(
         `${unresolved.length} \`#\` import(s) resolve through no package.json imports entry: ${unresolved.slice(0, 5).join("; ")}`,
       );
-    copyFileSync(join(tree, members[0] as string, GENERATED_APP), join(tree, "encore.app"));
+    // The member root's encore.app is gitignored and outside the copied outputs, so it comes from the repository.
+    copyFileSync(join(repository, members[0] as string, GENERATED_APP), join(tree, "encore.app"));
 
     // The members' folders whole: rewritten sources, dropped tests and the copied outputs.
     await run("git", ["add", "--all", "--force", "--", ...members, ...added, "encore.app"], {

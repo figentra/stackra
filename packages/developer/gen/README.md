@@ -131,7 +131,8 @@ The endpoint convention and ADR 0305 rule 30 (STA-340): every derived route star
 action entry records `area`. `checkEndpoints` (full pass only) refuses `endpoint_collision` (two calls, own or hosted,
 on one method and path once parameter names are erased: `GET /app/orders/:orderId` and `GET /app/orders/:id`; each is
 named, and no `openapi.json` is written), `endpoint_versioned` (a `v<digits>` path segment, ADR 0118),
-`endpoint_area_mismatch` (a path neither `/<area>` nor under `/<area>/`), `endpoint_method_mismatch` (a query not on
+`endpoint_area_mismatch` (a path neither `/<area>` nor under `/<area>/`; a public call may sit under RFC 8615's
+`/.well-known/`), `endpoint_method_mismatch` (a query not on
 `GET`, an action on `GET`, or a transition overridden away from `PUT`), `job_without_system_actor` (a `job` without
 the `system` or `job` actor), `cron_input_invalid` (a `job.cron.input` property the input's JSON Schema does not have,
 a required one it omits, or a value of another JSON type; a run without `input` gets `{}`, and a schema without

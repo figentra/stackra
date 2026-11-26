@@ -134,6 +134,7 @@ describe("@stackra/contracts", () => {
       "defineService",
       "defineWorker",
       "isPublicId",
+      "kmsKeyContext",
       "mintPublicId",
       "verifySignature",
       "wrapScopeKey",

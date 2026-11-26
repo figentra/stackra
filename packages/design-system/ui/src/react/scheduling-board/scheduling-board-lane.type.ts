@@ -13,7 +13,7 @@ import type { SchedulingSpan } from "#core/types/scheduling-span.type";
 
 /** One resource row, laid out. */
 export interface SchedulingBoardLane {
-  /** The resource. */
+  /** The resource of the lane. */
   readonly resource: SchedulingBoardResource;
   /** How many parents it is under, for the indent. */
   readonly depth: number;

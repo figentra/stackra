@@ -46,7 +46,9 @@ jobs:
           version: 2026.11.4
           install_args: node pnpm
 
+      # The cache only speeds gen up: without this workflow's grant on ci/build/turbo, Regen runs without it.
       - name: Turborepo remote cache (sops)
+        continue-on-error: true
         uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build/turbo
@@ -58,7 +60,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
 
+      # A member whose gen refuses (an error in its own code) writes nothing; every other member's output is still
+      # regenerated and pushed, so one broken member never blocks the rest.
       - name: Gen (turbo run gen)
+        continue-on-error: true
         run: pnpm exec turbo run gen --filter='!@figentra/mobile' --filter='!@figentra/playground'
 
       # The patch, the pull request and the head it was made from. An empty patch means nothing to regenerate.

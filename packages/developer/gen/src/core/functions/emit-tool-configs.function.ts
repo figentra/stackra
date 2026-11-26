@@ -8,9 +8,10 @@
  *          registers the member's wiring for
  *          `createTestingModule`, imports each generated schemas file statically (through Vite, so its `#` imports and
  *          decorators resolve as in source; STA-2032) so a test file's top-level `X.create(...)` finds its schema, and pairs each `Factory<M>`
- *          with its model; and the root
+ *          with its model; the root
  *          `vitest.config.ts` shim that re-exports the generated config, since `vitest run` reads only the member root
- *          (STA-1296).
+ *          (STA-1296); and, for a service, `TYPECHECK_TSCONFIG`, its tsconfig without the `paths` that exist for
+ *          Encore (STA-2681).
  * Boundary: pure. Paths are relative to the member root, which is where the tools run; Vitest's root is set to it
  *           explicitly. Apps and workers get none here: their Vite, Expo, Metro and Wrangler files come with their
  *           `defineApp` sections. Factory pairs live only in the test setup, so a server never loads a factory.
@@ -27,6 +28,7 @@ import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { ROOT_TSDOWN_SHIM } from "#core/constants/root-tsdown-shim.constant";
 import { ROOT_VITEST_SHIM } from "#core/constants/root-vitest-shim.constant";
+import { TYPECHECK_TSCONFIG } from "#core/constants/typecheck-tsconfig.constant";
 import { importLines } from "#core/functions/import-lines.function";
 import { schemaModules } from "#core/functions/schema-modules.function";
 import { tokenExpression } from "#core/functions/token-expression.function";
@@ -38,6 +40,15 @@ import type { MemberIR } from "#core/types/member-ir.type";
 /** A short string array on one line, as oxfmt writes it in JSON (`["a", "b"]`). */
 const inline = (items: readonly string[]): string =>
   `[${items.map((item) => JSON.stringify(item)).join(", ")}]`;
+
+/** The service preset's `include` (`@stackra/typescript-config/service`), from `.stackra/`. */
+const SERVICE_TYPECHECK_INCLUDE = [
+  "../src",
+  "../stackra.config.ts",
+  "../.stackra/gen",
+  "../.stackra/entry",
+  "../.stackra/*.config.ts",
+];
 
 /**
  * The tool configs of `ir`.
@@ -274,10 +285,28 @@ export function emitToolConfigs(
     "",
   ].join("\n");
 
+  // A service's tsconfig carries `paths` for Encore; tsc would apply them to every package the service compiles, so its
+  // typecheck reads the same tsconfig with none, and each package's `#` imports resolve through its own package.json.
+  // The service preset's `include` names its files from `${configDir}`, which is this config's folder here, so this one
+  // names the same files from the member root. A wildcard would not do: tsc's `**` skips dot folders, and losing
+  // `.stackra/gen` drops the entity augmentations gen writes there.
+  const typecheckTsconfig = [
+    "{",
+    `  "$comment": ${JSON.stringify(`${GENERATED_NOTICE}; from the member's tsconfig. Purpose: the typecheck program of a service: its tsconfig without the paths that exist for Encore.`)},`,
+    `  "extends": "../tsconfig.json",`,
+    `  "include": ${inline(SERVICE_TYPECHECK_INCLUDE)},`,
+    `  "compilerOptions": {`,
+    `    "paths": {}`,
+    `  }`,
+    "}",
+    "",
+  ].join("\n");
+
   return [
     ...(entries.length > 0 ? [{ path: ".stackra/tsdown.config.ts", content: tsdown }] : []),
     { path: ".stackra/vitest.config.ts", content: vitest },
     { path: ".stackra/vitest.setup.ts", content: setup },
+    ...(ir.layout === "service" ? [{ path: TYPECHECK_TSCONFIG, content: typecheckTsconfig }] : []),
     { path: ROOT_VITEST_SHIM, content: shim },
     // A service builds nothing with tsdown (Encore builds it at deploy), so only a package gets the shim.
     ...(entries.length > 0 && ir.layout === "package"

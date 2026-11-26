@@ -8,6 +8,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0416; ADR 0146 as amended; ADR 0294 (decisions 19 and 26).
  */
+import "#core/types/signer-driver-names.type";
+
+import type { DriverName } from "@stackra/container";
+import type { Signer } from "@stackra/contracts";
 import { registerSchemas, Schema } from "@stackra/validation";
 
 import { SIGNER_CONFIG_SCHEMA } from "#core/constants/signer-config-schema.constant";
@@ -17,11 +21,15 @@ import { SIGNER_CONFIG_SCHEMA } from "#core/constants/signer-config-schema.const
  *
  * @example
  * export class SignerConfig extends BaseSignerConfig {
+ *   override driver = "kms" as const;
  *   override keyId = "usage-2026";
  *   override kmsKeyId = "alias/usage-signing";
  * }
  */
 export class SignerOptions extends Schema {
+  /** Which `Signer` driver runs: `ephemeral` (a key pair in process, dev and tests) or `kms` (production). */
+  driver: DriverName<Signer> = "ephemeral";
+
   /** The id each signature names, so a verifier picks the key; empty means the KMS key id, or `ephemeral`. */
   keyId = "";
 

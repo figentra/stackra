@@ -40,10 +40,12 @@ export class MemoryNotificationPreferencesClientDriver extends Driver(
     return this;
   }
 
+  /** The rows seeded for `scope`, or none. */
   get(scope: Scope): Promise<readonly NotificationPreferenceRow[]> {
     return Promise.resolve(this.rows.get(scope) ?? []);
   }
 
+  /** Applies `changes` to `scope`'s rows and records the save; refuses a missing or locked channel. */
   set(scope: Scope, changes: Changes): Promise<void> {
     const rows = this.rows.get(scope) ?? [];
     for (const change of changes) {

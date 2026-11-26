@@ -20,7 +20,7 @@ const K = DITHER_ART_KEYS.dither_art.core;
 /** The kit's poster, one per scheme. */
 const POSTER = { light: "/posters/strata-light.png", dark: "/posters/strata-dark.png" } as const;
 
-/** DitherArt: Core. */
+/** The DitherArt demo: Core. */
 export default function Core() {
   const t = useCatalogueText(MESSAGES.en);
   return (

@@ -15,6 +15,9 @@ import type { SignerPublicKey } from "#core/types/signer-public-key.type";
 
 /** Signs with one key. */
 export abstract class Signer extends Port {
+  /** Type-only port key, so `DriverName<Signer>` narrows to this port's drivers. */
+  declare readonly "~key": "contracts.Signer";
+
   /** A detached ES256 signature of `message`. */
   abstract sign(message: Uint8Array): Promise<Signature>;
 

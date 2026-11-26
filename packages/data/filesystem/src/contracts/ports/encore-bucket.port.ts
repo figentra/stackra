@@ -3,7 +3,7 @@
  * Purpose: the `EncoreBucket` port: the slice of an Encore object-storage `Bucket` the `encore_bucket` disk uses, so
  *          this package drives an Encore bucket without importing `encore.dev`.
  * Boundary: an abstract class that is its own token, keyed `filesystem.EncoreBucket`. The generated Encore app
- *           (`.stackra/encore`, ADR 0091 and 0124) declares the bucket and binds a driver that forwards each call to
+ *           (`stackra-encore`, ADR 0091 and 0124) declares the bucket and binds a driver that forwards each call to
  *           it (`upload` takes `Buffer.from(data)` there). The method names and shapes are Encore's. `signedUploadUrl`
  *           was added for the disk's signed uploads (stackra-226); gen's bucket driver forwards it like the rest.
  * Runtime: isomorphic
@@ -16,7 +16,7 @@ import { Port } from "@stackra/contracts";
  * An Encore bucket, as the `encore_bucket` disk sees it.
  *
  * @example
- * // generated in .stackra/encore
+ * // generated in stackra-encore
  * export class FilesBucketDriver extends Driver(EncoreBucket) {
  *   upload(name: string, data: Uint8Array, options?: { contentType?: string }) {
  *     return files.upload(name, Buffer.from(data), options);

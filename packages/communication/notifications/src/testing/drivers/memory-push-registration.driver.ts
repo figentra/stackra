@@ -38,6 +38,7 @@ export class MemoryPushRegistrationDriver extends Driver(PushRegistration) {
     return this;
   }
 
+  /** Records `input` once per idempotency key when permission is granted; resolves to the set answer. */
   register(input: Input): Promise<PushPermission> {
     const isRepeat = input.idempotencyKey !== undefined && this.keys.has(input.idempotencyKey);
     if (this.answer === "granted" && !isRepeat) {

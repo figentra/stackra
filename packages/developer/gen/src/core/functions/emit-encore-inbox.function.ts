@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreInbox`, a service's Encore adapter of the cross-app inbox (`.stackra/encore/<member>/inbox.ts`):
+ * Purpose: `emitEncoreInbox`, a service's Encore adapter of the cross-app inbox (`stackra-encore/<member>/inbox.ts`):
  *          one `api.raw` endpoint, `POST /events/inbox`, exposed and outside session auth, that reads the raw request
  *          body, builds a fetch `Request` with the method and headers, and answers through `answerHttp` with
  *          `InboundEventsController#handle`'s status.
@@ -13,6 +13,7 @@
  *                     0295 (decision 8: the adapters reach the member through `handlers`); STA-1910.
  */
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -22,7 +23,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * The Encore inbox adapter of a service, or undefined when it has no inbox.
  *
  * @example
- * emitEncoreInbox(ir)?.path; // ".stackra/encore/billing/inbox.ts"
+ * emitEncoreInbox(ir)?.path; // "stackra-encore/billing/inbox.ts"
  */
 export function emitEncoreInbox(ir: MemberIR): GeneratedFile | undefined {
   if (inboxProducersOf(ir).length === 0) return undefined;
@@ -35,7 +36,7 @@ export function emitEncoreInbox(ir: MemberIR): GeneratedFile | undefined {
     runtime: "node",
   });
   return {
-    path: `.stackra/encore/${ir.member}/inbox.ts`,
+    path: `${encoreServiceFolder(ir.member)}/inbox.ts`,
     content: [
       header,
       ...encoreDatabaseImport(ir),
