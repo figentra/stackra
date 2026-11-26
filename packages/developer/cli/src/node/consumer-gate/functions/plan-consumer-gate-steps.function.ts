@@ -4,12 +4,13 @@
  *          (service package names, `test:int` and `validate` scripts): install, build-deps, gen per service,
  *          typecheck, lint, build, test, test:int per service, then the repo-own format, spell and validate (plus `leak`
  *          after install in pack mode). A step the product has no script for is planned with a
- *          skip reason.
+ *          skip reason; a missing `package.json` (a scaffold that was not created, or a dry run of one) reads as one
+ *          with no name and no scripts.
  * Boundary: reads `package.json` files under `root`; starts nothing.
  * Runtime: node
- * Governing contract: ADR 0500 (decision 3); STA-1813.
+ * Governing contract: ADR 0500 (decision 3); STA-1813; STA-2705.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { CONSUMER_GATE_INSTALL_FLAGS } from "#node/consumer-gate/constants/consumer-gate-install-flags.constant";
@@ -31,8 +32,12 @@ export function planConsumerGateSteps(input: {
   readonly mode?: ConsumerGateMode;
 }): ConsumerGateStepPlan[] {
   const { root, services, steps, mode = "link" } = input;
-  const read = (dir: string): ConsumerGatePackageJson =>
-    JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8")) as ConsumerGatePackageJson;
+  const read = (dir: string): ConsumerGatePackageJson => {
+    const file = join(root, dir, "package.json");
+    return existsSync(file)
+      ? (JSON.parse(readFileSync(file, "utf8")) as ConsumerGatePackageJson)
+      : {};
+  };
   const names = services.map((service) => read(`services/${service}`).name ?? service);
   const own = names.map((name) => `--filter=${name}`);
   const turbo = (task: string): string[] => [

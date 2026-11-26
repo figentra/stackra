@@ -7,6 +7,7 @@
  */
 import type { ConsumerGateEnvironment } from "#node/consumer-gate/types/consumer-gate-environment.type";
 import type { ConsumerGateMode } from "#node/consumer-gate/types/consumer-gate-mode.type";
+import type { ConsumerGatePin } from "#node/consumer-gate/types/consumer-gate-pin.type";
 import type { ConsumerGateStepResult } from "#node/consumer-gate/types/consumer-gate-step-result.type";
 
 /** The summary of one product run. */
@@ -28,6 +29,9 @@ export type ConsumerGateSummary = {
 
   /** The commit the product is pinned to. */
   readonly ref: string;
+
+  /** How old the pin is, from the matrix `pinned` date. */
+  readonly pin: ConsumerGatePin;
 
   /** The core tree's folder and the commit it is at. */
   readonly core: { readonly dir: string; readonly sha: string | undefined };

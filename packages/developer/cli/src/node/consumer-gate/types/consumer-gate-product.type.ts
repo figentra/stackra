@@ -1,34 +1,45 @@
 /**
  * Stackra file contract:
- * Purpose: `ConsumerGateProduct`, one product of the consumer gate matrix: repository, its pin, the services to gate
- *          and the services overlaid.
+ * Purpose: `ConsumerGateProduct`, one consumer of the consumer gate matrix: repository, its pin and the date it was
+ *          set, the services to gate and the services overlaid; for a `scaffold`, the starter profile, the service
+ *          `stackra new service` adds and the fixture copied into it.
  * Boundary: type only.
  * Runtime: node
- * Governing contract: ADR 0500 (decision 3); ADR 0484; STA-1813.
+ * Governing contract: ADR 0500 (decision 3); ADR 0484; ADR 0515 (decision 3: `create --starter`); STA-1813; STA-2705.
  */
 
 /**
  * One consumer the gate runs against a core tree. A `product` has a `repo` and exactly one of `ref` and `pins`; a
- * `scaffold` has neither (it is made from core's own scaffold and the `fixture` folder).
+ * `scaffold` has a `repo` and a `ref` too, but they name the starter (the template `stackra create --starter` reads),
+ * and the app is created from it, never copied.
  */
 export type ConsumerGateProduct = {
-  /** `product` (default, a checkout of a product repository) or `scaffold` (a reference app made from core). */
+  /** `product` (default, a checkout of a product repository) or `scaffold` (an app `stackra create` makes). */
   readonly kind?: "product" | "scaffold";
 
-  /** The mode a run takes when `--mode` is not given; a scaffold is `pack`. */
+  /** The mode a run takes when `--mode` is not given; a scaffold is `pack` and refuses `link`. */
   readonly mode?: "link" | "pack";
 
-  /** A scaffold's fixture folder (an action, a model with a migration and a test), relative to the repository. */
+  /** A scaffold's fixture folder (an action, a model with a migration and a test), relative to the core tree. */
   readonly fixture?: string;
 
-  /** The product repository, `owner/name`. */
+  /** A scaffold's starter profile (`stackra create --profile`); `minimal` when absent. */
+  readonly profile?: string;
+
+  /** The service a scaffold adds with `stackra new service <name> --data`, the fixture copied into it. */
+  readonly service?: string;
+
+  /** The repository, `owner/name`: the product, or a scaffold's starter template. */
   readonly repo?: string;
 
-  /** The commit every service of the product is pinned to. */
+  /** The commit every service of the product is pinned to (a scaffold: the starter's commit). */
   readonly ref?: string;
 
   /** A commit per service, when the services sit on different branches; one run gates services of one pin. */
   readonly pins?: Readonly<Record<string, string>>;
+
+  /** The day the pin was last moved, `YYYY-MM-DD`; the summary flags a pin older than 14 days. */
+  readonly pinned?: string;
 
   /** The services to gate. */
   readonly services: readonly string[];

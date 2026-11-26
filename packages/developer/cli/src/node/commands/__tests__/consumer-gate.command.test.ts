@@ -3,11 +3,12 @@
  * Purpose: unit tests of `ConsumerGateCommand` on the console: the flags reach `runConsumerGate` resolved against the
  *          working directory with the default matrix and allow-list and the reproduce line, its exit code is the
  *          command's, the Markdown summary is printed (the summary is the `--json` data, a setup error `{ error }`),
- *          and a missing flag, a bad `--today`, `--mode` or step, or an unreadable matrix exits 2 before anything runs.
+ *          and a missing flag, a bad `--today`, `--mode` or step, or an unreadable matrix exits 2 before anything runs;
+ *          `--pin` prints the consumer's repository and pin (text and json) and runs nothing (STA-2705).
  * Boundary: test only; `runConsumerGate` is mocked, so no product is built; the matrix and allow-list are throwaway
  *           files in the OS temp directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); spec `.agents/specs/sta-1813-product-gate`; STA-1966.
+ * Governing contract: ADR 0022 (test placement); spec `.agents/specs/sta-1813-product-gate`; STA-1966; STA-2705.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -32,6 +33,7 @@ const SUMMARY: ConsumerGateSummary = {
   verdict: "GREEN",
   date: "2026-11-01",
   ref: "1139925",
+  pin: { pinned: "2026-11-01", ageDays: 0, stale: false },
   core: { dir: "/core", sha: "abc" },
   checkout: { sha: "1139925" },
   steps: [],
@@ -118,6 +120,42 @@ describe("ConsumerGateCommand", () => {
     const failedJson = await gate([...REQUIRED, "--json"]);
     expect(failedJson.exitCode).toBe(2);
     expect((failedJson.json as { data: unknown }).data).toEqual({ error: "core is not built" });
+  });
+
+  it("prints the pin with --pin and runs nothing, the common pin of --services when pinned per service", async () => {
+    writeFileSync(
+      join(root, "tools", "consumer-gate", "matrix.yaml"),
+      [
+        "products:",
+        "  billing:",
+        "    repo: figentra/billing",
+        "    ref: '1139925'",
+        "    pinned: '2026-11-01'",
+        "    services: [billing]",
+        "  split:",
+        "    repo: figentra/split",
+        "    pins: { a: abc1234, b: def5678 }",
+        "    services: [a, b]",
+        "",
+      ].join("\n"),
+    );
+    const text = await gate(["--product", "billing", "--pin"]);
+    expect(text.exitCode).toBe(0);
+    expect(text.stdout.trim()).toBe("figentra/billing 1139925");
+    const json = await gate(["--product", "billing", "--pin", "--json"]);
+    expect((json.json as { data: unknown }).data).toEqual({
+      product: "billing",
+      repo: "figentra/billing",
+      ref: "1139925",
+      pinned: "2026-11-01",
+    });
+    expect((await gate(["--product", "split", "--pin", "--services", "b"])).stdout.trim()).toBe(
+      "figentra/split def5678",
+    );
+    expect((await gate(["--product", "split", "--pin"])).exitCode).toBe(2);
+    expect((await gate(["--product", "nope", "--pin"])).exitCode).toBe(2);
+    expect((await gate(["--pin"])).exitCode).toBe(2);
+    expect(runConsumerGate).not.toHaveBeenCalled();
   });
 
   it("refuses a bad command line with 2 before the gate runs", async () => {
