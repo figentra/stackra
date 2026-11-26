@@ -46,13 +46,13 @@ trust verification on and network fetches off, and maps the store to `trusted` (
 
 ## Correctness properties
 
-- **P-001**: a store is `trusted` only with state `Trusted`, `signingCredential.trusted` and no failure — Validates:
-  AC-001, AC-002
-- **P-002**: the engine is never given an anchor or signer outside its validity window, nor a CA as a signer —
-  Validates: AC-005, EC-04, EC-05
-- **P-003**: with no usable anchor the reading is never `trusted` — Validates: AC-004
-- **P-004**: a store that does not validate yields no credential — Validates: AC-003
-- **P-005**: the pinned list is the upstream file — Validates: AC-007
+- **P-001**: `trusted` needs `Trusted` plus `signingCredential.trusted`, no failure — Validates: FR-002, AC-001, AC-002
+- **P-002**: no anchor or signer outside its validity, and no CA as a signer — Validates: FR-003, AC-005, EC-04, EC-05
+- **P-003**: with no usable anchor the reading is never `trusted` — Validates: FR-004, AC-004
+- **P-004**: a store that does not validate yields no credential — Validates: FR-001, AC-003
+- **P-005**: the pinned list is the upstream file — Validates: FR-006, AC-007
+- **P-006**: a read never fetches a remote manifest or an OCSP answer, and verifies trust — Validates: FR-005, AC-006
+- **P-007**: the configuration takes only PEM certificates as trusted signers — Validates: FR-007, AC-002
 
 ## Architecture overview
 
@@ -105,11 +105,16 @@ packages/data/media/
   src/node/drivers/c2pa-content-credentials.driver.ts
   src/node/drivers/__tests__/c2pa-content-credentials.driver.test.ts
   src/node/drivers/__tests__/c2pa-round-trip.test.ts
-  src/node/drivers/__tests__/c2pa-test-certificate.fixture.ts (from STA-2781, unchanged)
-  src/node/drivers/__tests__/png-chunk.fixture.ts (from STA-2781, unchanged)
-  src/node/drivers/__tests__/test-png.fixture.ts (from STA-2781, unchanged)
+  src/node/drivers/__tests__/c2pa-test-certificate.fixture.ts
+  src/node/drivers/__tests__/png-chunk.fixture.ts
+  src/node/drivers/__tests__/test-png.fixture.ts
+  stackra.manifest.json
+  package.json
 .changeset/c2pa-read-trusted-only.md
 ```
+
+The three fixtures come from STA-2781 (stackra#1083) unchanged, byte for byte. The build derives the
+`media.ContentCredentialTrust` schema into `stackra.manifest.json`.
 
 ## Data models and migrations
 
@@ -147,8 +152,9 @@ stay secrets.
 - AC-004, AC-006, P-002, EC-04, EC-05: `c2pa-content-credentials.driver.test.ts` (mocked engine, every platform).
 - P-001, EC-03, EC-06: `credential-trust-of.function.test.ts`.
 - AC-007: `c2pa-trust-list.constant.test.ts`; `certificates-in.function.test.ts`.
-- Revert checks: with `credentialTrustOf` accepting `Valid` as trusted, and with the no-anchor cap or the expiry filter
-  removed, the round trip and unit tests fail (recorded in the PR).
+- AC-002, P-007: `media-config-schema.constant.test.ts` (a `trustedSigners` entry without a PEM block is refused).
+- Revert checks: with `credentialTrustOf` accepting `Valid` as trusted, and with the no-anchor cap, the expiry filter,
+  the CA filter or `remoteManifestFetch: false` removed, the round trip and unit tests fail (recorded in the PR).
 
 ## Rollout
 

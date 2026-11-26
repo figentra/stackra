@@ -39,6 +39,8 @@ expired anchor, is never `trusted`).
   with `signingCredential.untrusted`; an anchor or an allowed end-entity certificate gives `Trusted` with
   `signingCredential.trusted`; the allowed list is dropped when no anchor list is given
 - STA-2781 (stackra#1083): the certificate and PNG fixtures and the real-engine round trip this change reuses
+- FR-001 to FR-007: the CTO decision of 2026-11-25 on STA-2791 (three states, the pinned list plus our own signers,
+  fail closed), the c2pa-node probe above, and this branch's diff and tests
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
@@ -75,7 +77,8 @@ expired anchor, is never `trusted`).
 
 - **Manifest**: the signed C2PA claim embedded in an image.
 - **Anchor**: a certificate authority the reader trusts; a signer whose chain reaches one is trusted.
-- **Allowed signer**: an end-entity certificate trusted directly (c2pa-rs `allowed_list`): our own signing certificates.
+- **Allowed signer** (our own signer): an end-entity certificate trusted directly (c2pa-rs `allowed_list`): the
+  configured signing certificate or one in `media.c2pa.trustedSigners`.
 - **Trusted**: c2pa-rs's `Trusted` state with `signingCredential.trusted` on the active manifest.
 - **Unverified**: the manifest validates (`Valid`) but no anchor vouches for the signer.
 - **Invalid**: the manifest does not validate (hash mismatch, bad signature).
@@ -167,8 +170,7 @@ signing certificate is rotated, while the earlier certificate is kept in `media.
 
 - **AC-001**: WHEN the signer chains to no allowed anchor (a self-made CA) THE `c2pa` driver SHALL return
   `{ trust: "unverified", credential }`.
-- **AC-002**: WHEN our configured signing certificate, or one in `trustedSigners`, signed the image THE `c2pa` driver
-  SHALL return `{ trust: "trusted", credential }`.
+- **AC-002**: WHEN one of our own signers signed the image THE `c2pa` driver SHALL return `{ trust: "trusted", credential }`.
 - **AC-003**: WHEN the image changed after signing THE `c2pa` driver SHALL return `{ trust: "invalid" }`.
 - **AC-004**: IF the trust list is empty, unreadable or throws THEN THE `c2pa` driver SHALL return `unverified`, even
   for our own signer.
