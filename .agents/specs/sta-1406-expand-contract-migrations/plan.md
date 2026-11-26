@@ -140,6 +140,8 @@ packages/data/database/
   src/node/functions/migrate.function.ts
   src/node/functions/rollback.function.ts
   src/node/functions/__tests__/migrate.function.test.ts
+  src/node/functions/__tests__/migrate.function.int.test.ts
+  src/node/functions/__tests__/backfill.function.int.test.ts
   src/node/index.ts
   src/node/__tests__/index.test.ts
 packages/developer/gen/src/core/constants/kind-files.constant.ts
@@ -185,7 +187,8 @@ role can read (tested with forced row-level security and an unprivileged role).
   database…"), `migrate.function.test.ts` (the two STA-1406 cases).
 - AC-004, AC-005: `blueprint.record.test.ts` (rename tests). AC-006: `schema.record.test.ts` ("keeps a renamed table
   under its old name…"). AC-007: `blueprint.record.test.ts` (check and exclusion tests) and the compile tests.
-- AC-009: `run-backfill.function.test.ts`, `backfill.base.test.ts`, `0009-create-backfill-runs.migration.test.ts`.
+- AC-009: `run-backfill.function.test.ts`, `backfill.base.test.ts`, `0009-create-backfill-runs.migration.test.ts`, and
+  on real Postgres `backfill.function.int.test.ts`; the runner's gate end to end in `migrate.function.int.test.ts`.
   AC-010: `schema.record.test.ts` ("refuses a contract step while a backfill has rows to reach…").
 - AC-011: the gen, coding-standard and repo-checks suites.
 - Revert checks: each behaviour's test fails with its line reverted (security_invoker, the gate condition, the sync

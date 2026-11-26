@@ -75,11 +75,11 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
 
 ## Acceptance criteria
 
-- **AC-001**: WHEN a migration drops a column, finishes a column or table rename, or drops a table, THE compiler SHALL
-  open the step's transaction with a release gate on the stated `{ after }` migration and add that id to the
-  migration's `after` edges.
-- **AC-002**: IF `stackra db migrate` runs in a forward-only environment and the `after` migration was applied by the
-  same run, or never, THEN THE gate SHALL refuse the migration before any change, naming the step and the release.
+- **AC-001**: WHEN a migration holds a contract step, THE compiler SHALL open the step's transaction with a release
+  gate on the migration the step names as its release (a dropped column or table, a finished rename), and add that id
+  to the migration's after edges.
+- **AC-002**: IF a forward-only run applied the named release itself THEN THE release gate SHALL refuse the migration
+  before any change, naming the step and the release; a release never applied is refused the same way.
 - **AC-003**: THE gate SHALL pass on a fresh database (the run started at version 0), in dev, preview and test, and
   wherever no `schema_migrations_history` exists (Encore's runner, tests).
 - **AC-004**: WHEN a column is renamed (expand), THE compiled step SHALL add the new column and a trigger that keeps the
@@ -91,14 +91,15 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
   the view.
 - **AC-007**: THE blueprint SHALL add a named check inline on a new table and `NOT VALID` plus a validation step on an
   existing one, add an exclusion constraint on a new table only, and drop an index concurrently in its own step.
-- **AC-008**: EVERY step SHALL keep a dev inverse derived from the migration's literals (a dropped table: none), and
-  every drop SHALL carry a reviewed squawk ignore, so the compiled files lint clean under CI's squawk rules.
-- **AC-009**: A `Backfill` SHALL run in keyset batches of the rows still `pending`, fill each batch and move its cursor
-  in one transaction, pause between batches, stop after `maxBatches`, resume from the ledger on the next run, and
-  record a failed batch's SQLSTATE without moving the cursor.
-- **AC-010**: `schema.requireBackfill` SHALL refuse a migration while any row of the table meets the pending predicate,
-  and pass once none does.
-- **AC-011**: gen, the lint kind table and the module-group check SHALL know `<name>.backfill.ts` under
+- **AC-008**: THE compiler SHALL keep a dev inverse for every step, derived from the migration's literals (a dropped
+  table has none), and write a reviewed squawk ignore above every drop, so the compiled files lint clean under CI's
+  squawk rules.
+- **AC-009**: WHEN a backfill runs, THE runner SHALL take keyset batches of the rows still pending, fill each batch and
+  move its cursor in one transaction, pause between batches, stop after the batch limit, resume from the ledger on the
+  next run, and record a failed batch's SQLSTATE without moving the cursor.
+- **AC-010**: WHILE any row of the table meets the pending predicate, THE backfill gate SHALL refuse the migration, and
+  it SHALL pass once none does.
+- **AC-011**: THE gen kind tables, the lint kind table and the module-group check SHALL know a backfill file under
   `database/backfills/`.
 
 ## Status history
