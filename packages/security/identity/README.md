@@ -341,13 +341,21 @@ ADR 0410 decision 4). Core ships no screen; a template's security settings call 
   service keeps which organisation it made for which tenant). Nothing in the request names an organisation, tenant or
   scope. A platform call, a scope with no organisation, or a host that binds only the memory driver answers
   `NotFoundError`, so nothing is changed by mistake.
+- `organizationOf(scope)` answers only for the exact node the organisation belongs to (the tenant's root), as an
+  `IdpOrganization` naming that node; a descendant (a branch) answers `undefined`. Both calls also refuse with
+  `NotFoundError` unless the answered node is the call's own scope, so a host lookup that walks up the path never lets
+  a grant held at a branch change how the whole tenant signs in (ADR 0294, ADR 0462).
 - A list the request leaves out (`externalProviderIds`, `secondFactors`) keeps what the organisation offers now.
 - Before any provider write, `loginPolicyRejectionOf` refuses a policy that would lock everyone out or names a provider
   outside `IdentityConfig.externalProviders`, as `LoginPolicyRejectedError` (`login_policy_rejected`) with a
   `LoginPolicyRejection` reason: `no_sign_in_method`, `no_second_factor` or `unknown_provider`. The labels are in
   `assets/lang/<locale>/identity.json` under `enums.login_policy_rejection`.
 - Setting is L3 with a fresh `aal2` step-up; grant `identity.login_policy.set` at the tenant's root to its owner and
-  administrator roles. The audit entry carries the rules and provider-side ids only, never a person.
+  administrator roles. The audit (the policy before and the one attempted) is recorded before the provider writes, so a
+  call refused part way still shows what it tried; it carries the rules and provider-side ids only, never a person.
+- `ZitadelIdpAdminDriver` writes the rules, providers and second factors as separate calls in a sign-in-safe order:
+  additions first, then a forced second factor or a method turned off, removals last. A write that fails part way
+  (`IdpAdminUnavailableError`, retryable) leaves a looser policy, never a lock-out.
 - Neither call is an MCP tool: how a whole tenant signs in is an administrator's decision.
 - The staff organisation's policy stays in infrastructure code (`@stackra/infra-identity`), not behind these calls.
 

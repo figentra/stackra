@@ -6,7 +6,8 @@
  *          shows the rules before an administrator changes them.
  * Boundary: read only; a user or a service holding `identity.login_policy.read` (L1). The organisation is the
  *           session's (the call's scope through the host's `IdpOrganizations`), never one named in the request; a
- *           platform call or a scope with no organisation is `NotFoundError`. Not an MCP tool.
+ *           platform call, a scope with no organisation, or one that is not the node the organisation belongs to (a
+ *           descendant) is `NotFoundError`. Not an MCP tool.
  * Runtime: node
  * Governing contract: ADR 0207 (decision 1); ADR 0410 (decision 4); ADR 0462; ADR 0294 (decisions 16 and 21);
  *                     STA-2817.
@@ -49,9 +50,13 @@ export class ShowLoginPolicyQuery extends Query({
 
   /** The policy of the call's scope's organisation. */
   async handle(_input: ShowLoginPolicyInput, ctx: QueryContext): Promise<LoginPolicyOutput> {
-    const organizationId =
+    const organization =
       ctx.scope === undefined ? undefined : await this.organizations.organizationOf(ctx.scope);
-    if (organizationId === undefined) throw NotFoundError.create();
+    // Only the node the organisation belongs to (the tenant's root) reaches its policy, whatever the host's lookup
+    // answers: a grant held at a descendant never reaches the whole tenant (ADR 0294, ADR 0462).
+    if (organization === undefined || organization.scopeId !== ctx.scope?.id)
+      throw NotFoundError.create();
+    const { organizationId } = organization;
     return LoginPolicyOutput.from(await this.idp.getLoginPolicy(organizationId));
   }
 }

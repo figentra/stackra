@@ -19,3 +19,9 @@ The policy's separate provider writes now run in a sign-in-safe order: the missi
 added first, a forced second factor or a sign-in method turned off is applied only after every addition succeeded,
 and the factors and providers no longer listed are removed last (a relaxed rule goes first). A write that fails part
 way leaves a looser policy, never a tenant forced to a factor it is not offered or with no way to sign in.
+
+`IdpOrganizations.organizationOf` answers an `IdpOrganization` (the organisation and the scope node it belongs to) and
+only for that exact node, never a descendant; both login policy calls refuse with `NotFoundError` unless that node is
+the call's own scope, so a grant held at a branch can never change the whole tenant's sign-in rules. The set call
+records its audit (the policy before and the one attempted) before the provider writes, so a refused write is still
+recorded with what it tried.

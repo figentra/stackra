@@ -3,9 +3,11 @@
  * Purpose: unit tests of the tenant login policy calls: neither is a tool; setting it is a user's or a service's, needs
  *          a fresh `aal2` step-up and derives the L3 `identity.login_policy.set` permission, reading it the L1
  *          `identity.login_policy.read`; the set call forces MFA on the session scope's organisation only, audits the
- *          policy before and after, keeps the lists it leaves out, refuses a lock-out policy or an unconfigured
- *          provider before any provider write, and answers `not_found` for a platform call or a scope with no
- *          organisation; the read answers the organisation's own policy or the inherited default.
+ *          policy before and after (recorded before the provider write, so a refused write is still audited), keeps
+ *          the lists it leaves out, refuses a lock-out policy or an unconfigured provider before any provider write,
+ *          and answers `not_found` for a platform call, a scope with no organisation, or a descendant of the
+ *          organisation's node even when the host's lookup walks up the path; the read answers the organisation's own
+ *          policy or the inherited default.
  * Boundary: test only; the memory identity provider and organisation drivers stand in for ZITADEL and the identity
  *           service's mapping; the pipeline's permission and step-up checks are covered by @stackra/actions, so here
  *           the declared options are what is asserted.
@@ -16,15 +18,18 @@ import { fakeActionContext } from "@stackra/actions/testing";
 import { buildConfig } from "@stackra/config";
 import { kindOf } from "@stackra/container";
 import { ActorKind, AssuranceLevel, Realm } from "@stackra/contracts";
-import type { PublicId } from "@stackra/contracts";
+import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { NotFoundError } from "@stackra/errors";
 import { Risk } from "@stackra/iam";
 import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { IdentityConfig } from "#config/identity.config";
-import { IdpSecondFactor, LoginPolicyRejection } from "#contracts/index";
+import { IdpOrganizations, IdpSecondFactor, LoginPolicyRejection } from "#contracts/index";
+import type { IdpOrganization } from "#contracts/index";
 import { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
 import { MemoryIdpOrganizationsDriver } from "#core/drivers/memory-idp-organizations.driver";
+import { IdpAdminUnavailableError } from "#core/errors/idp-admin-unavailable.error";
 import { LoginPolicyRejectedError } from "#core/errors/login-policy-rejected.error";
 import { LoginPolicyPermissions } from "#node/access/login-policy.permissions";
 import { SetLoginPolicyAction } from "#node/actions/set-login-policy.action";
@@ -35,6 +40,20 @@ import { ShowLoginPolicyInput } from "#node/schemas/show-login-policy-input.sche
 const ADMIN = "usr_01j9z3k4m5n6p7q8r9s0t1v2w3" as PublicId<"usr">;
 const ACME = { id: "scp_acme" as PublicId<"scp">, path: "platform.acme" };
 const GLOBEX = { id: "scp_globex" as PublicId<"scp">, path: "platform.globex" };
+const ACME_BRANCH = { id: "scp_acme_branch" as PublicId<"scp">, path: "platform.acme.branch" };
+
+/**
+ * A host lookup that walks up the path, as one following "the organisation the people of `scope` sign in through"
+ * might: Acme and every node under it answer Acme's organisation and root node.
+ */
+class AncestorIdpOrganizations extends IdpOrganizations {
+  organizationOf(scope: ScopeRef): Promise<IdpOrganization | undefined> {
+    const underAcme = scope.path === ACME.path || scope.path.startsWith(`${ACME.path}.`);
+    return Promise.resolve(
+      underAcme ? { organizationId: "org_acme", scopeId: ACME.id } : undefined,
+    );
+  }
+}
 
 /** Passwords and passkeys, nothing forced, no list. */
 const RULES = {
@@ -164,6 +183,62 @@ describe("login policy calls", () => {
       );
     }
     expect(idp.policies.size).toBe(0);
+  });
+
+  it("answers not_found for a descendant of the organisation's node, even when the host's lookup walks up", async () => {
+    const { idp, set, show } = setup();
+    const config = buildConfig(IdentityConfig, {
+      values: { externalProviders: { nafath: "idp_nafath" } },
+    });
+    const ancestors = new AncestorIdpOrganizations();
+    const widened = {
+      set: new SetLoginPolicyAction(idp, ancestors, config),
+      show: new ShowLoginPolicyQuery(idp, ancestors),
+    };
+    const input = SetLoginPolicyInput.create({
+      ...RULES,
+      forceMfa: true,
+      secondFactors: [IdpSecondFactor.Totp],
+    });
+    // A branch administrator calls with the branch scope: neither the exact-node memory host nor the walking host
+    // lets the call reach the whole tenant's organisation.
+    for (const calls of [{ set, show }, widened]) {
+      const ctx = adminCtx(ACME_BRANCH);
+      await expect(calls.set.handle(input, ctx)).rejects.toBeInstanceOf(NotFoundError);
+      expect(ctx.recorded.audit).toEqual({});
+      await expect(
+        calls.show.handle(ShowLoginPolicyInput.create({}), adminCtx(ACME_BRANCH)),
+      ).rejects.toBeInstanceOf(NotFoundError);
+    }
+    expect(idp.policies.size).toBe(0);
+    // The tenant's root node still reaches it through the same host.
+    await widened.set.handle(input, adminCtx());
+    expect((await idp.getLoginPolicy("org_acme")).forceMfa).toBe(true);
+  });
+
+  it("audits the attempted policy before the provider write, so a refused write is still recorded", async () => {
+    const { idp, set } = setup();
+    vi.spyOn(idp, "setLoginPolicy").mockRejectedValueOnce(IdpAdminUnavailableError.create({}));
+    const ctx = adminCtx();
+    await expect(
+      set.handle(
+        SetLoginPolicyInput.create({
+          ...RULES,
+          forceMfa: true,
+          secondFactors: [IdpSecondFactor.Totp],
+        }),
+        ctx,
+      ),
+    ).rejects.toBeInstanceOf(IdpAdminUnavailableError);
+    expect(ctx.recorded.audit).toEqual({
+      before: { ...idp.defaultPolicy, externalProviderIds: [], secondFactors: [] },
+      after: {
+        ...RULES,
+        forceMfa: true,
+        externalProviderIds: [],
+        secondFactors: [IdpSecondFactor.Totp],
+      },
+    });
   });
 
   it("reads the scope's own policy, or the default it inherits", async () => {

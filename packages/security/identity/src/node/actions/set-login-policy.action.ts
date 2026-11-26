@@ -8,10 +8,13 @@
  * Boundary: a user or a service holding `identity.login_policy.set` (L3) with a fresh step-up (`stepUp: aal2`, checked
  *           by the pipeline before `handle`). The organisation is the session's: the call's scope, which the session
  *           settled, mapped by the host's `IdpOrganizations`; nothing in the input names an organisation, tenant or
- *           scope. A platform call (no scope) or a scope with no organisation is `NotFoundError`. A policy that would
+ *           scope. A platform call (no scope), a scope with no organisation, or one that is not the node the
+ *           organisation belongs to (a descendant: a branch grant never sets the whole tenant's policy) is
+ *           `NotFoundError`. A policy that would
  *           lock everyone out (no method left, a second factor forced with none offered) or names a provider outside
  *           `IdentityConfig.externalProviders` is `LoginPolicyRejectedError` before any provider write. The audit
- *           entry holds the policy's rules and provider-side ids only, no person. Not an MCP tool.
+ *           (the policy before and the one attempted) is recorded before the provider writes, so a call refused part
+ *           way still shows what it tried; it holds the policy's rules and provider-side ids only, no person. Not an MCP tool.
  * Runtime: node
  * Governing contract: ADR 0207 (decision 1: an MFA policy per tenant; step-up for L3); ADR 0410 (decision 4: login
  *                     policies are data pushed through the port); ADR 0206; ADR 0462; ADR 0294 (decisions 16 and 21);
@@ -81,11 +84,15 @@ export class SetLoginPolicyAction extends Action({
     this.config = config;
   }
 
-  /** Checks the policy, pushes it to the scope's organisation, audits before and after, and answers it. */
+  /** Checks the policy, audits before and after, pushes it to the scope's organisation, and answers it. */
   async handle(input: SetLoginPolicyInput, ctx: ActionContext): Promise<LoginPolicyOutput> {
-    const organizationId =
+    const organization =
       ctx.scope === undefined ? undefined : await this.organizations.organizationOf(ctx.scope);
-    if (organizationId === undefined) throw NotFoundError.create();
+    // Only the node the organisation belongs to (the tenant's root) reaches its policy, whatever the host's lookup
+    // answers: a grant held at a descendant never reaches the whole tenant (ADR 0294, ADR 0462).
+    if (organization === undefined || organization.scopeId !== ctx.scope?.id)
+      throw NotFoundError.create();
+    const { organizationId } = organization;
     const requested: LoginPolicy = {
       allowUsernamePassword: input.allowUsernamePassword,
       allowRegister: input.allowRegister,
@@ -106,14 +113,15 @@ export class SetLoginPolicyAction extends Action({
       Object.values(this.config.externalProviders),
     );
     if (reason !== undefined) throw LoginPolicyRejectedError.create({ reason });
-    await this.idp.setLoginPolicy(organizationId, requested);
     const before = LoginPolicyOutput.from(current);
     const after = LoginPolicyOutput.from({
       ...requested,
       externalProviderIds: requested.externalProviderIds ?? before.externalProviderIds,
       secondFactors: requested.secondFactors ?? before.secondFactors,
     });
+    // Recorded before the provider writes, so a call refused part way still shows the policy it attempted.
     ctx.audit({ before: auditOf(before), after: auditOf(after) });
+    await this.idp.setLoginPolicy(organizationId, requested);
     return after;
   }
 }

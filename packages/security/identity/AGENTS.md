@@ -59,7 +59,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./desktop`, `./n
   `TenantMembership`, and the claims speak of scope nodes. `SessionUser.memberships` names the list.
 - The tenant login policy calls (`SetLoginPolicyAction`, `ShowLoginPolicyQuery`, STA-2817) reach the organisation
   of the call's scope through the host's `IdpOrganizations`; never take an organisation, tenant or scope from the
-  request, and never push a policy `loginPolicyRejectionOf` refuses. The audit carries rules and provider ids only.
+  request, and never push a policy `loginPolicyRejectionOf` refuses. Only the node the organisation belongs to (the
+  tenant's root) reaches it: keep the `IdpOrganization.scopeId === ctx.scope.id` check, so a descendant's grant never
+  changes the whole tenant. Audit before the provider writes; the audit carries rules and provider ids only. Keep the
+  driver's write order sign-in-safe (additions, then tightening, then removals).
 - `ZitadelAuthEventsService` is a trust boundary: verify the `ZITADEL-Signature` over the raw body before any parse,
   and store ids only (never the event payload). It writes through the `AuditTrail` port only; never import
   @stackra/access-log. The organisation-to-scope mapping is the host's, passed in, never guessed here.
