@@ -119,8 +119,10 @@ run before the merge and no waiting on CI: open the pull request and merge it ri
 (`figentra pr merge --admin [-R figentra/<repo>] <n>`, as stackra-bot; see below), then add the Linear label
 `needs-testing` to its STA issue and a `Needs testing: <what to run>` line to the pull request body. The tester
 lane later runs those tests on the box (`testbed run "core STA-n" . "pnpm verify"`) and removes the label.
-GitHub CI runs no tests; its checks still run after the merge and stay visible. Nothing installs or tests on a
-workstation.
+The Quality Gate runs the unit tests of the members a code change affects, plus gen, tenancy, identity, actions
+and database every time (owner decision 2026-11-20, STA-2705; `tools/scripts/ci-test-plan.mjs`); a markdown-only
+change tests only the members it changed. `test:int` and e2e still run only on the testbed. Its checks still run
+after the merge and stay visible. Nothing installs or tests on a workstation.
 
 ## GitHub identity: agents are stackra-bot
 

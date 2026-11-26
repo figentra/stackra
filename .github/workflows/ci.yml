@@ -2,10 +2,11 @@
 # Purpose: the Quality Gate, the one required check on every pull request to main, every merge-queue
 #          group commit (merge_group, ADR 0166 CI3) and every push to main (workflow lint, OSV dependency scan,
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
-#          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
-#          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
-#          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
-#          build run for the members the change affects (turbo `--affected` against the base commit).
+#          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, unit tests),
+#          plus `Dependency Review` on pull requests. On a pull request typecheck, build and tests run for the members
+#          the change affects (turbo `--affected` against the base commit); tests also run for gen, tenancy, identity,
+#          actions and database on every code change (owner decision 2026-11-20, STA-2705, amending STA-2064/STA-2083).
+#          Integration (`test:int`) and e2e need Docker or a browser and run on the testbed.
 #          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
 # Secrets: UNIWIND_AUTH_TOKEN (the Uniwind Pro CI/CD licence token) from the sops scope ci/build, decrypted by the
@@ -227,6 +228,19 @@ jobs:
 
       - name: Secrets scan
         run: pnpm secrets:scan
+
+      # STA-2705 (owner decision 2026-11-20, amending STA-2083 for code changes): the unit tier (`turbo run test`), so
+      # a red test fails the required check. On a pull request: the members the change affects (`...[HEAD~1]`, HEAD~1
+      # being main in the checked-out merge) plus @stackra/gen, tenancy, identity, actions and database on every code
+      # change; a markdown-only change tests only the members whose files it changed (no dependents). A manual run
+      # tests every member. Two tasks at a time, as Typecheck. Last, so a red test never hides the result of a cheaper
+      # check above. The plan and its filters live in the script (tools/scripts/__tests__/ci-test-plan.test.mjs holds
+      # them, and this step, in place). Sized on 4 CPUs (box 2, 2026-11-26): the core five with a cold gen 9 min; a
+      # change to @stackra/tenancy (60 members' tests) 19 min. The timeout leaves room for a change to a foundation
+      # package, which tests nearly every member.
+      - name: Test
+        timeout-minutes: 60
+        run: node tools/scripts/ci-test-plan.mjs
 
   # STA-310: refuse a pull request that adds a dependency with a known high or critical advisory. The OSV step in the
   # gate scans the whole lockfile; this job reads only the pull request's dependency diff.

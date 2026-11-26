@@ -4,7 +4,7 @@
   "preset": {
     "name": "./packages/developer/flow-preset/preset",
     "version": "0.11.0",
-    "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
+    "digest": "sha256:81304eb69671b289ff6dd005a6650aab330694a4d2db4e0b7725311a1d83abe0"
   },
   "profile": "framework",
   "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
@@ -17,7 +17,7 @@
     ".agents/skills/flow-implement/SKILL.md": "sha256:39cfbc08d8cb58b79083406fc2a41cf960c72c6f4c7f333405dffe84e2454ae1",
     ".agents/skills/flow-build/SKILL.md": "sha256:67fdad107e652ab3a8f95ee8b5d88ce2e12825c28ed390b7103588a6134c99fd",
     ".agents/skills/flow-converge/SKILL.md": "sha256:3e3894c837a0d349b4b3ca075b423a099537cfa6d3f2924a4f2c6ce758d8af43",
-    ".agents/skills/flow-gate/SKILL.md": "sha256:1f2aa94d250d141d1bcaa315f460830d25579186f1ac8c4a27a5065496c8f314",
+    ".agents/skills/flow-gate/SKILL.md": "sha256:7c56735abd74114841fa269dd77c7a790ecf5a6bf08f66b65b5bd2126b84e6bb",
     ".agents/skills/flow-review/SKILL.md": "sha256:963dac4007052930b1988c4e76f00b99a86d5668781d6cb9e942abfca41ba41f",
     ".agents/agents/accessibility-reviewer.md": "sha256:08ac2c983624ac3c60c0d0461b4cb68a17a9887e8d48f3450bbfb8d7c81c0e4b",
     ".agents/agents/api-contract-reviewer.md": "sha256:5ff08fe22a81fca807eed522905facd61054d337df5db4487ce24ac91ba2c400",
@@ -117,7 +117,7 @@
     "opencode.jsonc": "sha256:91e93423ab0dec77ff76f5916ddc0148f26b4ac8a6bff817df407e6a2f74279b",
     ".opencode/plugins/fflow-guard.mjs": "sha256:771cd2dcb0636bfb9913e0280682baae345586c8dd7b339c556a9907815da867",
     ".mcp.yaml": "sha256:3b9cd6e6f147b2037a293f4b7ef168ff02f5e2eb3293e5c50786dba161660a0f",
-    "AGENTS.md": "sha256:dab4cf454062d629d97175371c2c1d40a21800cb60dd4df29881bad305b97017",
+    "AGENTS.md": "sha256:d52753a544e716cceb26c67cb5d77fc2f4c353423669b01af283efa2135fbb58",
     "CLAUDE.md": "sha256:1bb66f4650b13073d4dab49176c59479864a28274e4c6fb4a7902500a3c21dfc",
     "lefthook.yml": "sha256:56d729654d9993aebf75d7b7bedf829cbdd138ae121d08f3d30bcbdba9459c6b",
     "README.md": "sha256:ece6c89119dd00daebdee62a167cc671d059619c2b359c9a951729e935c9a102",
