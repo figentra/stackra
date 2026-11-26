@@ -126,6 +126,16 @@
       "entry": "node"
     },
     {
+      "name": "contract",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "ContractCommand",
+      "file": "src/node/commands/contract.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "create",
       "aliases": [],
       "hidden": false,

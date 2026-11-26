@@ -1,0 +1,11 @@
+# Tasks: the contract test tier, with an oasdiff check of every member's HTTP contract
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-2837
+
+- [x] T001 `contractTier` and `CONTRACT_TESTS`, with a test, in `packages/tooling/vitest/src/contract.ts`, `packages/tooling/vitest/src/functions/contract-tier.function.ts`, `packages/tooling/vitest/src/constants/contract-tests.constant.ts`, `packages/tooling/vitest/package.json` — covers: AC-001, P-001 — route: spec-task
+- [x] T002 gen writes the contract-tier config, with tests, in `packages/developer/gen/src/core/functions/emit-tier-config.function.ts`, `packages/developer/gen/src/node/functions/has-tier-tests.function.ts`, `packages/developer/gen/src/node/functions/generate.function.ts` — covers: AC-002, P-002 — route: spec-task — deps: T001
+- [x] T003 `stackra test --tier contract`, with tests, in `packages/developer/cli/src/node/functions/resolve-tool.function.ts`, `packages/developer/cli/src/node/functions/tool-command.function.ts`, `turbo.jsonc`, `package.json` — covers: AC-003, P-003 — route: spec-task — deps: T002
+- [x] T004 `stackra contract`, with tests, in `packages/developer/cli/src/node/contract/`, `packages/developer/cli/src/node/commands/contract.command.ts`, `packages/developer/cli/src/node/constants/commands.constant.ts`, `tools/contract/accepted-breaks.yaml` — covers: AC-004, AC-005, AC-006, P-004, P-005, P-006 — route: spec-task
+- [x] T005 the contract-tier test on the real `oasdiff`, in `packages/developer/cli/src/node/contract/functions/__tests__/oasdiff-breaks.contract.test.ts`, `packages/developer/cli/package.json`, `mise.toml` — covers: AC-008, P-007 — route: spec-task — deps: T002, T004
+- [x] T006 the Quality Gate step in `.github/workflows/ci.yml` — covers: AC-007 — route: spec-task — deps: T004
+- [x] T007 ADR 0182 Enforcement, the READMEs and the changeset in `apps/docs/src/docs/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies.mdx`, `packages/developer/cli/README.md`, `packages/tooling/vitest/README.md`, `.changeset/contract-tier-oasdiff.md` — covers: AC-001, AC-004 — route: spec-task — deps: T006
