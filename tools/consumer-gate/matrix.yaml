@@ -60,6 +60,10 @@ products:
       - tamo
     overlays:
       - identity
+  # The scaffold pin is template main of 2026-11-26. A run at it is RED at install (catalog entries the starter lacks,
+  # STA-2870); past install, format (STA-2869), spell (STA-2870) and validate (STA-2871) are red too, all under
+  # STA-2839. The gate is advisory until then (runbooks/release.mdx): once those and STA-2794 land, move this pin by a
+  # reviewed pull request to a template commit where one full run is green, and link that run in the pull request.
   scaffold:
     kind: scaffold
     mode: pack

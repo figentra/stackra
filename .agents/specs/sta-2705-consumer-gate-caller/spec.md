@@ -26,6 +26,10 @@ consumer. 0.33.0 broke the typecheck of every product and 0.33.1 was a partial r
 - ADR 0515 decision 3 (`stackra create --starter`, `--tarballs`) — FR-1
 - ADR 0019 (pinned actions, least privilege), ADR 0525 (sops scopes), ADR 0166 (CI policy) — FR-4
 - The box-2 runs of 2026-11-26 (gen `kind_unregistered_base`, `permission_unknown`, `generated_dependency_missing`) — FR-5
+- The runs of 2026-11-26, all RED: box 2 at the committed pin (`install`), box 2 with the STA-2794 PRs and a
+  hand-made starter fix (`format`, `spell`, `validate`), and CI on this pull request at `install`,
+  <https://github.com/stackra-inc/stackra/actions/runs/45878145029>; tracked under STA-2839 (STA-2869, STA-2870, STA-2871). The gate ships
+  advisory — FR-4
 
 ## Impact
 

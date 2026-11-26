@@ -128,14 +128,25 @@ secret. No tenant data.
 
 - AC-001 to AC-005, AC-007: vitest with a fake executor (`scaffold-consumer-gate.function.test.ts`,
   `judge-consumer-gate-step.function.test.ts`, `consumer-gate.command.test.ts`).
-- AC-006: actionlint and zizmor; the first run on the version packages pull request.
-- Real runs on box 2: core main (RED at install, STA-2839) and core with the STA-2794 PRs on a fixed starter (every
-  consumer step green).
+- AC-006: actionlint and zizmor, and the run on this pull request with the `consumer-gate` label on 2026-11-26,
+  <https://github.com/stackra-inc/stackra/actions/runs/45878145029>: every CI-only step ran (the `--pin` output, the starter checkout at its full
+  commit, the move to `RUNNER_TEMP` with the pin check passing, the step summary and the `consumer-gate-scaffold`
+  artifact). Its verdict is RED at `install` (`ERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPEC`, STA-2870), the same as box 2, with the same lockfile
+  hashes. Testcontainers on `ubuntu-latest` did not run: every step after `install` was skipped.
+- Real runs on box 2, both RED:
+  - core at this branch (e596df0) with the starter at its committed pin (template main d78a4fa): RED at `install`
+    (`ERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPEC`, STA-2870); every later step skipped.
+  - core with the STA-2794 PRs and a hand-made starter commit 1c932b5 adding the catalog entries (on no branch or pull
+    request): create, service, install, leak, gen, typecheck, lint, build, unit tests and the Postgres integration
+    test pass; `format` (STA-2869), `spell` (STA-2870) and `validate` (53 agent-sources findings, STA-2871) fail.
+- No run is green at a committed pin yet, so the gate is advisory (Rollout).
 
 ## Rollout
 
-Merged as a check that is not required. The owner makes `Consumer gate (scaffold)` a required check once STA-2839 is
-fixed; until then it reports.
+Merged as an advisory check that is not required; `runbooks/release.mdx` says red is expected and how to read a red
+version pull request. STA-2839 tracks every red step (STA-2869 `format`, STA-2870 `install` and `spell`, STA-2871
+`validate`). Once they and STA-2794 merge, a reviewed pull request moves the scaffold pin to a template commit where
+one full run is green and links that run; only then does the owner make `Consumer gate (scaffold)` a required check.
 
 ## Delegation and risk plan
 
