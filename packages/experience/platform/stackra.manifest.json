@@ -145,6 +145,7 @@
         "turnstile": {
           "class": "TurnstileCaptchaVerifierDriver",
           "from": "@stackra/platform/worker",
+          "node": "@stackra/platform/node",
           "deps": [
             {
               "class": {

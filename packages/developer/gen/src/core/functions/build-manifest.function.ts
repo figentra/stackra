@@ -11,7 +11,9 @@
  *          and listing; the `@Replaces` replacements; a model a hosting member re-declares with a package's prefix
  *          records the package model key it hosts (`hosts`); a package's drivers carry each candidate's class, entry
  *          and constructor tokens (`classes`; the entry is the folder's own for `src/desktop` and the like, and an
- *          abstract or internal driver is no candidate) and the config class that selects one (`config`), which a
+ *          abstract or internal driver is no candidate; a `./worker` driver the `./node` barrel also exports, a
+ *          portable one of ADR 0127's 2026-10-26 note, records that entry as `node`, STA-1605) and the config class
+ *          that selects one (`config`), which a
  *          host's wiring reads (STA-1297); a package lists its config classes (`config`: key, class, entry), so a
  *          host's wiring knows its configs without guessing from a name (STA-1308). It reports the identity checks it
  *          can see: `identity_collision`, `override_duplicate`, `permission_unknown`, `identity_missing`,
@@ -1076,15 +1078,29 @@ export function buildManifest(ir: MemberIR): {
     const name = driverName(declared.file, port.name, member);
     const entry = drivers.get(key) ?? { port: port.name, key, candidates: [] };
     entry.candidates.push(name);
-    if (published)
+    if (published) {
+      const from = exportedFrom(declared.name, packageSpecifier(ir.package, declared.file));
+      // A portable driver both `./worker` and `./node` export (ADR 0127 2026-10-26 note: Turnstile) records its
+      // `./node` entry too, so a host that is no Worker lists it from there (STA-1605).
+      const node =
+        from === `${ir.package}/worker` &&
+        ir.files.some(
+          (file) =>
+            file.file === "src/node/index.ts" &&
+            file.names.some((exported) => exported.name === declared.name),
+        )
+          ? `${ir.package}/node`
+          : undefined;
       entry.classes = {
         ...entry.classes,
         [name]: {
           class: declared.name,
-          from: exportedFrom(declared.name, packageSpecifier(ir.package, declared.file)),
+          from,
+          ...(node !== undefined ? { node } : {}),
           ...(declared.deps.length > 0 ? { deps: declared.deps.map(publicToken) } : {}),
         },
       };
+    }
     drivers.set(key, entry);
   }
   // A published package's services with their constructor tokens, so a host's wiring binds one it injects

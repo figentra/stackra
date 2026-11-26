@@ -1142,6 +1142,14 @@ describe("buildManifest's package services", () => {
   });
 });
 
+/** An entry barrel of `entry` exporting `names`. */
+const barrel = (entry: string, names: readonly string[]): MemberIR["files"][number] => ({
+  file: `src/${entry}/index.ts`,
+  importPath: `#${entry}/index`,
+  folder: entry,
+  names: names.map((name) => ({ name, typeOnly: false })),
+});
+
 describe("buildManifest's package drivers (STA-1297)", () => {
   it("records each candidate's class, entry and tokens, and the config class that selects one", () => {
     const ir: MemberIR = {
@@ -1177,6 +1185,45 @@ describe("buildManifest's package drivers (STA-1297)", () => {
         config: { class: "LoyaltyKitConfig", from: "@acme/loyalty-kit" },
       },
     ]);
+  });
+
+  it("records a ./worker driver's ./node entry only when the ./node barrel exports it too (STA-1605)", () => {
+    const memory = LOYALTY_KIT_IR.classes.find(
+      (candidate) => candidate.name === "MemoryLoyaltyLedgerDriver",
+    );
+    if (memory === undefined) throw new Error("the fixture has no memory ledger driver");
+    const driver = (name: string, stem: string): DeclaredClass => ({
+      ...memory,
+      name,
+      file: `src/worker/drivers/${stem}.driver.ts`,
+      importPath: `#worker/drivers/${stem}.driver`,
+    });
+    const ir: MemberIR = {
+      ...LOYALTY_KIT_IR,
+      classes: [
+        ...LOYALTY_KIT_IR.classes,
+        driver("KvLoyaltyLedgerDriver", "kv-loyalty-ledger"),
+        driver("D1LoyaltyLedgerDriver", "d1-loyalty-ledger"),
+      ],
+      files: [
+        ...LOYALTY_KIT_IR.files,
+        barrel("worker", ["KvLoyaltyLedgerDriver", "D1LoyaltyLedgerDriver"]),
+        barrel("node", ["KvLoyaltyLedgerDriver"]),
+      ],
+    };
+    const [table] = buildManifest(ir).manifest.drivers ?? [];
+    expect(table?.["classes"]).toMatchObject({
+      kv: {
+        class: "KvLoyaltyLedgerDriver",
+        from: "@acme/loyalty-kit/worker",
+        node: "@acme/loyalty-kit/node",
+      },
+      d1: { class: "D1LoyaltyLedgerDriver", from: "@acme/loyalty-kit/worker" },
+      memory: { class: "MemoryLoyaltyLedgerDriver", from: "@acme/loyalty-kit" },
+    });
+    const classes = table?.["classes"] as Record<string, Record<string, unknown>>;
+    expect(classes["d1"]).not.toHaveProperty("node");
+    expect(classes["memory"]).not.toHaveProperty("node");
   });
 
   it("lists no abstract driver, the base its candidates extend", () => {

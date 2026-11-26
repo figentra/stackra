@@ -194,6 +194,12 @@ interface Candidate {
   readonly testDefault?: boolean;
 }
 
+/** A declared package's driver candidate, with the `./node` entry a portable `./worker` driver also has. */
+interface PackageCandidate extends Candidate {
+  /** The `./node` entry that exports the class too (ADR 0127 2026-10-26 note), from the manifest's `node`. */
+  readonly node?: string;
+}
+
 /** The drivers of one port in the wiring, with the names the member itself declares. */
 interface PortTable {
   readonly port: ClassRef;
@@ -205,7 +211,7 @@ interface PortTable {
 
 /** A package's driver table as its manifest records it (STA-1297). */
 interface PackageTable {
-  readonly candidates: Candidate[];
+  readonly candidates: PackageCandidate[];
   selectedBy?: string | undefined;
   config?: ClassRef | undefined;
 }
@@ -297,7 +303,7 @@ function dependencyDriverTables(ir: MemberIR): Map<string, PackageTable> {
       if (typeof classes !== "object" || classes === null) continue;
       const table = tables.get(driver.key) ?? { candidates: [] };
       for (const [name, value] of Object.entries(classes as Record<string, unknown>)) {
-        const { class: type, from, deps } = (value ?? {}) as Record<string, unknown>;
+        const { class: type, from, node, deps } = (value ?? {}) as Record<string, unknown>;
         if (typeof type !== "string" || typeof from !== "string") continue;
         if (table.candidates.some((known) => known.name === name)) continue;
         const tokens = (Array.isArray(deps) ? deps : [])
@@ -307,7 +313,12 @@ function dependencyDriverTables(ir: MemberIR): Map<string, PackageTable> {
           (dep) =>
             importable(ir, dep.class.from) && (dep.of === undefined || importable(ir, dep.of.from)),
         );
-        table.candidates.push({ name, type: { name: type, from }, deps: reachable ? tokens : [] });
+        table.candidates.push({
+          name,
+          type: { name: type, from },
+          deps: reachable ? tokens : [],
+          ...(typeof node === "string" ? { node } : {}),
+        });
       }
       const selectedBy = driver["selectedBy"];
       if (typeof selectedBy === "string") table.selectedBy ??= selectedBy;
@@ -662,12 +673,14 @@ export function emitWiring(ir: MemberIR): string {
     // A server never runs a browser, React Native or Electron driver, so its wiring lists none: a port with only
     // those (`SignInBrowser`) stays out, else the boot fails choosing a driver nothing on the server asks for. A
     // package's `./worker` driver runs in a Worker only, against the Workers runtime module (`cloudflare:workers`)
-    // whose types only a Worker member has, so only a Worker member lists it (STA-1605).
-    const candidates = table.candidates.filter(
-      (candidate) =>
-        !(server && isClientEntry(candidate.type.from)) &&
-        (ir.layout === "worker" || !isWorkerEntry(candidate.type.from)),
-    );
+    // whose types only a Worker member has, so only a Worker member lists it from there; a portable one its package
+    // also exports from `./node` (Turnstile, ADR 0127 2026-10-26 note) is listed from `./node` anywhere else, so a
+    // service keeps it and the port never falls back to its memory driver alone (STA-1605).
+    const candidates = table.candidates.flatMap(({ node, ...candidate }): Candidate[] => {
+      if (server && isClientEntry(candidate.type.from)) return [];
+      if (ir.layout === "worker" || !isWorkerEntry(candidate.type.from)) return [candidate];
+      return node === undefined ? [] : [{ ...candidate, type: { ...candidate.type, from: node } }];
+    });
     if (candidates.length === 0) return brought;
     const entry = ports.get(key) ?? { port: dep.class, key, candidates: [], own: [] };
     for (const candidate of candidates)
