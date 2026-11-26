@@ -7,12 +7,16 @@
  *          shutdown), `guard` runs the contributed `RequestGuard`s by order and stops at the first refusal, and
  *          `/readyz` runs the given indicators and every bound `HealthIndicator`, failing with the down one named; with
  *          a bound `Tracer`, each call runs in `continueTrace` with a carrier `guard` fills (once the guards pass) from
- *          the request's `traceparent` and edge request id. Dev sign-in keys (`STACKRA_DEV_ISSUER_KEYS`) fail boot
- *          outside `STACKRA_ENVIRONMENT=dev`, before the generated boot runs and with the container shut down, and
- *          boot under it (STA-2795).
- * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events.
+ *          the request's `traceparent` and edge request id; the drain stops waiting at its deadline
+ *          (`HttpConfig.drainTimeoutSeconds`, 20 s by default or a host's override), reports one `DrainTimeoutError`
+ *          with the calls still running and lets `close` and SIGTERM shut down, and leaves no timer when the calls
+ *          settle in time. Dev sign-in keys (`STACKRA_DEV_ISSUER_KEYS`) fail boot outside `STACKRA_ENVIRONMENT=dev`,
+ *          before the generated boot runs and with the container shut down, and boot under it (STA-2795).
+ * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events; the
+ *           deadline tests fake only `setTimeout` and `clearTimeout`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0457.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0457;
+ *                     ADR 0143 (decision 3: draining timeouts).
  */
 import { Driver, Module, Service } from "@stackra/container";
 import type { Container, Wiring } from "@stackra/container";
@@ -20,13 +24,16 @@ import { HealthIndicator, HealthStatus, Tracer } from "@stackra/contracts";
 import type { HealthReport, TraceAttributes, TraceCarrier, TraceSpan } from "@stackra/contracts";
 import { ConfigInvalidError } from "@stackra/config";
 import { isRefusal } from "@stackra/errors";
+import { ErrorReporter } from "@stackra/errors/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { BearerConfig } from "#config/bearer.config";
+import { HttpConfig } from "#config/http.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { AppDrainingError } from "#server/errors/app-draining.error";
+import { DrainTimeoutError } from "#server/errors/drain-timeout.error";
 import { createApp } from "#server/functions/create-app.function";
 
 /** Records its shutdown. */
@@ -41,6 +48,13 @@ class LedgerService extends Service {
 class OrdersModule extends Module({ exports: [LedgerService] }) {}
 
 class CancelOrderAction {}
+
+/** A call that never settles. */
+function hang(): Promise<never> {
+  return new Promise<never>(() => {
+    // Never resolves: a hung call.
+  });
+}
 
 const wiring: Wiring = {
   member: "commerce",
@@ -242,6 +256,112 @@ describe("createApp (server)", () => {
     process.emit("SIGINT");
     await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(1));
     expect(write).toHaveBeenCalled();
+  });
+
+  describe("drain deadline", () => {
+    /** Keeps what the app reports. */
+    class MemoryErrorReporterDriver extends Driver(ErrorReporter) {
+      static readonly errors: unknown[] = [];
+
+      report(error: unknown): void {
+        MemoryErrorReporterDriver.errors.push(error);
+      }
+    }
+
+    /** A host's `app.http` override with a 2-second drain deadline. */
+    class ShortDrainHttpConfig extends HttpConfig {
+      override drainTimeoutSeconds = 2;
+    }
+
+    const reported: Wiring = {
+      ...wiring,
+      drivers: [
+        {
+          port: ErrorReporter,
+          candidates: { memory: () => Promise.resolve(MemoryErrorReporterDriver) },
+        },
+      ],
+    };
+
+    afterEach(() => {
+      vi.useRealTimers();
+      MemoryErrorReporterDriver.errors.length = 0;
+    });
+
+    it("stops waiting at 20 s by default, reports the calls still running and resolves", async () => {
+      const app = await createApp(OrdersModule, { wiring: reported });
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      void app.handlers.run(hang);
+      void app.handlers.run(hang);
+      let drained = false;
+      const draining = app.drain().then(() => (drained = true));
+      await vi.advanceTimersByTimeAsync(19_999);
+      expect(drained).toBe(false);
+      expect(MemoryErrorReporterDriver.errors).toEqual([]);
+      await vi.advanceTimersByTimeAsync(1);
+      await draining;
+      expect(drained).toBe(true);
+      expect(MemoryErrorReporterDriver.errors).toHaveLength(1);
+      const [error] = MemoryErrorReporterDriver.errors;
+      expect(error).toBeInstanceOf(DrainTimeoutError);
+      expect(error).toMatchObject({ pending: 2, timeoutSeconds: 20 });
+      await app.close();
+      expect(LedgerService.closed).toBe(1);
+    });
+
+    it("takes the deadline from a host's HttpConfig", async () => {
+      const app = await createApp(OrdersModule, {
+        wiring: {
+          ...reported,
+          config: [{ key: "app.http", provide: HttpConfig, override: ShortDrainHttpConfig }],
+        },
+      });
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      void app.handlers.run(hang);
+      let drained = false;
+      const draining = app.drain().then(() => (drained = true));
+      await vi.advanceTimersByTimeAsync(1999);
+      expect(drained).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await draining;
+      expect(MemoryErrorReporterDriver.errors).toEqual([
+        expect.objectContaining({ pending: 1, timeoutSeconds: 2 }),
+      ]);
+      await app.close();
+    });
+
+    it("shuts the container down and exits 0 on SIGTERM when a call hangs", async () => {
+      const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+      const app = await createApp(OrdersModule, { wiring: reported });
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      void app.handlers.run(hang);
+      process.emit("SIGTERM");
+      await vi.advanceTimersByTimeAsync(20_000);
+      await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0));
+      expect(LedgerService.closed).toBe(1);
+      expect(MemoryErrorReporterDriver.errors).toEqual([expect.any(DrainTimeoutError)]);
+    });
+
+    it("reports nothing and leaves no timer when the calls settle in time", async () => {
+      const app = await createApp(OrdersModule, { wiring: reported });
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const gate: { finish?: () => void } = {};
+      const slow = app.handlers.run(
+        () =>
+          new Promise<void>((resolve) => {
+            gate.finish = resolve;
+          }),
+      );
+      const draining = app.drain();
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(vi.getTimerCount()).toBe(1);
+      gate.finish?.();
+      await slow;
+      await draining;
+      expect(vi.getTimerCount()).toBe(0);
+      expect(MemoryErrorReporterDriver.errors).toEqual([]);
+      await app.close();
+    });
   });
 
   describe("guard", () => {

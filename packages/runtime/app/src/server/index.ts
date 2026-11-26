@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./server` runtime-target entry of @stackra/app (the server `createApp`, its app
- *          object, the `Controller` kind for raw HTTP, the `RequestGuard` extension point, and the signed edge-header
+ *          object and the `DrainTimeoutError` it reports at the drain deadline, the `Controller` kind for raw HTTP, the `RequestGuard` extension point, and the signed edge-header
  *          guard with its `EdgeConfig`, memory and `env` drivers and refusal, the origin and CSRF guards with their
  *          configuration and refusals, the JWKS bearer-token guard with its configuration, key drivers, refusal and the request's
  *          `VerifiedToken`, `verifyCallToken` and `devIssuerKeys` (the dev sign-in, accepted under `stackra dev` only),
  *          `CallAuthenticator` (the generated Encore auth handler's check, API keys included) with its call types,
  *          `ServiceClientSessionDriver` (a service call's own token and the user's token it forwards),
- *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, and `apiCacheControl`, the rule 22 `private, no-store` header), until
+ *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, `nodeBodyStream`
+ *          (the adapter's request body as a web stream, STA-2794), and `apiCacheControl`, the rule 22 `private, no-store` header), until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` through `#core/*`; `.` never imports it.
  * Runtime: node
@@ -29,6 +30,7 @@ export { MemoryJsonWebKeysDriver } from "#server/drivers/memory-json-web-keys.dr
 export { OidcJsonWebKeysDriver } from "#server/drivers/oidc-json-web-keys.driver";
 export { ServiceClientSessionDriver } from "#server/drivers/service-client-session.driver";
 export { AppDrainingError } from "#server/errors/app-draining.error";
+export { DrainTimeoutError } from "#server/errors/drain-timeout.error";
 export { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 export { CsrfTokenInvalidError } from "#server/errors/csrf-token-invalid.error";
 export { EdgeSignatureInvalidError } from "#server/errors/edge-signature-invalid.error";
@@ -37,6 +39,7 @@ export { apiCacheControl } from "#server/functions/api-cache-control.function";
 export { corsHeaders } from "#server/functions/cors-headers.function";
 export { createApp } from "#server/functions/create-app.function";
 export { devIssuerKeys } from "#server/functions/dev-issuer-keys.function";
+export { nodeBodyStream } from "#server/functions/node-body-stream.function";
 export { serveGuardedCall } from "#server/functions/serve-guarded-call.function";
 export { verifyCallToken } from "#server/functions/verify-call-token.function";
 export { BearerTokenGuard } from "#server/services/bearer-token.guard";
