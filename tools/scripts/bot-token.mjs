@@ -7,9 +7,13 @@
  *           runs.
  * Runtime: node
  * Governing contract: ADR 0230 (reviewer identity separate from builder); STA-302 (network layer).
- * Input: STACKRA_BOT_APP_ID, STACKRA_BOT_INSTALLATION_ID, STACKRA_BOT_PRIVATE_KEY from the environment — injected by
- *   `secrets-exec.mjs` from the `agents` scope of figentra/secrets (ADR 0525), never from a file. (The reviewer app's STACKRA_REVIEWER_ names are
- *   retired with that App, ADR 0523 decision 6.)
+ * Input: STACKRA_BOT_APP_ID, STACKRA_BOT_PRIVATE_KEY and (a fallback, read only when the target repository is not
+ *   known) STACKRA_BOT_INSTALLATION_ID from the environment — injected by `secrets-exec.mjs` from the `agents` scope of
+ *   figentra/secrets (ADR 0525), never from a file. Given the repository a command acts on (target-repo.mjs), the
+ *   installation is looked up for it with the app JWT (GET /repos/{owner}/{repo}/installation), so the one App
+ *   installed in several organizations mints for the right one and a stale stored id no longer blocks merges
+ *   (STA-2861). `pnpm bot:token [-R owner/repo]` mints for that repository, else the working directory's origin.
+ *   (The reviewer app's STACKRA_REVIEWER_ names are retired with that App, ADR 0523 decision 6.)
  * Output: the token alone on stdout (for piping); errors on stderr, never containing a secret. Exit 1 on failure.
  * Network: the one layer bot-gh, pr-merge and linear call GitHub and Linear through (STA-302). fetch goes over an
  *   undici Agent with a CONNECT_TIMEOUT_MS connect timeout and autoSelectFamily; an idempotent call (GET, the token
@@ -21,6 +25,7 @@
 import { spawnSync } from "node:child_process";
 import { sign } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { targetRepo } from "./target-repo.mjs";
 
 // linear-sync runs node without `pnpm install`: there the global fetch (10 s connect timeout) keeps only the retries.
 const undici = await import("undici").catch((error) => {
@@ -158,12 +163,49 @@ export function appJwt(appId, privateKey, now = Math.floor(Date.now() / 1000)) {
   return `${head}.${body}.${signature}`;
 }
 
-/** Exchange the app JWT for an installation token (retried: a mint is idempotent). The Error carries no secret. */
-export async function mintToken(env = process.env, fetchImpl = netFetch, prefix = "STACKRA_BOT") {
+const HEADERS = {
+  Accept: "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28",
+  "User-Agent": "stackra-bot-token",
+};
+
+/**
+ * The id of the App's installation on `repo` (`owner/name`), read with the app JWT (retried: a GET). A 404 means the
+ * App is not installed there: the Error says so, and no stored id is tried, since it could only mint a token that
+ * cannot reach the repository. The Error carries no secret.
+ */
+export async function installationFor(repo, jwt, fetchImpl = netFetch) {
+  const res = await fetchImpl(
+    `https://api.github.com/repos/${repo}/installation`,
+    { method: "GET", headers: { ...HEADERS, Authorization: `Bearer ${jwt}` } },
+    { idempotent: true },
+  );
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 404)
+    throw new Error(`the App is not installed on ${repo} (GitHub returned 404)`);
+  if (!res.ok || !data.id)
+    throw new Error(
+      `GitHub returned ${res.status} looking up the installation for ${repo}: ${data.message ?? "no id"}`,
+    );
+  return String(data.id);
+}
+
+/**
+ * Exchange the app JWT for an installation token (retried: a mint is idempotent). The Error carries no secret.
+ * With `repo` (`owner/name`) the installation is the one covering that repository (installationFor); without it,
+ * the stored `<prefix>_INSTALLATION_ID`, the fallback for a command whose repository cannot be told.
+ */
+export async function mintToken(
+  env = process.env,
+  fetchImpl = netFetch,
+  prefix = "STACKRA_BOT",
+  repo = null,
+) {
   const [appId, installation, privateKey] = ["APP_ID", "INSTALLATION_ID", "PRIVATE_KEY"].map(
     (n) => `${prefix}_${n}`,
   );
-  const missing = [appId, installation, privateKey].filter((name) => !env[name]);
+  const needed = repo ? [appId, privateKey] : [appId, installation, privateKey];
+  const missing = needed.filter((name) => !env[name]);
   if (missing.length)
     throw new Error(
       `missing env: ${missing.join(", ")} (run through pnpm bot:*, which decrypts them)`,
@@ -175,18 +217,12 @@ export async function mintToken(env = process.env, fetchImpl = netFetch, prefix 
   } catch {
     throw new Error(`could not sign the app JWT — ${privateKey} is not a valid PEM key`);
   }
-  const id = encodeURIComponent(env[installation]);
+  const id = encodeURIComponent(
+    repo ? await installationFor(repo, jwt, fetchImpl) : env[installation],
+  );
   const res = await fetchImpl(
     `https://api.github.com/app/installations/${id}/access_tokens`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${jwt}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "stackra-bot-token",
-      },
-    },
+    { method: "POST", headers: { ...HEADERS, Authorization: `Bearer ${jwt}` } },
     { idempotent: true },
   );
   const data = await res.json().catch(() => ({}));
@@ -196,9 +232,23 @@ export async function mintToken(env = process.env, fetchImpl = netFetch, prefix 
   return data.token;
 }
 
+/**
+ * The stackra-bot token for one command (`tool` gh or git and its arguments): minted for the installation covering
+ * the repository the command acts on (target-repo.mjs), or for the stored id when that cannot be told. bot-gh,
+ * pr-merge, adr-reserve and `pnpm bot:token` all mint through this (STA-2861).
+ */
+export function mintForCommand(
+  tool,
+  args,
+  { env = process.env, fetchImpl = netFetch, run = undefined } = {},
+) {
+  return mintToken(env, fetchImpl, "STACKRA_BOT", targetRepo(tool, args, { env, run }));
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
-    process.stdout.write(await mintToken());
+    // `-R owner/repo` names the repository; else GH_REPO, else the working directory's origin (STA-2861).
+    process.stdout.write(await mintForCommand("gh", process.argv.slice(2)));
   } catch (error) {
     process.stderr.write(`bot-token: ${error.message}\n`);
     process.exit(1);

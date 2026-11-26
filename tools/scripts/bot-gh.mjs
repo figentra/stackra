@@ -2,7 +2,8 @@
 /**
  * Stackra file contract:
  * Purpose: run `gh` or `git` as `stackra-bot` — `pnpm bot:gh -- pr list`, `pnpm bot:git -- commit -m …`,
- *   `pnpm bot:git -- push origin HEAD`. Mints an installation token (bot-token.mjs) and passes it as GH_TOKEN.
+ *   `pnpm bot:git -- push origin HEAD`. Mints an installation token (bot-token.mjs) for the installation that covers
+ *   the repository the command acts on (target-repo.mjs, STA-2861) and passes it as GH_TOKEN.
  *   The `review` mode (the `stackra-reviewer` App, ADR 0230) is retired with that App (ADR 0523 decision 6); the
  *   gate and the ruleset are the merge condition since ADR 0523, and an AI review is advisory.
  * git: author and committer are the bot; pushes go over https with `gh auth git-credential` as the only credential
@@ -17,7 +18,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { ghIdempotent, mintToken, spawnRetrying } from "./bot-token.mjs";
+import { ghIdempotent, mintForCommand, spawnRetrying } from "./bot-token.mjs";
 
 // Bot user id from `gh api /users/stackra-bot%5Bbot%5D` (not the app id).
 export const BOT_NAME = "stackra-bot[bot]";
@@ -255,7 +256,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(2);
   }
   try {
-    process.exit(await runAsBot(tool, args, await mintToken()));
+    // The token is minted for the installation that covers the repository acted on (STA-2861).
+    process.exit(await runAsBot(tool, args, await mintForCommand(tool, args)));
   } catch (error) {
     process.stderr.write(`bot-gh: ${error.message}\n`);
     process.exit(1);

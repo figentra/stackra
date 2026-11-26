@@ -170,7 +170,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { n, repo } = parsed;
   const R = repo.startsWith("{") ? [] : ["-R", repo];
   try {
-    const token = await botNetwork.mintToken();
+    // Minted for the installation on the repository merged in (-R, else origin as gh picks it), STA-2861.
+    const token = await botNetwork.mintForCommand("gh", R);
     const fields = "number,state,isDraft,headRefOid,baseRefName,labels,mergeStateStatus";
     const pr = JSON.parse(gh(["pr", "view", n, ...R, "--json", fields], token, true));
     const runs = JSON.parse(

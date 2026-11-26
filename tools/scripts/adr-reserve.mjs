@@ -57,7 +57,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(2);
   }
   try {
-    const token = await botNetwork.mintToken();
+    // `{owner}/{repo}` below is gh's current repository: mint for the installation on it (STA-2861).
+    const token = await botNetwork.mintForCommand("gh", []);
     const api = (args, read = false) => JSON.parse(gh(["api", ...args], token, read) || "null");
     const repo = "repos/{owner}/{repo}";
     const file = api([`${repo}/contents/${NUMBERS_PATH}?ref=main`], true);
