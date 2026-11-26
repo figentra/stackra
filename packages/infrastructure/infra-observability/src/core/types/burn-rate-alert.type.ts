@@ -17,7 +17,10 @@ export type BurnRateAlert = {
   readonly kind: SliKind;
   /** `critical` pages whoever is on call (`notify.critical`); `warning` opens a ticket (`notify.warning`). */
   readonly severity: "critical" | "warning";
-  /** How many times faster than sustainable the budget burns at the threshold (14.4 for an hour on a 30-day window). */
+  /**
+   * How many times faster than sustainable the budget burns at the threshold (14.4 for an hour on a 30-day window);
+   * never below 1, the rate at which the budget runs out exactly at the window's end.
+   */
   readonly burnRate: number;
   /** The error ratio both windows must exceed: `burnRate × (1 − target)`. */
   readonly threshold: number;

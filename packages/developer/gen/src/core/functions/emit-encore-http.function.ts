@@ -10,7 +10,8 @@
  *          `Cache-Control: private, no-store` where `apiCacheControl` forces it (ADR 0325 rule 22), inside
  *          `app.handlers.run` so a drain waits for it. When the service declares `@stackra/errors`, a
  *          `RateLimitedError` thrown by `handle` answers 429 with its envelope and `rateLimitHeaders` (`Retry-After`,
- *          `RateLimit-*`).
+ *          `RateLimit-*`). `answerCall` hands `serveGuardedCall` the bound `Metrics` (when the container binds one),
+ *          so every call is recorded in the `http.server.request.duration` histogram the objectives read.
  * Boundary: pure; written only for a service that declares `@stackra/app` (the wiring then binds `CorsConfig` as
  *           `app.cors`). The adapter never decides an origin itself: `corsHeaders` echoes only an allowed one and
  *           `OriginGuard` refuses the request. `Vary: Origin` is appended to what the handler set, never replacing it.
@@ -19,7 +20,7 @@
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order); ADR 0325 (rule 22: the gateway marks signed-in answers); ADR 0295
  *                     (decision 8: the adapters reach the member through `handlers`); ADR 0091 and 0124 (Encore is
  *                     generated); STA-1374 (stackra-216); STA-1385; ADR 0217 (decision 2: the `RateLimit-*` headers
- *                     are sent), STA-1477.
+ *                     are sent), STA-1477; ADR 0184 (decisions 1 and 3: the HTTP server histogram), STA-2854.
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
@@ -72,7 +73,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  VisitorIdentityService,",
       '} from "@stackra/app/server";',
       'import type { AnyClass, Container } from "@stackra/container";',
-      'import type { Actor } from "@stackra/contracts";',
+      'import { type Actor, Metrics } from "@stackra/contracts";',
       ...(errors
         ? ['import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";']
         : []),
@@ -156,6 +157,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
       "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",
       "      execute: (input, actor, guarded, options) => call.execute(container, input, actor, guarded, options),",
+      "      metrics: container.has(Metrics) ? container.get(Metrics) : undefined,",
       "    }),",
       "  );",
       "  for (const [name, value] of response.headers)",

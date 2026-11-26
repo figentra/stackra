@@ -6,7 +6,8 @@
  *          page (critical): 2% of the budget in an hour, 5% in six hours. Two open a ticket (warning): 10% in a day,
  *          10% in three days.
  * Boundary: internal data; `observabilityPlan` turns each row into a burn rate for the runway's objective window
- *           (14.4, 6, 3 and 1 for 30 days). Windows are Prometheus durations.
+ *           (14.4, 6, 3 and 1 for 30 days), never below 1 (a shorter window holds a slow row at 1). Windows are
+ *           Prometheus durations.
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (decision 3); ADR 0185 (decision 1: critical pages on-call).
  */

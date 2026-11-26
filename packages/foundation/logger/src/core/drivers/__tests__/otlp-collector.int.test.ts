@@ -4,9 +4,11 @@
  *          1): the log reporter, the tracer and the metrics driver POST their OTLP/JSON to the collector's OTLP/HTTP
  *          receiver behind basic auth, with the header taken from the headers secret, and the collector accepts and
  *          re-exports each signal with its `service.name`, attributes, trace ids, severities, monotonic sums,
- *          histogram buckets and gauges intact. A wrong secret is refused (401): the batch is dropped and counted,
- *          and nothing reaches the export.
- * Boundary: integration tier (`.int`): needs Docker (`startCollector`, Testcontainers). One collector for the file;
+ *          histogram buckets and gauges intact, and the HTTP server histogram keeps its unit (`s`) and the advised
+ *          seconds bounds. A wrong secret is refused (401): the batch is dropped and counted, and nothing reaches the
+ *          export.
+ * Boundary: integration tier (`.int`): needs Docker (`startCollector`, Testcontainers) or the collector binary
+ *           (`STACKRA_OTELCOL_BIN`, the same pinned release). One collector for the file;
  *           every test uses its own service name, so the tests read only their own exports.
  * Runtime: node (vitest)
  * Governing contract: ADR 0184 (decisions 1, 2 and 5); ADR 0147 (decision 1: the OTLP driver); ADR 0173 (secrets by
@@ -16,6 +18,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 
 import { buildConfig } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
+import { HTTP_SERVER_DURATION } from "@stackra/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
 
 import { OtlpConfig } from "#config/otlp.config";
@@ -67,7 +70,7 @@ function basic(password: string): string {
 /** The drivers' configuration for `serviceName`, sending to the collector. */
 function config(serviceName: string): OtlpConfig {
   return buildConfig(OtlpConfig, {
-    values: { endpoint: collector.endpoint, serviceName, flushIntervalMs: 50 },
+    values: { endpoint: collector.endpoint, serviceName, flushIntervalMs: 100 },
   });
 }
 
@@ -252,6 +255,58 @@ describe("the OTLP drivers against a real collector", () => {
       dataPoints: readonly { asDouble: number }[];
     };
     expect(depth.dataPoints[0]?.asDouble).toBe(7);
+  });
+
+  it("delivers the HTTP server histogram in seconds, with its unit and the advised bounds", async () => {
+    const metrics = new OtlpMetricsDriver(
+      config("proof-http"),
+      new HeaderSecrets(basic(collector.password)),
+    );
+    const { name, unit, bounds } = HTTP_SERVER_DURATION;
+    const attributes = {
+      "http.request.method": "POST",
+      "http.route": "/orders/:orderId",
+      "http.response.status_code": 200,
+    };
+    metrics.histogram(name, 0.02, attributes, { unit, bounds });
+    metrics.histogram(name, 0.3, attributes, { unit, bounds });
+    await metrics.onApplicationShutdown();
+    expect(metrics.dropped).toBe(0);
+
+    const resources = await exportedFor("resourceMetrics", "proof-http");
+    const metric = resources
+      .flatMap((resource) =>
+        (
+          resource["scopeMetrics"] as readonly {
+            metrics: readonly ({ name: string; unit?: string } & Readonly<
+              Record<string, unknown>
+            >)[];
+          }[]
+        ).flatMap((scope) => scope.metrics),
+      )
+      .find((candidate) => candidate.name === name);
+    expect(metric?.unit).toBe("s");
+    const histogram = metric?.["histogram"] as
+      | {
+          dataPoints: readonly {
+            count: string;
+            explicitBounds: readonly number[];
+            bucketCounts: readonly string[];
+            attributes: readonly Attribute[];
+          }[];
+        }
+      | undefined;
+    const point = histogram?.dataPoints[0];
+    expect(point?.explicitBounds).toEqual([...bounds]);
+    expect(point?.count).toBe("2");
+    expect(point?.bucketCounts[bounds.indexOf(0.025)]).toBe("1");
+    expect(point?.bucketCounts[bounds.indexOf(0.5)]).toBe("1");
+    expect(attribute(point?.attributes ?? [], "http.route")).toEqual({
+      stringValue: "/orders/:orderId",
+    });
+    expect(attribute(point?.attributes ?? [], "http.response.status_code")).toEqual({
+      intValue: "200",
+    });
   });
 
   it("drops and counts a batch the collector refuses for a wrong secret", async () => {

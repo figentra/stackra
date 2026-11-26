@@ -42,6 +42,9 @@ interface HistogramPoint extends PointBase {
   readonly bounds: readonly number[];
 
   readonly bucketCounts: readonly number[];
+
+  /** The advised unit (`s`), written as the OTLP metric's `unit`; absent when none was advised. */
+  readonly unit?: string;
 }
 
 /** One collected value. */

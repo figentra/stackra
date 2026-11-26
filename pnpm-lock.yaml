@@ -7457,6 +7457,12 @@ importers:
       '@pulumi/pulumi':
         specifier: catalog:infra
         version: 3.268.0(supports-color@10.2.2)(typescript@7.0.2)
+      '@stackra/app':
+        specifier: workspace:*
+        version: link:../../runtime/app
+      '@stackra/logger':
+        specifier: workspace:*
+        version: link:../../foundation/logger
       '@stackra/testing':
         specifier: workspace:*
         version: link:../../developer/testing

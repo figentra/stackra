@@ -13,6 +13,8 @@ export type PrometheusAlertingRule = {
   readonly alert: string;
   /** The PromQL expression; the alert fires while it returns a series. */
   readonly expr: string;
+  /** How long `expr` must hold before the alert fires (`15m`); absent, it fires on the first evaluation. */
+  readonly for?: string;
   /** Labels added to the alert, which route it (`severity`). */
   readonly labels: Readonly<Record<string, string>>;
   /** Text about the alert: `summary`, `description`, `runbook_url`. */

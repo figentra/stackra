@@ -4,8 +4,11 @@
  *          for the on-premises LGTM stack (Mimir or Prometheus, ADR 0184 decision 2): per objective, one recording rule
  *          per window holding its error ratio (availability: the share of requests answered 5xx; latency: the share
  *          slower than the threshold bucket), and one `SloErrorBudgetBurn` alerting rule per burn-rate row that fires
- *          while both its windows are above the threshold. Every alert carries `severity` (critical pages, warning
- *          opens a ticket), the service, the indicator and both windows, and links the runbook.
+ *          while both its windows are above the threshold, plus one `SloIndicatorMissing` warning that fires when the
+ *          objective's series has been absent for 15 minutes (no emitter, a wrong `service.name`, a unit or bucket
+ *          mismatch), because a ratio over no series is no series and its burn alerts can never fire. Every alert
+ *          carries `severity` (critical pages, warning opens a ticket), the service and the indicator, a burn alert
+ *          both windows, and links the runbook.
  * Boundary: pure: plan in, data out; reads no file and calls nothing. The caller serialises it (`JSON.stringify` is a
  *           valid rule file) and loads it into the ruler. Series names follow the OpenTelemetry-to-Prometheus
  *           translation of Prometheus's OTLP receiver and the collector's Prometheus exporters, overridable in
@@ -27,6 +30,12 @@ const RUNBOOK = "https://docs.stackra.figentra.com/runbooks/slo-burn-rate";
 
 /** The name of every burn alert; the labels tell them apart. */
 const ALERT = "SloErrorBudgetBurn";
+
+/** The name of the alert that an objective's series is missing. */
+const MISSING = "SloIndicatorMissing";
+
+/** How long the series must be absent before `SloIndicatorMissing` fires: past a deploy and a quiet minute. */
+const MISSING_FOR = "15m";
 
 /** The recording rule of the error ratio over `window`. */
 const ratioOf = (window: string): string => `slo:sli_error:ratio_rate${window}`;
@@ -50,6 +59,13 @@ function errorRatio(
     return `(sum(rate(${metric}_count{${service},http_response_status_code=~"5.."}[${window}])) or vector(0)) / ${all}`;
   const fast = `sum(rate(${metric}_bucket{${service},le=~${leMatcher(objective.thresholdSeconds ?? 0)}}[${window}]))`;
   return `1 - (${fast} / ${all})`;
+}
+
+/** The series `objective` reads: every answer (availability) or the threshold bucket (latency). */
+function indicatorSeries(objective: SloObjective, metric: string, serviceLabel: string): string {
+  const service = `${serviceLabel}=${JSON.stringify(objective.service)}`;
+  if (objective.kind === SliKind.Availability) return `${metric}_count{${service}}`;
+  return `${metric}_bucket{${service},le=~${leMatcher(objective.thresholdSeconds ?? 0)}}`;
 }
 
 /** `value` as a PromQL number, without float noise (`0.0144`, never `0.014400000000000001`). */
@@ -103,9 +119,21 @@ export function prometheusSloRules(
           runbook_url: runbook,
         },
       }));
+      const series = indicatorSeries(objective, metric, serviceLabel);
+      const missing: PrometheusAlertingRule = {
+        alert: MISSING,
+        expr: `absent(${series})`,
+        for: MISSING_FOR,
+        labels: { ...labels, severity: "warning" },
+        annotations: {
+          summary: `${objective.service} ${objective.kind} has no data, so its burn-rate alerts cannot fire`,
+          description: `No ${series} series for ${MISSING_FOR}. The service must record http.server.request.duration in seconds (Stackra's server runtime does once a Metrics driver is bound and logger.otlp.serviceName is the service key) and the backend must receive it.`,
+          runbook_url: `${runbook}#no-data`,
+        },
+      };
       return {
         name: `slo-${objective.service}-${objective.kind}`,
-        rules: [...recording, ...alerting],
+        rules: [...recording, ...alerting, missing],
       };
     }),
   };

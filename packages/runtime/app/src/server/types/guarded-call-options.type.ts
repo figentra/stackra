@@ -2,15 +2,16 @@
  * Stackra file contract:
  * Purpose: `GuardedCallOptions`, what `serveGuardedCall` needs to answer one inbound HTTP call: the request (body
  *          unread), the body cap, the route template, whether the call lists the anonymous actor, the action it runs,
- *          whether it is raw,
- *          and the three seams the generated adapter fills (`guard`, `authenticate`, `execute`).
+ *          whether it is raw, the three seams the generated adapter fills (`guard`, `authenticate`, `execute`), and the
+ *          `Metrics` every answer is recorded in (`http.server.request.duration`).
  * Boundary: a type only. The seams are functions, so the library depends on neither `@stackra/actions` nor Encore.
  * Runtime: node
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order);
- *                     ADR 0457 (request guards); ADR 0098 (the actor from the credential).
+ *                     ADR 0457 (request guards); ADR 0098 (the actor from the credential); ADR 0184 (decisions 1 and
+ *                     3: the HTTP server histogram).
  */
 import type { AnyClass } from "@stackra/container";
-import type { Actor } from "@stackra/contracts";
+import type { Actor, Metrics } from "@stackra/contracts";
 
 import type { CallAuthData } from "#server/types/call-auth-data.type";
 import type { CallCredentials } from "#server/types/call-credentials.type";
@@ -66,4 +67,10 @@ export interface GuardedCallOptions {
     request: Request,
     call: KeyCallOptions | undefined,
   ) => Promise<unknown>;
+
+  /**
+   * Where every answer is recorded: the `http.server.request.duration` histogram in seconds, by method, route template
+   * and status code (the generated adapter passes the bound `Metrics`). Absent, nothing is recorded.
+   */
+  readonly metrics?: Metrics | undefined;
 }

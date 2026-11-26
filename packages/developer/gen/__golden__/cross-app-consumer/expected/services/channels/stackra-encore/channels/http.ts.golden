@@ -22,7 +22,7 @@ import {
   VisitorIdentityService,
 } from "@stackra/app/server";
 import type { AnyClass, Container } from "@stackra/container";
-import type { Actor } from "@stackra/contracts";
+import { type Actor, Metrics } from "@stackra/contracts";
 import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";
 
 import { app } from "../../.stackra/entry/server";
@@ -100,6 +100,7 @@ export async function answerCall(req: IncomingMessage, resp: ServerResponse, cal
       authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),
       visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),
       execute: (input, actor, guarded, options) => call.execute(container, input, actor, guarded, options),
+      metrics: container.has(Metrics) ? container.get(Metrics) : undefined,
     }),
   );
   for (const [name, value] of response.headers)

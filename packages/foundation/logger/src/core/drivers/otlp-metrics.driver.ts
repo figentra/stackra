@@ -2,18 +2,21 @@
  * Stackra file contract:
  * Purpose: the OTLP driver of the `Metrics` port (driver name `otlp`): counters, histograms and gauges are aggregated in
  *          memory per name and attribute set, and every `metricIntervalMs` their cumulative values are POSTed as
- *          OTLP/JSON to `<endpoint>/v1/metrics` (monotonic sums, gauges, explicit-bucket histograms).
+ *          OTLP/JSON to `<endpoint>/v1/metrics` (monotonic sums, gauges, explicit-bucket histograms). A histogram is
+ *          bucketed by the bounds its first recording advises (`HistogramOptions`, e.g. the seconds bounds of
+ *          `HTTP_SERVER_DURATION`) and carries the advised unit, else by `HISTOGRAM_BOUNDS` (milliseconds).
  * Boundary: no vendor SDK: web-standard `fetch` only. Recording never throws: a negative counter delta or a non-finite
  *           value is ignored, and past `maxQueue` distinct series a new one is dropped, so a runaway attribute cannot
  *           grow memory without bound. Values are cumulative, so a lost send loses no count: the next export carries
- *           it. With no endpoint nothing is recorded. `flush()` and shutdown export once more and wait.
+ *           it. With no endpoint nothing is recorded. `flush()` and shutdown export once more and wait. Advised bounds
+ *           that are empty, not finite or not strictly ascending are ignored for the default.
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (decision 1: OpenTelemetry, OTLP for every signal); ADR 0147 (decision 3); ADR 0173.
  */
 import type { SecretStore } from "@stackra/config/contracts";
 import { Driver } from "@stackra/container";
 import { Metrics } from "@stackra/contracts";
-import type { TraceAttributes } from "@stackra/contracts";
+import type { HistogramOptions, TraceAttributes } from "@stackra/contracts";
 
 import type { OtlpConfig } from "#config/otlp.config";
 import { HISTOGRAM_BOUNDS } from "#core/constants/histogram-bounds.constant";
@@ -22,11 +25,27 @@ import { otlpMetricsBody } from "#core/functions/otlp-metrics-body.function";
 import type { MetricPoint } from "#core/types/metric-point.type";
 import type { OtlpExporter } from "#core/types/otlp-exporter.type";
 
+/** True when `bounds` is a usable explicit-bucket list: not empty, finite and strictly ascending. */
+function validBounds(bounds: readonly number[] | undefined): bounds is readonly number[] {
+  return (
+    bounds !== undefined &&
+    bounds.length > 0 &&
+    bounds.every(
+      (bound, index) =>
+        Number.isFinite(bound) && (index === 0 || bound > (bounds[index - 1] ?? bound)),
+    )
+  );
+}
+
 /** One aggregated series: a metric name, kind and attribute set. */
 interface Series {
   readonly kind: MetricPoint["kind"];
   readonly name: string;
   readonly attributes: TraceAttributes;
+  /** A histogram's bucket upper bounds, fixed when the series starts. */
+  readonly bounds: readonly number[];
+  /** A histogram's advised unit, when one was given. */
+  readonly unit: string | undefined;
   value: number;
   count: number;
   min: number;
@@ -40,6 +59,7 @@ interface Series {
  * @example
  * metrics.counter("orders.created", 1, { scopeId });
  * metrics.histogram("orders.create.duration_ms", 42);
+ * metrics.histogram("http.server.request.duration", 0.042, {}, { unit: "s", bounds: [0.005, 0.01, 0.025] });
  * await metrics.flush();
  */
 export class OtlpMetricsDriver extends Driver(Metrics) {
@@ -84,17 +104,22 @@ export class OtlpMetricsDriver extends Driver(Metrics) {
     if (series !== undefined) series.value += delta;
   }
 
-  /** Records `value` in the histogram; a non-finite value is ignored. */
-  histogram(name: string, value: number, attributes: TraceAttributes = {}): void {
+  /** Records `value` in the histogram, bucketed by the advised bounds; a non-finite value is ignored. */
+  histogram(
+    name: string,
+    value: number,
+    attributes: TraceAttributes = {},
+    options: HistogramOptions = {},
+  ): void {
     if (!Number.isFinite(value)) return;
-    const series = this.at("histogram", name, attributes);
+    const series = this.at("histogram", name, attributes, options);
     if (series === undefined) return;
     series.value += value;
     series.count += 1;
     series.min = Math.min(series.min, value);
     series.max = Math.max(series.max, value);
-    const found = HISTOGRAM_BOUNDS.findIndex((bound) => value <= bound);
-    const bucket = found === -1 ? HISTOGRAM_BOUNDS.length : found;
+    const found = series.bounds.findIndex((bound) => value <= bound);
+    const bucket = found === -1 ? series.bounds.length : found;
     series.bucketCounts[bucket] = (series.bucketCounts[bucket] ?? 0) + 1;
   }
 
@@ -116,6 +141,7 @@ export class OtlpMetricsDriver extends Driver(Metrics) {
     kind: MetricPoint["kind"],
     name: string,
     attributes: TraceAttributes,
+    options: HistogramOptions = {},
   ): Series | undefined {
     if (this.config.endpoint === "") return undefined;
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts a fresh entries array nothing else holds; toSorted is ES2023 and the base lib is ES2022
@@ -123,15 +149,18 @@ export class OtlpMetricsDriver extends Driver(Metrics) {
     let series = this.series.get(key);
     if (series === undefined) {
       if (this.series.size >= this.config.maxQueue) return undefined;
+      const bounds = validBounds(options.bounds) ? [...options.bounds] : HISTOGRAM_BOUNDS;
       series = {
         kind,
         name,
         attributes: { ...attributes },
+        bounds,
+        unit: options.unit,
         value: 0,
         count: 0,
         min: Number.POSITIVE_INFINITY,
         max: Number.NEGATIVE_INFINITY,
-        bucketCounts: Array.from({ length: HISTOGRAM_BOUNDS.length + 1 }, () => 0),
+        bucketCounts: Array.from({ length: bounds.length + 1 }, () => 0),
       };
       this.series.set(key, series);
     }
@@ -161,8 +190,9 @@ export class OtlpMetricsDriver extends Driver(Metrics) {
         sum: series.value,
         min: series.min,
         max: series.max,
-        bounds: HISTOGRAM_BOUNDS,
+        bounds: series.bounds,
         bucketCounts: [...series.bucketCounts],
+        ...(series.unit === undefined ? {} : { unit: series.unit }),
       });
     }
   }

@@ -98,13 +98,16 @@ sender (`fetch` only, no OpenTelemetry SDK):
   `@stackra/app` calls it for each request. `traceSampleRatio` samples new traces; a continued trace follows its
   caller's flag. `parseTraceparent` and `formatTraceparent` are the W3C helpers.
 - `OtlpMetricsDriver` (the `Metrics` port, driver name `otlp`) aggregates counters, gauges and explicit-bucket
-  histograms (the OpenTelemetry default bounds) per name and attribute set, and every `metricIntervalMs` POSTs their
-  cumulative values to `<endpoint>/v1/metrics`. A lost send loses no count; past `maxQueue` series a new one is
+  histograms per name and attribute set, and every `metricIntervalMs` POSTs their cumulative values to
+  `<endpoint>/v1/metrics`. A histogram is bucketed by the bounds its first recording advises (`HistogramOptions`, such
+  as `HTTP_SERVER_DURATION`'s seconds bounds) and carries the advised `unit`, so a Prometheus backend names it
+  `<name>_seconds`; without advice it uses the OpenTelemetry default bounds, tuned for milliseconds. A lost send loses no count; past `maxQueue` series a new one is
   dropped.
 
 A failing collector never reaches the traced or measured code.
 
-`pnpm --filter @stackra/logger test:int` (Docker) proves the three drivers against a real OpenTelemetry Collector
-(the pinned contrib image, Testcontainers): the collector's OTLP/HTTP receiver, behind basic auth taken from the
-headers secret, accepts and re-exports each signal with its `service.name`, attributes, trace ids, severities, sums,
-histogram buckets and gauges intact, and a wrong secret is refused (401), dropped and counted.
+`pnpm --filter @stackra/logger test:int` proves the three drivers against a real OpenTelemetry Collector (the pinned
+contrib 0.165.0 image in Testcontainers, or that release's binary when `STACKRA_OTELCOL_BIN` names it): the collector's
+OTLP/HTTP receiver, behind basic auth taken from the headers secret, accepts and re-exports each signal with its
+`service.name`, attributes, trace ids, severities, sums, histogram buckets and gauges intact, the HTTP server histogram
+keeps its unit and seconds bounds, and a wrong secret is refused (401), dropped and counted.

@@ -157,13 +157,15 @@ observability:
 The plan gives each objective the four multi-window, multi-burn-rate alerts of the Google SRE workbook: it pages
 (`critical`) when 2% of the budget goes in an hour (1h and 5m windows) or 5% in six hours (6h and 30m), and opens a
 ticket (`warning`) when 10% goes in a day (1d and 2h) or in three days (3d and 6h). Over 30 days those are burn rates of
-14.4, 6, 3 and 1; another window scales them. An objective of an unknown service, one listed twice or a threshold off
-the buckets fails the plan.
+14.4, 6, 3 and 1; another window scales them, never below 1 (a slower burn never spends the budget, so a row that
+would scale under 1 is held at 1). An objective of an unknown service, one listed twice or a threshold off the buckets
+fails the plan.
 
 `prometheusSloRules(plan)` renders them for the LGTM stack's ruler (Mimir or Prometheus): per objective one group with
 a recording rule `slo:sli_error:ratio_rate<window>` per window and one `SloErrorBudgetBurn` alert per row, labelled
 `slo_service`, `slo`, `severity`, `long_window` and `short_window` and linking the runbook
-(`apps/docs/src/docs/runbooks/slo-burn-rate.mdx`). The series names default to what Prometheus's OTLP receiver writes
+(`apps/docs/src/docs/runbooks/slo-burn-rate.mdx`), plus one `SloIndicatorMissing` warning that fires when the
+objective's series has been absent for 15 minutes, so an objective with no data is never mistaken for a healthy one. The series names default to what Prometheus's OTLP receiver writes
 (`http_server_request_duration_seconds`, the service in `job`); `metric`, `serviceLabel` and `runbookUrl` override them.
 `JSON.stringify` of the result is a valid rule file.
 
@@ -173,8 +175,18 @@ import { observabilityPlan, prometheusSloRules } from "@stackra/infra-observabil
 writeFileSync("slo-rules.yml", JSON.stringify(prometheusSloRules(plan), null, 2));
 ```
 
-`pnpm --filter @stackra/infra-observability test:int` (Docker) runs `promtool test rules` of a real Prometheus over the
-rendered rules: a fast burn pages, a slow burn opens a ticket and a healthy service stays quiet.
+The rules need the series: every service with an objective must record `http.server.request.duration` in seconds with
+the advised bounds (`HTTP_SERVER_DURATION` in `@stackra/contracts`). Stackra's server runtime does it for every call it
+serves (`serveGuardedCall` in `@stackra/app/server`, which the generated adapter hands the bound `Metrics`) once the
+service binds `OtlpMetricsDriver` and sets `logger.otlp.serviceName` to the service key the objective names.
+
+`pnpm --filter @stackra/infra-observability test:int` runs `promtool test rules` of a real Prometheus over the rendered
+rules (a fast burn pages, a slow burn opens a ticket, a healthy service stays quiet, a silent one raises
+`SloIndicatorMissing`, and a broken threshold fails the test), and an end-to-end test: calls served through
+`serveGuardedCall` with `OtlpMetricsDriver` reach a real OpenTelemetry Collector and Prometheus's OTLP receiver, and the
+recorded ratios and the alerts that fire are checked. It runs the pinned images under Docker, or the same releases'
+binaries when `STACKRA_OTELCOL_BIN` (otelcol-contrib 0.165.0) and `STACKRA_PROMETHEUS_DIR` (the unpacked Prometheus
+3.15.1 release) name them.
 
 ## Core's own stack
 

@@ -14,7 +14,9 @@
  *          call gets none. An anonymous call acts in the tenant the edge signed (its visitor id kept), and in none
  *          without a signed one; a credential's tenant wins, and a token or API key for another tenant than the signed
  *          one is 403. A `stream: true` action answers its stream as server-sent events, holding the user's token
- *          until the stream ends.
+ *          until the stream ends. Given `Metrics`, every answer is recorded once in `http.server.request.duration`
+ *          (seconds, the advised bounds) with its method, route template and status: 200, a refusal's status, the
+ *          generic 401, 429 for a rate-limited call and 500 for one that throws, which still propagates.
  * Boundary: test only; real Web Crypto signing with `signEdgeRequest` against real `Date.now()`; the forwarding cases
  *           stub the authenticator and `fetch` and use throwaway token strings.
  * Runtime: node (vitest)
@@ -26,9 +28,14 @@ import { Action, Idempotency } from "@stackra/actions";
 import { CallOriginKind } from "@stackra/actions/contracts";
 import { ClientsConfig, HttpClientTransportDriver } from "@stackra/clients";
 import { buildConfig } from "@stackra/config";
-import { ActorKind, HttpMethod, Realm } from "@stackra/contracts";
-import type { Actor } from "@stackra/contracts";
-import { ErrorKind, IdempotencyKeyInProgressError, Refusal } from "@stackra/errors";
+import { ActorKind, HTTP_SERVER_DURATION, HttpMethod, Metrics, Realm } from "@stackra/contracts";
+import type { Actor, HistogramOptions, TraceAttributes } from "@stackra/contracts";
+import {
+  ErrorKind,
+  IdempotencyKeyInProgressError,
+  RateLimitedError,
+  Refusal,
+} from "@stackra/errors";
 import { MemoryServiceTokensDriver } from "@stackra/identity";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -712,5 +719,119 @@ describe("serveGuardedCall forwarding a caller's token (ADR 0209)", () => {
       expect(reader()?.()).toBeUndefined();
     }
     expect(ON_BEHALF_OF_TOKEN.getStore()).toBeUndefined();
+  });
+});
+
+/** Metrics that keep every histogram recording. */
+class RecordedMetrics extends Metrics {
+  readonly histograms: {
+    name: string;
+    value: number;
+    attributes: TraceAttributes | undefined;
+    options: HistogramOptions | undefined;
+  }[] = [];
+
+  counter(): void {
+    return undefined;
+  }
+
+  histogram(
+    name: string,
+    value: number,
+    attributes?: TraceAttributes,
+    options?: HistogramOptions,
+  ): void {
+    this.histograms.push({ name, value, attributes, options });
+  }
+
+  gauge(): void {
+    return undefined;
+  }
+}
+
+/** A call with no guard, recording into fresh metrics; `execute` answers or throws `outcome`. */
+function measured(outcome?: Error, method = "POST") {
+  const metrics = new RecordedMetrics();
+  const serve = () =>
+    serveGuardedCall({
+      request: new Request("https://api.example.test/orders/ord_1?debug=1", {
+        method,
+        headers: { authorization: "Bearer t" },
+        ...(method === "POST" ? { body: "{}" } : {}),
+      }),
+      path: "/orders/:orderId",
+      maxBodyBytes: 1024,
+      anonymous: false,
+      guard: async () => undefined,
+      authenticate: async () => ({ actor: USER }),
+      execute: async () => {
+        if (outcome !== undefined) throw outcome;
+        return { ok: true };
+      },
+      metrics,
+    });
+  return { serve, metrics };
+}
+
+describe("serveGuardedCall recording the HTTP server histogram (ADR 0184)", () => {
+  it("records an answered call once, in seconds, by method, route template and status", async () => {
+    const { serve, metrics } = measured();
+    expect((await serve()).status).toBe(200);
+    expect(metrics.histograms).toEqual([
+      {
+        name: "http.server.request.duration",
+        value: expect.any(Number),
+        attributes: {
+          "http.request.method": "POST",
+          "http.route": "/orders/:orderId",
+          "http.response.status_code": 200,
+        },
+        options: { unit: "s", bounds: HTTP_SERVER_DURATION.bounds },
+      },
+    ]);
+    const value = metrics.histograms[0]?.value ?? -1;
+    expect(value).toBeGreaterThanOrEqual(0);
+    expect(value).toBeLessThan(5);
+  });
+
+  it("records a refusal as its kind's status", async () => {
+    const { serve, metrics } = measured(OrderLockedError.create(), "GET");
+    expect((await serve()).status).toBe(409);
+    expect(metrics.histograms[0]?.attributes).toMatchObject({
+      "http.request.method": "GET",
+      "http.response.status_code": 409,
+    });
+  });
+
+  it("records a refused credential as the generic 401", async () => {
+    const metrics = new RecordedMetrics();
+    const response = await serveGuardedCall({
+      request: new Request("https://api.example.test/orders/ord_1", { method: "GET" }),
+      path: "/orders/:orderId",
+      maxBodyBytes: 1024,
+      anonymous: false,
+      guard: async () => undefined,
+      authenticate: async () => ({ actor: USER }),
+      execute: async () => ({}),
+      metrics,
+    });
+    expect(response.status).toBe(401);
+    expect(metrics.histograms[0]?.attributes?.["http.response.status_code"]).toBe(401);
+  });
+
+  it("records a rate-limited call as 429 and a thrown one as 500, and still propagates both", async () => {
+    const limited = measured(RateLimitedError.create());
+    await expect(limited.serve()).rejects.toBeInstanceOf(RateLimitedError);
+    expect(limited.metrics.histograms[0]?.attributes?.["http.response.status_code"]).toBe(429);
+
+    const broken = measured(new Error("database down"));
+    await expect(broken.serve()).rejects.toThrow("database down");
+    expect(broken.metrics.histograms[0]?.attributes?.["http.response.status_code"]).toBe(500);
+  });
+
+  it("records a method the conventions do not name as _OTHER", async () => {
+    const { serve, metrics } = measured(undefined, "PROPFIND");
+    await serve();
+    expect(metrics.histograms[0]?.attributes?.["http.request.method"]).toBe("_OTHER");
   });
 });

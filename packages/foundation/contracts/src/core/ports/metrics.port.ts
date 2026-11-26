@@ -11,6 +11,7 @@
  *                     0263 (ports resolve by type).
  */
 import { Port } from "#core/bases/port.base";
+import type { HistogramOptions } from "#core/types/histogram-options.type";
 import type { TraceAttributes } from "#core/types/trace-attributes.type";
 
 /**
@@ -19,13 +20,22 @@ import type { TraceAttributes } from "#core/types/trace-attributes.type";
  * @example
  * this.metrics.counter("orders.created", 1, { scopeId });
  * this.metrics.histogram("orders.create.duration_ms", latencyMs, { outcome: "ok" });
+ * this.metrics.histogram("http.server.request.duration", 0.042, { "http.route": "/orders" }, { unit: "s", bounds });
  */
 export abstract class Metrics extends Port {
   /** Adds `delta` (zero or more) to the monotonic counter `name`. */
   abstract counter(name: string, delta: number, attributes?: TraceAttributes): void;
 
-  /** Records one `value` in the histogram `name` (a duration in milliseconds, a size in bytes). */
-  abstract histogram(name: string, value: number, attributes?: TraceAttributes): void;
+  /**
+   * Records one `value` in the histogram `name` (a duration in milliseconds, a size in bytes), bucketed by the
+   * driver's default bounds unless `options` advises a unit and bounds of its own.
+   */
+  abstract histogram(
+    name: string,
+    value: number,
+    attributes?: TraceAttributes,
+    options?: HistogramOptions,
+  ): void;
 
   /** Sets the gauge `name` to `value` (a queue depth, a pool size). */
   abstract gauge(name: string, value: number, attributes?: TraceAttributes): void;

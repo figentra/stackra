@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `otlpMetricsBody(points, serviceName)`, the OTLP/JSON `ExportMetricsServiceRequest` for a batch of collected
  *          points: one resource, one scope (`@stackra/logger`), one metric per name and kind with a data point per
- *          attribute set: cumulative monotonic sums, gauges, and cumulative explicit-bucket histograms.
+ *          attribute set: cumulative monotonic sums, gauges, and cumulative explicit-bucket histograms, a histogram
+ *          with the `unit` its points carry (a Prometheus backend appends it: `_seconds`).
  * Boundary: pure. Counts are strings (64-bit in OTLP/JSON); values are doubles.
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (decision 1); the OTLP/JSON encoding and metrics data model.
@@ -46,10 +47,18 @@ function dataPoint(point: MetricPoint): object {
  * await fetch(`${endpoint}/v1/metrics`, { method: "POST", body: JSON.stringify(otlpMetricsBody(points, "orders")) });
  */
 export function otlpMetricsBody(points: readonly MetricPoint[], serviceName: string): object {
-  const metrics = new Map<string, { kind: MetricPoint["kind"]; name: string; points: object[] }>();
+  const metrics = new Map<
+    string,
+    { kind: MetricPoint["kind"]; name: string; unit: string | undefined; points: object[] }
+  >();
   for (const point of points) {
     const key = `${point.kind}\u0000${point.name}`;
-    const metric = metrics.get(key) ?? { kind: point.kind, name: point.name, points: [] };
+    const metric = metrics.get(key) ?? {
+      kind: point.kind,
+      name: point.name,
+      unit: point.kind === "histogram" ? point.unit : undefined,
+      points: [],
+    };
     metric.points.push(dataPoint(point));
     metrics.set(key, metric);
   }
@@ -60,14 +69,18 @@ export function otlpMetricsBody(points: readonly MetricPoint[], serviceName: str
         scopeMetrics: [
           {
             scope: { name: "@stackra/logger" },
-            metrics: [...metrics.values()].map(({ kind, name, points: dataPoints }) => {
+            metrics: [...metrics.values()].map(({ kind, name, unit, points: dataPoints }) => {
               if (kind === "gauge") return { name, gauge: { dataPoints } };
               if (kind === "sum")
                 return {
                   name,
                   sum: { aggregationTemporality: CUMULATIVE, isMonotonic: true, dataPoints },
                 };
-              return { name, histogram: { aggregationTemporality: CUMULATIVE, dataPoints } };
+              return {
+                name,
+                ...(unit === undefined ? {} : { unit }),
+                histogram: { aggregationTemporality: CUMULATIVE, dataPoints },
+              };
             }),
           },
         ],

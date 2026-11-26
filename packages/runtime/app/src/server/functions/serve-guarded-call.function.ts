@@ -10,21 +10,33 @@
  *          credential whose tenant differs from it is 403), parse the input (JSON body, or the query string for
  *          GET and DELETE typed by the input schema, then the path parameters), run the call, and answer: output as 200 JSON, a refusal as its
  *          kind's status with its envelope, and a `stream: true` action's stream as server-sent events
- *          (`eventStreamResponse`), which still carries the visitor's token.
+ *          (`eventStreamResponse`), which still carries the visitor's token. Given `metrics`, every answer is recorded
+ *          in the stable `http.server.request.duration` histogram (`HTTP_SERVER_DURATION`: seconds, the advised
+ *          bounds) with `http.request.method`, `http.route` (the route template) and `http.response.status_code`;
+ *          a propagated error counts as the status it becomes (429 for `RateLimitedError`, else 500). The
+ *          service-level objectives of `@stackra/infra-observability` read exactly this series.
  * Boundary: a guard or authentication failure is one generic answer, 401 or 403 with the code `request_refused`, saying
  *           nothing about which check failed; it never logs or echoes the body, the signature or the credential. A
  *           `RateLimitedError`, any non-refusal error and an authenticator outage propagate, for `answerHttp` (429) and
  *           Encore (500). A refusal of the call is mapped by `Enum.meta(ErrorKind, kind).httpStatus`. The call runs
  *           inside `holdCallerToken`, so its service-to-service calls forward the user's token only as ADR 0209's
  *           amendment allows (a first hop, or a second into an action that declares it), never past the call; a
- *           streamed call ends when its stream does.
+ *           streamed call ends when its stream does. The duration ends when the answer starts (a stream's body is not
+ *           timed); recording never changes the answer and the path, query, body and actor are never attributes.
  * Runtime: node
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order and the
- *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098.
+ *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098; ADR 0184
+ *                     (decisions 1 and 3: the HTTP server histogram the objectives read).
  */
 import { kindOf } from "@stackra/container";
-import { ActorKind, actingScopeId, Enum, mintPublicId } from "@stackra/contracts";
-import type { Actor } from "@stackra/contracts";
+import {
+  ActorKind,
+  actingScopeId,
+  Enum,
+  HTTP_SERVER_DURATION,
+  mintPublicId,
+} from "@stackra/contracts";
+import type { Actor, Metrics } from "@stackra/contracts";
 import {
   ErrorKind,
   IdempotencyKeyInProgressError,
@@ -41,6 +53,19 @@ import { readCappedBody } from "#server/functions/read-capped-body.function";
 import type { GuardedCallOptions } from "#server/types/guarded-call-options.type";
 import type { KeyCallOptions } from "#server/types/key-call-options.type";
 import type { VisitorIdentity } from "#server/types/visitor-identity.type";
+
+/** The methods the HTTP semantic conventions name; any other is recorded as `_OTHER`. */
+const KNOWN_METHODS: ReadonlySet<string> = new Set([
+  "CONNECT",
+  "DELETE",
+  "GET",
+  "HEAD",
+  "OPTIONS",
+  "PATCH",
+  "POST",
+  "PUT",
+  "TRACE",
+]);
 
 /** Methods whose input is the body; every other method's input is the query string. */
 const BODY_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PATCH"]);
@@ -75,14 +100,54 @@ function carry(response: Response, visitor: VisitorIdentity | undefined): Respon
   return answer;
 }
 
+/** Records one answered call of `options` in `metrics`, which took `seconds` and answered `status`. */
+function record(
+  metrics: Metrics,
+  options: GuardedCallOptions,
+  seconds: number,
+  status: number,
+): void {
+  const method = options.request.method.toUpperCase();
+  metrics.histogram(
+    HTTP_SERVER_DURATION.name,
+    seconds,
+    {
+      "http.request.method": KNOWN_METHODS.has(method) ? method : "_OTHER",
+      "http.route": options.path,
+      "http.response.status_code": status,
+    },
+    { unit: HTTP_SERVER_DURATION.unit, bounds: HTTP_SERVER_DURATION.bounds },
+  );
+}
+
 /**
- * Answers one inbound call through the guards, the authenticator and the call itself.
+ * Answers one inbound call through the guards, the authenticator and the call itself, and records it in
+ * `options.metrics` when given.
  *
  * @throws RateLimitedError, a non-refusal error or an authenticator outage (as a rejection), for the adapter's answer.
  * @example
- * return serveGuardedCall({ request, path: "/orders/:orderId", maxBodyBytes, anonymous: false, guard, authenticate, execute });
+ * return serveGuardedCall({ request, path: "/orders/:orderId", maxBodyBytes, anonymous: false, guard, authenticate, execute, metrics });
  */
 export async function serveGuardedCall(options: GuardedCallOptions): Promise<Response> {
+  const { metrics } = options;
+  if (metrics === undefined) return respond(options);
+  const started = performance.now();
+  // What the caller is answered when the call throws: the adapter's 429, or Encore's 500.
+  let status = 500;
+  try {
+    const response = await respond(options);
+    status = response.status;
+    return response;
+  } catch (error) {
+    if (isRefusal(error, RateLimitedError)) status = 429;
+    throw error;
+  } finally {
+    record(metrics, options, (performance.now() - started) / 1000, status);
+  }
+}
+
+/** The answer of one call, in the server-check order (ADR 0437). */
+async function respond(options: GuardedCallOptions): Promise<Response> {
   const { request } = options;
   const method = request.method.toUpperCase();
   const declared = Number(request.headers.get("content-length") ?? 0);

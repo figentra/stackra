@@ -4,7 +4,8 @@
  *          whose `answerHttp` runs through `app.handlers.run`, answers `OPTIONS` with 204 and `corsHeaders` over the
  *          bound `CorsConfig`, and adds those headers to every other answer (`Vary` appended) with `apiCacheControl`'s
  *          `private, no-store` (ADR 0325 rule 22); a service that declares @stackra/errors answers a `RateLimitedError`
- *          with 429 and `rateLimitHeaders` (STA-1477), one without it keeps the plain answer; a service without
+ *          with 429 and `rateLimitHeaders` (STA-1477), one without it keeps the plain answer; every call is recorded in
+ *          the bound `Metrics` (the HTTP server histogram, STA-2854); a service without
  *          @stackra/app, a package and an app get none.
  * Boundary: test only; asserts on the generated source text of the IR fixtures.
  * Runtime: node (vitest)
@@ -47,6 +48,8 @@ describe(emitEncoreHttp, () => {
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
       "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",
+      'import { type Actor, Metrics } from "@stackra/contracts";',
+      "      metrics: container.has(Metrics) ? container.get(Metrics) : undefined,",
       "  action?: AnyClass;",
       "      action: call.action,",
       "  if (response.body === null) resp.end();",

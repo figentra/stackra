@@ -440,11 +440,44 @@ describe("observabilityPlan objectives", () => {
     );
 
     expect(plan.slos.windowDays).toBe(28);
-    expect(plan.slos.burnRateAlerts.map((alert) => alert.burnRate)).toEqual([
-      13.44, 5.6, 2.8, 0.933333333333,
-    ]);
+    // The 3d row would scale to 0.93: held at 1, so it spends 3 of 28 days' budget, never alerting inside it.
+    expect(plan.slos.burnRateAlerts.map((alert) => alert.burnRate)).toEqual([13.44, 5.6, 2.8, 1]);
     expect(plan.slos.burnRateAlerts.map((alert) => alert.threshold)).toEqual([
-      0.1344, 0.056, 0.028, 0.00933333333333,
+      0.1344, 0.056, 0.028, 0.01,
+    ]);
+    expect(plan.slos.burnRateAlerts.map((alert) => alert.budgetSpent)).toEqual([
+      0.02, 0.05, 0.1, 0.107142857143,
+    ]);
+  });
+
+  it("never alerts below a burn rate of 1, however short the window", () => {
+    for (const windowDays of [7, 14, 28, 30, 90]) {
+      const plan = observabilityPlan(
+        rootRunway({
+          providers: { betterstack: {} },
+          observability: {
+            slos: { windowDays, objectives: [{ service: "orders", availability: 99.9 }] },
+          },
+        }),
+        { apps: {}, services: ["orders"] },
+      );
+      for (const alert of plan.slos.burnRateAlerts) {
+        expect(alert.burnRate).toBeGreaterThanOrEqual(1);
+        expect(alert.threshold).toBeGreaterThanOrEqual(0.001);
+      }
+    }
+    const week = observabilityPlan(
+      rootRunway({
+        providers: { betterstack: {} },
+        observability: {
+          slos: { windowDays: 7, objectives: [{ service: "orders", availability: 99.9 }] },
+        },
+      }),
+      { apps: {}, services: ["orders"] },
+    );
+    expect(week.slos.burnRateAlerts.map((alert) => alert.burnRate)).toEqual([3.36, 1.4, 1, 1]);
+    expect(week.slos.burnRateAlerts.map((alert) => alert.budgetSpent)).toEqual([
+      0.02, 0.05, 0.142857142857, 0.428571428571,
     ]);
   });
 

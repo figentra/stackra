@@ -1,6 +1,6 @@
 ---
 title: "SLO burn-rate alert"
-description: "What to do when SloErrorBudgetBurn fires: read which service, indicator and windows burn, decide whether it is still burning, stop the burn, and record what the budget lost."
+description: "What to do when SloErrorBudgetBurn fires: read which service, indicator and windows burn, decide whether it is still burning, stop the burn, and record what the budget lost; and when SloIndicatorMissing says an objective has no data."
 icon: "flame"
 ---
 
@@ -9,6 +9,15 @@ icon: "flame"
   (`observability.slos.objectives`, STA-2854). Objectives start at the first paying tenant (ADR 0184
   decision 3); before then no burn alert exists.
 </Note>
+
+<Warning>
+  The alerts read the `http.server.request.duration` histogram in **seconds**
+  (`http_server_request_duration_seconds` in Prometheus), labelled with the service in `job`.
+  Stackra's server runtime records it for every call it serves (`serveGuardedCall`, through the
+  generated HTTP adapter) once a `Metrics` driver is bound (`OtlpMetricsDriver`, driver `otlp`) and
+  `logger.otlp.serviceName` is the service key named in the objective. Without that series the burn
+  alerts can never fire; `SloIndicatorMissing` says so (see [No data](#no-data)).
+</Warning>
 
 An objective promises a share of good requests over a window (30 days by default): availability, the requests
 answered without a server error, or latency, the requests answered within a threshold. The **error budget** is the
@@ -26,7 +35,10 @@ fast and stops soon after the burn stops.
 | `warning` (ticket) | 3                   | 1d / 2h             | 10% in a day              | `notify.warning`            |
 | `warning` (ticket) | 1                   | 3d / 6h             | 10% in three days         | `notify.warning`            |
 
-With another `slos.windowDays` the burn rates scale so each row still spends the same share of the budget.
+With another `slos.windowDays` the burn rates scale so each row still spends the same share of the budget, but never
+below 1: a slower burn would not exhaust the budget within the window, so a row that would scale under 1 (the 3d row of
+a 28-day window, the 1d and 3d rows of a 7-day one) is held at 1. A `warning` therefore always means the budget runs out
+before the window ends if the burn goes on.
 
 ## Read the alert
 
@@ -69,8 +81,27 @@ The summary gives the burn rate and the description the share of the budget that
   </Step>
 </Steps>
 
+## No data
+
+`SloIndicatorMissing` (`warning`, labels `slo_service` and `slo`) fires when the series an objective reads has been
+absent for 15 minutes: `http_server_request_duration_seconds_count{job="<service>"}` for availability, or its threshold
+bucket (`_bucket{le="<threshold>"}`) for latency. While it fires, that objective's burn alerts are blind: a ratio over
+no series is no series. Check, in order:
+
+1. The service serves through the generated adapter and binds a `Metrics` driver (`otlp`), and the OTLP endpoint is
+   set (`logger.otlp.endpoint`); with no endpoint the driver records nothing.
+2. `logger.otlp.serviceName` equals the objective's `service` (the backend writes it to `job`).
+3. The backend receives OTLP metrics and translates them with the unit suffix (Prometheus's OTLP receiver and the
+   collector's Prometheus exporters do); otherwise pass `metric` and `serviceLabel` to `prometheusSloRules`.
+4. For latency, the bucket exists: the histogram is recorded in seconds with the advised bounds
+   (`HTTP_SERVER_DURATION` in `@stackra/contracts`); a histogram in milliseconds has no `0.25` bucket.
+
+A service that has had no traffic at all since its deploy also raises it; send a probe through it or accept the warning
+until it serves.
+
 ## When the alert is wrong
 
+- **Never fires at all**: see [No data](#no-data); `SloIndicatorMissing` names the objective whose series is missing.
 - **Fires with no traffic problem**: the service label may not match. The rules read `job` (Prometheus's OTLP
   receiver writes `service.name` there) and `http_server_request_duration_seconds`; a backend that names them
   differently passes `metric` and `serviceLabel` to `prometheusSloRules`.
@@ -85,8 +116,10 @@ The summary gives the burn rate and the description the share of the budget that
 `observabilityPlan` (`@stackra/infra-observability`) reads `observability.slos` and derives the four alerts of each
 objective; `prometheusSloRules(plan)` renders them as one Prometheus rule group per objective (recording rules
 `slo:sli_error:ratio_rate<window>` and the alerting rules), loaded by the LGTM stack's ruler (ADR 0184 decision 2).
-`promtool test rules` proves in the package's integration tests that a fast burn pages, a slow burn opens a ticket and a
-healthy service stays quiet.
+`promtool test rules` proves in the package's integration tests that a fast burn pages, a slow burn opens a ticket, a
+healthy service stays quiet and a silent one raises `SloIndicatorMissing`; an end-to-end test serves calls through the
+server runtime, exports them through a real OpenTelemetry Collector into Prometheus's OTLP receiver and checks the
+recorded ratios and the alerts that fire.
 
 ```yaml
 observability:

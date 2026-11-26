@@ -7,19 +7,19 @@
  *          availability and latency indicators for every service, one uptime monitor per public URL the runway lists,
  *          the public status page when the runway declares one, the alerts and notification routes with their
  *          defaults applied, and the service-level objectives the runway declares (`slos.objectives`) with their
- *          multi-window burn-rate alerts (the SRE workbook's four rows, scaled to `slos.windowDays`).
+ *          multi-window burn-rate alerts (the SRE workbook's four rows, scaled to `slos.windowDays`, never below a burn
+ *          rate of 1: a slower burn never exhausts the budget, so it alerts nobody).
  * Boundary: pure: parsed runways in, a plan out. Reports every failure at once. Reads no file, resolves no `ref:` and
  *           calls no cloud; `observabilityStack` (`./node`) declares the plan's resources.
  * Runtime: isomorphic
  * Governing contract: ADR 0184 (decisions 1 to 6), ADR 0171 (decisions 2 and 6), ADR 0296 (decisions 1 and 2: member
  *                     WHAT, root WHERE), ADR 0185 (decisions 1 and 3: Better Stack runs on-call and the status page).
  */
-import { Enum } from "@stackra/contracts";
+import { Enum, HTTP_SERVER_DURATION } from "@stackra/contracts";
 import { RunwayEnvironment } from "@stackra/runway";
 import type { RootRunway, RunwayIssue } from "@stackra/runway";
 
 import { BURN_RATE_WINDOWS } from "#core/constants/burn-rate-windows.constant";
-import { HTTP_DURATION_BOUNDS } from "#core/constants/http-duration-bounds.constant";
 import { OBSERVABILITY_SCHEMA } from "#core/constants/observability-schema.constant";
 import { HeartbeatKind } from "#core/enums/heartbeat-kind.enum";
 import { SliKind } from "#core/enums/sli-kind.enum";
@@ -31,8 +31,14 @@ import type { ObservabilityPlan } from "#core/types/observability-plan.type";
 import type { ServiceSli } from "#core/types/service-sli.type";
 import type { SloObjective } from "#core/types/slo-objective.type";
 
-/** The stable OpenTelemetry HTTP server histogram both indicators read. */
-const HTTP_DURATION = "http.server.request.duration";
+/** The stable OpenTelemetry HTTP server histogram both indicators read (the server runtime records it). */
+const HTTP_DURATION = HTTP_SERVER_DURATION.name;
+
+/** The advised bounds of that histogram, in seconds: a latency threshold must be one of them. */
+const HTTP_DURATION_BOUNDS: readonly number[] = HTTP_SERVER_DURATION.bounds;
+
+/** The slowest burn worth an alert: below 1 the budget outlasts the window, so it never runs out. */
+const MIN_BURN_RATE = 1;
 
 /** No alerts or heartbeats on a developer machine or on pull-request previews, which live for days. */
 const UNMONITORED: ReadonlySet<RunwayEnvironment> = new Set([
@@ -224,14 +230,17 @@ export function observabilityPlan(
   const windowHours = policy.slos.windowDays * 24;
   const burnRateAlerts: BurnRateAlert[] = objectives.flatMap((objective) =>
     BURN_RATE_WINDOWS.map((row) => {
-      const burnRate = exact((row.budgetSpent * windowHours) / row.longHours);
+      // A short window scales a row below 1 (the 3d row of a 28-day window is 0.93): such a burn never spends the
+      // whole budget, so the row is held at 1 and spends what a burn of 1 spends over its long window.
+      const scaled = (row.budgetSpent * windowHours) / row.longHours;
+      const burnRate = exact(Math.max(MIN_BURN_RATE, scaled));
       return {
         service: objective.service,
         kind: objective.kind,
         severity: row.severity,
         burnRate,
         threshold: exact(burnRate * exact(1 - objective.target)),
-        budgetSpent: row.budgetSpent,
+        budgetSpent: scaled >= MIN_BURN_RATE ? row.budgetSpent : exact(row.longHours / windowHours),
         longWindow: row.longWindow,
         shortWindow: row.shortWindow,
       };

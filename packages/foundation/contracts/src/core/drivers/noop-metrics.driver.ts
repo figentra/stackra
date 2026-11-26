@@ -8,6 +8,7 @@
  * Governing contract: ADR 0266 (decision 2: a memory driver first); ADR 0184 (decision 1).
  */
 import { Metrics } from "#core/ports/metrics.port";
+import type { HistogramOptions } from "#core/types/histogram-options.type";
 import type { TraceAttributes } from "#core/types/trace-attributes.type";
 
 /**
@@ -23,7 +24,12 @@ export class NoopMetricsDriver extends Metrics {
   }
 
   /** Drops the histogram sample without recording it. */
-  histogram(_name: string, _value: number, _attributes?: TraceAttributes): void {
+  histogram(
+    _name: string,
+    _value: number,
+    _attributes?: TraceAttributes,
+    _options?: HistogramOptions,
+  ): void {
     return undefined;
   }
 

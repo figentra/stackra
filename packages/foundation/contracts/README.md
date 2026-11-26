@@ -103,7 +103,9 @@ host's wiring like any driver:
   trace (`TraceCarrier`: `traceparent` and the edge request id, read when the first span starts) and
   `Tracer.traceparent()` names the current span for an outbound call (`traceContext` in `@stackra/transport`).
 - `NoopMetricsDriver`: the default `Metrics` (counter, histogram, gauge; synchronous, never throws, attributes are ids
-  and codes). The OTLP driver is `OtlpMetricsDriver` in `@stackra/logger`. Operations metrics only: usage metering
+  and codes). A histogram may advise its unit and bucket bounds (`HistogramOptions`). `HTTP_SERVER_DURATION` names the
+  stable HTTP server histogram (`http.server.request.duration`, seconds, the semantic-convention bounds) that the
+  server runtime records and the service-level objectives read. The OTLP driver is `OtlpMetricsDriver` in `@stackra/logger`. Operations metrics only: usage metering
   that bills is `MeterKind` (ADR 0216).
 
 ## Member definitions

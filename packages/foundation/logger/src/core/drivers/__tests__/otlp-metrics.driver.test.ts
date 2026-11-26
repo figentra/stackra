@@ -10,7 +10,7 @@
  */
 import { buildConfig } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
-import { Metrics } from "@stackra/contracts";
+import { HTTP_SERVER_DURATION, Metrics } from "@stackra/contracts";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -26,6 +26,7 @@ class NoSecrets extends SecretStore {
 
 interface SentMetric {
   name: string;
+  unit?: string;
   sum?: { aggregationTemporality: number; isMonotonic: boolean; dataPoints: Point[] };
   gauge?: { dataPoints: Point[] };
   histogram?: { aggregationTemporality: number; dataPoints: Point[] };
@@ -114,6 +115,42 @@ describe(OtlpMetricsDriver, () => {
     expect(BigInt(point?.timeUnixNano ?? 0)).toBeGreaterThanOrEqual(
       BigInt(point?.startTimeUnixNano ?? 0),
     );
+  });
+
+  it("buckets a histogram by its advised bounds and writes its unit", async () => {
+    const meter = driver();
+    const { name, unit, bounds } = HTTP_SERVER_DURATION;
+    const attributes = { "http.route": "/orders", "http.response.status_code": 200 };
+    meter.histogram(name, 0.004, attributes, { unit, bounds });
+    meter.histogram(name, 0.25, attributes, { unit, bounds });
+    meter.histogram(name, 0.3, attributes, { unit, bounds });
+    meter.histogram(name, 12, attributes, { unit, bounds });
+    meter.histogram("orders.create.duration_ms", 4);
+    await meter.flush();
+    const [seconds, millis] = metrics(fetch, 0);
+    expect(seconds?.name).toBe("http.server.request.duration");
+    expect(seconds?.unit).toBe("s");
+    const point = seconds?.histogram?.dataPoints[0];
+    expect(point?.explicitBounds).toEqual([...bounds]);
+    const buckets = point?.bucketCounts ?? [];
+    expect(buckets).toHaveLength(bounds.length + 1);
+    expect(buckets[bounds.indexOf(0.005)]).toBe("1");
+    expect(buckets[bounds.indexOf(0.25)]).toBe("1");
+    expect(buckets[bounds.indexOf(0.5)]).toBe("1");
+    expect(buckets.at(-1)).toBe("1");
+    expect(millis?.unit).toBeUndefined();
+    expect(millis?.histogram?.dataPoints[0]?.explicitBounds).toEqual([...HISTOGRAM_BOUNDS]);
+  });
+
+  it("falls back to the default bounds when the advised ones are unusable", async () => {
+    const meter = driver();
+    meter.histogram("a", 1, { case: "empty" }, { bounds: [] });
+    meter.histogram("a", 1, { case: "descending" }, { bounds: [1, 0.5] });
+    meter.histogram("a", 1, { case: "infinite" }, { bounds: [1, Number.POSITIVE_INFINITY] });
+    await meter.flush();
+    const points = metrics(fetch, 0)[0]?.histogram?.dataPoints ?? [];
+    expect(points).toHaveLength(3);
+    for (const point of points) expect(point.explicitBounds).toEqual([...HISTOGRAM_BOUNDS]);
   });
 
   it("keeps values cumulative across exports, and exports on its interval", async () => {

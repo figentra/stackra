@@ -4,7 +4,8 @@
  *          one group with a recording rule per distinct window (the availability ratio counts 5xx answers, the latency
  *          ratio the requests above the threshold bucket, an integer bound matching `1` and `1.0`) and one
  *          `SloErrorBudgetBurn` alert per burn-rate row, both windows above the threshold, with its severity, windows
- *          and runbook; the series names, the service label and the runbook link can be overridden.
+ *          and runbook, and one `SloIndicatorMissing` warning per objective over the exact series it reads; the
+ *          series names, the service label and the runbook link can be overridden.
  * Boundary: test only; pure function. `prometheus-slo-rules.int.test.ts` proves the rules on a real Prometheus.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0184 (decisions 2 and 3); ADR 0185 (decision 1).
@@ -32,7 +33,10 @@ function planOf(objectives: readonly Record<string, unknown>[]) {
 }
 
 const isRecording = (rule: object): rule is PrometheusRecordingRule => "record" in rule;
-const isAlerting = (rule: object): rule is PrometheusAlertingRule => "alert" in rule;
+const isAlerting = (rule: object): rule is PrometheusAlertingRule =>
+  "alert" in rule && rule.alert === "SloErrorBudgetBurn";
+const isMissing = (rule: object): rule is PrometheusAlertingRule =>
+  "alert" in rule && rule.alert === "SloIndicatorMissing";
 
 describe("prometheusSloRules", () => {
   it("gives an empty rule file without objectives", () => {
@@ -93,6 +97,33 @@ describe("prometheusSloRules", () => {
     expect(alerting[3]?.expr).toBe(
       'slo:sli_error:ratio_rate3d{slo_service="orders",slo="availability"} > 0.001' +
         ' and slo:sli_error:ratio_rate6h{slo_service="orders",slo="availability"} > 0.001',
+    );
+  });
+
+  it("warns when an objective's series is missing, so a silent objective is never mistaken for a healthy one", () => {
+    const groups = prometheusSloRules(
+      planOf([
+        { service: "orders", availability: 99.9 },
+        { service: "search", latency: { thresholdMs: 1000, percent: 95 } },
+      ]),
+    ).groups;
+    const [availability, latency] = groups.map((group) => group.rules.filter(isMissing));
+    expect(availability).toEqual([
+      {
+        alert: "SloIndicatorMissing",
+        expr: 'absent(http_server_request_duration_seconds_count{job="orders"})',
+        for: "15m",
+        labels: { slo_service: "orders", slo: "availability", severity: "warning" },
+        annotations: {
+          summary: "orders availability has no data, so its burn-rate alerts cannot fire",
+          description: expect.stringContaining("http.server.request.duration in seconds"),
+          runbook_url: "https://docs.stackra.figentra.com/runbooks/slo-burn-rate#no-data",
+        },
+      },
+    ]);
+    // A latency objective reads its threshold bucket: a histogram bucketed in milliseconds has none, and warns.
+    expect(latency?.[0]?.expr).toBe(
+      'absent(http_server_request_duration_seconds_bucket{job="search",le=~`1(\\.0)?`})',
     );
   });
 
