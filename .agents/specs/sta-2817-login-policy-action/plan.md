@@ -77,16 +77,37 @@ as asked, removals last.
 ## Files and folders
 
 ```text
-packages/security/identity/src/contracts/{ports,types,enums}/…
+packages/security/identity/src/contracts/ports/idp-organizations.port.ts
+packages/security/identity/src/contracts/types/idp-organization.type.ts
+packages/security/identity/src/core/drivers/memory-idp-organizations.driver.ts
+packages/security/identity/src/contracts/index.ts
+packages/security/identity/src/contracts/ports/idp-admin.port.ts
+packages/security/identity/src/core/drivers/zitadel-idp-admin.driver.ts
+packages/security/identity/src/core/drivers/memory-idp-admin.driver.ts
+packages/security/identity/src/core/functions/login-policy-rejection-of.function.ts
+packages/security/identity/src/contracts/enums/login-policy-rejection.enum.ts
+packages/security/identity/src/core/errors/login-policy-rejected.error.ts
+packages/security/identity/src/core/index.ts
+packages/security/identity/assets/lang/ar/identity.json
+packages/security/identity/assets/lang/de/identity.json
+packages/security/identity/assets/lang/en/identity.json
+packages/security/identity/assets/lang/es/identity.json
+packages/security/identity/assets/lang/fr/identity.json
+packages/security/identity/assets/lang/it/identity.json
+packages/security/identity/assets/lang/nl/identity.json
+packages/security/identity/src/node/access/login-policy.permissions.ts
+packages/security/identity/src/node/actions/set-login-policy.action.ts
+packages/security/identity/src/node/queries/show-login-policy.query.ts
+packages/security/identity/src/node/schemas/set-login-policy-input.schema.ts
+packages/security/identity/src/node/schemas/show-login-policy-input.schema.ts
+packages/security/identity/src/node/schemas/login-policy-output.schema.ts
+packages/security/identity/src/node/index.ts
 packages/security/identity/src/contracts/types/login-policy.type.ts
-packages/security/identity/src/core/{drivers,errors,functions}/…
-packages/security/identity/src/node/{access,actions,queries,schemas}/…
-packages/security/identity/assets/lang/*/identity.json
 packages/security/identity/stackra.manifest.json
 packages/security/identity/README.md
 packages/security/identity/AGENTS.md
-packages/security/identity/docs/threat-model.md
 .changeset/identity-tenant-login-policy.md
+packages/security/identity/docs/threat-model.md
 ```
 
 ## Data models and migrations
