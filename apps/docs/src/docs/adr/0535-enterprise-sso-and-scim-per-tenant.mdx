@@ -3,12 +3,13 @@ title: "0535 — Enterprise SSO and SCIM per tenant, with group-to-role mapping"
 description: "Proposed · 2026-11-26"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0535 (Proposed 2026-11-26, STA-278), the proposal for a tenant's own SAML or OIDC identity provider, SCIM 2.0 provisioning and group-to-role mapping, put to the CTO for a ruling. Boundary: decision text only; nothing in the code relies on it until it is accepted, and the amended ADRs gain their notes in the commit that accepts it. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0206; ADR 0207; ADR 0208; ADR 0361 and ADR 0372 (amendments of 2026-11-08); ADR 0461 decision 5. */}
+{/* Stackra file contract. Purpose: ADR 0535 (Proposed 2026-11-26, STA-278), the proposal for a tenant's own SAML or OIDC identity provider, SCIM 2.0 provisioning and group-to-role mapping, put to the CTO for a ruling (ruling 2, the plan tiers, to the owner). Boundary: decision text only; nothing in the code relies on it until it is accepted, and the amended ADRs gain their notes in the commit that accepts it. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0206; ADR 0207; ADR 0208; ADR 0361 and ADR 0372 (amendments of 2026-11-08); ADR 0461 decision 5. */}
 
 <Note>
-  Proposed 2026-11-26 (STA-278) for a CTO ruling. Nothing may rely on it yet. The questions the
-  ruling must answer are listed under [Rulings asked for](#rulings-asked-for), each with the
-  recommended answer. When it is accepted, the same commit adds a note to
+  Proposed 2026-11-26 (STA-278) for a CTO ruling, with one question (ruling 2) for the owner,
+  because it would change an owner decision of 2026-11-08. Nothing may rely on it yet. The questions
+  are listed under [Rulings asked for](#rulings-asked-for), each with the recommended answer. When
+  it is accepted, the same commit adds a note to
   [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral),
   [0207](/adr/0207-authentication-assurance-and-machine-identities),
   [0208](/adr/0208-iam-model-scope-tree-roles-conditions-deny-delegation-and-permission-names),
@@ -45,8 +46,13 @@ What already stands:
   provider's user. IAM has the `RoleGrants` port (grant only, no revoke, no provenance). API keys have a lifecycle
   (prefix, hash, rotation, expiry) that a provisioning token can reuse ([0278](/adr/0278-api-key-lifecycle)).
 - **The plan ladder.** [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) sells SSO as a Pro
-  add-on and in Business and Enterprise, and SCIM in Business and Enterprise; the 2026-11-08 amendments say
-  "Enterprise-tier". The two disagree, and only entitlement data should decide it.
+  add-on and in Business and Enterprise, and SCIM in Business and Enterprise. The owner's 0372 amendment of 2026-11-08
+  is narrower: "an Enterprise-tier merchant may add its own organisation-level SAML or OIDC IdP for its staff", and
+  "Free and paid tiers below Enterprise keep decision 3 as written." The owner's decision is the later one and stands.
+  This page does not widen it: ruling 2 asks the owner whether to.
+- **Who may act and at what risk.** The same amendment says: "It is an L3 setting: the merchant's owner role sets it,
+  with step-up, audited." [0099](/adr/0099-risk-scale-l0-to-l4) has since placed keys and access at L4 and kept L3 for
+  money, so this page raises the level (rule 12) and keeps the owner role as the only role that acts.
 
 Alternatives weighed: a Stackra SAML or OIDC relying party of its own (rejected: 0206 keeps the login path out of our
 services, and ZITADEL already brokers SAML and OIDC IdPs); ZITADEL's own SCIM server (weighed in decision 6); a
@@ -61,8 +67,9 @@ Proposed. Each numbered rule is what the build will follow once accepted.
    runtime gate is the entitlement, never a package boundary: `access.sso` unlocks connections, domains, enforcement and
    group mapping from sign-in claims; `access.scim` unlocks the provisioning endpoint. A tenant without the entitlement
    gets "requires subscription" with the upgrade path (0242 decision 7,
-   [0215](/adr/0215-entitlements)). Which tiers hold which key is plan data; the 0242 table is the default ladder, and
-   "Enterprise-tier" in the 2026-11-08 amendments reads as "holds `access.sso`".
+   [0215](/adr/0215-entitlements)). Which tiers hold which key is plan data. Until the owner answers ruling 2, that
+   data follows the owner's 2026-11-08 decision: only the Enterprise tier holds `access.sso` and `access.scim`, and
+   tiers below it keep 0372 decision 3 as written.
 2. **One dedicated staff organisation per SSO tenant.** Turning SSO on for a tenant creates (once) a dedicated ZITADEL
    staff organisation for it on the instance of the tenant's region (0361 amendment, rule 3;
    [0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)).
@@ -84,10 +91,31 @@ Proposed. Each numbered rule is what the build will follow once accepted.
    setting value, `access.sso`, the shape the settings package already tests) makes the connection the only sign-in
    method for its verified domains: the dedicated organisation's `LoginPolicy` allows no password and no
    self-registration and lists exactly that connection's provider ids, and domain discovery on the login page sends
-   an email of a verified domain to that organisation. `LoginPolicy` gains `allowDomainDiscovery` for this. Turning
-   enforcement on is refused, `sso_enforcement_needs_break_glass`, unless at least one principal outside the dedicated
-   organisation holds the tenant's owner role, so a broken IdP never locks a tenant out; the IAM break-glass grant
-   (`BreakGlassGrant`) stays the emergency path for everyone else.
+   an email of a verified domain to that organisation. `LoginPolicy` gains `allowDomainDiscovery` for this.
+
+   **A break-glass owner stands while enforcement is on.** While `identity.sso.enforced` is on, the tenant keeps at
+   least one break-glass owner: a principal that holds the tenant's owner role (`SystemRole.Owner` at the tenant
+   root), whose user is active and outside the dedicated organisation, and none of whose sign-in identifiers (login
+   names and verified emails) is in any verified domain of the tenant. Such a person signs in through the shared staff
+   organisation, and domain discovery never sends them to the IdP. This is a standing rule, not a check made once:
+   every change that would leave the tenant with no break-glass owner is refused, `sso_enforcement_needs_break_glass`,
+   checked in the same transaction as the change. The changes are:
+   - turning enforcement on;
+   - verifying a domain;
+   - a claim (rule 11);
+   - revoking an owner grant or changing an owner's role, through IAM's `RoleGrants.revoke` or the membership actions
+     behind tenancy's `TenantMembers.changeRole` and `remove` (beside their `last_owner_refused`);
+   - a break-glass owner changing a sign-in identifier to one in a verified domain;
+   - deactivating a break-glass owner's user through `IdpAdmin`.
+
+   The check is one port, `BreakGlassOwnerGuard`, declared in `@stackra/contracts` and implemented by identity, so IAM
+   calls it without depending on identity ([0462](/adr/0462-iam-knows-no-segments-segments-is-an-add-on-and-one-layering-exemption-table)).
+   A person's own account erasure is the one change it never refuses, because the erasure right is not a setting to
+   override (STA-1543). The erasure goes through, the tenant's owners get `identity.sso.break_glass_lost`, and the
+   console shows enforcement as "no break-glass owner" until an owner names one. While a break-glass owner stands, a
+   broken IdP cannot lock the tenant out. The IAM break-glass grant (`BreakGlassGrant`) stays the emergency path for
+   everyone else, and for a tenant that lost its last break-glass owner by erasure.
+
 6. **SCIM 2.0 is served by Stackra, writing through the ports.** The identity service serves SCIM 2.0 (RFC 7643 and
    RFC 7644) at one base URL per region: `Users`, `Groups`, `ServiceProviderConfig`, `ResourceTypes` and `Schemas`.
    Users are written to ZITADEL through `IdpAdmin` (create, update, deactivate, remove); groups and memberships are kept
@@ -124,12 +152,17 @@ Proposed. Each numbered rule is what the build will follow once accepted.
     verified email is in a newly verified domain is moved by creating a user in the dedicated organisation that carries
     the same `usr_` id, then deactivating the old one after their first SSO sign-in. Their grants are on the `usr_` id
     and do not move. The tenant owner starts the claim per domain; each person is told before it happens. This follows
-    0372 decision 6: the proof is the enterprise's verified domain plus the person's verified email, not a name.
+    0372 decision 6: the proof is the enterprise's verified domain plus the person's verified email, not a name. Before
+    a claim runs, it lists the owners it would move. While enforcement is on, a claim that would move the last
+    break-glass owner is refused, `sso_enforcement_needs_break_glass` (rule 5).
 12. **Risk, permissions and audit.** Identity declares `identity.federation.*` permissions above IAM
     ([0462](/adr/0462-iam-knows-no-segments-segments-is-an-add-on-and-one-layering-exemption-table)). Reading
     connections, domains and mappings is L1. Creating, changing or removing a connection, a domain, a mapping or
-    enforcement, and issuing or rotating a SCIM token, are L4 with the `security` tag
-    ([0099](/adr/0099-risk-scale-l0-to-l4)), need a step-up within 10 minutes (0207 decision 1,
+    enforcement, and issuing or rotating a SCIM token, are taken by the tenant's owner role only, as the 0372 amendment
+    says: each needs `identity.federation.manage`, and the action also checks that the caller holds `SystemRole.Owner`
+    at the tenant root, so a custom role given the permission still cannot act. These actions are L4 with the
+    `security` tag ([0099](/adr/0099-risk-scale-l0-to-l4)), not the amendment's L3, because 0099 puts keys and access
+    at L4 and keeps L3 for money. They need a step-up within 10 minutes (0207 decision 1,
     [0406](/adr/0406-step-up-is-an-action-option-checked-after-the-permission-and-the-call-carries-its-assurance)) and
     are never MCP tools. Every admin action, every SCIM write and every reconcile that changes a grant is audited
     ([0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)) with ids and counts: connection id, user
@@ -146,6 +179,10 @@ Proposed. Each numbered rule is what the build will follow once accepted.
   mappings and memberships, SCIM tokens). Each table is tenant-owned with row-level security and ships the tenancy
   isolation test.
 - `@stackra/iam` changes `Grant` and `RoleGrants` (rule 9); every `RoleGrants` driver and the IAM service follow.
+- `@stackra/contracts` gains the `BreakGlassOwnerGuard` port (rule 5). IAM's revoke, the membership role-change and
+  remove actions, identity's domain, claim, identifier and deactivation actions, and the enforcement setting all call
+  it. Tenancy's `TenantMembers` lists `sso_enforcement_needs_break_glass` among its refusal codes, so the members page
+  shows the host's words for it.
 - SCIM user attributes are personal data, classified `pii` under
   [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle). Stackra stores `userName`, name, primary email,
   `active` and `externalId` only; enterprise-extension attributes (department, manager, employee number) are dropped
@@ -154,28 +191,34 @@ Proposed. Each numbered rule is what the build will follow once accepted.
 - Losing `access.sso` or `access.scim` freezes, never breaks: existing connections keep signing people in, edits are
   refused, and SCIM answers `403` with the RFC 7644 error body, so a lapsed plan cannot lock staff out.
 - Build rows, filed when accepted (size XL in all): `IdpFederation` port with memory and ZITADEL drivers, and
-  `LoginPolicy.allowDomainDiscovery`; connection, domain and enforcement actions with migrations; `Grant.source` and
+  `LoginPolicy.allowDomainDiscovery`; connection, domain and enforcement actions with migrations; the
+  `BreakGlassOwnerGuard` port and its calls; `Grant.source` and
   `RoleGrants.revoke` in IAM; the reconcile service; the SCIM 2.0 server; the account claim; console screens in OS;
   docs and a runbook for each IdP vendor.
 
 ## Rulings asked for
 
-Each question has the recommended answer first. The CTO rules; nothing here is accepted until then.
+Each question has the recommended answer first. The CTO rules on 1 and 3 to 6. Ruling 2 is the owner's, because any
+answer other than "Enterprise only" would change the owner's decision of 2026-11-08 in 0372. Nothing here is accepted
+until both have ruled.
 
-1. **Core or Pro.** Recommended: free code in `@stackra/identity` behind `access.sso` and `access.scim` (rule 1), as
-   0461 decision 5 already says. The alternative is a `@stackra-pro` package, which would need 0461 amended.
-2. **Which tiers.** Recommended: entitlement data decides, with 0242's ladder as the default (SSO a Pro add-on and in
-   Business and Enterprise; SCIM in Business and Enterprise), and the "Enterprise-tier" wording of the 2026-11-08
-   amendments read as "holds `access.sso`". The alternative is Enterprise only.
-3. **Who serves SCIM.** Recommended: Stackra's identity service (rule 6), because group-to-role mapping needs groups. The
+1. **Core or Pro** (CTO). Recommended: free code in `@stackra/identity` behind `access.sso` and `access.scim` (rule 1),
+   as 0461 decision 5 already says. The alternative is a `@stackra-pro` package, which would need 0461 amended.
+2. **Which tiers** (owner). The owner's decision of 2026-11-08 stands until the owner changes it: only the Enterprise
+   tier holds `access.sso` and `access.scim`, and "Free and paid tiers below Enterprise keep decision 3 as written."
+   The question for the owner is whether to widen it to 0242's ladder (SSO as a Pro add-on and in Business, SCIM in
+   Business). Because the gate is the entitlement (rule 1), either answer is plan data and needs no code change. If
+   the owner widens it, the decision is recorded as a new owner decision and 0372's amendment gains a note; it is not
+   a reading of the old wording.
+3. **Who serves SCIM** (CTO). Recommended: Stackra's identity service (rule 6), because group-to-role mapping needs groups. The
    alternative, ZITADEL's own SCIM server, is less code but leaves groups to the sign-in claims only and is a preview
    feature; confirm its group support against the pinned ZITADEL version before choosing it.
-4. **Claiming existing staff by verified domain** (rule 11). Recommended: yes, started by the tenant owner, each person
+4. **Claiming existing staff by verified domain** (rule 11, CTO). Recommended: yes, started by the tenant owner, each person
    told first. The alternative is that existing staff keep their shared-organisation login until they leave.
-5. **Session length under enforced SSO.** Recommended: the 0207 baseline of 30 days stays, and SCIM deactivation ends
+5. **Session length under enforced SSO** (CTO). Recommended: the 0207 baseline of 30 days stays, and SCIM deactivation ends
    sessions at once; a tenant without SCIM may set a shorter maximum (as low as 12 hours) so a person removed at the IdP
    loses access within a day.
-6. **Enterprise-extension attributes.** Recommended: dropped (data minimisation); a product that needs one asks for it
+6. **Enterprise-extension attributes** (CTO). Recommended: dropped (data minimisation); a product that needs one asks for it
    in its own ADR.
 
 ## Enforcement
@@ -183,19 +226,39 @@ Each question has the recommended answer first. The CTO rules; nothing here is a
 planned — the build adds: a conformance suite run against the memory driver and against a ZITADEL container in CI for
 `IdpFederation` (0206 Enforcement); the tenancy isolation test for each new table and for the SCIM surface (a token of
 tenant A reads, writes and lists nothing of tenant B); a test that a mapping naming the owner role or a role with a
-restricted permission is refused; a test that reconcile never revokes a `manual` grant; a test that enforcement without
-an outside owner is refused; the Microsoft Entra SCIM validator and Okta's SCIM test suite run against a staging
+restricted permission is refused; a test that reconcile never revokes a `manual` grant; a test that a federation write
+action refuses a caller who holds `identity.federation.manage` through a custom role but not the owner role; one
+`sso_enforcement_needs_break_glass` refusal test for each path of rule 5: turning enforcement on with no owner outside
+the dedicated organisation, turning it on when the only outside owner's email is in a verified domain, verifying the
+domain of the last break-glass owner's email, a claim that would move the last break-glass owner, revoking the last
+break-glass owner's owner grant (through `RoleGrants.revoke` and through membership remove), changing that owner's
+role, changing that owner's email to one in a verified domain, and deactivating that owner's user; a test that the
+same changes pass while a second break-glass owner stands, and while enforcement is off; a test that the last
+break-glass owner's own erasure goes through and emits `identity.sso.break_glass_lost`; the Microsoft Entra SCIM validator and Okta's SCIM test suite run against a staging
 deployment before the feature is offered; gen's `step_up_missing` (`checkCallShape`) already refuses an L4 user action
 without `stepUp`. Nothing checks this page today.
 
 ## Supersedes and sources
 
-Supersedes: none. On acceptance it amends 0206 (the control plane gains federation connections and the SCIM surface),
-0207 (decision 1 gains the SSO session rule of ruling 5), 0208 (rule 9), 0372 (its 2026-11-08 amendment is built by
-this page) and 0410 (a second admin port beside `IdpAdmin`).
+Supersedes: none. On acceptance it amends:
+
+- 0206: the control plane gains federation connections and the SCIM surface.
+- 0207: decision 1 gains the SSO session rule of ruling 5.
+- 0208: rule 9 (`Grant.source`, `RoleGrants.revoke`), and the owner-role revoke checks `BreakGlassOwnerGuard` (rule 5).
+- 0372, its amendment of 2026-11-08, which this page builds with two changes, both stated here so neither is silent:
+  - **Risk L3 to L4, with the `security` tag** (rule 12). This is a tightening that follows 0099's level for keys and
+    access.
+  - **Break-glass owner as a standing rule** (rule 5). The amendment allows enforcement for the verified domains. This
+    page refuses any change that would leave an enforced tenant with no owner who can sign in without the IdP.
+
+  Who may act does not change: the tenant's owner role only, with step-up, audited (rule 12). Which tiers may use it
+  does not change: Enterprise only, unless the owner rules otherwise (ruling 2).
+
+- 0410: a second admin port beside `IdpAdmin`.
 
 Sources: STA-278 (Auth0 and Clerk enterprise connections, SCIM, groups to roles); STA-1343 (cancelled Pro split);
 STA-1551 (enterprise day-1 readiness audit); the Stackra production-readiness audit of 2026-11-26 (STA-2796, batch 10,
 item 10.1); the owner's decisions of 2026-11-08 recorded in 0361 and 0372; `packages/security/identity/src/contracts/ports/idp-admin.port.ts`;
 `packages/security/identity/src/contracts/types/login-policy.type.ts`; `packages/security/iam/src/contracts/ports/role-grants.port.ts`;
-`packages/security/iam/src/contracts/types/break-glass-grant.type.ts`; RFC 7643 and RFC 7644 (SCIM 2.0).
+`packages/security/iam/src/contracts/types/break-glass-grant.type.ts`;
+`packages/security/tenancy/src/contracts/ports/tenant-members.port.ts` (`last_owner_refused`); RFC 7643 and RFC 7644 (SCIM 2.0).
