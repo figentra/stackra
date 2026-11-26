@@ -1,0 +1,52 @@
+# Stackra file contract:
+# Purpose: the DAST policy, in ZAP's own rules format (`<plugin id>	<IGNORE|INFO|WARN|FAIL>	<note>`, or
+#          `<ids>	OUTOFSCOPE	<url regex>`; tab separated). ZAP reads it (`-c policy.tsv`) and
+#          tools/scripts/security-scan.mjs gates the JSON report with it: a FAIL fails the run, a WARN is reported, an
+#          IGNORE is dropped; an OUTOFSCOPE regex (matched from the start of the URL) drops those URLs. A plugin not listed takes its risk: High fails, Medium warns, Low and Informational inform.
+#          An IGNORE or a downgrade names the reason on its line. Alert ids: https://www.zaproxy.org/docs/alerts/
+# Scope: every `pnpm security:dast` run (ADR 0187 decision 3)
+# Owner: release-operations
+# Secrets: forbidden
+#
+# Injection and server-side flaws fail whatever risk ZAP gives them (active scans only raise these).
+40012	FAIL	Cross Site Scripting (Reflected)
+40014	FAIL	Cross Site Scripting (Persistent)
+40018	FAIL	SQL Injection
+40019	FAIL	SQL Injection - MySQL
+40020	FAIL	SQL Injection - Hypersonic SQL
+40021	FAIL	SQL Injection - Oracle
+40022	FAIL	SQL Injection - PostgreSQL
+40024	FAIL	SQL Injection - SQLite
+40046	FAIL	Server Side Request Forgery
+90019	FAIL	Server Side Code Injection
+90020	FAIL	Remote OS Command Injection
+90023	FAIL	XML External Entity Attack
+90035	FAIL	Server Side Template Injection
+6	FAIL	Path Traversal
+7	FAIL	Remote File Inclusion
+40003	FAIL	CRLF Injection
+40009	FAIL	Server Side Include
+#
+# Transport and headers every Stackra host should send (the edge and @stackra/csp).
+10035	WARN	Strict-Transport-Security Header Not Set (FAIL again when STA-2822 sets it on the registry and static hosts)
+10020	WARN	Missing Anti-clickjacking Header (FAIL again when STA-2822 sets it on the static host)
+10021	WARN	X-Content-Type-Options Header Missing
+10038	WARN	Content Security Policy (CSP) Header Not Set
+10098	WARN	Cross-Domain Misconfiguration
+10054	WARN	Cookie without SameSite Attribute
+10010	WARN	Cookie No HttpOnly Flag
+10011	WARN	Cookie Without Secure Flag
+#
+# Informational only: they describe the site, not a weakness.
+10027	INFO	Information Disclosure - Suspicious Comments (a docs site and a package registry are full of the word "user")
+10109	INFO	Modern Web Application (the scan notes a single-page app)
+10049	INFO	Storable and Cacheable Content (static assets are meant to be cached at the edge)
+10104	INFO	User Agent Fuzzer
+#
+# Out of scope, by URL (a regex matched from the start of the URL, as ZAP does).
+# Cloudflare's own endpoints on every zone, not our code.
+*	OUTOFSCOPE	https://[^/]+/cdn-cgi/.*
+# The docs and the registry's package pages quote SQL on purpose (ADRs, READMEs).
+10099	OUTOFSCOPE	https://(docs\.stackra\.figentra\.com|npm\.stackra\.figentra\.com/(ar/)?package)/.*
+# The docs are public reference pages with no personal data; their long digit strings (hashes, ids) read as card numbers.
+10062	OUTOFSCOPE	https://docs\.stackra\.figentra\.com/.*

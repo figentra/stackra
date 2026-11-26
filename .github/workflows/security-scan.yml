@@ -1,0 +1,124 @@
+# Stackra file contract:
+# Purpose: the application security tests beside GitHub's CodeQL default setup (which already scans every pull request
+#          and main as "Analyze (javascript-typescript)"; this workflow does not repeat it). STA-2821, ADR 0187 decision 3.
+#          - SAST: the Stackra Semgrep rules (tools/security/semgrep) on pull requests that touch code or the rules, and
+#            nightly. The rule fixtures run first; a finding not in tools/security/semgrep/baseline.yaml fails the job.
+#            Findings go to code scanning (category `semgrep-stackra`).
+#          - DAST: a passive ZAP baseline nightly against each host in tools/security/zap/targets.yaml, gated by
+#            tools/security/zap/policy.tsv; alerts go to code scanning (category `zap-<target>`) and the HTML report is
+#            kept 30 days. Active scans run only on the box against a local target (`pnpm security:dast --mode full`).
+#          Both call tools/scripts/security-scan.mjs, the same command the box runs, with images pinned by digest.
+# Owner: release-operations
+# Secrets: none (the job token uploads SARIF only)
+name: Security scan
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "services/**"
+      - "workers/**"
+      - "tools/security/**"
+      - "tools/scripts/security-scan.mjs"
+      - ".github/workflows/security-scan.yml"
+  schedule:
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+
+# ADR 0019 D2: nothing by default; each job asks for what it needs.
+permissions: {}
+
+concurrency:
+  group: security-scan-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sast:
+    name: SAST (Semgrep, Stackra rules)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write # upload-sarif
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
+          install_args: node pnpm
+
+      # The script needs only the root's `yaml`; no member is installed or built.
+      - name: Install the root's dependencies
+        run: pnpm install --frozen-lockfile --filter=. --ignore-scripts
+
+      - name: Rule tests (fixtures)
+        run: node tools/scripts/security-scan.mjs sast --test
+
+      - name: Scan
+        run: node tools/scripts/security-scan.mjs sast --sarif semgrep.sarif
+
+      # A fork's job token cannot write security events; its result stays in the log.
+      - name: Upload to code scanning
+        if: ${{ always() && hashFiles('semgrep.sarif') != '' && !github.event.pull_request.head.repo.fork }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep-stackra
+
+  dast:
+    name: DAST (ZAP baseline, ${{ matrix.target }})
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write # upload-sarif
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every name in tools/security/zap/targets.yaml; the script refuses any other host.
+        target: [registry, static, docs]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node pnpm
+
+      - name: Install the root's dependencies
+        run: pnpm install --frozen-lockfile --filter=. --ignore-scripts
+
+      - name: ZAP baseline (passive)
+        env:
+          TARGET: ${{ matrix.target }}
+        run: node tools/scripts/security-scan.mjs dast --target "$TARGET" --mode baseline --out zap-out --sarif zap.sarif
+
+      - name: Upload to code scanning
+        if: ${{ always() && hashFiles('zap.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: zap.sarif
+          category: zap-${{ matrix.target }}
+
+      - name: Keep the HTML report
+        if: ${{ always() && hashFiles('zap-out/zap.html') != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: zap-${{ matrix.target }}
+          path: zap-out/zap.html
+          retention-days: 30

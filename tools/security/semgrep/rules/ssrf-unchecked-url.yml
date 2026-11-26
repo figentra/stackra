@@ -1,0 +1,80 @@
+# Stackra file contract:
+# Purpose: Semgrep taint rule `stackra.ssrf-unchecked-url`: a URL from the caller (an action's `input`, a request's
+#          body, query, params or headers) reaches an outbound request without passing an egress check
+#          (`checkEgress`, `assertEgress`, `assertPublicUrl`; ADR 0450 decision 3).
+#          Fixture: ../__tests__/__fixtures__/ssrf-unchecked-url.ts (`pnpm security:sast --test`).
+# Scope: TypeScript under apps, packages, services, workers (tools/scripts/security-scan.mjs)
+# Owner: release-operations
+# Secrets: forbidden
+rules:
+  - id: stackra.ssrf-unchecked-url
+    languages: [typescript]
+    severity: ERROR
+    mode: taint
+    message: >-
+      A caller-supplied URL reaches an outbound request without an egress check. Refuse private, link-local and
+      internal hosts first (`checkEgress`, ADR 0450), or the server can be made to call its own network.
+    metadata:
+      category: security
+      cwe: ["CWE-918: Server-Side Request Forgery (SSRF)"]
+      owasp: ["A10:2021 - Server-Side Request Forgery (SSRF)"]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      references:
+        [
+          "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html",
+        ]
+    pattern-sources:
+      - patterns:
+          - pattern-inside: |
+              class $C {
+                ...
+                $H($INPUT, ...) { ... }
+                ...
+              }
+          - metavariable-regex:
+              metavariable: $H
+              regex: "^(handle|execute|run)$"
+          - focus-metavariable: $INPUT
+          - pattern: $INPUT
+      - pattern: $REQ.body
+      - pattern: $REQ.query
+      - pattern: $REQ.params
+      - pattern: $REQ.headers
+      - pattern: $C.req.query(...)
+      - pattern: $C.req.param(...)
+      - pattern: $C.req.header(...)
+      - pattern: await $C.req.json()
+    pattern-sanitizers:
+      - patterns:
+          - pattern-either:
+              - pattern-inside: if (<... checkEgress(...) ...>) { ... } else { ... }
+              - pattern-inside: |
+                  if (<... checkEgress(...) ...>) return ...;
+                  ...
+              - pattern-inside: |
+                  if (<... checkEgress(...) ...>) throw ...;
+                  ...
+              - pattern-inside: |
+                  if (<... checkEgress(...) ...>) { ... }
+                  ...
+          - pattern: $ANY
+      - pattern: assertEgress(...)
+      - pattern: assertPublicUrl(...)
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: fetch($URL, ...)
+              - pattern: globalThis.fetch($URL, ...)
+              - pattern: new WebSocket($URL, ...)
+              - patterns:
+                  - pattern: $HTTP.$VERB($URL, ...)
+                  - metavariable-regex:
+                      metavariable: $VERB
+                      regex: "^(request|get|post|put|patch|delete|head|fetch)$"
+                  # an HTTP client (`http`, `https`, `axios`, `got`, `ky`, `undici`, `this.client`), never a Map's `get`
+                  - metavariable-regex:
+                      metavariable: $HTTP
+                      regex: '(?i)^(this\.)?\w*(https?|axios|got|ky|undici|client|request|agent|fetcher)\w*$'
+          - focus-metavariable: $URL

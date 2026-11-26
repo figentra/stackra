@@ -1,0 +1,47 @@
+# Stackra file contract:
+# Purpose: Semgrep rule `stackra.dynamic-code`: code compiled from a runtime string (`eval`, `new Function`, the `vm`
+#          module, a string handed to a timer). Gen emits source files; nothing compiles code at run time.
+#          Fixture: ../__tests__/__fixtures__/dynamic-code.ts (`pnpm security:sast --test`).
+# Scope: TypeScript under apps, packages, services, workers (tools/scripts/security-scan.mjs)
+# Owner: release-operations
+# Secrets: forbidden
+rules:
+  - id: stackra.dynamic-code
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      Code is compiled from a runtime string. Anything that reaches it runs with the process's rights; express the
+      behaviour as code, or emit a source file at build time.
+    metadata:
+      category: security
+      cwe:
+        [
+          "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection')",
+        ]
+      owasp: ["A03:2021 - Injection"]
+      confidence: MEDIUM
+      likelihood: LOW
+      impact: HIGH
+      references:
+        ["https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html"]
+    pattern-either:
+      - patterns:
+          - pattern: eval($X)
+          - pattern-not: eval("...")
+      - patterns:
+          - pattern-either:
+              - pattern: new Function(..., $BODY)
+              - pattern: Function(..., $BODY)
+          - pattern-not: new Function(..., "...")
+          - pattern-not: Function(..., "...")
+      - pattern: $VM.runInNewContext(...)
+      - pattern: $VM.runInThisContext(...)
+      - pattern: $VM.runInContext(...)
+      - pattern: new $VM.Script(...)
+      - patterns:
+          - pattern-either:
+              - pattern: setTimeout($S, ...)
+              - pattern: setInterval($S, ...)
+          - metavariable-regex:
+              metavariable: $S
+              regex: '^["''`]'
