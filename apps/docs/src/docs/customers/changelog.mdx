@@ -28,7 +28,13 @@ steps to take, how to verify, and how to roll back. It is published with the Git
 
 ## Releases so far
 
-<Note>
-  No stable release yet: `0.1.0` is the first. Prereleases are published under the `next` dist-tag
-  and have no release notes.
-</Note>
+Every release is on the registry under the `latest` dist-tag and on
+[GitHub releases](https://github.com/stackra-inc/stackra/releases). To see the current version and every earlier one:
+
+```bash
+npm view @stackra/container version --registry https://npm.stackra.figentra.com/
+npm view @stackra/container versions --registry https://npm.stackra.figentra.com/
+```
+
+Any package gives the same answer, because they all release at one version. Prereleases, when there are any, are
+published under the `next` dist-tag and have no release notes.

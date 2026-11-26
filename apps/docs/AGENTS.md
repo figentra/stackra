@@ -7,7 +7,7 @@ Stackra file contract:
 Purpose: the agent notes of @figentra/docs: the docs layout, its checks, the system map and the personal data it holds.
 Boundary: this member only; the project rules are in the root AGENTS.md.
 Runtime: none
-Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177; STA-1373; STA-1575.
+Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177; STA-1373; STA-1575; STA-2847.
 -->
 
 Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, React Router prerenders it, and the
@@ -21,9 +21,13 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
   `tsconfig.json`) and scripts (`scripts/`) stay outside `src/`.
 - `src/docs/customers/` is the buyer-facing tab: plain, accurate, no invented promise. A term the owner has not
   decided (support levels, EOL dates, how to buy) stays a marked placeholder (`Owner to supply (STA-n)`).
-  `customers/packages.mdx` is a snapshot of every package's `package.json` (`stackra.summary`, `exports`): update its
-  row when a package is added, renamed or gains an entry. `/licensing` redirects to `customers/install` (the registry
-  points `npm login` there).
+  `customers/packages.mdx` is generated from every published package's `package.json` (`stackra.summary`,
+  `exports`, `bin`) by `scripts/package-index/write-package-index.ts`: never edit it; after adding, renaming or
+  changing a package run `node apps/docs/scripts/package-index/write-package-index.ts` and commit the page (the docs
+  test fails while it is stale). The customer pages and `runbooks/release.mdx` never name the current version, a
+  dated status or the old `github.com/figentra/stackra` path; they say how to read the version from the registry
+  (`scripts/customer-pages/check-release-facts.ts`, run by the docs test, names a line that does). `/licensing`
+  redirects to `customers/install` (the registry points `npm login` there).
 - Never write the site, `llms.txt` or the API reference: gen writes them into `.stackra/site/`, which is never edited
   or committed. Moved paths go in `redirects` of `src/config/docs.config.ts`.
 - A new page is an `.mdx` under `src/docs/` plus an entry in a group of `src/config/docs.config.ts`; a new ADR needs no
@@ -38,6 +42,16 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
   `stackra.flows.json` and run the writer again.
 - Read the graph only through `@stackra/gen`'s exported types (`SystemGraph`, `GraphNode`, `GraphFlow`, `GraphEdge`).
 - Tests sit in `scripts/system-map/__tests__/`. The console renderer is later work (OS console).
+
+## Customer package index and release facts (`scripts/package-index/`, `scripts/customer-pages/`)
+
+- `render-package-index.ts` (pure) renders the page; `write-package-index.ts` (node) collects the published packages
+  (`"private": false`), writes `src/docs/customers/packages.mdx` and, with `--check`, exits 1 when it is stale. Tables
+  are padded as oxfmt pads them, so the written page passes `format:check` unchanged.
+- `stale-release-claims.ts` (pure) and `check-release-facts.ts` (node) refuse stale release phrases on the customer
+  pages and the release runbook. One declaration per file (ADR 0305): the records, paths and constants have their
+  own files. Tests sit in each folder's `__tests__/`; `turbo.jsonc` adds the packages' `package.json` files to the
+  `test` inputs.
 
 ## Architecture map (`scripts/architecture-map/`)
 

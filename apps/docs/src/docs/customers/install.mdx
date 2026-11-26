@@ -19,8 +19,9 @@ The registry never proxies npmjs: it answers only for these scopes, so every oth
 usual registry.
 
 <Note>
-  Status, 2026-10-29: the registry is built and the release workflow publishes to it. Version `0.1.0` is not released
-  yet, so `latest` is absent; prereleases go out under the `next` dist-tag (the tooling presets first). Check what is
+  Released: every `@stackra` package is published under the `latest` dist-tag, and all of them carry the same version
+  (one release moves every package; [Changelog](/customers/changelog) says what changed). Prereleases, when there are
+  any, go out under the `next` dist-tag. Check what is
   there with `npm view @stackra/<name> dist-tags --registry https://npm.stackra.figentra.com/`.
 </Note>
 
@@ -96,10 +97,11 @@ usual registry.
   </Step>
 </Steps>
 
-What Pro holds for 0.1.0 is decided in
+What Pro holds is decided in
 [0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers): paid
 studio UIs and advanced drivers over free runtimes. Runtime code stays free; a paid runtime feature is a plan
-entitlement, not a package.
+entitlement, not a package. A Pro package never checks its licence at runtime: the registry gates the install, and a
+revoked licence stops further installs (owner decision, STA-1589).
 
 ## In CI
 
@@ -149,10 +151,9 @@ served at `https://npm.stackra.figentra.com/-/npm/v1/attestations/@scope%2fname@
 
 ## Not ready yet
 
-| Item                                                              | State                                                            |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------- |
-| The Pro licence text (`LICENSE` of `@stackra-pro/*`)              | pending, owner (STA-30)                                          |
-| Whether a Pro package checks its licence at runtime               | pending, owner (STA-1589); today access is gated at install only |
-| How to buy a licence and request tokens                           | pending, owner (STA-1576)                                        |
-| `stackra whoami` (the entitlements call from the CLI)             | not built; use the `curl` call above                             |
-| A signed offline licence file for on-prem and air-gapped installs | not built (0453 decision 15)                                     |
+| Item                                                              | State                                                |
+| ----------------------------------------------------------------- | ---------------------------------------------------- |
+| The Pro licence text (`LICENSE` of `@stackra-pro/*`)              | drafted, waiting for owner and legal review (STA-30) |
+| How to buy a licence and request tokens                           | pending, owner (STA-1576)                            |
+| `stackra whoami` (the entitlements call from the CLI)             | not built; use the `curl` call above                 |
+| A signed offline licence file for on-prem and air-gapped installs | not built (0453 decision 15)                         |
