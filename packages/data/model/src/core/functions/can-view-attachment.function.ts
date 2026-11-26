@@ -8,7 +8,9 @@
  *           than answering. A driver's error propagates, so nothing is served on doubt. With an
  *           `AttachmentVisibilityCache` the answer is reused briefly per parent and actor. Tenant and scope are the
  *           files service's own checks, run before this one; this function never replaces them. The caller answers a
- *           refusal as "not found", so a hidden parent and a missing file look the same.
+ *           refusal as "not found", so a hidden parent and a missing file look the same. No files service calls it
+ *           yet, and the files-side driver that routes a parent's model key to its owning service is not built:
+ *           both are STA-2833.
  * Runtime: isomorphic
  * Governing contract: ADR 0222 (files); ADR 0333 (2026-10-24 amendment: a record under a related record is visible
  *                     only when that record is); STA-1960.

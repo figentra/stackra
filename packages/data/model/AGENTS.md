@@ -58,7 +58,9 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   parent's owning service binds `AttachmentParentVisibility`, the files service calls `canViewAttachment` after its own
   tenant and scope checks. Keep it fail-closed (no driver, or anything but a literal `true`, refuses; an error
   propagates) and keep `AttachmentVisibilityCache` keyed by the whole actor chain, capped at 60 s, never keeping a
-  failed answer.
+  failed answer. Only these parts exist so far: the files-side driver that routes each `parent.model` to its owning
+  service, gen's canView contract query per `HasAttachments` model and the files service's call are STA-2833. Never
+  describe the check as enforced until they land.
 - Data classes (ADR 0341): `DataClass` records the four effects; their readers (AI context, support access, search,
   export) apply them. The effects of the six classes of ADR 0134 are not set here yet; only `privileged` ships.
 - `@Searchable` keeps its options frozen and adds no key the caller left out; `semantic`, `sortable`, `ranges`,
