@@ -9,5 +9,8 @@
     // `stackra lint` runs the built CLI (packages/developer/cli/dist), so unlike the root lint this one waits for it;
     // it also builds the docs site into .stackra/site, so it runs after `build` and the two never write it at once.
     "lint": { "dependsOn": ["@stackra/cli#build", "build"] },
+    // The Free and Pro page check reads every packages/<category>/<name>/package.json (STA-2865), so a changed
+    // package.json must miss the cache and re-run it.
+    "test": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/packages/*/*/package.json"] },
   },
 }

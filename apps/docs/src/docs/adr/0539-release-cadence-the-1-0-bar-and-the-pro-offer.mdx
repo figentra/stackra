@@ -1,0 +1,133 @@
+---
+title: "0539 — Release cadence, the 1.0 bar, the support window and the Pro offer"
+description: "Proposed · 2026-11-26"
+---
+
+{/* Stackra file contract. Purpose: ADR 0539 (Proposed 2026-11-26, STA-2865), the draft for the owner's ruling on the release cadence before 1.0, the criteria that make 1.0, the support window after it, and what a Pro licence adds besides the @stackra-pro packages; each question carries its options and a recommendation. Boundary: decision text only; nothing relies on it until it is accepted. The free and Pro line itself is decided (ADR 0461, 0469) and described on customers/free-and-pro. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0013 (decision 5, carried by 0025); ADR 0177 (decisions 5 and 6); ADR 0453 (decision 18); ADR 0461; STA-2705; STA-2865. */}
+
+<Warning>
+  **Proposed, for the owner's ruling (STA-2865).** Nothing relies on this page until it is accepted.
+  Each decision below is the recommendation; the options weighed are under [Options for the
+  ruling](#options-for-the-ruling). The owner may accept, change or reject each question on its own.
+</Warning>
+
+## Context
+
+Stackra releases every `@stackra/*` package at one version
+([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)
+decision 18), and before `1.0.0` a minor release may break an API. The record on `main` shows what that means for a
+buyer: 46 release pull requests ("version packages") merged from 2026-10-29 to 2026-11-11, fourteen of them on one day
+(2026-11-06), and 33 minor versions from `0.1.0` to `0.33.1`. `0.33.1` followed `0.33.0` the next day as a set of about
+twenty fixes that a product needed to build and boot on it (#1039). Nothing says when "any minor may break" ends,
+which versions still get fixes, or how long a major lives after `1.0`; the support page lists all of these as owner
+placeholders (STA-1576).
+
+What already holds: every breaking release carries a written note ([0013](/adr/0013-versioning-and-release)
+decision 5, carried by [0025](/adr/0025-packages-publish-to-private-registry)); a deprecation lasts one minor before
+`1.0` and one major after, and long-term support starts at the first on-prem contract
+([0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 6); `@stackra-pro/*` releases at the same version as
+`@stackra/*` (0453 decision 18). The free and Pro line is decided:
+[0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers) keeps every
+runtime free behind plan entitlements and puts seven new packages (four studios, three drivers) in `@stackra-pro`, and
+[0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only) ships no HeroUI Pro. What a
+Pro licence holds besides those packages (support, long-term support, the unit it is sold by) is not decided.
+
+The review of 2026-11-20 (STA-2705) proposed a weekly minor with patch-only releases between and one upgrade note per
+minor. The owner accepted its test and consumer-gate parts; the cadence is still open. The work that makes a stable
+line possible is in flight, not merged: tests in the Quality Gate (#1111), the consumer gate before publish (#1120,
+#1125), the release-note check and upgrade notes (STA-2835), `stackra upgrade` with codemods (STA-145), the
+`@Deprecated` marker (STA-2836) and the staged refusals turned into errors (STA-2808).
+
+## Decision
+
+Recommended, for the ruling.
+
+1. **A weekly release train before 1.0.** One minor release a week, cut on Tuesday from `main` through the version
+   pull request. Between two minors only patch releases ship, and a patch only fixes: it adds no export, removes or
+   narrows nothing, and changes no public type. A security fix may ship as a patch on any day.
+2. **Breaking changes wait for the breaking minor.** Before `1.0`, a breaking change ships only in the first minor of
+   a calendar month (the breaking minor). Every other minor only adds. A breaking minor is announced on the changelog
+   page one week before it ships, with its upgrade note, and a mechanical break ships with a `stackra upgrade` codemod.
+   A security fix that cannot avoid a break may ship in the next minor outside the window, with its note.
+3. **Fixes before 1.0.** Fixes land on the latest minor only; the fix for an older minor is to upgrade. For four weeks
+   after a breaking minor, a security fix is also released on the last version before it, so an app that cannot take
+   the break yet stays safe.
+4. **The 1.0 bar.** `1.0.0` ships when every criterion below holds, checked by the release lead and recorded on the
+   release's Linear issue. The date is not fixed in advance; the owner may publish a target quarter, and the changelog
+   page says which criteria are still open.
+   1. The Quality Gate runs tests and is a required check, and `main` has been green for four consecutive weeks.
+   2. The consumer gate blocks a release, and the scaffold app plus at least two Figentra products pass it on every
+      release of those four weeks.
+   3. One Figentra product has run in production on a Stackra release for 30 days with no incident caused by Stackra.
+   4. Each published package marks its public entry points, and a committed API report per package makes a breaking
+      change fail CI unless its changeset is `major`.
+   5. No staged refusal is left (`STAGED_REFUSAL_CODES` is empty), and no versioning or release rule of this ADR or
+      0013, 0177 and 0453 is still `planned`.
+   6. Every breaking minor since `0.30` has an upgrade note, and `stackra upgrade` runs the codemods between any
+      two minors of that range.
+   7. `stackra create` makes a working app from the published starter on Linux and macOS, proven in CI.
+   8. The support terms on the customer support page are decided: no "owner to supply" row is left.
+   9. The last two breaking minors before `1.0` shipped no breaking change (a quiet period of about two months).
+5. **After 1.0: semantic versioning in full, two majors a year at most.** A minor only adds and a patch only fixes. A
+   major ships at most twice a year, in fixed months chosen by the owner, announced at least eight weeks ahead with its
+   upgrade note and codemods. A deprecated API keeps working for one major and at least six months (0177 decision 6
+   stands; the six months are new).
+6. **The support window after 1.0.** The latest major gets features and fixes. The previous major gets security and
+   critical fixes for 12 months after the next major ships, then it reaches end of life; the end-of-life date is
+   published on the support page when the next major ships. Long-term support stays a Pro term (decision 7).
+7. **What a Pro licence adds.** The `@stackra-pro/*` packages are the 0461 list, unchanged for `1.0` (the line is
+   decided; this ADR does not reopen it), and they release on the same day at the same version as `@stackra/*`. A Pro
+   licence also carries: a private support channel with response times by severity; long-term support, where one
+   major a year is named LTS and gets security fixes for 24 months; and the licence for on-prem and air-gapped
+   installs. It is sold per organization, as an annual licence with a fixed number of live tokens (the registry
+   already holds up to 20 per licence). The price, the response times and how to buy are the owner's to supply.
+
+## Options for the ruling
+
+| Question                 | Options weighed                                                                                                                                    | Recommended                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Cadence before 1.0       | (a) as today: a release whenever the version pull request merges; (b) a weekly minor, patches between (STA-2705); (c) a minor every two weeks      | (b), decision 1: predictable for buyers, still fast enough to ship the readiness work                         |
+| When a minor may break   | (a) any minor, as semver allows for 0.x; (b) only the first minor of each month; (c) no break until 1.0                                            | (b), decision 2: a buyer plans one upgrade a month; (c) would freeze the readiness work that 1.0 depends on   |
+| Fixes before 1.0         | (a) latest minor only; (b) latest minor, plus security fixes on the last version before a breaking minor for four weeks; (c) the last three minors | (b), decision 3: (c) triples the release work for a pre-1.0 line                                              |
+| When 1.0 ships           | (a) a fixed date; (b) when the criteria hold, with a target quarter; (c) when the first enterprise contract needs it                               | (b), decision 4: a date can force a 1.0 that still breaks; a target quarter gives buyers a horizon            |
+| Majors after 1.0         | (a) whenever needed; (b) at most twice a year in fixed months; (c) once a year                                                                     | (b), decision 5                                                                                               |
+| Support window after 1.0 | (a) latest major only; (b) previous major gets security and critical fixes for 12 months; (c) 24 months for every major                            | (b), decision 6; 24 months is the LTS term of a Pro licence                                                   |
+| What Pro adds            | (a) the packages only; (b) the packages plus support, LTS and the on-prem licence; (c) also move runtime features to Pro                           | (b), decision 7; (c) would reverse 0461 decision 1 and break the free installs                                |
+| Pro licence unit         | (a) per organization, annual, with a token cap; (b) per developer seat; (c) per product or app                                                     | (a), decision 7: the registry's licence and token model already counts this way; seats would need a new meter |
+
+## Consequences
+
+- A buyer can plan: one possible break a month before `1.0`, announced a week ahead, and a published bar for `1.0`.
+- The release lead's chore: cut the Tuesday minor, keep breaking changesets off `main` until the breaking minor (or on a
+  `next` prerelease), and keep the 1.0 criteria list current on the changelog page.
+- Breaking work queues for up to a month. A break that cannot wait ships as a `next` prerelease first.
+- The 1.0 bar needs work that is not built yet: API reports per package (criterion 4) and a release-train check
+  (Enforcement below).
+- Pro gains terms that need people: a support rota and LTS backports. The owner decides the price and the response
+  times before the support page can state them.
+
+## Enforcement
+
+Nothing checks this yet; it is a proposal.
+
+- planned — a release-train check in `@stackra/repo-checks`, run by `pnpm validate`, refuses a changeset that the
+  release-note check reads as breaking (STA-2835) outside the breaking-minor window, and a non-patch changeset on a
+  patch release.
+- planned — `.github/workflows/release.yml` opens the version pull request on Tuesday only for a minor; patches publish
+  as today.
+- planned — an API report per published package (criterion 4), compared in the Quality Gate.
+- The release-note check (STA-2835), the consumer gate (STA-2705) and the `@Deprecated` marker (STA-2836) are the
+  checks for decisions 2, 4 and 5 once they land.
+
+## Supersedes and sources
+
+Supersedes: none. Amends, if accepted: [0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 6 (adds the
+six-month floor and the LTS term). Related: [0013](/adr/0013-versioning-and-release),
+[0025](/adr/0025-packages-publish-to-private-registry),
+[0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine),
+[0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers),
+[0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only); the earlier free and Pro
+lists of [0077](/adr/0077-open-core-free-and-pro-lists) are superseded by
+[0202](/adr/0202-stackra-pro-is-developer-side-os-capability-is-free-code) and 0461. Sources: the release pull
+requests on `main` (2026-10-29 to 2026-11-11); Linear STA-2705 (the 2026-11-20 review), STA-1576 (support terms),
+STA-2865.

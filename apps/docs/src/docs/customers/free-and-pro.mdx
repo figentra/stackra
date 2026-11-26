@@ -1,0 +1,67 @@
+---
+title: "Free and Pro"
+description: "What the free @stackra packages give you, what the paid @stackra-pro packages add, and how the two are delivered."
+icon: "scale"
+---
+
+{/* Stackra file contract: Purpose: the customer comparison of free and Pro: every runtime is free MIT code, and @stackra-pro adds paid studio UIs and advanced drivers over free contracts; how the two scopes differ in licence, delivery and install; what a Pro licence adds besides packages (an owner placeholder, proposed in ADR 0539). Boundary: customer-facing documentation only; it restates decided ADRs and invents no price or service level. The package names on this page are checked against the repository and the 0461 Pro list by scripts/free-and-pro/check-free-and-pro.ts (run by the docs test). Runtime: docs. Governing contract: ADR 0461 (decisions 1, 2 and 7); ADR 0469; ADR 0316 (decisions 1 and 2); ADR 0453 (decision 18); ADR 0202 (decision 4); ADR 0242 (decision 7); ADR 0539 (proposed); STA-2865. */}
+
+Every runtime in Stackra is free. The `@stackra/*` packages are MIT and hold every kernel, port, driver and React hook,
+including the admin panel, live collaboration, the scope tree, tenancy, identity, the plans engine and licensing.
+`@stackra-pro/*` adds new code on top: paid editor UIs (studios) and advanced drivers, each behind a contract that a
+free package defines ([0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers)).
+A free install works fully without any Pro package, and no free package imports one.
+
+## What Pro adds, area by area
+
+| Area               | Free (`@stackra/*`, MIT)                                                                                                                | Pro (`@stackra-pro/*`, commercial)                                                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Visual builders    | `@stackra/builder`: the editor kernel for every document kind (document, changes, undo, selection) and its `./react` hooks              | `@stackra-pro/builder-studio`: the dashboard, page, form, experience-block and automation editor UIs                                                                     |
+| Workflows          | `@stackra/workflow`: durable workflows and tenant automations built from blocks                                                         | the automation editor, inside `@stackra-pro/builder-studio`                                                                                                              |
+| AI                 | `@stackra/ai`: prompts, skills, retrieval facts, typed decisions, MCP tools with approvals, and `runEvals`                              | `@stackra-pro/ai-studio`: the agent builder, the registry UI and the eval workspace                                                                                      |
+| Notifications      | `@stackra/notifications`: every channel (mail, SMS, WhatsApp, push, in-app, chat), templates, quiet hours, escalation                   | `@stackra-pro/notifications-studio`: the visual template editor and the delivery analytics dashboard                                                                     |
+| Provider failover  | `@stackra/integrations`: the `ProviderResolver` answers each capability's ordered failover list of providers                            | nothing extra: failover stays free                                                                                                                                       |
+| Search             | `@stackra/search`: ranked full-text, trigram and hybrid search on Postgres, a memory driver for tests, and the driver conformance suite | `@stackra-pro/search-meilisearch` and `@stackra-pro/search-opensearch`: drivers that pass the same suite                                                                 |
+| Product analytics  | `@stackra/analytics`: the consent-gated event queue and the PostHog driver                                                              | `@stackra-pro/analytics-destinations`: further destinations behind the same `AnalyticsDriver` port                                                                       |
+| Developer tools    | `@stackra/devtools-kit`: data tabs, RPC functions and events that packages expose to a devtools panel                                   | `@stackra-pro/devtools`: the floating panel for web and native apps and the service dev console                                                                          |
+| Admin and the rest | `@stackra/panel`, `@stackra/collaboration`, `@stackra/scope`, `@stackra/entitlements`, `@stackra/licensing` and every other package     | nothing: these stay free code ([0461](/adr/0461-the-pro-line-for-0-1-0-runtime-free-behind-entitlements-paid-studios-and-advanced-drivers) decision 5 gives each reason) |
+| UI components      | `@stackra/ui`: one component API on HeroUI (web) and HeroUI Native                                                                      | nothing: Stackra ships no HeroUI Pro in either scope ([0469](/adr/0469-stackra-ships-no-heroui-pro-free-heroui-and-stackras-own-components-only))                        |
+
+## How the two scopes are delivered
+
+|                   | `@stackra/*`                                       | `@stackra-pro/*`                                                                                                                                        |
+| ----------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Licence           | MIT                                                | commercial, named in each package's `LICENSE`                                                                                                           |
+| What you download | readable `dist`, type declarations and source maps | minified `dist` and type declarations, no source and no source maps ([0316](/adr/0316-open-core-distribution))                                          |
+| Install           | from the Stackra registry, no account and no token | from the Stackra registry with a licence token ([Install](/customers/install#install-pro-packages))                                                     |
+| Version           | one version for every package                      | the same version as `@stackra/*` ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine) decision 18) |
+| Licence check     | none                                               | at install; a runtime check is not decided ([Install](/customers/install#not-ready-yet), STA-1589)                                                      |
+
+Install the same version of every Stackra package, free and Pro alike; mixing versions is not supported
+([Support, versioning and end-of-life](/customers/support)).
+
+## Plans in your app are not Stackra Pro
+
+A paid feature inside the app you build is a plan entitlement, not a Stackra package. `@stackra/entitlements` gates a
+call by what your customer's plan grants (a feature, a limit, a module or seats), and a call the plan does not cover
+answers "requires subscription" with the upgrade path ([0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial)
+decision 7). You define those plans. The plan names in 0242 (Starter, Pro, Business, Enterprise) belong to Figentra's
+own products and are unrelated to a Stackra Pro licence.
+
+## What a Pro licence includes besides the packages
+
+<Warning>
+  **Owner to supply (STA-2865, STA-1576).** Proposed in
+  [0539](/adr/0539-release-cadence-the-1-0-bar-and-the-pro-offer) decision 7, not yet decided: a
+  private support channel with response times by severity, long-term support for one major a year,
+  and the licence for on-prem and air-gapped installs, sold per organization as an annual licence.
+  Until the owner rules, a Pro licence gives access to the `@stackra-pro/*` packages and nothing
+  more is promised.
+</Warning>
+
+| Term                               | Value                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------- |
+| Price and the unit it is sold by   | _owner to supply_                                                               |
+| How to buy and ask for tokens      | _owner to supply_ ([Install](/customers/install#install-pro-packages))          |
+| Support channel and response times | _owner to supply_                                                               |
+| Long-term support                  | starts at the first on-prem contract (0177 decision 6); terms _owner to supply_ |
