@@ -7,7 +7,7 @@ Purpose: the package's reader guide: the `stackra` binary, its commands (gen's t
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0294; ADR 0260; ADR 0349 (member names); ADR 0453 (add,
-                    publish).
+                    publish); ADR 0515 (create).
 -->
 
 The `stackra` binary (ADR 0083, ADR 0282 decision 3). It runs gen, runs each member's tools against the configs gen
@@ -23,6 +23,7 @@ and `yaml`.
 
 | Command                                                   | Does                                                                                                                                      |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `stackra create <directory>` | a new app in an empty folder from `@stackra/starter`: install, gen, type-check, test, first commit (below) |
 | `stackra new <kind> <name>`                               | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                                   |
 | `stackra new <tooling\|app:*> <name>`                     | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                               |
 | `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest; a warning prints and exits 0, a refusal exits 1         |
@@ -224,6 +225,38 @@ connector-catalogue, brand-kit), the record `key` and `rows`; every row has an `
   records and seed-owned records whose content hash changed. A record a tenant changed is kept: a new seed version
   only changes the product default underneath.
 - `stackra new seed-pack <product>` writes the header and the three profile folders.
+
+## New apps
+
+`stackra create <directory>` (or `npx @stackra/cli create <directory>` before the CLI is installed) makes a new app in
+a folder that is missing or empty, the way `laravel new` does (ADR 0515). It asks the app's name, its npm scope, the
+edition and the package manager, then runs each step as a task: fetch the starter, check the machine (`stackra doctor`
+in its fresh mode), write the files, install, `stackra gen` (its files drawn as a tree), type-check, test and the first
+commit. A failed step stops the run, keeps the folder and shows the tail of the step's output; a failed commit only
+warns. It writes nothing outside `<directory>`.
+
+The starter is `@stackra/starter`, the Stackra template packed by its release workflow, fetched from the Stackra
+registry at this CLI's version (`latest` when that version is missing) and checked against the registry's SHA-512
+integrity. The template's `stackra.starter.yaml` names the renames (`acme` becomes the name, scope and product key) and
+each profile's files; the app's catalog `stackra` is pinned to this CLI's version, its `.npmrc` maps the Stackra scopes
+to the registry, and no lockfile is copied, so the first install resolves fresh. `STACKRA_LICENCE_TOKEN` is checked for
+presence only and sent only to the registry origin. The walk-through for customers is
+<https://docs.stackra.figentra.com/customers/create>.
+
+| Option | Default | Does |
+| --- | --- | --- |
+| `--name <name>` | the folder name | the app's package name: lower case, digits and dashes |
+| `--scope <@scope>` | `@<name>` | the npm scope of its members |
+| `--edition free\|pro` | `free` | the edition; `pro` needs `STACKRA_LICENCE_TOKEN` and is offered only when it is set |
+| `--pm pnpm` | `pnpm` | the package manager; pnpm only, because the workspace uses pnpm catalogs |
+| `--profile minimal\|full` | `minimal` | `minimal`: a web console and one service with one module; `full`: the whole template |
+| `--yes` | off | ask nothing and take every default; a run without a terminal never asks |
+| `--starter <dir\|tgz>` | the registry | read the starter from a template checkout or a packed `.tgz` instead |
+| `--tarballs <dir>` | none | install `@stackra/*` from the packed tarballs in this folder, as overrides (pre-release) |
+| `--no-doctor` | doctor on | skip the machine check |
+| `--no-install` | install on | stop after writing the files; then `pnpm install` and `pnpm exec stackra gen` by hand |
+| `--no-check` | check on | skip the type-check and the tests |
+| `--no-git` | git on | no `git init` and no first commit |
 
 ## New members
 

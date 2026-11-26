@@ -1,0 +1,94 @@
+---
+title: "0515 — stackra create and the published starter"
+description: "Accepted · 2026-11-26"
+---
+
+{/* Stackra file contract. Purpose: ADR 0515 (Accepted 2026-11-26, STA-1952, STA-2794), how a new Stackra app is made: the `stackra create` command of @stackra/cli, the questions and flags, the @stackra/starter package packed from the Stackra template and fetched from the registry, the version pin, the starter profile file and its two profiles, the doctor, the steps, the output and what OS product creation reuses later. Boundary: decision text only; the command is packages/developer/cli/src/node/commands/create.command.ts and src/node/create/, the starter is stackra-template's stackra.starter.yaml, starter/ and .github/scripts/pack-starter.mjs, and the customer guide is /customers/create. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0083, 0453, 0461, 0528. */}
+
+<Note>
+  Accepted 2026-11-26. It records the owner's decisions of 2026-11-02 (STA-1952: the command is
+  `stackra create`, the way `laravel new` works, and the first app is a web console plus one service
+  with one module) and the behaviour `@stackra/cli` has shipped since 0.33.0. The number was
+  reserved on 2026-11-02 and the code cited it from then on; this page writes down what those
+  citations point to.
+</Note>
+
+## Context
+
+A newcomer to Stackra had two ways in, and neither was a product: clone the framework repository (the contributor
+quickstart) or click "Use this template" on GitHub and then rename `acme` by hand, pin versions and wire the registry.
+Both put a new user in front of a monorepo before they had a running app. The owner asked for the `laravel new`
+experience on 2026-11-02: one command in an empty folder that ends in a generated, installed, tested and committed app.
+
+The weighed alternatives were a separate `create-stackra` package (`npm create stackra`), a `degit`-style copy of the
+template repository from GitHub, and a starter generated from code inside the CLI. A separate package splits the
+version line from the CLI; a GitHub copy depends on GitHub, cannot be checked against the registry's integrity and
+signatures, and gives no version that matches the CLI; a starter in code drifts from the template that CI keeps green.
+
+## Decision
+
+1. **The command is `stackra create <directory>`**, a command of `@stackra/cli` (one binary,
+   [0083](/adr/0083-npm-scopes-and-cli-names)). Without an installed CLI it runs as
+   `npx @stackra/cli create <directory>` against the Stackra registry. There is no `create-stackra` package. It
+   refuses a folder that exists and is not empty, and writes nothing outside `<directory>`.
+2. **It asks four questions, each also a flag**: the app's package name (`--name`, default the folder name), its npm
+   scope (`--scope`, default `@<name>`), the edition (`--edition free|pro`; Pro needs `STACKRA_LICENCE_TOKEN`, and is
+   offered only when it is set) and the package manager (`--pm`, `pnpm` only, because the workspace uses pnpm
+   catalogs). `--yes` takes every default; without a terminal nothing is asked.
+3. **The starter is the npm package `@stackra/starter`**, packed from the Stackra template
+   ([0528](/adr/0528-neutral-and-stackra-templates)) by its release workflow (`.github/scripts/pack-starter.mjs`):
+   every git-tracked file, at the `@stackra/*` version the template pins. `create` fetches it from the Stackra
+   registry ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine))
+   at the CLI's own version, falling back to `latest`, and checks the tarball against the registry's SHA-512
+   integrity before it reads a byte. `--starter <dir|tgz>` reads a template checkout or a packed tarball instead. A
+   licence token, when set, is sent only to the registry origin.
+4. **The app is pinned to the CLI's version and installs fresh.** The catalog `stackra` is pinned to the CLI's exact
+   version, `.npmrc` maps the Stackra scopes to the registry (0453 decision 10), and the template's `pnpm-lock.yaml`
+   is not copied, so the first install resolves on the user's machine. `--tarballs <dir>` installs `@stackra/*` from
+   packed tarballs as pnpm overrides, for pre-release checks only.
+5. **The template's `stackra.starter.yaml` says what an app gets**: ordered rename rules (`@figentra/acme-`,
+   `@acme/`, `acme-platform`, `acme` become the scope, the name and the product key) applied to every text file, and
+   per profile the `include` globs of tracked files and the `overlay` files copied over them from `starter/<profile>/`.
+   `stackra.starter.yaml`, `starter/`, `pnpm-lock.yaml` and `.infisical.yaml` are never written into an app.
+6. **Two profiles.** `minimal` (the default) is a standalone app: a web console app member, one service with one
+   module (a model, an action, a query and a migration), the root toolchain and CI, and a root `runway.yaml` without
+   surfaces, mobile app or docs site. `full` is the whole template, the Figentra product shape: surfaces in
+   `runway.yaml` and no app member. Runway reads both root files the same way.
+7. **The doctor runs first**, in its fresh mode, for what the chosen profile needs (the toolchain, Docker and Encore
+   for a service, the registry reads, Pulumi when the runway names AWS). A failed check is shown and the user decides
+   whether to go on; `--no-doctor` skips it.
+8. **The steps, in order**: fetch the starter, check the machine, write the files, install, `stackra gen`,
+   type-check, test, `git init` and the first commit. Each is a task on the console. A failed step stops the run,
+   keeps the folder and names the step with the tail of its output; a failed commit only warns. `--no-install` stops
+   after writing, `--no-check` skips the type-check and tests, `--no-git` skips the commit.
+9. **The output shows what gen derived.** The files `stackra gen` wrote are drawn as a tree, then the next steps:
+   `cd <directory>`, `pnpm dev`, `stackra doctor` and the documentation link.
+10. **Figentra OS product creation comes later on the same engine**, through the OS console and the Control Plane;
+    it reuses the starter and its profiles rather than a second generator.
+
+## Consequences
+
+- A release is complete only when `stackra create` works from the registry alone. The order is fixed: the core
+  `@stackra/*` packages, then the template's catalog bump, then `@stackra/starter` at the same version. A partial
+  release (one package missing at the new version) breaks every new app's install, and the CLI itself.
+- Keeping the template green on core main is a standing chore: a gen refusal in the template is a broken first run
+  for every new user (STA-2794 found five such breaks).
+- `pnpm` is the only package manager until the starter stops relying on catalogs.
+- The customer guide ([Create your first app](/customers/create)) states what works today; it changes with each
+  release that changes the path.
+
+## Enforcement
+
+- `packages/developer/cli/src/node/create/functions/__tests__/create.test.ts`: the profile file, renames, the version
+  pin, the files never written, the gen tree.
+- `packages/developer/cli/src/node/commands/__tests__/create.command.test.ts`: the steps as tasks, a failed step
+  stopping the run, and the package README documenting every `create` option.
+- stackra-template `.github/scripts/__tests__/pack-starter.test.mjs`: the packed starter holds every tracked file at
+  the pinned version.
+- `planned — a release gate that runs stackra create demo --yes from the registry alone on a clean Linux box and
+fails the release when the app does not install, generate, type-check, test and serve (STA-2794)`.
+
+## Supersedes and sources
+
+`Supersedes: none`. Sources: Linear STA-1952 (owner request and decisions, 2026-11-02), STA-1730 (the console
+create flow), STA-2794 (the first-run audit, 2026-11-25).

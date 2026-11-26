@@ -1,0 +1,204 @@
+---
+title: "Create your first app"
+description: "From an empty folder to a running Stackra app: stackra create, pnpm dev, your first change, and what works today."
+icon: "rocket"
+---
+
+{/* Stackra file contract: Purpose: the customer getting-started: what a machine needs, `stackra create` (the questions, the flags and each step it runs), `pnpm dev` and what it serves, the app's layout, the first change, the Pro edition, the answers a run can give and the state of the path today. Boundary: customer-facing documentation only; the decision is ADR 0515, the command is @stackra/cli's `create` (its README holds the option reference) and registry access is /customers/install. Contributors to Stackra itself start at /quickstart. Runtime: docs. Governing contract: ADR 0515; ADR 0453 (decision 10); ADR 0517; ADR 0083; STA-1952; STA-2794. */}
+
+`stackra create` makes a new Stackra app in an empty folder, the way `laravel new` does: it asks a few questions,
+fetches the starter, installs, runs `stackra gen`, type-checks, tests and makes the first commit
+([ADR 0515](/adr/0515-stackra-create-and-the-published-starter)). You get a web console and one service with one
+module (a model, an action, a query and a migration), ready for `pnpm dev`.
+
+<Warning>
+  **What works today (checked 2026-11-26 on a clean Linux machine).** The path below is not yet runnable from the
+  registry alone. Three things stand in the way, all tracked in STA-2794:
+
+- `@stackra/cli@latest` (0.33.1) does not install: some of its `@stackra/*` dependencies are not published at
+  0.33.1 yet, so `npx` stops with `ETARGET` (`No matching version found for @stackra/csp@0.33.1`).
+- `@stackra/starter` is not published yet, so `create` stops at **Fetching the starter** with
+  `@stackra/starter@latest: the registry answered 404`.
+- With `@stackra/cli@0.33.0` and `--starter` pointed at a checkout of
+  [stackra-template](https://github.com/stackra-inc/stackra-template), the files are written and installed, then
+  **Running stackra gen** stops: the template's example service does not declare `encore.dev` yet.
+
+The fixes are written and waiting to land; the release then publishes the missing packages and the starter. This
+page describes the path as it works once they ship. Until then, contact Figentra (see [Support](/customers/support))
+rather than working around a step.
+
+</Warning>
+
+## What your machine needs
+
+| Tool       | Version                       | Why                                                                                        |
+| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------ |
+| Node.js    | 24 or later                   | every Stackra package is ESM for Node 24                                                   |
+| pnpm       | 12                            | `create` installs with pnpm; the app's workspace uses pnpm catalogs, so no other manager   |
+| git        | any recent                    | the first commit                                                                           |
+| Docker     | running                       | Encore starts the service's local Postgres in Docker                                       |
+| Encore CLI | the version in the app's mise | `pnpm dev` serves the service through Encore, locally, with no Encore account              |
+| mise       | optional, recommended         | the app's `mise.toml` pins Node, pnpm, Encore and the hook tools; `mise install` gets them |
+
+Leave about 5 GB of free disk for the install and the Postgres image. The machine must reach
+`npm.stackra.figentra.com` (the Stackra registry) and your usual npm registry.
+
+You do not need a Stackra account or a token for the free edition, and you do not need an Encore Cloud account or
+a secret store to run the app locally.
+
+## Create the app
+
+<Steps>
+  <Step title="Run stackra create">
+    In the folder that should hold your app's folder:
+
+    ```bash
+    npx -y --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create my-app
+    ```
+
+    The `--@stackra:registry` flag tells npm where `@stackra/*` lives for this one run; nothing is written to your
+    npm settings. If the CLI is already installed (`pnpm add -g @stackra/cli` with the same scope mapping), the
+    command is `stackra create my-app`.
+
+    The folder must be new or empty; `create` refuses anything else and never writes outside it.
+
+  </Step>
+  <Step title="Answer the questions">
+    | Question                            | Default         | Flag                       |
+    | ----------------------------------- | --------------- | -------------------------- |
+    | What is the app called?             | the folder name | `--name my-app`            |
+    | Which npm scope do its members use? | `@<name>`       | `--scope @my-company`      |
+    | Which edition?                      | Free            | `--edition free` or `pro`  |
+    | Which package manager?              | pnpm            | `--pm pnpm`                |
+
+    The name is lower case, digits and dashes. Pro is offered only when `STACKRA_LICENCE_TOKEN` is set (see
+    [The Pro edition](#the-pro-edition)). `--yes` takes every default, and in CI or any run without a terminal
+    nothing is asked.
+
+  </Step>
+  <Step title="Watch the steps">
+    Each step is one line with its time; the first one that fails stops the run, keeps the folder and prints the tail
+    of what went wrong.
+
+    1. **Fetching the starter**: `@stackra/starter` from the registry, at the CLI's own version, checked against the
+       registry's SHA-512 integrity.
+    2. **Checking the machine**: `stackra doctor` for what the app needs (Node, pnpm, Docker, Encore and its ports,
+       the registry). Anything missing is listed with its fix, and you choose whether to go on.
+    3. **Writing the files**: the starter with your name and scope in place of the placeholder `acme`, every
+       `@stackra/*` version pinned to the CLI's, and an `.npmrc` that maps the Stackra scopes to the registry.
+    4. **Installing with pnpm**: a fresh install; the starter carries no lockfile, so versions resolve on your
+       machine.
+    5. **Running stackra gen**: gen derives the wiring, the HTTP endpoints, the typed client and the Encore app into
+       `.stackra/`, and `create` draws what it wrote as a tree.
+    6. **Type-checking** and **Testing**: the console's and the service's own tests.
+    7. **Making the first commit**: `git init` and one commit. If git is not configured, the folder is ready but
+       not committed, and `create` says so.
+
+    It ends with the next commands to run.
+
+  </Step>
+</Steps>
+
+## Run it
+
+```bash
+cd my-app
+mise install   # optional: the pinned Node, pnpm and Encore
+pnpm dev
+```
+
+`pnpm dev` runs `stackra dev`: it checks the machine (the tools, Docker and the ports), generates, and starts every
+member. The console runs on the port its `runway.yaml` names, and that port is recorded in `.stackra/dev/ports.json`.
+The service runs under `encore run`, which picks its own ports and prints them: look for `Your API is running at` and
+`Development Dashboard URL` in the output. The service's address is not in `ports.json`.
+
+| What               | Where                                        | Check                                                    |
+| ------------------ | -------------------------------------------- | -------------------------------------------------------- |
+| The web console    | `http://localhost:3710`                      | the home page renders                                    |
+| The service's API  | `http://localhost:4000`, as Encore prints it | `curl -i http://localhost:4000/app/notes` answers 401    |
+| Encore's dashboard | `http://localhost:9400/<app-id>`             | the `example` service, its requests, traces and database |
+
+Encore runs local-only: no Encore Cloud login and no secret is needed. The 401 is the answer to expect, and it shows the
+service is up: the notes endpoints need a signed-in caller, and there is no development sign-in yet, so an authenticated
+call needs your own OIDC issuer for now. The service serves no `/healthz` under `pnpm dev`: that path answers 404.
+
+## What you got
+
+```text
+my-app/
+├── apps/console/          # the web console (Vite), port 3710
+├── services/example/      # one service: the notes module
+│   └── src/modules/notes/ # model, action, query, schemas, migration and their tests
+├── assets/                # brand and language sources
+├── docs/                  # your own documentation
+├── runway.yaml            # the product key, environments and providers
+├── pnpm-workspace.yaml    # members and catalogs (catalog `stackra` pinned to one version)
+├── mise.toml              # the pinned toolchain
+└── .stackra/              # generated by stackra gen; never edited, never committed
+```
+
+You write the classes under `src/`; `stackra gen` writes everything in `.stackra/`. See
+[The programming model](/programming-model) for what each kind of class is and what gen derives from it.
+
+## Make your first change
+
+Add a service of your own, then regenerate and test:
+
+```bash
+pnpm exec stackra new service billing --area app --summary "Invoices and payments."
+pnpm install
+pnpm gen
+pnpm test
+```
+
+`pnpm verify` runs the whole gate (format, lint, type-check, tests, `stackra gen --check`, validate) the way CI does.
+When `services/billing` is yours, delete `services/example`.
+
+## Every option
+
+`stackra create <directory> [options]`; the full reference is the `@stackra/cli` README.
+
+| Option                    | Default         | Does                                                                                   |
+| ------------------------- | --------------- | -------------------------------------------------------------------------------------- |
+| `--name <name>`           | the folder name | the app's package name                                                                 |
+| `--scope <@scope>`        | `@<name>`       | the npm scope of its members                                                           |
+| `--edition free\|pro`     | `free`          | the edition; `pro` needs `STACKRA_LICENCE_TOKEN`                                       |
+| `--pm pnpm`               | `pnpm`          | the package manager                                                                    |
+| `--profile minimal\|full` | `minimal`       | `minimal`: a console and one service; `full`: the whole template, the product shape    |
+| `--yes`                   | off             | ask nothing; take every default                                                        |
+| `--starter <dir\|tgz>`    | the registry    | read the starter from a template checkout or a `.tgz`                                  |
+| `--tarballs <dir>`        | none            | install `@stackra/*` from packed tarballs (pre-release checks)                         |
+| `--no-doctor`             | doctor on       | skip the machine check                                                                 |
+| `--no-install`            | install on      | stop after writing the files; then `pnpm install` and `pnpm exec stackra gen` yourself |
+| `--no-check`              | check on        | skip the type-check and the tests                                                      |
+| `--no-git`                | git on          | no `git init` and no first commit                                                      |
+
+## The Pro edition
+
+Set `STACKRA_LICENCE_TOKEN` in your shell before you run `create` (how to get a token:
+[Get access and install](/customers/install#install-pro-packages)), then choose Pro or pass `--edition pro`. The
+token is checked for presence and sent only to the Stackra registry; it is never written into the app. In CI, the
+install step needs the same variable (see [In CI](/customers/install#in-ci)).
+
+## What a run can answer
+
+| You see                                                                 | Means                                                                         | Do                                                                    |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `… exists and is not empty; choose a new folder`                        | the folder already holds files                                                | pick a new name, or empty the folder                                  |
+| `the Pro edition needs STACKRA_LICENCE_TOKEN`                           | `--edition pro` without a token                                               | set the token, or create the free edition                             |
+| `@stackra/starter@latest: the registry answered 404`                    | the starter is not on the registry                                            | see the status note at the top of this page                           |
+| `ETARGET` or `ERR_PNPM_NO_MATCHING_VERSION` for an `@stackra/*` package | a release is incomplete on the registry                                       | see the status note at the top of this page                           |
+| `the tarball does not match its integrity`                              | what the registry served is not what it signed                                | do not continue; contact Figentra                                     |
+| a step marked FAIL                                                      | that step's command failed; its output's tail is shown and the folder is kept | fix what it names, then run the remaining steps by hand in the folder |
+| `the folder is ready but not committed`                                 | git is missing or has no user name and email                                  | configure git, then `git init && git add -A && git commit`            |
+
+`stackra doctor`, run inside the app at any time, lists what the machine still needs.
+
+## Not ready yet
+
+| Item                                                              | State                                                    |
+| ----------------------------------------------------------------- | -------------------------------------------------------- |
+| `stackra create` from the registry alone                          | blocked on the 0.33.1 release and the starter (STA-2794) |
+| A development sign-in for calling authenticated endpoints locally | not built; use your own OIDC issuer                      |
+| Deploying a created app (`stackra deploy`)                        | not documented for customers yet                         |
+| Package managers other than pnpm                                  | not supported; the starter relies on pnpm catalogs       |

@@ -1,19 +1,27 @@
 ---
 title: "The CLI"
-description: "stackra new, gen, dev, validate, verify, mcp and the rest; what runs where, and the Testbed behind the heavy commands."
+description: "stackra create, new, gen, dev, validate, verify, mcp and the rest; what runs where, and the Testbed behind the heavy commands."
 icon: "terminal"
 ---
 
-{/* Stackra file contract: Purpose: the reader's page on the stackra binary: the everyday commands, the gates, the developer MCP, the Testbed. Boundary: an introduction that cites @stackra/cli's README; the table there is the reference. Runtime: docs. Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0484; STA-2676. */}
+{/* Stackra file contract: Purpose: the reader's page on the stackra binary: the everyday commands, the gates, the developer MCP, the Testbed. Boundary: an introduction that cites @stackra/cli's README; the table there is the reference. Runtime: docs. Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0484; ADR 0515; STA-2676. */}
 
 `stackra` is one binary ([ADR 0083](/adr/0083-npm-scopes-and-cli-names)). It runs gen, runs each member's tools
 against the configs gen writes, lists what a committed manifest locks, and wires the local developer MCP. At a
 workspace root the task commands fan out through Turborepo; in a member they run that member.
 
+## Start an app
+
+`stackra create <directory>` (or `npx @stackra/cli create <directory>` before the CLI is installed) makes a new app in
+an empty folder: it asks the name, scope and edition, fetches `@stackra/starter` from the registry, installs, runs gen,
+type-checks, tests and makes the first commit ([ADR 0515](/adr/0515-stackra-create-and-the-published-starter)). The
+walk-through, every option and what works today are in [Create your first app](/customers/create).
+
 ## Every day
 
 | Command                              | Does                                                                                          |
 | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `stackra create <directory>`         | a new app in an empty folder: starter, install, gen, type-check, test, first commit           |
 | `stackra new <kind> <name>`          | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`, laid out by the rules     |
 | `stackra gen [--check]`              | derive and write `.stackra/`; `--check` fails when a committed manifest no longer matches     |
 | `stackra dev`                        | gen, then serve: Vite for the web, Expo for phones, Wrangler for Workers, Encore for services |

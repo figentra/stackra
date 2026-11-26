@@ -1,28 +1,36 @@
 ---
 title: "سطر الأوامر"
-description: "stackra new وgen وdev وvalidate وverify وmcp وسواها؛ ما يعمل أين، وصناديق Testbed خلف الأوامر الثقيلة."
+description: "stackra create وnew وgen وdev وvalidate وverify وmcp وسواها؛ ما يعمل أين، وصناديق Testbed خلف الأوامر الثقيلة."
 icon: "terminal"
 ---
 
-{/* Stackra file contract: Purpose: the Arabic twin of /cli, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same claims as the English page. Runtime: docs. Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0484; STA-2676. */}
+{/* Stackra file contract: Purpose: the Arabic twin of /cli, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same claims as the English page. Runtime: docs. Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0484; ADR 0515; STA-2676. */}
 
 `stackra` ملفٌ تنفيذي واحد ([القرار 0083](/adr/0083-npm-scopes-and-cli-names)). يشغّل gen، ويشغّل أدوات كل عضو على
 الإعدادات التي يكتبها gen، ويسرد ما يقفله بيان ملتزَم به، ويوصِل MCP المطوّر المحلي. وفي جذر مساحة العمل تتوزّع
 أوامر المهام عبر Turborepo؛ وفي العضو تعمل على ذلك العضو.
 
+## بدء تطبيق
+
+ينشئ `stackra create <directory>` (أو `npx @stackra/cli create <directory>` قبل تثبيت سطر الأوامر) تطبيقًا جديدًا في
+مجلد فارغ: يسأل عن الاسم والنطاق والإصدار، ويجلب `@stackra/starter` من السجل، ثم يثبّت ويشغّل gen ويفحص الأنواع
+ويختبر وينشئ أول إيداع ([القرار 0515](/adr/0515-stackra-create-and-the-published-starter)). الشرح خطوةً خطوة وكل
+الخيارات وما يعمل اليوم في [أنشئ تطبيقك الأول](/customers/create).
+
 ## كل يوم
 
-| الأمر                                | ما يفعله                                                                                 |
-| ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `stackra new <kind> <name>`          | حزمة `package` (مع `--category`) أو خدمة `service` (مع `--area`) أو `seed-pack` بالقواعد |
-| `stackra gen [--check]`              | يشتقّ ويكتب `.stackra/`؛ و`--check` يفشل حين لا يطابق بيان ملتزَم به الإعلانات           |
-| `stackra dev`                        | gen ثم التشغيل: Vite للويب، وExpo للهواتف، وWrangler للـWorkers، وEncore للخدمات         |
-| `stackra dev --surface <s> --os <c>` | سطح منتج في هيكل أو إس الحقيقي، مع إعادة تحميل فورية                                     |
-| `stackra build`                      | gen ثم البناء: tsdown وVite و`expo export` وتشغيل Wrangler تجريبي                        |
-| `stackra typecheck`، `test`، `lint`  | gen ثم `tsc --noEmit`، وvitest (أو Playwright وMaestro بحسب الطبقة)، و`oxlint .`         |
-| `stackra validate`                   | مراحل الإعداد والبنية والتوثيق والكتالوج والمواصفة من بوابة الجودة                       |
-| `stackra verify`                     | البوابة كاملةً، بالاختبارات                                                              |
-| `stackra ls [section]`               | الهويات التي يقفلها بيان ملتزَم به: الإجراءات والأحداث والصلاحيات…                       |
+| الأمر                                | ما يفعله                                                                                     |
+| ------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `stackra create <directory>`         | تطبيق جديد في مجلد فارغ: القالب المبدئي، فالتثبيت، فgen، ففحص الأنواع، فالاختبار، فأول إيداع |
+| `stackra new <kind> <name>`          | حزمة `package` (مع `--category`) أو خدمة `service` (مع `--area`) أو `seed-pack` بالقواعد     |
+| `stackra gen [--check]`              | يشتقّ ويكتب `.stackra/`؛ و`--check` يفشل حين لا يطابق بيان ملتزَم به الإعلانات               |
+| `stackra dev`                        | gen ثم التشغيل: Vite للويب، وExpo للهواتف، وWrangler للـWorkers، وEncore للخدمات             |
+| `stackra dev --surface <s> --os <c>` | سطح منتج في هيكل أو إس الحقيقي، مع إعادة تحميل فورية                                         |
+| `stackra build`                      | gen ثم البناء: tsdown وVite و`expo export` وتشغيل Wrangler تجريبي                            |
+| `stackra typecheck`، `test`، `lint`  | gen ثم `tsc --noEmit`، وvitest (أو Playwright وMaestro بحسب الطبقة)، و`oxlint .`             |
+| `stackra validate`                   | مراحل الإعداد والبنية والتوثيق والكتالوج والمواصفة من بوابة الجودة                           |
+| `stackra verify`                     | البوابة كاملةً، بالاختبارات                                                                  |
+| `stackra ls [section]`               | الهويات التي يقفلها بيان ملتزَم به: الإجراءات والأحداث والصلاحيات…                           |
 
 يسمّي الرفض رمزه وموضعه والإصلاح؛ ولا يُكتب شيء حين يرفض gen. و`stackra validate` هو ما يشغّله التكامل المستمر على
 كل طلب دمج؛ و`verify` هو ما يعمل على الصندوق قبل أن يُحتسب الدمج.
