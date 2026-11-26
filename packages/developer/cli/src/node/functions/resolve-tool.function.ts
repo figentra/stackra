@@ -8,7 +8,7 @@
  *          `.stackra/site/` gen assembles, or in `src/` for a docs app not yet moved to that layout, STA-1316),
  *          and vitest, tsc
  *          and oxlint everywhere (`--tier int` runs the `.stackra/vitest.int.config.ts` gen writes for a member with an
- *          `.int.test.ts`). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
+ *          `.int.test.ts`; `--coverage` runs the unit tier under the member's coverage floor, ADR 0182 decision 2). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
  *          member-root config it finds itself.
  * Boundary: pure apart from checking which generated configs exist, whether a Fumadocs site's dependencies are
  *           installed, and reading a docs app's dev port from its `runway.yaml` (`environments.dev.port`, the one place
@@ -49,8 +49,10 @@ const TIERS = new Set(["unit", "int", "e2e"]);
  *
  * @param task - the command.
  * @param member - the member it runs in.
- * @param options - `target` picks one of an app's targets; `tier` picks the test tier (default `unit`).
- * @throws CliUsageError when `target` is not one of the app's targets or `tier` is unknown.
+ * @param options - `target` picks one of an app's targets; `tier` picks the test tier (default `unit`); `coverage`
+ *                  measures the unit tier against the member's coverage floor.
+ * @throws CliUsageError when `target` is not one of the app's targets, `tier` is unknown, or `coverage` is asked of
+ *         a tier other than `unit`.
  * @throws Error when no tool serves this task for this member, naming why.
  * @example
  * resolveTool("dev", readMember("apps/web"), {});
@@ -59,7 +61,11 @@ const TIERS = new Set(["unit", "int", "e2e"]);
 export function resolveTool(
   task: ToolTask,
   member: Member,
-  options: { readonly target?: string | undefined; readonly tier?: string | undefined },
+  options: {
+    readonly target?: string | undefined;
+    readonly tier?: string | undefined;
+    readonly coverage?: boolean | undefined;
+  },
 ): ToolRun {
   const { root, layout, targets } = member;
   const at = (command: string, args: readonly string[], cwd = root): ToolRun => ({
@@ -135,7 +141,12 @@ export function resolveTool(
       const tier = options.tier ?? "unit";
       if (!TIERS.has(tier))
         throw new CliUsageError(`unknown tier: ${tier} (expected unit, int or e2e)`);
-      if (tier === "unit") return at("vitest", ["run", ...config("vitest.config.ts")]);
+      if (options.coverage === true && tier !== "unit")
+        throw new CliUsageError(`--coverage measures the unit tier, not ${tier}`);
+      if (tier === "unit") {
+        const coverage = options.coverage === true ? ["--coverage"] : [];
+        return at("vitest", ["run", ...config("vitest.config.ts"), ...coverage]);
+      }
       if (tier === "int") {
         // Gen writes this config for a package or service that has an `.int.test.ts`; nobody authors one.
         if (layout !== "package" && layout !== "service")

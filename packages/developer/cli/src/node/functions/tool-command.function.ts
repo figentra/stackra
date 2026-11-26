@@ -3,7 +3,8 @@
  * Purpose: `toolCommand(task, summary)`, the `stackra dev|build|start|typecheck|test|lint` commands. In a member it
  *          runs gen first (except for `lint`, and for members without `stackra.config.ts`), so the tool always sees
  *          fresh generated configs and entries, then starts the tool `resolveTool` picks. At the workspace root it fans
- *          out through `turbo run <task>`, whose member scripts call `stackra <task>` again.
+ *          out through `turbo run <task>`, whose member scripts call `stackra <task>` again (`test --coverage` runs
+ *          `turbo run test:coverage`, `test --tier e2e` runs `turbo run test:e2e`).
  *          A docs app (`src/config/docs.config.ts`, STA-1316) always runs gen first, `lint` included, since the
  *          checks read the site gen assembles: `dev` keeps gen watching `src/` while the site's dev server runs. For a
  *          Mintlify site `lint` runs `mint broken-links`, then `mint a11y`; for a Fumadocs site (STA-2026) it builds the
@@ -48,7 +49,7 @@ const OPTIONS: Readonly<Record<ToolTask, CliCommand["options"]>> = {
   build: { target: { type: "string" } },
   start: {},
   typecheck: {},
-  test: { tier: { type: "string" }, target: { type: "string" } },
+  test: { tier: { type: "string" }, target: { type: "string" }, coverage: { type: "boolean" } },
   lint: {},
 };
 
@@ -69,7 +70,9 @@ function hasTsdownConfig(cwd: string): boolean {
  */
 export function toolCommand(task: ToolTask, summary: string): CliCommand {
   const options = OPTIONS[task] ?? {};
-  const flags = Object.keys(options).map((name) => ` [--${name} <${name}>]`);
+  const flags = Object.entries(options).map(([name, option]) =>
+    option.type === "boolean" ? ` [--${name}]` : ` [--${name} <${name}>]`,
+  );
   return {
     name: task,
     summary,
@@ -78,6 +81,7 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
     async run({ cwd, values, io }) {
       const target = typeof values["target"] === "string" ? values["target"] : undefined;
       const tier = typeof values["tier"] === "string" ? values["tier"] : undefined;
+      const coverage = values["coverage"] === true;
 
       if (existsSync(join(cwd, "pnpm-workspace.yaml"))) {
         if (target !== undefined)
@@ -85,7 +89,10 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
         if (tier !== undefined && tier !== "unit" && tier !== "e2e") {
           throw new CliUsageError(`unknown tier: ${tier} (expected unit or e2e)`);
         }
-        const turboTask = tier === "e2e" ? "test:e2e" : task;
+        if (coverage && tier !== undefined && tier !== "unit") {
+          throw new CliUsageError(`--coverage measures the unit tier, not ${tier}`);
+        }
+        const turboTask = tier === "e2e" ? "test:e2e" : coverage ? "test:coverage" : task;
         return runProcess({ command: "turbo", args: ["run", turboTask], cwd }, io);
       }
 
@@ -102,7 +109,7 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
         io.out(`nothing to build in ${cwd}: Encore builds a service at deploy\n`);
         return 0;
       }
-      const tool = resolveTool(task, member, { target, tier });
+      const tool = resolveTool(task, member, { target, tier, coverage });
       if (docs && task === "lint") {
         const code = await runProcess(tool, io);
         if (code !== 0) return code;

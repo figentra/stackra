@@ -230,6 +230,22 @@ describe("resolveTool", () => {
     expect(() => resolveTool("typecheck", member("docs"), {})).toThrow(/React Router/);
   });
 
+  it("measures the unit tier against the coverage floor with --coverage, and refuses it for another tier", () => {
+    generated("vitest.config.ts");
+    expect(resolveTool("test", member("service"), { coverage: true })).toEqual({
+      command: "vitest",
+      args: ["run", "--config", ".stackra/vitest.config.ts", "--coverage"],
+      cwd: root,
+    });
+    expect(resolveTool("test", member("package"), { coverage: false }).args).not.toContain(
+      "--coverage",
+    );
+    generated("vitest.int.config.ts");
+    expect(() => resolveTool("test", member("service"), { tier: "int", coverage: true })).toThrow(
+      CliUsageError,
+    );
+  });
+
   it("runs the generated int config for a package or service, and refuses without it or in an app", () => {
     expect(() => resolveTool("test", member("service"), { tier: "int" })).toThrow(
       "no .stackra/vitest.int.config.ts",

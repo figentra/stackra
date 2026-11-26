@@ -64,6 +64,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "oxlint .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "clean": "rm -rf dist coverage .turbo",

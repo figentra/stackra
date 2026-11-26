@@ -57,6 +57,13 @@ describe("serviceTemplate", () => {
     expect(test).toContain("await createTestingModule(DemoModule).compile()");
   });
 
+  it("joins the coverage gate: a test:coverage script and the v8 provider (ADR 0182 decision 2)", () => {
+    for (const data of [false, true]) {
+      expect(manifest(data).scripts["test:coverage"]).toBe("stackra test --coverage");
+      expect(manifest(data).devDependencies["@vitest/coverage-v8"]).toBe("catalog:quality");
+    }
+  });
+
   it("writes no tool config and no test:int without --data", () => {
     expect(paths(false).filter((path) => /(vitest|tsdown)[^/]*config/.test(path))).toEqual([]);
     expect(manifest(false).scripts["test:int"]).toBeUndefined();

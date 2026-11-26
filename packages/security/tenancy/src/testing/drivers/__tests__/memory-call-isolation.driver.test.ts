@@ -6,7 +6,8 @@
  *          tenant is refused (`TenantSwitchRefusedError`) and builds no row; an explicit override of `CallIsolation`
  *          wins; a call with a scope runs in its scope session, one without opens none.
  * Boundary: unit tier; the real pipeline through `run`, on a fixture module. Access, approval and the tenancy check
- *           are allowing stand-ins: this file proves the isolation only.
+ *           are allowing stand-ins: this file proves the isolation only. Each test compiles the memory database, so
+ *           the suite has a 120 s timeout (ADR 0182: the unit tier also runs under `test:coverage`).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269 (decision 3); ADR 0495; ADR 0239.
  */
@@ -109,7 +110,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe(MemoryCallIsolationDriver, () => {
+// each test compiles the memory database again (PGlite, tenancy's migrations): 10-15 s each, past 30 s under coverage
+describe(MemoryCallIsolationDriver, { timeout: 120_000 }, () => {
   it("is the CallIsolation useDrivers(memory) binds", async () => {
     const app = await memory().compile();
     expect(app.get(CallIsolation)).toBeInstanceOf(MemoryCallIsolationDriver);

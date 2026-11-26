@@ -5,13 +5,18 @@
  *          index; a failing step names its file; a schema outside the list is not read; PostGIS geography columns
  *          replay with their GiST index.
  * Boundary: unit tier: PGlite runs in this process, no Docker; it needs the optional peer `@electric-sql/pglite`
- *           (a devDependency of this package), so it runs wherever the repository's PGlite tests run.
+ *           (a devDependency of this package), so it runs wherever the repository's PGlite tests run. Each test boots
+ *           its own PGlite (and loads PostGIS), which takes tens of seconds under coverage on a loaded box, so each
+ *           has `TIMEOUT_MS`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159; ADR 0160; STA-1808.
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { readMigratedSchema } from "#node/functions/read-migrated-schema.function";
+
+/** Each test boots PGlite (and PostGIS): more than the preset's 30 s under `test:coverage` on a busy box (ADR 0182). */
+const TIMEOUT_MS = 120_000;
 
 /** One transactional step. */
 const step = (name: string, sql: string) => ({ name, sql, transactional: true });
@@ -30,67 +35,79 @@ const SETUP = [
 ];
 
 describe("readMigratedSchema", () => {
-  it("reads columns, types, nullability, indexes and foreign keys of the listed schemas", async () => {
-    const schema = await readMigratedSchema(SETUP, ["billing"]);
+  it(
+    "reads columns, types, nullability, indexes and foreign keys of the listed schemas",
+    async () => {
+      const schema = await readMigratedSchema(SETUP, ["billing"]);
 
-    expect(
-      schema.columns
-        .filter((column) => column.table === "invoices")
-        .map((column) => [column.name, column.type, column.nullable]),
-    ).toEqual([
-      ["id", "character varying(33)", false],
-      ["number", "text", false],
-      ["paid_at", "timestamp with time zone", true],
-      ["tenant_id", "character varying(33)", false],
-    ]);
-    expect(schema.indexes).toEqual([
-      {
-        schema: "billing",
-        table: "invoices",
-        name: "idx_invoices_tenant_id_number",
-        columns: ["tenant_id", "number"],
-        unique: true,
-        method: "btree",
-        predicate: "(paid_at IS NULL)",
-      },
-    ]);
-    expect(schema.foreignKeys).toEqual([
-      {
-        schema: "billing",
-        table: "invoice_lines",
-        name: "fk_invoice_lines_invoice_id",
-        columns: ["invoice_id"],
-        referencedSchema: "billing",
-        referencedTable: "invoices",
-      },
-    ]);
-    expect(schema.columns.some((column) => column.schema === "other")).toBe(false);
-  });
+      expect(
+        schema.columns
+          .filter((column) => column.table === "invoices")
+          .map((column) => [column.name, column.type, column.nullable]),
+      ).toEqual([
+        ["id", "character varying(33)", false],
+        ["number", "text", false],
+        ["paid_at", "timestamp with time zone", true],
+        ["tenant_id", "character varying(33)", false],
+      ]);
+      expect(schema.indexes).toEqual([
+        {
+          schema: "billing",
+          table: "invoices",
+          name: "idx_invoices_tenant_id_number",
+          columns: ["tenant_id", "number"],
+          unique: true,
+          method: "btree",
+          predicate: "(paid_at IS NULL)",
+        },
+      ]);
+      expect(schema.foreignKeys).toEqual([
+        {
+          schema: "billing",
+          table: "invoice_lines",
+          name: "fk_invoice_lines_invoice_id",
+          columns: ["invoice_id"],
+          referencedSchema: "billing",
+          referencedTable: "invoices",
+        },
+      ]);
+      expect(schema.columns.some((column) => column.schema === "other")).toBe(false);
+    },
+    TIMEOUT_MS,
+  );
 
-  it("names the file of a step that fails", async () => {
-    await expect(
-      readMigratedSchema([step("0001_billing_0001_bad", "create table (")], ["billing"]),
-    ).rejects.toThrow(/^0001_billing_0001_bad failed:/);
-  });
+  it(
+    "names the file of a step that fails",
+    async () => {
+      await expect(
+        readMigratedSchema([step("0001_billing_0001_bad", "create table (")], ["billing"]),
+      ).rejects.toThrow(/^0001_billing_0001_bad failed:/);
+    },
+    TIMEOUT_MS,
+  );
 
-  it("replays geography columns and their GiST index with PostGIS loaded (ADR 0314)", async () => {
-    const schema = await readMigratedSchema(
-      [
-        step(
-          "0001_places_0001_create",
-          `create schema "places";
+  it(
+    "replays geography columns and their GiST index with PostGIS loaded (ADR 0314)",
+    async () => {
+      const schema = await readMigratedSchema(
+        [
+          step(
+            "0001_places_0001_create",
+            `create schema "places";
            create table "places"."zones" ("id" varchar(33) primary key, "area" geography(Polygon,4326) not null, "depot" geography(Point,4326));
            create index "idx_zones_area" on "places"."zones" using gist ("area")`,
-        ),
-      ],
-      ["places"],
-    );
+          ),
+        ],
+        ["places"],
+      );
 
-    expect(
-      schema.columns.filter((column) => column.table === "zones").map((column) => column.type),
-    ).toEqual(["character varying(33)", "geography(Polygon,4326)", "geography(Point,4326)"]);
-    expect(schema.indexes).toEqual([
-      expect.objectContaining({ name: "idx_zones_area", columns: ["area"], method: "gist" }),
-    ]);
-  });
+      expect(
+        schema.columns.filter((column) => column.table === "zones").map((column) => column.type),
+      ).toEqual(["character varying(33)", "geography(Polygon,4326)", "geography(Point,4326)"]);
+      expect(schema.indexes).toEqual([
+        expect.objectContaining({ name: "idx_zones_area", columns: ["area"], method: "gist" }),
+      ]);
+    },
+    TIMEOUT_MS,
+  );
 });

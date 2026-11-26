@@ -58,7 +58,7 @@ describe("toolCommand", () => {
     const test = toolCommand("test", "Run the tests");
     expect(test.name).toBe("test");
     expect(test.summary).toBe("Run the tests");
-    expect(test.usage).toBe("stackra test [--tier <tier>] [--target <target>]");
+    expect(test.usage).toBe("stackra test [--tier <tier>] [--target <target>] [--coverage]");
     expect(toolCommand("lint", "Lint").usage).toBe("stackra lint");
   });
 
@@ -144,6 +144,14 @@ describe("toolCommand", () => {
       { command: "turbo", args: ["run", "test:e2e"], cwd: root },
       expect.anything(),
     );
+    await toolCommand("test", "Test").run(context({ coverage: true }));
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "turbo", args: ["run", "test:coverage"], cwd: root },
+      expect.anything(),
+    );
+    await expect(
+      toolCommand("test", "Test").run(context({ coverage: true, tier: "e2e" })),
+    ).rejects.toThrow(CliUsageError);
     await expect(toolCommand("dev", "Dev").run(context({ target: "ios" }))).rejects.toThrow(
       CliUsageError,
     );
