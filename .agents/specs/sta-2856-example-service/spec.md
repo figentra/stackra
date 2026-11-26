@@ -27,13 +27,16 @@ the tenants unless the host chose one.
 
 ### Sources
 
-- `services/example` on `main` (the placeholder) and the starter's `services/example` (notes only)
-- `origin/save/stackra/l3/service-example-diverged-2026-11-25` (the X11 notes resource, PR #1064, unmerged), whose two
+- FR-001 to FR-004, FR-007: `services/example` on `main` (the placeholder) and the starter's `services/example`
+  (notes only), and the audit item 18.3 that names their gap
+- FR-001: `origin/save/stackra/l3/service-example-diverged-2026-11-25` (the X11 notes resource, PR #1064, unmerged), whose two
   example commits this change carries onto `main`
-- `packages/developer/gen/src/core/functions/emit-encore-cron-jobs.function.ts` (the CronJobs that resolve
+- FR-005 and FR-006: `packages/developer/gen/src/core/functions/emit-encore-cron-jobs.function.ts` (the CronJobs that resolve
   `SchedulerService`), `packages/developer/gen/src/core/constants/boot-services.constant.ts` (what the wiring binds for
   what boot and the Encore files resolve), `packages/developer/gen/src/core/functions/system-driver-defaults.function.ts`
-- `packages/runtime/scheduler/README.md` (crons, `perScope`, `CronScopes`), `packages/security/tenancy/src/core/drivers/tenancy-cron-scopes.driver.ts`
+- FR-004 and FR-006: `packages/runtime/scheduler/README.md` (crons, `perScope`, `CronScopes`), `packages/security/tenancy/src/core/drivers/tenancy-cron-scopes.driver.ts`
+- FR-008: `packages/data/database/src/core/bases/crud-service.base.ts` (`CrudService.table`, the keyset read through
+  MikroORM's `findByCursor`, whose `CursorError` escaped as a server error) and ADR 0307 rule 2
 - ADR 0075, 0078 (decisions 2 to 4), 0098, 0148 (decisions 4 to 6), 0206 (decision 8), 0209 (decision 3), 0239, 0263,
   0269, 0294, 0305 (rule 28)
 

@@ -49,16 +49,22 @@ job through the queue. Gen binds `SchedulerService` for a service that declares 
 
 ## Correctness properties
 
-- **P-001**: for every notes event a committed call published, the feed gains exactly one entry of that kind for that
-  note in the call's tenant — Validates: FR-002
-- **P-002**: for every tenant and cutoff, a retention run deletes exactly the tenant's entries that happened before the
-  cutoff — Validates: FR-004
-- **P-003**: for every service IR, the wiring binds `SchedulerService` iff the service declares `@stackra/scheduler`
-  — Validates: FR-005
-- **P-004**: for every service IR, `CronScopes` defaults to `tenancy` iff the service declares the scheduler and tenancy
-  — Validates: FR-006
-- **P-005**: for every table read with an input cursor that does not decode, the read refuses `table_cursor_invalid`
-  — Validates: FR-008
+- **P-001** (Validates: FR-002): for every notes event a committed call published, the feed gains exactly one entry of
+  that kind for that note in the call's tenant.
+- **P-002** (Validates: FR-004): for every tenant and cutoff, a retention run deletes exactly the tenant's entries that
+  happened before the cutoff.
+- **P-003** (Validates: FR-005): for every service IR, the wiring binds `SchedulerService` iff the service declares
+  `@stackra/scheduler`.
+- **P-004** (Validates: FR-006): for every service IR, `CronScopes` defaults to `tenancy` iff the service declares the
+  scheduler and tenancy.
+- **P-005** (Validates: FR-008): for every table read with an input cursor that does not decode, the read refuses
+  `table_cursor_invalid`; any other failure is rethrown unchanged.
+- **P-006** (Validates: FR-001): for every note operation, a caller of one tenant never reads, changes or deletes another
+  tenant's note (`not_found`), and every committed write records exactly one event carrying ids only.
+- **P-007** (Validates: FR-003): for every feed read, each entry belongs to the caller's tenant, entries come newest
+  first, and following `nextCursor` visits every entry once.
+- **P-008** (Validates: FR-007): for every token, the caller is its user in its tenant iff its signature, issuer,
+  audience and expiry verify; otherwise the call is the one `unauthenticated` refusal.
 
 ## Architecture overview
 
@@ -83,37 +89,41 @@ through the pipeline in that tenant's isolation.
 
 ```text
 services/example/
-├── README.md · AGENTS.md · package.json · runway.yaml · stackra.config.ts · stackra.manifest.json · openapi.json
-└── src/modules/
-    ├── notes/ (access, actions, database, errors, events, functions, models, queries, schemas, services, __tests__)
-    └── activity/
-        ├── access/activity-entry.permissions.ts
-        ├── actions/prune-activity.action.ts
-        ├── database/migrations/0001-create-activity-entries.migration.ts
-        ├── enums/activity-kind.enum.ts
-        ├── functions/activity-entry-view-of.function.ts
-        ├── listeners/record-note-{created,updated,deleted}.listener.ts
-        ├── models/activity-entry.model.ts
-        ├── queries/list-activity.query.ts
-        ├── schemas/{activity-entry-view,list-activity-input,list-activity-output,prune-activity-input,prune-activity-output}.schema.ts
-        ├── services/activity-entry.service.ts
-        └── __tests__/ and one __tests__/ per group
-packages/developer/gen/src/core/
-├── constants/boot-services.constant.ts
-└── functions/system-driver-defaults.function.ts (+ their __tests__)
+  README.md
+  AGENTS.md
+  package.json
+  runway.yaml
+  tsconfig.json
+  tsdown.config.ts (removed: gen writes the build config)
+  stackra.config.ts
+  stackra.manifest.json
+  openapi.json
+  assets/.gitkeep
+  src/main.ts (removed: gen writes the entries)
+  src/example.module.ts (removed: a v3 member has no root module)
+  src/modules/notes/
+  src/modules/activity/
+services/README.md
+packages/developer/gen/
+  README.md
+  src/core/constants/boot-services.constant.ts
+  src/core/functions/system-driver-defaults.function.ts
+packages/data/database/
+  README.md
+  stackra.manifest.json
+  src/core/index.ts
+  src/core/bases/crud-service.base.ts
+  src/core/errors/table-cursor-invalid.error.ts
+apps/docs/src/docs/adr/0075-stackra-ships-packages-figentra-os-ships-services.mdx
+runway.yaml
+knip.jsonc
+.changeset/gen-binds-the-scheduler-and-tenant-cron-scopes.md
+.changeset/table-refuses-an-invalid-cursor.md
 ```
 
-- `services/example/src/modules/activity/**`, `services/example/src/modules/notes/**`
-- `services/example/README.md`, `services/example/AGENTS.md`, `services/example/package.json`
-- `packages/developer/gen/src/core/constants/boot-services.constant.ts`
-- `packages/developer/gen/src/core/functions/system-driver-defaults.function.ts`
-- `packages/developer/gen/src/core/functions/__tests__/emit-wiring.function.test.ts`
-- `packages/developer/gen/src/core/functions/__tests__/system-driver-defaults.function.test.ts`
-- `packages/data/database/src/core/bases/crud-service.base.ts`, `packages/data/database/src/core/errors/table-cursor-invalid.error.ts`,
-  `packages/data/database/src/core/index.ts` (+ their `__tests__`), `packages/data/database/README.md`,
-  `.changeset/table-refuses-an-invalid-cursor.md`
-- `packages/developer/gen/README.md`, `services/README.md`, `runway.yaml`, ADR 0075,
-  `.changeset/gen-binds-the-scheduler-and-tenant-cron-scopes.md`
+`notes/` holds access, actions, database (migration and factory), errors, events, functions, models, queries, schemas,
+services and `__tests__`; `activity/` holds access, actions, database/migrations, enums, functions, listeners, models,
+queries, schemas, services and `__tests__`. Tests sit in `__tests__/` beside their subject.
 
 ## Data models and migrations
 
@@ -146,7 +156,7 @@ isolation is proved on Postgres as the NOBYPASSRLS role. Events and feed entries
 - AC-004, EC-02, EC-03: `activity/__tests__/activity-isolation.int.test.ts`; notes in `note-isolation.int.test.ts`.
 - AC-005: `notes/__tests__/sign-in.test.ts`.
 - AC-006: `emit-wiring.function.test.ts`, `system-driver-defaults.function.test.ts`.
-- AC-007, FR-008: `crud-service.base.test.ts` ("refuses a cursor no page gave") and the forged cursor in
+- AC-007 (P-005): `crud-service.base.test.ts` ("refuses a cursor no page gave") and the forged cursor in
   `activity-feed.test.ts`.
 - Unit tests per listener, the query, the job, the view; manifest tests pin each surface.
 - Revert checks: the gen rows, a listener and the prune cutoff each fail their tests when reverted.
