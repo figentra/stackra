@@ -204,3 +204,7 @@ ADR 0159 (decisions 1 to 4, the 2026-10-23 note; amended 2026-11-26 by this PR):
 ## Complexity tracking
 
 none
+
+## Follow-up
+
+Packages are checked but not locked today. STA-2885 locks a package's released migrations too and refuses a changed package migration the same way as a service one (CTO note at approval, 26 Nov).
