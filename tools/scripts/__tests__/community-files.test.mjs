@@ -3,8 +3,9 @@
  * Purpose: hold the community health files to what an outside contributor needs (STA-314): the code of conduct, the
  *          support guide and the issue forms exist where GitHub reads them, the forms parse with the fields GitHub
  *          requires, every relative link in the contributor-facing pages resolves (anchors included), SECURITY.md
- *          states which versions get fixes, and CONTRIBUTING.md gives the same install command the Quality Gate runs.
- * Boundary: reads repository files as text and YAML; nothing runs and nothing reaches GitHub.
+ *          states which versions get fixes, CONTRIBUTING.md gives the same install command the Quality Gate runs, and
+ *          its pull request and maintainer steps match what the Linear key check (prCarriesKey) and the CI triggers do.
+ * Boundary: reads repository files as text and YAML and calls the pure prCarriesKey; nothing reaches GitHub or Linear.
  * Runtime: node
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0187 (security programme: the reporting policy);
  *                     STA-314.
@@ -14,6 +15,7 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { parse } from "yaml";
+import { prCarriesKey } from "../linear.mjs";
 
 /** The pages an outside contributor reads, by repository path. */
 const PAGES = [
@@ -173,4 +175,62 @@ test("CONTRIBUTING.md installs with the same filters as the Quality Gate", () =>
   const documented = contributing.split("\n").find((line) => line.startsWith("pnpm install"));
   assert.ok(documented, "CONTRIBUTING.md gives no pnpm install command");
   assert.deepEqual(documented.match(/--filter='[^']+'/g) ?? [], filters);
+});
+
+/**
+ * One `## <title>` section of a Markdown file, up to the next heading of the same level.
+ * @param {string} text the file's contents
+ * @param {string} title the section's heading text
+ * @returns {string} the section, or "" when there is none
+ */
+function section(text, title) {
+  const start = text.indexOf(`\n## ${title}\n`);
+  if (start === -1) return "";
+  const end = text.indexOf("\n## ", start + 1);
+  return text.slice(start, end === -1 ? undefined : end);
+}
+
+test("CONTRIBUTING.md describes the Linear key check the way check-pr runs it", () => {
+  const guide = section(readFileSync("CONTRIBUTING.md", "utf8"), "Pull requests");
+  assert.ok(guide, "CONTRIBUTING.md has no Pull requests section");
+  // A fork branch with the key only in the title fails: the guide must not offer the title as the way in.
+  assert.equal(
+    prCarriesKey({ title: "fix(cli): explain the missing token (STA-123)", branch: "patch-1" }).ok,
+    false,
+  );
+  assert.doesNotMatch(
+    guide,
+    /or put\s+the key in the title/,
+    "CONTRIBUTING.md offers the title as an alternative to the branch name, which check-pr rejects",
+  );
+  assert.match(
+    guide,
+    /title alone is not enough/,
+    "CONTRIBUTING.md does not say the title alone fails",
+  );
+  // The branch it names passes, and so does the chore-lane label it offers instead.
+  const branch = /`(figentra\/sta-123-[a-z0-9-]+)`/.exec(guide);
+  assert.ok(branch, "CONTRIBUTING.md gives no example figentra/sta-<n>-<slug> branch");
+  assert.equal(
+    prCarriesKey({ title: "fix(cli): explain the missing token", branch: branch[1] }).ok,
+    true,
+  );
+  assert.match(guide, /`figentra\/sta-<n>-<short-slug>`/);
+  assert.match(guide, /`chore-lane`/);
+  assert.equal(prCarriesKey({ branch: "patch-1", labels: ["chore-lane"] }).ok, true);
+});
+
+test("CONTRIBUTING.md tells maintainers a way to rerun the gate that sees a new label", () => {
+  const ci = parse(readFileSync(".github/workflows/ci.yml", "utf8"));
+  const types = ci.on.pull_request.types ?? [];
+  const maintainers = section(readFileSync("CONTRIBUTING.md", "utf8"), "For maintainers");
+  // A re-run reuses its original event payload, whose labels predate the new one; only a new event reads it.
+  assert.doesNotMatch(
+    maintainers,
+    /so re-run the `Quality Gate` job/,
+    "a re-run reuses the original event, so it never sees the chore-lane label",
+  );
+  if (types.includes("labeled")) return;
+  assert.ok(types.includes("reopened"), "ci.yml no longer runs on reopened");
+  assert.match(maintainers, /Close and reopen the pull request after labelling it/);
 });

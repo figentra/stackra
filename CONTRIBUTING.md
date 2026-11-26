@@ -86,15 +86,21 @@ The commit hook checks the format when you commit.
 
 ## Pull requests
 
-1. Push the branch to your fork and open a pull request against `main`. Fill in the template;
+1. Name the branch before you push it. With a Linear key, the branch must be
+   `figentra/sta-<n>-<short-slug>`, for example `figentra/sta-123-explain-missing-token`. CI's Linear
+   key check reads the branch name first, so a key in the title alone is not enough: a branch such as
+   `patch-1` fails even with `(STA-123)` in the title. Changing the branch later means a new pull
+   request.
+2. Without a key, any branch name works and a maintainer labels the pull request `chore-lane`. That
+   label passes the key check but not the `Refs:` rule, so it fits `docs`, `test`, `chore`, `build`
+   and `ci` commits only; a `feat`, `fix`, `refactor` or `perf` change needs the key and the
+   Linear-named branch.
+3. Push the branch to your fork and open a pull request against `main`. Fill in the template;
    leave the Linear, Spec, Lane and Change risk lines blank if you do not know them.
-2. Name the branch after the Linear key when you have one (`figentra/sta-<n>-<short-slug>`), or put
-   the key in the title, for example `fix(cli): explain the missing token (STA-123)`. Without a key,
-   a maintainer marks the pull request as a small change (the `chore-lane` label) instead.
-3. A maintainer approves the CI run for a first-time contributor. The required check is `Quality
+4. A maintainer approves the CI run for a first-time contributor. The required check is `Quality
 Gate`. The `Mobile apps (Uniwind Pro)` job needs the licence token, always fails on a pull request
    from a fork and is not required.
-4. A maintainer reviews the change. Answer review comments with new commits; do not force-push
+5. A maintainer reviews the change. Answer review comments with new commits; do not force-push
    after review has started. Maintainers squash-merge accepted pull requests, so you never need
    write access.
 
@@ -131,10 +137,15 @@ The working rules live in [`AGENTS.md`](AGENTS.md) and `.agents/rules/`; the flo
 ### Outside pull requests
 
 - Triage each new issue: check its label, and for an accepted bug or feature open a Linear issue and
-  reply with its `STA-<n>` key, so the contributor can name it in commits and the pull request.
+  reply with its `STA-<n>` key and branch name (`figentra/sta-<n>-<slug>`, Linear's "Copy git branch
+  name"), so the contributor can use them in commits and the branch.
 - On a pull request from a fork, approve the CI run once you have read the diff (workflows from
-  first-time contributors wait for that). A pull request without a key gets the `chore-lane` label;
-  the label event does not start CI, so re-run the `Quality Gate` job after adding it.
+  first-time contributors wait for that). A pull request without a key whose commits are all `docs`,
+  `test`, `chore`, `build` or `ci` gets the `chore-lane` label; any other needs the key-named branch.
+- Adding a label does not start CI (`ci.yml` runs on `opened`, `synchronize`, `reopened` and
+  `ready_for_review`), and re-running the `Quality Gate` job does not help: a re-run reuses the
+  event it started from, which has no label. Close and reopen the pull request after labelling it,
+  or ask the contributor to push a commit; the new run reads the label.
 - Fill in the template's Linear, Spec, Lane and Change risk lines yourself, and run the box tests
   (`needs-testing`) the same as for an internal change.
 
