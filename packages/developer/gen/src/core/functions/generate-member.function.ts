@@ -37,7 +37,8 @@
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
  *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) or an adapter that reaches a workflow directly
  *           (`checkActionFirst`, `workflow_without_action`, ADR 0101) on the full pass only. A warning
- *           (`severity: "warning"`, such as `action_without_workflow`) never blocks: the full pass returns it in
+ *           (`severity: "warning"`, such as `action_without_workflow`, or `deprecated_use` and
+ *           `deprecation_past_sunset` of `checkDeprecations`, ADR 0131 decision 4) never blocks: the full pass returns it in
  *           `warnings` beside the files (STA-340). An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
@@ -67,6 +68,7 @@ import { checkShownOnce } from "#core/functions/check-shown-once.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
 import { checkIdentityLock } from "#core/functions/check-identity-lock.function";
 import { checkActionFirst } from "#core/functions/check-action-first.function";
+import { checkDeprecations } from "#core/functions/check-deprecations.function";
 import { unboundPorts } from "#core/functions/unbound-ports.function";
 import { checkSlotFills } from "#core/functions/check-slot-fills.function";
 import { checkTableIndexes } from "#core/functions/check-table-indexes.function";
@@ -213,6 +215,8 @@ export function generateMember(
     ...checkTableIndexes(ir, manifest),
     // ADR 0101: an action crossing a boundary without a workflow warns; an adapter reaching a workflow refuses.
     ...checkActionFirst(ir),
+    // ADR 0131 decision 4: a use of something deprecated, and an own deprecation past its sunset, warn (STA-2836).
+    ...checkDeprecations(ir),
     // A port a constructor takes that no driver binds would fail every container-built test at boot.
     ...unboundPorts(ir),
     // One panel resource key recorded by two classes across the host's dependencies (STA-1947).

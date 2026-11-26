@@ -8,6 +8,7 @@
  *                     ADR 0438 (slots and fills).
  */
 import type { DeclaredClass } from "#core/types/declared-class.type";
+import type { DeprecatedTraitIR } from "#core/types/deprecated-trait-ir.type";
 import type { EnumIR } from "#core/types/enum-ir.type";
 import type { FileExports } from "#core/types/file-exports.type";
 import type { GenError } from "#core/types/gen-error.type";
@@ -35,6 +36,12 @@ export interface SourceReader {
 
   /** The `Enum.of` declarations of a file. */
   enums: (file: TsNode) => EnumIR[];
+
+  /**
+   * The exported `createTrait` declarations of a file that carry a `deprecated` option (STA-2836); reports
+   * `deprecation_not_constant`, `deprecation_invalid` and `deprecation_window_short`.
+   */
+  deprecatedTraits: (file: TsNode) => DeprecatedTraitIR[];
 
   /** The exported declarations of a file; reports `two_declarations_in_file`. */
   exports: (file: TsNode) => FileExports;

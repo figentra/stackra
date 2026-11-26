@@ -30,6 +30,10 @@ programming model v3.1 shape (ADR 0294, 0305). Entry `.` only.
   its field (`FieldDecorator<T>`, or `SchemaFieldDecorator<Out>` for `@Field`).
 - Field decorators may mark `SHAPE_KINDS`; the class form of `@Renamed` may mark `IDENTITY_KINDS`. A kind package that
   adds a field-carrying kind, or a kind whose identity the manifest locks, adds its code there in the same change.
+- `@Deprecated({ since, sunset, replacement })` (ADR 0131 decision 4, STA-2836): the class form may mark
+  `DEPRECATABLE_KINDS` (`IDENTITY_KINDS`, `settings`, `service`), the field form `SHAPE_KINDS`. It checks its terms with
+  `deprecationProblem` from `@stackra/contracts` and throws on import; never copy the window formula here. It records
+  only; gen reads it from source (`SHAPE_DECORATORS`), records it and warns on use.
 - `Schema` keeps no state and its `~kind` brand stays protected, so `Fields<X>` and `X$Check` never see it.
 - The registry matches a class exactly. Never fall back to a parent's schema: it would strip the subclass's fields.
 - A runtime helper's output type must equal the platform type it stands for (`PublicId<P>`, `Date`, `Json`, `Url`),

@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `openApiOf`: one operation per endpoint with its path and query parameters, body, responses,
  *          refusal reference and `x-stackra-*` extensions, `auth: false` as an empty security list, the manifest's
- *          shapes as components with rewritten references, a stream action as `text/event-stream`, and a deterministic
- *          projection.
+ *          shapes as components with rewritten references, a stream action as `text/event-stream`, a deterministic
+ *          projection, and a `@Deprecated` action and field as OpenAPI's `deprecated` with their sunset (STA-2836).
  * Boundary: test only; projects the manifest built from the commerce IR fixture.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 10); ADR 0158; ADR 0140.
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 10); ADR 0158; ADR 0140; ADR 0131 (decision 4).
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -14,6 +14,7 @@ import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { buildManifest } from "#core/functions/build-manifest.function";
 import { openApiOf } from "#core/functions/open-api-of.function";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { DEPRECATED_COMMERCE_IR } from "#core/__tests__/fixtures/deprecated-commerce-ir.fixture";
 
 describe("openApiOf", () => {
   const { manifest } = buildManifest(COMMERCE_IR);
@@ -107,5 +108,19 @@ describe("openApiOf", () => {
 
   it("is deterministic", () => {
     expect(JSON.stringify(openApiOf(manifest))).toBe(JSON.stringify(document));
+  });
+  it("marks a deprecated action and field, with the sunset and replacement (STA-2836)", () => {
+    const deprecated = openApiOf(buildManifest(DEPRECATED_COMMERCE_IR).manifest);
+    expect(deprecated.paths["/app/orders/{orderId}/cancel"]?.["put"]).toMatchObject({
+      deprecated: true,
+      "x-stackra-sunset": "2.0.0",
+      "x-stackra-replacement": "orders.order.cancel@2",
+    });
+    expect(document.paths["/app/orders/{orderId}/cancel"]?.["put"]).not.toHaveProperty(
+      "deprecated",
+    );
+    expect(deprecated.components.schemas["orders.OrderView"]).toMatchObject({
+      properties: { note: { deprecated: true, "x-stackra-sunset": "2027-05-26" } },
+    });
   });
 });

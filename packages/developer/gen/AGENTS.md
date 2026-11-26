@@ -7,7 +7,7 @@ Purpose: the agent rules of @stackra/gen: where code goes, entries and barrels, 
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
 Governing contract: ADR 0294; ADR 0295; ADR 0305; ADR 0260 (generated clients and typed events); ADR 0263; ADR 0162 and ADR 0222
-                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); data-layer gap se10 (`searchable_columns_drift`, stackra-273); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59); STA-1365 (gen agrees with the base-matches-suffix lint, `I18nKey`, members off the container); ADR 0159 (the migration target, stackra-248); ADR 0465 d5 (the encryption wiring and checks, stackra-262); ADR 0238 (the Encore database and the boot's url, replicas and timeouts, stackra-250).
+                    (the translated and upload shape kinds); ADR 0338 (a replica query's `ReplicaPage` output); STA-1290 (the shipped shape kind); STA-1293 (i18n, clients for apps, undeclared packages); STA-1296 (client modules and permission sets, config overrides, the root Vitest shim); STA-1298 (package lang namespaces in `I18n`, `i18n_key_missing`, `i18n_namespace_clash`); STA-1309 (catalogue loaders); STA-1306 (the quality-gate refusals); STA-1316 (the docs site); STA-1363 (consumed services' lang, remote shapes, `Settings.pick`); stackra-209 (`#stackra/settings`, `settings_key_unresolved`); STA-1322 (the Encore app file); STA-1251 (`searchable_semantic_ai_never`); data-layer gap se10 (`searchable_columns_drift`, stackra-273); ADR 0438 (shell slots and fills, stackra-03); ADR 0436 (surface targets, `modulepreloadOf`, stackra-04); ADR 0336 (model additions, stackra-64); ADR 0452 (the system graph, stackra-59); STA-1365 (gen agrees with the base-matches-suffix lint, `I18nKey`, members off the container); ADR 0159 (the migration target, stackra-248); ADR 0465 d5 (the encryption wiring and checks, stackra-262); ADR 0238 (the Encore database and the boot's url, replicas and timeouts, stackra-250); ADR 0131 decision 4 (deprecations, STA-2836).
 -->
 
 The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the programming model v3.1 shape (ADR 0294,
@@ -34,6 +34,14 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   (`openHost`): TypeScript 7 first, `typescript6` as the fallback (ADR 0294 d26). Never ts-morph.
 
 ## This package
+
+- Deprecations (ADR 0131 decision 4, STA-2836): the source reader reads `@Deprecated` on a class (`DeclaredClass.deprecated`)
+  and a field (`FieldIR.deprecated`), and `createTrait`'s `deprecated` option (`MemberIR.deprecatedTraits`), refusing bad
+  terms with `deprecationProblem`'s codes or `deprecation_not_constant`. `deprecationsOf` writes the manifest's
+  `deprecations` section (absent when empty, so other manifests never change); the action and event entries carry
+  `deprecated`, a field's schema `deprecated: true`, `openApiOf` the operation's `deprecated`, `emitClients` a
+  `@deprecated` line. `checkDeprecations` only warns (`deprecated_use`, `deprecation_past_sunset`); a consumer finds a
+  dependency's or service's deprecations in that manifest, never its source.
 
 - Client tools (ADR 0490): `clientToolsOf` is the one place a client tool is derived; never hand-write a row. The row type
   is structural (`ClientToolIR`), because gen imports no AI package; `emitClientTools` types the file from

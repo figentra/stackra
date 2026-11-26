@@ -38,7 +38,9 @@
  *          A driver over another package's base takes its port from that package's entry, never the base's `#` path.
  *          A typed defaulted constructor parameter is a token (the default serves hand construction only), and an
  *          inferred one is `token_not_a_class` (STA-1536). A `.d.mts` base typed `import("@stackra/config").ConfigClass`
- *          keeps its kind (STA-1738).
+ *          keeps its kind (STA-1738). `@Deprecated` on a class and a field and a trait's `deprecated` option read as
+ *          their terms (never a facet), and a sunset inside the window, a malformed one and a non-constant one are
+ *          `deprecation_window_short`, `deprecation_invalid` and `deprecation_not_constant` (STA-2836).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -2394,5 +2396,149 @@ describe("createSourceReader on a .d.mts base typed by an import type (STA-1738)
 
   it('reads the kind from `import("@stackra/config").ConfigClass`', () => {
     expect(classes.find((declared) => declared.name === "TillConfig")?.kind).toBe("config");
+  });
+});
+
+/** `@Deprecated` on a schema and its field, and traits deprecated through `createTrait`'s option (STA-2836). */
+const DEPRECATION_SOURCES: Readonly<Record<string, string>> = {
+  ...MODEL_STAND_IN,
+  "node_modules/@stackra/model/index.d.ts": [
+    MODEL_STAND_IN["node_modules/@stackra/model/index.d.ts"] ?? "",
+    "export declare function createTrait(name: string, apply: (base: unknown) => unknown, options?: Readonly<Record<string, unknown>>): Trait<object>;",
+    "",
+  ].join("\n"),
+  "src/core/schemas/order-view.schema.ts": [
+    'import { Deprecated, Schema } from "@stackra/validation";',
+    "",
+    '@Deprecated({ since: "0.34.0", sunset: "0.35.0", replacement: "OrderSummary" })',
+    "export class OrderView extends Schema {",
+    '  @Deprecated({ since: "2026-11-26", sunset: "2027-05-26", replacement: "total" })',
+    "  amount = 0;",
+    "",
+    "  total = 0;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/short-window.schema.ts": [
+    'import { Deprecated, Schema } from "@stackra/validation";',
+    "",
+    "export class ShortWindow extends Schema {",
+    '  @Deprecated({ since: "0.34.0", sunset: "0.34.1" })',
+    "  amount = 0;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/bad-form.schema.ts": [
+    'import { Deprecated, Schema } from "@stackra/validation";',
+    "",
+    '@Deprecated({ since: "soon", sunset: "0.35.0" })',
+    "export class BadForm extends Schema {",
+    "  amount = 0;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/schemas/computed.schema.ts": [
+    'import { Deprecated, Schema } from "@stackra/validation";',
+    "",
+    'const SINCE: string = String("0.34.0");',
+    "",
+    "export class Computed extends Schema {",
+    '  @Deprecated({ since: SINCE, sunset: "0.35.0" })',
+    "  amount = 0;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/traits/discontinued.trait.ts": [
+    'import { createTrait } from "@stackra/model";',
+    "",
+    'export const Discontinued = createTrait("discontinued", (base) => base, {',
+    '  deprecated: { since: "0.34.0", sunset: "0.35.0", replacement: "Archivable" },',
+    "});",
+    "",
+  ].join("\n"),
+  "src/node/traits/shiny.trait.ts": [
+    'import { createTrait } from "@stackra/model";',
+    "",
+    'export const Shiny = createTrait("shiny", (base) => base, { colour: "gold" });',
+    "",
+  ].join("\n"),
+  "src/node/traits/hasty.trait.ts": [
+    'import { createTrait } from "@stackra/model";',
+    "",
+    'export const Hasty = createTrait("hasty", (base) => base, { deprecated: { since: "1.0.0", sunset: "1.1.0" } });',
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on deprecations (STA-2836)", async () => {
+  const root = writeFixtureMember("deprecations", DEPRECATION_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const traits = reader.sources.flatMap((file) => reader.deprecatedTraits(file));
+  host.close();
+  const field = (shape: string, name: string) =>
+    shapes.find((candidate) => candidate.name === shape)?.fields.find((each) => each.name === name);
+
+  it("reads @Deprecated on a class and on a field, and leaves an unmarked field alone", () => {
+    expect(classes.find((declared) => declared.name === "OrderView")?.deprecated).toEqual({
+      since: "0.34.0",
+      sunset: "0.35.0",
+      replacement: "OrderSummary",
+    });
+    expect(field("OrderView", "amount")?.deprecated).toEqual({
+      since: "2026-11-26",
+      sunset: "2027-05-26",
+      replacement: "total",
+    });
+    expect(field("OrderView", "total")).not.toHaveProperty("deprecated");
+  });
+
+  it("never lists @Deprecated as a facet", () => {
+    expect(classes.flatMap((declared) => declared.facets).map((facet) => facet.name)).not.toContain(
+      "Deprecated",
+    );
+  });
+
+  it("reads a trait's deprecated option, and skips a trait without one", () => {
+    expect(traits).toEqual([
+      {
+        name: "Discontinued",
+        code: "discontinued",
+        module: "deprecations",
+        file: "src/node/traits/discontinued.trait.ts",
+        importPath: "#node/traits/discontinued.trait",
+        line: 3,
+        column: 14,
+        deprecated: { since: "0.34.0", sunset: "0.35.0", replacement: "Archivable" },
+      },
+    ]);
+  });
+
+  it("refuses a sunset inside the window, a malformed deprecation and one that is not constant, with a fix", () => {
+    const found = reader.errors
+      .filter((error) => error.code.startsWith("deprecation_"))
+      .map((error) => [error.code, error.subject, error.fix]);
+    expect(found).toEqual(
+      expect.arrayContaining([
+        ["deprecation_window_short", "ShortWindow.amount", "move the sunset to 0.35.0 or later"],
+        ["deprecation_window_short", "Hasty", "move the sunset to 2.0.0 or later"],
+        [
+          "deprecation_invalid",
+          "BadForm",
+          'write `{ since: "<the release that deprecates it>", sunset: "<the release that removes it>", replacement: "<what to use>" }`, both release versions or both dates',
+        ],
+        [
+          "deprecation_not_constant",
+          "Computed.amount",
+          'write literals: `@Deprecated({ since: "0.34.0", sunset: "0.35.0", replacement: "<what to use>" })`',
+        ],
+      ]),
+    );
+    expect(field("ShortWindow", "amount")).not.toHaveProperty("deprecated");
+    expect(classes.find((declared) => declared.name === "BadForm")).not.toHaveProperty(
+      "deprecated",
+    );
   });
 });

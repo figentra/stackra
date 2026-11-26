@@ -9,7 +9,8 @@
  *          `imports`) and one `permissionsRef` set per Permissions class (`ReviewPermissions.moderate`; ./contracts is
  *          types-only, ADR 0117), one `remoteAction` / `remoteQuery` descriptor per action and query (named after the
  *          producer's class), and the `<Service>Client` class over `ServiceClient` with one member per call
- *          (`client.product.get.call(input)`).
+ *          (`client.product.get.call(input)`). A producer's `@Deprecated` action or event carries a `@deprecated` TSDoc
+ *          line on its descriptor, class and client member, so a consumer's editor and lint flag each use (STA-2836).
  * Boundary: pure. The client is a class, so it is its own DI token (`emitWiring` binds it with the `ClientTransport`
  *           the topology picks); a consumer never imports the producer's source. A consumed service without a manifest,
  *           a client imported under another name, or an event the producer does not publish as an integration event
@@ -21,7 +22,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0260 (decisions 2 to 6 and 10; a cycle between services is allowed at the manifest level); ADR 0141 (`<module>.<name>.v<n>` wire names); ADR 0158 (the manifest is the contract); ADR 0261
  *                     (`#stackra/clients`); ADR 0263 (a class is its own token); STA-1293 (clients for apps); STA-1296 (client modules and
- *                     permission sets).
+ *                     permission sets); ADR 0131 (decision 4: deprecations).
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { Enum } from "@stackra/contracts";
@@ -70,6 +71,21 @@ function own<T extends { readonly [field: string]: unknown }>(
 /** The client class name of `service`: `catalogue` → `CatalogueClient`. */
 function clientName(service: string): string {
   return `${pascalCase(service)}Client`;
+}
+
+/**
+ * The TSDoc line that marks a deprecated producer entry, so a consumer's editor and lint flag each use (STA-2836); `[]`
+ * when the entry carries no `deprecated`.
+ */
+function deprecatedDoc(entry: Readonly<Record<string, unknown>>, indent = ""): string[] {
+  const deprecated = entry["deprecated"];
+  if (!isSchema(deprecated) || typeof deprecated["sunset"] !== "string") return [];
+  const replacement =
+    typeof deprecated["replacement"] === "string" ? `use ${deprecated["replacement"]}; ` : "";
+  const since = typeof deprecated["since"] === "string" ? ` since ${deprecated["since"]}` : "";
+  return [
+    `${indent}/** @deprecated ${replacement}deprecated${since}, removed at ${deprecated["sunset"]}. */`,
+  ];
 }
 
 /** The content of one service's client file. */
@@ -161,6 +177,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
     const payload = refKey(event["fields"]);
     if (payload === undefined || !(payload in schemas)) use("zod", "z");
     eventLines.push(
+      ...deprecatedDoc(event),
       `export class ${event.class} extends remoteEvent(${JSON.stringify(event.name)}, ` +
         `${payload !== undefined && payload in schemas ? `${nameOf(payload)}$` : "z.object({})"}) {}`,
     );
@@ -217,6 +234,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
       route = `, endpoint: { method: HttpMethod.${pascalCase(endpoint["method"].toLowerCase())}, path: ${JSON.stringify(endpoint["path"])} }`;
     }
     calls.push(
+      ...deprecatedDoc(entry),
       `export const ${entry.class} = ${factory}(${JSON.stringify(entry.key)}, { input: ${schemaOf(entry["input"], "z.object({})")}, ` +
         `output: ${schemaOf(entry["output"], "z.unknown()")}${route} });`,
     );
@@ -225,7 +243,13 @@ function clientFile(service: string, manifest: StackraManifest): string {
     const verb = camelCase(segments.pop() ?? "");
     const group = camelCase(segments.join("_"));
     const members = groups.get(group) ?? new Map<string, string>();
-    if (!members.has(verb)) members.set(verb, entry.class);
+    if (!members.has(verb))
+      members.set(
+        verb,
+        `${deprecatedDoc(entry, "    ")
+          .map((line) => `${line}\n`)
+          .join("")}    ${verb}: this.member(${entry.class}),`,
+      );
     groups.set(group, members);
   }
   // An enum's schema constant nothing reads is left out: a consumer's noUnusedLocals refuses it (STA-1751).
@@ -239,8 +263,7 @@ function clientFile(service: string, manifest: StackraManifest): string {
   });
   if (kept.some((declaration) => declaration.includes("z."))) use("zod", "z");
   const body = [...groups].map(
-    ([group, members]) =>
-      `  readonly ${group} = {\n${[...members].map(([verb, name]) => `    ${verb}: this.member(${name}),`).join("\n")}\n  };`,
+    ([group, members]) => `  readonly ${group} = {\n${[...members.values()].join("\n")}\n  };`,
   );
   const header = generatedHeader({
     from: `the committed stackra.manifest.json of the ${service} service (${manifest.package})`,

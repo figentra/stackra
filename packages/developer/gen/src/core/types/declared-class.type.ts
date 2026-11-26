@@ -10,6 +10,8 @@
  * Governing contract: ADR 0294 (decisions 4, 16, 17, 20 and 25); ADR 0305 (rules 5 to 9, 31 and 42); ADR 0260
  *                     (decision 4); ADR 0101 (the workflows a class starts).
  */
+import type { Deprecation } from "@stackra/contracts";
+
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { FacetUse } from "#core/types/facet-use.type";
 import type { TokenRef } from "#core/types/token-ref.type";
@@ -97,6 +99,9 @@ export interface DeclaredClass {
 
   /** The identity `@Renamed(old)` records. */
   readonly renamed?: string;
+
+  /** The deprecation `@Deprecated({ since, sunset, replacement })` records (ADR 0131 decision 4, STA-2836). */
+  readonly deprecated?: Deprecation;
 
   /** Set when the class is `abstract`: a kind base other classes extend, never built, so never a driver candidate. */
   readonly abstract?: true;

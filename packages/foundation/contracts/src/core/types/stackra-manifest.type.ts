@@ -153,6 +153,25 @@ export type StackraManifest = {
       Record<string, readonly { readonly member: string; readonly events: readonly string[] }[]>
     >;
   };
+  /**
+   * What the member deprecates (ADR 0131 decision 4, STA-2836): each `@Deprecated` class or field and each deprecated
+   * trait, sorted by name then member; absent when nothing is. A consumer's gen warns when it uses one.
+   */
+  readonly deprecations?: readonly {
+    /** The class's kind code (`action`, `integration_event`, `settings`, ...), `field`, `setting` or `trait`. */
+    readonly kind: string;
+    /** The class name, or a trait's exported name. */
+    readonly name: string;
+    /** The deprecated field of the class, for `field` and `setting`. */
+    readonly member?: string;
+    /** The module key it sits in. */
+    readonly module?: string;
+    /** The locked identity, when the kind has one (an action key, an event wire name, a trait code). */
+    readonly identity?: string;
+    readonly since: string;
+    readonly sunset: string;
+    readonly replacement?: string;
+  }[];
   /** JSON Schemas of the member's shapes, by module-qualified name. */
   readonly schemas?: Json;
   /** The sections other targets add (`ui`, `settings`, `migrations`, `infra`, …). */
