@@ -56,7 +56,7 @@ STA-2705 (readiness batch 8, item 8.2).
 - **AC-001**: THE docs site SHALL hold one upgrade note per release line 0.30, 0.31, 0.32 and 0.33 under
   `customers/upgrading/`, each with the sections What changes, Pins, Steps, Verify and Roll back, written from that
   line's changelog entries, AND a note for the pending 0.34 line written from its pending changesets (STA-2797's
-  `IdempotencyStore` break), AND an index that lists them and the versions to skip (0.33.0).
+  `IdempotencyStore` break, STA-2786's Worker version proof), AND an index that lists them and the versions to skip (0.33.0).
 - **AC-002**: WHEN a changelog entry of an `@stackra/*` release from 0.30.0 on has a break mark THE rule SHALL report
   that release until its line's note exists (`0-<minor>.mdx` before 1.0.0, `<major>.mdx` after).
 - **AC-003**: WHEN a pending changeset that bumps an `@stackra/*` package carries a break mark THE rule SHALL report the
@@ -84,3 +84,5 @@ STA-2705 (readiness batch 8, item 8.2).
 - 2026-11-26 → Implementing (the commit on `figentra/sta-2835-upgrade-notes`)
 - 2026-11-26 → Implementing (review fixes: rebased on STA-2797, whose pending changeset marks a break, so the
   pending 0.34.0 gets `customers/upgrading/0-34.mdx`; AC-002 reworded to EARS)
+- 2026-11-26 → Implementing (rebased on STA-2786, a second break in 0.34: the 0.34 note covers the Worker version
+  proof)
