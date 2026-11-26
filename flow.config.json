@@ -58,6 +58,196 @@
     ],
     "install": "pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'"
   },
+  "ci": {
+    "pr": ["typecheck", "build"],
+    "main": ["typecheck", "build"],
+    "gen": "pnpm exec turbo run gen --filter='./services/*'",
+    "commitlint": false,
+    "turbo": true,
+    "filters": ["!@figentra/mobile", "!@figentra/playground"],
+    "concurrency": {
+      "typecheck": 2
+    },
+    "runsOn": "ubuntu-latest",
+    "timeoutMinutes": 60,
+    "checks": [
+      {
+        "name": "Workflow lint",
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "run": "actionlint\nzizmor --config .github/zizmor.yml .github/workflows\n"
+      },
+      {
+        "name": "Linear key check",
+        "if": "github.event_name == 'pull_request'",
+        "env": {
+          "PR_TITLE": "${{ github.event.pull_request.title }}",
+          "PR_BRANCH": "${{ github.head_ref }}",
+          "PR_LABELS": "${{ join(github.event.pull_request.labels.*.name, ',') }}",
+          "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+          "HEAD_SHA": "${{ github.event.pull_request.head.sha }}"
+        },
+        "run": "node tools/scripts/linear.mjs check-pr\ncase \"$PR_BRANCH\" in renovate/*|changeset-release/*) exit 0 ;; esac\n# The preset builds to dist for its tarball; here, before any build, Node reads its src (ADR 0025).\nNODE_OPTIONS=--conditions=@stackra/source pnpm exec commitlint --from \"$BASE_SHA\" --to \"$HEAD_SHA\"\n"
+      },
+      {
+        "name": "Format check",
+        "run": "pnpm format:check"
+      },
+      {
+        "name": "Lint",
+        "run": "pnpm exec turbo run lint --filter='!@figentra/mobile' --filter='!@figentra/playground' && pnpm lint:root"
+      }
+    ],
+    "after": [
+      {
+        "name": "Build the CLI for validate",
+        "run": "pnpm exec turbo run build --filter='@stackra/cli...' --filter='!@figentra/mobile' --filter='!@figentra/playground'"
+      },
+      {
+        "name": "Committed manifests match gen",
+        "run": "if ! git diff --quiet -- '*stackra.manifest.json' '*src/node/entities.gen.ts'; then\n  git diff --stat -- '*stackra.manifest.json' '*src/node/entities.gen.ts'\n  echo \"::error title=Stale manifests::run pnpm gen and commit the stackra.manifest.json and entities.gen.ts files above\"\n  exit 1\nfi\n"
+      },
+      {
+        "name": "Migration lint (Squawk)",
+        "run": "mapfile -t files < <(find . -path ./node_modules -prune -o -path '*/.stackra/migrations/*.up.sql' -print | sort)\nif [ \"${#files[@]}\" -eq 0 ]; then\n  echo \"::notice title=Squawk::no compiled migrations (.stackra/migrations) in this checkout; nothing linted\"\n  exit 0\nfi\ntransactional=()\nonline=()\nfor file in \"${files[@]}\"; do\n  if head -n 1 \"$file\" | grep -qx -- '-- stackra:transactional=false'; then online+=(\"$file\"); else transactional+=(\"$file\"); fi\ndone\nlint() {\n  mise exec github:sbdchd/squawk@2.71.0 -- squawk --pg-version=18.0 \\\n    --exclude=prefer-robust-stmts --exclude=prefer-text-field --exclude=ban-char-field \\\n    --exclude=prefer-bigint-over-int \\\n    --exclude=require-lock-timeout --exclude=require-statement-timeout \"$@\"\n}\nif [ \"${#transactional[@]}\" -gt 0 ]; then lint --assume-in-transaction \"${transactional[@]}\"; fi\nif [ \"${#online[@]}\" -gt 0 ]; then lint \"${online[@]}\"; fi\n"
+      },
+      {
+        "name": "Validate repository",
+        "env": {
+          "SPEC_GATE_REQUIRE_READY": "${{ github.event_name == 'pull_request' && !github.event.pull_request.draft && '1' || '' }}",
+          "STACKRA_BRANCH": "${{ github.head_ref }}"
+        },
+        "run": "pnpm validate"
+      },
+      {
+        "name": "Environment names (runway env check)",
+        "run": "pnpm exec turbo run build --filter=@stackra/runway --output-logs=errors-only\npnpm runway env check\n"
+      },
+      {
+        "name": "Check boundaries",
+        "run": "pnpm boundaries"
+      },
+      {
+        "name": "Check unused code",
+        "run": "pnpm exec turbo run build --filter=@stackra/vitest-config --output-logs=errors-only\npnpm exec turbo run gen --filter='!@figentra/mobile' --filter='!@figentra/playground' --output-logs=errors-only\npnpm knip\n"
+      },
+      {
+        "name": "Secrets scan",
+        "run": "pnpm secrets:scan"
+      }
+    ],
+    "optional": [
+      {
+        "id": "mobile",
+        "name": "Mobile apps (Uniwind Pro)",
+        "steps": [
+          {
+            "name": "Toolchain (mise)",
+            "uses": "jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7",
+            "with": {
+              "version": "2026.11.4",
+              "install_args": "node pnpm"
+            }
+          },
+          {
+            "name": "Uniwind Pro token (sops)",
+            "uses": "figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4",
+            "with": {
+              "scope": "ci/build",
+              "names": "UNIWIND_AUTH_TOKEN"
+            }
+          },
+          {
+            "name": "Uniwind Pro cache directory",
+            "run": "echo \"UNIWIND_CACHE_DIR=$HOME/.uniwind/cache/pro\" >> \"$GITHUB_ENV\""
+          },
+          {
+            "name": "Uniwind Pro download cache (restore)",
+            "id": "uniwind-cache",
+            "uses": "actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+            "with": {
+              "path": "~/.uniwind/cache/pro",
+              "key": "uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}",
+              "restore-keys": "uniwind-pro-1-${{ runner.os }}-"
+            }
+          },
+          {
+            "name": "Uniwind Pro cache token (GitHub App)",
+            "id": "ci-cache-token",
+            "if": "${{ steps.uniwind-cache.outputs.cache-hit != 'true' }}",
+            "continue-on-error": true,
+            "uses": "actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510",
+            "with": {
+              "client-id": "${{ secrets.STACKRA_BOT_APP_ID }}",
+              "private-key": "${{ secrets.STACKRA_BOT_PRIVATE_KEY }}",
+              "owner": "figentra",
+              "repositories": "ci-cache",
+              "permission-contents": "read"
+            }
+          },
+          {
+            "name": "Uniwind Pro cache from figentra/ci-cache",
+            "if": "${{ steps.uniwind-cache.outputs.cache-hit != 'true' && steps.ci-cache-token.outputs.token != '' }}",
+            "continue-on-error": true,
+            "env": {
+              "GH_TOKEN": "${{ steps.ci-cache-token.outputs.token }}"
+            },
+            "run": "version=$(awk '/^  uniwind-pro@[0-9]/ { sub(/^  uniwind-pro@/, \"\"); sub(/:$/, \"\"); print; exit }' \\\n  pnpm-lock.yaml)\ndir=\"$UNIWIND_CACHE_DIR/$version\"\nif [ -z \"$version\" ] || [ -f \"$dir/uniwind-pro-$version.tgz\" ]; then exit 0; fi\nmkdir -p \"$dir\"\nif ! gh release download \"uniwind-pro-$version\" --repo figentra/ci-cache \\\n  --pattern \"uniwind-pro-$version.tgz*\" --dir \"$dir\"; then\n  echo \"::notice title=Uniwind Pro::no uniwind-pro-$version release in figentra/ci-cache; downloading\"\n  exit 0\nfi\npublished=\"https://cdn.uniwind.dev/uniwind-pro/checksums/$version\"\nexpected=$(curl -fsS --max-time 10 \"$published\" | awk '{ print tolower($1); exit }' || true)\nactual=$(sha256sum \"$dir/uniwind-pro-$version.tgz\" 2>/dev/null | awk '{ print $1 }' || true)\nif [ -n \"$expected\" ] && [ \"$expected\" = \"$actual\" ]; then\n  echo \"Uniwind Pro $version seeded from figentra/ci-cache (sha256 $actual, as Uniwind publishes)\"\nelse\n  rm -rf \"$dir\"\n  echo \"::warning title=Uniwind Pro::seeded $version does not match the published sha256; dropped, downloading\"\nfi\n"
+          },
+          {
+            "name": "Install dependencies",
+            "run": "pnpm install --frozen-lockfile --child-concurrency=1"
+          },
+          {
+            "name": "Uniwind Pro download cache (filled?)",
+            "id": "uniwind-filled",
+            "if": "${{ !cancelled() }}",
+            "run": "if find \"$UNIWIND_CACHE_DIR\" -type f ! -name '*.sha256' -size +100k 2>/dev/null | grep -q .; then\n  echo \"filled=true\" >> \"$GITHUB_OUTPUT\"\nfi\n"
+          },
+          {
+            "name": "Uniwind Pro download cache (save)",
+            "if": "${{ !cancelled() && steps.uniwind-cache.outputs.cache-hit != 'true' && steps.uniwind-filled.outputs.filled == 'true' }}",
+            "continue-on-error": true,
+            "uses": "actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+            "with": {
+              "path": "~/.uniwind/cache/pro",
+              "key": "uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}"
+            }
+          },
+          {
+            "name": "Lint, typecheck and build the mobile apps",
+            "run": "pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground --continue=dependencies-successful"
+          }
+        ]
+      },
+      {
+        "id": "dependency-review",
+        "name": "Dependency Review",
+        "steps": [
+          {
+            "name": "Dependency review",
+            "if": "github.event_name == 'pull_request'",
+            "uses": "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294",
+            "with": {
+              "fail-on-severity": "high"
+            }
+          }
+        ]
+      },
+      {
+        "id": "deploy-staging",
+        "name": "Deploy Staging",
+        "steps": [
+          {
+            "name": "No deploy target decided",
+            "if": "github.ref == 'refs/heads/main' && github.event_name == 'push'",
+            "run": "echo \"No deploy target is decided yet (gap questionnaire DP1-DP7). Nothing is deployed.\""
+          }
+        ]
+      }
+    ]
+  },
   "agentsMd": {
     "facts": "pnpm 12 + Turborepo monorepo. Every rule lives in this repository (`.agents/rules/`, indexed below); there are no\nglobal rules. Full guides: `apps/docs` (`pnpm docs`). Every member keeps its code in `src/`.\n\nWhere things live (path: what it holds, tier tag):\n\n- `apps/console`: `@figentra/console` — Vite web app; authored `src/main.ts` until v3 generates the entry (ADR 0295) (`tier:app`)\n- `apps/mobile`: `@figentra/mobile` — Expo app; authored `src/main.ts` until v3 generates the entry (ADR 0295) (`tier:app`)\n- `apps/docs`: `@figentra/docs` — Fumadocs (ADR 0514); pages in `src/docs/` (ADRs in `src/docs/adr`), site config `src/config/docs.config.ts` (`tier:app`)\n- `packages/<category>/<name>`: `@stackra/<name>`, flat inside one category: foundation, application, communication, connectors, cross-cutting, data, developer, experience, runtime, security, state (`tier:lib`)\n- `packages/tooling/*`: `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300) (`tier:config`)\n- `services/<name>`: `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294) (`tier:service`)\n- `workers/<name>`: `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.stackra.figentra.com), `wrangler.jsonc`, ADR 0284 (`tier:app`)\n- `tools/scripts`: repo helpers (Linear, bots, spec gates, runway); the checks and `pnpm new` are `stackra` commands, templates in `tools/scaffold`\n- `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc`: agent hooks and config\n- `.notes`: private owner-only submodule (`git submodule update --init .notes`); CI and agents never need it; never reference its contents from public docs\n\nRules every member follows (`pnpm validate` enforces them):\n\n- Versions come only from `pnpm-workspace.yaml` catalogs (`catalog:<name>`) or `workspace:*`. `catalogMode: strict`.\n- `turbo.jsonc` extends `//` with exactly one tier tag, then its category and runtime tags; `tsconfig.json` extends one\n  `@stackra/typescript-config` preset.\n- `package.json` carries `keywords`, `repository` (with `directory`), `homepage`, `bugs`, `author`, `engines` and\n  `\"stackra\": { \"kind\": \"package\", \"tier\", \"category\", \"runtimes\", \"summary\" }`, checked against\n  `STACKRA_MANIFEST_SCHEMA` and the folder (ADR 0453 decision 11, amendment of 2026-10-27; `/standards/members`).\n- Every test file sits directly in a `__tests__/` folder beside its subject (`src/**/__tests__/<name>.test.ts`), anywhere in the repo; no root `tests/`, no `.spec`. App e2e lives in the app. ADR 0022, enforced by `pnpm validate`.\n- A package never imports an app, a service or `encore.dev`, nor another package's `src/`.\n- A JSON config is `.jsonc` (comments welcome) when its tool reads JSONC; tsconfig files keep `.json` and take comments.\n  The files that must stay strict `.json`, with the reason, are `MUST_STAY_JSON` in `@stackra/repo-checks`.\n\nThe programming model v3 is the target for new code (ADR 0294, 0295, 0296): a class declares its kind by its base\nclass, each file sits in its kind's one home group, identities are derived and locked in `stackra.manifest.json`, and\nnobody writes `main.ts` or a tool config. No member is converted yet (STA-344) and its checks are planned (STA-338,\nSTA-339, STA-340), so today's code and `stackra validate --repository` still show the older shapes.\n\nReserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue STA-n` lands it in\n`apps/docs/adr/numbers.yaml` on main first (STA-1732); never take \"the highest on disk plus one\" from a branch.\n\nDone = `pnpm verify` green on the box after the merge (format, lint, typecheck, test, build, validate, boundaries, knip; \"Tests run\nlater\" below). Conventional commits.\n\nScope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.\n\nDeploys (owner decision 2026-10-28, ADR 0468): agents develop and deploy end to end. Dev and staging deploys and\nprereleases run without the owner; production (a deploy, promote, rollback or package release) runs in CI and waits on\nthe owner's one GitHub Environment approval, which an agent may start. Secret values stay with the owner, main changes\nonly through a merged pull request, and a workstation `encore deploy` stays denied. Until the owner applies the guard\nand settings edits listed on STA-1395, the guard still asks before staging deploys.\n\n## Tests run later: merge now, label `needs-testing`\n\nOwner decision 2026-11-03 (STA-2083, replaces \"Tests run on the box\"): nothing waits on tests before it lands. No box\nrun before the merge and no waiting on CI: open the pull request and merge it right away\n(`figentra pr merge --admin [-R figentra/<repo>] <n>`, as stackra-bot; see below), then add the Linear label\n`needs-testing` to its STA issue and a `Needs testing: <what to run>` line to the pull request body. The tester\nlane later runs those tests on the box (`testbed run \"core STA-n\" . \"pnpm verify\"`) and removes the label.\nGitHub CI runs no tests; its checks still run after the merge and stay visible. Nothing installs or tests on a\nworkstation.\n\n## GitHub identity: agents are stackra-bot\n\nOwner decision 2026-11-04 (STA-2105): agents act on GitHub only as the `stackra-bot` App. Raw `gh` and a plain\n`git push` run as the owner's login `figentra-usr`, so they mean the owner; an agent never runs them, in any\nrepository or directory.\n\n- In this repository: `pnpm bot:gh -- …`, `pnpm bot:git -- push origin HEAD`, `pnpm pr:merge <n>`.\n- Anywhere else (another repository, `~/Projects/figentra`): `figentra bot gh …`,\n  `figentra bot git push origin HEAD` and `figentra pr merge --admin [-R figentra/<repo>] <n>` from\n  `@figentra/cli`. Each mints the installation token in-process from the sops `agents` scope (`secrets-exec.mjs`); none\n  prints it or puts it on argv.\n- A merge-now (`--admin`) merge lands only where the repository's rulesets name stackra-bot as a bypass actor. Where\n  GitHub refuses it, hand the pull request to the leader for the owner; never retry as the owner.\n- The bot has no `administration`, `environments`, `secrets` or `variables` permission. Rulesets, environments,\n  branch protection, secrets, variables, App permissions and production approvals stay the owner's; a production\n  dispatch by the bot stops at the owner check (`github.triggering_actor`).",
     "land": "Merge the pull request right away with `pnpm pr:merge <n>` under the owner's merge-now rule above (STA-2083): never wait on the gate. Then add the `needs-testing` label to its STA issue and a `Needs testing:` line to its body, and remove the worktree yourself."
