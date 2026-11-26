@@ -3919,8 +3919,10 @@ const overrideTarget = (selector) =>
  * reference, or an `npm:<name>@<range>` alias; `workspace:` only between members (`memberNames`). `link:`, `file:`,
  * `portal:`, git, GitHub and http(s) tarball specs, and paths, are refused. An alias that renames a gate-tool package
  * (GATE_TOOL_PACKAGES) to another registry name is refused too, and so is a `workspace:` spec for one: either would
- * swap the gate's runner for a stub. An override may also be `-` (removal) or a `$name` reference, which is checked as
- * the root package.json's spec for `name` (`rootManifest`); `memberNames` are the lockfile importers' names.
+ * swap the gate's runner for a stub. The one exception is a gate tool that is main's own workspace member
+ * (`gateMembers`, @stackra/cli, box 1 proof B2): a `workspace:` spec for it links to that member, as main's own
+ * manifests do. An override may also be `-` (removal) or a `$name` reference, which is checked as the root
+ * package.json's spec for `name` (`rootManifest`); `memberNames` are the lockfile importers' names.
  */
 /**
  * Round 6, H2: every package the tested tree's lockfile resolves comes from a package registry under its own name.
@@ -3990,6 +3992,7 @@ export function dependencySpecProblems({
   workspace = {},
   manifests = [],
   memberNames = new Set(),
+  gateMembers = new Set(),
   rootManifest = {},
 }) {
   const problems = [];
@@ -4018,7 +4021,8 @@ export function dependencySpecProblems({
     }
     if (/^catalog:[\w.-]*$/.test(spec)) return;
     if (spec.startsWith("workspace:")) {
-      if (isGateToolPackage(key)) return bad("links a gate tool to a workspace member");
+      if (isGateToolPackage(key) && !gateMembers.has(key))
+        return bad("links a gate tool to a workspace member");
       return workspaceOk
         ? undefined
         : bad("is a workspace: spec for a package that is not a member");
@@ -5597,17 +5601,32 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}
     // What an allowed build installs is the registry's package under its own name, never a tarball the PR chose.
     problems.push(...lockfileResolutionProblems(lockText));
   }
-  const memberNames = new Set(
-    manifests
-      .filter((m) => importerDirs.has(definitionDirectory(m.path) || "."))
-      .map((m) => m.json?.name)
-      .filter(Boolean),
-  );
+  const members = manifests.filter((m) => importerDirs.has(definitionDirectory(m.path) || "."));
+  const memberNames = new Set(members.map((m) => m.json?.name).filter(Boolean));
+  // A gate tool that is main's own member (@stackra/cli) may be linked with workspace: when it is the same member in
+  // both trees: one manifest of that name, at the path where main has it, and an importer of main's lockfile.
+  const gateMembers = new Set();
+  const mainImporters = mainByPath.has("pnpm-lock.yaml")
+    ? new Set(Object.keys(lockfileGraph(blob(mainByPath.get("pnpm-lock.yaml"))).importers))
+    : new Set();
+  for (const name of memberNames) {
+    if (!isGateToolPackage(name)) continue;
+    const same = members.filter((m) => m.json?.name === name);
+    const mainEntry = mainByPath.get(same[0].path);
+    if (same.length !== 1 || !mainEntry) continue;
+    if (!mainImporters.has(definitionDirectory(same[0].path) || ".")) continue;
+    try {
+      if (JSON.parse(blob(mainEntry))?.name === name) gateMembers.add(name);
+    } catch {
+      // main's manifest is not JSON: no exception
+    }
+  }
   problems.push(
     ...dependencySpecProblems({
       workspace,
       manifests,
       memberNames,
+      gateMembers,
       rootManifest: manifests.find((m) => m.path === "package.json")?.json ?? {},
     }),
   );

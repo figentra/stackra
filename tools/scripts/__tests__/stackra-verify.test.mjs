@@ -5372,6 +5372,117 @@ test("dependencySpecProblems: the spec grammar, without a repository", () => {
   );
 });
 
+test("proof B2: a gate tool that is main's own member (@stackra/cli) keeps its workspace: link; no other gate tool does", () => {
+  const manifests = [
+    {
+      path: "apps/docs/package.json",
+      json: { devDependencies: { "@stackra/cli": "workspace:*" } },
+    },
+  ];
+  const problems = (gateMembers) =>
+    dependencySpecProblems({
+      manifests,
+      memberNames: new Set(["@stackra/cli"]),
+      gateMembers: new Set(gateMembers),
+    });
+  assert.deepEqual(problems(["@stackra/cli"]), []);
+  assert.match(
+    problems([])[0],
+    /@stackra\/cli "workspace:\*" links a gate tool to a workspace member/,
+  );
+  // an override still never links one
+  assert.match(
+    dependencySpecProblems({
+      workspace: { overrides: { "@stackra/cli": "workspace:*" } },
+      memberNames: new Set(["@stackra/cli"]),
+      gateMembers: new Set(["@stackra/cli"]),
+    })[0],
+    /is a workspace: spec for a package that is not a member/,
+  );
+});
+
+/** A lockfile where packages/<from> links `to.name` from packages/<to.dir> (workspace:*), beside an empty member. */
+const memberLinkLock = (from, to) =>
+  [
+    "lockfileVersion: '9.0'",
+    "",
+    "importers:",
+    "",
+    "  .: {}",
+    "",
+    `  packages/${from}:`,
+    "    devDependencies:",
+    `      '${to.name}':`,
+    "        specifier: workspace:*",
+    `        version: link:../${to.dir}`,
+    "",
+    `  packages/${from === "a" ? "b" : "a"}: {}`,
+    "",
+  ].join("\n");
+
+test("proof B2: buildTree accepts main's own workspace link to its gate-tool member, and refuses that name anywhere else", () => {
+  const repo = treeRepo();
+  const { dir, git } = repo;
+  const write = (path, text) => {
+    mkdirSync(join(dir, path, ".."), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  };
+  try {
+    git("checkout", "-q", "main");
+    write("packages/a/package.json", '{"name":"@stackra/cli","bin":{"stackra":"x.mjs"}}\n');
+    write(
+      "packages/b/package.json",
+      '{"name":"b","devDependencies":{"@stackra/cli":"workspace:*"}}\n',
+    );
+    write("pnpm-lock.yaml", memberLinkLock("b", { name: "@stackra/cli", dir: "a" }));
+    git("add", "-A");
+    git("commit", "-qm", "main links its CLI");
+    const base = git("rev-parse", "HEAD");
+    let n = 0;
+    const build = (files) => {
+      git("checkout", "-q", "-b", `b2-${++n}`, base);
+      for (const [path, text] of Object.entries(files)) write(path, text);
+      git("add", "-A");
+      git("commit", "-qm", `b2 ${n}`, "--allow-empty");
+      const sha = git("rev-parse", "HEAD");
+      git("checkout", "-q", "main");
+      return buildTree(mirrorOf(dir), base, sha, join(dir, `index-b2-${n}`), YAML);
+    };
+    // main's own tree, and a PR that changes a source beside it
+    assert.match(build({}), /^[0-9a-f]{40}$/);
+    assert.match(build({ "packages/b/src/x.ts": "export const x = 1;\n" }), /^[0-9a-f]{40}$/);
+    // the gate tool's name moved to another member, or another gate tool made a member: refused
+    for (const [files, key] of [
+      [
+        {
+          "packages/a/package.json":
+            '{"name":"a","devDependencies":{"@stackra/cli":"workspace:*"}}\n',
+          "packages/b/package.json": '{"name":"@stackra/cli"}\n',
+          "pnpm-lock.yaml": memberLinkLock("a", { name: "@stackra/cli", dir: "b" }),
+        },
+        "@stackra/cli",
+      ],
+      [
+        {
+          "packages/a/package.json": '{"name":"vitest"}\n',
+          "packages/b/package.json": '{"name":"b","devDependencies":{"vitest":"workspace:*"}}\n',
+          "pnpm-lock.yaml": memberLinkLock("b", { name: "vitest", dir: "a" }),
+        },
+        "vitest",
+      ],
+    ])
+      assert.throws(
+        () => build(files),
+        (error) =>
+          error.refused === true &&
+          error.message.includes(`${key} "workspace:*" links a gate tool to a workspace member`),
+        key,
+      );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("serviceYaml: the daemon's parser is main's installed yaml; a missing or different one is a host problem", () => {
   const dir = mkdtempSync(join(tmpdir(), "stackra-yaml-"));
   try {
