@@ -4,10 +4,11 @@
  *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
  *          has nothing to build; at the workspace root it fans out through
  *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
- *          the site and then fails on a broken link, naming the page (STA-2026).
+ *          the site and then fails on a broken link, naming the page (STA-2026); a service's `dev` gets the dev compose's
+ *          variables with the dev-secrets file's values over them (STA-2664).
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule.
+ * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule; STA-2664 (item 6).
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -104,6 +105,38 @@ describe("toolCommand", () => {
     await toolCommand("test", "Test").run(context());
     expect(gen).not.toHaveBeenCalled();
     expect(spawn).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives a service's dev run the dev compose's variables, the dev-secrets file's values over them", async () => {
+    const member = join(root, "services", "orders");
+    mkdirSync(join(member, "stackra-encore"), { recursive: true });
+    mkdirSync(join(root, ".stackra", "dev"), { recursive: true });
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - services/*\n");
+    writeFileSync(
+      join(root, "runway.yaml"),
+      `version: 3\nproject: acme\nenvironments:\n  dev:\n    infra:\n      valkey: { image: "valkey/valkey:8.1@sha256:${"a".repeat(64)}", port: 6379 }\n`,
+    );
+    writeFileSync(join(root, ".stackra", "dev", "infra.json"), '{ "lane": 0, "optIn": [] }');
+    writeFileSync(
+      join(root, ".stackra", "dev-secrets.json"),
+      '{ "CACHE_VALKEY_URL": "redis://127.0.0.1:7000" }',
+    );
+    writeFileSync(join(member, "stackra.config.ts"), "export default defineService({});\n");
+    writeFileSync(
+      join(member, "stackra.manifest.json"),
+      JSON.stringify({ env: [{ name: "CACHE_VALKEY_URL", kind: "secret", required: false }] }),
+    );
+    expect(await toolCommand("dev", "Dev").run({ ...context(), cwd: member })).toBe(0);
+    expect(spawn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: "encore",
+        env: expect.objectContaining({
+          CACHE_VALKEY_URL: "redis://127.0.0.1:7000",
+          LOCKING_VALKEY_URL: "redis://127.0.0.1:6379",
+        }),
+      }),
+      expect.anything(),
+    );
   });
 
   it("returns the tool's exit code", async () => {

@@ -118,6 +118,15 @@ eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change),
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
 run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
 
+In a member or at the root, `stackra dev` first starts the dev compose of the root runway's `environments.dev.infra`
+(Valkey, SeaweedFS, Mailpit, ClamAV, otel-lgtm; Encore keeps its own Postgres): it writes `.stackra/dev/compose.yaml`
+(and `.stackra/dev/compose.shared.yaml` for the `perLane: false` ones, ClamAV by default) and runs
+`docker compose -f <file> up --detach --wait`, so each container is healthy before the member starts. The member's run
+gets the containers' variables (`CACHE_VALKEY_URL`, `AWS_ENDPOINT_URL_S3`, `SMTP_PORT`, …) unless the shell or
+`.stackra/dev-secrets.json` sets them. `--infra <name>[,<name>]` also starts `when: opt-in` blocks; `--no-infra` skips
+the step. The containers keep running after `stackra dev` stops; `docker compose -f .stackra/dev/compose.yaml down`
+stops them. A member run turbo starts from the root leaves the step to the root run.
+
 `stackra dev --surface <surface>` runs at a product root (ADR 0436 decision 6, app-shells section 15 point 2). It reads
 `surfaces.<surface>` (`shell: os/console@3`, `packages`) from the root `runway.yaml`, runs `stackra gen`, writes the
 `DevSurface` descriptor to `.stackra/surfaces/<surface>/dev-surface.json`, then starts Vite with the surface's
