@@ -77,4 +77,8 @@ crypto-shredding). Member at `packages/security/privacy` (`tier:lib`), in the pr
 | Subject public id           | `EraseSubjectInput`, receipts, events | pseudonymous id only, kept as the proof the request was honoured             |
 | Subject salt                | `privacy.subject_salts` or the host's | read only to derive the subject key; destroyed on erasure; never logged      |
 
-- `personalDataDeclarations` drops every field a model classifies `credential` and any declaration left empty: a provider secret is never in a DSAR export and erasure skips it (ADR 0494).
+- `personalDataDeclarations` drops every field a model classifies `credential` (by `@Classified` or `@Classify`) and any declaration left empty: a provider secret is never in a DSAR export and erasure skips it (ADR 0494).
+- A declaration without `fields` takes them from the model's data classes (`fieldDataClasses` of @stackra/model: every
+  classified field whose class's `erasure` is not `keep`, with that method; ADR 0540 decision 5). Never keep a second
+  list of a model's personal fields. A listed method never goes below its field's class: `looserErasureFields` makes
+  the erasure refuse, and gen's `checkPersonalData` refuses it at build time.

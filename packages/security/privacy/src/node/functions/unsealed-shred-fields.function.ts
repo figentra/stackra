@@ -5,8 +5,8 @@
  *          field of its model, keyed by the same subject property, or destroying the subject's salt leaves it readable
  *          and the erasure receipt would be false.
  * Boundary: pure over a resolved declaration and the model's trait registry (`encryptedFieldsOf`,
- *           `encryptedSubjectOf`). `EraseSubjectWorkflow` refuses to erase while any field fails it; gen is to run the
- *           same rule at build time once it reads `PersonalData` (stackra-314).
+ *           `encryptedSubjectOf`). `EraseSubjectWorkflow` refuses to erase while any field fails it; gen runs the
+ *           same rule at build time (`personal_data_shred_unsealed`, ADR 0540).
  * Runtime: node
  * Governing contract: ADR 0189 (decision 2); ADR 0212 (crypto-shredding); gap gov2 (stackra-263).
  */

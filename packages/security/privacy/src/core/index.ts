@@ -14,6 +14,7 @@ export { PRIVACY_CONFIG_SCHEMA as PrivacyConfig$ } from "#core/constants/privacy
 export { MemoryPersonalDataStoreDriver } from "#core/drivers/memory-personal-data-store.driver";
 export { MemorySubjectSaltStoreDriver } from "#core/drivers/memory-subject-salt-store.driver";
 export { SubjectErased } from "#core/events/subject-erased.event";
+export { looserErasureFields } from "#core/functions/looser-erasure-fields.function";
 export { personalDataDeclarations } from "#core/functions/personal-data-declarations.function";
 export { registerPersonalData } from "#core/functions/register-personal-data.function";
 export { ErasedRecordsLine } from "#core/schemas/erased-records-line.schema";

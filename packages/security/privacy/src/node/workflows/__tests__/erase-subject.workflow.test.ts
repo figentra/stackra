@@ -4,15 +4,30 @@
  *          shred-rows to the key; a legal hold keeps its rows and, when they carry shredded fields, keeps the key;
  *          `redact` nulls the declared fields in held outbox messages naming the subject and the receipt counts them;
  *          `receipt` records `SubjectErased` and, when asked, the `ServiceAcked` erasure ack; `output` is the receipt;
- *          a shredded field that is not subject-sealed refuses the erasure before any row is touched.
+ *          a shredded field that is not subject-sealed, or a declared method weaker than its field's data class,
+ *          refuses the erasure before any row is touched.
  * Boundary: test only; the steps are called directly in order with a hand-built run and step context, the memory
  *           store, the salt fake, the memory outbox and a hold registry connected through `connectHoldRegistry`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0189 (decisions 2 and 4); ADR 0134; ADR 0212; STA-1375; stackra-263.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0189 (decisions 2 and 4); ADR 0134; ADR 0212; STA-1375; stackra-263;
+ *                     ADR 0540 (decision 5).
  */
 import type { AnyClass } from "@stackra/container";
 import { Driver } from "@stackra/container";
-import { HasEncryptedFields, Model } from "@stackra/model";
+import {
+  AiAudience,
+  Classify,
+  DataClass,
+  ExportLabel,
+  FieldEncryption,
+  HasEncryptedFields,
+  MaskMethod,
+  Model,
+  RetentionBound,
+  SearchSnippet,
+  SubjectErasure,
+  SupportAccess,
+} from "@stackra/model";
 import { connectHoldRegistry } from "@stackra/database";
 import { HoldRegistry } from "@stackra/database/contracts";
 import type { Event } from "@stackra/events";
@@ -51,6 +66,36 @@ class NotePersonalData extends PersonalData({
   model: () => Note,
   subject: "userId",
   fields: { body: ErasureMethod.Shred },
+}) {}
+
+/** A class whose fields leave with their row. */
+class CaseFileDataClass extends DataClass({
+  key: "case_file",
+  ai: AiAudience.Never,
+  support: SupportAccess.Hidden,
+  search: SearchSnippet.NoSnippet,
+  export: ExportLabel.Labelled,
+  encrypt: FieldEncryption.Clear,
+  erasure: SubjectErasure.Delete,
+  retention: RetentionBound.None,
+  mask: MaskMethod.Null,
+}) {}
+
+/** A case whose summary's class deletes the row. */
+class CaseFile extends Model {
+  @Classify(CaseFileDataClass)
+  summary!: string | null;
+
+  id!: string;
+
+  userId!: string;
+}
+
+/** Wrongly only anonymises a field its class deletes. */
+class CaseFilePersonalData extends PersonalData({
+  model: () => CaseFile,
+  subject: "userId",
+  fields: { summary: ErasureMethod.Anonymise },
 }) {}
 
 /** When every run ends. */
@@ -254,6 +299,19 @@ describe("EraseSubjectWorkflow", () => {
 
     await expect(runAll(workflow, { erasureId: "era_1", subject: SUBJECT })).rejects.toThrow(
       /crm\.note\.body/,
+    );
+    expect(store.all(Customer)).toHaveLength(2);
+    expect(salts.calls("destroy")).toEqual([]);
+  });
+
+  it("refuses to erase anything while a declared method is weaker than its field's data class", async () => {
+    registerPersonalData("legal", [CustomerPersonalData, CaseFilePersonalData]);
+    const store = seeded();
+    const salts = SubjectSaltStoreFake.holding([SUBJECT]);
+    const workflow = new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver());
+
+    await expect(runAll(workflow, { erasureId: "era_1", subject: SUBJECT })).rejects.toThrow(
+      /legal\.case_file\.summary \(anonymise below delete\)/,
     );
     expect(store.all(Customer)).toHaveLength(2);
     expect(salts.calls("destroy")).toEqual([]);

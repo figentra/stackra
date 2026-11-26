@@ -317,12 +317,21 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   the ADR-named tables of `MODEL_SCOPE_EXEMPTIONS`; `model_tenancy_migration_missing` (staged) over
   `MemberIR.migrationTables` (`readMigrationTables`) for an owned model whose table never gets `t.belongsToTenant()`. `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.
-- `checkEncryptedFields` (core, full pass only, stackra-262): `encrypted_field_unknown`, `encrypted_field_unclassified`,
-  `credential_field_not_encrypted` (a `credential` field outside `HasEncryptedFields`, ADR 0494)
+- `checkEncryptedFields` (core, full pass only, stackra-262): `encrypted_field_unknown`, `encrypted_field_unclassified`
+  (no `@Classified` and no `@Classify`), `credential_field_not_encrypted` (a `credential` field outside
+  `HasEncryptedFields`, ADR 0494), `classified_field_not_encrypted` and `classified_field_not_subject_sealed` (a field
+  whose data class's `encrypt` is `sealed` or `subject_sealed` and the trait does not give it, ADR 0540)
   (the reader puts the `@Classified` code on `FieldIR.classified`) and `encrypted_native_write` over
   `MemberIR.nativeWrites` (`readNativeWrites`, a same-line text scan). `emitBoot` adds the `EncryptedFieldsSubscriber`
-  over the bound `FieldCipher` when any model, own or a declared package's, has `HasEncryptedFields`. The
-  `PersonalData` erasure methods are not compared: gen does not read them (stackra-314).
+  over the bound `FieldCipher` when any model, own or a declared package's, has `HasEncryptedFields`.
+- One classification source (ADR 0540): a field's class is `fieldDataClassOf` (its `@Classify` facet's constant
+  effects, its `@Classified` code's row of @stackra/contracts' `DATA_CLASSIFICATION_EFFECTS`, the stricter of both per
+  effect). Never restate that table in gen. `checkDataClasses` (core, full pass only): `data_class_effects_missing`,
+  `data_class_looser_than_classified`, `classified_model_without_retention`. `checkPersonalData` (core, full pass only)
+  reads `PersonalData` classes (kind `personal_data`, `<model>.personal-data.ts`) of own models:
+  `personal_data_field_unknown`, `personal_data_credential_field`, `personal_data_looser_than_class`,
+  `personal_data_shred_unsealed`, `personal_data_anonymise_not_nullable`; a declaration without `fields` is checked on
+  the fields its model's classes derive. A package's model is left to its own gen.
 - `checkSemanticSearch` (core, full pass only, STA-1251): `searchable_semantic_ai_never`, a `semantic: true`
   `@Searchable` text path that ends at a field whose `@Classify` facet's `options.dataClass.ai` is `never`. The reader
   fills `options.dataClass` from the `DataClass({...})` from `@stackra/*` the class's chain extends (`dataClassOf`).

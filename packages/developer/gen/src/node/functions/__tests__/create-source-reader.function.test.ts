@@ -1782,6 +1782,73 @@ describe("createSourceReader on data classes", async () => {
   });
 });
 
+/** A model and its `PersonalData` declarations, one listing its fields and one leaving them to the classes (ADR 0540). */
+const PERSONAL_DATA_SOURCES: Readonly<Record<string, string>> = {
+  ...MODEL_STAND_IN,
+  "node_modules/@stackra/privacy/package.json": JSON.stringify({
+    name: "@stackra/privacy",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/privacy/index.d.ts": [
+    'export declare const ErasureMethod: { readonly Shred: "shred"; readonly Delete: "delete"; readonly Anonymise: "anonymise" };',
+    "export type ErasureMethod = (typeof ErasureMethod)[keyof typeof ErasureMethod];",
+    'export interface PersonalData { readonly "~kind": "personal_data" }',
+    "export declare const PersonalData: (options: { readonly model: () => unknown; readonly subject: string; readonly fields?: Readonly<Record<string, ErasureMethod>> }) => new () => PersonalData;",
+    "",
+  ].join("\n"),
+  "src/modules/crm/models/customer.model.ts": [
+    'import { HasPublicId, Model } from "@stackra/model";',
+    "",
+    'export class Customer extends Model.with(HasPublicId("cus")) {',
+    "  userId!: string;",
+    "  email!: string | null;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/modules/crm/privacy/customer.personal-data.ts": [
+    'import { ErasureMethod, PersonalData } from "@stackra/privacy";',
+    'import { Customer } from "#modules/crm/models/customer.model";',
+    "",
+    "export class CustomerPersonalData extends PersonalData({",
+    "  model: () => Customer,",
+    '  subject: "userId",',
+    "  fields: { email: ErasureMethod.Anonymise },",
+    "}) {}",
+    "",
+  ].join("\n"),
+  "src/modules/crm/privacy/lead.personal-data.ts": [
+    'import { PersonalData } from "@stackra/privacy";',
+    'import { Customer } from "#modules/crm/models/customer.model";',
+    "",
+    'export class LeadPersonalData extends PersonalData({ model: () => Customer, subject: "userId" }) {}',
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on personal-data declarations", async () => {
+  const root = writeFixtureMember("personal-data", PERSONAL_DATA_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it("reads a PersonalData class as the personal_data kind, with its model, subject and constant fields", () => {
+    const declared = classes.find((candidate) => candidate.name === "CustomerPersonalData");
+    expect(declared?.kind).toBe("personal_data");
+    expect(declared?.options).toMatchObject({
+      model: { $class: "Customer" },
+      subject: "userId",
+      fields: { email: "anonymise" },
+    });
+  });
+
+  it("reads a declaration without fields with none, so the checks derive them", () => {
+    const declared = classes.find((candidate) => candidate.name === "LeadPersonalData");
+    expect(declared?.kind).toBe("personal_data");
+    expect(declared?.options).not.toHaveProperty("fields");
+  });
+});
+
 /** A shell slot, a fill of it and a fill gen cannot read (ADR 0438), over a stand-in @stackra/panel. */
 const SLOT_SOURCES: Readonly<Record<string, string>> = {
   "node_modules/@stackra/panel/package.json": JSON.stringify({

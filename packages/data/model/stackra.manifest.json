@@ -59,13 +59,29 @@
       "type": "string",
       "enum": ["labelled", "excluded"]
     },
+    "model.FieldEncryption": {
+      "type": "string",
+      "enum": ["clear", "sealed", "subject_sealed"]
+    },
+    "model.MaskMethod": {
+      "type": "string",
+      "enum": ["keep", "hash", "fake", "null"]
+    },
     "model.OnDelete": {
       "type": "string",
       "enum": ["cascade", "set_null", "restrict"]
     },
+    "model.RetentionBound": {
+      "type": "string",
+      "enum": ["none", "required"]
+    },
     "model.SearchSnippet": {
       "type": "string",
       "enum": ["no_snippet", "snippet"]
+    },
+    "model.SubjectErasure": {
+      "type": "string",
+      "enum": ["keep", "anonymise", "delete", "shred"]
     },
     "model.SupportAccess": {
       "type": "string",

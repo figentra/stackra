@@ -1,19 +1,23 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `checkEncryptedFields`: an encrypted field must exist and carry `@Classified`, and a native,
- *          query-builder or raw SQL write on an encrypted model (own or a declared package's, by class or table) is
- *          refused; a model without `HasEncryptedFields` is left alone.
+ * Purpose: unit tests of `checkEncryptedFields`: an encrypted field must exist and carry a data class (`@Classified`
+ *          or `@Classify`), a field whose class rests sealed must be encrypted (subject-keyed when the class says
+ *          `subject_sealed`), and a native, query-builder or raw SQL write on an encrypted model (own or a declared
+ *          package's, by class or table) is refused; a model without `HasEncryptedFields` is left alone.
  * Boundary: test only; runs on the billing IR fixture (its models have shapes) with the first model made encrypted.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0465 (decision 5); ADR 0134 (decision 2).
+ * Governing contract: ADR 0022 (test placement); ADR 0465 (decision 5); ADR 0134 (decision 2); ADR 0540 (decision 1).
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
+import { DATA_CLASS_IR } from "#core/__tests__/fixtures/data-class-ir.fixture";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
+
+const { CLINICAL_NOTE, classify, field: fieldIr, irOf, model, shapeOf } = DATA_CLASS_IR;
 
 const MODEL = BILLING_IR.classes.find((declared) => declared.kind === "model") as DeclaredClass;
 const SHAPE = BILLING_IR.shapes.find((shape) => shape.name === MODEL.name) as ShapeIR;
@@ -44,6 +48,14 @@ const encrypted = (
   ...extra,
 });
 
+/** The encryption refusals of a `Visit` whose `note` is a clinical note, under `traits`. */
+function visitCodes(traits: Parameters<typeof model>[1]): string[] {
+  const visit = model("Visit", traits, [classify("note", CLINICAL_NOTE)]);
+  return checkEncryptedFields(irOf([visit], [shapeOf(visit, [fieldIr("note")])])).map(
+    (error) => error.code,
+  );
+}
+
 const write = (method: string, target: string): NonNullable<MemberIR["nativeWrites"]>[number] => ({
   file: "src/modules/billing/services/x.service.ts",
   line: 3,
@@ -68,6 +80,32 @@ describe("checkEncryptedFields", () => {
       "credential_field_not_encrypted",
     ]);
     expect(checkEncryptedFields(encrypted([FIELD], "credential"))).toEqual([]);
+  });
+
+  it("refuses a field whose data class rests sealed when HasEncryptedFields does not name it", () => {
+    expect(checkEncryptedFields(encrypted([], "health")).map((error) => error.code)).toEqual([
+      "classified_field_not_encrypted",
+    ]);
+    expect(checkEncryptedFields(encrypted([FIELD], "health"))).toEqual([]);
+  });
+
+  it("refuses a subject_sealed field sealed without a subject, and accepts it subject-keyed", () => {
+    expect(visitCodes([])).toEqual(["classified_field_not_encrypted"]);
+    expect(visitCodes([{ name: "HasEncryptedFields", args: ["note"] }])).toEqual([
+      "classified_field_not_subject_sealed",
+    ]);
+    expect(
+      visitCodes([{ name: "HasEncryptedFields", args: [{ subject: "userId" }, "note"] }]),
+    ).toEqual([]);
+  });
+
+  it("counts a @Classify class as the encrypted field's classification", () => {
+    const visit = model(
+      "Visit",
+      [{ name: "HasEncryptedFields", args: [{ subject: "userId" }, "note"] }],
+      [classify("note", { key: "note" })],
+    );
+    expect(checkEncryptedFields(irOf([visit], [shapeOf(visit, [fieldIr("note")])]))).toEqual([]);
   });
 
   it("refuses an encrypted field the model does not declare", () => {

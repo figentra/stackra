@@ -9,6 +9,8 @@
 export { Enum } from "#core/bases/enum.base";
 export { Port } from "#core/bases/port.base";
 export { AUDIT_HOT_RETENTION } from "#core/constants/audit-hot-retention.constant";
+export { DATA_CLASS_EFFECT_RANKS } from "#core/constants/data-class-effect-ranks.constant";
+export { DATA_CLASSIFICATION_EFFECTS } from "#core/constants/data-classification-effects.constant";
 export { Duration } from "#core/constants/duration.constant";
 export { AesGcmFieldCipherDriver } from "#core/drivers/aes-gcm-field-cipher.driver";
 export { AwsKmsKeyProviderDriver } from "#core/drivers/aws-kms-key-provider.driver";
@@ -48,7 +50,9 @@ export { defineService } from "#core/functions/define-service.function";
 export { defineWorker } from "#core/functions/define-worker.function";
 export { isPublicId } from "#core/functions/is-public-id.function";
 export { kmsKeyContext } from "#core/functions/kms-key-context.function";
+export { loosenedEffects } from "#core/functions/loosened-effects.function";
 export { mintPublicId } from "#core/functions/mint-public-id.function";
+export { strictestEffects } from "#core/functions/strictest-effects.function";
 export { verifySignature } from "#core/functions/verify-signature.function";
 export { wrapScopeKey } from "#core/functions/wrap-scope-key.function";
 export { ApprovalSettingsSource } from "#core/ports/approval-settings-source.port";
@@ -73,6 +77,7 @@ export type { AwsKmsKeyProviderOptions } from "#core/types/aws-kms-key-provider-
 export type { AwsKmsSignerOptions } from "#core/types/aws-kms-signer-options.type";
 export type { Branded } from "#core/types/branded.type";
 export type { CatalogueRow } from "#core/types/catalogue-row.type";
+export type { DataClassEffects } from "#core/types/data-class-effects.type";
 export type { DataKey } from "#core/types/data-key.type";
 export type { Email } from "#core/types/email.type";
 export type { GeoLine } from "#core/types/geo-line.type";

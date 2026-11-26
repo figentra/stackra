@@ -48,7 +48,7 @@ describe("@stackra/privacy/contracts", () => {
     >();
     expectTypeOf<contracts.SubjectRecord["id"]>().toEqualTypeOf<string>();
     expectTypeOf<contracts.PersonalDataOptions["fields"]>().toEqualTypeOf<
-      Readonly<Record<string, contracts.ErasureMethod>>
+      Readonly<Record<string, contracts.ErasureMethod>> | undefined
     >();
   });
 });

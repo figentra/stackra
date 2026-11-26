@@ -32,6 +32,7 @@ package may import it; it imports nothing.
 | `GeoPoint`                                                                                                                                | type      | the one latitude and longitude (rules geo facts, shipping, geocoding)                                     |
 | `CatalogueRow`                                                                                                                            | type      | one stored catalogue row (entitlements plans, pricing lists, offers, cards)                               |
 | `LocalizedText`                                                                                                                           | type      | one string per BCP 47 locale (experience block props, brand-kit names)                                    |
+| `DATA_CLASSIFICATION_EFFECTS`, `DATA_CLASS_EFFECT_RANKS`, `DataClassEffects`, `loosenedEffects`, `strictestEffects`                       | data      | the effects of each classification and their strictness (ADR 0540)                                        |
 | `brand<B>()`                                                                                                                              | function  | the one constructor of a branded type                                                                     |
 | `capabilityGuard<M>()`                                                                                                                    | function  | the one capability-gateway guard (payments, shipping): narrows to a port                                  |
 | `mintPublicId(prefix, time?)`                                                                                                             | function  | the one public-id minter (UUIDv7, ADR 0135)                                                               |
@@ -49,7 +50,13 @@ adds up to half again).
 regulator issues or governs, such as a tax registration number or a national id) and `credential` (a provider secret:
 an OAuth token, a client secret, an API key; encrypted, never exported, skipped by erasure, always access-logged, ADR 0494). `IdentityResolver#principalOf`
 returns the verified address, verified phone, locale and time zone of a principal; `PrincipalDirectory#supervisorOf`
-returns who a principal reports to in a scope, or `null`. Both answer at the moment of use, so no caller stores them.
+returns who a principal reports to in a scope, or `null`.
+
+Each code is a built-in data class: `DATA_CLASSIFICATION_EFFECTS[code]` holds its eight effects (`ai`, `support`,
+`search`, `export`, `encrypt`, `erasure`, `retention`, `mask`, typed `DataClassEffects`), the one table @stackra/model,
+@stackra/privacy and gen read (ADR 0540). `DATA_CLASS_EFFECT_RANKS` orders each effect's codes loosest first;
+`loosenedEffects(candidate, floor)` names the effects a class loosens and `strictestEffects(a, b)` takes the stricter code
+of each. Both answer at the moment of use, so no caller stores them.
 The canonical JSON of a value and its hash are `canonicalJson` and `canonicalHash` of `@stackra/support`, not here.
 
 ## Enums

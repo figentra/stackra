@@ -4,6 +4,15 @@ description: "Accepted, amended by 0341 · 2026-10-20 · amended 2026-10-24 (STA
 ---
 
 <Note>
+  Amended 2026-11-26 (STA-1421) by
+  [0540](/adr/0540-one-classification-source-for-encryption-erasure-retention-and-masking), when
+  accepted: the effects of decision 2 are listed there as eight effects per class (`ai`, `support`,
+  `search`, `export`, `encrypt`, `erasure`, `retention`, `mask`), each `DataClassification` code is
+  a built-in data class whose effects are one table in `@stackra/contracts`, and a `PersonalData`
+  declaration may derive its fields from them.
+</Note>
+
+<Note>
   Amended 2026-10-30 (STA-1677) by [0494](/adr/0494-credential-data-class-for-provider-secrets): a
   `credential` class for provider secrets joins `DataClassification`. It is always encrypted, never
   in an export or a subject-access response, access-logged on every read, and deleted with its

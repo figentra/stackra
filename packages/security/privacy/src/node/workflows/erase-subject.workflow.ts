@@ -12,11 +12,12 @@
  *           shredded field, since shredding would destroy what the hold preserves; the receipt says which. Erasure is
  *           not undone, so no step has an undo. Started only by `EraseSubjectAction` through `ctx.run`. Before touching
  *           anything, `erase` refuses when a declared `Shred` field is not sealed under the subject's key
- *           (`unsealedShredFields`): destroying the salt would leave it readable and the receipt would be false.
+ *           (`unsealedShredFields`): destroying the salt would leave it readable and the receipt would be false; and
+ *           when a declared method is weaker than its field's data class (`looserErasureFields`).
  * Runtime: node
  * Governing contract: ADR 0189 (decisions 2 and 4); ADR 0134 (legal holds); ADR 0212 (crypto-shredding); ADR 0210
  *                     (decision 6: `ServiceAcked`); ADR 0294 (decisions 16 and 18); ADR 0151; STA-1312; STA-1375; gap
- *                     gov2 (stackra-263); gap gov6 (the outbox redaction, stackra-275).
+ *                     gov2 (stackra-263); gap gov6 (the outbox redaction, stackra-275); ADR 0540 (decision 5).
  */
 import { Disposal } from "@stackra/database/contracts";
 import { disposableIds } from "@stackra/database";
@@ -35,6 +36,7 @@ import type { PersonalDataStore } from "#contracts/ports/personal-data-store.por
 import type { SubjectSaltStore } from "#contracts/ports/subject-salt-store.port";
 import type { ErasedRecords } from "#contracts/types/erased-records.type";
 import { SubjectErased } from "#core/events/subject-erased.event";
+import { looserErasureFields } from "#core/functions/looser-erasure-fields.function";
 import { personalDataDeclarations } from "#core/functions/personal-data-declarations.function";
 import { unsealedShredFields } from "#node/functions/unsealed-shred-fields.function";
 import type { EraseSubjectInput } from "#node/schemas/erase-subject-input.schema";
@@ -110,6 +112,12 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
       throw new TypeError(
         `Shred needs a subject-sealed field, so these would stay readable: ${unsealed.join(", ")}. ` +
           "Seal them with HasEncryptedFields({ subject }) under the declaration's subject property",
+      );
+    const looser = declarations.flatMap(looserErasureFields);
+    if (looser.length > 0)
+      throw new TypeError(
+        `A declared erasure method is weaker than its field's data class: ${looser.join(", ")}. ` +
+          "Use the class's method or a stronger one, or leave fields out so the class gives it",
       );
     const erased: ErasedRecords[] = [];
     const kept: KeptRecords[] = [];

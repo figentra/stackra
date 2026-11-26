@@ -4,6 +4,14 @@ description: "Accepted · 2026-10-24"
 ---
 
 <Note>
+  Amended 2026-11-26 (STA-1421) by
+  [0540](/adr/0540-one-classification-source-for-encryption-erasure-retention-and-masking), when
+  accepted: a class sets eight effects, the four of decision 2 plus `encrypt`, `erasure`,
+  `retention` and `mask`, every one required; `privileged` keeps its fields out of erasure (`keep`)
+  and out of masked copies (`null`).
+</Note>
+
+<Note>
   Amended 2026-10-30 (STA-1677) by [0494](/adr/0494-credential-data-class-for-provider-secrets):
   `@stackra/model` ships a second built-in class, `CredentialDataClass`, and `ExportLabel` gains
   `excluded` (no export carries the field).

@@ -167,10 +167,22 @@ writes a query's `reads`), reaches the `ReplicaReads` port (`replicaReadsPorts`)
 pipeline resolves optionally, so its wiring writes the port's table from the declared packages' manifests:
 `@stackra/database`'s `DatabaseReplicaReadsDriver` (`database`) with the `DatabaseConfig` row (`readYourWrites`).
 
+One classification source (ADR 0540, full pass only): a field's data class is its `@Classify` class, its
+`@Classified` code's row of @stackra/contracts' `DATA_CLASSIFICATION_EFFECTS`, or the stricter of both per effect.
+`checkDataClasses` refuses a `@Classify` class that leaves an effect out (`data_class_effects_missing`), one looser than
+the field's `@Classified` class (`data_class_looser_than_classified`), and a model holding a field whose class needs a
+bounded retention without `Retention` (`classified_model_without_retention`). `checkPersonalData` reads each
+`PersonalData` declaration of an own model and refuses an unknown field (`personal_data_field_unknown`), a credential
+(`personal_data_credential_field`), a method weaker than the field's class (`personal_data_looser_than_class`), a shred
+the model does not seal under the declaration's subject (`personal_data_shred_unsealed`) and an anonymise on a field
+that cannot hold null (`personal_data_anonymise_not_nullable`); a declaration without `fields` is checked on the
+fields its model's classes derive.
+
 The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
 `HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without
-`@Classified`), `credential_field_not_encrypted` (a `@Classified(DataClassification.Credential)` field not named by
-`HasEncryptedFields`, ADR 0494), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder
+`@Classified` or `@Classify`), `credential_field_not_encrypted` (a `@Classified(DataClassification.Credential)` field not named by
+`HasEncryptedFields`, ADR 0494), `classified_field_not_encrypted` / `classified_field_not_subject_sealed` (a field
+whose data class rests `sealed` or `subject_sealed` and the trait does not give it, ADR 0540), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder
 insert or update, or raw `insert into`/`update` statement on an encrypted model, own or a declared package's, found by
 `readNativeWrites` outside `__tests__` and `database/`). A service with an encrypted model gets
 `new EncryptedFieldsSubscriber(container.get(FieldCipher), undefined, <the bound KeyProvider>)` among its boot

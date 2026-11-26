@@ -18,9 +18,13 @@ import {
   Classify,
   DataClass,
   ExportLabel,
+  FieldEncryption,
+  MaskMethod,
   Model,
+  RetentionBound,
   Searchable,
   SearchSnippet,
+  SubjectErasure,
   SupportAccess,
 } from "@stackra/model";
 import { RowChangeKind } from "@stackra/outbox/contracts";
@@ -39,6 +43,10 @@ class SecretDataClass extends DataClass({
   support: SupportAccess.Hidden,
   search: SearchSnippet.NoSnippet,
   export: ExportLabel.Labelled,
+  encrypt: FieldEncryption.Clear,
+  erasure: SubjectErasure.Keep,
+  retention: RetentionBound.None,
+  mask: MaskMethod.Null,
 }) {}
 
 @Searchable({
