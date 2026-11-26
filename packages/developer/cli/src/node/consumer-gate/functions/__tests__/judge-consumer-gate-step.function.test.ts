@@ -46,7 +46,9 @@ describe("consumerGateSignatures and judgeConsumerGateStep", () => {
       "  fix: extend the action kind's base",
       "  x unicorn(consistent-function-scoping): Function `load` does not capture any variables",
       "pnpm-workspace.yaml:146:20 - Unknown word (pglite)",
+      "STATE.md (187ms)",
       "Format issues found in above 5 files. Run without `--check` to fix.",
+      ".agents/agents/ci-steward.md  repo-checks/agent-sources  references `docs/ci.mdx`, which does not exist",
       "config      failed   53        0        0.1s",
       "structure   not run  0         0        0.0s",
       "Finished in 360ms on 95 files using 16 threads.",
@@ -55,7 +57,9 @@ describe("consumerGateSignatures and judgeConsumerGateStep", () => {
       "./src/a.action.ts error kind_unregistered_base A: A extends no kind base gen knows",
       "x unicorn(consistent-function-scoping): Function `load` does not capture any variables",
       "pnpm-workspace.yaml:146:20 - Unknown word (pglite)",
+      "STATE.md (187ms)",
       "Format issues found in above 5 files. Run without `--check` to fix.",
+      ".agents/agents/ci-steward.md  repo-checks/agent-sources  references `docs/ci.mdx`, which does not exist",
       "config      failed   53        0        0.1s",
     ]);
   });

@@ -8,9 +8,10 @@
 #          A `kind: scaffold` entry is not a product repository: `repo` and `ref` name the starter template, and the
 #          gate makes the app the way a user does (`stackra create --starter <checkout> --tarballs`, core's own built
 #          CLI), adds `service` with `stackra new service --data`, copies the `fixture` folder (an action with its
-#          schemas and test, a model with a migration) into it, adds `dependencies` to that service's package.json,
-#          and gates it in pack mode. `.github/workflows/consumer-gate.yml` runs it
-#          (STA-2705); the products run by hand or on the testbed, since their repositories and overlays are private.
+#          schemas, test and permissions, a model with a migration) into it, adds `dependencies` to that service's
+#          package.json as a user's `pnpm add` would, and gates it in pack mode. `.github/workflows/consumer-gate.yml`
+#          runs it (STA-2705); the products run by hand or on the testbed, since their repositories and overlays are
+#          private.
 # Boundary: data only; the command never fetches, so the caller clones each repository at its pin
 #           (`stackra consumer-gate --product <name> --pin` prints `<repo> <ref>`).
 # Owner: release-operations · Secrets: forbidden
@@ -68,8 +69,11 @@ products:
     profile: minimal
     service: gate-example
     fixture: tools/consumer-gate/scaffold-fixture
-    dependencies: # what the fixture imports beyond `stackra new service --data`, added as a user's `pnpm add` would
+    dependencies:
       "@stackra/actions": "catalog:stackra"
+      "@stackra/iam": "catalog:stackra"
+      "@stackra/queue": "catalog:stackra"
+      "@stackra/scheduler": "catalog:stackra"
     services:
       - example
       - gate-example
