@@ -1,0 +1,80 @@
+---
+title: "نموذج البرمجة"
+description: "الأنواع، ومجلد كل نوع، وما يشتقّه stackra gen، والبيان ووثيقة OpenAPI بوصفهما حقائق ملتزَمًا بها."
+icon: "shapes"
+---
+
+{/* Stackra file contract: Purpose: the Arabic twin of /programming-model, a native draft for Qossai's review (ar: draft, for Qossai's review). Boundary: the same claims as the English page, no more. Runtime: docs. Governing contract: ADR 0294; ADR 0305; STA-2676. */}
+
+يُكتب عضو ستاكرا، حزمةً كان أو خدمة، على هيئة أصناف من **أنواع** قليلة. لكل نوع أساسٌ يُمدّ منه، ولاحقةُ ملف، ومجلدٌ
+يسكنه، ويقرأ `stackra gen` الصنف فيشتقّ منه كل هوية ويقفل ما اشتقّه في ملف ملتزَم به. تكتب المفتاح مرة واحدة،
+فتتبعه الوحدة والصلاحية والمسار والمخطط.
+
+## الأنواع
+
+| النوع         | ما تكتبه                                                          | اللاحقة                      | المجلد              |
+| ------------- | ----------------------------------------------------------------- | ---------------------------- | ------------------- |
+| إجراء         | `class CreateOrderAction extends Action({ key, actors, … })`      | `.action.ts`                 | `actions/`          |
+| استعلام       | `class ListOrdersQuery extends Query({ key, actors, … })`         | `.query.ts`                  | `queries/`          |
+| نموذج         | `class Order extends Model.with(…)`                               | `.model.ts`                  | `models/`           |
+| حدث           | حدث تكامل مُرقَّم بالإصدار في اسمه                                | `.event.ts`                  | `events/`           |
+| مخطط          | `class CreateOrderInput extends Schema`                           | `.schema.ts`                 | `schemas/`          |
+| مشغّل         | `class HttpClientTransportDriver extends Driver(ClientTransport)` | `.driver.ts`                 | `drivers/`          |
+| مسار، صفحة    | شاشة في تطبيق، `Page.of(X)`                                       | `.route.tsx`، `.page.tsx`    | `routes/`، `pages/` |
+| كتلة          | كتلة تجربة، `Block({ category, icon })`                           | `.block.ts`                  | `blocks/`           |
+| وحدة، إعدادات | وحدة الجذر الواحدة ومجموعة إعداداتها                              | `.module.ts`، `.settings.ts` | جذر الوحدة          |
+
+الوحدة هي `src/modules/<key>/` في الخدمة و`src/node/` في الحزمة؛ ويظهر مجلد المجموعة مع أول ملف فيه، ويصدّر كل
+ملف إعلانًا واحدًا باسم الملف. الجدول الكامل للمجموعات واللواحق، مع قرار الهندسة الذي يأتي منه كل صف، في
+[بنية المستودع](/standards/structure)، وهو مولَّد من قواعد المدقّق نفسها حتى لا يختلف الاثنان أبدًا.
+
+## ما يشتقّه gen
+
+يقرأ `stackra gen` العضو عبر واجهة مترجم TypeScript، ويشتقّ من جملة `extends` في كل صنف ومن خياراته:
+
+- **المفتاح**، مقفلًا بإصداره (`orders.order.create@1`)؛
+- **الصلاحية**، من المفتاح، فيكون تغيير اسم المفتاح تغييرًا مُراجَعًا في البيان؛
+- **المسار**: طريقة نقطة النهاية المولَّدة ومسارها، وعملية OpenAPI التي توثّقها؛
+- **المخططات**: كل صنف `Schema` مُترجَمًا إلى zod، للتحقق من المُدخل في خط الأنابيب وللعملاء؛
+- **التوصيل**: روابط الحاوية ووحدة العضو ومداخله، فلا يستورد ملفٌ ملفًا آخر بمساره.
+
+ما يكتبه gen يسكن تحت `.stackra/` في العضو، ولا يُلتزَم به ولا يُحرَّر. وما يقفله gen يسكن في ملفين ملتزَمٍ بهما
+في جذر العضو: `stackra.manifest.json`، كل هوية بإصدارها، و`openapi.json`، إسقاطُ البيان على سطح HTTP. والتغيير
+الذي يبدّل هوية مقفلة يُفشِل `stackra gen --check` ما لم يحمل الصنف أو الحقل `@Renamed(old)`، فيبقى الاسم القديم
+يُجيب.
+
+```sh
+stackra gen            # يكتب .stackra/ والملفين الملتزَم بهما
+stackra gen --check    # يفشل حين لا يطابق ملف ملتزَم به الإعلانات
+```
+
+## لماذا حقائق ملتزَم بها
+
+البيان هو العقد بين الأعضاء: يوصَف التطبيق أو الخدمة المستهلِكة ببيان المنتِج الملتزَم به، لا بملفات `.d.ts`،
+ويكتب gen منه عميلًا مُنمَّطًا لكل خدمة مستهلَكة ([العملاء وأدوات MCP](/clients-and-tools)). ووثيقة OpenAPI هي ما
+يُبنى منه [مرجع الواجهة البرمجية](/api). ويُراجَع الاثنان في طلب الدمج الذي يغيّرهما، فلا تنتقل هوية بالمصادفة.
+
+## اقرأ بعد ذلك
+
+<CardGroup cols={2}>
+  <Card title="الإجراءات" icon="zap" href="/actions">
+    المفتاح والمخططات والصلاحية المشتقّة وعدم التكرار وترتيب خط الأنابيب الثابت.
+  </Card>
+  <Card title="بنية المستودع" icon="sitemap" href="/standards/structure">
+    كل فئة ومجلد مجموعة ولاحقة، من قواعد المدقّق.
+  </Card>
+  <Card
+    title="القرار 0294"
+    icon="landmark"
+    href="/adr/0294-programming-model-v3-grammar-folders-identities-and-naming"
+  >
+    قواعد نموذج البرمجة v3 ومجلداته وهوياته وتسميته.
+  </Card>
+  <Card
+    title="القرار 0305"
+    icon="landmark"
+    href="/adr/0305-programming-model-v3-1-names-partners-files-and-class-components"
+  >
+    v3.1: الأسماء والشركاء وإعلان واحد لكل ملف ومكوّنات الأصناف.
+  </Card>
+</CardGroup>

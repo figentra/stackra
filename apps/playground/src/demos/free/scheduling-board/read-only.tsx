@@ -26,7 +26,7 @@ const DAY = new CalendarDate(2026, 11, 15);
 /** A moment on the day shown, at `hour` (fractions are minutes), in Riyadh. */
 const at = (hour: number) => new Date(DAY.toDate(ZONE).getTime() + hour * 3_600_000);
 
-/** SchedulingBoard: read-only. */
+/** The SchedulingBoard demo: read-only. */
 export default function ReadOnly() {
   const t = useCatalogueText(MESSAGES.en);
   const [picked, setPicked] = useState<string>();

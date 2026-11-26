@@ -25,7 +25,7 @@ const SECTIONS = [
   { key: "dunning", label: K.dunning, text: K.dunning_text, status: K.dunning_status },
 ] as const;
 
-/** SectionDock: dock. */
+/** The SectionDock demo: dock. */
 export default function Dock() {
   const t = useCatalogueText(MESSAGES.en);
   const id = useId();

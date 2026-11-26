@@ -18,8 +18,8 @@ export interface SchedulingBoardDraft {
   readonly fromResourceId: string | null;
   /** The row it ends on. */
   readonly resourceId: string;
-  /** Its start. */
+  /** Its start once dropped. */
   readonly start: Date;
-  /** Its end. */
+  /** Its end once dropped. */
   readonly end: Date;
 }

@@ -96,6 +96,41 @@ describe("checkI18n", () => {
     );
   });
 
+  it("takes a namespace once from the contract a consumed service's package also ships, and still refuses a stranger", () => {
+    const contractAndService: MemberIR = {
+      ...COMMERCE_IR,
+      packageCatalogues: [
+        {
+          package: "@acme/service-compliance-privacy-contract",
+          catalogues: { en: { consent: { granted: "Granted" } } },
+        },
+        {
+          package: "@acme/service-compliance-privacy",
+          service: "compliance_privacy",
+          from: "../../services/compliance-privacy/assets/lang",
+          catalogues: { en: { consent: { granted: "Granted", withdrawn: "Withdrawn" } } },
+        },
+      ],
+    };
+    const { namespaces, clashes } = i18nTree(contractAndService);
+    expect(clashes).toEqual([]);
+    expect(namespaces.get("consent")).toMatchObject({
+      node: ["granted"],
+      package: "@acme/service-compliance-privacy-contract",
+    });
+    // a package that is not the service's contract still clashes
+    const stranger: MemberIR = {
+      ...contractAndService,
+      packageCatalogues: [
+        { package: "@acme/consent-kit", catalogues: { en: { consent: { granted: "Granted" } } } },
+        ...(contractAndService.packageCatalogues ?? []).slice(1),
+      ],
+    };
+    expect(i18nTree(stranger).clashes).toEqual([
+      { namespace: "consent", owners: ["@acme/consent-kit", "@acme/service-compliance-privacy"] },
+    ]);
+  });
+
   it("moves a consumed service's namespace the member also has under the service's client name", () => {
     const twoServices: MemberIR = {
       ...COMMERCE_IR,

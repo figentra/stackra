@@ -51,7 +51,7 @@ jobs:
         run: pnpm turbo run build --filter=@stackra/runway
 
       - name: Read-only Cloudflare token (sops)
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/deploy
           names: CLOUDFLARE_API_TOKEN_READ

@@ -10,7 +10,9 @@ import type { PolicyRow } from "#testing/types/policy-row.type";
 
 /** One `pg_policy` row of a table, with its roles. */
 export interface RolePolicyRow extends PolicyRow {
+  /** The schema of the policy's table. */
   readonly schema: string;
+  /** The table the policy is on. */
   readonly table: string;
   /** The role names it applies to, comma-joined and sorted; `public` when it names none. */
   readonly roles: string;

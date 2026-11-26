@@ -7,7 +7,9 @@
  *          `docs_asset_missing`, `docs_asset_unreferenced`, `docs_owned_key`, `docs_service_unknown`) returns nothing
  *          to write; with `locales`, translations served under their locale with a page tree, font and interface
  *          strings per locale, an untranslated page only warned, and an orphan translation, a page in a locale's
- *          folder and malformed locales refused, while an empty `locales` leaves the site byte-identical.
+ *          folder and malformed locales refused, while an empty `locales` leaves the site byte-identical; and with a
+ *          docs member's `source`, the refusals and generated-file headers name `content/`, `docs.yaml` and
+ *          `content/**\/meta.json`.
  * Boundary: test only; plain inputs, no file system.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0002 (2026-10-27 amendment); STA-1316.
@@ -15,6 +17,8 @@
 import type { StackraManifest } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { DOCS_MEMBER_SOURCE } from "#core/constants/docs-member-source.constant";
+import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { emitDocsSite } from "#core/functions/emit-docs-site.function";
 import type { DocsSiteInput } from "#core/types/docs-site-input.type";
 
@@ -486,6 +490,53 @@ describe("emitDocsSite with the fumadocs renderer", () => {
         },
       }),
     ).toEqual(["docs_owned_key", "docs_redirect_shadows_page", "docs_redirect_target_missing"]);
+  });
+
+  it("names a docs member's own source in its refusals and generated-file headers (ADR 0514, 2026-11-09)", () => {
+    const refused = fumadocs({
+      source: DOCS_MEMBER_SOURCE,
+      config: { ...CONFIG, favicon: "gone.svg" },
+      files: [
+        ...FUMADOCS_FILES,
+        { path: "docs/orphan.mdx", content: page("Orphan") },
+        { path: "docs/diagram.png" },
+      ],
+    });
+    expect(refused.errors.map((error) => [error.code, error.file, error.fix])).toEqual([
+      [
+        "docs_source_misplaced",
+        "content/diagram.png",
+        "move it to content/assets/ and reference it as /assets/diagram.png",
+      ],
+      [
+        "docs_page_unlisted",
+        "content/orphan.mdx",
+        'list "orphan" (or its folder) in a group of content/**/meta.json, or delete the page',
+      ],
+      [
+        "docs_asset_missing",
+        "docs.yaml",
+        "add content/assets/gone.svg, or name an asset that exists",
+      ],
+      [
+        "docs_asset_unreferenced",
+        "content/assets/favicon.svg",
+        "reference it as /assets/favicon.svg, or delete it",
+      ],
+    ]);
+
+    const site = fumadocs({ source: DOCS_MEMBER_SOURCE });
+    expect(site.errors).toEqual([]);
+    expect(text(site, "app/theme.css").split("\n")[0]).toBe(
+      `/* ${GENERATED_NOTICE}; from docs.yaml */`,
+    );
+    expect(text(site, "app/root.tsx").split("\n")[0]).toBe(
+      `// ${GENERATED_NOTICE}; from docs.yaml`,
+    );
+    expect(text(fumadocs(), "app/root.tsx").split("\n")[0]).toBe(
+      `// ${GENERATED_NOTICE}; from src/config/docs.config.ts`,
+    );
+    expect(site.copies).toEqual(fumadocs().copies);
   });
 });
 

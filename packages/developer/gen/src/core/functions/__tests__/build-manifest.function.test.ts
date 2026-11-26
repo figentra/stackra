@@ -30,6 +30,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
 import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
+import { COURIER_PACKAGE_IR } from "#core/__tests__/fixtures/courier-package-ir.fixture";
 import { INBOX_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fixture";
 import {
   CONNECTOR_PACKAGES,
@@ -1592,5 +1593,45 @@ describe("buildManifest's seeders and factories sections (STA-2061)", () => {
     const { manifest } = buildManifest(COMMERCE_IR);
     expect(manifest).not.toHaveProperty("seeders");
     expect(manifest).not.toHaveProperty("factories");
+  });
+});
+
+/** A package's `webhookEvents` section, which its host registers from (ADR 0308 rules 15 and 16). */
+describe("buildManifest's package webhook events", () => {
+  /** The section is the only place a host learns of the package's events, so it carries the full pairing. */
+  it("lists each webhook event with its Integration and Connection, and no section without one", () => {
+    expect(buildManifest(COURIER_PACKAGE_IR).manifest["webhookEvents"]).toEqual([
+      {
+        class: "CourierShipmentUpdated",
+        type: "shipment.updated",
+        module: "ship_courier",
+        from: "@acme/ship-courier/node",
+        integration: {
+          key: "ship_courier.courier",
+          class: "CourierIntegration",
+          from: "@acme/ship-courier/node",
+        },
+        connection: { class: "CourierConnection", from: "@acme/ship-courier/node" },
+      },
+    ]);
+    expect(buildManifest(LOYALTY_KIT_IR).manifest).not.toHaveProperty("webhookEvents");
+  });
+
+  /** A host refuses a hosted event its package's manifest cannot pair, rather than register it half paired. */
+  it("refuses a hosted event whose Integration the package's manifest does not list", () => {
+    const courier = buildManifest(COURIER_PACKAGE_IR).manifest;
+    const { errors } = buildManifest({
+      ...BILLING_IR,
+      dependencies: [
+        ...BILLING_IR.dependencies,
+        { package: "@acme/ship-courier", manifest: { ...courier, integrations: [] } },
+      ],
+    });
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        code: "webhook_event_unpaired",
+        subject: "CourierShipmentUpdated",
+      }),
+    );
   });
 });

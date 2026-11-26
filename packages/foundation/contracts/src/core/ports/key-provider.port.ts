@@ -13,6 +13,9 @@ import type { DataKey } from "#core/types/data-key.type";
 
 /** Provides data keys for envelope encryption. */
 export abstract class KeyProvider extends Port {
+  // No `~key` brand: products ship their own drivers (os audit), so the member's generated wiring is the one declarer
+  // of this port's names, and a package's narrower `DriverRegistry` entry would clash with it (TS2717, STA-2693).
+
   /** The key new data is sealed with. */
   abstract current(): Promise<DataKey>;
 

@@ -47,6 +47,7 @@ export { definePackage } from "#core/functions/define-package.function";
 export { defineService } from "#core/functions/define-service.function";
 export { defineWorker } from "#core/functions/define-worker.function";
 export { isPublicId } from "#core/functions/is-public-id.function";
+export { kmsKeyContext } from "#core/functions/kms-key-context.function";
 export { mintPublicId } from "#core/functions/mint-public-id.function";
 export { verifySignature } from "#core/functions/verify-signature.function";
 export { wrapScopeKey } from "#core/functions/wrap-scope-key.function";

@@ -167,9 +167,13 @@
         "runway.yaml",
       ],
       // the gitignored root shims too (ROOT_VITEST_SHIM, the Expo shim): a cache hit that restored only .stackra/
-      // left `vitest run` with no config in a member that has no authored one (@stackra/console)
+      // left `vitest run` with no config in a member that has no authored one (@stackra/console). A service's Encore
+      // app file and services sit outside .stackra (ADR 0091, 2026-11-10): a hit that left them out hid the service's
+      // only encore.dev imports from knip.
       "outputs": [
         ".stackra/**",
+        "stackra-encore/**",
+        "encore.app",
         "stackra.manifest.json",
         "src/node/entities.gen.ts",
         "vitest.config.ts",

@@ -19,7 +19,7 @@ const K = FLAG_KEYS.flag.basics;
 /** The row that lays the flags out, wrapping on a narrow frame. */
 const ROW = "flex flex-wrap items-center gap-4";
 
-/** Flag: Basics. */
+/** The Flag demo: Basics. */
 export default function Basics() {
   const t = useCatalogueText(MESSAGES.en);
   const countries = [

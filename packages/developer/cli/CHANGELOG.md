@@ -1,5 +1,124 @@
 # @stackra/cli
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: `stackra dev --surface` and `stackra dev --product` go on when `stackra gen` refuses a member. gen already runs every
+  member and writes what it can before it exits 1, so one member's refusal no longer stops every surface: dev names the
+  refusal on stderr and serves with what gen wrote. Any other gen failure still stops dev, and a surface whose own
+  config gen did not write still stops as before. `stackra build` and `stackra gen --check` keep stopping on a refusal.
+- e885a38: A service whose configuration reads a required `@Secret` at boot starts under a local `stackra dev`. New command:
+  `stackra dev secrets init [--rotate] [--from <file>]` writes a random dev value for each required secret the
+  workspace's running members declare, and for each name a member's runway lists under `environments.dev.secrets`
+  (optional in the configuration or not), to `.stackra/dev-secrets.json` (gitignored, mode 600). It prints names, never a
+  value, and lists the names a random value would break (a connection string, the events relay's key pair) as needing
+  a value. An existing file only gains its missing names unless `--rotate`; `--from` copies a name shared with another
+  repository. `stackra dev` adds the file's values for a member's own declared names to its tool run. The testbed upload
+  excludes the file (ADR 0525, amendment of 2026-11-10).
+- d60f9d5: A service's Encore app resolves its `#` imports, and its typecheck no longer resolves a compiled workspace package's
+  `#` imports into the service. Encore honours only the first `./` target of a tsconfig `paths` key, so
+  `stackra encore:prepare` writes, and `stackra validate --repository` expects, each package.json `imports` key with its
+  first target only (`pathsOfImports`). And because tsc applies `paths` to every package a service compiles, gen writes
+  the service's `.stackra/tsconfig.typecheck.json` (its tsconfig without `paths`), and `stackra typecheck` runs on it in a
+  service. After upgrading, run `stackra encore:prepare` in each service and regenerate (ADR 0091, rule 4 as corrected
+  2026-11-10).
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- Updated dependencies [d60f9d5]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+  - @stackra/repo-checks@0.33.1
+  - @stackra/gen@0.33.1
+  - @stackra/runway@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/mcp@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/skills@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 41a5ff0: `stackra test --tier e2e` runs in a package too: it uses the `.stackra/playwright.e2e.config.ts` gen writes for a package that has a `.e2e.page.tsx`, and refuses with a hint when there is none. A service or a worker still refuses.
+
+### Patch Changes
+
+- 0ed69c1: The duplicate-export check now exempts five names that two packages each declare for a different concept: `FooterLink`, `RawBody`, `Surface`, `SurfaceKind` and `settingsKeyOf`. Each entry gives its reason. `validate` on main no longer reports them.
+- 89253a8: `stackra duplicate-exports` allows five names that today's kit blocks share with older exports, each with its reason:
+  
+  - `CalendarSystem`: ui derives its picker list from i18n's enum.
+  - `LocaleSwitcher` and `LocaleSwitcherProps`: ui's drawn switcher, and i18n's headless kit block that binds it.
+  - `PushPermission` and `PushRegistration`: notifications' registration port and its answer, and platform's push address and permission hook.
+  
+  Main's `validate --repository` reported them.
+- 6186329: A service's tsconfig no longer needs `baseUrl` for Encore. TypeScript 7 removed `baseUrl` (TS5102), so the rule from 0.30.0 broke typecheck in a TS 7 repository (INVOICING).
+  
+  - **The service check:** it now requires only `compilerOptions.paths` equal to package.json `imports`, which resolve from the tsconfig's folder. It refuses a `baseUrl`.
+  - **`stackra encore:prepare`:**
+    - it removes an existing `baseUrl`;
+    - it writes package.json and tsconfig.json with gen's `formatJson`, now exported from `@stackra/gen`, in the repository formatter's layout, so the format check passes after it.
+  
+  Bump step: run `stackra encore:prepare` in each service, or delete `"baseUrl": "."` from its tsconfig.
+  
+  `stackra encore:prepare` also keeps a tsconfig's file contract written inside the braces (NOTIFY's services). Before, it kept only the `//` lines above the object, so the contract was dropped and the format check failed. `encore.dev` stays the literal catalog version (ADR 0091 rule 3): Encore rewrites `catalog:` to `^<version>`, which breaks the frozen install.
+- 6186329: The `encore.dev` version a service pins can live in the root package.json as `stackra.encore`, so a repository whose
+  services pin the literal keeps no unused catalog entry for it. `encoreReferenceVersion` (exported from
+  `@stackra/repo-checks/node`) reads `stackra.encore` first and falls back to the default catalog's `encore.dev`; the
+  service check and `stackra encore:prepare` use it. A repository that keeps the version in its catalog needs no change.
+- 03da426: `runAsTenant` (`@stackra/tenancy/testing`) now sets `app.tenant_id` transaction-locally in every transaction that starts inside it on a connected database (a factory's flush, a `database.transaction`), so a test's setup rows pass the tenant policy under a role without `BYPASSRLS`, instead of being refused by row-level security. It still opens no transaction itself, sets no scope setting and proves nothing about isolation (`asTenant` does). The session-setting check allows this one testing path.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [6186329]
+- Updated dependencies [6186329]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [3c47a3a]
+- Updated dependencies [2e3e323]
+- Updated dependencies [93d63bb]
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4bf092e]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [0a57fb3]
+- Updated dependencies [93d63bb]
+- Updated dependencies [7d0e16f]
+- Updated dependencies [6186329]
+- Updated dependencies [52d2593]
+- Updated dependencies [0f7448f]
+- Updated dependencies [89253a8]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/repo-checks@0.33.0
+  - @stackra/gen@0.33.0
+  - @stackra/runway@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/mcp@0.33.0
+  - @stackra/skills@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

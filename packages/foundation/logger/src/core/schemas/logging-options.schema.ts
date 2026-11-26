@@ -9,10 +9,14 @@
  * Governing contract: ADR 0147 (decision 1: per-module levels, sampling, redaction); ADR 0294 (decisions 19 and 26);
  *                     ADR 0305 (rule 34).
  */
+import "#core/types/log-reporter-driver-names.type";
+
+import type { DriverName } from "@stackra/container";
 import { Field, Num, registerSchemas, Schema } from "@stackra/validation";
 
 import { LOGGING_CONFIG_SCHEMA } from "#core/constants/logging-config-schema.constant";
 import { LogLevel } from "#contracts/enums/log-level.enum";
+import type { LogReporter } from "#contracts/ports/log-reporter.port";
 
 /**
  * The logger's settings.
@@ -37,6 +41,9 @@ export class LoggingOptions extends Schema {
     /** Field names masked wherever they appear (`customerId` also matches `customer_id`, `stripeCustomerId`). */
     extraFields: string[];
   } = { extraFields: [] };
+
+  /** Which reporter writes the lines: `console` (stdout, the platform collects it) or `otlp` (`OtlpConfig`). */
+  reporter: DriverName<LogReporter> = "console";
 
   /** The lowest level written for a channel with no level of its own. */
   level: LogLevel = LogLevel.Info;

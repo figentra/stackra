@@ -1,7 +1,28 @@
 ---
 title: "0159 — Migrations: gen-ordered SQL, migrations shipped in packages, and safety rules"
-description: "Accepted, amended by 0294, 0305, 0334 · 2026-10-20 · amended 2026-10-24 (STA-408)"
+description: "Accepted, amended by 0294, 0305, 0334 · 2026-10-20 · amended 2026-10-24 (STA-408), 2026-11-10 (STA-2678)"
 ---
+
+<Note>
+  Amended 2026-11-10 (STA-2678), decided by the leader under the owner's delegation. The generated
+  Encore app still hands Encore a copy of the compiled migrations (its `migrations/` folder), and
+  the 2026-10-24 finding stands: Encore's runner runs every file in one transaction, so a concurrent
+  statement there always fails. In that copy only, gen writes each online step in its plain form
+  (`create index` without `concurrently`, and the same for `drop index`, `reindex` and `refresh
+  materialized view`) and drops the `-- stackra:transactional=false` marker. `.stackra/migrations`
+  keeps the online form. Which path applies where:
+
+- **Dev and staging** apply Encore's copy when `encore run` or the Encore deploy starts the
+  service. The plain build blocks writes to its table while it runs; on these databases that is
+  accepted.
+- **Production** applies `stackra db migrate` with the online form, as the 2026-10-24 note
+  decided. A production deploy that would apply Encore's copy instead needs an explicit owner
+  decision first, because there the plain build blocks writes to a live table.
+
+Decision 3 stands: a migration still builds an index on an existing table concurrently, in its own
+step.
+
+</Note>
 
 <Note>
   Amended 2026-10-24 (STA-428) by

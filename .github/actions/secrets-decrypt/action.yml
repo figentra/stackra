@@ -75,14 +75,24 @@ runs:
         set -euo pipefail
         # @stackra/* reads anonymously from the Stackra registry, so this needs no token before any secret exists.
         registry=https://npm.stackra.figentra.com/
-        # A version is usable once runway and every @stackra/* package it pins are on the registry. The fixed group's
-        # release publishes them one at a time, so runway can be there before its dependencies.
+        # A version is usable once runway and every @stackra/* package it needs, directly or through another @stackra
+        # package, is on the registry. The fixed group's release publishes them one at a time, so runway (and a direct
+        # dependency) can be there before a package further down, as 0.33.1 was without @stackra/csp.
         usable() {
-          local deps dep
-          deps="$(npm view --registry "$registry" "@stackra/runway@$1" dependencies --json 2>/dev/null)" || return 1
-          [ -n "$deps" ] || return 1
-          for dep in $(jq -r 'to_entries[] | select(.key | startswith("@stackra/")) | "\(.key)@\(.value)"' <<<"$deps"); do
-            [ -n "$(npm view --registry "$registry" "$dep" version 2>/dev/null)" ] || return 1
+          local queue=("@stackra/runway@$1") seen=" " spec deps dep
+          while [ "${#queue[@]}" -gt 0 ]; do
+            spec="${queue[0]}"
+            queue=("${queue[@]:1}")
+            case "$seen" in *" $spec "*) continue ;; esac
+            seen="$seen$spec "
+            # One call per package: {version, dependencies}, or the bare version string for a package with no
+            # dependencies; nothing at all when that version is not published.
+            deps="$(npm view --registry "$registry" "$spec" version dependencies --json 2>/dev/null)" || return 1
+            [ -n "$(jq -r 'if type == "object" then .version // "" elif type == "string" then . else "" end' <<<"${deps:-null}")" ] ||
+              return 1
+            for dep in $(jq -r 'if type == "object" then .dependencies // {} else {} end | to_entries[] | select(.key | startswith("@stackra/")) | "\(.key)@\(.value)"' <<<"$deps"); do
+              queue+=("$dep")
+            done
           done
         }
         # A remote action is the whole repository at its ref, so the runway package beside it names the version that

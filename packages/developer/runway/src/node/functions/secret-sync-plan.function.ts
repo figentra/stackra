@@ -59,7 +59,7 @@ export function secretSyncPlan(environment: string, runways: DeployRunways): Sec
     ...entries,
     {
       member: GATEWAY_SECRETS_MEMBER,
-      folder: ".stackra/encore (generated API gateway)",
+      folder: "stackra-encore (generated API gateway)",
       names: [...gateway].toSorted(),
       scope: secretScope,
       writer: "encore",
