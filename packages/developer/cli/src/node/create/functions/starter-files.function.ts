@@ -4,7 +4,9 @@
  *          included paths with its overlays, the rename list applied to every text file, catalog `stackra` pinned to
  *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line in `.npmrc`.
  *          `stackra.starter.yaml`, `starter/` and `pnpm-lock.yaml` are never written: the install resolves fresh.
- *          Nor is `.infisical.yaml`: it binds the template's own Infisical project, never the app's (STA-2027).
+ *          Nor is `.infisical.yaml`: it binds the template's own Infisical project, never the app's (STA-2027). Nor
+ *          is a `.github/workflows/starter-*.yml` workflow: the starter repository's own CI, such as its create smoke
+ *          test, which checks the template itself and has no meaning in an app (STA-2829).
  * Boundary: pure; returns the files and writes nothing. Refuses a manifest that does not match `StarterManifest`, an
  *           unknown profile, and an overlay whose source is missing.
  * Runtime: node
@@ -24,12 +26,16 @@ const MANIFEST = "stackra.starter.yaml";
 /** The path with each segment's leading dot dropped: `path.matchesGlob` never matches dotfiles with `*` or `**`. */
 const undot = (path: string): string => path.replaceAll(/(^|\/)\./g, "$1");
 
-/** A file of the starter, or of its own tooling or vault binding, that an app never gets. */
+/** The starter repository's own workflows: `.github/workflows/starter-<name>.yml` (or `.yaml`). */
+const STARTER_WORKFLOW = /^\.github\/workflows\/starter-[^/]+\.ya?ml$/;
+
+/** A file of the starter, or of its own tooling, CI or vault binding, that an app never gets. */
 const NEVER = (path: string) =>
   path === MANIFEST ||
   path === "pnpm-lock.yaml" ||
   path === ".infisical.yaml" ||
-  path.startsWith("starter/");
+  path.startsWith("starter/") ||
+  STARTER_WORKFLOW.test(path);
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 const encoder = new TextEncoder();

@@ -44,6 +44,7 @@ const starter = (extra: Record<string, string | Uint8Array> = {}) =>
     Object.entries({
       "stackra.starter.yaml": MANIFEST,
       ".github/workflows/ci.yml": "on: push\n",
+      ".github/workflows/starter-create-smoke.yml": "on: pull_request\n",
       "package.json": '{"name":"acme-platform","scripts":{"dev":"stackra dev"}}',
       "pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
       ".infisical.yaml": "workspaceId: template-project\n",
@@ -84,6 +85,22 @@ test("a profile writes only its paths, its overlays and never the starter's own 
   assert.equal(full.has(".github/workflows/ci.yml"), true);
   // The template's Infisical binding never rides along, even in a profile that takes every file.
   assert.equal(full.has(".infisical.yaml"), false);
+  // Nor does the starter repository's own CI (its create smoke test), while the app's own workflows do (STA-2829).
+  assert.equal(full.has(".github/workflows/starter-create-smoke.yml"), false);
+  assert.equal(
+    starterFiles(starter({ ".github/workflows/starter-check.yaml": "on: push\n" }), {
+      ...options,
+      profile: "full",
+    }).has(".github/workflows/starter-check.yaml"),
+    false,
+  );
+  assert.equal(
+    starterFiles(starter({ ".github/workflows/deploy-starter.yml": "on: push\n" }), {
+      ...options,
+      profile: "full",
+    }).has(".github/workflows/deploy-starter.yml"),
+    true,
+  );
 });
 
 test("the rename list, the catalog pin and the registry line apply; binary files pass untouched", () => {

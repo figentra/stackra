@@ -119,15 +119,30 @@ Use this only when the host cannot run workflows at all (billing lock, outage, s
 | ---------- | --- | --- | --- | ---- | ----- | ------ |
 | _none yet_ |     |     |     |      |       |        |
 
+## Create smoke test
+
+`create-smoke.yml` (core) and the template's `create-smoke.yml` run `tools/scripts/create-smoke.mjs`: they make an app with `stackra create` from the packages and template under test, start it with `stackra dev`, and call it the way a developer does. The step summary names the first step that failed; each step's log is in the `create-smoke` artifact.
+
+| Step                                         | Fails when                                                                                                                                     |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pack`, `create`                             | a package does not pack, or the created app does not install, generate, typecheck or pass its tests                                            |
+| `start`, `probes`                            | `stackra dev` exits or never answers, or `/healthz` or `/readyz` is not 200 with everything `up`                                               |
+| `sign-in`, `refusals`                        | `stackra dev token` prints no token, or the notes route accepts no token or a forged one                                                       |
+| `list`, `create-note`, `replay`, `read-back` | an authenticated call to the example `notes` service fails, the same `Idempotency-Key` makes a second note, or the new note does not read back |
+| `stop`                                       | the API still answers after the dev run stops                                                                                                  |
+
+To run it on the box (never on a workstation), build core, then: `node tools/scripts/create-smoke.mjs --core . --template <template checkout> --out <empty folder> [--lane <n>]`. `--lane <n>` sets `STACKRA_LANE` for the app's dev facts; the service's API is wherever `encore run` reports it (Encore's own port, 4000), so run one smoke test per host at a time. `--tarballs <dir>` reuses a packed set, and `--keep-running` leaves the dev run up after the summary for a look at a failure.
+
 ## Enforcement status
 
-| Rule                                   | Check                                                                      | State                                                |
-| -------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `pnpm verify` is the single gate       | `ci.yml` `Quality Gate`                                                    | Live                                                 |
-| Merge queue gates every merge          | `ci.yml` `merge_group`; `merge_queue` rule in `.github/rulesets/main.json` | Applied by the owner after STA-233 and STA-302 merge |
-| Hooks are advisory                     | `lefthook.yml` (check-only, no auto-fix)                                   | Live                                                 |
-| Conventional commits                   | commitlint in `commit-msg`; CI range check                                 | Live                                                 |
-| Secrets scan                           | gitleaks in `pre-commit`, `pnpm secrets:scan`                              | Live                                                 |
-| Actions pinned by SHA, least privilege | Done by hand in every workflow; workflow lint (zizmor) and a pin test      | Pins live, lint not built                            |
+| Rule                                     | Check                                                                      | State                                                |
+| ---------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `pnpm verify` is the single gate         | `ci.yml` `Quality Gate`                                                    | Live                                                 |
+| Merge queue gates every merge            | `ci.yml` `merge_group`; `merge_queue` rule in `.github/rulesets/main.json` | Applied by the owner after STA-233 and STA-302 merge |
+| Hooks are advisory                       | `lefthook.yml` (check-only, no auto-fix)                                   | Live                                                 |
+| Conventional commits                     | commitlint in `commit-msg`; CI range check                                 | Live                                                 |
+| Secrets scan                             | gitleaks in `pre-commit`, `pnpm secrets:scan`                              | Live                                                 |
+| A created app signs in and serves a call | `create-smoke.yml` (`tools/scripts/create-smoke.mjs`), core and template   | Built; advisory, not required                        |
+| Actions pinned by SHA, least privilege   | Done by hand in every workflow; workflow lint (zizmor) and a pin test      | Pins live, lint not built                            |
 
 See also [Definition of done](/guides/definition-of-done), [Release](/runbooks/release) and [Testing](/standards/testing).

@@ -1,0 +1,133 @@
+# Stackra file contract:
+# Purpose: the create smoke test in CI (STA-2829). Builds core, checks out the starter template (stackra-template at
+#          `main`, or the ref a dispatch names), and runs `tools/scripts/create-smoke.mjs`: an app made with
+#          `stackra create` on packed tarballs of every publishable package, started with `stackra dev` (Encore and
+#          its Postgres in Docker), then its health probes, a dev sign-in (`stackra dev token`), the refusal of a
+#          missing and a forged token, and an authenticated list, create, idempotent replay and read-back of a note.
+#          Runs on each pull request and push to main that touches a package or the script, and by dispatch; the
+#          template repository runs the same script on its own changes (its create-smoke.yml).
+# Boundary: read-only: `contents: read`, and `id-token: write` only for the sops decrypt of the turbo cache scope; no
+#           write token, no secret value. The dev token is minted and used inside the job and never logged. Advisory,
+#           not a required check (ADR 0166; owner decision 2026-11-03: nothing waits on tests before it lands). The
+#           summary is the step summary, the logs an artifact.
+# Owner: release-operations
+# Governing contract: ADR 0515 (`stackra create`); ADR 0206 (the dev issuer, amendment of 2026-11-26); ADR 0166 (CI
+#                     policy); ADR 0019 (supply chain); ADR 0027 (mise); ADR 0525 (sops scopes); STA-1952; STA-2829.
+name: Create smoke test
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tools/scripts/create-smoke.mjs"
+      - ".github/workflows/create-smoke.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tools/scripts/create-smoke.mjs"
+      - ".github/workflows/create-smoke.yml"
+  workflow_dispatch:
+    inputs:
+      template-ref:
+        description: "The stackra-template branch, tag or commit to create the app from"
+        type: string
+        default: main
+
+permissions: {}
+
+concurrency:
+  group: create-smoke-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  smoke:
+    name: Create smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write # ADR 0525: the sops decrypt of ci/build/turbo only
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node pnpm
+
+      # The cache only speeds the build up: without this workflow's grant on ci/build/turbo (figentra/infra
+      # estate/secret-callers.mjs), or on a fork, the job builds without it.
+      - name: Turborepo remote cache (sops)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        continue-on-error: true
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
+        with:
+          scope: ci/build/turbo
+
+      # As the Quality Gate: the two members that alias `uniwind` to Uniwind Pro are left out (a licensed download).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter='!@figentra/mobile' --filter='!@figentra/playground'
+
+      # The script never builds core; it packs what this builds (every publishable package's dist).
+      - name: Build the packages
+        run: pnpm exec turbo run build --filter='./packages/**'
+
+      - name: Checkout the starter template
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          repository: stackra-inc/stackra-template
+          ref: ${{ inputs.template-ref || 'main' }}
+          path: .create-smoke-template
+          persist-credentials: false
+
+      # The created app runs on the Encore CLI its template pins (core pins none); `stackra dev` calls `encore`.
+      - name: Encore CLI (the template's pin)
+        run: |
+          set -euo pipefail
+          mv .create-smoke-template "$RUNNER_TEMP/template"
+          version=$(sed -n 's/^"aqua:encoredev\/encore" = "\(.*\)"$/\1/p' "$RUNNER_TEMP/template/mise.toml")
+          if [ -z "$version" ]; then
+            echo "::error::the template's mise.toml pins no aqua:encoredev/encore"
+            exit 1
+          fi
+          mise install "aqua:encoredev/encore@$version"
+          dirname "$(mise exec "aqua:encoredev/encore@$version" -- which encore)" >> "$GITHUB_PATH"
+
+      # --out sits outside the core and template trees, as the script requires.
+      - name: Smoke test
+        run: |
+          node tools/scripts/create-smoke.mjs \
+            --core . --template "$RUNNER_TEMP/template" --out "$RUNNER_TEMP/create-smoke"
+
+      - name: Step summary
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/create-smoke/create-smoke.md" ]; then
+            cat "$RUNNER_TEMP/create-smoke/create-smoke.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No create smoke summary: the run stopped before its first step (see the Smoke test step)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the summary and logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: create-smoke
+          path: |
+            ${{ runner.temp }}/create-smoke/create-smoke.*
+            ${{ runner.temp }}/create-smoke/logs/
+          if-no-files-found: warn
+          retention-days: 14
