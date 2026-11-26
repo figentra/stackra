@@ -99,7 +99,7 @@ jobs:
 
       - name: Bot App (sops)
         if: env.HAS_APP_SECRETS != 'true'
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/production/release
           names: STACKRA_BOT_APP_ID,STACKRA_BOT_PRIVATE_KEY
@@ -153,7 +153,7 @@ jobs:
       # so a caller without the turbo grant builds with the local cache instead of failing the release.
       - name: Turborepo remote cache (sops)
         continue-on-error: true
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/turbo
 

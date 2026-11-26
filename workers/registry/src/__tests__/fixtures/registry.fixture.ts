@@ -76,10 +76,10 @@ export const STACKRA_CLAIMS: GithubClaims = {
   iss: ISSUER,
   aud: `npm:${HOST}`,
   exp: NOW.getTime() / 1000 + 300,
-  repository: "figentra/stackra",
+  repository: "stackra-inc/stackra",
   repository_id: "1425140001",
-  repository_owner_id: "314302700",
-  workflow_ref: "figentra/stackra/.github/workflows/release.yml@refs/heads/main",
+  repository_owner_id: "277548342",
+  workflow_ref: "stackra-inc/stackra/.github/workflows/release.yml@refs/heads/main",
   ref: "refs/heads/main",
   environment: "release",
   run_id: "42",
@@ -89,9 +89,9 @@ export const STACKRA_CLAIMS: GithubClaims = {
 /** The claims of the @stackra-pro trusted publisher. */
 export const PRO_CLAIMS: GithubClaims = {
   ...STACKRA_CLAIMS,
-  repository: "figentra/stackra-pro",
+  repository: "stackra-inc/stackra-pro",
   repository_id: "1435812554",
-  workflow_ref: "figentra/stackra-pro/.github/workflows/release.yml@refs/heads/main",
+  workflow_ref: "stackra-inc/stackra-pro/.github/workflows/release.yml@refs/heads/main",
 };
 
 /**
@@ -114,14 +114,14 @@ export function sigstoreBundle(digest: Readonly<Record<string, string>>, identit
         },
         resolvedDependencies: [
           {
-            uri: "git+https://github.com/figentra/stackra@refs/heads/main",
+            uri: "git+https://github.com/stackra-inc/stackra@refs/heads/main",
             digest: { gitCommit: "0d5f464aabbccddeeff00112233445566778899a" },
           },
         ],
       },
       runDetails: {
         metadata: {
-          invocationId: "https://github.com/figentra/stackra/actions/runs/42/attempts/1",
+          invocationId: "https://github.com/stackra-inc/stackra/actions/runs/42/attempts/1",
         },
       },
     },
@@ -158,7 +158,7 @@ export async function publishBody(
   const tgz = makeTarball({ "package.json": JSON.stringify(pkg), ...options.files });
   const computed = await tarballDigests(tgz);
   const bare = pkg.name.slice(pkg.name.indexOf("/") + 1);
-  const repository = options.repository ?? "figentra/stackra";
+  const repository = options.repository ?? "stackra-inc/stackra";
   const attachments: Record<string, unknown> = {
     [`${bare}-${pkg.version}.tgz`]: {
       content_type: "application/octet-stream",
