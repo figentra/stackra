@@ -5,23 +5,34 @@
  *          groups and the workloads' group, the RDS instance (or the Aurora cluster and its instances) encrypted with automated backups, and RDS
  *          Proxy in front with TLS required. A database whose plan preloads extensions gets its own parameter group
  *          (a cluster parameter group on Aurora) setting `shared_preload_libraries`, applied at the next reboot. RDS Proxy logs in with a Secrets Manager secret, so the admin password is
- *          also stored there for the proxy alone, read by a role only RDS Proxy may assume.
+ *          also stored there for the proxy alone, read by a role only RDS Proxy may assume. A database whose plan names
+ *          extensions gets a one-shot Fargate task (`createExtensionsScript` in a pinned Postgres client image, in its
+ *          own security group the database admits) that the deploy runs once per revision with the admin login,
+ *          before any workload's migration, so a migration never meets a missing extension on a fresh server; the
+ *          ECS cluster, log group and execution role it runs with are created once, for the first such database.
  * Boundary: declares resources only, inside the Pulumi program that calls it; only the owner applies them. The
  *           password arrives as a Pulumi secret input per database (generated in the deploy job and written blind to
  *           the vault, ADR 0493 decision 4, ADR 0525) and is never logged or returned. Dev and preview databases have no deletion
- *           protection and no final snapshot; staging and production keep both.
+ *           protection and no final snapshot; staging and production keep both. The extensions task reads the password
+ *           from the proxy's secret (`<secret>:password::`), so it is in no task definition, input or state, and only
+ *           the setup execution role may read it. Each database's extensions run lands in `ready` under its resource
+ *           name, for `awsWorkloads` to order migrations after it.
  * Runtime: node
  * Governing contract: ADR 0493 (decisions 2 and 4), ADR 0238 (RDS by default), ADR 0473 (RDS Proxy), ADR 0186
  *                     (decision 1: point-in-time recovery), ADR 0172 (decision 5: tags), ADR 0173, ADR 0160 (note of
- *                     2026-11-03: the preload).
+ *                     2026-11-03: the preload; note of 2026-11-26: the extensions run before migrations, STA-2092).
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
+import { createExtensionsScript } from "@stackra/runway";
+
 import { resourceName } from "#core/functions/resource-name.function";
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
+import { DATABASE_SETUP_SETTINGS } from "#node/constants/database-setup-settings.constant";
 import { RESOURCE_SECRETS_SETTINGS } from "#node/constants/resource-secrets-settings.constant";
+import { WORKLOAD_MIGRATION_PROVIDER } from "#node/constants/workload-migration-provider.constant";
 import type { AwsRuntimeOptions } from "#node/types/aws-runtime-options.type";
 
 /** The admin user every database is created with; services get their own roles (ADR 0238 decision 3). */
@@ -36,11 +47,79 @@ const NAME_LIMIT = 63;
 /** Environments whose databases are throwaway. */
 const THROWAWAY = new Set(["dev", "preview"]);
 
+/** The AWS-managed policy every task execution role carries (image pulls, log writes). */
+const EXECUTION_POLICY = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy";
+
+/** The longest ECS cluster name. */
+const CLUSTER_NAME_LIMIT = 255;
+
+/** What the extensions tasks of one environment share: created once, for the first database that names extensions. */
+type SetupShared = {
+  readonly cluster: aws.ecs.Cluster;
+  readonly group: aws.ec2.SecurityGroup;
+  readonly logGroup: aws.cloudwatch.LogGroup;
+  readonly role: aws.iam.Role;
+  readonly region: pulumi.Output<string>;
+};
+
+/** The cluster, security group, log group and execution role the extensions tasks of `plan` run with. */
+function setupShared(
+  plan: RuntimePlan,
+  options: AwsRuntimeOptions,
+  vpcId: pulumi.Input<string>,
+): SetupShared {
+  const prefix = resourceName([plan.project, plan.environment, "db-setup"], CLUSTER_NAME_LIMIT);
+  const tags = { ...options.tags, env: plan.environment, service: "db-setup" };
+  const role = new aws.iam.Role(`${prefix}-execution`, {
+    assumeRolePolicy: JSON.stringify({
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Effect: "Allow",
+          Principal: { Service: "ecs-tasks.amazonaws.com" },
+          Action: "sts:AssumeRole",
+        },
+      ],
+    }),
+    tags,
+  });
+  new aws.iam.RolePolicyAttachment(`${prefix}-execution`, {
+    role: role.name,
+    policyArn: EXECUTION_POLICY,
+  });
+  return {
+    cluster: new aws.ecs.Cluster(prefix, {
+      name: prefix,
+      settings: [{ name: "containerInsights", value: "enabled" }],
+      tags,
+    }),
+    // Out on 443 for the image, Secrets Manager and the logs, and on 5432 to the databases, which admit only it.
+    group: new aws.ec2.SecurityGroup(prefix, {
+      vpcId,
+      description: "Database setup tasks: out to Postgres and HTTPS only, nothing in",
+      ingress: [],
+      egress: [
+        { protocol: "tcp", fromPort: 443, toPort: 443, cidrBlocks: ["0.0.0.0/0"] },
+        { protocol: "tcp", fromPort: PORT, toPort: PORT, cidrBlocks: ["0.0.0.0/0"] },
+      ],
+      tags,
+    }),
+    logGroup: new aws.cloudwatch.LogGroup(prefix, {
+      name: `/${plan.project}/${plan.environment}/db-setup`,
+      retentionInDays: options.workloads?.logRetentionDays ?? DATABASE_SETUP_SETTINGS.logDays,
+      tags,
+    }),
+    role,
+    region: aws.getRegionOutput().name,
+  };
+}
+
 /**
  * Declares the Postgres resources of `plan` and returns each one's proxy endpoint, by plan key.
  *
  * @throws TypeError when the plan has a database and the options name no VPC or no password for it.
  * @param workloadGroups - the shared workload security group, when the plan has workloads; databases admit it too.
+ * @param ready - filled with each database's extensions run, by resource name (`main-db`), for what must follow it.
  * @example
  * const databases = awsDatabases(plan, { network, databasePasswords: { "resources.main-db": pulumi.secret(password) } });
  */
@@ -48,6 +127,7 @@ export function awsDatabases(
   plan: RuntimePlan,
   options: AwsRuntimeOptions,
   workloadGroups: readonly pulumi.Input<string>[] = [],
+  ready: Map<string, pulumi.Resource> = new Map(),
 ): Record<string, { endpoint: pulumi.Output<string>; port: number }> {
   const out: Record<string, { endpoint: pulumi.Output<string>; port: number }> = {};
   if (plan.databases.length === 0) return out;
@@ -70,6 +150,9 @@ export function awsDatabases(
     }),
     tags: { ...options.tags, env: plan.environment, service: "shared" },
   });
+  const setup = plan.databases.some((database) => database.extensions.length > 0)
+    ? setupShared(plan, options, vpcId)
+    : undefined;
 
   for (const database of plan.databases) {
     const password = options.databasePasswords?.[database.key];
@@ -97,6 +180,16 @@ export function awsDatabases(
             ]),
         // The proxy reaches the database through the same group.
         { protocol: "tcp", fromPort: PORT, toPort: PORT, self: true },
+        ...(setup === undefined || database.extensions.length === 0
+          ? []
+          : [
+              {
+                protocol: "tcp",
+                fromPort: PORT,
+                toPort: PORT,
+                securityGroups: [setup.group.id],
+              },
+            ]),
       ],
       egress: [{ protocol: "tcp", fromPort: PORT, toPort: PORT, self: true }],
       tags,
@@ -135,6 +228,9 @@ export function awsDatabases(
     let target:
       | { dbInstanceIdentifier: pulumi.Output<string> }
       | { dbClusterIdentifier: pulumi.Output<string> };
+    // Where the extensions task signs in, and what must exist before it can.
+    let host: pulumi.Output<string>;
+    const servers: pulumi.Resource[] = [];
     if (database.engine === "aurora") {
       const parameters =
         preload === undefined
@@ -152,16 +248,19 @@ export function awsDatabases(
         tags,
       });
       for (let index = 0; index < (database.multiAz ? 2 : 1); index += 1)
-        new aws.rds.ClusterInstance(`${database.name}-${index}`, {
-          identifier: `${database.name}-${index}`,
-          clusterIdentifier: cluster.id,
-          engine: "aurora-postgresql",
-          instanceClass: database.instanceClass,
-          dbSubnetGroupName: subnetGroup.name,
-          publiclyAccessible: false,
-          tags,
-        });
+        servers.push(
+          new aws.rds.ClusterInstance(`${database.name}-${index}`, {
+            identifier: `${database.name}-${index}`,
+            clusterIdentifier: cluster.id,
+            engine: "aurora-postgresql",
+            instanceClass: database.instanceClass,
+            dbSubnetGroupName: subnetGroup.name,
+            publiclyAccessible: false,
+            tags,
+          }),
+        );
       target = { dbClusterIdentifier: cluster.id };
+      host = cluster.endpoint;
     } else {
       const parameters =
         preload === undefined ? undefined : new aws.rds.ParameterGroup(database.name, preload);
@@ -182,6 +281,8 @@ export function awsDatabases(
         tags,
       });
       target = { dbInstanceIdentifier: instance.identifier };
+      host = instance.address;
+      servers.push(instance);
     }
 
     const secret = new aws.secretsmanager.Secret(database.name, {
@@ -190,7 +291,7 @@ export function awsDatabases(
       recoveryWindowInDays: throwaway ? 0 : 7,
       tags,
     });
-    new aws.secretsmanager.SecretVersion(database.name, {
+    const secretVersion = new aws.secretsmanager.SecretVersion(database.name, {
       secretId: secret.id,
       secretString: pulumi.jsonStringify({ username: ADMIN_USER, password }),
     });
@@ -221,6 +322,78 @@ export function awsDatabases(
       ...target,
     });
     out[database.key] = { endpoint: proxy.endpoint, port: PORT };
+
+    if (setup !== undefined && database.extensions.length > 0) {
+      const setupName = `${database.name}-extensions`;
+      const access = new aws.iam.RolePolicy(setupName, {
+        role: setup.role.id,
+        policy: pulumi.jsonStringify({
+          Version: "2012-10-17",
+          Statement: [
+            { Effect: "Allow", Action: "secretsmanager:GetSecretValue", Resource: secret.arn },
+          ],
+        }),
+      });
+      const registry = options.workloads?.registry;
+      // The script names the extensions and the host is in the environment, so either change makes a new revision.
+      const task = new aws.ecs.TaskDefinition(setupName, {
+        family: setupName,
+        networkMode: "awsvpc",
+        requiresCompatibilities: ["FARGATE"],
+        cpu: DATABASE_SETUP_SETTINGS.cpu,
+        memory: DATABASE_SETUP_SETTINGS.memoryMb,
+        executionRoleArn: setup.role.arn,
+        containerDefinitions: pulumi.jsonStringify([
+          {
+            name: DATABASE_SETUP_SETTINGS.container,
+            image:
+              registry === undefined
+                ? DATABASE_SETUP_SETTINGS.image
+                : pulumi.interpolate`${registry}/${DATABASE_SETUP_SETTINGS.registryImage}`,
+            essential: true,
+            command: ["sh", "-c", createExtensionsScript(database.extensions)],
+            environment: [
+              { name: "PGHOST", value: host },
+              { name: "PGPORT", value: String(PORT) },
+              { name: "PGUSER", value: ADMIN_USER },
+              { name: "PGSSLMODE", value: "require" },
+              { name: "PGCONNECT_TIMEOUT", value: "10" },
+            ],
+            secrets: [
+              { name: "PGPASSWORD", valueFrom: pulumi.interpolate`${secret.arn}:password::` },
+            ],
+            logConfiguration: {
+              logDriver: "awslogs",
+              options: {
+                "awslogs-group": setup.logGroup.name,
+                "awslogs-region": setup.region,
+                "awslogs-stream-prefix": database.resource,
+              },
+            },
+          },
+        ]),
+        tags,
+      });
+      // dynamic.Resource is abstract, so the run gets an empty subclass of its own
+      const run = new (class DatabaseExtensions extends pulumi.dynamic.Resource {})(
+        WORKLOAD_MIGRATION_PROVIDER,
+        setupName,
+        {
+          name: database.name,
+          purpose: "extensions",
+          region: setup.region,
+          cluster: setup.cluster.arn,
+          taskDefinition: task.arn,
+          container: DATABASE_SETUP_SETTINGS.container,
+          subnets: options.network.subnetIds,
+          securityGroups: [setup.group.id],
+          timeoutMinutes: DATABASE_SETUP_SETTINGS.timeoutMinutes,
+          pollSeconds: DATABASE_SETUP_SETTINGS.pollSeconds,
+        },
+        { dependsOn: [...servers, securityGroup, secretVersion, access] },
+      );
+      ready.set(database.resource, run);
+    }
   }
   return out;
 }

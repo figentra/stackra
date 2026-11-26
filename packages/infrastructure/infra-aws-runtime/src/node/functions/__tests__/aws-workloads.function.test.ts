@@ -8,12 +8,17 @@
  *          between its bounds; an internal one gets none of them; a worker with no port gets no port mapping and its
  *          health command as the container's health check; a public workload without a certificate is refused; a
  *          workload with `migrate` gets a migration task (the same image and secrets, its own arguments, no port) and
- *          one migration run of that revision with its timeout, and a workload without one gets neither.
+ *          one migration run of that revision with its timeout, and a workload without one gets neither; the
+ *          migration and the service of a workload that uses a database wait for that database's extensions run,
+ *          and a workload that uses none waits for no run.
  * Boundary: test only; no cloud is called and no state is written (`pulumi.runtime.setMocks`); `dynamic.Resource` is
- *           mocked so the migration run registers without closure serialisation.
+ *           mocked so the migration run registers without closure serialisation, and it and `ecs.Service` keep the
+ *           resources they were told to wait for.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 2 and 4, owner answers Q5 and Q6); spec sta-1640.
+ * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 2 and 4, owner answers Q5 and Q6); spec sta-1640;
+ *                     ADR 0160 (note of 2026-11-26).
  */
+import type * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { beforeAll, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -21,6 +26,9 @@ import { vi } from "vitest";
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import type { WorkloadPlan } from "#core/types/workload-plan.type";
 import { awsWorkloads } from "#node/functions/aws-workloads.function";
+
+/** What each migration run and service was told to wait for, by logical name. */
+const waits = vi.hoisted(() => new Map<string, unknown>());
 
 // Vitest rewrites the provider's code, so Pulumi's closure serialisation of it never settles under the mocks; the
 // dynamic resource registers here without its serialised provider.
@@ -34,9 +42,22 @@ vi.mock("@pulumi/pulumi", async (original) => {
       opts?: pulumi.CustomResourceOptions,
     ) {
       super("pulumi-nodejs:dynamic:Resource", name, props, opts);
+      waits.set(name, opts?.dependsOn);
     }
   }
   return { ...actual, dynamic: { ...actual.dynamic, Resource } };
+});
+
+// The ECS service keeps its options too, so the test sees what it waits for.
+vi.mock("@pulumi/aws", async (original) => {
+  const actual = await original<typeof aws>();
+  class Service extends actual.ecs.Service {
+    constructor(name: string, args: aws.ecs.ServiceArgs, opts?: pulumi.CustomResourceOptions) {
+      super(name, args, opts);
+      waits.set(name, opts?.dependsOn);
+    }
+  }
+  return { ...actual, ecs: { ...actual.ecs, Service } };
 });
 
 /** One resource the program registered. */
@@ -151,6 +172,21 @@ function resource(kind: string, name: string): Registered {
 
 let hosts: { internal: string; public: string | undefined };
 
+/** The logical names of what `name` was told to wait for. */
+async function waitsOf(name: string): Promise<string[]> {
+  const dependsOn = (waits.get(name) ?? []) as pulumi.Resource[];
+  return Promise.all(
+    dependsOn.map(
+      (dependency) =>
+        new Promise<string>((resolve) => {
+          dependency.urn.apply((urn) => {
+            resolve(urn.split("::").at(-1) ?? "");
+          });
+        }),
+    ),
+  );
+}
+
 beforeAll(async () => {
   await pulumi.runtime.setMocks(
     {
@@ -172,7 +208,13 @@ beforeAll(async () => {
     "production",
     false,
   );
-  const out = awsWorkloads(PLAN, OPTIONS, "sg-workloads");
+  // The main database's extensions run, as awsDatabases hands it back.
+  const extensionsRun = new pulumi.CustomResource(
+    "pulumi-nodejs:dynamic:Resource",
+    "academorix-production-main-db-extensions",
+    {},
+  );
+  const out = awsWorkloads(PLAN, OPTIONS, "sg-workloads", new Map([["main-db", extensionsRun]]));
   const zitadel = out["workloads.zitadel"];
   if (zitadel?.publicHost === undefined) throw new Error("No public host");
   hosts = {
@@ -284,6 +326,21 @@ describe("awsWorkloads", () => {
       securityGroups: ["sg-workloads"],
       timeoutMinutes: 20,
     });
+  });
+
+  it("starts a workload's migration and service only after the extensions of the database it uses", async () => {
+    expect(await waitsOf("academorix-production-zitadel-migrate")).toContain(
+      "academorix-production-main-db-extensions",
+    );
+    expect(await waitsOf("academorix-production-zitadel")).toEqual(
+      expect.arrayContaining([
+        "academorix-production-zitadel-migrate",
+        "academorix-production-main-db-extensions",
+      ]),
+    );
+    expect(await waitsOf("academorix-production-ocr")).not.toContain(
+      "academorix-production-main-db-extensions",
+    );
   });
 
   it("gives a workload without migrate no migration task and no run", () => {

@@ -3,14 +3,17 @@
  * Purpose: `WORKLOAD_MIGRATION_PROVIDER`, the Pulumi dynamic provider behind a workload's `migrate`: on create, and on
  *          an update to a new revision of the migration task definition (a new image, command, env or secret name), it
  *          runs the task once on Fargate in the workload's subnets and security group, waits for it to stop, and fails
- *          unless its container exited 0. A task past its timeout is stopped and fails. A delete runs nothing.
+ *          unless its container exited 0. A task past its timeout is stopped and fails. A delete runs nothing. The same
+ *          run, with `purpose: "extensions"`, creates a database's planned extensions before any migration
+ *          (`awsDatabases`); its failures say that no migration ran.
  * Boundary: ECS has no pre-deploy hook, so this calls ECS's RunTask, DescribeTasks and StopTask through
  *           `@aws-sdk/client-ecs`, imported inside the call so Pulumi's closure serialisation captures no module; the
  *           program that declares it resolves that package (the stacks repository lists it beside `@pulumi/aws`). The
  *           credentials are the deploy job's, the environment's infra role. No secret enters the inputs or the state:
  *           the task reads its own from SSM. A failure names the task and its exit code or stop reason, never output.
  * Runtime: node
- * Governing contract: ADR 0493 (as amended: a workload's migrate task), ADR 0444 (decision 4: Fargate), ADR 0173.
+ * Governing contract: ADR 0493 (as amended: a workload's migrate task), ADR 0444 (decision 4: Fargate), ADR 0173,
+ *                     ADR 0160 (note of 2026-11-26: extensions before migrations).
  */
 import type { dynamic } from "@pulumi/pulumi";
 
@@ -23,6 +26,10 @@ type WorkloadMigrationOutputs = WorkloadMigrationInputs & { readonly task: strin
 async function migrate(inputs: WorkloadMigrationInputs): Promise<string> {
   const { DescribeTasksCommand, ECSClient, RunTaskCommand, StopTaskCommand } =
     await import("@aws-sdk/client-ecs");
+  // Kept inside the run so Pulumi's closure serialisation captures nothing from the module.
+  const isExtensions = inputs.purpose === "extensions";
+  const what = isExtensions ? "create-extension" : "migration";
+  const stopped = isExtensions ? "no migration ran" : "the rollout did not start";
   const ecs = new ECSClient({ region: inputs.region });
   const started = await ecs.send(
     new RunTaskCommand({
@@ -30,7 +37,7 @@ async function migrate(inputs: WorkloadMigrationInputs): Promise<string> {
       taskDefinition: inputs.taskDefinition,
       launchType: "FARGATE",
       count: 1,
-      startedBy: "runway-migrate",
+      startedBy: isExtensions ? "runway-extensions" : "runway-migrate",
       networkConfiguration: {
         awsvpcConfiguration: {
           subnets: [...inputs.subnets],
@@ -43,7 +50,7 @@ async function migrate(inputs: WorkloadMigrationInputs): Promise<string> {
   const arn = started.tasks?.[0]?.taskArn;
   if (arn === undefined)
     throw new Error(
-      `${inputs.name}: ECS started no migration task (${started.failures?.map((failure) => failure.reason).join(", ") ?? "no reason given"}); the rollout did not start`,
+      `${inputs.name}: ECS started no ${what} task (${started.failures?.map((failure) => failure.reason).join(", ") ?? "no reason given"}); ${stopped}`,
     );
 
   const deadline = Date.now() + inputs.timeoutMinutes * 60_000;
@@ -61,14 +68,14 @@ async function migrate(inputs: WorkloadMigrationInputs): Promise<string> {
     )?.exitCode;
     if (exitCode === 0) return arn;
     throw new Error(
-      `${inputs.name}: the migration task ${arn} failed (${exitCode === undefined ? (task.stoppedReason ?? "no exit code") : `exit code ${exitCode}`}); the rollout did not start`,
+      `${inputs.name}: the ${what} task ${arn} failed (${exitCode === undefined ? (task.stoppedReason ?? "no exit code") : `exit code ${exitCode}`}); ${stopped}`,
     );
   }
   await ecs.send(
-    new StopTaskCommand({ cluster: inputs.cluster, task: arn, reason: "runway migrate timeout" }),
+    new StopTaskCommand({ cluster: inputs.cluster, task: arn, reason: `runway ${what} timeout` }),
   );
   throw new Error(
-    `${inputs.name}: the migration task ${arn} ran past ${inputs.timeoutMinutes} minutes and was stopped; the rollout did not start`,
+    `${inputs.name}: the ${what} task ${arn} ran past ${inputs.timeoutMinutes} minutes and was stopped; ${stopped}`,
   );
 }
 
@@ -81,7 +88,7 @@ async function migrate(inputs: WorkloadMigrationInputs): Promise<string> {
 export const WORKLOAD_MIGRATION_PROVIDER: dynamic.ResourceProvider = {
   async create(inputs: WorkloadMigrationInputs): Promise<dynamic.CreateResult> {
     const outs: WorkloadMigrationOutputs = { ...inputs, task: await migrate(inputs) };
-    return { id: `${inputs.name}-migrate`, outs };
+    return { id: `${inputs.name}-${inputs.purpose ?? "migrate"}`, outs };
   },
 
   async diff(

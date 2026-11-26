@@ -7,7 +7,8 @@
  *          at-rest encryption, its own parameter group for an eviction policy, one subnet group for all) and each S3
  *          bucket (public access blocked, versioning and the noncurrent-version expiry the plan asks for), then the
  *          Postgres resources through `awsDatabases` and the container workloads through `awsWorkloads`, with the one
- *          workload security group the databases admit (ADR 0493).
+ *          workload security group the databases admit (ADR 0493); a workload's migration waits for the extensions
+ *          run of each database it uses (ADR 0160 note of 2026-11-26).
  * Boundary: declares resources only, inside the Pulumi program that calls it; `pulumi preview` shows them and only the
  *           owner applies them (agents never run `pulumi up`). No secret is created or read: caches are reached
  *           over TLS inside the given security groups.
@@ -219,13 +220,16 @@ export function awsRuntime(plan: RuntimePlan, options: AwsRuntimeOptions): AwsRu
           },
         );
   const groups = workloadGroup === undefined ? [] : [workloadGroup.id];
+  // Each database's extensions run, which the workloads using it wait for (ADR 0160 note of 2026-11-26).
+  const ready = new Map<string, pulumi.Resource>();
+  const databases = awsDatabases(plan, options, groups, ready);
   return {
     queues,
     topics,
     caches,
     buckets,
-    databases: awsDatabases(plan, options, groups),
+    databases,
     // awsWorkloads refuses a workload without a VPC before it would read the missing group.
-    workloads: awsWorkloads(plan, options, workloadGroup?.id ?? ""),
+    workloads: awsWorkloads(plan, options, workloadGroup?.id ?? "", ready),
   };
 }

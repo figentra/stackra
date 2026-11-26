@@ -1,7 +1,26 @@
 ---
 title: "0160 — Raw SQL at runtime and the approved Postgres extensions"
-description: "Accepted, amended by 0314, 0334 and notes of 2026-10-29 (pg_stat_statements) and 2026-11-03 (btree_gist, provisioning) · 2026-10-20"
+description: "Accepted, amended by 0314, 0334 and notes of 2026-10-29 (pg_stat_statements), 2026-11-03 (btree_gist, provisioning) and 2026-11-26 (extensions before migrations) · 2026-10-20"
 ---
+
+<Note>
+  Note of 2026-11-26 (STA-2092): the infrastructure now runs `create extension` before the
+  migrations, on AWS and GCP, which the note of 2026-11-03 left unbuilt. `@stackra/runway` gives the
+  list and the script: `plannedExtensions(services, environment, members?)` is the sorted union of
+  the extensions the service runways name, and `createExtensionsScript(extensions)` is the
+  idempotent psql script that runs `CREATE EXTENSION IF NOT EXISTS` for each in `template1` and
+  every database that takes connections (never `template0`, `rdsadmin` or `cloudsqladmin`), refusing
+  any name outside `PostgresExtension`; a database a service creates later from `template1` starts
+  with them. On AWS, `awsDatabases` gives each Postgres resource whose member consumers name
+  extensions a one-shot Fargate task with the admin login (the password read from the RDS Proxy
+  secret, never in the task), run once per revision inside the apply, and every workload migration
+  and service using that resource waits for it. On GCP, `gcpRuntime` creates the built-in admin
+  `stackra_admin` from the deploy job's password, keeps a copy in an in-region Secret Manager secret
+  only the job's account reads, and runs a Cloud Run job to completion inside the apply, again only
+  when the extensions, image or server change. A failed run fails the deploy before any migration. A
+  migration's `schema.createExtension` stays valid and finds the extension already there. Decision 2
+  stands.
+</Note>
 
 <Note>
   Amended 2026-11-03 (STA-1402, stackra-283): `btree_gist` is approved, so decision 2 lists eight
