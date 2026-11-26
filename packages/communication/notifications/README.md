@@ -132,7 +132,9 @@ const { richText } = this.mail;
 return <Html lang={locale} dir={dir}>{richText(this.props.branch.welcomeNoteHtml)}</Html>;
 ```
 
-`richText(html, policy)` takes a narrower `HtmlPolicy` (only paragraphs, say); `sanitizeHtml`'s floor holds under any.
+`richText(html, policy)` takes a narrower `HtmlPolicy` (only paragraphs, say). The policy is intersected with the
+rich-text default (`narrowHtmlPolicy` from `@stackra/csp`), so it can only take away: a tag or attribute the default
+refuses, such as `img` and its `src` or a link `target`, is dropped whatever the policy allows.
 
 ## Delivery
 

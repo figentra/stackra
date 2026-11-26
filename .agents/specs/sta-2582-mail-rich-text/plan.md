@@ -7,14 +7,17 @@
 ## Summary
 
 `MailTools` gains `richText(html, policy?)`, built in the renderer's `toolsFor` as a `<div>` whose inner HTML is
-`sanitizeHtml(html, policy)` from `@stackra/csp`. `@stackra/oxlint-config` adds a last override that sets
+`sanitizeHtml(html, narrowHtmlPolicy(policy))` from `@stackra/csp` (plain `sanitizeHtml(html)` with no policy), so a
+host policy is intersected with the rich-text default and can only narrow it. `@stackra/oxlint-config` adds a last
+override that sets
 `react/no-danger` to error in `**/*.mail.tsx`, so a body never writes raw HTML. Renderer tests prove a hostile note is
 cleaned, escaped elsewhere and carried into the text part; a lint test proves the rule fires on a mail body only.
 
 ## Technical Context
 
 - **Language**: TypeScript (ESM), React server rendering (`react-dom/server`)
-- **Members**: `packages/communication/notifications`, `packages/tooling/oxlint`, `packages/security/csp` (docs)
+- **Members**: `packages/communication/notifications`, `packages/tooling/oxlint`, `packages/security/csp`
+  (`narrowHtmlPolicy` and docs)
 - **Testing**: vitest in `src/**/__tests__/`, on CI
 - **Storage**: none
 - **Runtime target**: every host that renders a `.mail.tsx` body (the sending Notifier driver, `renderMail` in
@@ -57,6 +60,12 @@ cleaned, escaped elsewhere and carried into the text part; a lint test proves th
   AC-005
 - **P-006**: oxlint over the mail fixtures reports `react(no-danger)` for `welcome.mail.tsx` and not for
   `welcome-card.tsx` — Validates: AC-006, AC-007
+- **P-007**: a host policy allowing `img` (`src`, `alt`), `a` (`target`) and `p` (`class`) renders
+  `<div><p>Hi <a href="https://club.example">kit</a></p></div>` and no `<img`, tracker origin, `target=` or `class=`
+  — Validates: AC-008
+- **P-008**: `narrowHtmlPolicy` keeps `{ p: ["dir"], a: ["href"] }` of a wider policy, unions `dropWithContent`,
+  honours a given base, ignores inherited keys, returns a frozen policy and leaves its input equal to a clone; under
+  it `sanitizeHtml` drops the image and the link `target` that the raw wider policy keeps — Validates: AC-009, AC-008
 
 ## Architecture overview
 
@@ -69,7 +78,10 @@ lint rule is the second wall: a body cannot bypass the tool with its own `danger
 
 - `MailTools.richText` (`mail-tools.type.ts`): the contract; documented as the only way HTML a body did not write gets
   into a mail.
-- `toolsFor` (`render-mail-body.function.tsx`): builds `richText` as a `<div>` over `sanitizeHtml(html, policy)`.
+- `toolsFor` (`render-mail-body.function.tsx`): builds `richText` as a `<div>` over `sanitizeHtml(html)`, or
+  `sanitizeHtml(html, narrowHtmlPolicy(policy))` when a host passes a policy.
+- `narrowHtmlPolicy` (`@stackra/csp`, new): a host policy intersected with a base (`RICH_TEXT_HTML_POLICY` by default);
+  pure, own keys only, frozen result.
 - `sanitizeHtml` and `RICH_TEXT_HTML_POLICY` (`@stackra/csp`, unchanged): the allowlist and its floor.
 - The `**/*.mail.tsx` override (`base.jsonc`): `react/no-danger` at error, last in the overrides list.
 
@@ -90,7 +102,13 @@ packages/tooling/oxlint/
   src/__tests__/no-danger-mail.test.ts
   src/__tests__/fixtures/mail/packages/communication/demo/src/react/welcome.mail.tsx
   src/__tests__/fixtures/mail/packages/communication/demo/src/react/welcome-card.tsx
-packages/security/csp/AGENTS.md
+packages/security/csp/
+  AGENTS.md
+  README.md
+  src/core/index.ts
+  src/core/__tests__/index.test.ts
+  src/core/functions/narrow-html-policy.function.ts
+  src/core/functions/__tests__/narrow-html-policy.function.test.ts
 .changeset/notifications-mail-rich-text-sanitized.md
 pnpm-lock.yaml
 ```
@@ -102,7 +120,9 @@ none
 ## Contracts
 
 `MailTools.richText: (html: string, policy?: HtmlPolicy) => ReactElement`, reached through `useMail()` from
-`@stackra/notifications/react`. `HtmlPolicy` is the existing type from `@stackra/csp`. The lint contract: in
+`@stackra/notifications/react`. `HtmlPolicy` is the existing type from `@stackra/csp`.
+`narrowHtmlPolicy(policy: HtmlPolicy, base: HtmlPolicy = RICH_TEXT_HTML_POLICY): HtmlPolicy` is a new export of
+`@stackra/csp`'s `.` entry. The lint contract: in
 `@stackra/oxlint-config`, `react/no-danger` is `error` for `**/*.mail.tsx`.
 
 ## Error handling
@@ -114,7 +134,8 @@ open tag is closed. `useMail()` still throws outside a mail render, as before.
 
 Tenant and client HTML is rebuilt from parsed parts against the allowlist before it reaches the markup, so no script,
 handler, style, image or unsafe link reaches a mail client under the default policy. A host-supplied policy replaces
-the default (see the spec's Risks); the floor still blocks script-capable content. No tenant data is read or stored.
+the default no more: it is intersected with it, so it can only narrow it, and the floor still blocks script-capable
+content. No tenant data is read or stored.
 
 ## Testing strategy
 
@@ -122,13 +143,17 @@ the default (see the spec's Risks); the floor still blocks script-capable conten
 - AC-003: the same file, "escapes the HTML when a body passes it as a prop or an ICU value".
 - AC-004: the same file, "keeps the sanitized rich text in the plain-text part, without the dropped script".
 - AC-005: the same file, "narrows to a host's policy, and the floor holds under any policy".
+- AC-008: the same file, "never lets a host policy widen the rich-text default"; it fails with the intersection taken
+  out of `toolsFor`.
+- AC-009: `narrow-html-policy.function.test.ts` in csp (six cases) and the entry's export test; all six fail with the
+  function reduced to `return policy`.
 - AC-006, AC-007: `no-danger-mail.test.ts` runs oxlint with the boundaries preset over the fixtures.
 - The PR reports package tests, typecheck, oxlint and oxfmt passing, and the new tests failing with the change
   reverted.
 
 ## Rollout
 
-A minor changeset for `@stackra/notifications` and `@stackra/oxlint-config`. Additive for consumers; a mail body that
+A minor changeset for `@stackra/notifications`, `@stackra/oxlint-config` and `@stackra/csp`. Additive for consumers; a mail body that
 writes raw HTML fails lint and moves to `richText(html)`.
 
 ## Delegation and risk plan
@@ -141,7 +166,7 @@ none new; implements ADR 0223 as amended by ADR 0294.
 
 ## Docs
 
-The notifications README and AGENTS.md, the oxlint README and AGENTS.md, the csp AGENTS.md.
+The notifications README and AGENTS.md, the oxlint README and AGENTS.md, the csp README and AGENTS.md.
 
 ## Complexity tracking
 

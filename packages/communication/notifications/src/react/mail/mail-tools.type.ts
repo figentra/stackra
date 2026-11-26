@@ -41,8 +41,10 @@ export interface MailTools {
 
   /**
    * Tenant or client rich-text `html` (a branch's welcome note, an editor's message) as a `<div>` holding only what
-   * `sanitizeHtml` keeps under `policy`: no script, style, event handler, `style` attribute or non-http(s)/mailto
-   * link. `policy` narrows the rich-text default (`RICH_TEXT_HTML_POLICY`); `sanitizeHtml`'s floor holds under any.
+   * `sanitizeHtml` keeps under the rich-text default (`RICH_TEXT_HTML_POLICY`): no script, style, event handler,
+   * `style` attribute, image or non-http(s)/mailto link. `policy` can only narrow that default: it is intersected with
+   * it (`narrowHtmlPolicy`), so a tag or attribute the default refuses (an `img` and its `src`, a link `target`) is
+   * dropped whatever `policy` allows.
    */
   readonly richText: (html: string, policy?: HtmlPolicy) => ReactElement;
 }

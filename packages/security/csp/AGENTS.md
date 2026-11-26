@@ -39,6 +39,10 @@ The Content Security Policy baseline, its configuration, nonces and the React no
   against an allowlist (`RICH_TEXT_HTML_POLICY`), so widening the policy to a script, a style, an event handler or
   `style` is a security change that needs review. ProseMirror JSON needs no pass. A mail body reaches it through
   `@stackra/notifications`' `useMail().richText` (STA-2582).
+- `narrowHtmlPolicy(policy, base?)` (STA-2582) intersects a policy a host hands in with `RICH_TEXT_HTML_POLICY` (or
+  `base`): a tag only when both allow it, an attribute only when both allow it, content dropped wherever either drops
+  it. Any caller that accepts a policy from a host or a tenant runs it through here before `sanitizeHtml`, so the
+  policy can only narrow the default; `sanitizeHtml` itself takes a policy as given.
 - Third-party scripts (STA-2562 audit item c): `thirdPartyScripts` maps an exact https origin to a `ConsentCategory`
   code. `necessary` always loads (a payment SDK); any other loads only when `CspAdditions.consent` grants it, so without
   consent only `necessary` scripts run. No wildcard, scheme or host pattern; an unlisted script never loads.

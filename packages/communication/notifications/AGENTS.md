@@ -48,8 +48,9 @@ Messages to people (ADR 0086, 0223 as amended by 0294; R-26). Member at `package
 
 - Mail HTML (STA-2582): a body's strings are escaped by React; tenant or client HTML goes in through
   `MailTools.richText`, which renders `sanitizeHtml` (`@stackra/csp`) output and is the package's only
-  `dangerouslySetInnerHTML`. Never add another sink or widen the policy here; `react/no-danger` is an error in
-  `*.mail.tsx`.
+  `dangerouslySetInnerHTML`. A host `policy` is intersected with the rich-text default (`narrowHtmlPolicy`) before
+  `sanitizeHtml`, so it can only narrow it. Never add another sink or widen the policy here; `react/no-danger` is an
+  error in `*.mail.tsx`.
 - `Notification` is called only. Only `recipients` is declared on the base, so `data` and the channel methods are
   found by name and a subclass writes them without `override`.
 - Strings are i18n keys (`I18nKey`), never literals or concatenations. No template engine at run time: a body is a

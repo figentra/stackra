@@ -3,7 +3,8 @@
  * Purpose: unit tests of `renderMailBody`: an XHTML document with the body's markup and its text part, the ICU plural
  *          per locale (English `one`, Arabic dual and `few`), right-to-left for Arabic, the configured digits, a
  *          RangeError for a key the catalogues lack, and tenant or client HTML: escaped when passed as a prop or an ICU
- *          value, and through `richText` written back only as `sanitizeHtml` keeps it, in the HTML and the text part.
+ *          value, and through `richText` written back only as `sanitizeHtml` keeps it, in the HTML and the text part,
+ *          under a host policy only as far as the rich-text default allows (a wider policy cannot add an image).
  * Boundary: test only; the body is the compiled form of the template's receipt mail (a function component).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0223; ADR 0192 (plurals and digits); ADR 0080.
@@ -189,6 +190,21 @@ describe("renderMailBody", () => {
       });
       expect(html).toContain("<div><p>Hi there</p></div>");
       expect(html).not.toContain("<style");
+    });
+
+    it("never lets a host policy widen the rich-text default", () => {
+      const WIDER: HtmlPolicy = {
+        tags: { p: ["dir", "class"], a: ["href", "target"], img: ["src", "alt"] },
+        dropWithContent: [],
+      };
+      const { html } = render(WelcomeMail, {
+        note:
+          '<p class="x">Hi <img src="https://tracker.example/open.gif" alt="">' +
+          '<a href="https://club.example" target="_blank">kit</a></p>',
+        policy: WIDER,
+      });
+      expect(html).toContain('<div><p>Hi <a href="https://club.example">kit</a></p></div>');
+      expect(html).not.toMatch(/<img|tracker\.example|target=|class=/);
     });
   });
 });
