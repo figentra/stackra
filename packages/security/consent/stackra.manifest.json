@@ -11,6 +11,15 @@
       "dependsOn": []
     }
   ],
+  "facets": [
+    {
+      "name": "Index",
+      "kind": "index",
+      "target": "class",
+      "from": "@stackra/model",
+      "targets": []
+    }
+  ],
   "actions": [
     {
       "key": "consent.consent_snapshot.issue@1",
@@ -63,9 +72,167 @@
       "category": "forbidden",
       "module": "consent",
       "class": "ConsentNotVerifiedError"
+    },
+    {
+      "code": "consent_proof_write_failed",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "consent",
+      "class": "ConsentProofWriteFailedError"
     }
   ],
-  "models": [],
+  "models": [
+    {
+      "key": "consent.consent_proof_entry",
+      "class": "ConsentProofEntry",
+      "file": "src/node/models/consent-proof-entry.model.ts",
+      "table": "consent.consent_proof_entries",
+      "publicId": "cpf",
+      "traits": ["HasPublicId", "BelongsToTenant", "AppendOnly"],
+      "entity": {
+        "module": "consent",
+        "fields": [
+          {
+            "name": "sequence",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "number"
+            },
+            "int": true
+          },
+          {
+            "name": "subject",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "givenBy",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "relationship",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "document",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "version",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "contentHash",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "granted",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "boolean"
+            }
+          },
+          {
+            "name": "at",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "date"
+            }
+          },
+          {
+            "name": "channel",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "verificationMethod",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "enum",
+              "name": "ConsentVerificationMethod",
+              "values": ["card_check", "signed_form", "guardian_login"],
+              "module": "consent"
+            }
+          },
+          {
+            "name": "verificationReference",
+            "optional": false,
+            "nullable": true,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "previousHash",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "hash",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "string"
+            }
+          },
+          {
+            "name": "id",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "cpf"
+            }
+          },
+          {
+            "name": "tenantId",
+            "optional": false,
+            "nullable": false,
+            "type": {
+              "kind": "public_id",
+              "prefix": "scp"
+            }
+          }
+        ],
+        "relations": [],
+        "optional": ["id", "tenantId"],
+        "computed": []
+      }
+    }
+  ],
   "drivers": [
     {
       "port": "RegionSource",
@@ -120,24 +287,70 @@
       }
     },
     {
-      "port": "ConsentProofStore",
-      "key": "consent.ConsentProofStore",
-      "candidates": ["memory"],
+      "port": "ConsentVerifier",
+      "key": "consent.ConsentVerifier",
+      "candidates": ["guardian_login", "none"],
       "classes": {
-        "memory": {
-          "class": "MemoryConsentProofStoreDriver",
+        "guardian_login": {
+          "class": "GuardianLoginConsentVerifierDriver",
+          "from": "@stackra/consent",
+          "deps": [
+            {
+              "class": {
+                "name": "ConsentConfig",
+                "from": "@stackra/consent"
+              }
+            },
+            {
+              "class": {
+                "name": "ConsentSnapshotKeys",
+                "from": "@stackra/consent/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
+        },
+        "none": {
+          "class": "NoneConsentVerifierDriver",
           "from": "@stackra/consent"
         }
       }
     },
     {
-      "port": "ConsentVerifier",
-      "key": "consent.ConsentVerifier",
-      "candidates": ["none"],
+      "port": "ConsentProofStore",
+      "key": "consent.ConsentProofStore",
+      "candidates": ["memory", "postgres"],
       "classes": {
-        "none": {
-          "class": "NoneConsentVerifierDriver",
+        "memory": {
+          "class": "MemoryConsentProofStoreDriver",
           "from": "@stackra/consent"
+        },
+        "postgres": {
+          "class": "PostgresConsentProofStoreDriver",
+          "from": "@stackra/consent/node",
+          "deps": [
+            {
+              "class": {
+                "name": "ConsentProofEntry",
+                "from": "@stackra/consent/node"
+              },
+              "of": {
+                "name": "repositoryOf",
+                "from": "@stackra/database"
+              }
+            },
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
+            }
+          ]
         }
       }
     },
@@ -284,6 +497,30 @@
       ]
     },
     {
+      "class": "GuardianLoginAttestationIssuer",
+      "from": "@stackra/consent",
+      "deps": [
+        {
+          "class": {
+            "name": "ConsentConfig",
+            "from": "@stackra/consent"
+          }
+        },
+        {
+          "class": {
+            "name": "Signer",
+            "from": "@stackra/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "Clock",
+            "from": "@stackra/contracts"
+          }
+        }
+      ]
+    },
+    {
       "class": "IssueConsentSnapshotAction",
       "from": "@stackra/consent/node",
       "deps": [
@@ -312,6 +549,88 @@
     "consent.ConsentStatus": {
       "type": "string",
       "enum": ["granted", "denied", "undecided"]
+    },
+    "consent.ConsentProofEntry": {
+      "type": "object",
+      "required": [
+        "sequence",
+        "subject",
+        "givenBy",
+        "relationship",
+        "document",
+        "version",
+        "contentHash",
+        "granted",
+        "at",
+        "channel",
+        "verificationMethod",
+        "verificationReference",
+        "previousHash",
+        "hash",
+        "id",
+        "tenantId"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "subject": {
+          "type": "string"
+        },
+        "givenBy": {
+          "type": "string"
+        },
+        "relationship": {
+          "type": ["string", "null"]
+        },
+        "document": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "contentHash": {
+          "type": ["string", "null"]
+        },
+        "granted": {
+          "type": "boolean"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "channel": {
+          "type": ["string", "null"]
+        },
+        "verificationMethod": {
+          "anyOf": [
+            {
+              "$ref": "#/schemas/consent.ConsentVerificationMethod"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verificationReference": {
+          "type": ["string", "null"]
+        },
+        "previousHash": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^cpf_[0-9A-Za-z]{26}$"
+        },
+        "tenantId": {
+          "type": "string",
+          "pattern": "^scp_[0-9A-Za-z]{26}$"
+        }
+      }
     },
     "consent.IssueConsentSnapshotInput": {
       "type": "object",

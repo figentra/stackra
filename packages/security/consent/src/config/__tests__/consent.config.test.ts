@@ -74,6 +74,8 @@ describe("ConsentConfig", () => {
       askOnFirstLaunch: false,
       snapshotLifetimeMinutes: 1440,
       snapshotClockSkewSeconds: 60,
+      guardianLoginMaxAgeMinutes: 5,
+      guardianLoginAttestationMinutes: 10,
     });
   });
 

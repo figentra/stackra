@@ -8,11 +8,12 @@
  *           (`ConsentConfig$.shape.categories.unwrap().default(...)`). The rules sit on the fields: a required
  *           category is granted by default, a category appears once, the cookie name is a cookie token, and a
  *           decision lives at most 400 days (the longest cookie lifetime browsers keep); a snapshot lives 5 minutes to
- *           7 days (default a day) and tolerates up to 5 minutes of clock skew. The defaults equal
- *           `ConsentOptions`' initializers (tested).
+ *           7 days (default a day) and tolerates up to 5 minutes of clock skew; a guardian sign-in is attested only
+ *           within 1 to 60 minutes of it (default 5) and the attestation lives 1 to 60 minutes (default 10). The
+ *           defaults equal `ConsentOptions`' initializers (tested).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0298 (decisions 1, 3 and 4); ADR 0472
- *                     (decision 2: the snapshot's lifetime is a consent setting).
+ *                     (decision 2: the snapshot's lifetime is a consent setting); STA-2818.
  */
 import { Enum } from "@stackra/contracts";
 import { z } from "zod";
@@ -61,4 +62,6 @@ export const CONSENT_CONFIG_SCHEMA = z.object({
   askOnFirstLaunch: z.boolean().default(false),
   snapshotLifetimeMinutes: z.number().int().min(5).max(10_080).default(1440),
   snapshotClockSkewSeconds: z.number().int().min(0).max(300).default(60),
+  guardianLoginMaxAgeMinutes: z.number().int().min(1).max(60).default(5),
+  guardianLoginAttestationMinutes: z.number().int().min(1).max(60).default(10),
 });

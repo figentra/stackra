@@ -11,6 +11,17 @@ description: "Proposed · 2026-10-27"
   on `@stackra/loyalty-kit` (OS-343; ADR 0357's Note of 2026-10-26).
 </Note>
 
+<Note>
+  Note of 2026-11-26 (STA-2818): decision 5's record is now durable. `@stackra/consent/node` ships
+  `PostgresConsentProofStoreDriver` over `consent.consent_proof_entries`: tenant-owned under the
+  forced `tenant_id` policy, append-only (UPDATE revoked and refused by a trigger), and each
+  subject's proofs one hash chain that `findConsentProofChainBreak` checks, so an edit or a removal
+  in the middle of a trail is found. The verification method follow-up of the Consequences exists
+  (`ConsentVerifier`, STA-1323), and the first method the package runs itself is `guardian_login`: a
+  server-signed attestation of the guardian's fresh sign-in, bound to the guardian, the person and
+  the document, whose id the proof keeps as its reference.
+</Note>
+
 ## Context
 
 Commerce's loyalty module found five gaps in the kit: there is no programme (one account per scope and member, and
@@ -58,7 +69,7 @@ earnPerMinor?)` takes the scope's rate; config `earnPerMinor` remains only as th
 - `AccountService` takes a `SettingsReader`; `RecalculateTierListener` takes a `LoyaltyTierPolicy` instead of one.
   Both are resolved by type, so gen wiring needs no change beyond discovering the new driver.
 - A consent verification method (card check, signed form; review A2-2) is not part of the record yet; it is a
-  follow-up port.
+  follow-up port. (Done: `ConsentVerifier`, STA-1323; `guardian_login`, STA-2818.)
 
 ## Alternatives
 

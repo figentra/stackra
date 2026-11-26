@@ -13,10 +13,13 @@ import * as node from "#node/index";
 describe("@stackra/consent/node", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(node).sort()).toEqual([
+      "CONSENT_ENTITIES",
+      "ConsentProofEntry",
       "ConsentSnapshotPermissions",
       "IssueConsentSnapshotAction",
       "IssueConsentSnapshotInput",
       "IssueConsentSnapshotOutput",
+      "PostgresConsentProofStoreDriver",
     ]);
   });
 });
