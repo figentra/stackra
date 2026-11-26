@@ -28,16 +28,20 @@ Figentra-only approval and baseline workflows, which a starter profile had no wa
 
 ### Sources
 
-- `packages/developer/cli/src/node/doctor/functions/doctor-checks.function.ts` (`WARP_FIX`, `which`, the secrets rows)
-- `packages/developer/cli/src/node/dev-surface/constants/dev-command.constant.ts` and
-  `packages/developer/cli/src/node/dev-tunnel/functions/start-tunnel.function.ts` (the tunnel token advice)
-- `packages/developer/cli/src/node/functions/service-template.function.ts` (a new service's `runway.yaml` header)
-- `packages/developer/mcp/src/core/functions/mcp-exec-command.function.ts` (the missing-checkout error)
-- `packages/developer/cli/src/node/create/functions/starter-files.function.ts` and
-  `packages/developer/cli/src/node/create/types/starter-manifest.type.ts` (the starter profile filter)
-- stackra-template `stackra.starter.yaml`, `.github/workflows/fflow-approve.yml`, `.github/workflows/fflow-baseline.yml`
-- ADR 0515 (decisions 3 and 5: the starter manifest), ADR 0290 (decisions 4 and 5: the dev tunnel), ADR 0525 (sops),
-  ADR 0027 (tools from mise), STA-1952 spec FR-014 to FR-017 (doctor)
+- FR-001 to FR-003: `packages/developer/cli/src/node/doctor/functions/doctor-checks.function.ts` (`WARP_FIX`, `which`,
+  the secrets rows) and STA-1952 spec FR-014 to FR-017 (doctor); FR-001 also ADR 0027 (tools from mise)
+- FR-004: `packages/developer/cli/src/node/dev-surface/constants/dev-command.constant.ts` and
+  `packages/developer/cli/src/node/dev-tunnel/functions/start-tunnel.function.ts` (the tunnel token advice), ADR 0290
+  (decisions 4 and 5: the dev tunnel)
+- FR-005: `packages/developer/cli/src/node/functions/service-template.function.ts` (a new service's `runway.yaml`
+  header), ADR 0525 (sops)
+- FR-006: `packages/developer/mcp/src/core/functions/mcp-exec-command.function.ts` (the missing-checkout error), ADR 0525
+- FR-007: `packages/developer/cli/src/node/create/functions/starter-files.function.ts` and
+  `packages/developer/cli/src/node/create/types/starter-manifest.type.ts` (the starter profile filter), stackra-template
+  `stackra.starter.yaml`, `.github/workflows/fflow-approve.yml`, `.github/workflows/fflow-baseline.yml`, ADR 0515
+  (decisions 3 and 5: the starter manifest)
+- FR-001 to FR-007: the production-readiness audit of 26 November (item 13.3), the branch's diff against `main` and its
+  tests
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 

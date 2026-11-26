@@ -52,6 +52,9 @@ Figentra repository, script and person. `StarterManifest` profiles gain optional
 - **P-002**: for every probe set, the network row's status is fail when a host has no answering address, warn when only some addresses fail, ok otherwise, and its fix matches no vendor product — Validates: FR-002
 - **P-003**: for every workspace, no doctor row's name, detail or fix names `figentra/secrets`, `figentra/infra`, WARP or `secrets-exec` — Validates: FR-003
 - **P-004**: for every starter manifest, a file is written iff it is an overlay target or (an include glob matches it and no exclude glob does and it is not the starter's own) — Validates: FR-007
+- **P-005**: for every environment without `CLOUDFLARE_TUNNEL_TOKEN`, `stackra dev --tunnel` refuses before starting `cloudflared`, and neither its refusal nor the `dev` usage text names a Figentra script or repository — Validates: FR-004
+- **P-006**: for every service name, the `runway.yaml` that `serviceTemplate` writes says secret values come from the secret store through runway and names no Figentra repository — Validates: FR-005
+- **P-007**: for every `argv` that names a secret and no secrets checkout, `mcpExecCommand` refuses with an error that names `STACKRA_SECRETS_DIR` and its default `~/.stackra/secrets`, and no Figentra repository — Validates: FR-006
 
 ## Architecture overview
 
@@ -143,7 +146,8 @@ Doctor stays read-only: `commandOnPath` reads file metadata only and runs nothin
 - AC-004: `command-on-path.function.test.ts` (temporary folders; an injected file check for Windows paths).
 - AC-005: `start-tunnel.function.test.ts`, `dev-command.constant.test.ts`.
 - AC-006: `create.test.ts` ("a profile's exclude globs ...", and the malformed `exclude` refusal).
-- FR-005, FR-006: `service-template.function.test.ts`, `mcp-exec-command.function.test.ts`.
+- FR-004 (P-005): `start-tunnel.function.test.ts`, `dev-command.constant.test.ts`.
+- FR-005 (P-006), FR-006 (P-007): `service-template.function.test.ts`, `mcp-exec-command.function.test.ts`.
 - Revert check: with the previous `doctor-checks`, `doctor-group`, `start-tunnel`, `dev-command`, `starter-files` and
   `starter-manifest` sources, six of the new tests fail.
 

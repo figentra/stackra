@@ -39,10 +39,11 @@ describe("mcpExecCommand", () => {
     ]);
   });
 
-  it("fails on a secret without a clone, and without a command", () => {
+  it("fails on a secret without a secrets checkout, and without a command", () => {
     expect(() => mcpExecCommand(["mcp", "$A_KEY"])).toThrow(
-      /no secrets checkout to read the secrets from \(STACKRA_SECRETS_DIR/,
+      /no secrets checkout to read the secrets from \(STACKRA_SECRETS_DIR, default ~\/\.stackra\/secrets\)/,
     );
+    expect(() => mcpExecCommand(["mcp", "$A_KEY"])).not.toThrow(/figentra/i);
     expect(() => mcpExecCommand([])).toThrow(/no command given/);
   });
 });
