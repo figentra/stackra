@@ -165,5 +165,6 @@ None.
 - 2026-11-26 → Clarified · no open question: the five codes and the promise come from the 0.19 changelog and
   ADR 0239 decision 7
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing · T001 to T009 done on the branch; T010 (the box run) open
