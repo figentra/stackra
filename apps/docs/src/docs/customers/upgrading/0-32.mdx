@@ -1,0 +1,65 @@
+---
+title: "Upgrade to 0.32"
+description: "What 0.32.0 changes for an app built on Stackra, the steps to take, how to check them and how to go back."
+icon: "arrow-up-circle"
+---
+
+{/* Stackra file contract: Purpose: the upgrade note of the 0.32 release line (ADR 0013 decision 5): what 0.32.0 changes for a consumer, the pins, the steps, the checks and the rollback, written from the 0.32.0 changelog entries. Boundary: customer-facing documentation only; the per-package CHANGELOG.md files stay the full record, and `stackra validate --repository` (rule release-notes) holds this page to its five sections. Runtime: docs. Governing contract: ADR 0013 (decisions 4 and 5); ADR 0025 (decision 5); STA-2835. */}
+
+From **0.31.x** to **0.32.x**. Upgrade to 0.31 first ([Upgrade to 0.31](/customers/upgrading/0-31)).
+Every `@stackra/*` package moves together.
+
+## What changes
+
+**Signer drivers.** A service that injects `@stackra/contracts`' `Signer` now passes gen; before,
+gen refused it with `port_unbound`. `@stackra/config` adds two drivers, configured by
+`config.signer` (`keyId`, `kmsKeyId`, `region`):
+
+- `kms` (`KmsSignerDriver`) signs inside AWS KMS. Its default client builds
+  `new KMS({ region })` from `@aws-sdk/client-kms`, an optional peer the service must install.
+- `ephemeral` (`EphemeralSignerDriver`) uses a key pair made in the process, for tests and local
+  development only.
+
+`AwsKmsSignerDriver` and `MemorySignerDriver` in `@stackra/contracts` are unchanged for code that
+builds a signer by hand.
+
+**Dates follow the tenant's calendar.** Every app shows dates in the tenant's calendar
+(`gregory`, `islamic-umalqura`, …) with no wiring of its own. A tenant set to another calendar sees
+its dates change; nothing breaks.
+
+## Pins
+
+Set every entry of the `stackra` catalog in `pnpm-workspace.yaml` to `0.32.0`, and
+`@stackra-pro/*` to the same version. If your repository uses TypeScript 7, go on to 0.33.1 instead
+(see [Upgrade to 0.30](/customers/upgrading/0-30#pins)).
+
+## Steps
+
+Only a service that injects `Signer` has work to do.
+
+<Steps>
+  <Step title="Move the pins and install">
+    Set the `stackra` catalog to `0.32.0`, add `@aws-sdk/client-kms` to the dependencies of each
+    service that injects `Signer`, then `pnpm install`.
+  </Step>
+  <Step title="Bind and configure the signer">
+    Bind `kms` in production and `ephemeral` in tests. In each deployed environment's runway, set
+    `config.signer.kmsKeyId` (and `region`) to the KMS key the service signs with.
+  </Step>
+  <Step title="Regenerate">Run `stackra gen` and commit what it writes.</Step>
+</Steps>
+
+## Verify
+
+- `pnpm install --frozen-lockfile` passes, and `pnpm why @stackra/config` shows only `0.32.0`.
+- `stackra gen` reports no `port_unbound`, and a second run changes no file.
+- `stackra validate --repository`, `stackra typecheck` and `stackra test` pass.
+- In staging, one signing call succeeds against the KMS key, and its signature verifies.
+
+## Roll back
+
+Revert the commit that moved the pins, the lockfile and the regenerated files, then
+`pnpm install --frozen-lockfile`. 0.32 adds no migration, so nothing else needs undoing. On 0.31 a
+service that injects `Signer` fails gen again with `port_unbound`.
+
+If 0.32 itself is the problem, report it. The fix ships as a new release; nothing is unpublished.

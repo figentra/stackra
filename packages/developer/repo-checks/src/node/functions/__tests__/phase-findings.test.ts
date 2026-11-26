@@ -57,6 +57,15 @@ describe("phase runners", () => {
     ]);
   });
 
+  it("configFindings holds a breaking @stackra release to its upgrade note (release-notes, STA-2835)", () => {
+    const context = repo({
+      ".gitignore": ".stackra/\n",
+      "packages/data/demo/CHANGELOG.md":
+        "# @stackra/demo\n\n## 0.30.0\n\n### Minor Changes\n\n- d5a7d0a: **Breaking route change.** Routes move.\n",
+    });
+    expect(configFindings(context).map((f) => f.rule)).toEqual(["release-notes"]);
+  });
+
   it("configFindings reads a scaffold template as it renders: `port: {{PORT}}` is no flow map there", () => {
     const yaml = "environments:\n  dev:\n    port: {{PORT}}\n";
     const context = repo({

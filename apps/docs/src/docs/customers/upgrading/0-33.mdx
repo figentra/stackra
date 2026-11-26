@@ -1,0 +1,82 @@
+---
+title: "Upgrade to 0.33"
+description: "What 0.33 changes for an app built on Stackra, why to skip 0.33.0, the steps to take, how to check them and how to go back."
+icon: "arrow-up-circle"
+---
+
+{/* Stackra file contract: Purpose: the upgrade note of the 0.33 release line (ADR 0013 decision 5): what 0.33.0 and 0.33.1 change for a consumer, the warning to skip 0.33.0, the pins, the steps, the checks and the rollback, written from their changelog entries. Boundary: customer-facing documentation only; the per-package CHANGELOG.md files stay the full record, and `stackra validate --repository` (rule release-notes) holds this page to its five sections and to naming 0.33.1. Runtime: docs. Governing contract: ADR 0013 (decisions 4 and 5); ADR 0025 (decision 5); ADR 0091 (rule 4, corrected 2026-11-10); STA-2835. */}
+
+From **0.32.x** to **0.33.1**. Upgrade to 0.32 first ([Upgrade to 0.32](/customers/upgrading/0-32)).
+Every `@stackra/*` package moves together.
+
+<Warning>
+  **Do not take 0.33.0.** It breaks the typecheck of every repository with a service. Go straight to
+  **0.33.1**, which fixes it. If you are on 0.33.0 now, move to 0.33.1 with the steps below.
+</Warning>
+
+## What changes
+
+### 0.33.0
+
+**A service's tsconfig drops `baseUrl`.** TypeScript 7 removed `baseUrl` (TS5102), so the 0.30 rule
+that required it broke typecheck in a TypeScript 7 repository. The service check in
+`stackra validate --repository` now refuses a `baseUrl` and wants only `compilerOptions.paths` that
+match the service's package.json `imports`, resolved from the tsconfig's folder.
+`stackra encore:prepare` removes an existing `baseUrl` and writes both files in the repository
+formatter's layout.
+
+**Why 0.33.0 is broken.** tsc applies a tsconfig's `paths` to every package a service compiles. With
+the 0.33.0 paths, a compiled workspace package's own `#` imports resolved into the service's folders,
+so `stackra typecheck` failed in every service.
+
+### 0.33.1
+
+**The fix.** `stackra encore:prepare` writes, and `stackra validate --repository` expects, each
+package.json `imports` key with its **first** `./` target only, because Encore honours only that one.
+Gen writes `.stackra/tsconfig.typecheck.json` in each service (its tsconfig without `paths`), and
+`stackra typecheck` runs on it in a service. ([0091](/adr/0091-generated-encore-app-in-stackra-folder)
+rule 4, as corrected 2026-11-10.)
+
+### Also in 0.33
+
+- With a `QueueService` bound, a trigger starts its automations through the queued job
+  `workflow.automation.start_triggered@1`, so a short quota outage is retried instead of skipped.
+  Without a queue, nothing changes.
+- An action may declare `stream: true` and answer server-sent events, and a queued job's call has
+  `ctx.attempt`. Both are additions.
+
+## Pins
+
+Set every entry of the `stackra` catalog in `pnpm-workspace.yaml` to **`0.33.1`**, never `0.33.0`, and
+`@stackra-pro/*` to the same version.
+
+## Steps
+
+<Steps>
+  <Step title="Move the pins and install">
+    Set the `stackra` catalog to `0.33.1`, then `pnpm install`.
+  </Step>
+  <Step title="Prepare each service">
+    Run `stackra encore:prepare` in each service. It deletes `"baseUrl": "."` from the tsconfig and
+    rewrites `paths` with the first target of each import. Commit both files.
+  </Step>
+  <Step title="Regenerate">
+    Run `stackra gen`. It writes each service's `.stackra/tsconfig.typecheck.json`. Commit what gen
+    writes outside `.stackra/`.
+  </Step>
+</Steps>
+
+## Verify
+
+- `pnpm install --frozen-lockfile` passes, and `pnpm why @stackra/cli` shows only `0.33.1`.
+- No service tsconfig has a `baseUrl`, and each `paths` key has one target.
+- `stackra typecheck` passes in every service, and `stackra validate --repository` passes.
+- `stackra gen` changes no file on a second run, and `stackra test` passes.
+- Each service still builds with Encore: its `#` imports resolve.
+
+## Roll back
+
+Revert the commit that moved the pins, the lockfile, the tsconfigs and the regenerated files, then
+`pnpm install --frozen-lockfile`. 0.33 adds no migration. Going back means 0.32.x, never 0.33.0.
+
+If 0.33.1 itself is the problem, report it. The fix ships as a new release; nothing is unpublished.

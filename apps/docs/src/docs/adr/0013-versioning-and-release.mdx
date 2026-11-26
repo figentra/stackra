@@ -3,7 +3,7 @@ title: "0013 — Versioning and release"
 description: "Superseded by 0025, rule 6 amended by 0468 · 2026-10-19"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0013, versioning and release (superseded by 0025, whose decision 5 carries rule 6 forward). Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
+{/* Stackra file contract. Purpose: ADR 0013, versioning and release (superseded by 0025, whose decision 5 carries rule 6 forward). Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395); the decision 5 Enforcement line is STA-2835. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
 
 <Note>
   Amended 2026-10-28 (STA-1395) by
@@ -45,6 +45,10 @@ Many members, one repository. A member's version must be recorded where the memb
 - `.changeset/config.json` is the configuration; `validate-repository.mjs` requires `CHANGELOG.md` and `LICENSE` in every member.
 - `.agents/hooks/guard-bash.mjs` denies running `changeset version` by an agent.
 - Planned: chain `pnpm changeset:status` into `pnpm verify` so a change without a changeset fails.
+- Decision 5 (STA-2835): `stackra validate --repository` (rule `release-notes` of `@stackra/repo-checks`, run by
+  `pnpm validate`) refuses an `@stackra/*` release from 0.30.0 on, released or pending, whose changelog entry or
+  changeset carries a break mark, until `apps/docs/src/docs/customers/upgrading/<line>.mdx` exists with the sections
+  What changes, Pins, Steps, Verify and Roll back and names a breaking patch by its version.
 
 ## Supersedes and sources
 

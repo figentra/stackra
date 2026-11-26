@@ -98,6 +98,8 @@ export class StackraDocsConfig extends DocsConfig {
             "customers/packages",
           ],
         },
+        // `index` first, then one upgrade note per breaking release line (ADR 0013 decision 5, STA-2835).
+        { group: "Upgrade", pages: [{ folder: "customers/upgrading" }] },
       ],
     },
     {
