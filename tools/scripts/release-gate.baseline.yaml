@@ -1,0 +1,12 @@
+# Stackra file contract:
+# Purpose: the known findings of the release gate (tools/scripts/release-gate.mjs, ADR 0177 PK4). A finding listed
+#          here is reported but does not fail the gate; a listed finding that no longer occurs fails it, so a row is
+#          removed the day its fix lands and the list only shrinks. Each row names the issue that fixes it.
+# Boundary: data only. Keys are a check (publint, attw, pins, smoke:node, smoke:vite, smoke:metro, registry), then
+#           the subject the gate reports (a package name, an entry such as `@stackra/panel/native`, or name@version).
+# Runtime: node
+# Governing contract: ADR 0177 (decision 4); STA-2705.
+# Owner: release-operations (a new row needs the owner's or the CTO's read: it lets a known break ship)
+known:
+  smoke:metro:
+    "@stackra/panel": "STA-2825: the root entry imports @stackra/database, whose MikroORM import(url) Metro refuses"

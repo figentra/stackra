@@ -15,11 +15,18 @@
 #          commit, no tag, no version PR, nothing pushed. The normal `release` job does not run on that dispatch.
 #          The prerelease job still waits on `release`, because the publisher row names that environment; it moves to an
 #          unprotected environment once the registry has a row for it (ADR 0468, plan).
+#          The release gate (ADR 0177 PK4, STA-2705, tools/scripts/release-gate.mjs): on the publishing run and on a dry
+#          run, `package-checks` packs every public package and runs publint, arethetypeswrong, the pin check and the
+#          packed-tarball smoke in Node, Vite and Metro, with read-only permissions and no environment, before
+#          `release` may start; after every run in `release` (even one whose release job failed or was cancelled),
+#          `registry-check` proves every package is on the registry at the new version, every workspace pin resolves
+#          and `latest` moved, so a partial publish (0.33.1) turns the run red and names what is missing.
 # Boundary: the registry URL is set only in this file (the release job's `registry`, the root runway's
-#           `providers.npm.registry`, and the prerelease job's REGISTRY); no member's publishConfig names one. Never
-#           npmjs, never Keygen (ADR 0453).
+#           `providers.npm.registry`, the gate jobs' and the prerelease job's REGISTRY); no member's publishConfig
+#           names one. Never npmjs, never Keygen (ADR 0453).
 # Runtime: GitHub Actions
-# Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group); ADR 0468.
+# Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK4, the release checks; PK5, the fixed
+#                     version group); ADR 0468.
 # Owner: release-operations
 # Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
 #          decision A1), passed to the provider until the provider decrypts them from the sops scope
@@ -105,11 +112,57 @@ jobs:
           echo "::notice title=Release gate::${pending} pending changesets, environment ${environment}"
           echo "environment=${environment}" >> "$GITHUB_OUTPUT"
 
+  # ADR 0177 PK4 (STA-2705): what consumers receive is checked before it is published. Runs on the version PR's merge
+  # (the publishing run) and on a dry run; a run that only opens or updates the version PR publishes nothing and skips
+  # it. No environment and read-only: the smoke consumer installs third-party packages, so this job can mint no token.
+  package-checks:
+    name: Package checks
+    needs: gate
+    if: ${{ !inputs.prerelease && (needs.gate.outputs.environment == 'release' || inputs.dry_run == true) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read # checkout
+    env:
+      REGISTRY: https://npm.stackra.figentra.com/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
+          install_args: node pnpm
+
+      # As the release job's install-args: the two members with licensed Pro postinstalls are neither installed nor
+      # published.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter=!@figentra/mobile --filter=!@figentra/playground
+
+      # As the release job's build-args: only what is published.
+      - name: Build
+        run: pnpm turbo run build --filter=./packages/**
+
+      # pack (through .pnpmfile.mjs, as the publish), publint, arethetypeswrong, pins, then the Node, Vite and Metro
+      # smoke in a consumer under RUNNER_TEMP. Known findings are in tools/scripts/release-gate.baseline.yaml.
+      - name: Release gate
+        run: >-
+          node tools/scripts/release-gate.mjs all --out "$RUNNER_TEMP/release-gate/packs"
+          --work "$RUNNER_TEMP/release-gate/consumer" --registry "$REGISTRY"
+
   release:
     name: Release
-    needs: gate
-    # A prerelease dispatch runs the job below instead; a push has no inputs, so this is true for every push.
-    if: ${{ !inputs.prerelease }}
+    needs: [gate, package-checks]
+    # A prerelease dispatch runs the job below instead; a push has no inputs, so this is true for every push. The
+    # package checks must pass, or be skipped on a run that publishes nothing.
+    if: >-
+      ${{ !inputs.prerelease && !cancelled() && needs.gate.result == 'success' &&
+      (needs.package-checks.result == 'success' || needs.package-checks.result == 'skipped') }}
     permissions:
       contents: write
       pull-requests: write
@@ -128,6 +181,45 @@ jobs:
     secrets:
       app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
       app-private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}
+
+  # After a publish: every public package is on the registry at the new version, every workspace pin of each published
+  # version resolves, and `latest` points at it. 0.33.1 stopped at 99 of 119 and left @stackra/app pinning versions
+  # that answer 404; this job names each missing package and each broken pin. Reads only; anonymous registry reads.
+  # It runs after every run that may have published (the `release` environment, not a dry run), whatever the release
+  # job's result: a publish that stops part way fails or cancels the release job (runway-npm.yml's publish runs under
+  # `set -euo pipefail`; 0.17.0 was cancelled at 118 of 119), changesets/action then sets no `published` output, and a
+  # condition on that output (with the implicit `success()`) would skip this job exactly when it matters.
+  registry-check:
+    name: Registry check
+    needs: [gate, release]
+    if: >-
+      ${{ always() && !inputs.prerelease && inputs.dry_run != true &&
+      needs.gate.outputs.environment == 'release' && needs.release.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # checkout
+    env:
+      REGISTRY: https://npm.stackra.figentra.com/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node pnpm
+
+      # The root's own dependencies only (the gate reads its baseline with `yaml`); no member is installed.
+      - name: Install the root
+        run: pnpm install --frozen-lockfile --filter=.
+
+      - name: Registry check
+        run: node tools/scripts/release-gate.mjs registry --registry "$REGISTRY"
 
   # The prerelease path (stackra-212). The same registry exchange as runway-npm.yml's registry script, per package:
   # this file, refs/heads/main and the `release` environment are what the publisher row matches, so the job runs here

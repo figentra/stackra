@@ -34,6 +34,8 @@
     "changeset": "changeset",
     "changeset:status": "changeset status",
     "changeset:version": "changeset version && pnpm install --lockfile-only && turbo run gen:workspace gen --output-logs=errors-only",
+    "release:check": "node tools/scripts/release-gate.mjs all --out .stackra/release-gate/packs",
+    "release:registry": "node tools/scripts/release-gate.mjs registry",
     "secrets:scan": "gitleaks git . --config .gitleaks.toml --no-banner --redact",
     "delegate": "node tools/scripts/delegate.mjs",
     "linear": "node tools/scripts/secrets-exec.mjs --names LINEAR_AGENT_TOKEN,LINEAR_AGENT_CLIENT_ID,LINEAR_AGENT_CLIENT_SECRET,LINEAR_API_KEY -- node tools/scripts/linear.mjs",
@@ -59,6 +61,7 @@
     "adr:reserve": "node tools/scripts/secrets-exec.mjs --names STACKRA_BOT_APP_ID,STACKRA_BOT_INSTALLATION_ID,STACKRA_BOT_PRIVATE_KEY -- node tools/scripts/adr-reserve.mjs"
   },
   "devDependencies": {
+    "@arethetypeswrong/core": "catalog:release",
     "@changesets/changelog-git": "catalog:release",
     "@changesets/cli": "catalog:release",
     "@commitlint/cli": "catalog:release",
@@ -70,6 +73,7 @@
     "lefthook": "catalog:release",
     "oxfmt": "catalog:quality",
     "oxlint": "catalog:quality",
+    "publint": "catalog:release",
     "sharp": "catalog:media",
     "turbo": "catalog:build",
     "typescript": "catalog:tooling",
