@@ -62,16 +62,12 @@ context) and `SearchIndex.snippets` excerpted it.
 
 ## Acceptance criteria
 
-- **AC-001**: WHEN an own model's `@Searchable` text, filter, sortable or range path ends at a field that
-  `HasEncryptedFields` names THE generator SHALL refuse `searchable_field_encrypted`, naming `<Model>.<path>`, with a fix
-  that drops the path and points at `HasEncryptedFields({ lookup })` and `whereEncrypted`.
+- **AC-001**: WHEN a facet path ends at an encrypted field THE generator SHALL refuse `searchable_field_encrypted`: an own model's `@Searchable` text, filter, sortable or range path that ends at a field `HasEncryptedFields` names is refused as `<Model>.<path>`, with a fix that drops the path and points at `HasEncryptedFields({ lookup })` and `whereEncrypted`.
 - **AC-002**: THE refusal SHALL follow a field an own base model encrypts, the trait's options argument, and a dotted
   path through a relation to an own model; a plain field, a model without the facet and a path that leaves the member's
   models SHALL pass.
 - **AC-003**: THE `generateMember` full pass SHALL return no files when the refusal fires.
-- **AC-004**: WHEN `searchDocumentOf` builds a document over a text, filter, sortable or range path that ends at an
-  encrypted field, on the row or any owner its populated relations reach, THE search package SHALL throw a `TypeError`
-  naming `searchable_field_encrypted` before any value is read; an empty relation SHALL pass.
+- **AC-004**: WHEN a document path ends at an encrypted field THE search package SHALL throw a `TypeError` naming `searchable_field_encrypted` from `searchDocumentOf` before any value is read, for a text, filter, sortable or range path on the row or any owner its populated relations reach; an empty relation SHALL pass.
 - **AC-005**: THE semantic passage (`semanticPassageOf`) SHALL refuse the same, so an encrypted field never reaches an
   embedder.
 - **AC-006**: WHEN `SearchIndex.index` meets such a row THE index SHALL reject and SHALL hand the driver no document;
