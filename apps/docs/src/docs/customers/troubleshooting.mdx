@@ -1,0 +1,114 @@
+---
+title: "Troubleshooting"
+description: "The failures a first run meets, from installing to a running app: what you see, why, and the fix."
+icon: "wrench"
+---
+
+{/* Stackra file contract: Purpose: the customer troubleshooting page for the path from an empty folder to a running app: the machine check, the registry and installs, Node, pnpm and mise, `stackra dev` (Docker, Encore, ports), gen, the checks and Runway, and what to send when asking for help. Boundary: customer-facing documentation only; each row is what the code prints today (doctor checks, create, gen, check, runway), and the codes themselves are on /customers/error-codes. Registry answers are owned by /customers/install. Runtime: docs. Governing contract: ADR 0027 (tools pinned in mise); ADR 0121; ADR 0453 (decision 10); ADR 0294 (decision 22); ADR 0515; STA-2853. */}
+
+Most first-run failures are about the machine, not your code. Start every investigation with the machine check, then
+find what you see on this page. When a tool prints a code (such as `shape_number_kind` or `repo-checks/imports`), look
+it up on [Error codes](/customers/error-codes).
+
+## Check the machine first
+
+```bash
+stackra doctor          # inside your app
+stackra doctor --fix    # offers each fix's command and runs it only after a yes
+```
+
+`stackra doctor` checks what this workspace needs and prints each problem with its fix: mise and the pinned tools, the
+install, free disk (5 GB), the network to the hosts the workspace uses, the Stackra registry, the GitHub CLI, and,
+when the workspace has services, Docker, the Encore CLI and the Encore ports. It exits 1 when a required check fails;
+a warning never fails it. It only reads: nothing is installed unless you accept a `--fix` command. `stackra dev` runs
+the quick part of it (the tools, Docker and the ports) before it starts.
+
+## Installing
+
+| You see                                                                 | Why                                                                                                 | Fix                                                                                                                                                                     |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `404 Not Found - GET https://registry.npmjs.org/@stackra%2f…`           | The `@stackra` scope is not mapped, so npm asked npmjs, which does not hold Stackra.                | Add `@stackra:registry=https://npm.stackra.figentra.com/` to the project's `.npmrc`. For a one-off `npx`, pass `--@stackra:registry=https://npm.stackra.figentra.com/`. |
+| `404` from `npm.stackra.figentra.com`                                   | The name is not on the registry; it never fetches from npmjs.                                       | Check the spelling and the scope. `npm view @stackra/<name> dist-tags --registry https://npm.stackra.figentra.com/` shows what is published.                            |
+| `ETARGET` or `ERR_PNPM_NO_MATCHING_VERSION` for an `@stackra/*` package | The version asked for is not on the registry.                                                       | Install matching versions of every Stackra package (one version line); check the dist-tags as above. If a release is incomplete, tell Figentra.                         |
+| `401` or `403` on an `@stackra-pro/*` package                           | No licence token, a token the registry does not know, or a licence that does not cover the package. | See [What the registry answers](/customers/install#what-the-registry-answers). The free `@stackra/*` packages never need a token.                                       |
+| `403` on `npm login`                                                    | The registry has no login.                                                                          | Use the `.npmrc` on [Get access and install](/customers/install).                                                                                                       |
+| `the tarball does not match its integrity`                              | What the registry served is not what it signed.                                                     | Stop and contact Figentra; do not work around it.                                                                                                                       |
+| The doctor's **network** row fails                                      | The machine cannot reach a host the workspace needs, such as `npm.stackra.figentra.com`.            | Let your proxy, firewall or VPN reach the hosts the row names, then run `stackra doctor` again.                                                                         |
+
+## Node, pnpm and mise
+
+Every Stackra package needs Node.js 24 or later, and an app's workspace needs pnpm 12. The app's `mise.toml` pins
+both, with Encore and the hook tools.
+
+| You see                                                     | Why                                                                                          | Fix                                                                                                                 |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `npm warn EBADENGINE Unsupported engine` for `@stackra/cli` | Node is older than 24. The CLI may then fail with an error that does not name Node.          | Install Node 24 (`node --version` to check), or `mise install` in the app.                                          |
+| `ERR_PNPM_UNSUPPORTED_ENGINE`                               | The app refuses an unsupported Node or pnpm (`engineStrict: true` in `pnpm-workspace.yaml`). | Use the versions in the app's `mise.toml`: `mise install`, then run pnpm again in the same shell.                   |
+| mise says the config files are not trusted                  | mise does not read a `mise.toml` until you trust it.                                         | `mise trust`, then `mise install`.                                                                                  |
+| The doctor's **mise tools** row lists missing tools         | A pinned tool is not installed.                                                              | `mise trust && mise install`.                                                                                       |
+| `pnpm add` refuses a version                                | The workspace uses `catalogMode: strict`: a dependency's version lives in a catalog.         | Add the package and version to a catalog in `pnpm-workspace.yaml`, then reference it from the member as `catalog:`. |
+| The doctor's **pnpm install done** row fails                | The workspace has no `node_modules`.                                                         | `pnpm install` at the workspace root.                                                                               |
+
+## Running the app
+
+`pnpm dev` runs `stackra dev`: it checks the machine, runs gen and starts every member. Services run under Encore,
+which needs Docker for the local databases.
+
+| You see                                            | Why                                                                                                                             | Fix                                                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Docker engine running** fails: no docker CLI     | No container engine is installed.                                                                                               | Install OrbStack or Docker Desktop.                                                                                  |
+| **Docker engine running** fails: no engine answers | The docker CLI is there but the engine is stopped.                                                                              | Start OrbStack or Docker Desktop.                                                                                    |
+| **encore CLI** fails                               | The Encore CLI is not on `PATH`.                                                                                                | `mise install` in the app (it pins `aqua:encoredev/encore`).                                                         |
+| **dev ports free** fails: `in use: 4000, 9400`     | Something already listens on Encore's API (4000) or dashboard (9400) port, or a member's dev port; often an earlier `pnpm dev`. | Stop it: `lsof -nP -iTCP:<port> -sTCP:LISTEN` names the process.                                                     |
+| `RunwayUnresolvedError` about the dev facts        | A tool read the dev ports before `stackra dev` wrote them.                                                                      | Run `pnpm dev` (or `stackra dev`) first.                                                                             |
+| A step marked FAIL in `stackra create`             | That step's command failed; its output's tail is shown and the folder is kept.                                                  | Fix what it names, then run the remaining steps in the folder (`pnpm install`, `pnpm exec stackra gen`, `pnpm dev`). |
+
+## Gen
+
+`stackra gen` refuses rather than writing something wrong. A refusal is two lines, the second starting with `fix:`;
+nothing is written while any refusal stands, and the command exits 1. Look the code up on
+[Error codes](/customers/error-codes#gen).
+
+| You see                                                                                                                                   | Why                                                                                 | Fix                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Many `kind_unregistered_base` refusals at once                                                                                            | Gen cannot resolve the `@stackra` packages, usually because they are not installed. | `pnpm install`, then `stackra gen` again.                                                       |
+| `gen: skipped <folder>: not installed`                                                                                                    | A member has no `node_modules`, often after a filtered install.                     | `pnpm install` at the root; gen skips the member until then.                                    |
+| `client_dependency_missing`, `schema_dependency_missing` or `generated_dependency_missing`                                                | What gen writes imports a package the member does not declare.                      | Add the packages the message lists to the member's `dependencies`.                              |
+| A warning with `action_risk_below_write`, `idempotency_missing`, `model_tenancy_migration_missing`, `query_above_l1` or `step_up_missing` | A staged check: a warning by default, a refusal when `STACKRA_GEN_STRICT=1`.        | Treat it as a refusal and fix it; a strict run refuses it.                                      |
+| `stackra gen --check` fails with `… is stale`                                                                                             | A committed generated file no longer matches the code.                              | Run `stackra gen` and commit what it changed. The `.stackra/` folder itself is never committed. |
+| `identity_changed` after a rename                                                                                                         | Committed identities are locked: a rename would break callers.                      | Add `@Renamed("old")`, or restore the name.                                                     |
+
+## Checks and CI
+
+`stackra check` runs the whole gate on your machine and `stackra validate` the repository-shape part of it; a pull
+request runs the same checks. Each finding prints its file, `tool/rule` and message; `[fixable]` marks one that
+`stackra check --fix` repairs. Look the rule up on [Error codes](/customers/error-codes#check).
+
+| You see                           | Why                                                    | Fix                                                                                                      |
+| --------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `gen/stale`                       | A generated file is out of date.                       | `stackra gen`, or `stackra check --fix`, then commit.                                                    |
+| `oxfmt/format`                    | A file is not formatted.                               | `pnpm format`, or `stackra check --fix`.                                                                 |
+| `<tool>/exit` or `<tool>/crash`   | A tool failed without a finding the phase could read.  | Run that tool alone (the message names it) to see its full output; a missing install is the usual cause. |
+| It passes locally and fails in CI | CI installs from the lockfile, and may run gen strict. | Reproduce it: `pnpm install --frozen-lockfile`, then `STACKRA_GEN_STRICT=1 stackra check`.               |
+
+## Runway
+
+| You see                                     | Why                                                                 | Fix                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `runway.yaml is invalid: …`                 | A runway file breaks its schema (`RunwayInvalidError`).             | Fix each path it lists; `stackra runway validate` checks every runway file. |
+| `Another apply is running in <environment>` | Another deploy, promotion or rollback holds the environment's lock. | Wait for it to end, then run again.                                         |
+| `… did not verify`                          | A deploy target failed its check; later targets were not touched.   | Read the provider's detail in the message, fix the target, run again.       |
+| `Smoke failed: …`                           | The smoke step failed, so promotion is blocked.                     | Fix the failing subjects it names, then promote again.                      |
+
+The issue codes Runway prints (`member_unplaced`, `host_collision`, …) are on
+[Error codes](/customers/error-codes#runway).
+
+## Still stuck
+
+Send Figentra (see [Support](/customers/support)) what lets someone reproduce it without a call:
+
+- the command you ran and its whole output (a refusal's `fix:` line too);
+- `stackra doctor --json` from the same folder;
+- `node --version`, `pnpm --version` and `stackra --version`.
+
+Never send a licence token, an `.env` file or any other secret: no step on this page needs one.
