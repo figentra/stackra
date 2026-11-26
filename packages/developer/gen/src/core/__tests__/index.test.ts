@@ -42,6 +42,7 @@ describe("@stackra/gen", () => {
       "MIGRATIONS_DIR",
       "PUBLIC_ID_PREFIXES",
       "SCOPE_OWNER_TRAITS",
+      "TRAIT_COLUMNS",
       "TYPECHECK_TSCONFIG",
       "actionKey",
       "additionsOf",
@@ -125,6 +126,7 @@ describe("@stackra/gen", () => {
       "tableName",
       "toolHints",
       "toolName",
+      "traitColumnsOf",
       "unboundPorts",
       "webhookPath",
     ]);
