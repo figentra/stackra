@@ -5,15 +5,25 @@
  *          `deploy()` the commit, every provider and the kind filter, then reports each record; named Worker members
  *          skip the product publish. With `secrets.sync: on-deploy` it syncs the secrets first when services ship
  *          (from the job's environment; `--from-env` is accepted and ignored), and stops if the sync fails.
- * Boundary: test only; Runway's `readRunway`, `readRunways`, `syncSecrets` and `deploy` are mocked, nothing is
- *           deployed.
+ * Boundary: test only; Runway's `readRunway`, `readRunways`, `syncSecrets`, `deploy` and `fileDeployLock` are mocked,
+ *           nothing is deployed. The lock is a stand-in, never the host's lock folder: the real one is a file shared by
+ *           every run on the box (and by `stackra promote`'s tests), and a second holder of it exited 1.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); STA-1921; STA-606.
  */
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { beforeEach, describe, expect, it } from "@stackra/testing";
 import { deploy } from "@stackra/runway";
-import type { RootRunway } from "@stackra/runway";
-import { proveGithubJob, readRunway, readRunways, syncSecrets } from "@stackra/runway/node";
+import type { DeployLock, RootRunway } from "@stackra/runway";
+import {
+  fileDeployLock,
+  proveGithubJob,
+  readRunway,
+  readRunways,
+  syncSecrets,
+} from "@stackra/runway/node";
 import { vi } from "vitest";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -34,6 +44,7 @@ vi.mock("@stackra/runway/node", async (original) => ({
   readRunways: vi.fn(),
   syncSecrets: vi.fn(),
   proveGithubJob: vi.fn(),
+  fileDeployLock: vi.fn(),
 }));
 
 vi.mock("#node/doctor/functions/probe-hosts.function", () => ({ probeHosts: vi.fn() }));
@@ -69,7 +80,16 @@ const run = (values: CliContext["values"]) => {
   return { code, output };
 };
 
+/** A deploy lock nobody holds: it runs the work. */
+const FREE: DeployLock = {
+  tryWith: async (_key, _ttl, work) => {
+    await work();
+    return true;
+  },
+};
+
 beforeEach(() => {
+  vi.mocked(fileDeployLock).mockReset().mockReturnValue(FREE);
   vi.mocked(probeHosts).mockReset().mockResolvedValue([]);
   vi.mocked(runDeployProduct).mockReset().mockResolvedValue(0);
   vi.mocked(readRunway).mockReset().mockReturnValue(ROOT);
@@ -132,6 +152,8 @@ describe("runRunwayDeploy", () => {
       "cloudflare-workers",
     ]);
     expect(output()).toBe(`production/web ${SHA.slice(0, 12)} up (static=v1)\n`);
+    // The real lock is the host's, in the temp folder, shared with `stackra promote`.
+    expect(fileDeployLock).toHaveBeenCalledWith(join(tmpdir(), "stackra-runway-locks"));
   });
 
   it("wires no encore-cloud provider when runway names no Encore app", async () => {
