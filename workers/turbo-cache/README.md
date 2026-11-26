@@ -28,6 +28,10 @@ Errors use `{ "error": { "code", "message" } }`: 400 (team or hash shape, query 
 411 (upload without Content-Length), 413 (over the size setting), 503 (not configured). Artifacts are opaque: turbo
 signs them (`remoteCache.signature: true` in the root `turbo.jsonc`) and rejects a bad tag itself.
 
+Every answer carries `x-stackra-version`, the id of the Worker version that gave it (the `CF_VERSION_METADATA`
+binding). Runway's deploy smoke reads it on the status check, so a smoke that reaches the old version fails instead of
+passing (STA-2786).
+
 ## Settings
 
 Every limit is a `vars` entry in `wrangler.jsonc` (change it there, or in the dashboard, without a code change).

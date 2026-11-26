@@ -57,6 +57,9 @@ note).
   the boot connects with its service's Encore database url (STA-1401), and the migrate and seed CLIs use
   `directDatabaseUrl()` of `@stackra/database/node` (ADR 0473), so nothing here reads `DATABASE_URL`.
 - Report each unexpected error once through the `ErrorReporter`; never report a refusal.
+- The server drain is bounded by `HttpConfig.drainTimeoutSeconds` (ADR 0143 decision 3): at the deadline `drain()`
+  reports one `DrainTimeoutError` (a count, never a call's data) and resolves, so `close()` still runs the shutdown
+  hooks. Never wait on calls in flight without that deadline.
 - No rate-limit code here: the area bucket per tenant lives in the `@stackra/actions` pipeline (`RateLimitBudget`);
   this package only forwards the verified tenant from the signed edge headers.
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).
@@ -101,3 +104,4 @@ note).
 | Unexpected errors       | `ErrorReporter`                | Passed as they are; the reporter driver scrubs personal data (ADR 0232). |
 
 - `serveGuardedCall` (`./server`) is the one path of every generated HTTP adapter (STA-2577): body read once under `HttpConfig.maxBodyBytes` (413), `handlers.guard` over the exact bytes, `CallAuthenticator` (a present bad `Authorization` is 401, never anonymous), input, pipeline. Failures of a guard or the authenticator are one generic 401 or 403.
+- `nodeBodyStream` (`./server`) is how a generated adapter turns Node's request body into the `Request` body `serveGuardedCall` reads: plain `data` / `end` listeners with pause / resume. Never `Readable.toWeb(req)` or `for await (… of req)` on an Encore `RawRequest`: both run Node's end-of-stream, whose cleanup calls `req.req.removeListener`, and Encore's `req` is its native request, so the service crashed on every request with a body (STA-2794).
