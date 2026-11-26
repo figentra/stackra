@@ -35,10 +35,21 @@ other tenants.
 The catalogue audit is built: `assertRowSecurity` (`@stackra/database/testing`) reads every table of a migrated
 database on a real Postgres and fails when a table with `tenant_id` lacks either flag or its one equality policy, when
 another policy widens it, or when the service role can bypass row-level security. It then seeds rows of two tenants and
-proves, as that role, that a session sees only its own tenant's rows and cannot move a row to the other tenant. Gen
-writes this test into every service that has tenant-owned models (`.stackra/tests/tenant-isolation.int.test.ts`), and
-each package's migration tests run it ([0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views),
+proves, as that role, that a session sees only its own tenant's rows and cannot move a row to the other tenant
+([0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views),
 [0347](/adr/0347-row-level-security-layering-one-permissive-tenant-policy-and-generated-restrictive-policies)).
+
+Where it runs:
+
+- Built: gen writes the test into every service that runs `@stackra/database` and `@stackra/tenancy` and has
+  tenant-owned models of its own or hosts a package that has them (`.stackra/tests/tenant-isolation.int.test.ts`). It
+  runs the service's compiled migrations, the service's own and its hosted packages' together, so the tables your
+  service deploys are audited whichever packages it hosts.
+- Built: the migration tests of many core packages also run it, for example `@stackra/payments`, `@stackra/webhooks`,
+  `@stackra/content`, `@stackra/rules`, `@stackra/segments`, `@stackra/achievements` and `@stackra/ai`.
+- Planned (STA-2850): not every package's own migration tests run it yet. `@stackra/access-log`, `@stackra/iam`,
+  `@stackra/identity`, `@stackra/scope`, `@stackra/loyalty-kit`, `@stackra/panel` and `@stackra/data-maintenance` are
+  audited only by the generated service test today.
 
 ## Authorization
 
@@ -73,14 +84,16 @@ The checks of [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks
   (60 seconds by default) and the request id is unseen. Two keys are live during a rotation, so the secret rotates
   without a cut-over. A request that carries any edge header and fails a check is refused; a request with no edge
   header is not edge traffic, and its bearer token or its endpoint's own signature decides.
-- Planned (STA-2803): seen request ids are kept per API instance today, so with more than one instance a captured
-  request could be replayed against another instance inside the window. A shared store of seen ids on the cache closes
-  this; it must ship before an edge serves more than one instance.
+- Planned (STA-2803): seen request ids live in each API instance's process memory today. A restart forgets them, and a
+  rolling deploy, an autoscale or a second instance runs another set, so in each of those cases a captured request can
+  be replayed inside the window. A shared store of seen ids on the cache closes this. Per
+  [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks), it must ship before any edge goes live; no
+  number of instances makes the in-memory store enough.
 - Your deployment: the origin accepts traffic only from the edge (Cloudflare Tunnel or authenticated origin pulls). No
   package can enforce this network lock; the signature sits on top of it, never in place of it.
 
 <Warning>
-  Never expose an origin directly, and run one API instance per region behind the edge until the
+  Do not expose an origin directly, and do not put an edge in front of production traffic until the
   shared replay store (STA-2803) ships.
 </Warning>
 
