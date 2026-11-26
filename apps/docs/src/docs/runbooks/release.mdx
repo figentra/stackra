@@ -78,6 +78,29 @@ icon: "package-check"
   </Step>
 </Steps>
 
+## The consumer gate
+
+`.github/workflows/consumer-gate.yml` (STA-2705) checks a release against a real consumer before it publishes. It runs
+on the version pull request (`changeset-release/main`), on a pull request labelled `consumer-gate`, on each push to
+`main` that touches a package, and by dispatch. It builds core, checks out the starter template at the commit
+`tools/consumer-gate/matrix.yaml` pins for `scaffold`, and runs
+`stackra consumer-gate --product scaffold`: `stackra create` makes an app from the starter on packed tarballs of every
+publishable package, `stackra new service gate-example --data` adds a service, the fixture (an action, a model with a
+migration, a test) goes into it, and the app is installed, leak-checked, generated, typechecked, linted, built and
+tested. The step summary shows each step; the logs are the `consumer-gate-scaffold` artifact.
+
+- **Red on the version pull request: do not merge it.** Fix core (a scaffold failure is core's own: its `create`,
+  `new` or a package a consumer installs), or, for a known product-side failure only, add an expiring entry to
+  `tools/consumer-gate/allow.yaml`.
+- **Reproduce** with the `reproduce` line of the summary, after building core
+  (`pnpm exec turbo run build --filter=./packages/**`) and checking the starter out at its pin
+  (`node packages/developer/cli/dist/stackra.mjs consumer-gate --product scaffold --pin` prints `<repo> <ref>`).
+- **Pins move by a reviewed pull request.** The summary flags a pin older than 14 days, or with no `pinned` date, as
+  stale. The product consumers (billing, pay, invoicing, tamo) run by hand or on the testbed with `--overlays`, since
+  their repositories and overlay manifests are private.
+- **Making it blocking** is the owner's branch-protection step: require the `Consumer gate (scaffold)` check on
+  `main`. The job is skipped, which GitHub counts as passing, on every other pull request.
+
 ## What the registry refuses at publish
 
 From 0453 decision 7 and `workers/registry/README.md`: a version that already exists; a tarball over 50 MiB (the
@@ -105,7 +128,8 @@ are already there.
   runbook). Nothing is registered per package: the publisher row covers the whole scope.
 - The `release` GitHub environment exists, is restricted to `main` and has a required reviewer, so a branch that edits
   the workflow cannot obtain a token.
-- Branch protection on `main` requires the `Quality Gate` check ([CI](/runbooks/ci)).
+- Branch protection on `main` requires the `Quality Gate` check ([CI](/runbooks/ci)), and the
+  `Consumer gate (scaffold)` check once the owner makes the consumer gate a release blocker (above).
 - A tag ruleset on the version tag pattern blocks deletion and non-fast-forward updates.
 - The `stackra-bot` App secrets above exist.
 
