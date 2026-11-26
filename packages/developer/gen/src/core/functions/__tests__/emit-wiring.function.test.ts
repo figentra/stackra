@@ -293,6 +293,30 @@ describe("emitWiring", () => {
       expect(content).toMatch(new RegExp(`kind: "service", provide: ${name}, deps: \\[\\] \\},`));
   });
 
+  it("binds the SchedulerService the generated CronJobs resolve, in a service that declares the scheduler (STA-2856)", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const scheduler = {
+      ...kit,
+      package: "@stackra/scheduler",
+      member: "scheduler",
+      services: [{ class: "SchedulerService", from: "@stackra/scheduler", deps: [] }],
+    };
+    const emitted = (packages: readonly string[]) =>
+      emitWiring({
+        ...COMMERCE_IR,
+        packages: [...(COMMERCE_IR.packages ?? []), ...packages],
+        dependencies: packages.includes("@stackra/scheduler")
+          ? [{ package: "@stackra/scheduler", manifest: scheduler }]
+          : [],
+      });
+    const row = /kind: "service", provide: SchedulerService, deps: \[\] \},/;
+    expect(emitted(["@stackra/scheduler"])).toMatch(row);
+    expect(emitted(["@stackra/scheduler"])).toContain(
+      'import { SchedulerService } from "@stackra/scheduler";',
+    );
+    expect(emitted([])).not.toMatch(row);
+  });
+
   it("binds FieldCipher over a declared KeyProvider for a service with encrypted fields (STA-2664 (l))", () => {
     const kit = buildManifest(LOYALTY_KIT_IR).manifest;
     const tenancy = {

@@ -2,12 +2,14 @@
  * Stackra file contract:
  * Purpose: `BOOT_SERVICES`, the package services a service's generated `boot.ts` resolves from the container for
  *          what the service declares: the outbox's writer, relay and inbox, the event bus, the segments service, the
- *          workflow's automations and the queue worker. Nothing injects them, so the wiring binds them from here.
+ *          workflow's automations and the queue worker; and the scheduler the generated Encore CronJobs resolve
+ *          (`stackra-encore/<member>/cron.ts`). Nothing injects them, so the wiring binds them from here.
  * Boundary: data only; `emitWiring` adds each one of a declared package to its worklist, which binds it with its
  *           dependencies from the package's manifest. It must name what `emitBoot` resolves; a test checks every
  *           golden service's boot against its wiring.
  * Runtime: isomorphic
- * Governing contract: ADR 0511 (the outbox and inbox); ADR 0148 (decision 6: the queue worker); STA-2664 (n).
+ * Governing contract: ADR 0511 (the outbox and inbox); ADR 0148 (decision 6: the queue worker; decisions 4 and 5:
+ *                     the scheduler); STA-2664 (n); STA-2856.
  */
 import type { ClassRef } from "#core/types/class-ref.type";
 
@@ -40,5 +42,11 @@ export const BOOT_SERVICES: readonly {
   {
     packages: ["@stackra/queue"],
     services: [{ name: "QueueWorkerService", from: "@stackra/queue/node" }],
+  },
+  // The generated Encore CronJobs (`stackra-encore/<member>/cron.ts`) resolve the scheduler to fire each cron and tick
+  // the stored schedules; nothing injects it, so without this row every cron fails with "Nothing binds SchedulerService".
+  {
+    packages: ["@stackra/scheduler"],
+    services: [{ name: "SchedulerService", from: "@stackra/scheduler" }],
   },
 ];

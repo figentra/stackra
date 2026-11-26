@@ -306,8 +306,26 @@
       // gen finds the root module by name (ADR 0294 R12); a v2 service still names it in `stackra.module`.
       // stackra-encore/: the Encore services gen writes outside .stackra (ADR 0091, amendment of 2026-11-10), the
       // service's only encore.dev imports.
-      "entry": ["src/*.module.ts", ".stackra/**/*.{ts,tsx}", "stackra-encore/**/*.ts"],
+      // A v3 module's migrations are read by path: gen compiles them to SQL (ADR 0159), so nothing imports them.
+      "entry": [
+        "src/*.module.ts",
+        "src/modules/*/database/migrations/*.migration.ts",
+        ".stackra/**/*.{ts,tsx}",
+        "stackra-encore/**/*.ts",
+      ],
       "project": ["src/**/*.ts"],
+      // The test peers @stackra/database/testing loads by name (PGlite for the memory driver, Testcontainers for
+      // `usePostgres`, faker for factories) and the tools `stackra lint` and `stackra build` resolve from the member.
+      "ignoreDependencies": [
+        "@electric-sql/pglite",
+        "@electric-sql/pglite-pgvector",
+        "@faker-js/faker",
+        "@mikro-orm/pglite",
+        "@testcontainers/postgresql",
+        "testcontainers",
+        "oxlint",
+        "tsdown",
+      ],
     },
     "apps/docs": {
       // Pages are MDX; gen reads stackra.config.ts and src/config/docs.config.ts; scripts/ holds the system-map writer.

@@ -12,7 +12,9 @@
  *          that declares `@stackra/app` binds `JsonWebKeys` to its `oidc` driver with `BearerConfig`, the generated
  *          auth handler's key source (STA-2558). One that declares `@stackra/app`, `@stackra/clients` and
  *          `@stackra/identity` binds `ClientSession` to app's `service` driver and `ServiceTokens` to identity's `zitadel`
- *          driver with `ServiceTokensConfig`, so its generated clients send its own token with no host wiring.
+ *          driver with `ServiceTokensConfig`, so its generated clients send its own token with no host wiring. One that
+ *          declares `@stackra/scheduler` and `@stackra/tenancy` binds the scheduler's `CronScopes` to tenancy's `tenancy`
+ *          driver, so a per-scope cron runs once per tenant (STA-2856).
  * Boundary: pure. A package's own wiring is left to its test default; a host that does not declare the port's package
  *           gets none. One wiring serves every runtime of an app, so an app with both a browser and a native target
  *           takes `memory` in its wiring and asks for the `native` rows again for its native entry's `nativeWiring`.
@@ -99,6 +101,15 @@ const SYSTEM_PORTS: readonly SystemPort[] = [
     port: { name: "ServiceTokens", from: "@stackra/identity/contracts" },
     config: { name: "ServiceTokensConfig", from: "@stackra/identity/node" },
     server: "zitadel",
+  },
+  // The scopes a per-scope cron runs in: tenancy's tenant list in a service that declares the scheduler and tenancy,
+  // so a `perScope` cron runs once per tenant with no host wiring. The scheduler's own memory driver lists none, and
+  // with two candidates and no default the boot could not choose (ADR 0148 decision 5, STA-2856).
+  {
+    package: "@stackra/scheduler",
+    requires: ["@stackra/tenancy"],
+    port: { name: "CronScopes", from: "@stackra/scheduler/contracts" },
+    server: "tenancy",
   },
 ];
 

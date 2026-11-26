@@ -20,7 +20,7 @@
  * Governing contract: ADR 0105 as amended by ADR 0294; ADR 0307 (rules 2 and 16); ADR 0333 (decision 4); ADR 0022;
  *                     ADR 0269.
  */
-import { LockMode, TransactionPropagation } from "@mikro-orm/core";
+import { CursorError, LockMode, TransactionPropagation } from "@mikro-orm/core";
 import type { OptionalProps } from "@mikro-orm/core";
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { ContextStorage } from "@stackra/actions/contracts";
@@ -53,6 +53,7 @@ import { MetadataInvalidError } from "#core/errors/metadata-invalid.error";
 import { HasMetadata } from "#core/traits/has-metadata.trait";
 import { StaleVersionError } from "#core/errors/stale-version.error";
 import { SystemFieldWriteError } from "#core/errors/system-field-write.error";
+import { TableCursorInvalidError } from "#core/errors/table-cursor-invalid.error";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 import { Count } from "#core/enums/count.enum";
 import { connectVisibilityFilter } from "#core/functions/connect-visibility-filter.function";
@@ -331,6 +332,26 @@ describe(CrudService, () => {
     });
     expect(page).toMatchObject({ hasMore: true, nextCursor: "c2" });
     expect(page.items).toHaveLength(1);
+  });
+
+  it("refuses a cursor no page gave as table_cursor_invalid, and rethrows any other failure (STA-2856)", async () => {
+    const em = connect();
+    em.findByCursor.mockRejectedValueOnce(
+      CursorError.invalidCursor("Order", new SyntaxError("Unexpected token")),
+    );
+    await expect(new OrderService().table({ limit: 20, cursor: "bogus" })).rejects.toSatisfy(
+      (error: unknown) =>
+        isRefusal(error, TableCursorInvalidError) &&
+        JSON.stringify((error as { fieldErrors?: unknown }).fieldErrors) ===
+          JSON.stringify({ cursor: "table_cursor_invalid" }),
+    );
+    // without an input cursor, a cursor failure is the server's: it is not dressed as the caller's
+    em.findByCursor.mockRejectedValueOnce(CursorError.missingValue("Order", "id"));
+    await expect(new OrderService().table({ limit: 20 })).rejects.toBeInstanceOf(CursorError);
+    em.findByCursor.mockRejectedValueOnce(new Error("connection reset"));
+    await expect(new OrderService().table({ limit: 20, cursor: "c1" })).rejects.toThrow(
+      "connection reset",
+    );
   });
 
   it("adds the matching rows' count to a table page when asked", async () => {

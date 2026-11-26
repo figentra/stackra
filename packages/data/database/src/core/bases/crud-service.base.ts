@@ -49,7 +49,7 @@
  *                     mo16 (`HasTree` reads and `move`); ca5 (the `Cached` entity cache on `findOne` by id); mo18
  *                     (`HasMetadata` bound).
  */
-import { LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
+import { CursorError, LockMode, TransactionPropagation, raw } from "@mikro-orm/core";
 import type {
   CountOptions,
   EntityData,
@@ -71,6 +71,7 @@ import { BULK_LIMITS } from "#core/constants/bulk-limits.constant";
 import { DELETE_FILTERS } from "#core/constants/delete-filters.constant";
 import { AppendOnlyWriteError } from "#core/errors/append-only-write.error";
 import { SystemFieldWriteError } from "#core/errors/system-field-write.error";
+import { TableCursorInvalidError } from "#core/errors/table-cursor-invalid.error";
 import { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 import { HOLD_HOST } from "#core/constants/hold-host.constant";
 import { HOLD_LINK_FIELDS } from "#core/constants/hold-link-fields.constant";
@@ -803,6 +804,7 @@ export abstract class CrudService<M extends object> extends Service implements R
    *
    * @throws TableFilterInvalidError for a filter value outside the `TableFilter` vocabulary, or more than three sort
    *         keys.
+   * @throws TableCursorInvalidError for a cursor no earlier page gave (malformed, forged or another table's).
    */
   table<H extends string = never>(
     input: TableQuery,
@@ -817,14 +819,24 @@ export abstract class CrudService<M extends object> extends Service implements R
         .map(([path, value]) => nest(path, filterCondition(path, value, options.period)));
       const visible = await visibleFilter(model, options.where ?? ({} as Where<M>));
       const where = { $and: [visible, ...filters] } as Where<M>;
-      const cursor = await em.findByCursor(model, {
-        where,
-        orderBy,
-        first: input.limit,
-        ...(input.cursor === undefined ? {} : { after: input.cursor }),
-        ...(options.populate === undefined ? {} : { populate: options.populate }),
-        includeCount: false,
-      });
+      const cursor = await em
+        .findByCursor(model, {
+          where,
+          orderBy,
+          first: input.limit,
+          ...(input.cursor === undefined ? {} : { after: input.cursor }),
+          ...(options.populate === undefined ? {} : { populate: options.populate }),
+          includeCount: false,
+        })
+        .catch((error: unknown) => {
+          // A cursor the caller sent that does not decode to this order's keys is the caller's error, not ours.
+          if (input.cursor !== undefined && error instanceof CursorError)
+            throw TableCursorInvalidError.create(
+              {},
+              { fieldErrors: { cursor: "table_cursor_invalid" } },
+            );
+          throw error;
+        });
       const next = cursor.hasNextPage ? cursor.endCursor : null;
       // After the page, not beside it: both statements share the call's connection.
       const count =
