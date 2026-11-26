@@ -60,8 +60,8 @@ changeset-status CI check is the gate.
    Name the file with a unique kebab slug. List every affected member in one changeset when they share one
    logical change. When two changesets describe the same change, merge them.
 
-5. **Verify.** `pnpm changeset:status` must list exactly the members and bumps you intended. On a branch,
-   `pnpm changeset status --since=origin/main` is the same check CI runs.
+5. **Verify.** `pnpm changeset:status` must list exactly the members and bumps you intended, and
+   `pnpm changeset:check` (the check `pnpm verify` and CI run) must pass: every changed published member named.
 6. Stage nothing. On hand-off, list the explicit `.changeset/*.md` paths you created (per
    the `concurrent-sessions` rule).
 
