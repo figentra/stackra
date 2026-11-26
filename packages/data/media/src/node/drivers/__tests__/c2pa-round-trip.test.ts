@@ -7,7 +7,8 @@
  *           by `c2paTestCertificate()` when the suite starts and never leave memory. `@contentauth/c2pa-node` ships
  *           its binding for Linux x64 only, and its postinstall (which fetches the others) is off (`allowBuilds`), so
  *           the suite must run on Linux x64 (CI) and fails there if the binding does not load; on any other platform
- *           it is skipped with the reason.
+ *           it is skipped with the reason, unless `C2PA_ROUND_TRIP_REQUIRED=1` (set where a merge is gated), which turns
+ *           that skip into a failure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0173; COM-73, COM-294; STA-789; STA-2781.
  */
@@ -23,8 +24,13 @@ import { pngChunk } from "#node/drivers/__tests__/png-chunk.fixture";
 import { testPng } from "#node/drivers/__tests__/test-png.fixture";
 import { C2paContentCredentialsDriver } from "#node/drivers/c2pa-content-credentials.driver";
 
-/** Linux x64: the platform whose binding the package ships, so the round trip must run there. */
-const REQUIRED = process.platform === "linux" && process.arch === "x64";
+/**
+ * Linux x64 (the platform whose binding the package ships) or `C2PA_ROUND_TRIP_REQUIRED=1`: the round trip must run,
+ * and a binding that does not load fails the suite instead of skipping it.
+ */
+const REQUIRED =
+  (process.platform === "linux" && process.arch === "x64") ||
+  process.env.C2PA_ROUND_TRIP_REQUIRED === "1";
 
 /** Why the engine's binding does not load here, or `null` when it does (it always must on Linux x64). */
 function bindingUnavailable(): string | null {
