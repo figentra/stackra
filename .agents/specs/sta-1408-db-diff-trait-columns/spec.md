@@ -192,4 +192,5 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-1408 spec, batch 21) · written after the fact from the diff of PR #1130
 - 2026-11-26 · Draft → Clarified · Claude (STA-1408 spec, batch 21) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-1408 spec, batch 21) · plan.md
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 · Planned → Tasked · Claude (STA-1408 spec, batch 21) · tasks.md; the tasks marked done are already on the branch (PR); Implementing waits for the approver's Planned approval (ADR 0502)
