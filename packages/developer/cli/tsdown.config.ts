@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: build config of @stackra/cli: one tsdown entry, the `stackra` binary (`dist/stackra.mjs`, the package.json
- *          `bin`). The package has no code entry: nothing imports it, it is run.
+ *          `bin`), and core's `tools/scaffold/templates` copied to `dist/scaffold-templates` so `stackra new` renders
+ *          its template kinds in any repository (STA-1954). The package has no code entry: nothing imports it, it is run.
  * Boundary: build configuration only; spreads gen's `./.stackra/tsdown.config` and lays this package's own entries
  *           (the barrels package.json `exports` names) and options over it, so gen keeps this file (ADR 0295
  *           decision 5; STA-1306, STA-1299). Before gen has run the package's own config builds alone.
  * Runtime: node
- * Governing contract: ADR 0025 (build output); ADR 0083 (the `stackra` binary).
+ * Governing contract: ADR 0025 (build output); ADR 0083 (the `stackra` binary); ADR 0126 (scaffold templates).
  */
 import { existsSync } from "node:fs";
 
@@ -17,4 +18,10 @@ import { library } from "@stackra/tsdown-config";
 const url = new URL("./.stackra/tsdown.config.ts", import.meta.url);
 const generated = existsSync(url) ? (await import(url.href)).default : {};
 
-export default { ...generated, ...library({ stackra: "src/node/stackra.ts" }) };
+export default {
+  ...generated,
+  ...library({ stackra: "src/node/stackra.ts" }),
+  // After the clean: core's templates as dist/scaffold-templates, which `scaffoldTemplates` reads where the workspace
+  // has none (SCAFFOLD_TEMPLATE_PATHS; scaffold-templates.function.test.ts holds the two together).
+  copy: [{ from: "../../../tools/scaffold/templates", to: "dist", rename: "scaffold-templates" }],
+};

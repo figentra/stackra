@@ -5,10 +5,18 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tags": ["tier:lib", "category:developer", "runtime:node"],
-  // The consumer-gate tests read the committed matrix and allow-list.
+  // The consumer-gate tests read the committed matrix and allow-list; the build ships core's scaffold templates
+  // (dist/scaffold-templates) and the scaffold tests render them, so a template change rebuilds and retests.
   "tasks": {
+    "build": {
+      "inputs": ["$TURBO_DEFAULT$", "../../../tools/scaffold/templates/**"],
+    },
     "test": {
-      "inputs": ["$TURBO_DEFAULT$", "../../../tools/consumer-gate/*.yaml"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../../tools/consumer-gate/*.yaml",
+        "../../../tools/scaffold/templates/**",
+      ],
     },
   },
 }

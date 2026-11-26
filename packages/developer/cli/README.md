@@ -24,7 +24,7 @@ and `yaml`.
 | Command                                                   | Does                                                                                                                                      |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `stackra new <kind> <name>`                               | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                                   |
-| `stackra new <tooling\|app:*> <name>`                     | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                               |
+| `stackra new <tooling\|app:*> <name>`                     | a template kind, from the templates the CLI ships (`--description`, `--summary`); `--dry-run` writes nothing for any kind                 |
 | `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest; a warning prints and exits 0, a refusal exits 1         |
 | `stackra dev [--target <t>]`                              | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify                                                         |
 | `stackra dev --surface <surface>`                         | a product surface in its real shell (published or `--os` checkout), Vite with hot reload                                                  |

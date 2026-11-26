@@ -7,21 +7,24 @@
  *          (`seed-packs/<name>`) at the workspace root, then names the next steps. The package name comes from
  *          `memberNaming` (`--scope`, else the root runway's `product.key`). `--over` regenerates over an existing
  *          member: it writes only the files that are missing and prints a line diff for each authored file that
- *          differs from the template, never writing it. It refuses a folder that exists (without `--over`), a name or
- *          scope that is not kebab-case, a category with no folder under `packages/`, and an area that is not an
- *          `ApiArea`.
+ *          differs from the template, never writing it. `--dry-run` writes nothing for every kind: it lists the files
+ *          it would write (STA-2616). A package's category folder is created when the category is one of
+ *          `CATEGORY_NAMES` (an app made by `stackra create` starts with no `packages/`, STA-1954); another name needs
+ *          its folder to exist. It refuses a folder that exists (without `--over`), a name or scope that is not
+ *          kebab-case, a category that is neither, and an area that is not an `ApiArea`.
  * Boundary: writes only inside the one member folder; never installs, formats or runs gen (the next steps say to).
  *           `--over` never touches `CHANGELOG.md` or an existing `runway.yaml` (its ports and sizes are authored), and
  *           writes nothing under `src/`, so `src/modules/`, an authored root module and its tests are never touched. A package gets the workspace LICENSE when it has none yet. The template kinds (`tooling`,
- *           `app:console`, `app:mobile`, `app:desktop`, `app:docs`) render from `tools/scaffold/templates` through
- *           `scaffold` (was `tools/scripts/scaffold.mjs`, `pnpm new`): `--description` and `--summary` required,
- *           `--keywords`, `--title`, `--port`, `--repo <path>` and `--dry-run`, then oxfmt formats the member. A
+ *           `app:console`, `app:mobile`, `app:desktop`, `app:docs`) render through `scaffold` from the workspace's
+ *           `tools/scaffold/templates`, else the copy `@stackra/cli` ships (was `tools/scripts/scaffold.mjs`, `pnpm new`): `--description` and `--summary` required,
+ *           `--keywords`, `--title`, `--port`, `--repo <path>` and `--dry-run`, then oxfmt formats the member; a
+ *           dependency no catalog of the workspace holds is named, with the step to add it. A
  *           package given `--entries` or `--data` (optional react/native entries, database folders) renders the same
  *           way.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 3 and consequences: `new` moves in from `tools/scripts`); ADR 0294 (rule
  *                     R12); ADR 0295; ADR 0082 (API areas); config-model section 6 (seed packs); ADR 0349 (decision 2: product package
- *                     names); STA-1210 (`--scope`, `--over`).
+ *                     names); STA-1210 (`--scope`, `--over`); ADR 0515 (a created app is a product repository).
  */
 import {
   copyFileSync,
@@ -34,6 +37,7 @@ import {
 import { dirname, join, relative, resolve } from "node:path";
 
 import { ApiArea, Enum } from "@stackra/contracts";
+import { CATEGORY_NAMES } from "@stackra/repo-checks/node";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { lineDiff } from "#node/functions/line-diff.function";
@@ -42,6 +46,7 @@ import { packageTemplate } from "#node/functions/package-template.function";
 import { seedPackTemplate } from "#node/functions/seed-pack-template.function";
 import { cliVersion } from "#node/functions/cli-version.function";
 import { serviceTemplate } from "#node/functions/service-template.function";
+import { sorted } from "#node/functions/sorted.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
 import { workspaceTemplate } from "#node/functions/workspace-template.function";
 import { SCAFFOLD_KINDS } from "#node/scaffold/constants/scaffold-kinds.constant";
@@ -64,6 +69,30 @@ const text = (value: string | boolean | undefined): string | undefined =>
 
 /** Files `--over` never writes or diffs: release history and the member's authored runtime needs (ports, sizes). */
 const KEEP_OVER = new Set(["CHANGELOG.md", "runway.yaml"]);
+
+/**
+ * The files a run would write, relative to `root`, sorted: the template's missing files (none under `src/` with
+ * `--over`), a package's LICENSE, and for a service in a folder with no workspace that workspace's missing files.
+ */
+function dryRunPaths(
+  root: string,
+  folder: string,
+  files: readonly TemplateFile[],
+  over: boolean,
+  freshWorkspace: boolean,
+  kind: string,
+): string[] {
+  const paths = files
+    .filter((file) => !(over && file.path.startsWith("src/")))
+    .map((file) => join(folder, file.path));
+  if (kind === "package" && existsSync(join(root, "LICENSE"))) paths.push(join(folder, "LICENSE"));
+  if (freshWorkspace)
+    for (const file of workspaceTemplate({ cliVersion: cliVersion(), dependencies: {} }))
+      paths.push(join(root, file.path));
+  return sorted([...new Set(paths)])
+    .filter((path) => !existsSync(path))
+    .map((path) => relative(root, path));
+}
 
 /** The `stackra new` command. */
 export const NEW_COMMAND: CliCommand = {
@@ -116,6 +145,10 @@ export const NEW_COMMAND: CliCommand = {
         });
         io.out(`${dryRun ? "Would create" : "Created"} ${made.rel}:\n`);
         for (const file of made.files) io.out(`  ${file}\n`);
+        if (made.missing.length > 0)
+          io.out(
+            `\nNo catalog in pnpm-workspace.yaml holds ${made.missing.join(", ")}; add each to a catalog before installing (catalogMode: strict)\n`,
+          );
         if (!dryRun) io.out("\nNext: pnpm install, then pnpm verify\n");
         return 0;
       } catch (error) {
@@ -158,9 +191,13 @@ export const NEW_COMMAND: CliCommand = {
           "a package needs --category <folder under packages/>, such as data",
         );
       const categoryFolder = join(root, "packages", category);
-      if (!existsSync(categoryFolder) || !statSync(categoryFolder).isDirectory())
+      // A standard category's folder is made with the member; another name must already be a folder.
+      if (
+        !CATEGORY_NAMES.includes(category) &&
+        (!existsSync(categoryFolder) || !statSync(categoryFolder).isDirectory())
+      )
         throw new CliUsageError(
-          `packages/${category} does not exist; pick an existing category folder`,
+          `packages/${category} does not exist; pick an existing category folder or one of ${CATEGORY_NAMES.join(", ")}`,
         );
       folder = join(categoryFolder, name);
       files = packageTemplate({
@@ -195,6 +232,12 @@ export const NEW_COMMAND: CliCommand = {
     const where = relative(root, folder);
     if (existsSync(folder) && !over)
       throw new CliUsageError(`${where} already exists; pass --over to regenerate over it`);
+    if (values["dry-run"] === true) {
+      io.out(`Would ${over ? "write" : "create"} ${where}:\n`);
+      for (const path of dryRunPaths(root, folder, files, over, freshWorkspace, kind))
+        io.out(`  ${path}\n`);
+      return 0;
+    }
     if (freshWorkspace) {
       const manifest = JSON.parse(
         files.find((file) => file.path === "package.json")?.content ?? "{}",

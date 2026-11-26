@@ -1,15 +1,19 @@
 /**
  * Stackra file contract:
- * Purpose: `scaffold(options)`, renders a member from `tools/scaffold/templates` into a monorepo (the one holding the
- *          templates, or another with `root`): replaces the tokens ({{NAME}} {{PASCAL}} {{TITLE}} {{DESCRIPTION}}
+ * Purpose: `scaffold(options)`, renders a member from the scaffold templates (`scaffoldTemplates`: the workspace's own
+ *          `tools/scaffold/templates`, else the copy shipped in `@stackra/cli`) into a monorepo (the workspace, or
+ *          another with `root`): replaces the tokens ({{NAME}} {{PASCAL}} {{TITLE}} {{DESCRIPTION}}
  *          {{PORT}} {{CATEGORY}} {{ENTRIES}}) in contents and path names, adds the chosen optional package entries and,
  *          with `data`, the module's database folders, writes a package's `exports` and `imports`, copies the target
- *          repo's LICENSE, writes the npm metadata, keywords, `stackra` field and turbo tags `pnpm validate` requires
- *          (ADR 0453 decision 11, amendment of 2026-10-27), then formats the result with oxfmt. Members come out in the
+ *          repo's LICENSE, names a package as `memberNaming` does, writes the npm metadata, keywords, `stackra` field and turbo tags `pnpm validate` requires
+ *          (ADR 0453 decision 11, amendment of 2026-10-27), points each `catalog:` dependency at the target
+ *          workspace's catalog that holds it (`retargetCatalogs`; the ones none holds come back as `missing`), then
+ *          formats the result with oxfmt. Members come out in the
  *          programming model v3 shape (ADR 0294 rule R12, ADR 0295) (moved from `tools/scripts/scaffold.mjs`).
  * Boundary: writes only the one new destination directory, then formats it; with `dryRun` writes nothing.
  * Runtime: node
- * Governing contract: ADR 0126 (member shapes and scaffold templates); ADR 0294; ADR 0453 (decision 11).
+ * Governing contract: ADR 0126 (member shapes and scaffold templates); ADR 0294; ADR 0453 (decision 11); ADR 0515
+ *                     (a created app renders from the shipped templates, STA-1954).
  */
 import { execFileSync } from "node:child_process";
 import {
@@ -34,11 +38,14 @@ import {
   turboTagsFor,
 } from "@stackra/repo-checks/node";
 
+import { memberNaming } from "#node/functions/member-naming.function";
 import { sorted } from "#node/functions/sorted.function";
 import { workspaceRoot } from "#node/functions/workspace-root.function";
 import { BINARY_RE } from "#node/scaffold/constants/binary-re.constant";
 import { SCAFFOLD_KINDS } from "#node/scaffold/constants/scaffold-kinds.constant";
 import { parseEntries } from "#node/scaffold/functions/parse-entries.function";
+import { retargetCatalogs } from "#node/scaffold/functions/retarget-catalogs.function";
+import { scaffoldTemplates } from "#node/scaffold/functions/scaffold-templates.function";
 import type { ScaffoldOptions } from "#node/scaffold/types/scaffold-options.type";
 
 /** The runtime an optional package entry adds (`stackra.runtimes`, ADR 0453 decision 11). */
@@ -151,9 +158,12 @@ const packageImports = (picked: readonly string[]): Record<string, string[]> => 
 
 /**
  * Renders a template and returns the destination dir and the relative file list. With `dryRun` nothing is written and
- * `format` is skipped. `root` is the target repo root; templates always come from `home`.
+ * `format` is skipped. `root` is the target repo root; templates come from `home`'s own `tools/scaffold/templates`,
+ * else from the copy `@stackra/cli` ships.
  *
  * @param options - the kind, name, target and flags.
+ * @returns the destination, its path from `root`, the files, and the `name@catalog:<name>` dependencies no catalog of
+ *          the target workspace holds (empty on a dry run).
  * @throws Error on an unknown kind, a bad name, a missing description, summary or category, or an existing folder.
  * @example
  * scaffold({ kind: "app:docs", name: "handbook", description: "A handbook.", summary: "Use it for docs.", dryRun: true });
@@ -173,7 +183,7 @@ export function scaffold({
   port,
   dryRun = false,
   format = true,
-}: ScaffoldOptions): { dest: string; rel: string; files: string[] } {
+}: ScaffoldOptions): { dest: string; rel: string; files: string[]; missing: string[] } {
   const spec = SCAFFOLD_KINDS[kind];
   if (!spec)
     throw new Error(`unknown kind "${kind}" — one of: ${Object.keys(SCAFFOLD_KINDS).join(", ")}`);
@@ -199,7 +209,7 @@ export function scaffold({
   if (!existsSync(root) || !statSync(root).isDirectory())
     throw new Error(`--repo ${root} is not a directory`);
   const picked = kind === "package" ? parseEntries(entries) : [];
-  const templates = join(home, "tools/scaffold/templates");
+  const templates = scaffoldTemplates(home);
 
   const rel = spec.dest(name, category);
   const dest = join(root, rel);
@@ -243,6 +253,7 @@ export function scaffold({
     }
   const licensed = kind === "package" || kind === "tooling";
   if (licensed) files.push("LICENSE");
+  let missing: string[] = [];
   if (!dryRun) {
     const file = join(dest, "package.json");
     const pkg = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
@@ -253,6 +264,8 @@ export function scaffold({
         "./assets/*": "./assets/*",
       };
       pkg["imports"] = packageImports(picked);
+      // The name `stackra new package` gives the same member: `@stackra/<name>` here, the product's name in a product.
+      pkg["name"] = memberNaming(root, "package", name).packageName;
     }
     const { fields, tags } = memberMetadata({
       rel,
@@ -267,7 +280,13 @@ export function scaffold({
     });
     // oxfmt sorts the keys into package.json order when it formats the member.
     Object.assign(pkg, fields);
-    writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+    // The templates name core's catalogs; a product keeps the same packages under its own catalog names.
+    const workspace = join(root, "pnpm-workspace.yaml");
+    const retargeted = existsSync(workspace)
+      ? retargetCatalogs(pkg, readFileSync(workspace, "utf8"))
+      : { manifest: pkg, missing: [] };
+    missing = retargeted.missing;
+    writeFileSync(file, `${JSON.stringify(retargeted.manifest, null, 2)}\n`);
     const turbo = join(dest, "turbo.jsonc");
     writeFileSync(
       turbo,
@@ -285,5 +304,5 @@ export function scaffold({
     if (format)
       execFileSync("pnpm", ["exec", "oxfmt", "--write", dest], { cwd: home, stdio: "inherit" });
   }
-  return { dest, rel, files: sorted(files) };
+  return { dest, rel, files: sorted(files), missing };
 }
