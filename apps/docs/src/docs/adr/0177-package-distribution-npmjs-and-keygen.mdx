@@ -73,7 +73,11 @@ npmjs with provenance and the Pro packages to Keygen Cloud. Railway is no longer
 
 ## Enforcement
 
-planned — the release workflow publishes with provenance, and `publint` and `attw` run in the release job.
+Live for decision 4 (STA-2705, 2026-11-26): `tools/scripts/release-gate.mjs` packs every public package, runs `publint`
+and `attw`, checks every workspace pin, and smoke-tests the packed tarballs in Node, Vite and Metro. The `Package
+checks` job of `release.yml` runs it before the publish, and the `Registry check` job checks after the publish that
+every package and pin is on the registry. Known findings sit in `tools/scripts/release-gate.baseline.yaml`, each with
+its issue. The release workflow publishes with provenance (ADR 0453).
 
 ## Open questions
 

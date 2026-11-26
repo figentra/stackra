@@ -4,7 +4,7 @@ description: "Changesets, the version-packages pull request, publishing to the S
 icon: "package-check"
 ---
 
-{/* Stackra file contract: Purpose: the package release runbook: changesets, the version pull request, the trusted-publisher publish to the Stackra registry (release.yml calling runway-npm.yml), the prerelease and dry-run dispatches, the one-time owner setup, failures and recovery. Boundary: npm packages only; app store releases are Mobile release, the registry's own deploy is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 6 to 9, 16 and 18); ADR 0013; ADR 0025; ADR 0119; ADR 0174; ADR 0177 (decisions 4 to 7); STA-1575. */}
+{/* Stackra file contract: Purpose: the package release runbook: changesets, the version pull request, the trusted-publisher publish to the Stackra registry (release.yml calling runway-npm.yml), the prerelease and dry-run dispatches, the one-time owner setup, failures and recovery. Boundary: npm packages only; app store releases are Mobile release, the registry's own deploy is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 6 to 9, 16 and 18); ADR 0013; ADR 0025; ADR 0119; ADR 0174; ADR 0177 (decisions 4 to 7); STA-1575; STA-2705. */}
 
 <Note>
   Status 2026-10-29: live. `.github/workflows/release.yml` calls Runway's `npm` provider
@@ -12,10 +12,11 @@ icon: "package-check"
   Stackra registry `https://npm.stackra.figentra.com/`
   ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)).
   Every package is `"private": false`. `0.1.0` is not released yet; prereleases go out under `next`.
-  Not built: the packed-tarball smoke test (`publint`, `attw`, Node, Vite and Metro,
-  [0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 4) and a workflow for
-  deprecations and dist-tag moves. npmjs is not a target: the optional mirror of 0453 decision 16 is
-  off and not built.
+  The release gate of [0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 4 runs before
+  every publish (`publint`, `attw`, the pin check and the packed-tarball smoke in Node, Vite and
+  Metro) and the registry check after it (STA-2705). Not built: a workflow for deprecations and
+  dist-tag moves. npmjs is not a target: the optional mirror of 0453 decision 16 is off and not
+  built.
 </Note>
 
 ## The rules
@@ -49,7 +50,8 @@ icon: "package-check"
     decision 5).
   </Step>
   <Step title="Merge it and approve the run">
-    The merge to `main` starts the release job, which waits in the `release` environment until the
+    The merge to `main` starts the run. The `Package checks` job runs the release gate first (below);
+    only when it passes does the release job start and wait in the `release` environment until the
     owner approves it.
   </Step>
   <Step title="The job publishes">
@@ -67,6 +69,10 @@ icon: "package-check"
     6. The `sbom` job writes a CycloneDX SBOM, signs it keylessly with cosign and attaches it to every
        new release, with a `sha256sums.txt` of the published tarballs as the registry serves them (each
        checked against the registry's `dist.integrity` first).
+    7. The `Registry check` job runs `release-gate.mjs registry`: every public package is on the registry at
+       the new version, every workspace pin of each published version resolves, and `latest` points at
+       the new version. A partial publish turns the run red and names each missing package and each
+       broken pin.
   </Step>
   <Step title="Verify">
     `git ls-remote --tags origin` shows the new tags on the merge commit. In a clean folder with the
@@ -77,6 +83,28 @@ icon: "package-check"
     provenance and the signed SBOM ([Security policy](https://github.com/figentra/stackra/blob/main/SECURITY.md)).
   </Step>
 </Steps>
+
+## The release gate
+
+`tools/scripts/release-gate.mjs` ([0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 4) checks what a
+consumer receives. The `Package checks` job of `release.yml` runs `all` on the publishing run and on a dry run, with
+read-only permissions and no environment; `pnpm release:check` runs the same on a laptop or the verify service.
+
+| Step       | What it checks                                                                                                                                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pack`     | Packs every public package with `pnpm pack`, through the `.pnpmfile.mjs` hook as the publish does, and records each entry's runtime: a host subpath (`./native`, `./desktop`, `./worker`) or the `Runtime:` line of the entry's source file |
+| `publint`  | Every tarball, strict mode: an error or a warning fails                                                                                                                                                                                     |
+| `attw`     | arethetypeswrong, ESM-only profile: any problem under Node 16 ESM or bundler resolution fails. A package with no JavaScript entry (the JSON presets, the CLI) has no types to check; an Expo `./app.plugin.js` is skipped                   |
+| pins       | Every dependency on a workspace package is an exact version of a public package, at the version this release packs (or, with `--registry`, one already published); a `fixed` group packs at one version                                     |
+| Node smoke | A consumer outside the repo installs every tarball (scripts off, one-day minimum release age) with the peers a full app has, then imports each Node entry in its own process                                                                |
+| Vite smoke | Builds each browser entry of a package that declares `browser`                                                                                                                                                                              |
+| Metro      | Builds the iOS module graph of each React Native entry of a package that declares `react-native`, under `babel-preset-expo`; React Native, Expo and Electron modules resolve to empty modules                                               |
+| `registry` | After a publish: every public package at the new version (or `--version <v>`), every workspace pin it carries, and the `latest` dist-tag                                                                                                    |
+
+A known finding sits in `tools/scripts/release-gate.baseline.yaml` with the issue that fixes it; it is reported but
+does not fail. A row whose finding is gone fails the gate, so the list only shrinks. A new row needs the owner's or
+the CTO's read, because it lets a known break ship. To check the live registry at any time:
+`pnpm release:registry --version <v>` (add `--no-dist-tag` for an older release).
 
 ## What the registry refuses at publish
 
@@ -93,7 +121,7 @@ Actions → "Release" → Run workflow on `main`:
 
 | Input        | Does                                                                                                                                                                                                                                  |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dry_run`    | packs every published package through the `.pnpmfile.mjs` hook and runs `pnpm -r publish --dry-run`; nothing leaves the runner                                                                                                        |
+| `dry_run`    | runs the release gate (`Package checks`), then packs every published package through the `.pnpmfile.mjs` hook and runs `pnpm -r publish --dry-run`; nothing leaves the runner                                                         |
 | `prerelease` | publishes only `packages` (default: the five `*-config` presets) at `<base_version>-<dist_tag>.<run number>` under `dist_tag` (default `next`, never `latest`); the version is set on the runner only, nothing is committed or tagged |
 
 A prerelease waits for the same approval and publishes through the same OIDC exchange. A re-run skips versions that
@@ -119,6 +147,8 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 | Failed step                      | State                      | Do                                                                                                                                                                                                                                                                                                             |
 | -------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Version pull request not opened  | Nothing released           | Check the App secrets and the host setting for pull requests from workflows, then push any commit to `main` or re-run                                                                                                                                                                                          |
+| Package checks                   | Nothing released           | Read the job's annotations: fix the package on `main` and merge again. Only a finding with an issue may go in the baseline, with the owner's or CTO's read                                                                                                                                                     |
+| Registry check                   | Published, maybe partly    | The run names each missing package and broken pin. Re-run the failed release job (versions already there are skipped), then re-run the registry check                                                                                                                                                          |
 | Trivy                            | Nothing released           | Update the vulnerable dependency on `main`; the next run retries                                                                                                                                                                                                                                               |
 | OIDC exchange answers 401 or 403 | Nothing for that package   | The publisher row does not match: check the run is `release.yml` on `refs/heads/main` in the `release` environment                                                                                                                                                                                             |
 | Publish refused (400 or 422)     | Earlier packages published | Read the registry's message (decision 7 above), fix on `main`, release again; published versions stay                                                                                                                                                                                                          |
@@ -139,16 +169,17 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 
 ## Checks that back this page
 
-| Rule                                          | Check                                        | State                        |
-| --------------------------------------------- | -------------------------------------------- | ---------------------------- |
-| Changeset per changed member                  | `pnpm changeset:status`                      | Script live; not in `verify` |
-| No local `changeset version`                  | `guard-bash`                                 | Live                         |
-| Conventional commits and generated changelogs | commitlint, changesets                       | Live                         |
-| Publish only from the release workflow        | registry publisher rows and OIDC claim match | Live                         |
-| Publish checks, signatures, provenance        | `workers/registry`                           | Live                         |
-| `id-token: write` scope of the workflows      | `zizmor` in the Quality Gate                 | Live                         |
-| Packed-tarball smoke test                     | release job                                  | Not built                    |
-| Tag ruleset                                   | owner setting                                | Not checked                  |
+| Rule                                          | Check                                          | State                        |
+| --------------------------------------------- | ---------------------------------------------- | ---------------------------- |
+| Changeset per changed member                  | `pnpm changeset:status`                        | Script live; not in `verify` |
+| No local `changeset version`                  | `guard-bash`                                   | Live                         |
+| Conventional commits and generated changelogs | commitlint, changesets                         | Live                         |
+| Publish only from the release workflow        | registry publisher rows and OIDC claim match   | Live                         |
+| Publish checks, signatures, provenance        | `workers/registry`                             | Live                         |
+| `id-token: write` scope of the workflows      | `zizmor` in the Quality Gate                   | Live                         |
+| publint, attw, pins, packed-tarball smoke     | `Package checks` (`release-gate.mjs all`)      | Live                         |
+| Every package and pin on the registry         | `Registry check` (`release-gate.mjs registry`) | Live                         |
+| Tag ruleset                                   | owner setting                                  | Not checked                  |
 
 See also [Get access and install](/customers/install) (the consumer side), [Mobile release](/runbooks/mobile-release),
 [Deploys](/runbooks/deploys) and [Commits and releases](/guides/workflow).

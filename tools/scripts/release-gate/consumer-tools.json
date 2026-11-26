@@ -1,0 +1,11 @@
+{
+  "$comment": "The tools the release gate's smoke consumer installs beside the packed tarballs (tools/scripts/release-gate.mjs). Each version is one the repository's pnpm-lock.yaml already holds, so the smoke runs on vetted releases: Vite from catalog frontend, Metro and metro-config as @expo/metro pins them for Expo 57, Babel 7 (the major Metro runs), babel-preset-expo from catalog mobile and @babel/runtime, which every React Native app has. tools/scripts/__tests__/release-gate.test.mjs fails when one leaves the lockfile.",
+  "tools": {
+    "vite": "8.3.3",
+    "metro": "0.84.5",
+    "metro-config": "0.84.5",
+    "@babel/core": "7.29.7",
+    "@babel/runtime": "7.29.10",
+    "babel-preset-expo": "57.0.16"
+  }
+}
