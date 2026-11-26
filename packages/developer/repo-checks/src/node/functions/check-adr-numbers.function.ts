@@ -10,8 +10,7 @@
  */
 import { parse } from "yaml";
 
-/** An ADR page: four digits, a dash, the slug. */
-const ADR_FILE = /^apps\/docs\/src\/docs\/adr\/(\d{4})-(.+)\.mdx$/;
+import { ADR_PAGE_PATH } from "#node/constants/adr-page-path.constant";
 
 /**
  * The ADR number findings.
@@ -26,7 +25,7 @@ export function checkAdrNumbers(
   numbersText: string | undefined,
 ): string[] {
   const pages = adrFiles.flatMap((path) => {
-    const match = ADR_FILE.exec(path);
+    const match = ADR_PAGE_PATH.exec(path);
     return match ? [{ path, number: match[1] ?? "", slug: match[2] ?? "" }] : [];
   });
   if (pages.length === 0 || numbersText === undefined) return [];

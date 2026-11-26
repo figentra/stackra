@@ -3,8 +3,12 @@ title: "ADR template"
 description: "Copy this page, give it the next number, fill every section."
 ---
 
-Copy the block below into `NNNN-short-title.mdx`, add the page to `adr/index.mdx` and to `docs.json`.
-Number from the highest existing ADR plus one. Never cite an ADR by a number from another repository.
+Reserve the number first with `pnpm adr:reserve <slug> --issue STA-n`, which lands it in `apps/docs/adr/numbers.yaml`
+on main. Copy the block below into `NNNN-<slug>.mdx`, add its row to [the index](/adr) (link, decision, and the status
+the description opens with) and set its status in `numbers.yaml` in the same pull request. `stackra check` refuses a
+page whose number is not registered (`adr-numbers`), and a page without an index row or whose row or register status
+differs from its description (`adr-index`). Never cite an ADR by a number from another repository; a number another
+product took by mistake is `external` in the register and has no page here.
 
 ## Status vocabulary
 

@@ -3,9 +3,13 @@
 #          holds it and its Linear key. A number is taken by landing its entry here on main first, with
 #          `pnpm adr:reserve <slug> --issue STA-n`; the first pull request to land wins and a loser reserves again.
 # Boundary: data only. `stackra check` (config phase, `adr-numbers`) refuses an ADR file whose number is missing here
-#           or whose slug differs, and a number used twice. Status: reserved, proposed, accepted, superseded, deferred.
+#           or whose slug differs, and a number used twice. Status: reserved, proposed, accepted, superseded, deferred,
+#           rejected, external. `adr-index` (STA-2851) refuses a status that differs from the page's description, a
+#           reserved or external entry that has a page, and any other entry without one: the pull request that lands an
+#           ADR sets its status here. External: a number another product took by mistake; the decision lives in that
+#           product (`home:`), Stackra has no page, and the number is never reused.
 # Runtime: repository data
-# Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); STA-1732.
+# Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); STA-1732; STA-2851.
 
 "0001":
   slug: monorepo-layout
@@ -204,7 +208,7 @@
   status: accepted
 "0067":
   slug: spec-kit-is-the-sdlc
-  status: accepted
+  status: superseded
 "0068":
   slug: runway-cicd-built-inside-stackra
   status: superseded
@@ -1501,7 +1505,7 @@
   owner: c6 design system (feat/c6-data-family)
 "0506":
   slug: console-command-kind
-  status: reserved
+  status: accepted
   owner: stackra-console (figentra/sta-1730-console-port)
   issue: STA-1730
 "0507":
@@ -1514,7 +1518,7 @@
   owner: c6 design system (feat/c6-shortcuts)
 "0509":
   slug: the-approval-stage-a-declared-floor-of-distinct-approvers-checked-in-core-executed-as-the-requester
-  status: reserved
+  status: proposed
   owner: core AI everywhere (figentra/sta-1724-approval-stage)
   issue: STA-1724
 "0510":
@@ -1523,16 +1527,16 @@
   issue: STA-1729
 "0511":
   slug: cross-repo-service-contracts-and-cross-app-events
-  status: reserved
+  status: accepted
   issue: STA-1821
 "0512":
   slug: one-infisical-layout-projects-by-reader-agents-and-product-runtimes
-  status: reserved
+  status: proposed
   owner: claude
   issue: STA-1867
 "0513":
   slug: permission-vocabulary-moves-to-contracts-and-container
-  status: reserved
+  status: accepted
   issue: STA-1890
 "0514":
   slug: self-hosted-docs-replace-mintlify
@@ -1571,7 +1575,7 @@
   issue: STA-2024
 "0522":
   slug: testbed-own-repo
-  status: reserved
+  status: accepted
   issue: STA-2073
 "0523":
   slug: humans-approve-policy-not-instances
@@ -1612,9 +1616,10 @@
   issue: STA-2201
 "0531":
   slug: figentra-pay-hosted-payment-suite
-  status: proposed
+  status: external
   owner: claude
   issue: STA-2220
+  home: Figentra Pay's private repository (a product decision; Stackra keeps the number so it is never reused)
 "0532":
   slug: infrastructure-ownership
   status: accepted

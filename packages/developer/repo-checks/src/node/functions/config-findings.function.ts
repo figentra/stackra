@@ -1,16 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: `configFindings(context)`, the `config` phase of `stackra check`: JSON versus JSONC versus YAML, YAML flow
- *          mappings (each file must also parse), `.stackra/` in `.gitignore`, golden files git would ignore (STA-1807), the ADR number register (STA-1732), mise npm pins that match the catalogs (STA-1865), gen tasks that carry STACKRA_GEN_STRICT, a current `.flow/constitution.md`, and the skill and agent source rules (STA-2098 H6).
+ *          mappings (each file must also parse), `.stackra/` in `.gitignore`, golden files git would ignore (STA-1807), the ADR number register (STA-1732), the ADR index and the ADR links of customer pages (STA-2851), mise npm pins that match the catalogs (STA-1865), gen tasks that carry STACKRA_GEN_STRICT, a current `.flow/constitution.md`, and the skill and agent source rules (STA-2098 H6).
  * Boundary: reads the listed files; returns findings and never prints.
  * Runtime: node
- * Governing contract: the YAML standard (STA-299); ADR 0295 (decision 5); STA-1732.
+ * Governing contract: the YAML standard (STA-299); ADR 0295 (decision 5); STA-1732; STA-2851.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { ADR_INDEX_PATH } from "#node/constants/adr-index-path.constant";
+import { ADR_PAGE_PATH } from "#node/constants/adr-page-path.constant";
 import { agentSourceFindings } from "#node/functions/agent-source-findings.function";
+import { checkAdrIndex } from "#node/functions/check-adr-index.function";
 import { checkAdrNumbers } from "#node/functions/check-adr-numbers.function";
+import { checkCustomerAdrLinks } from "#node/functions/check-customer-adr-links.function";
 import { checkGenStrictEnv } from "#node/functions/check-gen-strict-env.function";
 import { checkGitignore } from "#node/functions/check-gitignore.function";
 import { checkJsonConfigs } from "#node/functions/check-json-configs.function";
@@ -22,6 +26,10 @@ import { ignoredGoldenFindings } from "#node/functions/ignored-golden-findings.f
 import { isRepoOwnedYaml } from "#node/functions/is-repo-owned-yaml.function";
 import type { RawFinding } from "#node/types/raw-finding.type";
 import type { RepoContext } from "#node/types/repo-context.type";
+import type { TextFile } from "#node/types/text-file.type";
+
+/** A customer page, whose ADR links `checkCustomerAdrLinks` reads. */
+const CUSTOMER_PAGE = /^apps\/docs\/src\/docs\/customers\/.+\.mdx$/;
 
 /** A file's text, or undefined when it is missing. */
 const readIf = (path: string): string | undefined =>
@@ -42,6 +50,9 @@ export function configFindings(context: RepoContext): RawFinding[] {
   const { root, files } = context;
   const gitignore = join(root, ".gitignore");
   const numbers = join(root, "apps/docs/adr/numbers.yaml");
+  const docs: TextFile[] = files
+    .filter((path) => ADR_PAGE_PATH.test(path) || CUSTOMER_PAGE.test(path))
+    .map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
   return [
     ...of("json-configs", checkJsonConfigs(files)),
     ...files
@@ -66,6 +77,8 @@ export function configFindings(context: RepoContext): RawFinding[] {
       "adr-numbers",
       checkAdrNumbers(files, existsSync(numbers) ? readFileSync(numbers, "utf8") : undefined),
     ),
+    ...of("adr-index", checkAdrIndex(docs, readIf(join(root, ADR_INDEX_PATH)), readIf(numbers))),
+    ...of("customer-adr-links", checkCustomerAdrLinks(docs)),
     ...of(
       "tool-pins",
       checkToolPins(readIf(join(root, "mise.toml")), readIf(join(root, "pnpm-workspace.yaml"))),
