@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `MediaOptions`, the shape of `MediaConfig`: which uploader the client uses, how long an upload stays valid, where the HTTP uploader asks for a signed URL, the in-region OCR
- *          service and the C2PA signing slot.
+ *          service and the C2PA signing slot and the signers it trusts.
  * Boundary: a shape class; it registers this package's own schema (`MEDIA_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(MediaConfig)` validates with no generated file. Deploy-time values only; the one
  *           credential, the C2PA certificate chain and key, is two `@Secret` names resolved blind from the secret store
@@ -77,8 +77,8 @@ export class MediaOptions extends Schema {
   };
 
   /**
-   * How the `c2pa` content-credentials driver signs: the COSE algorithm of the key, an RFC 3161 time-stamp authority
-   * (empty for none) and the image types it signs.
+   * How the `c2pa` content-credentials driver signs and reads: the COSE algorithm of the key, an RFC 3161 time-stamp
+   * authority (empty for none), the image types it signs, and our earlier signing certificates it still trusts.
    */
   // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
   @Field(MEDIA_CONFIG_SCHEMA.shape.c2pa)
@@ -89,7 +89,18 @@ export class MediaOptions extends Schema {
     timestampUrl: string;
     /** The image media types the driver signs and reads. */
     formats: string[];
-  } = { algorithm: "es256", timestampUrl: "", formats: ["image/jpeg", "image/png", "image/webp"] };
+    /**
+     * Our own earlier signing certificates (PEM, one end-entity certificate each) whose media still read as
+     * `trusted` after a rotation, beside the current `c2paSigningCertificate`. Public certificates, never keys; an
+     * expired one is not trusted.
+     */
+    trustedSigners?: string[];
+  } = {
+    algorithm: "es256",
+    timestampUrl: "",
+    formats: ["image/jpeg", "image/png", "image/webp"],
+    trustedSigners: [],
+  };
 
   /** The client's uploader: `http` in an app, `memory` in tests. */
   uploader: DriverName<Uploader> = "memory";

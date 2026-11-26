@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./contracts` entry (`ImageLayer` on `ImageTransform`): it exports the
- *          scanner, transformer, extractor and content-credentials ports and `ScanVerdict`, no `MediaDisk` (folded into
+ *          scanner, transformer, extractor and content-credentials ports, `ScanVerdict` and `ContentCredentialTrust`,
+ *          no `MediaDisk` (folded into
  *          `FileSystem`, ADR 0465), nothing else at run time, and its types resolve.
  * Boundary: test only; imports the stand-in barrel through its `#contracts` alias.
  * Runtime: node (vitest)
@@ -16,6 +17,7 @@ import type { ImageLayer, ImageTransform } from "#contracts/index";
 describe("@stackra/media/contracts", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(contracts).sort()).toEqual([
+      "ContentCredentialTrust",
       "ContentCredentials",
       "FileScanner",
       "ImageTransformer",

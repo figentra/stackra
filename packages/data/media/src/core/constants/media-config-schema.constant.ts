@@ -7,7 +7,8 @@
  *           full defaults; they equal `MediaOptions`' initializers (tested). The upload lifetime is at most seven days, read in either duration form (stackra-223) and stored canonical,
  *           the SigV4 limit of a signed URL. No `disk` field: media stores on the one `FileSystem` disk that
  *           `filesystem.disk` picks (ADR 0465, stackra-226). The C2PA
- *           certificate and key are `@Secret` names (empty strings until set), never values in a layer.
+ *           certificate and key are `@Secret` names (empty strings until set), never values in a layer;
+ *           `c2pa.trustedSigners` holds public PEM certificates only (STA-2791).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173 (no secret values in config).
  */
@@ -75,11 +76,13 @@ export const MEDIA_CONFIG_SCHEMA = z.object({
         .array(z.string().regex(/^image\/[a-z0-9.+-]+$/))
         .min(1)
         .default(() => ["image/jpeg", "image/png", "image/webp"]),
+      trustedSigners: z.array(z.string().includes("-----BEGIN CERTIFICATE-----")).default(() => []),
     })
     .default(() => ({
       algorithm: "es256" as const,
       timestampUrl: "",
       formats: ["image/jpeg", "image/png", "image/webp"],
+      trustedSigners: [],
     })),
   c2paSigningCertificate: z.string().default(""),
   c2paSigningKey: z.string().default(""),

@@ -56,6 +56,12 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
   Never claim them certified; re-record the fixtures against the live service and a signed image first.
 - The C2PA certificate and key are `@Secret` fields only (`MEDIA_C2PA_SIGNING_CERTIFICATE`, `MEDIA_C2PA_SIGNING_KEY`).
   Never sign with a bundled or test certificate in a driver; an empty secret is a refusal.
+- Only a `trusted` `ContentCredentialReading` is genuine (STA-2791, CTO decision of 2026-11-25). Never label an
+  `unverified` credential verified or count it as proof, and never read claims from an `invalid` one. `trusted` needs
+  c2pa-rs's `Trusted` state and its `signingCredential.trusted` code; the anchors are the pinned C2PA trust list and our
+  own signing certificates only. Never fetch the trust list at run time, never add a per-tenant anchor, and keep the
+  read fail-closed (no usable anchor means nothing is trusted; expired anchors are dropped). The list changes only by a
+  pull request that copies the upstream file and updates `C2PA_TRUST_LIST_PIN`.
 - `FileSystem.read` of a media path is for server-side processing only (scan, transform, extract). Never return its bytes from an
   action: clients read through `url` or `temporaryUrl`.
 - Processing runs in process: `sharp`, `document` and `c2pa` call no provider (a `c2pa` time-stamp authority gets a
@@ -76,5 +82,6 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 | Uploaded files        | the `FileSystem` disk  | Read only by `FileSystem.read` for processing; never logged or put in an error. |
 | Scans sent to OCR     | the in-region service  | Only to `media.ocr.endpoint`; the service keeps nothing.                        |
 | C2PA signing key      | the secret store       | A `@Secret` field; never logged, never in an error.                             |
+| C2PA trusted signers  | `media.c2pa` config    | Public certificates only (`trustedSigners`), never a key.                       |
 | Signed upload URLs    | `upload.create` output | A short-lived credential for one object; returned to the caller only.           |
 | Upload and bucket ids | refusal details, paths | Ids only.                                                                       |
