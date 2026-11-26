@@ -13,15 +13,22 @@
  *          also shows current() still names the serving commit after a failed 50% or 100% step, verify of a version
  *          older than the proof falls back to Cloudflare's deployment (header or /-/version 404), a step's smoke is
  *          bounded by stepSmokeAttempts and the job's deadline, and a failed rollback is reported with its cause.
+ *          The STA-2860 block shows the deploy log: one line per phase (build, migrations, upload, version id, each
+ *          smoke attempt, each rollout step with its percentage and hold, rollback, verify), each command's output
+ *          streamed with every secret and the Cloudflare token masked, a failed command's error masked, and standard
+ *          error as the default log.
  * Boundary: test only; the command runner, environment and fetch are fakes, and the member is a temporary folder.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); ADR 0173; STA-1921; ADR 0536; STA-2786.
+ * Governing contract: ADR 0022 (test placement); ADR 0352 (decisions 1 and 3); ADR 0173; STA-1921; ADR 0536; STA-2786;
+ *                     STA-2860.
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { HealthStatus } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
@@ -166,6 +173,8 @@ function workers(
     fetch: async (url: string) => answer(options.status ?? 200, VERSION, url),
     smokeAttempts: 3,
     smokeIntervalMs: 0,
+    // The deploy log has its own tests (STA-2860); the others keep the test output quiet.
+    log: () => undefined,
   });
 }
 
@@ -1060,5 +1069,202 @@ describe("CloudflareWorkersProviderDriver version proof (STA-2786)", () => {
       ),
     );
     expect(sim.deployment()).toEqual({ [VERSION]: 10, [BEFORE]: 90 });
+  });
+});
+
+describe("CloudflareWorkersProviderDriver deploy log (STA-2860)", () => {
+  /** The registry as runway.yaml ships it: an `api` member, 10/50/100 in production, one smoke URL. */
+  const REGISTRY: DeployTarget = {
+    ...WEB,
+    settings: {
+      members: {
+        registry: {
+          path: "workers/registry",
+          preset: "api",
+          ids: { REGISTRY_D1_DATABASE_ID: D1 },
+          d1: ["stackra-registry"],
+          vars: ["REGISTRY_READ_ONLY"],
+          secrets: ["REGISTRY_SIGNING_KEY"],
+          smoke: [{ url: "https://npm.stackra.figentra.com/-/ping" }],
+        },
+      },
+    },
+  };
+  const PING = "https://npm.stackra.figentra.com/-/ping";
+  const TOKEN = "cf-api-token-value";
+  const START = Date.UTC(2026, 10, 26, 12, 0, 0);
+
+  /** The fake Cloudflare with the log captured, a fixed clock and the Cloudflare token set. */
+  function logged(options: Parameters<typeof cloudflare>[1] = {}) {
+    const sim = cloudflare(repository(), options);
+    const lines: string[] = [];
+    sim.driver.log = (line) => {
+      lines.push(line);
+    };
+    sim.driver.now = () => START;
+    sim.driver.env = { ...ENV, CLOUDFLARE_API_TOKEN: TOKEN };
+    return { ...sim, lines, phases: () => lines.filter((line) => line.startsWith("runway: ")) };
+  }
+
+  it("prints one line per phase: upload, version id, each smoke attempt, each step with its hold", async () => {
+    const { driver, phases } = logged();
+    await driver.apply(REGISTRY, SHA);
+    const step = (percent: number): string[] => [
+      `runway: registry: smoke ${VERSION} at ${percent}%`,
+      `runway: registry: smoke ${PING} attempt 1/6: ok`,
+      `runway: registry: smoke ${VERSION} at ${percent}% passed`,
+    ];
+    expect(phases()).toEqual([
+      "runway: registry: build (turbo run build --filter=./workers/registry)",
+      "runway: registry: apply the D1 migrations of stackra-registry",
+      "runway: registry: upload a version (wrangler versions upload)",
+      `runway: registry: version ${VERSION} uploaded`,
+      `runway: registry: stage ${VERSION} at 0% beside ${BEFORE} at 100% for its smoke`,
+      `runway: registry: 0% smoke of ${VERSION}`,
+      `runway: registry: smoke ${PING} attempt 1/3: ok`,
+      `runway: registry: 0% smoke of ${VERSION} passed`,
+      `runway: registry: rollout step 1/3: ${VERSION} at 10%, ${BEFORE} at 90%`,
+      "runway: registry: hold 10% for 5 min (until 2026-11-26T12:05:00.000Z)",
+      ...step(10),
+      `runway: registry: rollout step 2/3: ${VERSION} at 50%, ${BEFORE} at 50%`,
+      "runway: registry: hold 50% for 5 min (until 2026-11-26T12:05:00.000Z)",
+      ...step(50),
+      `runway: registry: rollout step 3/3: ${VERSION} at 100%`,
+      ...step(100),
+      `runway: registry: ${VERSION} serves 100%`,
+    ]);
+  });
+
+  it("streams each command's output line by line with every secret and the Cloudflare token masked", async () => {
+    const { driver, lines } = logged();
+    const run = driver.run;
+    driver.run = async (command, args, options) => {
+      if (command !== "git") {
+        options.onLine?.(`wrangler ${args[2] ?? ""}: signing with signing-key-value`);
+        options.onLine?.(`auth: Bearer ${TOKEN}`);
+      }
+      return run(command, args, options);
+    };
+    await driver.apply(REGISTRY, SHA);
+    const streamed = lines.filter((line) => line.startsWith("  | "));
+    expect(streamed).toContain("  | wrangler versions: signing with ***");
+    expect(streamed).toContain("  | auth: Bearer ***");
+    // Build, migrations, upload, the 0% stage, three steps; each printed two lines.
+    expect(streamed).toHaveLength(2 * 7);
+    expect(lines.join("\n")).not.toMatch(/signing-key-value|cf-api-token-value/);
+  });
+
+  it("masks a secret in a failed command's error, and prints the failure", async () => {
+    const { driver, lines } = logged();
+    const run = driver.run;
+    driver.run = async (command, args, options) => {
+      if (args[3] === "upload")
+        throw new Error("wrangler versions failed: bad key signing-key-value");
+      return run(command, args, options);
+    };
+    const failure = driver.apply(REGISTRY, SHA);
+    await expect(failure).rejects.toThrow("wrangler versions failed: bad key ***");
+    expect(lines.at(-1)).toBe("runway: registry: upload a version (wrangler versions upload)");
+  });
+
+  it("prints each failed smoke attempt, taking the version out after a failed 0% smoke", async () => {
+    const { driver, phases } = logged({ broken: [VERSION] });
+    await expect(driver.apply(REGISTRY, SHA)).rejects.toThrow(/failed its 0% smoke/);
+    // The last lines: no step is printed after the version left the deployment.
+    expect(phases().slice(-5)).toEqual([
+      `runway: registry: 0% smoke of ${VERSION}`,
+      `runway: registry: smoke ${PING} attempt 1/3: answered 503`,
+      `runway: registry: smoke ${PING} attempt 2/3: answered 503`,
+      `runway: registry: smoke ${PING} attempt 3/3: answered 503`,
+      `runway: registry: 0% smoke failed: ${PING} answered 503 after 3 attempts; take ${VERSION} out of the deployment, no traffic moved`,
+    ]);
+  });
+
+  it("prints the rollback after a failed step, and its result", async () => {
+    const { driver, phases, timeline } = logged();
+    const honoured = driver.fetch;
+    driver.fetch = async (url, headers) =>
+      timeline.some((line) => line.startsWith(`deploy ${VERSION}@10`))
+        ? answer(503, VERSION, url)
+        : honoured(url, headers);
+    await expect(driver.apply(REGISTRY, SHA)).rejects.toThrow(RunwayDeployFailedError);
+    const failed = `${VERSION} failed its smoke at 10% (${PING} answered 503 after 6 attempts)`;
+    expect(phases().slice(-3)).toEqual([
+      `runway: registry: smoke ${PING} attempt 6/6: answered 503`,
+      `runway: registry: roll back to ${BEFORE}: ${failed}`,
+      `runway: registry: ${VERSION} rolled back to ${BEFORE}`,
+    ]);
+  });
+
+  it("prints a line when verify smokes and when rollback returns each member", async () => {
+    const root = repository();
+    const { run } = fakeRunner(root);
+    const lines: string[] = [];
+    const driver = Object.assign(workers(root, run), {
+      log: (line: string) => {
+        lines.push(line);
+      },
+    });
+    const record = { target: WEB.id, sha: SHA, reference: `registry=${VERSION},static=${VERSION}` };
+    await driver.verify(WEB, record);
+    await driver.rollback(WEB, { ...record, sha: OLD });
+    expect(lines).toEqual([
+      `runway: registry: verify ${VERSION} (${SHA})`,
+      "runway: registry: smoke https://npm.stackra.figentra.com/-/ping attempt 1/3: ok",
+      `runway: static: verify ${VERSION} (${SHA})`,
+      "runway: static: smoke https://static.test/schemas/index.json attempt 1/3: ok",
+      `runway: registry: roll back to ${VERSION} (${OLD})`,
+      `runway: registry: rolled back to ${VERSION}`,
+      `runway: static: roll back to ${VERSION} (${OLD})`,
+      `runway: static: rolled back to ${VERSION}`,
+    ]);
+  });
+
+  it("masks a smoke bearer in a verify line, without an apply before it", async () => {
+    const root = repository();
+    const { run } = fakeRunner(root);
+    const lines: string[] = [];
+    const bearer = "turbo-bearer-value";
+    const cache: DeployTarget = {
+      ...WEB,
+      settings: {
+        members: {
+          cache: {
+            path: "workers/registry",
+            preset: "api",
+            smoke: [{ url: "https://cache.test/v8/artifacts/status", bearer: "TURBO_TOKEN" }],
+          },
+        },
+      },
+    };
+    const driver = Object.assign(workers(root, run), {
+      env: { ...ENV, TURBO_TOKEN: bearer },
+      fetch: async () => {
+        throw new Error(`refused Bearer ${bearer}`);
+      },
+      log: (line: string) => {
+        lines.push(line);
+      },
+    });
+    const health = await driver.verify(cache, {
+      target: WEB.id,
+      sha: SHA,
+      reference: `cache=${VERSION}`,
+    });
+    expect(health.status).toBe(HealthStatus.Down);
+    expect(lines).toContain(
+      "runway: cache: smoke https://cache.test/v8/artifacts/status attempt 1/3: failed: refused Bearer ***",
+    );
+    expect(lines.join("\n")).not.toContain(bearer);
+  });
+
+  it("writes to standard error by default", () => {
+    const write = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    try {
+      new CloudflareWorkersProviderDriver().log("runway: registry: a line");
+      expect(write).toHaveBeenCalledWith("runway: registry: a line\n");
+    } finally {
+      write.mockRestore();
+    }
   });
 });

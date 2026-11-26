@@ -542,6 +542,25 @@ none, so for it (a rollback to an older record) the answers must be 2xx and Clou
 (`wrangler deployments status`) must show it at 100%. `WORKER_VERSION`, `WorkerVersionProof` and
 `servedVersionProblem` (`.`) are the names and the check, for another smoke to apply the same proof.
 
+A Worker deploy is never silent (STA-2860). The provider prints one line per phase to its `log` (standard error by
+default), each starting `runway: <member>:`: the build, each D1 migration, the upload, the version id, the 0% stage, each
+smoke attempt with its answer, each rollout step with its percentage, each hold with its length and end time, the
+rollback after a failed step and its result, and the lines of `verify` and `rollback`. Each command's own output
+(wrangler's, turbo's) streams to the same log line by line while it runs, prefixed `  | `. Every line, and the message of
+a failed command, has each secret value masked as `***`: the member's declared secrets, its smoke bearers and
+`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_API_TOKEN_READ`. `runProgram` streams only when given `onLine`
+(`CommandRunner`'s optional option), and hands the line over raw: the caller masks it.
+
+```text
+runway: registry: upload a version (wrangler versions upload)
+  | Uploaded stackra-registry (4.12 sec)
+runway: registry: version 0d9c…e1 uploaded
+runway: registry: stage 0d9c…e1 at 0% beside 7a41…02 at 100% for its smoke
+runway: registry: smoke https://npm.stackra.figentra.com/-/ping attempt 1/60: ok
+runway: registry: rollout step 1/3: 0d9c…e1 at 10%, 7a41…02 at 90%
+runway: registry: hold 10% for 5 min (until 2026-11-26T12:05:00.000Z)
+```
+
 ```yaml
 targets:
   cloudflare-workers:

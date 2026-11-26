@@ -5,7 +5,7 @@ Stackra file contract:
 Purpose: the agent rules of @stackra/runway: where code goes, the schema, deploy, secrets and event fan-out rules, PII.
 Boundary: documentation only; the code and the ADRs win on any difference.
 Runtime: none
-Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); ADR 0441 as amended (D17 brand step, D19 capture job); ADR 0453 (`providers.npm`); ADR 0437 and app-shells 5.3, 15.7, 16.3, 16.4, 16.7 (the publish step); STA-863; ADR 0260 (decision 4: the relay fan-out
+Governing contract: ADR 0296; ADR 0352; ADR 0002 (2026-10-27 amendment, the `mintlify` provider); ADR 0400; ADR 0444 (`providers.tools`); ADR 0441; ADR 0439 (the mobile job); ADR 0441 as amended (D17 brand step, D19 capture job); ADR 0453 (`providers.npm`); ADR 0437 and app-shells 5.3, 15.7, 16.3, 16.4, 16.7 (the publish step); STA-863; STA-2860 (the masked deploy log); ADR 0260 (decision 4: the relay fan-out
                     is gen's).
 -->
 
@@ -37,6 +37,9 @@ and only parses and prints; the work stays in the functions it calls.
 - The canonical schemas are `tools/schemas/runway-<kind>.schema.json`, owned by main: never edit `schema/<kind>.json`
   by hand; `cp` the canonical file (`pnpm validate` checks the bytes) and change the zod to match (the
   `runwayJsonSchema` test compares them).
+- A provider prints progress through its own masked log: every line it prints, a command's streamed output (`onLine`)
+  and a failed command's message pass through `maskSecrets` with every secret value the deploy holds (STA-2860). Never
+  print a raw `onLine` line or error, and give a new secret source to the mask before its first command runs.
 - Agents never call `deploy`, `promote` or `rollback` against a real provider, and never run `git push encore://`,
   `eas build`, `eas update` or a push of a docs deploy branch: tests use fake command runners; a real run is the deploy workflow's (ADR 0352 d6).
 - The `mintlify` provider publishes a docs app's generated `.stackra/site/` to `targets.mintlify.branch`; it reads
