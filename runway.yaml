@@ -19,6 +19,11 @@ project: stackra
 
 # ── Providers ────────────────────────────────────────────────────────────────────────────────────────
 providers:
+  encore:
+    # The Encore Cloud app of the reference services (`encore.app` is generated from this id, ADR 0091). Its two
+    # environments, `staging` (the default) and `production`, are inactive: nothing deploys to either without the
+    # owner's word. The id is public.
+    app: stackra-nzk2
   cloudflare:
     # The account of workers/static/wrangler.jsonc (ADR 0284 decision 7).
     accountId: d861f9ac9df28b7f0b1298cc0c89bc9d
