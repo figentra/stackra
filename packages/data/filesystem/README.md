@@ -81,7 +81,10 @@ for await (const text of body.pipeThrough(new TextDecoderStream())) parser.push(
 to `url` with exactly those headers, so the bytes never pass through a service (ADR 0222 decision 2). The size is never
 signed (a browser sets Content-Length), and an Encore bucket signs no header, so the caller checks `stat(key)` after the
 upload. `move(from, to)` keeps the media type; the default reads, writes and deletes, and the memory, local, s3 and gcs
-disks use the store's own move. `@stackra/media` runs its signed uploads and claims through these two members on any
+disks use the store's own move. On `s3` a move asks the object's size first: up to 5 GiB it is one `CopyObject`; above
+(S3's limit for one copy), a multipart copy of 512 MiB ranges (`UploadPartCopy`, larger ranges past 10,000 parts) that
+keeps the content type, cache, disposition, encoding and language headers and the user metadata, copies only while the
+source keeps its ETag, and is aborted on any failure with the source kept. `@stackra/media` runs its signed uploads and claims through these two members on any
 disk (ADR 0465; the old `MediaDisk` port and its S3 driver were folded in here, stackra-226). The bucket of the s3 and
 gcs disks needs a CORS rule that allows `content-type` on `PUT`.
 
