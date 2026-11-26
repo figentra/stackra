@@ -198,6 +198,15 @@ import {
   judgeGuardSource,
   judgeNodeSource,
   judgeEnv,
+  JUDGE_GUARD,
+  JUDGE_INLINE,
+  FACTS_READER_FILE,
+  NODE_REFUSED_EXIT,
+  NODE_VALUED_OPTIONS,
+  REBUILD_COMMAND,
+  STORE_METADATA_CACHE,
+  JUDGE_METADATA_CACHE,
+  GEN_MACRO_PACKAGES,
   judgeViewScript,
   JUDGE_GEN,
   JUDGE_MOUNT,
@@ -475,7 +484,7 @@ test("install: no PR lifecycle script or pnpmfile; only main's allowed builds ru
   });
   assert.match(
     install.at(-1),
-    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile && pnpm rebuild --ignore-pnpmfile esbuild @shopify\/react-native-skia$/,
+    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile && pnpm rebuild --ignore-pnpmfile --store-dir \/store esbuild @shopify\/react-native-skia$/,
   );
   const none = installArgs(S, {
     name: "i",
@@ -961,6 +970,7 @@ function fakeDeps({
     judgeEnvFile: "/runs/x/judge.env",
     judgeImage: async () => "stackra-verify-judge:abc",
     judgeEvalEnvFile: "/runs/x/judge-eval.env",
+    judgeInlineFile: "/runs/x/judge-inline",
     workVolume: async (image, name) => {
       (calls.volumes ??= []).push([image, name]);
       return name;
@@ -1568,10 +1578,27 @@ async function commitlintLoad() {
   }
 }
 const COMMITLINT = await commitlintLoad();
+/**
+ * Whether this process may build code from strings: not under a judge's guarded node (validate runs these self-tests
+ * with code from strings off), where commitlint's ajv cannot compile its schemas.
+ */
+const CAN_EVAL = (() => {
+  try {
+    // oxlint-disable-next-line no-new-func -- the probe the judge guard makes too
+    return new Function("return true")();
+  } catch {
+    return false;
+  }
+})();
 
 test(
   "buildTree: the real @commitlint/load over the tested tree reads main's rules, not a PR's .commitlintrc.json or package.yaml",
-  { skip: COMMITLINT ? false : "@commitlint/load is not installed in this checkout" },
+  {
+    skip: !COMMITLINT
+      ? "@commitlint/load is not installed in this checkout"
+      : !CAN_EVAL &&
+        "code from strings is off here (a judge's validate): commitlint's ajv needs it",
+  },
   async () => {
     const { dir, base, sha } = overlayRepo();
     const out = mkdtempSync(join(tmpdir(), "stackra-tested-"));
@@ -1722,7 +1749,7 @@ test("licensed builds: main's versions from the lockfile; the install copies the
   const cmd = installCommand(["esbuild", "uniwind-pro", "sharp"]);
   assert.match(
     cmd,
-    /--ignore-scripts --ignore-pnpmfile && pnpm rebuild --ignore-pnpmfile esbuild sharp && /,
+    /--ignore-scripts --ignore-pnpmfile && pnpm rebuild --ignore-pnpmfile --store-dir \/store esbuild sharp && /,
   );
   assert.doesNotMatch(cmd, /pnpm rebuild[^&]*uniwind-pro/);
   assert.match(cmd, /node_modules\/\.pnpm\/uniwind-pro@\*\/node_modules\/uniwind-pro/);
@@ -2278,7 +2305,7 @@ test("gate mirrors main's ci.yml: every dependency-scan, gate and mobile step, i
   );
   assert.match(
     installCommand(["esbuild"], [], GATE_FILTERS),
-    /--ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' esbuild$/,
+    /--ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile --store-dir \/store --filter='!@figentra\/mobile' --filter='!@figentra\/playground' esbuild$/,
   );
   assert.throws(() => installCommand([], [], ["x; rm -rf /"]), /not a pnpm filter/);
 });
@@ -2352,6 +2379,7 @@ function gateFixture(facts = PR_FACTS) {
   writeFileSync(join(dir, "judge/packages/developer/cli/dist/stackra.mjs"), NODE_STUB("stackra"));
   writeFileSync(join(input, "licence-check.mjs"), NODE_STUB("licence-check"));
   writeFileSync(join(input, "facts.json"), JSON.stringify(facts));
+  writeFileSync(join(input, FACTS_READER_FILE), kindFiles("gate")[FACTS_READER_FILE]);
   for (const tool of ["pnpm", "actionlint", "zizmor", "osv-scanner", "squawk"]) {
     writeFileSync(join(bin, tool), STUB);
     chmodSync(join(bin, tool), 0o755);
@@ -4111,9 +4139,10 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
     ["/runs/x/shared-definitions", "/in/shared-definitions"],
     ["/runs/x/shared-main.tar", "/in/shared-main.tar"],
     ["/runs/x/facts.json", "/in/facts.json"],
+    ["/runs/x/facts-reader.cjs", "/in/facts-reader.cjs"],
     ["/runs/x/history.bundle", "/in/history.bundle"],
     ["/osv-db", "/osv"],
-    ["/runs/x/judge-guard.mjs", "/in/judge-guard.mjs"],
+    ["/runs/x/judge-guard.cjs", "/in/judge-guard.cjs"],
     ["/runs/x/bin", "/in/bin"],
     ["/runs/x/main-paths", "/in/main-paths"],
     ["/runs/x/judge-view.sh", "/in/judge-view.sh"],
@@ -4125,7 +4154,7 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
     ["/runs/x/mobile.sh", "/in/mobile.sh"],
     ["/runs/x/licence-check.mjs", "/in/licence-check.mjs"],
     ["/runs/x/licences.json", "/in/licences.json"],
-    ["/runs/x/judge-guard.mjs", "/in/judge-guard.mjs"],
+    ["/runs/x/judge-guard.cjs", "/in/judge-guard.cjs"],
     ["/runs/x/bin", "/in/bin"],
     ["/runs/x/main-paths", "/in/main-paths"],
     ["/runs/x/judge-view.sh", "/in/judge-view.sh"],
@@ -4136,16 +4165,20 @@ test("kinds: the gate mounts its script, licence check, main's licence policy, P
   assert.throws(() => kindMounts("nope", { runDir: "/r" }), /not a verify kind/);
   const argv = verifyArgs(S, { name: "v", image: "run", envFile: ENV, tarPath: TAR, mounts });
   const volumes = argv.filter((_, i) => argv[i - 1] === "--volume");
-  assert.equal(volumes.length, 16);
+  assert.equal(volumes.length, 17);
   for (const v of volumes) assert.match(v, /:ro$/, v);
   assert.equal(argv[argv.indexOf("--network") + 1], "none");
-  const judgeFiles = ["judge-guard.mjs", "bin/node", "bin/turbo", "judge-view.sh"];
+  const judgeFiles = ["judge-guard.cjs", "bin/node", "bin/turbo", "judge-view.sh"];
   assert.deepEqual(Object.keys(kindFiles("gate")), [
     "gate.sh",
     "licence-check.mjs",
+    FACTS_READER_FILE,
     "prepare.sh",
     ...judgeFiles,
   ]);
+  // every step container reads the PR facts, judges too: a file, never node -e (a judge's node runs no inline script)
+  assert.match(gateScript(), /< <\(node "\$GATE_IN\/facts-reader\.cjs" "\$GATE_IN\/facts\.json"\)/);
+  assert.doesNotMatch(gateScript(), /node -e/);
   assert.equal(kindFiles("gate")["prepare.sh"], prepareScript("gate"));
   assert.match(
     prepareScript("gate"),
@@ -4170,7 +4203,7 @@ test("runJob gate: installs without the Uniwind Pro members and never lays in a 
   assert.match(install, /--filter='!@figentra\/mobile' --filter='!@figentra\/playground'$/);
   assert.equal(
     calls.runs[1].at(-1),
-    "set -e; cd /work; pnpm rebuild --ignore-pnpmfile --filter='!@figentra/mobile' --filter='!@figentra/playground' esbuild",
+    "set -e; cd /work; pnpm rebuild --ignore-pnpmfile --store-dir /store --filter='!@figentra/mobile' --filter='!@figentra/playground' esbuild",
   );
   for (const run of calls.runs.slice(0, 2)) assert.doesNotMatch(run.at(-1), /uniwind-pro|prebuilt/);
   assert.equal(calls.runs[2].at(-1), "bash /in/prepare.sh");
@@ -4189,7 +4222,7 @@ test("runJob mobile: the full install with the licensed build; a licence failure
   assert.doesNotMatch(calls.runs[0].at(-1), /--filter=|rebuild/);
   assert.match(
     calls.runs[1].at(-1),
-    /^set -e; cd \/work; pnpm rebuild --ignore-pnpmfile esbuild && for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
+    /^set -e; cd \/work; pnpm rebuild --ignore-pnpmfile --store-dir \/store esbuild && for d in node_modules\/\.pnpm\/uniwind-pro@\*/,
   );
   assert.equal(calls.runs[2].at(-1), "bash /in/prepare.sh");
   assert.deepEqual(
@@ -6353,6 +6386,33 @@ function guardFixture() {
     "helper.mjs": say("tree helper"),
     "changed.mjs": say("PR changed"),
     "pr.mjs": 'process.stdout.write("PR RAN\\n"); process.exit(0);\n',
+    // proof 6 (#1118): a PR preload, which ran before the guard when the guard was an --import
+    "evil.cjs": 'process.stdout.write("PR RAN\\n");\n',
+    // main's code compiling text with no file the guard can check (proof 6: an anonymous vm.runInThisContext)
+    "anon.mjs": [
+      'import vm, { runInThisContext } from "node:vm";',
+      'import Module from "node:module";',
+      'import { Worker } from "node:worker_threads";',
+      'import { readFileSync } from "node:fs";',
+      "const [how, file] = process.argv.slice(2);",
+      'const text = readFileSync(file, "utf8").replace("process.exit(0);", "");',
+      "try {",
+      '  if (how === "this") runInThisContext(text);',
+      '  else if (how === "new") vm.runInNewContext(text, { process });',
+      '  else if (how === "context") vm.runInContext(text, vm.createContext({ process }));',
+      '  else if (how === "compile") vm.compileFunction(text, [], {})();',
+      '  else if (how === "script") new vm.Script(text).runInThisContext();',
+      '  else if (how === "relative") runInThisContext(text, { filename: "pr.mjs" });',
+      '  else if (how === "module") new Module("x")._compile(text, "anon.js");',
+      '  else if (how === "data") await import(`data:text/javascript,${encodeURIComponent(text)}`);',
+      '  else if (how === "worker") new Worker(text, { eval: true });',
+      '  else if (how === "binding") process.binding("contextify"), console.log("BINDING");',
+      '  else if (how === "register") Module.register(file);',
+      "} catch (error) {",
+      '  console.log(error.message.split("\\n")[0]);',
+      "}",
+      "",
+    ].join("\n"),
     "equal.mjs": say("generated"),
     "main.cjs": 'require("cpkg");\n' + say("tree cjs"),
     "node_modules/pkg/package.json": '{"name":"pkg","type":"module","exports":"./index.mjs"}',
@@ -6367,6 +6427,7 @@ function guardFixture() {
       "",
     ].join("\n"),
     "resolve.cjs": 'console.log(require.resolve("cpkg"));\n',
+    "req.cjs": "require(process.argv[2]);\n",
     // a judge tool starting a child from process.execPath with NODE_OPTIONS stripped (turbo's strict env does that)
     "spawn.mjs": [
       'import { spawnSync } from "node:child_process";',
@@ -6415,30 +6476,44 @@ function guardFixture() {
       "main.cjs",
       "vm.mjs",
       "resolve.cjs",
+      "req.cjs",
       "plugin.mjs",
       "spawn.mjs",
       "eval.mjs",
       "argv.mjs",
       "native.cjs",
+      "anon.mjs",
     ]
       .map((p) => `${p}\0`)
       .join(""),
   );
-  const guard = join(dir, "guard.mjs");
-  // the guarded node, as judgeNodeSource writes it: the real node, the guard first, no code from strings
-  const execPath = join(dir, "node");
-  writeFileSync(
-    execPath,
-    `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} --import ${JSON.stringify(guard)} --disallow-code-generation-from-strings "$@"\n`,
-  );
+  // the guard and the guarded node as kindFiles writes them, in an /in of the fixture's own: the real node, the guard
+  // preloaded first, no code from strings (unless STACKRA_JUDGE_EVAL=1)
+  const inDir = join(dir, "in");
+  const guard = join(inDir, JUDGE_GUARD);
+  const execPath = join(inDir, "bin/node");
+  mkdirSync(dirname(execPath), { recursive: true });
+  writeFileSync(execPath, judgeNodeSource(inDir, [process.execPath]));
   chmodSync(execPath, 0o755);
   writeFileSync(
     guard,
-    `(${judgeGuard.toString()})(${JSON.stringify({ tree, root, mainList, execPath })});\n`,
+    `(${judgeGuard.toString()})(${JSON.stringify({ tree, root, mainList, execPath, inline: join(inDir, JUDGE_INLINE) })});\n`,
   );
   const run = (...args) =>
-    spawnSync(process.execPath, ["--import", guard, ...args], { cwd: tree, encoding: "utf8" });
-  return { dir, tree, root, run, execPath };
+    spawnSync(process.execPath, ["--require", guard, ...args], { cwd: tree, encoding: "utf8" });
+  /** The guarded node in a judge's environment, with `env` added. */
+  const guarded = (args, { env = {}, input } = {}) => {
+    const base = { ...process.env };
+    delete base.STACKRA_JUDGE_EVAL;
+    delete base.NODE_OPTIONS;
+    return spawnSync(execPath, args, {
+      cwd: tree,
+      encoding: "utf8",
+      env: { ...base, ...env },
+      input,
+    });
+  };
+  return { dir, tree, root, run, execPath, guarded, guard, inline: join(inDir, JUDGE_INLINE) };
 }
 
 test("judge guard: a judge runs main's files only; the tree's own code never runs, main's copy or build runs instead", () => {
@@ -6471,16 +6546,7 @@ test("judge guard: a judge runs main's files only; the tree's own code never run
     assert.notEqual(viaVm.status, 0);
     assert.doesNotMatch(viaVm.stdout, /PR RAN/);
     assert.match(viaVm.stderr, /never runs the tested tree's pr\.mjs/);
-    const viaRequire = spawnSync(
-      process.execPath,
-      [
-        "--import",
-        join(g.dir, "guard.mjs"),
-        "-e",
-        `require(${JSON.stringify(join(g.tree, "node_modules/cpkg/index.js"))})`,
-      ],
-      { cwd: g.tree, encoding: "utf8" },
-    );
+    const viaRequire = g.run(join(g.tree, "req.cjs"), join(g.tree, "node_modules/cpkg/index.js"));
     // the tree's copy of a package is main's when main's install has the same file at the same place
     assert.equal(viaRequire.stdout, "judge cpkg\n", viaRequire.stderr);
     // a child started from process.execPath with NODE_OPTIONS stripped is still guarded: execPath is the guarded node
@@ -6528,7 +6594,7 @@ test("judge guard: a judge runs main's files only; the tree's own code never run
     writeFileSync(otherGuard, `(${judgeGuard.toString()})(${JSON.stringify(otherConfig)});\n`);
     const nested = spawnSync(
       process.execPath,
-      ["--import", join(g.dir, "guard.mjs"), "--import", otherGuard, join(other, "pr.mjs")],
+      ["--require", g.guard, "--import", otherGuard, join(other, "pr.mjs")],
       { cwd: other, encoding: "utf8" },
     );
     assert.notEqual(nested.status, 0);
@@ -6547,7 +6613,8 @@ test("judge guard: a judge runs main's files only; the tree's own code never run
 
 test("judge container setup: guarded node first on PATH, the guard and the eval ban in NODE_OPTIONS, turbo without a cache", () => {
   const wrapper = judgeNodeSource();
-  assert.match(wrapper, /exec "\$node" --import \/in\/judge-guard\.mjs \$flags "\$@"/);
+  assert.match(wrapper, /^guard=\/in\/judge-guard\.cjs$/m);
+  assert.match(wrapper, /exec "\$node" --require "\$guard" \$flags "\$@"/);
   assert.match(wrapper, /^flags=--disallow-code-generation-from-strings$/m);
   // the judge image's real node first; never the wrapper itself where it is mounted over the image's node
   assert.match(wrapper, new RegExp(`for node in ${JUDGE_NODE} ${IMAGE_NODE} /usr/bin/node; do`));
@@ -6562,13 +6629,20 @@ test("judge container setup: guarded node first on PATH, the guard and the eval 
   assert.deepEqual(env.PATH.split(":").slice(0, 2), ["/in/bin", "/judge/node_modules/.bin"]);
   assert.equal(
     env.NODE_OPTIONS,
-    "--import /in/judge-guard.mjs --disallow-code-generation-from-strings",
+    "--require /in/judge-guard.cjs --disallow-code-generation-from-strings",
   );
   assert.equal(env.TURBO_CACHE, "local:,remote:");
   assert.equal(env.STACKRA_JUDGE_EVAL, undefined);
   const evalEnv = judgeEnv("/in", { evalAllowed: true });
-  assert.match(evalEnv, /^NODE_OPTIONS=--import \/in\/judge-guard\.mjs$/m);
+  assert.match(evalEnv, /^NODE_OPTIONS=--require \/in\/judge-guard\.cjs$/m);
   assert.match(evalEnv, /^STACKRA_JUDGE_EVAL=1$/m);
+  // inline scripts without code from strings, by a marker the step has mounted: validate's self-tests start node -e
+  assert.match(judgeGuardSource(), /"inline":"\/in\/judge-inline"/);
+  assert.deepEqual(
+    [...GATE_STEPS, ...MOBILE_STEPS].filter((step) => step.inlineAllowed).map((step) => step.id),
+    ["validate"],
+  );
+  assert.match(GATE_STEPS.find((step) => step.inlineAllowed).inlineAllowed, /node -e/);
   // the one step that may build code from strings, with its reason
   assert.deepEqual(
     [...GATE_STEPS, ...MOBILE_STEPS].filter((step) => step.evalAllowed).map((step) => step.id),
@@ -6579,6 +6653,184 @@ test("judge container setup: guarded node first on PATH, the guard and the eval 
   assert.match(JUDGE_GEN, /^node \/judge\/packages\/developer\/cli\/dist\/stackra\.mjs gen$/m);
   for (const m of JUDGE_GEN.matchAll(/\S*stackra\.mjs/g))
     assert.equal(m[0], "/judge/packages/developer/cli/dist/stackra.mjs");
+});
+
+/** The guarded node refused what it was given before any of it ran: no PR code ran, and the guard says why. */
+function refusedNode(r, what) {
+  assert.notEqual(r.status, 0, `${what}: ${r.stdout}`);
+  assert.doesNotMatch(r.stdout, /PR RAN/, what);
+  assert.match(r.stderr, /stackra-verify: a judge never lets node run /, what);
+}
+
+test("#1118 proof 6: the guard is node's first preload; a PR preload, inline script or stdin script never runs", () => {
+  const g = guardFixture();
+  try {
+    const evil = join(g.tree, "evil.cjs");
+    const main = join(g.tree, "main.mjs");
+    // NODE_OPTIONS' preloads ran before the command line's --import guard: `--require ./evil.js` ran PR code
+    for (const options of [
+      "--require ./evil.cjs",
+      `--require ${evil}`,
+      '--require "./evil.cjs"',
+      "--require=./evil.cjs",
+      "-r ./evil.cjs",
+      "--import ./pr.mjs",
+      "--experimental_loader ./pr.mjs",
+      "--conditions=x --require ./evil.cjs",
+    ]) {
+      const r = g.guarded([main], { env: { NODE_OPTIONS: options } });
+      refusedNode(r, options);
+      assert.match(r.stderr, /\(NODE_OPTIONS\)/, options);
+    }
+    // the same on the command line, which `"$@"` passed straight through
+    for (const args of [
+      ["-r", "./evil.cjs", main],
+      ["--require", evil, main],
+      ["--require=./evil.cjs", main],
+      ["--import", "./pr.mjs", main],
+      ["--loader", "./pr.mjs", main],
+      ["--experimental-loader=./pr.mjs", main],
+      ["--env-file=./pr.mjs", main],
+      ["--expose-internals", main],
+    ]) {
+      const r = g.guarded(args);
+      refusedNode(r, args.join(" "));
+      assert.match(r.stderr, /\(the command line\)/, args.join(" "));
+    }
+    // inline scripts and a script from stdin (proof 6: `node -e`, `node -p`, `node - < evil.mjs`)
+    const pr = readFileSync(join(g.tree, "pr.mjs"), "utf8");
+    for (const args of [
+      ["-e", pr],
+      ["--eval", pr],
+      [`--eval=${pr}`],
+      ["-p", pr],
+      ["--print", pr],
+      ["-pe", pr],
+      ["-i"],
+    ]) {
+      const r = g.guarded(args, { input: pr });
+      refusedNode(r, args[0]);
+      assert.match(r.stderr, /an inline script/, args[0]);
+    }
+    for (const args of [["-"], []]) {
+      const r = g.guarded(args, { input: pr });
+      refusedNode(r, `stdin ${args.join(" ")}`);
+      assert.match(r.stderr, /a script read from stdin/);
+    }
+    // what node does before any preload runs is refused by the guarded node itself, up to the script
+    for (const args of [
+      ["--run", "x"],
+      ["--title", "t", "--run=x"],
+      ["--experimental-config-file", "node.config.json", main],
+      ["--experimental_default_config_file", main],
+      ["--snapshot-blob", "x.blob", main],
+    ]) {
+      const r = g.guarded(args);
+      assert.equal(r.status, NODE_REFUSED_EXIT, args.join(" "));
+      assert.match(r.stderr, /stackra-verify: a judge never lets node run --/, args.join(" "));
+    }
+    assert.ok(NODE_VALUED_OPTIONS.includes("--title"));
+    // allowed: main's file, a script's own arguments, node's own options, the guard again (a fork passes its
+    // execArgv), a preload that is an absolute file outside the tree, NODE_OPTIONS without a preload
+    const outside = join(g.dir, "outside.cjs");
+    writeFileSync(outside, 'process.stdout.write("outside preload\\n");\n');
+    for (const [args, env, out] of [
+      [[main], {}, "judge pkg\ntree helper\ntree main\n"],
+      [[main, "--run", "-e", "x"], {}, "judge pkg\ntree helper\ntree main\n"],
+      [["--title", "t", "--no-warnings", main], {}, "judge pkg\ntree helper\ntree main\n"],
+      [
+        ["--require", g.guard, "--disallow-code-generation-from-strings", main],
+        {},
+        "judge pkg\ntree helper\ntree main\n",
+      ],
+      [["--require", outside, main], {}, "outside preload\njudge pkg\ntree helper\ntree main\n"],
+      [
+        ["--require", join(g.tree, "main.cjs"), main],
+        {},
+        "judge cpkg\ntree cjs\njudge pkg\ntree helper\ntree main\n",
+      ],
+      [
+        [main],
+        { NODE_OPTIONS: "--conditions=@stackra/source" },
+        "judge pkg\ntree helper\ntree main\n",
+      ],
+      [["--test-reporter", "dot", main], {}, "judge pkg\ntree helper\ntree main\n"],
+    ]) {
+      const r = g.guarded(args, { env });
+      assert.equal(r.status, 0, `${args.join(" ")}: ${r.stderr}`);
+      assert.equal(r.stdout, out, args.join(" "));
+    }
+    // inline scripts where the step's marker is mounted (validate's self-tests, which start node -e with a clean
+    // environment: a file survives that, an environment variable would not), and where code from strings is on
+    for (const [marker, env] of [
+      [true, {}],
+      [true, { PATH: process.env.PATH }],
+      [false, { STACKRA_JUDGE_EVAL: "1" }],
+    ]) {
+      if (marker) writeFileSync(g.inline, "inline\n");
+      else rmSync(g.inline, { force: true });
+      const evaluated = g.guarded(["-e", 'console.log("inline ran")'], { env });
+      assert.equal(evaluated.stdout, "inline ran\n", evaluated.stderr);
+      const p = g.guarded(["-p", "6 * 7"], { env });
+      assert.equal(p.stdout, "42\n", p.stderr);
+      const stdin = g.guarded(["-"], { env, input: 'console.log("stdin ran")' });
+      assert.equal(stdin.stdout, "stdin ran\n", stdin.stderr);
+      // a PR preload stays refused there too
+      refusedNode(
+        g.guarded(["-e", "1"], { env: { ...env, NODE_OPTIONS: "--require ./evil.cjs" } }),
+        "inline + preload",
+      );
+    }
+    rmSync(g.inline, { force: true });
+  } finally {
+    rmSync(g.dir, { recursive: true, force: true });
+  }
+});
+
+test("#1118 proof 6: code with no file to check (anonymous vm, _compile, data: imports, Worker strings) runs only with eval on", () => {
+  const g = guardFixture();
+  try {
+    const anon = join(g.tree, "anon.mjs");
+    const pr = join(g.tree, "pr.mjs");
+    for (const how of [
+      "this",
+      "new",
+      "context",
+      "compile",
+      "script",
+      "relative",
+      "module",
+      "data",
+      "worker",
+      "binding",
+    ]) {
+      const r = g.guarded([anon, how, pr]);
+      assert.doesNotMatch(r.stdout, /PR RAN|BINDING/, `${how}: ${r.stdout}`);
+      assert.match(
+        r.stdout,
+        /^stackra-verify: a judge never runs code with no file to check \(.+\): code from strings is off for this step$/m,
+        `${how}: ${r.stdout} ${r.stderr}`,
+      );
+    }
+    // module hooks in a thread the guard does not reach: never the tree's
+    const register = g.guarded([anon, "register", pr]);
+    assert.match(register.stdout, /^stackra-verify: a judge never registers module hooks from /m);
+    // the step that may build code from strings (linear-key-check, ajv) may compile it with no file too
+    for (const how of ["this", "compile", "script", "module", "data"]) {
+      const r = g.guarded([anon, how, pr], { env: { STACKRA_JUDGE_EVAL: "1" } });
+      assert.match(r.stdout, /PR RAN/, `${how} with eval on: ${r.stdout} ${r.stderr}`);
+    }
+    // a file of the tree stays refused with eval on: it runs only when it is main's
+    const named = spawnSync(g.execPath, [join(g.tree, "vm.mjs"), pr], {
+      cwd: g.tree,
+      encoding: "utf8",
+      env: { ...process.env, STACKRA_JUDGE_EVAL: "1" },
+    });
+    assert.doesNotMatch(named.stdout, /PR RAN/);
+    assert.match(named.stderr, /never runs the tested tree's pr\.mjs/);
+  } finally {
+    rmSync(g.dir, { recursive: true, force: true });
+  }
 });
 
 /** The judging steps and the PR steps, as Idris's ruling (B) names them. */
@@ -6709,6 +6961,12 @@ test("B runJob: install, its rebuild, prepare, the views, then one container per
       // fresh from its view, read-only, /work noexec, guarded (the only node), with main's judge image
       assert.ok(argv.includes("--read-only"), step.id);
       assert.equal(env, step.evalAllowed ? "/runs/x/judge-eval.env" : "/runs/x/judge.env", step.id);
+      // inline scripts only where the step names why: its marker, read-only
+      assert.equal(
+        argv.includes("/runs/x/judge-inline:/in/judge-inline:ro"),
+        Boolean(step.inlineAllowed),
+        step.id,
+      );
       assert.match(
         work,
         /^type=volume,source=sv-[\w-]+-work-[0-3],target=\/work,volume-subpath=work$/,
@@ -6820,8 +7078,27 @@ test("B judge image: main's tree, installed offline as the gate installs, the ju
   assert.equal(JUDGE_NODE, "/judge/.stackra-node/node");
   assert.match(
     dockerfile,
-    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile --offline --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' esbuild\n/,
+    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile --offline --cache-dir \/tmp\/judge-home\/\.cache\/pnpm --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile --store-dir \/store --filter='!@figentra\/mobile' --filter='!@figentra\/playground' esbuild\n/,
   );
+  // F1 a (#1118 proofs): the store image's fetch ran as root, so its registry metadata is root's; the judge user's
+  // offline install reads a copy it owns, or stops with ERR_PNPM_NO_OFFLINE_META
+  const copy = lines.findIndex((l) =>
+    l.includes(`cp -a ${STORE_METADATA_CACHE} ${JUDGE_METADATA_CACHE}`),
+  );
+  assert.ok(copy > 0, "the metadata copy");
+  assert.ok(copy < lines.indexOf("USER 1000:1000"), "copied as root, before the judge user");
+  assert.match(lines[copy], /chown -R 1000:1000 \/tmp\/judge-home$/);
+  assert.match(lines[copy], /if \[ ! -d \/root\/\.cache\/pnpm \]; then .* exit 1; fi/);
+  assert.ok(
+    lines.includes(
+      "ENV CI=1 HOME=/tmp/judge-home TURBO_TELEMETRY_DISABLED=1 TURBO_CACHE_DIR=/tmp/turbo-cache FORCE_COLOR=0",
+    ),
+  );
+  // F1 c: main's gen loads every macro package's built ./node (@stackra/access-log/node): built with the judges
+  const build = lines.find((l) => l.includes("turbo run build"));
+  assert.ok(build.includes(`for d in ${GEN_MACRO_PACKAGES}; do`));
+  assert.ok(build.includes('gen="$gen --filter=./${d%/src/node/database/macros}..."'));
+  assert.ok(build.includes(" $gen --output-logs=errors-only"));
   assert.doesNotMatch(dockerfile, /uniwind-pro|prebuilt/);
   assert.match(
     dockerfile,
@@ -7722,8 +7999,11 @@ test("round 7 M2: the install is two parts, scripts off first; licence-policy ju
   );
   assert.equal(
     parts.rebuild,
-    "pnpm rebuild --ignore-pnpmfile --filter='!@figentra/mobile' --filter='!@figentra/playground' esbuild",
+    "pnpm rebuild --ignore-pnpmfile --store-dir /store --filter='!@figentra/mobile' --filter='!@figentra/playground' esbuild",
   );
+  // the rebuild uses the install's store: otherwise it makes node_modules/.pnpm-store, which prepare refuses (F1 b)
+  assert.ok(parts.rebuild.startsWith(`${REBUILD_COMMAND} `));
+  assert.match(REBUILD_COMMAND, / --store-dir \/store$/);
   assert.equal(
     installCommand(["esbuild"], [], GATE_FILTERS),
     `${parts.install} && ${parts.rebuild}`,

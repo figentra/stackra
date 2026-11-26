@@ -83,7 +83,13 @@
  *     as argv[0] is the guarded node (/in/bin/node), which runs the real node (the judge image's copy) with the guard
  *     and with code generation from strings disallowed (eval, new Function). The one exception is linear-key-check:
  *     commitlint validates its config with ajv, which compiles schemas with new Function. The real node can still be
- *     started by its own path, which no PATH, execPath or argv names. Under the guard a file of /work runs only when
+ *     started by its own path, which no PATH, execPath or argv names. The guard is node's first preload, a CommonJS
+ *     --require at the head of NODE_OPTIONS (#1118 proofs, F2: NODE_OPTIONS' preloads ran before an --import guard),
+ *     and refuses before anything else runs: a preload or loader that is not main's or outside /work, an option that
+ *     loads code before it can look (--env-file, config files, --run, snapshots), an inline script (-e, -p) or one
+ *     from stdin (validate only, by its mounted marker: main's self-tests start node -e; linear-key-check, whose eval
+ *     is on), and code with no file to check where eval is off (anonymous node:vm, data: imports, Worker strings).
+ *     The PR facts reader is a file in /in for the same reason. Under the guard a file of /work runs only when
  *     its bytes are main's (main-paths, the tracked paths whose blob is main's, or a file equal to the judge image's
  *     copy); any other runs as the judge image's copy at that path, or not at all; a native addon of the tree never
  *     loads; a bare import from /work resolves in main's install; a guard for another tree (a test's own) applies
@@ -303,6 +309,8 @@ export const GATE_REPOS = Object.freeze([DEFAULT_REPO]);
 export const ungatedRepos = (repos) => repos.filter((repo) => !GATE_REPOS.includes(repo));
 export const INSTALL_COMMAND =
   "pnpm install --frozen-lockfile --store-dir /store --ignore-scripts --ignore-pnpmfile";
+/** The install's second part: main's allowed builds, from the same store (#1118 proofs, F1 b). */
+export const REBUILD_COMMAND = "pnpm rebuild --ignore-pnpmfile --store-dir /store";
 
 /**
  * The dependencies main allows to build (`allowBuilds: { name: true }` or `onlyBuiltDependencies: [name]` in main's
@@ -381,8 +389,9 @@ export function installCommands(builds, licensed = LICENSED_BUILDS, filters = []
   const install = [INSTALL_COMMAND, ...filterArgs].join(" ");
   const steps = [];
   // the same filters as the install: an unfiltered rebuild lays in every member the install left out, and their
-  // dependencies (box 1, proof 3: apps/mobile and apps/playground in the gate's install)
-  if (free.length) steps.push(["pnpm rebuild --ignore-pnpmfile", ...filterArgs, ...free].join(" "));
+  // dependencies (box 1, proof 3: apps/mobile and apps/playground in the gate's install). The same store too: without
+  // it the rebuild makes node_modules/.pnpm-store, which prepare refuses in every tree, a harmless one too (#1118, F1).
+  if (free.length) steps.push([REBUILD_COMMAND, ...filterArgs, ...free].join(" "));
   for (const name of licensed.filter((l) => builds.includes(l)))
     steps.push(
       `for d in node_modules/.pnpm/${name}@*/node_modules/${name}; do [ -e "$d" ] || continue; ` +
@@ -690,6 +699,8 @@ export const GATE_STEPS = Object.freeze([
   {
     id: "validate",
     judge: true,
+    // main's own self-tests (node --test tools/scripts/__tests__) start node -e; code from strings stays off
+    inlineAllowed: "main's self-tests start node with an inline script (node -e)",
     job: "gate",
     ci: "Validate repository",
     line: 204,
@@ -770,10 +781,12 @@ export const MOBILE_STEPS = Object.freeze([
 
 /**
  * Reads the PR facts file (written by the daemon from GitHub's answer, never from the PR tree) and prints its seven
- * values NUL-separated, so the shell never parses a value. No single quote: it sits in a single-quoted argument.
+ * values NUL-separated, so the shell never parses a value. A file in IN_DIR (FACTS_READER_FILE), never `node -e`:
+ * every step container reads the facts, and a judge's node runs no inline script (#1118 proofs, F2).
  */
+export const FACTS_READER_FILE = "facts-reader.cjs";
 const FACTS_READER =
-  'const f = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); ' +
+  'const f = JSON.parse(require("node:fs").readFileSync(process.argv[2], "utf8")); ' +
   'const v = [f.event, f.title, f.branch, (f.labels ?? []).join(","), f.base, f.head, f.draft === true ? "true" : "false"]; ' +
   'process.stdout.write(v.map((x) => String(x ?? "").replaceAll(String.fromCharCode(0), "") + String.fromCharCode(0)).join(""));';
 
@@ -800,7 +813,7 @@ export function stepScript(steps, { inDir = IN_DIR, workDir = "/work", facts = t
   if (facts)
     lines.push(
       "facts=()",
-      `while IFS= read -r -d '' value; do facts+=("$value"); done < <(node -e '${FACTS_READER}' "$GATE_IN/facts.json")`,
+      `while IFS= read -r -d '' value; do facts+=("$value"); done < <(node "$GATE_IN/${FACTS_READER_FILE}" "$GATE_IN/facts.json")`,
       'if [ "${#facts[@]}" -ne 7 ]; then echo "stackra-verify: the PR facts file is unreadable"; exit 1; fi',
       "FACT_EVENT=${facts[0]}; FACT_TITLE=${facts[1]}; FACT_BRANCH=${facts[2]}; FACT_LABELS=${facts[3]}",
       "FACT_BASE=${facts[4]}; FACT_HEAD=${facts[5]}; FACT_DRAFT=${facts[6]}",
@@ -2167,8 +2180,19 @@ export const licenceCheckSource = () =>
  * is never refused, only running it, so a judge can still read the tree as data. `execPath` (the guarded node) becomes
  * process.execPath, so a child started from it is guarded whatever NODE_OPTIONS it gets. Self-contained: the
  * generated file is this function's source.
+ * Loaded as a CommonJS preload, first (#1118 proofs, F2): NODE_OPTIONS' preloads run before the command line's and
+ * CommonJS ones before any --import, so the guarded node puts it at the head of NODE_OPTIONS. Before any other code
+ * runs it reads what node was given (NODE_OPTIONS, split as node splits it, and the command line) and refuses: a
+ * preload or loader that is not an absolute file outside the tree (-r, --require, --import, --loader,
+ * --experimental-loader); an option that loads code or settings from a file before the guard can look (--env-file,
+ * the config files, --run, snapshots, --expose-internals); and, unless the step allows it (`inline`: code from strings
+ * is on, or the step's `inline` marker file is mounted), an inline script (-e, --eval, -p, --print, -i) or one read
+ * from stdin. Code with no
+ * file to check (anonymous node:vm calls, Module._compile with no path, a data: or blob: import, a Worker from a
+ * string, process.binding("contextify"), module.register of anything but an absolute file outside the tree) runs
+ * only where code from strings is on (the step's `evalAllowed`), which the guard measures rather than reads.
  */
-export function judgeGuard({ tree, root, mainList, execPath = null }) {
+export function judgeGuard({ tree, root, mainList, execPath = null, inline: inlineMarker = null }) {
   // Once per tree and judge root: a second guard for another tree (a test's own) applies too (round 6, M1).
   const loaded = Symbol.for(`stackra-verify.judgeGuard:${tree}:${root}`);
   if (globalThis[loaded]) return;
@@ -2225,6 +2249,140 @@ export function judgeGuard({ tree, root, mainList, execPath = null }) {
   };
   const isBare = (spec) =>
     !/^(?:\.{1,2}(?:\/|$)|\/|[a-z][\w+.-]*:)/i.test(spec) && !Module.isBuiltin(spec);
+  // Code from strings, measured: on only where the node runs without --disallow-code-generation-from-strings (the
+  // step's evalAllowed). An environment cannot turn it on.
+  let evalAllowed = true;
+  try {
+    // oxlint-disable-next-line no-new-func -- the probe: whether this node may build code from strings
+    new Function("return 0")();
+  } catch {
+    evalAllowed = false;
+  }
+  // Inline scripts: where code from strings is on, or where the step's marker is mounted (JUDGE_INLINE): a file, so a
+  // tool that starts node with a clean environment keeps it, and nothing in a judge can make it (/in is read-only).
+  const inline = evalAllowed || (typeof inlineMarker === "string" && fs.existsSync(inlineMarker));
+  /** Code with no file the guard can check runs only where code from strings is on. */
+  const anonymous = (what) => {
+    if (!evalAllowed)
+      throw new Error(
+        `stackra-verify: a judge never runs code with no file to check (${what}): code from strings is off for this step`,
+      );
+  };
+  /**
+   * A preload, loader or hooks module a judge may load: an absolute file (path or file: URL), outside the tree or
+   * main's in it (a tool's own preload from main's install, as vitest's fork pool passes), by its path and its target.
+   */
+  const loadable = (spec) => {
+    const p = filePath(typeof spec === "string" ? spec : spec?.href);
+    if (p === null) return false;
+    const resolved = path.resolve(p);
+    let real;
+    try {
+      real = fs.realpathSync(resolved);
+    } catch {
+      return false;
+    }
+    return [resolved, real].every((f) => !inTree(f) || isMains(f));
+  };
+  /** NODE_OPTIONS as node splits it: on spaces outside double quotes; a backslash escapes inside them. */
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- self-contained: the guard file is this function's source
+  const splitOptions = (text) => {
+    const args = [];
+    let quoted = false;
+    let fresh = true;
+    for (let i = 0; i < text.length; i++) {
+      let c = text[i];
+      if (c === "\\" && quoted) {
+        if (i + 1 === text.length) return null;
+        i += 1;
+        c = text[i];
+      } else if (c === " " && !quoted) {
+        fresh = true;
+        continue;
+      } else if (c === '"') {
+        quoted = !quoted;
+        continue;
+      }
+      if (fresh) args.push(c);
+      else args[args.length - 1] += c;
+      fresh = false;
+    }
+    return quoted ? null : args;
+  };
+  const PRELOADS = new Set(["-r", "--require", "--import", "--loader", "--experimental-loader"]);
+  const INLINE = new Set(["-e", "--eval", "-p", "--print", "-pe", "-i", "--interactive"]);
+  const NEVER = new Set([
+    "--env-file",
+    "--env-file-if-exists",
+    "--experimental-config-file",
+    "--experimental-default-config-file",
+    "--run",
+    "--build-snapshot",
+    "--build-snapshot-config",
+    "--snapshot-blob",
+    "--expose-internals",
+  ]);
+  const VALUED = new Set([
+    ...PRELOADS,
+    "-e",
+    "--eval",
+    "-p",
+    "--print",
+    "-pe",
+    "--env-file",
+    "--env-file-if-exists",
+    "--experimental-config-file",
+    "--run",
+    "--build-snapshot-config",
+    "--snapshot-blob",
+  ]);
+  /** What node was given that a judge refuses: `args` as node parsed them, from `where`. */
+  const refusedOptions = (args, where) => {
+    const found = [];
+    let inlineScript = false;
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      if (!arg.startsWith("-") || arg === "-") continue;
+      const eq = arg.indexOf("=");
+      let name = eq === -1 ? arg : arg.slice(0, eq);
+      // node reads --a_b as --a-b
+      if (name.startsWith("--")) name = `--${name.slice(2).replaceAll("_", "-")}`;
+      let value = eq === -1 ? undefined : arg.slice(eq + 1);
+      if (value === undefined && VALUED.has(name)) {
+        i += 1;
+        value = args[i];
+      }
+      if (PRELOADS.has(name) && !loadable(value)) found.push(`${name} ${value} (${where})`);
+      else if (NEVER.has(name)) found.push(`${name} (${where})`);
+      else if (INLINE.has(name)) {
+        inlineScript = true;
+        if (!inline) found.push(`an inline script, ${name} (${where})`);
+      }
+    }
+    return { found, inlineScript };
+  };
+  const threads = process.getBuiltinModule("node:worker_threads");
+  if (threads.isMainThread) {
+    const fromEnv = splitOptions(process.env.NODE_OPTIONS ?? "");
+    const env = fromEnv
+      ? refusedOptions(fromEnv, "NODE_OPTIONS")
+      : { found: ["NODE_OPTIONS it cannot read"] };
+    const argv = refusedOptions(process.execArgv, "the command line");
+    const found = [...env.found, ...argv.found];
+    const testRunner = process.execArgv.some((a) => a === "--test" || a.startsWith("--test="));
+    const check = process.execArgv.some((a) => a === "-c" || a === "--check");
+    // node with no script and no inline code reads its script from stdin (or is a REPL)
+    if (
+      !inline &&
+      !argv.inlineScript &&
+      !testRunner &&
+      !check &&
+      (process.argv.length < 2 || process.argv[1] === "-")
+    )
+      found.push("a script read from stdin");
+    if (found.length)
+      throw new Error(`stackra-verify: a judge never lets node run ${found.join("; ")}`);
+  }
   /** Where a bare import from `parent` (in the tree) resolves: the same place in the judge image, else its root. */
   const judgeParent = (parent) => {
     const copy = copyOf(parent);
@@ -2254,13 +2412,18 @@ export function judgeGuard({ tree, root, mainList, execPath = null }) {
               ? path.resolve(path.dirname(parent), specifier)
               : null);
           if (!inTree(missing) || !fs.existsSync(copyOf(missing))) throw error;
-          return next(url.pathToFileURL(copyOf(missing)).href, context);
+          // as the specifier came: a path for require (with the guard a CommonJS preload, node may load the entry
+          // through require's resolution), a file: URL for import
+          const copy = copyOf(missing);
+          return next(/^file:/i.test(specifier) ? url.pathToFileURL(copy).href : copy, context);
         }
       const found = filePath(result.url);
       const run = found && target(found);
       return run && run !== found ? { ...result, url: url.pathToFileURL(run).href } : result;
     },
     load(u, context, next) {
+      if (typeof u === "string" && /^(?:data|blob):/i.test(u))
+        anonymous(`an import of a ${u.slice(0, u.indexOf(":"))}: URL`);
       refuse(filePath(u));
       return next(u, context);
     },
@@ -2294,10 +2457,20 @@ export function judgeGuard({ tree, root, mainList, execPath = null }) {
   const compile = Module.prototype._compile;
   // oxlint-disable-next-line no-underscore-dangle -- Node's own CommonJS entry points, which require and jiti go through
   Module.prototype._compile = function (content, filename, ...rest) {
-    refuse(filename);
+    const file = filePath(filename);
+    // node's own wrappers for -e, -p and stdin scripts, which the start checks allowed or refused
+    if (file === null && !(inline && /^\[(?:eval|stdin)\]-wrapper$/.test(String(filename))))
+      anonymous(`Module._compile of ${String(filename)}`);
+    refuse(file);
     return compile.call(this, content, filename, ...rest);
   };
   const named = (options) => filePath(typeof options === "string" ? options : options?.filename);
+  /** A node:vm compile: a file of the tree runs only when it is main's; no file at all, only with eval on. */
+  const compiled = (what, options) => {
+    const file = named(options);
+    if (file === null) anonymous(what);
+    refuse(file);
+  };
   for (const [name, at] of [
     ["runInThisContext", 1],
     ["runInNewContext", 2],
@@ -2306,7 +2479,7 @@ export function judgeGuard({ tree, root, mainList, execPath = null }) {
   ]) {
     const original = vm[name];
     vm[name] = function (...args) {
-      refuse(named(args[at]));
+      compiled(`vm.${name}`, args[at]);
       return original.apply(this, args);
     };
   }
@@ -2331,41 +2504,194 @@ export function judgeGuard({ tree, root, mainList, execPath = null }) {
   const Script = vm.Script;
   vm.Script = class extends Script {
     constructor(code, options) {
-      refuse(named(options));
+      compiled("vm.Script", options);
       super(code, options);
     }
   };
+  // Only with --experimental-vm-modules: its identifier names no file the guard can check.
+  if (vm.SourceTextModule) {
+    const SourceTextModule = vm.SourceTextModule;
+    vm.SourceTextModule = class extends SourceTextModule {
+      constructor(code, options) {
+        const file = filePath(options?.identifier);
+        if (file === null) anonymous("vm.SourceTextModule");
+        refuse(file);
+        super(code, options);
+      }
+    };
+  }
+  // A Worker from a string or a data: URL; a Worker from a file loads it under its own guard (workers inherit it).
+  const Worker = threads.Worker;
+  threads.Worker = class extends Worker {
+    constructor(file, options) {
+      const spec = file instanceof URL ? file.href : String(file);
+      if (options?.eval) anonymous("a Worker from a string");
+      else if (/^(?:data|blob):/i.test(spec)) anonymous("a Worker from a data: URL");
+      super(file, options);
+    }
+  };
+  // node's raw compiler, below node:vm
+  const binding = process.binding;
+  process.binding = function (name, ...rest) {
+    if (name === "contextify") anonymous('process.binding("contextify")');
+    return binding.call(this, name, ...rest);
+  };
+  // Hooks in a thread of their own, which this guard does not reach: only an absolute file outside the tree.
+  const register = Module.register;
+  Module.register = function (specifier, parentURL, ...rest) {
+    let spec = specifier instanceof URL ? specifier.href : String(specifier);
+    const parent =
+      typeof parentURL === "string" || parentURL instanceof URL ? parentURL : parentURL?.parentURL;
+    if (/^\.{1,2}\//.test(spec) && parent) spec = new URL(spec, parent).href;
+    if (!loadable(spec))
+      throw new Error(`stackra-verify: a judge never registers module hooks from ${spec}`);
+    return register.call(this, specifier, parentURL, ...rest);
+  };
+  // `import { runInThisContext } from "node:vm"` and the like see the guarded functions too
+  Module.syncBuiltinESMExports();
 }
 
-/** The judge guard file a judging container imports (`/in/judge-guard.mjs`), for the tree at /work. */
+/** The judge guard file every judging container's node preloads first (`/in/judge-guard.cjs`), for the tree at /work. */
 export const judgeGuardSource = (inDir = IN_DIR) =>
   [
-    "// Generated by tools/scripts/stackra-verify.mjs (STA-2761): a judge runs main's code only.",
-    `(${judgeGuard.toString()})(${JSON.stringify({ tree: "/work", root: JUDGE_MOUNT, mainList: `${inDir}/main-paths`, execPath: `${inDir}/bin/node` })});`,
+    "// Generated by tools/scripts/stackra-verify.mjs (STA-2761): a judge runs main's code only. A CommonJS preload.",
+    `(${judgeGuard.toString()})(${JSON.stringify({ tree: "/work", root: JUDGE_MOUNT, mainList: `${inDir}/main-paths`, execPath: `${inDir}/bin/node`, inline: `${inDir}/${JUDGE_INLINE}` })});`,
     "",
   ].join("\n");
+
+/** The guard's file name in IN_DIR: CommonJS, so `--require` loads it before any other preload (#1118 proofs, F2). */
+export const JUDGE_GUARD = "judge-guard.cjs";
+/**
+ * The marker a judging step whose main tools start node with an inline script (`inlineAllowed`) has mounted in IN_DIR:
+ * the guard allows -e, -p and stdin scripts there, with code from strings still off.
+ */
+export const JUDGE_INLINE = "judge-inline";
 
 /** Where the judge image keeps the real node (copied there when it is built; nothing on PATH points to it). */
 export const JUDGE_NODE = `${JUDGE_MOUNT}/.stackra-node/node`;
 /** Where the base image keeps node; a judging container with the judge image sees the guarded node there instead. */
 export const IMAGE_NODE = "/usr/local/bin/node";
 
+/** The guarded node's exit when it refuses its arguments before starting node. */
+export const NODE_REFUSED_EXIT = 126;
+/** node's options that take their value as the next word (`--title x`), so that word is not the script. */
+export const NODE_VALUED_OPTIONS = Object.freeze([
+  "-r",
+  "--require",
+  "--import",
+  "--loader",
+  "--experimental-loader",
+  "-e",
+  "--eval",
+  "-p",
+  "--print",
+  "-pe",
+  "-C",
+  "--conditions",
+  "--env-file",
+  "--env-file-if-exists",
+  "--input-type",
+  "--title",
+  "--test-reporter",
+  "--test-reporter-destination",
+  "--test-name-pattern",
+  "--test-skip-pattern",
+  "--test-concurrency",
+  "--test-timeout",
+  "--test-shard",
+  "--test-isolation",
+  "--test-coverage-include",
+  "--test-coverage-exclude",
+  "--watch-path",
+  "--inspect-port",
+  "--debug-port",
+  "--disable-warning",
+  "--redirect-warnings",
+  "--unhandled-rejections",
+  "--diagnostic-dir",
+  "--report-dir",
+  "--report-directory",
+  "--report-filename",
+  "--report-signal",
+  "--heapsnapshot-signal",
+  "--trace-event-categories",
+  "--trace-event-file-pattern",
+  "--cpu-prof-dir",
+  "--cpu-prof-name",
+  "--cpu-prof-interval",
+  "--heap-prof-dir",
+  "--heap-prof-name",
+  "--heap-prof-interval",
+  "--icu-data-dir",
+  "--openssl-config",
+  "--dns-result-order",
+  "--localstorage-file",
+  "--allow-fs-read",
+  "--allow-fs-write",
+  "--max-http-header-size",
+  "--secure-heap",
+  "--secure-heap-min",
+  "--stack-trace-limit",
+  "--use-largepages",
+  "--watch-kill-signal",
+]);
+/** A sh case pattern for node option names (`--a-b` also as `--a_b`, as node reads it). */
+const optionPattern = (names) =>
+  names.map((n) => (n.startsWith("--") ? `--${n.slice(2).replaceAll("-", "[-_]")}` : n)).join("|");
+/** Options that make node run code or load settings before any preload, which the guard cannot see. */
+const NODE_EARLY = optionPattern([
+  "--run",
+  "--experimental-config-file",
+  "--experimental-default-config-file",
+  "--snapshot-blob",
+  "--build-snapshot",
+  "--build-snapshot-config",
+]);
+
 /**
  * `node` for a judging container: `/in/bin/node`, first on PATH, also mounted over IMAGE_NODE when the judge image is
  * there (so every path to node is this one; the guard makes it process.execPath too). It runs the real node (the
- * judge image's copy, JUDGE_NODE; the base image's only where there is no judge image, which is never mounted over)
- * with the judge guard imported first and code generation from strings disallowed, unless the step allows it
- * (STACKRA_JUDGE_EVAL=1, set only for an `evalAllowed` step; an environment that drops it stays disallowed).
+ * judge image's copy, JUDGE_NODE; the base image's only where there is no judge image, which is never mounted over;
+ * `nodes` for a test) with code generation from strings disallowed, unless the step allows it (STACKRA_JUDGE_EVAL=1,
+ * set only for an `evalAllowed` step; an environment that drops it stays disallowed), and the judge guard preloaded
+ * first: at the head of NODE_OPTIONS, whose preloads node runs before the command line's (#1118 proofs, F2: a
+ * `--require ./evil.js` there ran before the guard), and on the command line. The guard refuses every other preload,
+ * inline and stdin script it is given. What node does before any preload runs (--run runs a package.json script;
+ * the config files and snapshots load before preloads) is refused here, among the options before the script: the
+ * first word that is not an option or the value of one of NODE_VALUED_OPTIONS.
  */
-export const judgeNodeSource = (inDir = IN_DIR) =>
+export const judgeNodeSource = (
+  inDir = IN_DIR,
+  nodes = [JUDGE_NODE, IMAGE_NODE, "/usr/bin/node"],
+) =>
   [
     "#!/bin/sh",
-    "# Generated by tools/scripts/stackra-verify.mjs (STA-2761): node, with the judge guard imported first.",
+    "# Generated by tools/scripts/stackra-verify.mjs (STA-2761): node, with the judge guard preloaded first.",
+    `guard=${inDir}/${JUDGE_GUARD}`,
     "flags=--disallow-code-generation-from-strings",
     '[ "${STACKRA_JUDGE_EVAL-}" = 1 ] && flags=',
-    `for node in ${JUDGE_NODE} ${IMAGE_NODE} /usr/bin/node; do`,
+    'case " ${NODE_OPTIONS-}" in',
+    '  " --require $guard" | " --require $guard "*) ;;',
+    '  *) NODE_OPTIONS="--require $guard${NODE_OPTIONS:+ $NODE_OPTIONS}" ;;',
+    "esac",
+    "export NODE_OPTIONS",
+    "value=",
+    'for arg in "$@"; do',
+    '  if [ -n "$value" ]; then value=; continue; fi',
+    '  case "$arg" in',
+    "    --) break ;;",
+    `    ${NODE_EARLY}|${NODE_EARLY.split("|")
+      .map((p) => `${p}=*`)
+      .join("|")})`,
+    `      echo "stackra-verify: a judge never lets node run $arg" >&2; exit ${NODE_REFUSED_EXIT} ;;`,
+    `    ${optionPattern(NODE_VALUED_OPTIONS)}) value=1 ;;`,
+    "    -?*) ;;",
+    "    *) break ;;",
+    "  esac",
+    "done",
+    `for node in ${nodes.join(" ")}; do`,
     "  # never itself: where it is mounted over the image's node, that path is this script",
-    `  [ -x "$node" ] && [ ! "$node" -ef "$0" ] && exec "$node" --import ${inDir}/judge-guard.mjs $flags "$@"`,
+    '  [ -x "$node" ] && [ ! "$node" -ef "$0" ] && exec "$node" --require "$guard" $flags "$@"',
     "done",
     'echo "stackra-verify: no node" >&2; exit 127',
     "",
@@ -2385,12 +2711,13 @@ export const judgeTurboSource = () =>
 
 /**
  * A judging container's environment (with CONTAINER_ENV): the guarded node and main's tools first on PATH, the guard
- * and the ban on code generation from strings in NODE_OPTIONS too (the guarded node applies both anyway), and turbo
- * with no cache (the tree is read-only, so it writes no task log either). `evalAllowed`: the step's tools need eval.
+ * (a CommonJS preload, first) and the ban on code generation from strings in NODE_OPTIONS too (the guarded node applies
+ * both anyway), and turbo with no cache (the tree is read-only, so it writes no task log either). `evalAllowed`: the
+ * step's tools need eval (and so may run inline scripts too).
  */
 export const judgeEnv = (inDir = IN_DIR, { evalAllowed = false } = {}) =>
   `PATH=${inDir}/bin:${JUDGE_MOUNT}/node_modules/.bin:/opt/stackra-verify/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n` +
-  `NODE_OPTIONS=--import ${inDir}/judge-guard.mjs${evalAllowed ? "" : " --disallow-code-generation-from-strings"}\n` +
+  `NODE_OPTIONS=--require ${inDir}/${JUDGE_GUARD}${evalAllowed ? "" : " --disallow-code-generation-from-strings"}\n` +
   `TURBO_CACHE=local:,remote:\n${evalAllowed ? "STACKRA_JUDGE_EVAL=1\n" : ""}`;
 
 /** The judge view's exit when the tree holds something it does not recognise (a service error, fail closed). */
@@ -2574,7 +2901,7 @@ export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
   const file = (name) => [join(runDir, name), `${IN_DIR}/${name}`];
   // Every step container's judge parts (its judging steps run guarded): the guard, the guarded node, main's paths.
   const judging = [
-    file("judge-guard.mjs"),
+    file(JUDGE_GUARD),
     file("bin"),
     file("main-paths"),
     file("judge-view.sh"),
@@ -2590,6 +2917,7 @@ export function kindMounts(kind, { runDir, osvDir, codeqlDir }) {
       file("shared-definitions"),
       file("shared-main.tar"),
       file("facts.json"),
+      file(FACTS_READER_FILE),
       file("history.bundle"),
       [osvDir, OSV_MOUNT],
       ...judging,
@@ -2608,7 +2936,7 @@ export const prepareScript = (kind) =>
 /** The files a kind's run writes for its mounts (the facts and the bundle come from GitHub and the mirror). */
 export function kindFiles(kind, languages = CODEQL_DEFAULT_LANGUAGES) {
   const judging = {
-    "judge-guard.mjs": judgeGuardSource(),
+    [JUDGE_GUARD]: judgeGuardSource(),
     "bin/node": judgeNodeSource(),
     "bin/turbo": judgeTurboSource(),
     "judge-view.sh": judgeViewScript(),
@@ -2617,6 +2945,7 @@ export function kindFiles(kind, languages = CODEQL_DEFAULT_LANGUAGES) {
     return {
       "gate.sh": gateScript(),
       "licence-check.mjs": licenceCheckSource(),
+      [FACTS_READER_FILE]: `// Generated by tools/scripts/stackra-verify.mjs (STA-2761): the PR facts reader.\n${FACTS_READER}\n`,
       "prepare.sh": prepareScript("gate"),
       ...judging,
     };
@@ -3575,30 +3904,52 @@ export const judgeTag = (baseTree, storeId, dockerfile) =>
   `stackra-verify-judge:${createHash("sha256").update(baseTree).update("\0").update(storeId).update("\0").update(dockerfile).digest("hex").slice(0, 16)}`;
 
 /**
+ * Where the store image's `pnpm fetch` (run as root, HOME=/root) leaves the registry metadata an offline install
+ * reads, and where the judge image's install (CONTAINER_USER, HOME=/tmp/judge-home) is told to read its copy: without
+ * it `pnpm install --offline` stops with ERR_PNPM_NO_OFFLINE_META (#1118 proofs, F1 a).
+ */
+export const STORE_METADATA_CACHE = "/root/.cache/pnpm";
+export const JUDGE_METADATA_CACHE = "/tmp/judge-home/.cache/pnpm";
+/**
+ * The packages main's gen loads built (`<name>/node`, for their migration macros; compile-migrations): every workspace
+ * package with `src/node/database/macros`, found in main's tree inside the image. Without them gen stops with
+ * migration_load_failed (@stackra/access-log/node, #1118 proofs, F1 c).
+ */
+export const GEN_MACRO_PACKAGES = "packages/*/*/src/node/database/macros";
+
+/**
  * The judge image (CTO ruling, round 5, B): main's tree at the job's base under /judge, installed from the store
- * image offline as the gate installs (GATE_FILTERS, main's allowed builds), the judges built (`roots`, JUDGE_ROOTS,
- * and every member they depend on) and main's gen run on main's tree (the generated configs the judges load). Built
- * by this process with no network; PR code is never in it.
+ * image offline as the gate installs (GATE_FILTERS, main's allowed builds; the store's registry metadata copied for
+ * the judge user, STORE_METADATA_CACHE), the judges built (`roots`, JUDGE_ROOTS, and every member they depend on),
+ * with the packages gen loads (GEN_MACRO_PACKAGES), and main's gen run on main's tree (the generated configs the judges
+ * load). Built by this process with no network; PR code is never in it.
  */
 export function judgeDockerfile({ storeImage, builds, roots }) {
   for (const root of roots)
     if (!/^[\w./-]+$/.test(root) || root.includes(".."))
       throw new Error(`not a judge member: ${root}`);
+  const home = dirname(dirname(JUDGE_METADATA_CACHE));
   return [
     `FROM ${storeImage}`,
     "USER root",
     `ADD tree.tar /${JUDGE_IMAGE_PATH}/`,
     `RUN mkdir -p ${JUDGE_NODE.replace(JUDGE_MOUNT, `/${JUDGE_IMAGE_PATH}`).replace(/\/node$/, "")} && cp "$(readlink -f "$(command -v node)")" ${JUDGE_NODE.replace(JUDGE_MOUNT, `/${JUDGE_IMAGE_PATH}`)} && chown -R ${CONTAINER_USER} /${JUDGE_IMAGE_PATH}`,
+    `RUN if [ ! -d ${STORE_METADATA_CACHE} ]; then echo "stackra-verify: the store image has no pnpm metadata at ${STORE_METADATA_CACHE}" >&2; exit 1; fi && ` +
+      `mkdir -p ${dirname(JUDGE_METADATA_CACHE)} && cp -a ${STORE_METADATA_CACHE} ${JUDGE_METADATA_CACHE} && chown -R ${CONTAINER_USER} ${home}`,
     `USER ${CONTAINER_USER}`,
     `WORKDIR /${JUDGE_IMAGE_PATH}`,
-    "ENV CI=1 HOME=/tmp/judge-home TURBO_TELEMETRY_DISABLED=1 TURBO_CACHE_DIR=/tmp/turbo-cache FORCE_COLOR=0",
+    `ENV CI=1 HOME=${home} TURBO_TELEMETRY_DISABLED=1 TURBO_CACHE_DIR=/tmp/turbo-cache FORCE_COLOR=0`,
     `RUN ${installCommand(
       builds.filter((b) => !LICENSED_BUILDS.includes(b)),
       [],
       GATE_FILTERS,
-    ).replace(INSTALL_COMMAND, `${INSTALL_COMMAND} --offline`)}`,
-    `RUN pnpm exec turbo run build ${roots.map((r) => `--filter='./${r}...'`).join(" ")} --output-logs=errors-only`,
-    `RUN node packages/developer/cli/dist/stackra.mjs gen && pnpm exec turbo run gen ${EXCLUDE} --output-logs=errors-only && rm -rf /tmp/judge-home /tmp/turbo-cache`,
+    ).replace(
+      INSTALL_COMMAND,
+      `${INSTALL_COMMAND} --offline --cache-dir ${JUDGE_METADATA_CACHE}`,
+    )}`,
+    `RUN gen=; for d in ${GEN_MACRO_PACKAGES}; do if [ -d "$d" ]; then gen="$gen --filter=./\${d%/src/node/database/macros}..."; fi; done; ` +
+      `pnpm exec turbo run build ${roots.map((r) => `--filter='./${r}...'`).join(" ")} $gen --output-logs=errors-only`,
+    `RUN node packages/developer/cli/dist/stackra.mjs gen && pnpm exec turbo run gen ${EXCLUDE} --output-logs=errors-only && rm -rf ${home} /tmp/turbo-cache`,
     "",
   ].join("\n");
 }
@@ -4914,6 +5265,11 @@ async function runSteps(
   };
   /** A judging step's environment: code from strings only for a step that names why it needs it. */
   const judgeEnvOf = (step) => (step.evalAllowed ? deps.judgeEvalEnvFile : deps.judgeEnvFile);
+  /** A judging step's inputs: inline scripts (the JUDGE_INLINE marker) only for a step that names why it starts them. */
+  const mountsOf = (step) =>
+    step.judge && step.inlineAllowed && deps.judgeInlineFile
+      ? [...mounts, [deps.judgeInlineFile, `${IN_DIR}/${JUDGE_INLINE}`]]
+      : mounts;
   const failed = [];
   for (const step of steps) {
     const name = named(`step-${step.id}`);
@@ -4933,7 +5289,7 @@ async function runSteps(
         image: start,
         envFile: step.judge ? judgeEnvOf(step) : deps.envFile,
         tarPath,
-        mounts,
+        mounts: mountsOf(step),
         command: command(`--step ${step.id}`),
         readOnly: Boolean(step.judge),
         judgeImage: step.judge || step.judgeTools ? judge : null,
@@ -6247,6 +6603,14 @@ export async function verify(s, job) {
   writeFileSync(judgeEvalEnvFile, CONTAINER_ENV + judgeEnv(IN_DIR, { evalAllowed: true }), {
     mode: 0o644,
   });
+  const judgeInlineFile = join(runDir, JUDGE_INLINE);
+  writeFileSync(
+    judgeInlineFile,
+    "a judging step whose main tools start node with an inline script\n",
+    {
+      mode: 0o644,
+    },
+  );
   const state = readState(s);
 
   const deps = {
@@ -6254,6 +6618,7 @@ export async function verify(s, job) {
     envFile,
     judgeEnvFile,
     judgeEvalEnvFile,
+    judgeInlineFile,
     installEnvFile,
     now: Date.now,
     archive: () => {

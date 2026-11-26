@@ -112,6 +112,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     "fixtures of the lines tool's JSON output, compared byte for byte with what it writes (STA-1794)",
   ],
   [
+    /^tools\/policy\/licences\.json$/,
+    "the stackra/verify licence check JSON.parses the licence policy from main inside the verify container, where only node runs (STA-2761)",
+  ],
+  [
     /^apps\/[\w-]+\/capabilities\.json$/,
     "Runway's capabilityConfig reads an app's capabilities.json by this fixed name as strict JSON (STA-1794)",
   ],
