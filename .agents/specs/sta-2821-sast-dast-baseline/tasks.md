@@ -1,0 +1,10 @@
+# Tasks: ci: a SAST and DAST baseline with the Stackra Semgrep rules and a nightly ZAP scan
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-2821
+
+- [x] T001 the seven Stackra Semgrep rules in `tools/security/semgrep/rules/` with one fixture each in `tools/security/semgrep/__tests__/__fixtures__/` — covers: FR-001, AC-005, P-001 — route: spec-task
+- [x] T002 the SAST half of `tools/scripts/security-scan.mjs` (fingerprints, baseline gate and writer, pinned Semgrep command, SARIF) and `tools/security/semgrep/baseline.yaml` — covers: FR-002, FR-003, FR-004, FR-008, AC-001, AC-002, AC-003, AC-004, P-002, P-003, P-004, P-008 — route: spec-task — deps: T001
+- [x] T003 the DAST half of `tools/scripts/security-scan.mjs` (policy gate, target and spec URL checks, `-O` pinning, pinned ZAP command, SARIF) with `tools/security/zap/policy.tsv` and `tools/security/zap/targets.yaml` — covers: FR-004, FR-005, FR-006, FR-007, FR-008, AC-006, AC-007, AC-008, AC-009, AC-010, P-005, P-006, P-007 — route: spec-task
+- [x] T004 the unit tests in `tools/scripts/__tests__/security-scan.test.mjs`, including the committed-file checks — covers: AC-001, AC-002, AC-003, AC-004, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011 — route: spec-task — deps: T002, T003
+- [x] T005 `.github/workflows/security-scan.yml` (SAST on pull requests and nightly, passive ZAP per target nightly) the root `package.json` commands, and the lint and hook excludes for the fixtures in `.oxlintrc.jsonc`, `lefthook.yml` and `.flow/overrides/hooks/lefthook.yml.txt` (with `.flow/lock.json`) — covers: FR-009, AC-012, P-009 — route: spec-task — deps: T002, T003
+- [x] T006 the runbook `apps/docs/src/docs/runbooks/security-testing.mdx`, its sidebar entry in `apps/docs/src/config/docs.config.ts`, the CI runbook row in `apps/docs/src/docs/runbooks/ci.mdx`, the Enforcement line of `apps/docs/src/docs/adr/0187-security-and-compliance-programme.mdx`, `tools/security/README.md`, `tools/README.md` and `tools/scripts/README.md` — covers: FR-010, AC-011, P-010 — route: spec-task — deps: T005
