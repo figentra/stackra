@@ -43,7 +43,8 @@ A member's `package.json` names the catalog, never a version:
 | Control                    | Where                 | Rule                                                                                                                                                                                                           |
 | -------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `allowBuilds`              | `pnpm-workspace.yaml` | Dependency lifecycle scripts are blocked by default. Each entry is `true` (reviewed, may run) or `false` (reviewed, never). An unlisted one fails install with `ERR_PNPM_IGNORED_BUILDS` until it is reviewed. |
-| `minimumReleaseAgeExclude` | `pnpm-workspace.yaml` | Packages exempt from the minimum release age (a freshly published version is not installed until it has aged). An entry is a supply-chain approval.                                                            |
+| `minimumReleaseAge`        | `pnpm-workspace.yaml` | `1440` (one day, [0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation) decision 3): a version resolves only once it has been published for a day. pnpm 12 sets no age by default.  |
+| `minimumReleaseAgeExclude` | `pnpm-workspace.yaml` | Packages exempt from the minimum release age. An entry is a supply-chain approval: our own scope, or one exact third-party version.                                                                            |
 | `catalogMode: strict`      | `pnpm-workspace.yaml` | `pnpm add` accepts only versions already in a catalog.                                                                                                                                                         |
 | `.npmrc`                   | repo root             | `engine-strict`, no hoisting (`shamefully-hoist=false`): a package imports only what it declares.                                                                                                              |
 
@@ -51,13 +52,16 @@ Adding an entry to `allowBuilds` or `minimumReleaseAgeExclude` is as serious as 
 
 ## Licences
 
-Every dependency's licence must be on the allow-list. The policy is a data file reviewed by code owners:
+Every dependency's licence must be on the allow-list (owner decision 2026-11-01, STA-1589, widened by the CTO's
+licence ruling of 2026-11-24). The CI dependency scan checks every package in `pnpm-lock.yaml` against it with
+`osv-scanner scan source --licenses`, and a package off the list fails the job:
 
-| List       | Licences                                                                                                            |
-| ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| `allow`    | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, MPL-2.0, Unlicense, CC0-1.0                                 |
-| `deny`     | `GPL-*`, `AGPL-*`, `SSPL-*` (a deny match wins over `allow`)                                                        |
-| exceptions | Per package, with a required `reason`, printed on every run (for example a commercial licence with a contract date) |
+| List        | Where                                   | Licences                                                                                                                                          |
+| ----------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| allow       | `.github/licence-allowlist.yaml`        | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, MIT-0, BlueOak-1.0.0, CC0-1.0, Unlicense, Zlib, Python-2.0, MPL-2.0, CC-BY-3.0, CC-BY-4.0 |
+| refused     | never on the allow-list                 | GPL, LGPL, AGPL, SSPL, BUSL, Elastic, CC NC/ND, and a package with no licence at all                                                              |
+| corrections | `osv-scanner.toml` (`license.override`) | deps.dev reports no licence but the published tarball states an allowed one; pinned to the exact version that was read, with the reason           |
+| exceptions  | `osv-scanner.toml` (`license.ignore`)   | a licence off the list that a ruling approved (for example LGPL libvips, loaded dynamically); each names the ruling and a date to look again      |
 
 A denied licence is fixed by replacing the dependency, never by editing the policy in the same change. The member's own `license` is `MIT` ([0024](/adr/0024-mit-license-with-exclusions)) ([Members](/standards/members)).
 
@@ -77,14 +81,14 @@ The validator rejects a manifest that depends on a package the architecture reje
 
 ## What enforces this
 
-| Rule                                                       | Check                                                                                          | Status |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
-| Only `catalog:` or `workspace:*` specifiers (peers exempt) | `stackra validate --repository`                                                                | Yes    |
-| New versions come from a catalog                           | `catalogMode: strict`                                                                          | Yes    |
-| No forbidden dependency                                    | `stackra validate --repository` (`FORBIDDEN_DEPENDENCIES`)                                     | Yes    |
-| Install scripts reviewed                                   | `allowBuilds` (install fails otherwise)                                                        | Yes    |
-| Dead catalog entry visible                                 | `knip` (`catalog: warn`)                                                                       | Yes    |
-| Release age set explicitly (one day)                       | planned: `minimumReleaseAge` in `pnpm-workspace.yaml`; only the exclude list is declared today | No     |
-| Licence allow-list                                         | planned: `policy/licenses.yaml` and a licence check in `pnpm verify`                           | No     |
-| `mise.toml` `pnpm` equals `packageManager`                 | planned: pin-agreement test in `tools/scripts`                                                 | No     |
-| Automated updates, no automerge                            | planned: Renovate ([Renovate](/runbooks/renovate))                                             | No     |
+| Rule                                                       | Check                                                                                                                                              | Status                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Only `catalog:` or `workspace:*` specifiers (peers exempt) | `stackra validate --repository`                                                                                                                    | Yes                     |
+| New versions come from a catalog                           | `catalogMode: strict`                                                                                                                              | Yes                     |
+| No forbidden dependency                                    | `stackra validate --repository` (`FORBIDDEN_DEPENDENCIES`)                                                                                         | Yes                     |
+| Install scripts reviewed                                   | `allowBuilds` (install fails otherwise)                                                                                                            | Yes                     |
+| Dead catalog entry visible                                 | `knip` (`catalog: warn`)                                                                                                                           | Yes                     |
+| Release age set explicitly (one day)                       | `minimumReleaseAge: 1440` in `pnpm-workspace.yaml`; `tools/scripts/__tests__/supply-chain-policy.test.mjs`                                         | Yes                     |
+| Licence allow-list                                         | CI `Dependency scan (OSV-Scanner)` with `--licenses`; the policy test above                                                                        | Yes                     |
+| `mise.toml` `pnpm` equals `packageManager`                 | planned: pin-agreement test in `tools/scripts`                                                                                                     | No                      |
+| Automated updates, no automerge                            | `renovate.json5`, checked by the policy test and `renovate-config.yml`; the Renovate app is installed by an admin ([Renovate](/runbooks/renovate)) | Config yes, app pending |

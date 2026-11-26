@@ -1,0 +1,86 @@
+// Stackra file contract:
+// Purpose: the Renovate policy for this repository (ADR 0174 decision 3): which dependency updates are proposed,
+//          when, and grouped how. Versions move in pnpm-workspace.yaml catalogs, mise.toml, .node-version and the
+//          `packageManager` field, never in a member's package.json (catalogMode: strict, `pnpm validate`).
+// Boundary: update policy only. No token, `hostRules` entry or registry credential: registry access is configured in
+//           the Renovate app settings of the organisation. Nothing merges on its own; every update is a pull request a
+//           human reviews against the Quality Gate.
+// Runtime: Renovate app; validated by .github/workflows/renovate-config.yml (`renovate-config-validator --strict`).
+// Governing contract: ADR 0013 (versions only from catalogs), ADR 0174 decision 3 (Renovate, one-day release age, no
+//                     automerge). Runbook: apps/docs/src/docs/runbooks/renovate.mdx. Tests:
+//                     tools/scripts/__tests__/supply-chain-policy.test.mjs.
+// Owner: release-operations
+// Secrets: forbidden
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  // Recommended defaults plus digest pinning: actions by full commit SHA with the version in a trailing comment
+  // (ADR 0019 D1, checked by zizmor), container images by digest.
+  extends: ["config:best-practices", "helpers:pinGitHubActionDigestsToSemver"],
+  // Branches start with `renovate/`: the gate's Linear key and commitlint checks exempt that prefix, because a bot
+  // writes those titles and messages (tools/scripts/linear.mjs).
+  branchPrefix: "renovate/",
+  // Conventional commits, e.g. `chore(deps): update dependency vitest to v5.0.6`.
+  semanticCommits: "enabled",
+  semanticCommitType: "chore",
+  semanticCommitScope: "deps",
+  labels: ["dependencies"],
+  // A release must be a day old before it is proposed, as a blocking check, so a compromised release has time to be
+  // pulled (pnpm-workspace.yaml `minimumReleaseAge: 1440` enforces the same when a version resolves).
+  minimumReleaseAge: "1 day",
+  internalChecksFilter: "strict",
+  automerge: false,
+  // The lockfile is refreshed weekly, outside working hours.
+  lockFileMaintenance: { enabled: true, schedule: ["before 6am on monday"] },
+  // A security advisory does not wait for the release age or the schedule.
+  vulnerabilityAlerts: { minimumReleaseAge: null, labels: ["dependencies", "security"] },
+  // config:best-practices' defaults, plus the vendored agent skills, the member templates `pnpm new` renders and the
+  // private notes submodule: none of them is a workspace member with dependencies of its own.
+  ignorePaths: [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**",
+    ".agents/**",
+    ".notes/**",
+    "tools/scaffold/**",
+  ],
+  packageRules: [
+    {
+      // Our own packages: we publish them, so they skip the age gate (owner, 2026-11-09, for @figentra-oss; the
+      // Stackra registry's @stackra versions are ours too).
+      matchPackageNames: ["@stackra/**", "@stackra-pro/**", "@figentra-oss/**"],
+      groupName: "stackra",
+      minimumReleaseAge: null,
+    },
+    {
+      // Expo SDK packages move together, with `expo install --fix`; a new SDK major is a planned upgrade
+      // (runbooks/upgrade), never an automatic pull request.
+      matchPackageNames: ["expo", "expo-*", "@expo/**", "react-native"],
+      groupName: "expo sdk",
+    },
+    {
+      matchPackageNames: ["expo", "expo-*", "@expo/**", "react-native"],
+      matchUpdateTypes: ["major"],
+      enabled: false,
+    },
+    {
+      // The toolchain moves together: mise.toml pins, .node-version and the packageManager field.
+      matchManagers: ["mise", "nodenv"],
+      groupName: "toolchain",
+    },
+    {
+      matchDepNames: ["node", "pnpm"],
+      groupName: "toolchain",
+    },
+    {
+      // Every GitHub Action in one weekly pull request.
+      matchManagers: ["github-actions"],
+      groupName: "github actions",
+      schedule: ["before 6am on monday"],
+    },
+  ],
+}

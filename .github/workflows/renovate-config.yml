@@ -1,0 +1,50 @@
+# Stackra file contract:
+# Purpose: validate renovate.json5 on the pull request that changes it (ADR 0174 decision 3, STA-1735): Renovate's own
+#          `renovate-config-validator --strict`, at a pinned version, refuses an unknown option, a wrong type or a
+#          deprecated setting before the Renovate app reads the file from main.
+# Boundary: reads the repository only; downloads the pinned validator from npmjs; no token, no write. Advisory: not a
+#           required check.
+# Owner: release-operations
+# Governing contract: ADR 0019 (supply chain), ADR 0174 decision 3 (Renovate). Runbook:
+#                     apps/docs/src/docs/runbooks/renovate.mdx.
+name: Renovate config
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - renovate.json5
+      - .github/workflows/renovate-config.yml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: renovate-config-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Renovate config (validator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      # Node from mise.toml: the validator needs Node 22 or later.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node
+
+      # Pinned, and older than the one-day release age. Without a file argument the validator reads the repository's
+      # config file (renovate.json5) as a repository config; `--strict` also fails on a setting it would migrate.
+      - name: renovate-config-validator --strict
+        run: npm exec --yes --package=renovate@44.234.1 -- renovate-config-validator --strict
