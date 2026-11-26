@@ -1,6 +1,6 @@
 ---
 title: "0091 — The Encore app is generated into .stackra/encore; services hold no Encore files"
-description: "Accepted, amended by 0158, 0268, 0294, 0295 and its own amendment of 2026-11-09 · 2026-10-19"
+description: "Accepted, amended by 0158, 0268, 0294, 0295 and its own amendments of 2026-11-09, 2026-11-10 and 2026-11-26 · 2026-10-19"
 ---
 
 <Note>
@@ -32,6 +32,12 @@ description: "Accepted, amended by 0158, 0268, 0294, 0295 and its own amendment 
   Amended 2026-11-10 (below): the generated services move out of the dot folder to
   `stackra-encore/<svc>/` at the member root, since Encore skips dot folders when it discovers
   services. The runtime entry and gen output stay in `.stackra/`.
+</Note>
+
+<Note>
+  Amended 2026-11-26 (below, STA-2794): a local `stackra dev` on a workstation that cannot reach the
+  Encore Cloud app runs Encore local-only, with the id `""`; gen and every deploy keep the runway's
+  id.
 </Note>
 
 ## Context
@@ -158,6 +164,27 @@ discovered and parsed the service, and followed its imports into `.stackra/entry
    `stackra-encore/` gen has not written. Runway's Encore Cloud deploy tree carries each member's
    `stackra-encore/` with its `.stackra/` and rewrites the `#` imports in both.
 4. A consumer repository adds `stackra-encore/` to its `.gitignore`.
+
+## Amendment 2026-11-26: a local run without Encore Cloud (STA-2794)
+
+With a non-empty id in `encore.app`, `encore run` (1.58.8) first reads the app's secrets from
+Encore Cloud and stops when it cannot ("Fetching application secrets failed … not logged in: run
+'encore auth login' first"). So a new `stackra create` app could not start `pnpm run dev` without
+an Encore Cloud login and an app of that id. A local run needs nothing from Encore Cloud: its secret
+values come from the workspace's dev-secrets file ([0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical),
+amendment of 2026-11-10). With the id `""`, Encore runs local-only.
+
+1. **Gen is unchanged.** It writes the root runway's `providers.encore.app` into `encore.app` and
+   still refuses a service with no id (`encore_app_missing`); `stackra gen --check` compares that
+   file, so it reports `encore.app` as changed while a local-only run is up.
+2. **`stackra dev` decides per run.** Before `encore run` it runs `encore secret list` in the member
+   root, the same Encore Cloud read. When that succeeds, Encore runs with the runway's id as before.
+   When it fails, `stackra dev` prints one line with Encore's reason, writes the id `""` into
+   `encore.app` for the run, and puts gen's file back when Encore exits or `stackra dev` is
+   stopped (unless something rewrote it meanwhile). No runway setting is added: the login state
+   already says whether the cloud app can be used, and the line says which mode runs.
+3. **Deploys always ship the runway's id.** Runway's Encore deploy tree refuses a member `encore.app`
+   with the id `""`, which only a killed local run can leave; `stackra gen` restores it.
 
 ## Supersedes and sources
 

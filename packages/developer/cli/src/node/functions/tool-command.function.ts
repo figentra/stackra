@@ -11,7 +11,9 @@
  *          accessibility check is the app's e2e tier).
  *          A package gen wrote no entry for (a fresh `stackra new package`, nothing under `src/` yet) and with no
  *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown. A
- *          service has nothing to build either: Encore builds it at deploy (ADR 0091).
+ *          service has nothing to build either: Encore builds it at deploy (ADR 0091). A service's `dev` starts
+ *          `encore run` through `runEncoreDev`, which runs Encore local-only when this workstation cannot reach the
+ *          service's Encore Cloud app (STA-2794).
  * Boundary: starts at most one tool (two in sequence for a Mintlify docs app's `lint`); a gen refusal stops before
  *           the tool and exits 1.
  * Runtime: node
@@ -25,6 +27,7 @@ import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
 import { watchDocsSite } from "@stackra/gen/node";
 
 import { devSecretEnv } from "#node/dev-secrets/functions/dev-secret-env.function";
+import { runEncoreDev } from "#node/encore/functions/run-encore-dev.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { checkDocsLinks } from "#node/functions/check-docs-links.function";
 import { readMember } from "#node/functions/read-member.function";
@@ -128,9 +131,12 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
           watcher.close();
         }
       }
-      // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679).
-      if (task === "dev")
-        return runProcess({ ...tool, env: { ...tool.env, ...devSecretEnv(cwd) } }, io);
+      // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679); a
+      // service's `encore run` runs local-only when this workstation cannot reach its Encore Cloud app (STA-2794).
+      if (task === "dev") {
+        const run = { ...tool, env: { ...tool.env, ...devSecretEnv(cwd) } };
+        return member.layout === "service" ? runEncoreDev(run, io) : runProcess(run, io);
+      }
       return runProcess(tool, io);
     },
   };

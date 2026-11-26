@@ -4,12 +4,13 @@
  *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
  *          has nothing to build; at the workspace root it fans out through
  *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
- *          the site and then fails on a broken link, naming the page (STA-2026).
+ *          the site and then fails on a broken link, naming the page (STA-2026); a service's `dev` runs `encore run`
+ *          local-only when Encore Cloud is out of reach, and gets gen's `encore.app` back (STA-2794).
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -88,6 +89,32 @@ describe("toolCommand", () => {
     expect(await toolCommand("build", "Build").run({ ...context(), io })).toBe(0);
     expect(spawn).not.toHaveBeenCalled();
     expect(output()).toContain("Encore builds a service at deploy");
+  });
+
+  /** STA-2794: a logged-out workstation's `stackra dev` must not stop at "Fetching application secrets". */
+  it("runs a service's encore run local-only when Encore Cloud is out of reach", async () => {
+    writeFileSync(join(root, "stackra.config.ts"), "export default defineService({});\n");
+    mkdirSync(join(root, "stackra-encore"));
+    const generated = '{\n  "id": "acme-platform",\n  "lang": "typescript"\n}\n';
+    writeFileSync(join(root, "encore.app"), generated);
+    const started: string[] = [];
+    spawn.mockImplementation(async (run, io) => {
+      if (run.args[0] === "secret") {
+        io.err("error: not logged in: run 'encore auth login' first\n");
+        return 1;
+      }
+      started.push(readFileSync(join(root, "encore.app"), "utf8"));
+      return 0;
+    });
+    const { io, output } = captureIo();
+    expect(await toolCommand("dev", "Dev").run({ ...context(), io })).toBe(0);
+    expect(spawn).toHaveBeenLastCalledWith(
+      expect.objectContaining({ command: "encore", args: ["run"], cwd: root }),
+      io,
+    );
+    expect(started).toEqual(['{\n  "id": "",\n  "lang": "typescript"\n}\n']);
+    expect(readFileSync(join(root, "encore.app"), "utf8")).toBe(generated);
+    expect(output()).toContain("running local-only");
   });
 
   it("stops before the tool when gen refuses", async () => {
