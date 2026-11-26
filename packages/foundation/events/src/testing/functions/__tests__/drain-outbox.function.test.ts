@@ -16,6 +16,7 @@ import { z } from "zod";
 import { EventOutbox } from "#contracts/index";
 import type { RecordedEvent } from "#contracts/index";
 import { IntegrationEvent, Listener, registerListeners } from "#core/index";
+import type { ListenerContext } from "#core/index";
 import "#testing/index";
 import { currentHarness } from "#testing/functions/current-harness.function";
 import { deliverRemoteEvent } from "#testing/functions/deliver-remote-event.function";
@@ -39,8 +40,11 @@ registerSchemas([
 class SettleListener extends Listener {
   readonly orders: string[] = [];
 
-  async handle(event: OrderPlaced): Promise<void> {
+  readonly producers: (string | undefined)[] = [];
+
+  async handle(event: OrderPlaced, ctx: ListenerContext): Promise<void> {
     this.orders.push(event.orderId);
+    this.producers.push(ctx.producer);
     await currentHarness().outbox.write([
       {
         event: PointsSettled.create({ orderId: event.orderId }),
@@ -109,6 +113,21 @@ describe(drainOutbox, () => {
 
     expect(app.get(SettleListener).orders).toEqual(["ord_1", "ord_2", "ord_2"]);
     expect(app.listeners.calls(SettleListener)).toHaveLength(3);
+  });
+
+  it("hands a remote event's producer to its listeners, and none for an own event (STA-1792)", async () => {
+    const outbox = new OutboxFake();
+    const app = await createTestingModule(FixtureModule).override(EventOutbox, outbox).compile();
+    await deliverRemoteEvent(OrderPlaced, { orderId: "ord_1" }, { id: "evt_1" }, "orders");
+    await outbox.write([
+      {
+        event: OrderPlaced.create({ orderId: "ord_2" }),
+        meta: { id: "evt_2", occurredAt: new Date(0) },
+      },
+    ]);
+    await drainOutbox();
+
+    expect(app.get(SettleListener).producers).toEqual([undefined, "orders"]);
   });
 
   it("refuses an outbox that is not the fake", async () => {

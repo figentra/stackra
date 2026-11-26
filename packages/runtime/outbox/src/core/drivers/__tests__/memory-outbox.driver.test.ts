@@ -119,8 +119,8 @@ describe(MemoryOutboxDriver, () => {
     const driver = new MemoryOutboxDriver();
     await driver.write([message("evt_A")]);
     await driver.retry("evt_A", LATER, FAILURE);
-    await driver.rewrite("evt_A", { orderId: "ord_1", email: null });
-    await driver.rewrite("evt_Z", {});
+    await expect(driver.rewrite("evt_A", { orderId: "ord_1", email: null })).resolves.toBe(true);
+    await expect(driver.rewrite("evt_Z", {})).resolves.toBe(false);
     const [stored] = driver.stored();
     expect(stored?.data).toEqual({ orderId: "ord_1", email: null });
     expect(stored?.attempts).toBe(1);

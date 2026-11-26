@@ -36,6 +36,8 @@ describe("@stackra/outbox/contracts", () => {
       Parameters<contracts.ChangeConsumer["consume"]>[0]
     >().toEqualTypeOf<contracts.RowChange>();
     expectTypeOf<contracts.EventEnvelope["occurredAt"]>().toEqualTypeOf<string>();
+    expectTypeOf<contracts.EventEnvelope["producer"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<contracts.SubjectRedaction["unrewritable"]>().toEqualTypeOf<number>();
     expectTypeOf<contracts.ChangeRecord["change"]>().toEqualTypeOf<contracts.RowChange>();
     expectTypeOf<contracts.ChangeCursor["position"]>().toEqualTypeOf<string | undefined>();
     expectTypeOf<contracts.Delivery["envelope"]>().toEqualTypeOf<contracts.CrossAppEnvelope>();

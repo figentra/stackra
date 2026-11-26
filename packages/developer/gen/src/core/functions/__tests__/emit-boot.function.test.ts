@@ -86,7 +86,7 @@ describe("emitBoot", () => {
         '  else options.signal.addEventListener("abort", disconnect, { once: true });',
         "  if (options.relay !== false) {",
         "    const relay = container.get(OutboxRelayService);",
-        "    relay.connect(container);",
+        '    relay.connect(container, { service: "billing" });',
         "    void relay.work({ signal: options.signal });",
         "  }",
         "}",
@@ -291,7 +291,7 @@ describe("emitBoot and the cross-app relay (STA-1910)", () => {
       [
         "  if (options.relay !== false) {",
         "    const relay = container.get(OutboxRelayService);",
-        "    relay.connect(container);",
+        '    relay.connect(container, { service: "pay" });',
         "    void relay.work({ signal: options.signal });",
         "    const crossApp = container.get(CrossAppRelayService);",
         "    crossApp.connect(container);",

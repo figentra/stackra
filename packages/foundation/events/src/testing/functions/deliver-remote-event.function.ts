@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `deliverRemoteEvent(EventClass, fields, meta?)`, which puts an event another service published into the
- *          memory inbox of the testing app compiled last; `drainOutbox()` then delivers it to its listeners.
+ * Purpose: `deliverRemoteEvent(EventClass, fields, meta?, producer?)`, which puts an event another service published
+ *          into the memory inbox of the testing app compiled last; `drainOutbox()` then delivers it to its listeners,
+ *          with `producer` as the service the transport verified (`ctx.producer`, STA-1792).
  * Boundary: builds the event with `EventClass.create`, so its fields are checked by its generated schema (a consumed
  *           service's event class from `#stackra/clients/<service>` checks them with its payload schema). An event
  *           delivered again with the same `id` runs no listener (inbox dedup); one with no `id` is always new.
@@ -20,30 +21,39 @@ import { currentHarness } from "#testing/functions/current-harness.function";
  * @param type - the event's class, as gen writes it into `#stackra/clients/<service>`.
  * @param values - its fields.
  * @param meta - the occurrence's metadata; `id` deduplicates, `connection` marks a tenant connection's webhook.
+ * @param producer - the service that published it, as its transport would verify it; listeners see it as
+ *                   `ctx.producer`. None: a transport that proves no producer.
  * @returns the built event.
  * @throws Error when no testing app has been compiled.
  * @example
- * await deliverRemoteEvent(OrderPaid, paid, { id: "evt_1" });
+ * await deliverRemoteEvent(OrderPaid, paid, { id: "evt_1" }, "orders");
  * await drainOutbox();
  */
 export function deliverRemoteEvent<E extends Event>(
   type: EventClass<E>,
   values: Fields<E>,
   meta?: Partial<EventMeta>,
+  producer?: string,
 ): Promise<E>;
 /** A consumed service's event class, as gen writes it into `#stackra/clients/<service>`. */
 export function deliverRemoteEvent<E extends object, V>(
   type: { readonly eventName: string; create: (values: V) => E },
   values: V,
   meta?: Partial<EventMeta>,
+  producer?: string,
 ): Promise<E>;
 /** The implementation behind both overloads: creates the event and queues it in the harness inbox. */
 export async function deliverRemoteEvent(
   type: { create: (values: never) => object },
   values: unknown,
   meta: Partial<EventMeta> = {},
+  producer?: string,
 ): Promise<object> {
   const event = type.create(values as never);
-  currentHarness().inbox.push({ event: event as Event, meta });
+  currentHarness().inbox.push({
+    event: event as Event,
+    meta,
+    ...(producer === undefined ? {} : { producer }),
+  });
   return event;
 }

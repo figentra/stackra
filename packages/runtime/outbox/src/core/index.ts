@@ -4,7 +4,8 @@
  *          memory drivers of the four stores, the `EventOutbox` driver, the cross-app relay's config subscriber
  *          source, Ed25519 signer and contract inbox verifier, the wire-name and change-consumer
  *          registrations, the `@ConsumesChanges` facet, change coalescing, the outbox prune `pruneOutbox`, the change
- *          log's `maintainChangeLog` and per-owner `loadChanges`, and the unknown-event refusal) until `stackra gen`
+ *          log's `maintainChangeLog` and per-owner `loadChanges`, the unknown-event refusal and the refusal of a
+ *          personal event outside a tenant) until `stackra gen`
  *          writes the entry barrels (STA-339). `boundIsolation` and the claim-not-loaded and row-isolation-missing
  *          refusals moved to @stackra/actions; they are re-exported here for one release only.
  * Boundary: names each re-export and declares nothing. The shipped schema is re-exported under its generated name
@@ -30,6 +31,7 @@ export { MemoryDeliveryDriver } from "#core/drivers/memory-delivery.driver";
 export { MemoryInboxDriver } from "#core/drivers/memory-inbox.driver";
 export { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 export { OutboxEventOutboxDriver } from "#core/drivers/outbox-event-outbox.driver";
+export { PlatformPersonalEventError } from "#core/errors/platform-personal-event.error";
 export { UnknownEventError } from "#core/errors/unknown-event.error";
 export { coalesceChanges } from "#core/functions/coalesce-changes.function";
 export { loadChanges } from "#core/functions/load-changes.function";

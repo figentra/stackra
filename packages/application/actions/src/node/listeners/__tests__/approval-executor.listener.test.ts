@@ -3,7 +3,8 @@
  * Purpose: unit tests of `ApprovalExecutorListener` over the memory gate and binding store and the real `ActionPipeline`: a grant
  *          runs the call once as the stored requester and settles `executed`; the binding is read as the tenant's system
  *          actor in a read-only run and the call runs in a fresh run as the binding's actor; a duplicate and a
- *          concurrent delivery run `handle` once; an untrusted origin, a tenant mismatch, an unknown key, a missing
+ *          concurrent delivery run `handle` once; a delivery whose verified producer is not the configured store's
+ *          service (another service, none, or none configured; STA-1792), a tenant mismatch, an unknown key, a missing
  *          binding and an `on_resubmit` request are dropped; a scope the actor does not own and a tampered snapshot are
  *          refused `approval_mismatch` before `begin`; a refused execution settles `failed` with its code; an in-flight
  *          answer, an identity outage and an error that is not a refusal never settle `failed` and leave a retry that
@@ -12,6 +13,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0509 (decision 7); STA-1724 (P-009, P-010, P-015, P-019, P-022).
  */
+import { buildConfig } from "@stackra/config";
 import { Driver } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import {
@@ -36,7 +38,6 @@ import {
   ActorStatusCheck,
   ApprovalBindingStore,
   ApprovalGate,
-  ApprovalGrantOrigin,
   ApprovalGranted,
   CallIsolation,
   IdempotencyStore,
@@ -44,6 +45,7 @@ import {
   ScopeOwnership,
 } from "#contracts/index";
 import type { ApprovalRecord, CallDescriptor } from "#contracts/index";
+import { ApprovalsConfig } from "#config/approvals.config";
 import { Action } from "#core/bases/action.base";
 import { MemoryIdempotencyStoreDriver } from "#core/drivers/memory-idempotency-store.driver";
 import { MemoryRateLimitStoreDriver } from "#core/drivers/memory-rate-limit-store.driver";
@@ -137,13 +139,8 @@ class Ownership extends Driver(ScopeOwnership) {
   }
 }
 
-class Origin extends Driver(ApprovalGrantOrigin) {
-  trusted = true;
-
-  async trusts(): Promise<boolean> {
-    return this.trusted;
-  }
-}
+/** The approval store's service, the one producer whose grants the executor trusts. */
+const STORE = "tasks";
 
 class Lines extends Driver(Logger) {
   readonly warnings: [string, Readonly<Record<string, unknown>> | undefined][] = [];
@@ -218,16 +215,20 @@ const approver = {
 };
 
 /** The delivery's metadata; `null` is a platform event with no tenant. */
-const ctxOf = (scopeId: string | null = "ten_1"): ListenerContext => ({
+const ctxOf = (
+  scopeId: string | null = "ten_1",
+  producer: string | null = STORE,
+): ListenerContext => ({
   eventId: "evt_1",
   occurredAt: NOW,
   ...(scopeId === null ? {} : { scopeId }),
+  ...(producer === null ? {} : { producer }),
   now: () => NOW,
   audit: () => {},
 });
 
 /** Everything bound over the memory drivers: the pipeline's resolver and the executor on it. */
-function build(executorClock: Date = NOW) {
+function build(executorClock: Date = NOW, storeService: string = STORE) {
   behaviour.handled = [];
   behaviour.next = undefined;
   const identity = new SilentIdentity();
@@ -242,7 +243,7 @@ function build(executorClock: Date = NOW) {
   const access = new Access();
   const isolation = new Isolation();
   const ownership = new Ownership();
-  const origin = new Origin();
+  const config = buildConfig(ApprovalsConfig, { values: { storeService } });
   const lines = new Lines();
   const entries: [AnyClass, object][] = [
     [Clock, new ClockAt(NOW)],
@@ -267,7 +268,7 @@ function build(executorClock: Date = NOW) {
   const executor = new ApprovalExecutorListener(
     gate,
     bindings,
-    origin,
+    config,
     isolation,
     ownership,
     new ClockAt(executorClock),
@@ -283,7 +284,7 @@ function build(executorClock: Date = NOW) {
     access,
     isolation,
     ownership,
-    origin,
+    config,
     lines,
   };
 }
@@ -355,9 +356,8 @@ describe(ApprovalExecutorListener, () => {
   it("drops a delivery from an untrusted origin, for another tenant, for an unknown key or without a binding", async () => {
     const built = build();
     const { approvalId, event } = await granted(built);
-    built.origin.trusted = false;
-    await built.executor.handle(event, ctxOf());
-    built.origin.trusted = true;
+    await built.executor.handle(event, ctxOf("ten_1", "billing"));
+    await built.executor.handle(event, ctxOf("ten_1", null));
     await built.executor.handle(event, ctxOf("ten_2"));
     await built.executor.handle(event, ctxOf(null));
     await built.executor.handle(
@@ -384,9 +384,20 @@ describe(ApprovalExecutorListener, () => {
       "origin",
       "origin",
       "origin",
+      "origin",
       "key",
       "binding",
     ]);
+  });
+
+  it("trusts no producer while no store service is configured, the store's own included (STA-1792)", async () => {
+    const built = build(NOW, "");
+    const { approvalId, event } = await granted(built);
+    await built.executor.handle(event, ctxOf("ten_1", ""));
+    await built.executor.handle(event, ctxOf());
+    expect(behaviour.handled).toEqual([]);
+    expect(await statusOf(built, approvalId)).toBe("granted");
+    expect(built.lines.warnings.map(([, fields]) => fields?.reason)).toEqual(["origin", "origin"]);
   });
 
   it("drops the grant of an on_resubmit request, which the requester resubmits", async () => {
@@ -529,7 +540,7 @@ describe(ApprovalExecutorListener, () => {
     const loose = new ApprovalExecutorListener(
       built.gate,
       built.bindings,
-      built.origin,
+      built.config,
       built.isolation,
       built.ownership,
       new ClockAt(NOW),

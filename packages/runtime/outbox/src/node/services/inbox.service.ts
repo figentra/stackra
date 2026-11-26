@@ -17,9 +17,13 @@
  *           resolved by `connect`, dropped by `disconnect` on shutdown) get every claimed envelope, a wire name with no class included, so a service with
  *           a relay claims an unknown event for its relay instead of refusing it. A relay that throws rolls the receipt
  *           back (the claim is released and the event is redelivered), so a relay should be a queued listener.
+ *           `receive`'s `producer` is the service the caller's transport verified (the topic's owner, the cross-app
+ *           sender, this service's own relay in process); relays and listeners see it as `ctx.producer`, and nothing
+ *           else sets it: the envelope's own `producer` and any `producer` in its metadata are ignored (STA-1792).
  * Runtime: node
  * Governing contract: ADR 0078 (decisions 2 to 4: the inbox deduplicates on the event id); ADR 0141 (decisions 2 and 3);
- *                     ADR 0260 (decision 4: the relay);
+ *                     ADR 0260 (decision 4: the relay); ADR 0509 (decision 7) and ADR 0511 (decision 11: the
+ *                     verified producer);
  *                     ADR 0327 (decision 9: the scope session).
  */
 import { CallIsolation, ScopeOwnership } from "@stackra/actions/contracts";
@@ -117,13 +121,15 @@ export class InboxService extends Service {
    * Runs the listeners of the event in `envelope`, and hands the envelope to each relay, unless its id was received
    * before.
    *
+   * @param producer - the service that published it, as the caller's transport verified it; never `envelope.producer`
+   *                   read from a body the caller cannot authenticate. None: the listeners see no producer.
    * @returns `true` when this call ran it, `false` when it had been received or carries a newer version than this
    *          process reads (the producer publishes the older one too, under the same id).
    * @throws UnknownEventError when its wire name names no integration event of this process and no relay is connected.
    * @throws ZodError when its data breaks the schema of the version it carries.
    * @throws RangeError when it carries an older version whose `Change` is not registered (its sunset passed).
    */
-  async receive(envelope: EventEnvelope): Promise<boolean> {
+  async receive(envelope: EventEnvelope, producer?: string): Promise<boolean> {
     const wire = wireVersionOf(envelope.type);
     // A newer version than this process reads: its producer publishes the older one under the same id, so wait for it.
     if (wire !== undefined && wire.version > wire.current) return false;
@@ -135,7 +141,14 @@ export class InboxService extends Service {
         wire.version === wire.current
           ? wire.type.create(envelope.data as never)
           : upgrade(wire.type, envelope.data, wire.version);
-    const meta = { ...envelope.meta, id: envelope.id, occurredAt: new Date(envelope.occurredAt) };
+    const claimed: Record<string, unknown> = { ...envelope.meta };
+    // the producer is what the transport verified, never what the body claims (STA-1792)
+    delete claimed["producer"];
+    const meta = {
+      ...(claimed as EventEnvelope["meta"]),
+      id: envelope.id,
+      occurredAt: new Date(envelope.occurredAt),
+    };
     const receive = async () => {
       if (!(await this.driver.claim(envelope.id, this.clock.now()))) return false;
       const { id, ...rest } = meta;
@@ -143,12 +156,13 @@ export class InboxService extends Service {
       const context: ListenerContext = {
         ...rest,
         eventId: id,
+        ...(producer === undefined ? {} : { producer }),
         now: () => this.clock.now(),
         audit: () => undefined,
       };
       for (const relay of this.relays) await relay.handle(envelope as never, context);
       if (event !== undefined) {
-        this.bus.deliver(event, meta);
+        this.bus.deliver(event, meta, producer);
         await this.bus.drain();
       }
       return true;

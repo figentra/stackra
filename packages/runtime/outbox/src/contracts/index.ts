@@ -4,7 +4,7 @@
  *          `ChangeFeed` and `EventPublisher` ports, the cross-app relay's `DeliveryDriver`, `SubscriberSource`,
  *          `EventSigner` and `InboxVerifier` ports, the `MessageKind`, `RowChangeKind` and `DeliveryState` enums, and
  *          the stored message, envelope, row change, change record, cursor, log report, change consumer and cross-app
- *          delivery, envelope and key types) until
+ *          delivery, envelope and key types, and an erasure's `SubjectRedaction`) until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. The leaf entry: it imports no other entry of this package
  *           (ADR 0294 decision 15).
@@ -41,5 +41,6 @@ export type { PinnedProducer } from "#contracts/types/pinned-producer.type";
 export type { RelayKey } from "#contracts/types/relay-key.type";
 export type { RowChange } from "#contracts/types/row-change.type";
 export type { SignedHeaders } from "#contracts/types/signed-headers.type";
+export type { SubjectRedaction } from "#contracts/types/subject-redaction.type";
 export type { Subscriber } from "#contracts/types/subscriber.type";
 export type { VerifiedSender } from "#contracts/types/verified-sender.type";

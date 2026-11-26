@@ -17,9 +17,12 @@
  *           claims the envelope id, so a redelivery runs nothing twice. Which `EventPublisher` driver runs is runtime
  *           configuration; the topics cost nothing while the in-process driver is used. A relay service gets no typed
  *           subscription for a wire name its relay already hears (the inbox runs the typed listeners from either).
- *           The cross-service topic imports are not yet checked by an Encore build (STA-597).
+ *           The cross-service topic imports are not yet checked by an Encore build (STA-597). Each subscription hands
+ *           the inbox its topic's owning service as the verified producer (`ctx.producer`, STA-1792): a topic is
+ *           declared only in its publishing service's generated events file, so the topic, never the message body,
+ *           proves who published it.
  * Runtime: isomorphic
- * Governing contract: ADR 0260 (decision 4: the relay hears every event; typed consumers by the event class); ADR 0141 (decision 2: the envelope, wire
+ * Governing contract: ADR 0509 (decision 7) and ADR 0511 (decision 11: the verified producer); ADR 0260 (decision 4: the relay hears every event; typed consumers by the event class); ADR 0141 (decision 2: the envelope, wire
  *                     names); ADR 0148 (decisions 3 and 6: Encore Pub/Sub in SaaS); ADR 0142 (decision 1: transports
  *                     are drivers); ADR 0078 (decisions 2 to 4: inbox deduplication).
  */
@@ -70,10 +73,10 @@ function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
     ENCORE_APP_IMPORT,
     ...imports,
     "",
-    "/** Hands one delivered envelope to this service's inbox. */",
-    "function receive(message: BrokerMessage): Promise<void> {",
+    "/** Hands one delivered envelope to this service's inbox, with the topic's owning service as its verified producer. */",
+    "function receive(message: BrokerMessage, producer: string): Promise<void> {",
     "  return app.handlers.run(async (container) => {",
-    "    await container.get(InboxService).receive(message.body as EventEnvelope);",
+    "    await container.get(InboxService).receive(message.body as EventEnvelope, producer);",
     "  });",
     "}",
     "",
@@ -142,20 +145,25 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
     return seen;
   // Own topics from `./events`, each sibling's from its generated events file; first publisher of a wire name wins.
   const sources = [
-    ...(own.length > 0 ? [{ from: "./events", wires: own }] : []),
+    ...(own.length > 0 ? [{ from: "./events", wires: own, producer: ir.member }] : []),
     ...(ir.publishers ?? [])
       .filter((publisher) => publisher.member !== ir.member)
       .map((publisher) => ({
         from: `../../../${publisher.folder}/${encoreServiceFolder(publisher.member)}/events`,
         wires: wireNames(publisher.manifest),
+        producer: publisher.member,
       })),
   ];
   const imports: string[] = [];
   const subscribed: string[] = [];
-  for (const { from, wires } of sources) {
+  const producers = new Map<string, string>();
+  for (const { from, wires, producer } of sources) {
     const fresh = wires.filter((wire) => !seen.has(wire));
     if (fresh.length === 0) continue;
-    for (const wire of fresh) seen.add(wire);
+    for (const wire of fresh) {
+      seen.add(wire);
+      producers.set(wire, producer);
+    }
     imports.push(`import { ${fresh.map(topicConst).join(", ")} } from ${JSON.stringify(from)};`);
     subscribed.push(...fresh);
   }
@@ -177,7 +185,7 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
       ...subscribed.flatMap((wire) => [
         `/** Relays \`${wire}\`. */`,
         `export const ${topicConst(wire)}Relay = new Subscription(${topicConst(wire)}, ${JSON.stringify(subscription)}, {`,
-        "  handler: receive,",
+        `  handler: (message) => receive(message, ${JSON.stringify(producers.get(wire) ?? ir.member)}),`,
         "});",
         "",
       ]),
@@ -226,11 +234,15 @@ function emitSubscriptions(
   const seen = new Set<string>();
   const imports: string[] = [];
   const subscribed: string[] = [];
+  const producers = new Map<string, string>();
   for (const [service, wires] of services) {
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const fresh = [...wires].filter((wire) => !seen.has(wire)).sort();
     if (fresh.length === 0) continue;
-    for (const wire of fresh) seen.add(wire);
+    for (const wire of fresh) {
+      seen.add(wire);
+      producers.set(wire, service);
+    }
     const folder =
       ir.services?.find((candidate) => candidate.member === service)?.folder ?? service;
     const from =
@@ -256,7 +268,7 @@ function emitSubscriptions(
       ...subscribed.flatMap((wire) => [
         `/** Delivers \`${wire}\` to this service's typed listeners. */`,
         `export const ${topicConst(wire)}Subscription = new Subscription(${topicConst(wire)}, ${JSON.stringify(`${kebabCase(ir.member)}-${kebabCase(stem(wire))}`)}, {`,
-        "  handler: receive,",
+        `  handler: (message) => receive(message, ${JSON.stringify(producers.get(wire) ?? ir.member)}),`,
         "});",
         "",
       ]),

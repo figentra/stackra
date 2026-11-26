@@ -3,7 +3,8 @@
  * Purpose: `RelayInboxService`, the consumer side of a cross-app delivery: the generated `POST /events/inbox` route
  *          hands it the raw request; it verifies the sender (`InboxVerifier`) before anything reads the body, parses
  *          the cross-app envelope, sets `producer` from the verified sender (never from the body) and hands it to
- *          `InboxService.receive`, which claims the event id and runs the listeners in one transaction. It answers 204
+ *          `InboxService.receive` with that sender as the verified producer (`ctx.producer`, STA-1792), which claims
+ *          the event id and runs the listeners in one transaction. It answers 204
  *          when handled, already received or a newer version this process waits on; 401 when unverified (the reason is
  *          logged, never the body); 403 when the verified producer does not publish the envelope's event (any version
  *          of a wire name it lists), so one pinned producer's key can never run another producer's listeners; 405 for
@@ -106,7 +107,7 @@ export class RelayInboxService extends Service {
       return 403;
     }
     try {
-      await this.inbox.receive(envelope);
+      await this.inbox.receive(envelope, verdict.sender.service);
     } catch (error) {
       if (error instanceof z.ZodError) return this.invalid(envelope.producer, "data", envelope);
       if (error instanceof UnknownEventError)

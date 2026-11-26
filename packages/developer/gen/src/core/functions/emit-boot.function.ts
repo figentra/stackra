@@ -22,7 +22,9 @@
  *          `InboxService#connect` (the
  *          registered listeners and relays, disconnected when the signal aborts), the live queries' refresh (one
  *          `liveQueryRoutes` call per query with `cache.invalidateOn`, each route subscribed on the bus and sent through
- *          `RealtimeRelay` or `RealtimeBroadcaster`, when the service runs `@stackra/realtime`; STA-1445), then `relay.connect(container)` and
+ *          `RealtimeRelay` or `RealtimeBroadcaster`, when the service runs `@stackra/realtime`; STA-1445), then
+ *          `relay.connect(container, { service: "<member>" })` (the deployment identity every envelope names as its
+ *          producer, STA-1792) and
  *          the relay's `work` loop until the signal aborts, beside it the cross-app relay's (`CrossAppRelayService`, for
  *          a producer with a runway `events` block) and, before them, `RelayInboxService#connect` for a service with the
  *          cross-app inbox (STA-1910). A signal already aborted when `boot` starts connects
@@ -259,7 +261,8 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     steps.push(
       "  if (options.relay !== false) {",
       "    const relay = container.get(OutboxRelayService);",
-      "    relay.connect(container);",
+      // The deployment identity every envelope names as its producer (STA-1792): the member, never a runtime value.
+      `    relay.connect(container, { service: ${JSON.stringify(ir.member)} });`,
       "    void relay.work({ signal: options.signal });",
       ...(crossApp
         ? [

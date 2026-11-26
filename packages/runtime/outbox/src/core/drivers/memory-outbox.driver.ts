@@ -99,14 +99,13 @@ export class MemoryOutboxDriver extends Driver(OutboxDriver) {
   }
 
   /** Implements `OutboxDriver.rewrite`, documented there. */
-  rewrite(id: PublicId<"evt">, data: unknown): Promise<void> {
+  rewrite(id: PublicId<"evt">, data: unknown): Promise<boolean> {
     const message = this.messages.get(id);
-    if (message !== undefined) {
-      // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose, as in write
-      const json: unknown = JSON.parse(JSON.stringify(data ?? null));
-      this.messages.set(id, Object.freeze({ ...message, data: json }));
-    }
-    return Promise.resolve();
+    if (message === undefined) return Promise.resolve(false);
+    // oxlint-disable-next-line unicorn/prefer-structured-clone -- a JSON round trip on purpose, as in write
+    const json: unknown = JSON.parse(JSON.stringify(data ?? null));
+    this.messages.set(id, Object.freeze({ ...message, data: json }));
+    return Promise.resolve(true);
   }
 
   /** Every message kept, dead ones included, in the relay's order; for a test's assertions. */

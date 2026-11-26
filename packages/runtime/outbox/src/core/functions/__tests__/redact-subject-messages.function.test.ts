@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `redactSubjectMessages`: held messages naming the subject, live or dead, get the personal
  *          fields nulled at any depth (a row change's `before` and `after` too) and keep their delivery state;
- *          messages of another subject, or with no such field, are not rewritten; an empty subject is refused.
+ *          messages of another subject, or with no such field, are not rewritten; a matching message the driver
+ *          could not rewrite (a platform message, for a tenant) is counted as unrewritable, never as rewritten
+ *          (STA-2629); an empty subject is refused.
  * Boundary: test only; the memory outbox driver.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0189 (decision 2); data-layer gap gov6.
@@ -59,7 +61,10 @@ describe(redactSubjectMessages, () => {
     ]);
     await driver.deadLetter("evt_A", { code: "internal", message: "down" }, NOON);
 
-    await expect(redactSubjectMessages(driver, "usr_1", FIELDS)).resolves.toBe(2);
+    await expect(redactSubjectMessages(driver, "usr_1", FIELDS)).resolves.toEqual({
+      rewritten: 2,
+      unrewritable: 0,
+    });
 
     const byId = new Map(driver.stored().map((stored) => [stored.id, stored]));
     expect(byId.get("evt_A")?.data).toEqual({ customerId: "usr_1", email: null, plan: "gold" });
@@ -76,7 +81,31 @@ describe(redactSubjectMessages, () => {
     const driver = new MemoryOutboxDriver();
     await driver.write([message("evt_A", { customerId: "usr_1", email: "a@example.com" })]);
     await redactSubjectMessages(driver, "usr_1", FIELDS);
-    await expect(redactSubjectMessages(driver, "usr_1", FIELDS)).resolves.toBe(0);
+    await expect(redactSubjectMessages(driver, "usr_1", FIELDS)).resolves.toEqual({
+      rewritten: 0,
+      unrewritable: 0,
+    });
+  });
+
+  it("counts a held message it could not rewrite as unrewritable, never as rewritten (STA-2629)", async () => {
+    /** A store whose row security hides the platform message `evt_P` from the caller's tenant session. */
+    class OwnerSessionOutbox extends MemoryOutboxDriver {
+      override async rewrite(id: PublicId<"evt">, data: unknown): Promise<boolean> {
+        return id === "evt_P" ? false : super.rewrite(id, data);
+      }
+    }
+    const driver = new OwnerSessionOutbox();
+    await driver.write([
+      message("evt_A", { customerId: "usr_1", email: "a@example.com" }),
+      message("evt_P", { customerId: "usr_1", email: "a@example.com" }),
+    ]);
+
+    await expect(redactSubjectMessages(driver, "usr_1", FIELDS)).resolves.toEqual({
+      rewritten: 1,
+      unrewritable: 1,
+    });
+    const byId = new Map(driver.stored().map((stored) => [stored.id, stored]));
+    expect(byId.get("evt_P")?.data).toEqual({ customerId: "usr_1", email: "a@example.com" });
   });
 
   it("refuses an empty subject", async () => {

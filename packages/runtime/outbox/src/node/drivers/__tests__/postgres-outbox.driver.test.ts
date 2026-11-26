@@ -179,11 +179,20 @@ describe(PostgresOutboxDriver, () => {
     expectBound(statements);
   });
 
-  it("rewrites a payload with one bound statement", async () => {
-    const { database, statements } = databaseWith();
-    await new PostgresOutboxDriver(database).rewrite("evt_A", { email: null });
-    expect(statements[0]?.sql).toContain("set data = ?::jsonb where id = ?");
+  it("rewrites a payload with one bound statement and says whether a row changed", async () => {
+    const { database, statements } = databaseWith([{ id: "evt_A" }]);
+    await expect(
+      new PostgresOutboxDriver(database).rewrite("evt_A", { email: null }),
+    ).resolves.toBe(true);
+    expect(statements[0]?.sql).toContain("set data = ?::jsonb where id = ? returning id");
     expect(statements[0]?.params).toEqual([JSON.stringify({ email: null }), "evt_A"]);
     expectBound(statements);
+  });
+
+  it("answers false when row security leaves the row unchanged (STA-2629)", async () => {
+    const { database } = databaseWith([]);
+    await expect(
+      new PostgresOutboxDriver(database).rewrite("evt_A", { email: null }),
+    ).resolves.toBe(false);
   });
 });

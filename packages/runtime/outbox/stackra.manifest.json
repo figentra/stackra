@@ -16,6 +16,13 @@
   "permissions": [],
   "errors": [
     {
+      "code": "platform_personal_event",
+      "kind": "internal",
+      "category": "internal",
+      "module": "outbox",
+      "class": "PlatformPersonalEventError"
+    },
+    {
       "code": "unknown_event",
       "kind": "internal",
       "category": "internal",

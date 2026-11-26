@@ -12,6 +12,8 @@
  *           call does (STA-1715): the system actor `sys_listener` handled it, the event's id is the correlation, the
  *           event's actor is `causedBy`, and the fields are what the listener added with `ctx.audit`. The entry is
  *           written in the delivery, so inside the inbox's transaction; a listener that threw is not audited.
+ *           `ctx.producer` comes only from `deliver`'s `producer` (what the inbox's transport verified): a `producer`
+ *           key in the metadata is dropped, and `dispatch` never sets one (STA-1792).
  * Runtime: isomorphic
  * Governing contract: ADR 0078 (decisions 1 to 4); ADR 0294 (decisions 4 and 27); ADR 0305 (rule 21); ADR 0263 (connected after the
  *                     container is ready, disconnected on shutdown).
@@ -135,17 +137,24 @@ export class EventBus extends Service {
    * Queues an occurrence published elsewhere (relayed from the outbox, received by the inbox) for `drain()` without
    * publishing it again.
    *
-   * @param meta - the occurrence's metadata; a fresh id and the clock's time when absent.
+   * @param meta - the occurrence's metadata; a fresh id and the clock's time when absent. A `producer` key in it is
+   *               dropped.
+   * @param producer - the service that published it, as the caller's transport verified it (the inbox's); every
+   *                   listener sees it as `ctx.producer`.
    * @returns the queued occurrence.
    */
-  deliver(event: Event, meta: Partial<EventMeta> = {}): RecordedEvent<Event> {
+  deliver(event: Event, meta: Partial<EventMeta> = {}, producer?: string): RecordedEvent<Event> {
+    const kept: Record<string, unknown> = { ...meta };
+    // a producer is what the transport verified, never what the metadata claims (STA-1792)
+    delete kept["producer"];
     const record: RecordedEvent<Event> = Object.freeze({
       event,
       meta: Object.freeze({
-        ...meta,
+        ...(kept as Partial<EventMeta>),
         id: meta.id ?? newEventId(),
         occurredAt: meta.occurredAt ?? this.clock.now(),
       }),
+      ...(producer === undefined ? {} : { producer }),
     });
     this.queue.push(record);
     return record;
@@ -186,6 +195,7 @@ export class EventBus extends Service {
     const context: ListenerContext = {
       ...meta,
       eventId: id,
+      ...(record.producer === undefined ? {} : { producer: record.producer }),
       now: () => this.clock.now(),
       audit: (added) => {
         Object.assign(fields, added);

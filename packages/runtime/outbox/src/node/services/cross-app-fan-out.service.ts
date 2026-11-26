@@ -7,7 +7,8 @@
  *           only when the container binds it, so a service with no relay configuration publishes exactly as before. It
  *           writes in the relay's transaction; a failure fails the outbox message, which retries, and the store's unique
  *           (event id, subscriber, type) keeps the rows single. A sibling consumer in the same app is not a subscriber,
- *           so it gets no delivery.
+ *           so it gets no delivery. A published envelope's `producer` is never sent: the consumer's inbox sets it from
+ *           the verified signer (ADR 0511 decision 19, STA-1792).
  * Runtime: node
  * Governing contract: ADR 0511 (decisions 12 and 17, amendment of 2026-11-02); ADR 0141 (2026-10-23 note: older
  *                     versions under the same id); ADR 0078 (decision 4).
@@ -44,7 +45,11 @@ export class CrossAppFanOut extends Service {
   /** Writes one delivery per subscriber of each envelope's type, due at `now`; a kept one is skipped. */
   async fanOut(envelopes: readonly EventEnvelope[], now: Date): Promise<void> {
     const deliveries: Delivery[] = [];
-    for (const envelope of envelopes)
+    for (const published of envelopes) {
+      // the consumer's inbox sets `producer` from the verified signer; the producer never sends one (ADR 0511 d19)
+      const sent: Record<string, unknown> = { ...published };
+      delete sent["producer"];
+      const envelope = sent as unknown as EventEnvelope;
       for (const subscriber of await this.source.subscribersOf(envelope.type))
         deliveries.push({
           id: mintPublicId("dlv", now.getTime()),
@@ -56,6 +61,7 @@ export class CrossAppFanOut extends Service {
           availableAt: now,
           createdAt: now,
         });
+    }
     await this.driver.write(deliveries);
   }
 }

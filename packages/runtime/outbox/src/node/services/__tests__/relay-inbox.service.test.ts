@@ -149,14 +149,17 @@ describe(RelayInboxService, () => {
 
   it("sets producer from the verified sender, never from the body", async () => {
     const received: EventEnvelope[] = [];
+    const producers: (string | undefined)[] = [];
     const { service } = inboxOf({
-      receive: async (envelope) => {
+      receive: async (envelope, producer) => {
         received.push(envelope);
+        producers.push(producer);
         return true;
       },
     });
     await expect(service.receive(await request(bodyOf({ producer: "evil" })))).resolves.toBe(204);
     expect((received[0] as CrossAppEnvelope).producer).toBe("pay");
+    expect(producers).toEqual(["pay"]);
     expect(received[0]).toMatchObject({ id: "evt_1", envelopeVersion: 1 });
   });
 

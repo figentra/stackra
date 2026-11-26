@@ -531,8 +531,12 @@
     },
     "privacy.EraseSubjectOutput": {
       "type": "object",
-      "required": ["erasureId", "subject", "erased", "kept", "shredded", "at"],
+      "required": ["unredacted", "erasureId", "subject", "erased", "kept", "shredded", "at"],
       "properties": {
+        "unredacted": {
+          "type": "integer",
+          "minimum": 0
+        },
         "erasureId": {
           "type": "string"
         },

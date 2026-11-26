@@ -4,7 +4,9 @@
  *          straight into this service's own inbox, so its listeners run once each, after the commit, even when the relay
  *          publishes an event twice. It is the transport of a single service, a test, and on-prem until a queue driver.
  * Boundary: a driver of this package's port (driver name `inbox`); other services' inboxes are reached by the
- *           transports gen supplies (Encore Pub/Sub, a Postgres queue), never by this driver.
+ *           transports gen supplies (Encore Pub/Sub, a Postgres queue), never by this driver. Only this process's own
+ *           relay publishes here, so the envelope's `producer` (the relay's deployment identity) is the verified
+ *           producer handed to the inbox (STA-1792).
  * Runtime: node
  * Governing contract: ADR 0142 (decision 1); ADR 0078 (decisions 2 and 4).
  */
@@ -34,6 +36,6 @@ export class InboxEventPublisherDriver extends Driver(EventPublisher) {
 
   /** Implements `EventPublisher.publish`, documented there. */
   async publish(envelope: EventEnvelope): Promise<void> {
-    await this.inbox.receive(envelope);
+    await this.inbox.receive(envelope, envelope.producer);
   }
 }

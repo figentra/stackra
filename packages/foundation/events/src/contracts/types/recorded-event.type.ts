@@ -3,7 +3,8 @@
  * Purpose: `RecordedEvent`, one occurrence of an event: the event instance and its metadata, as the bus queues it and
  *          the outbox stores it.
  * Boundary: a type only, in the leaf entry. The event is typed `object` here because the event bases live in `.`,
- *           which this entry may not import; `.` narrows it to `RecordedEvent<Event>`.
+ *           which this entry may not import; `.` narrows it to `RecordedEvent<Event>`. `producer` is set only by
+ *           `EventBus.deliver` from what the inbox's transport verified, never from `meta` (STA-1792).
  * Runtime: isomorphic
  * Governing contract: ADR 0141 (decision 3: an in-process event maps one to one at the outbox); ADR 0294 (decision 15).
  */
@@ -16,4 +17,7 @@ export interface RecordedEvent<E extends object = object> {
 
   /** Its id, time, tenant, actor and causation. */
   readonly meta: EventMeta;
+
+  /** The service that published it, as its transport verified it; absent for an occurrence dispatched in process. */
+  readonly producer?: string;
 }

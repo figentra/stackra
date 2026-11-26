@@ -14,7 +14,9 @@
  *          attempt, while every other consumer moves on. An event is published at its current version and then at
  *          each older version a live `Change` still serves (ADR 0141, stackra-403), all under the same id; when the
  *          container binds `CrossAppFanOut`, each of those versions is then written as a delivery to every subscriber
- *          in another app that takes it (ADR 0511 decision 12), and a failure there fails the message.
+ *          in another app that takes it (ADR 0511 decision 12), and a failure there fails the message. Every
+ *          envelope names this relay's service as its `producer`, the deployment identity `connect` is given (the
+ *          generated boot passes the service's member), never a value from the stored message (STA-1792).
  * Boundary: a platform service over the `OutboxDriver` and `EventPublisher` ports, @stackra/locking's `Locks`, the
  *           `Database` and the `Clock`; `connect(container)` gives it the container its change consumers and logger are
  *           resolved from (the runtime and a test call it, as they call `EventBus.connect`). Delivery is at least once:
@@ -160,6 +162,9 @@ export class OutboxRelayService extends Service {
   /** Set by `connect`. */
   private resolver: Resolver | undefined;
 
+  /** The service this relay runs in, stamped on every envelope as its producer; set by `connect`. */
+  private service: string | undefined;
+
   /**
    * @param driver - the message store.
    * @param feed - the change log the change consumers read.
@@ -188,9 +193,15 @@ export class OutboxRelayService extends Service {
     this.config = config;
   }
 
-  /** Resolves change consumers and the logger from `resolver` (a booted container or a testing app). */
-  connect(resolver: Resolver): void {
+  /**
+   * Resolves change consumers and the logger from `resolver` (a booted container or a testing app).
+   *
+   * @param identity - the deployment identity: `service`, the member of the service this relay runs in, which every
+   *                   envelope it publishes names as its producer. None: envelopes name no producer.
+   */
+  connect(resolver: Resolver, identity: { readonly service?: string } = {}): void {
     this.resolver = resolver;
+    this.service = identity.service === "" ? undefined : identity.service;
   }
 
   /**
@@ -423,7 +434,7 @@ export class OutboxRelayService extends Service {
       await this.resolver.get(CrossAppFanOut).fanOut(envelopes, now);
   }
 
-  /** The wire form of an event message. */
+  /** The wire form of an event message, its producer this relay's own service, never the message's claim. */
   private envelopeOf(message: OutboxMessage): EventEnvelope {
     return Object.freeze({
       id: message.id,
@@ -432,6 +443,7 @@ export class OutboxRelayService extends Service {
       ...(message.scope === undefined ? {} : { scope: message.scope }),
       meta: message.meta,
       data: message.data,
+      ...(this.service === undefined ? {} : { producer: this.service }),
     });
   }
 

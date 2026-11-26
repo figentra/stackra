@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `EraseSubjectWorkflow`: `erase` deletes delete-rows, anonymises anonymise-rows and leaves
  *          shred-rows to the key; a legal hold keeps its rows and, when they carry shredded fields, keeps the key;
- *          `redact` nulls the declared fields in held outbox messages naming the subject and the receipt counts them;
+ *          `redact` nulls the declared fields in held outbox messages naming the subject and the receipt counts them,
+ *          and a held message it could not rewrite shows as `unredacted` (STA-2629);
  *          `receipt` records `SubjectErased` and, when asked, the `ServiceAcked` erasure ack; `output` is the receipt;
  *          a shredded field that is not subject-sealed refuses the erasure before any row is touched.
  * Boundary: test only; the steps are called directly in order with a hand-built run and step context, the memory
@@ -136,6 +137,7 @@ describe("EraseSubjectWorkflow", () => {
       ],
       kept: [],
       shredded: true,
+      unredacted: 0,
       at: NOW.toISOString(),
     });
     expect(events).toHaveLength(1);
@@ -218,6 +220,57 @@ describe("EraseSubjectWorkflow", () => {
       { userId: "usr_other", line: "3 Tahlia St" },
     ]);
     expect(output.erased).toContainEqual({ kind: "outbox.message", method: "anonymise", count: 1 });
+    expect(output.unredacted).toBe(0);
+  });
+
+  it("reports a held platform message it could not rewrite as unredacted (STA-2629)", async () => {
+    registerPersonalData("crm", [CustomerPersonalData, AddressPersonalData]);
+    /** The subject's tenant session: row security hides the platform message `evt_P` from its update. */
+    class OwnerSessionOutbox extends MemoryOutboxDriver {
+      override async rewrite(id: `evt_${string}`, data: unknown): Promise<boolean> {
+        return id === "evt_P" ? false : super.rewrite(id, data);
+      }
+    }
+    const outbox = new OwnerSessionOutbox();
+    const at = new Date(NOW);
+    const held = {
+      kind: MessageKind.Event,
+      type: "crm.customer.moved.v1",
+      meta: {},
+      occurredAt: at,
+      attempts: 0,
+      availableAt: at,
+    };
+    await outbox.write([
+      { ...held, id: "evt_A", data: { userId: SUBJECT, phone: "+966500000000" } },
+      { ...held, id: "evt_P", data: { userId: SUBJECT, phone: "+966500000000" } },
+    ]);
+
+    const { output } = await runAll(
+      new EraseSubjectWorkflow(seeded(), SubjectSaltStoreFake.holding([SUBJECT]), outbox),
+      { erasureId: "era_6", subject: SUBJECT },
+    );
+
+    expect(output.unredacted).toBe(1);
+    expect(output.erased).toContainEqual({ kind: "outbox.message", method: "anonymise", count: 1 });
+  });
+
+  it("reads a redact result stored as a bare count by a run started before STA-2629", async () => {
+    registerPersonalData("crm", [AddressPersonalData]);
+    const workflow = new EraseSubjectWorkflow(
+      seeded(),
+      SubjectSaltStoreFake.holding([SUBJECT]),
+      new MemoryOutboxDriver(),
+    );
+    const results: Record<string, unknown> = {};
+    const run = { id: "wfr_1", input: { erasureId: "era_7", subject: SUBJECT }, results } as never;
+    results["erase"] = await workflow.erase(run);
+    results["redact"] = 2;
+    results["shred"] = await workflow.shred(run);
+    results["receipt"] = NOW.toISOString();
+    const output = workflow.output(run);
+    expect(output.erased).toContainEqual({ kind: "outbox.message", method: "anonymise", count: 2 });
+    expect(output.unredacted).toBe(0);
   });
 
   it("acks the waiting service with what it kept", async () => {

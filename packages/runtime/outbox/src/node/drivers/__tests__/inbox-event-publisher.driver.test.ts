@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `InboxEventPublisherDriver`: it is an `EventPublisher` that hands each envelope to this
- *          service's inbox, and a rejection of the inbox reaches the relay.
+ *          service's inbox with the producer its own relay stamped (STA-1792), and a rejection of the inbox reaches
+ *          the relay.
  * Boundary: test only; a stand-in inbox records what it receives.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0142 (decision 1).
@@ -23,17 +24,21 @@ const ENVELOPE: EventEnvelope = {
 
 describe(InboxEventPublisherDriver, () => {
   it("is an EventPublisher that publishes into the inbox", async () => {
-    const received: EventEnvelope[] = [];
+    const received: [EventEnvelope, string | undefined][] = [];
     const inbox = {
-      receive: async (envelope: EventEnvelope) => {
-        received.push(envelope);
+      receive: async (envelope: EventEnvelope, producer?: string) => {
+        received.push([envelope, producer]);
         return true;
       },
     } as unknown as InboxService;
     const publisher = new InboxEventPublisherDriver(inbox);
     expect(publisher).toBeInstanceOf(EventPublisher);
     await publisher.publish(ENVELOPE);
-    expect(received).toEqual([ENVELOPE]);
+    await publisher.publish({ ...ENVELOPE, producer: "orders" });
+    expect(received).toEqual([
+      [ENVELOPE, undefined],
+      [{ ...ENVELOPE, producer: "orders" }, "orders"],
+    ]);
   });
 
   it("passes the inbox's refusal on", async () => {

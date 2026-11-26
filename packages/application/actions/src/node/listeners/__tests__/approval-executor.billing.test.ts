@@ -9,6 +9,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0509; STA-1724 (P-017, FR-020).
  */
+import { buildConfig } from "@stackra/config";
 import { Driver } from "@stackra/container";
 import type { AnyClass } from "@stackra/container";
 import {
@@ -32,13 +33,13 @@ import {
   ActorStatusCheck,
   ApprovalBindingStore,
   ApprovalGate,
-  ApprovalGrantOrigin,
   ApprovalGranted,
   CallIsolation,
   IdempotencyStore,
   RateLimitStore,
   ScopeOwnership,
 } from "#contracts/index";
+import { ApprovalsConfig } from "#config/approvals.config";
 import { Effect } from "#contracts/enums/effect.enum";
 import { Action } from "#core/bases/action.base";
 import { ApprovalCondition } from "#core/bases/approval-condition.base";
@@ -112,12 +113,6 @@ class PassThrough extends Driver(CallIsolation) {
 
 class Owns extends Driver(ScopeOwnership) {
   async holds(): Promise<boolean> {
-    return true;
-  }
-}
-
-class FromStore extends Driver(ApprovalGrantOrigin) {
-  async trusts(): Promise<boolean> {
     return true;
   }
 }
@@ -198,7 +193,7 @@ describe("a billing-shaped coupon create action with an approval stage", () => {
     const executor = new ApprovalExecutorListener(
       gate,
       bindings,
-      new FromStore(),
+      buildConfig(ApprovalsConfig, { values: { storeService: "tasks" } }),
       new PassThrough(),
       new Owns(),
       new FixedClock(),
@@ -240,6 +235,7 @@ describe("a billing-shaped coupon create action with an approval stage", () => {
       eventId: "evt_1",
       occurredAt: NOW,
       scopeId: "ten_1",
+      producer: "tasks",
       now: () => NOW,
       audit: () => {},
     };

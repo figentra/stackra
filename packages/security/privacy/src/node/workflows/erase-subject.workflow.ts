@@ -3,7 +3,10 @@
  * Purpose: `EraseSubjectWorkflow`, the erasure saga (GDPR Art. 17, PDPL Art. 4 right to destruction): `erase` deletes
  *          or anonymises the subject's rows of every registered `PersonalData` declaration that no legal hold covers,
  *          `redact` nulls the declared personal fields in the outbox messages still held that name the subject (a
- *          late delivery or a dead-letter replay would carry them otherwise), `shred` destroys the subject key's salt
+ *          late delivery or a dead-letter replay would carry them otherwise) and counts the ones it found but could
+ *          not rewrite (a platform message, which the subject's tenant may not change) as the receipt's
+ *          `unredacted`, so an incomplete erasure never reads as complete (STA-2629), `shred` destroys the subject
+ *          key's salt
  *          so every shredded field is unreadable, and `receipt` records
  *          `SubjectErased` (and the `ServiceAcked` a cross-service erasure waits on) with what was disposed of and kept.
  * Boundary: the public async methods are the steps, run in declaration order, each its own transaction. Holds are
@@ -21,7 +24,7 @@
 import { Disposal } from "@stackra/database/contracts";
 import { disposableIds } from "@stackra/database";
 import { redactSubjectMessages } from "@stackra/outbox";
-import type { OutboxDriver } from "@stackra/outbox/contracts";
+import type { OutboxDriver, SubjectRedaction } from "@stackra/outbox/contracts";
 import {
   type Run,
   ServiceAcked,
@@ -63,8 +66,17 @@ function rowMethod(fields: Readonly<Record<string, ErasureMethod>>): ErasureMeth
   return ErasureMethod.Shred;
 }
 
+/** `redact`'s result; a run started before STA-2629 stored the rewritten count alone. */
+function redactionOf(result: SubjectRedaction | number): SubjectRedaction {
+  return typeof result === "number" ? { rewritten: result, unrewritable: 0 } : result;
+}
+
 /** What was disposed of: the rows `erase` reached, then the outbox messages `redact` rewrote. */
-function erasedOf(rows: readonly ErasedRecords[], messages: number): ErasedRecords[] {
+function erasedOf(
+  rows: readonly ErasedRecords[],
+  redaction: SubjectRedaction | number,
+): ErasedRecords[] {
+  const messages = redactionOf(redaction).rewritten;
   return messages > 0
     ? [...rows, { kind: OUTBOX_KIND, method: ErasureMethod.Anonymise, count: messages }]
     : [...rows];
@@ -142,10 +154,11 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
   }
 
   /**
-   * Nulls every declared personal field in the held outbox messages that name the subject; the count of rewritten
-   * messages. Held rows do not stop it: a hold preserves the record, not a copy waiting for delivery.
+   * Nulls every declared personal field in the held outbox messages that name the subject; how many it rewrote and
+   * how many it found but could not rewrite. Held rows do not stop it: a hold preserves the record, not a copy waiting
+   * for delivery.
    */
-  async redact(run: Run<this>): Promise<number> {
+  async redact(run: Run<this>): Promise<SubjectRedaction> {
     const named = new Set(personalDataDeclarations().flatMap(({ fields }) => Object.keys(fields)));
     return redactSubjectMessages(this.outbox, run.input.subject, named);
   }
@@ -178,6 +191,7 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
       erased: erasedOf(run.results.erase.erased, run.results.redact),
       kept: run.results.erase.kept,
       shredded: run.results.shred,
+      unredacted: redactionOf(run.results.redact).unrewritable,
       at: run.results.receipt,
     });
   }

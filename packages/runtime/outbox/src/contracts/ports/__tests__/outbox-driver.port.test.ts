@@ -42,7 +42,9 @@ class NullOutboxDriver extends Driver(OutboxDriver) {
     return [];
   }
 
-  async rewrite(): Promise<void> {}
+  async rewrite(): Promise<boolean> {
+    return false;
+  }
 }
 
 describe("OutboxDriver", () => {

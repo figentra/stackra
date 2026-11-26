@@ -11,7 +11,8 @@
  *          live change is published again at the older version, same id, its data run through `down` (stackra-403).
  *          An owned claim is loaded, fanned out and removed (or retried) in its owner through the bound isolation, and
  *          its changes loaded in their owner; an owned claim with no isolation bound, or a claim that does not load,
- *          fails the tick and is never skipped.
+ *          fails the tick and is never skipped. Every envelope names the service `connect` was given as its producer,
+ *          never one the stored message claims, and none without one (STA-1792).
  * Boundary: test only; the memory store, the memory lock driver, a recording publisher, a stand-in database that
  *           records the scopes it opens, a fixed clock and a map resolver.
  * Runtime: node (vitest)
@@ -229,6 +230,27 @@ describe(OutboxRelayService, () => {
       },
     ]);
     expect(store.stored()).toEqual([]);
+  });
+
+  it("stamps its own service as every envelope's producer, never the stored message's claim (STA-1792)", async () => {
+    const { relay, store, publisher } = relayOf();
+    relay.connect({ has: () => false, get: () => undefined as never }, { service: "orders" });
+    await store.write([
+      eventMessage({
+        meta: { correlationId: "call-1", producer: "approvals" } as OutboxMessage["meta"],
+      }),
+      eventMessage({
+        id: "evt_B",
+        type: "loyalty.points.earned.v2",
+        data: { memberId: "mem_1", tier: "gold" },
+      }),
+    ]);
+    await expect(relay.relay()).resolves.toBe(2);
+    expect(publisher.published.map(({ type, producer }) => [type, producer])).toEqual([
+      ["orders.order.paid.v1", "orders"],
+      ["loyalty.points.earned.v2", "orders"],
+      ["loyalty.points.earned.v1", "orders"],
+    ]);
   });
 
   it("publishes an event again at each older version a live change serves, under the same id", async () => {
