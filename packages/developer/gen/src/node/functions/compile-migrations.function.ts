@@ -274,7 +274,13 @@ export async function compileMigrations(
       ),
     };
   const blueprint = ir.layout === "service" ? emitBlueprintMacros(ownMacros) : [];
-  if (found.length === 0) return { files: blueprint, errors: [] };
+  // No migration: an empty classification, so runway can tell "nothing to ship" from "gen has not run" (STA-2866).
+  if (found.length === 0)
+    return {
+      files: blueprint,
+      errors: [],
+      safety: { schema: "stackra.migration-safety/v1", migrations: [] },
+    };
 
   const require = createRequire(join(root, "package.json"));
   let database: DatabaseEntry;

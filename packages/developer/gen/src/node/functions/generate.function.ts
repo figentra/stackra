@@ -28,7 +28,8 @@
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
  *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
  *           leftover one. Beside them it writes `.stackra/migration-safety.json`, the ADR 0159 class of each
- *           migration (`classifyMigrations`, STA-2866), and refuses a banned statement (`migration_banned`).
+ *           migration (`classifyMigrations`, STA-2866), for every service, with no rows when it has no migration, so
+ *           a missing file always means gen has not run; and it refuses a banned statement (`migration_banned`).
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
  *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
@@ -49,7 +50,6 @@ import type { StackraManifest } from "@stackra/contracts";
 
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
-import { MIGRATION_SAFETY_FILE } from "#core/constants/migration-safety-file.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
@@ -166,8 +166,8 @@ const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
 /**
  * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
  * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
- * `.stackra/gen/blueprint.ts`, which would import a deleted macro, and a leftover `.stackra/migration-safety.json`,
- * which would class migrations that are gone. `--check` reports them as changed.
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed. The
+ * `.stackra/migration-safety.json` of a service is rewritten on every run, never left stale.
  */
 function staleMigrations(
   root: string,
@@ -181,8 +181,8 @@ function staleMigrations(
     .filter((name) => name.endsWith(".sql"))
     .map((name) => `${MIGRATIONS_DIR}/${name}`)
     .filter((path) => !kept.has(path));
-  for (const file of [BLUEPRINT_FILE, MIGRATION_SAFETY_FILE])
-    if (compiled && !kept.has(file) && existsSync(join(root, file))) stale.push(file);
+  if (compiled && !kept.has(BLUEPRINT_FILE) && existsSync(join(root, BLUEPRINT_FILE)))
+    stale.push(BLUEPRINT_FILE);
   if (!check) for (const path of stale) rmSync(join(root, path));
   return stale;
 }
@@ -320,10 +320,8 @@ export async function generate(
       ]
     : [
         ...migrations.files,
-        // The ADR 0159 class of each migration, which `runway evidence` reads (STA-2866).
-        ...(migrations.safety === undefined || migrations.files.length === 0
-          ? []
-          : [emitMigrationSafety(migrations.safety)]),
+        // The ADR 0159 class of each migration, which `runway evidence` reads, empty without one (STA-2866).
+        ...(migrations.safety === undefined ? [] : [emitMigrationSafety(migrations.safety)]),
       ];
   // Encore reads migrations only from a local folder, so a
   // service's compiled files are copied under its Encore service too. Encore runs each file in one transaction, so

@@ -9,7 +9,8 @@
  *          loaded), and the merged `Blueprint` augmentation of an own macro, through which a TypeScript program accepts
  *          the call and rejects a wrong argument, and `module_key_collision` for an own module with migrations whose
  *          key a made-up declared package's migrations need (STA-2161), and the ADR 0159 classes it returns with a
- *          `migration_banned` refusal for a data write (STA-2866).
+ *          `migration_banned` refusal for a data write, and an empty classification for a service with no migration
+ *          (STA-2866).
  * Boundary: test only; writes under the OS temp folder and removes it. No workspace dependency is used.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305; ADR 0159 decision 3 (STA-2866).
@@ -370,6 +371,16 @@ describe("compileMigrations", () => {
       ["ai.0001_create_agents", "additive", false, ["0002_ai_0001_create_agents"]],
       ["ai.0002_drop_note", "contract", true, ["0003_ai_0002_drop_note"]],
     ]);
+  });
+
+  /** "No migration" is a classification too, so runway can tell it from a checkout where gen has not run. */
+  it("returns an empty classification for a service with no migration (STA-2866)", async () => {
+    const { files, errors, safety } = await compileMigrations(host(), {
+      ...serviceIr([]),
+      packages: [],
+    });
+    expect([files, errors]).toEqual([[], []]);
+    expect(safety).toEqual({ schema: "stackra.migration-safety/v1", migrations: [] });
   });
 
   /** A data write is a queue job, never a migration: refused, and no file is written. */

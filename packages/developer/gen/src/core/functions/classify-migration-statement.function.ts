@@ -7,9 +7,11 @@
  *          removes or narrows what the running release uses (a dropped table, column, function, policy or trigger, a
  *          rename, `SET NOT NULL`, a type change, a NOT NULL column without a default, a constraint checked under a
  *          lock) and `banned` never belongs in a migration (a data write, an index built on an existing table without
- *          `CONCURRENTLY`, a lock, a vacuum, a table rewrite). A statement on a table the same migration created is
- *          `additive`, since no release reads that table yet. A statement gen cannot read counts as `contract`, so an
- *          unknown is destructive.
+ *          `CONCURRENTLY`, a lock, a vacuum, a table rewrite). A statement on a table the same migration created with a
+ *          plain `CREATE TABLE` is `additive`, since no release reads that table yet; `CREATE TABLE IF NOT EXISTS`
+ *          may adopt a table that already exists, so it marks nothing created. A statement gen cannot read counts as
+ *          `contract`, so an unknown is destructive; so does a string that holds more than one top-level statement
+ *          (`splitSqlStatements`), which `classifyMigrations` splits before it asks.
  * Boundary: pure; reads the SQL text only. Comment lines are dropped and string literals and dollar-quoted bodies
  *           blanked before keywords are matched, so a function body or a quoted word never changes the class. A `DO`
  *           block is judged by its body: only reads and raises are `additive`, a data write is `banned`, anything
@@ -19,6 +21,7 @@
  *                     (rule 4: no data change in a migration).
  */
 import { migrationSafetyRank } from "#core/functions/migration-safety-rank.function";
+import { splitSqlStatements } from "#core/functions/split-sql-statements.function";
 import type { ClassifiedStatement } from "#core/types/classified-statement.type";
 import type { MigrationSafetyClass } from "#core/types/migration-safety-class.type";
 
@@ -37,6 +40,10 @@ const WRITES_DATA =
 
 /** The reason of a statement gen does not read. */
 const UNREAD = "gen cannot classify this statement, so it counts as destructive";
+
+/** The reason of a string that holds several statements. */
+const SEVERAL =
+  "holds more than one statement, which gen classifies one at a time, so it counts as destructive";
 
 /** The reason of a type change. */
 const TYPE_CHANGE =
@@ -188,9 +195,13 @@ function createOrDrop(s: string, created: ReadonlySet<string>): ClassifiedStatem
         );
   }
   const table = new RegExp(
-    String.raw`^create (?:(?:global |local )?(?:temp|temporary|unlogged) )?table (?:if not exists )?(${QUALIFIED})`,
+    String.raw`^create (?:(?:global |local )?(?:temp|temporary|unlogged) )?table (if not exists )?(${QUALIFIED})`,
   ).exec(s);
-  if (table !== null) return { ...of("additive", "creates a table"), creates: nameOf(table[1]) };
+  // IF NOT EXISTS may adopt a table a release already uses, so what follows is judged against an existing table.
+  if (table !== null)
+    return table[1] === undefined
+      ? { ...of("additive", "creates a table"), creates: nameOf(table[2]) }
+      : of("additive", "creates a table unless it exists, so it may adopt one already in use");
   if (/^create\b/.test(s)) return of("additive", "creates a new object");
   if (/^drop index\b/.test(s)) return of("online", "drops an index, which loses no data");
   const dropped = new RegExp(
@@ -211,7 +222,7 @@ function createOrDrop(s: string, created: ReadonlySet<string>): ClassifiedStatem
 /**
  * The class of `sql`, one statement of a compiled step.
  *
- * @param sql - the statement as the compiled step holds it, comment lines included.
+ * @param sql - one statement as the compiled step holds it, comment lines included; several count as `contract`.
  * @param created - the tables an earlier statement of the same migration created (unquoted, lowercased).
  * @example
  * classifyMigrationStatement('alter table "orders"."orders" drop column "note"', new Set()).class; // "contract"
@@ -220,6 +231,7 @@ export function classifyMigrationStatement(
   sql: string,
   created: ReadonlySet<string>,
 ): ClassifiedStatement {
+  if (splitSqlStatements(sql).length > 1) return of("contract", SEVERAL);
   const s = fold(sql);
   if (s === "") return of("additive", "a comment or marker line");
   if (/^with\b/.test(s))

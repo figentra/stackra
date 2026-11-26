@@ -9,14 +9,14 @@ Writes the approvals bot's evidence for one deploy job.
 stackra runway evidence <environment> --target <target> --sha <sha> [--member <member>] [--repo <owner/repo>] [--previous <file>] [--json]
 ```
 
-| Argument or option | Kind     | Meaning                                                                     |
-| ------------------ | -------- | --------------------------------------------------------------------------- |
-| `environment`      | argument | The runway environment the job deploys.                                     |
-| `--target`         | option   | The destination target (`cloudflare-workers`, `encore-cloud`, `eas`).       |
-| `--sha`            | option   | The full commit the job deploys.                                            |
-| `--member`         | option   | The member the job ships; default the whole target.                         |
-| `--repo`           | option   | `owner/repo`; default the root runway's `providers.github`.                 |
-| `--previous`       | option   | The `runway-migrations` file the previous deploy to this environment wrote. |
+| Argument or option | Kind     | Meaning                                                                      |
+| ------------------ | -------- | ---------------------------------------------------------------------------- |
+| `environment`      | argument | The runway environment the job deploys.                                      |
+| `--target`         | option   | The destination target (`cloudflare-workers`, `encore-cloud`, `eas`).        |
+| `--sha`            | option   | The full commit the job deploys.                                             |
+| `--member`         | option   | The member the job ships; default the whole target.                          |
+| `--repo`           | option   | `owner/repo`; default the root runway's `providers.github`.                  |
+| `--previous`       | option   | The `runway-migrations` record of this environment's last successful deploy. |
 
 ## What it does
 
@@ -49,15 +49,21 @@ decides on `rollout` only. `release.strategy` in the root runway is descriptive 
 | A Workers member with Durable Object migrations or a D1 binding, or no config read; an undeclared target | `null`                                                                                                                |
 
 For a service target, gen classes every migration as `additive`, `online`, `contract` or `banned`; `contract` and
-`banned` are destructive. `destructive` is `true`, with the ids in `destructiveMigrations`, when a destructive migration
-is missing from the `--previous` file's keys. It is `false` when every service's classes match its compiled
+`banned` are destructive. Each top-level statement of a raw `schema.sql()` string is classed alone, and a statement gen
+cannot read counts as `contract`. `destructive` is `true`, with the ids in `destructiveMigrations`, when a destructive
+migration is missing from the `--previous` record's keys. It is `false` when every service's classes match its compiled
 `.stackra/migrations` files and nothing destructive is new, or no service has a destructive migration at all. It is
-`null` when a safety file is missing, unreadable or stale (run `stackra gen`), or when a destructive migration exists
-and no `--previous` file says whether it shipped before.
+`null` when a safety file is missing, unreadable or stale, when no service is found, or when a destructive migration
+exists and no `--previous` record says whether it was applied before.
 
-For a service target whose services are all classified, it also writes `runway-migrations-<environment>[-<member>].json`
-(`runway.migrations/v1`): the environment, the commit and the `<member>:<id>` key of every migration the job ships. The
-deploy workflow keeps it as an artifact and passes it as `--previous` to the next deploy to the same environment.
+Gen writes `.stackra/migration-safety.json` for every service, with no rows when the service has no migration. A missing
+file therefore always means gen has not run. `.stackra/` is gitignored, so on a fresh checkout every service is
+`null` until `stackra gen` runs: run gen in the evidence job before this command, or the deploy always goes to the owner.
+
+The `--previous` record comes from [`runway migrations:record`](/runway/migrations-record), which the deploy job runs
+after its deploy step succeeded. This command writes no record: it runs before the deploy, which the owner may reject
+or which may fail, so what it reads is not yet applied. Take the record from the environment's last successful deploy
+run only. A record of a run whose deploy never applied its migrations would make a destructive migration look old.
 
 ## What it prints
 
@@ -73,9 +79,9 @@ The file name and the two answers; with `--json`, the whole record.
 
 ## Where it runs
 
-Anywhere; it reads files only. A deploy workflow runs it in a job that finishes before the deploy job, and uploads the
-file as the artifact `runway-evidence-<environment>[-<member>]`: GitHub asks the bot when the deploy job is queued,
-before any of its steps.
+Anywhere; it reads files only. A deploy workflow runs it in a job that finishes before the deploy job, after
+`stackra gen` in that job, and uploads the file as the artifact `runway-evidence-<environment>[-<member>]`: GitHub asks
+the bot when the deploy job is queued, before any of its steps.
 
 ## Examples
 
@@ -86,4 +92,5 @@ stackra runway evidence production --target encore-cloud --sha <sha> --previous 
 
 ## See also
 
-[0533](/adr/0533-approvals-bot-deployment-protection) and [the runway runbook](/runbooks/runway).
+[`runway migrations:record`](/runway/migrations-record), [0533](/adr/0533-approvals-bot-deployment-protection) and
+[the runway runbook](/runbooks/runway).

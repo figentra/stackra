@@ -3,7 +3,7 @@
  * Purpose: `MigrationStream`, one service's compiled migrations as a deploy ships them: the member, gen's classified
  *          migrations from `.stackra/migration-safety.json` (`undefined` when the file is missing or does not parse)
  *          and the step files in `.stackra/migrations`.
- * Boundary: data only; read by the `runway evidence` command, judged by `streamIsCurrent` and `destructiveOf`.
+ * Boundary: data only; read by `readMigrationStreams`, judged by `streamIsCurrent` and `destructiveOf`.
  * Runtime: isomorphic
  * Governing contract: ADR 0159 (decision 3); ADR 0533 (decision 3); STA-2866.
  */

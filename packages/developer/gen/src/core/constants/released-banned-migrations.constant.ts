@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: `RELEASED_BANNED_MIGRATIONS`, the released migrations that hold a statement ADR 0159 bans, written before gen
  *          classified migrations (STA-2866): the tenancy contract migrations that backfill `tenant_id` in place before
- *          `SET NOT NULL`, and an index built on an existing table without `CONCURRENTLY`. An applied migration is
- *          frozen, so gen keeps compiling them, classified `banned` and destructive; any other banned statement is
- *          refused (`migration_banned`).
+ *          `SET NOT NULL`, and indexes built without `CONCURRENTLY` on a table that may already hold rows (an existing
+ *          one, or one `CREATE TABLE IF NOT EXISTS` adopts). An applied migration is frozen, so gen keeps compiling
+ *          them, classified `banned` and destructive; any other banned statement is refused (`migration_banned`).
  * Boundary: a frozen set of migration ids. Closed: a new migration never joins it; a banned change is rewritten as
  *           expand and contract instead.
  * Runtime: isomorphic
@@ -26,4 +26,7 @@ export const RELEASED_BANNED_MIGRATIONS: ReadonlySet<string> = new Set<string>([
   "workflow.0012_contract_journal_tenancy",
   // An HNSW index built on the existing vector_items table without CONCURRENTLY.
   "search.0004_create_vector_hnsw_index",
+  // Indexes built without CONCURRENTLY on the cache tables, which its CREATE TABLE IF NOT EXISTS adopts when a
+  // service already made them (#649).
+  "database.0005_create_cache_tables",
 ]);

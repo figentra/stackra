@@ -3,45 +3,37 @@
  * Purpose: `RunwayEvidenceCommand`, `runway evidence <environment> --target <t> --sha <sha> [--member <m>] [--repo <r>]
  *          [--previous <file>]`: writes the approvals bot's evidence for one deploy job (`deployEvidence`, ADR 0533)
  *          to `runway-evidence-<environment>[-<member>].json` in the working folder, the name the bot looks for in the
- *          run's artifacts, and gives it as the `--json` data. For a service target it also writes
- *          `runway-migrations-<environment>[-<member>].json` (`runway.migrations/v1`), the migration keys the job
- *          ships, which the next deploy to the environment passes back as `--previous` so `destructive` names only
- *          what is new.
+ *          run's artifacts, and gives it as the `--json` data. `--previous` is the `runway-migrations` record
+ *          `runway migrations:record` wrote after the environment's last successful deploy, so `destructive` names
+ *          only what is new. It writes no such record itself: it runs before the deploy, which may be rejected or
+ *          fail, so what it would record is not yet applied.
  * Boundary: reads the runway files, for a Workers member its `wrangler.jsonc`, and for a service target each shipped
  *           service's `.stackra/migration-safety.json` (gen's ADR 0159 classes) and `.stackra/migrations` file names
- *           (`services/<member>`, or every service under `services/` for the whole target); writes those two files and
- *           nothing else; no network and no value. The repo is the root runway's `providers.github` unless `--repo`
- *           names it. A `--previous` file of another environment, or one that does not parse, is refused.
+ *           (`readMigrationStreams`: `services/<member>`, or every service under `services/` for the whole target);
+ *           writes the evidence file and nothing else; no network and no value. The repo is the root runway's
+ *           `providers.github` unless `--repo` names it. A `--previous` file of another environment, or one that does
+ *           not parse, is refused.
  * Runtime: node
  * Governing contract: ADR 0533 (decision 3); ADR 0352 (decision 6); ADR 0506 (decision 8); ADR 0159 (decision 3);
  *                     STA-2104; STA-2866.
  */
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { Argument, Command, Option, UsageError, type CommandIo } from "@stackra/console";
 import { Str } from "@stackra/validation";
 
-import { z } from "zod";
+import type { z } from "zod";
 
-import { MIGRATION_SAFETY_FILE_SCHEMA } from "#core/constants/migration-safety-file-schema.constant";
+import { RUNWAY_MIGRATIONS_FILE_SCHEMA } from "#core/constants/runway-migrations-file-schema.constant";
 import { SERVICE_TARGETS } from "#core/constants/service-targets.constant";
 import { RunwayKind } from "#core/enums/runway-kind.enum";
 import { deployEvidence } from "#core/functions/deploy-evidence.function";
-import { migrationKeysOf } from "#core/functions/migration-keys-of.function";
 import type { DeployEvidence } from "#core/types/deploy-evidence.type";
 import type { DeployMigrations } from "#core/types/deploy-migrations.type";
-import type { MigrationStream } from "#core/types/migration-stream.type";
+import { readMigrationStreams } from "#node/functions/read-migration-streams.function";
 import { readRunway } from "#node/functions/read-runway.function";
 import { repositoryRoot } from "#node/functions/repository-root.function";
-
-/** A previous deploy's `runway-migrations` file. */
-const MIGRATIONS_FILE_SCHEMA = z.object({
-  schema: z.literal("runway.migrations/v1"),
-  environment: z.string(),
-  sha: z.string(),
-  migrations: z.array(z.string()),
-});
 
 /** Writes one deploy job's evidence for the approvals bot. */
 export class RunwayEvidenceCommand extends Command({
@@ -84,7 +76,7 @@ export class RunwayEvidenceCommand extends Command({
   /** The previous deploy's migrations file. */
   @Option({
     description:
-      "The runway-migrations file the previous deploy to this environment wrote (default: unknown, so a destructive migration is floor)",
+      "The runway-migrations record `runway migrations:record` wrote after this environment's last successful deploy (default: unknown, so a destructive migration is floor)",
   })
   @Str
   previous?: string;
@@ -113,7 +105,9 @@ export class RunwayEvidenceCommand extends Command({
         "Pass --repo or set providers.github in runway.yaml",
       );
     const previous = this.readPrevious(io.cwd);
-    const streams = SERVICE_TARGETS.has(this.target) ? this.streams(root) : undefined;
+    const streams = SERVICE_TARGETS.has(this.target)
+      ? readMigrationStreams(root, this.member)
+      : undefined;
     const migrations: DeployMigrations | undefined =
       streams === undefined ? undefined : { streams, previous };
     const config = this.wranglerConfig(root, runway.targets?.["cloudflare-workers"]?.members);
@@ -131,12 +125,6 @@ export class RunwayEvidenceCommand extends Command({
     const suffix = `${this.environment}${this.member === undefined ? "" : `-${this.member}`}`;
     const name = `runway-evidence-${suffix}.json`;
     writeFileSync(join(io.cwd, name), `${JSON.stringify(evidence, null, 2)}\n`);
-    const shipped = migrations === undefined ? undefined : migrationKeysOf(migrations);
-    if (shipped !== undefined)
-      writeFileSync(
-        join(io.cwd, `runway-migrations-${suffix}.json`),
-        `${JSON.stringify({ schema: "runway.migrations/v1", environment: this.environment, sha: this.sha, migrations: shipped }, null, 2)}\n`,
-      );
     io.output.success(
       `${name}: rollout ${String(evidence.rollout)}, destructive ${String(evidence.destructive)}`,
     );
@@ -164,13 +152,13 @@ export class RunwayEvidenceCommand extends Command({
   private readPrevious(cwd: string): readonly string[] | undefined {
     if (this.previous === undefined) return undefined;
     const path = resolve(cwd, this.previous);
-    let parsed: z.infer<typeof MIGRATIONS_FILE_SCHEMA>;
+    let parsed: z.infer<typeof RUNWAY_MIGRATIONS_FILE_SCHEMA>;
     try {
-      parsed = MIGRATIONS_FILE_SCHEMA.parse(JSON.parse(readFileSync(path, "utf8")));
+      parsed = RUNWAY_MIGRATIONS_FILE_SCHEMA.parse(JSON.parse(readFileSync(path, "utf8")));
     } catch {
       throw new UsageError(
         `--previous ${this.previous} is not a runway-migrations file`,
-        "Pass the runway-migrations-<environment>.json the previous deploy's evidence step wrote",
+        "Pass the runway-migrations-<environment>.json `runway migrations:record` wrote after the last successful deploy",
       );
     }
     if (parsed.environment !== this.environment)
@@ -179,45 +167,5 @@ export class RunwayEvidenceCommand extends Command({
         "Pass the file the previous deploy to this environment wrote",
       );
     return parsed.migrations;
-  }
-
-  /**
-   * The migration streams of the services the job ships: `services/<member>`, or every service for the whole target;
-   * `undefined` when the named member has no service folder, so nothing says what it ships.
-   */
-  private streams(root: string): MigrationStream[] | undefined {
-    const services = join(root, "services");
-    if (this.member !== undefined && !existsSync(join(services, this.member))) return undefined;
-    const names =
-      this.member !== undefined
-        ? [this.member]
-        : existsSync(services)
-          ? readdirSync(services, { withFileTypes: true })
-              .filter(
-                (entry) =>
-                  entry.isDirectory() && existsSync(join(services, entry.name, "package.json")),
-              )
-              .map((entry) => entry.name)
-          : [];
-    return names.map((member) => {
-      const folder = join(services, member);
-      const compiledDir = join(folder, ".stackra/migrations");
-      const compiled = existsSync(compiledDir)
-        ? readdirSync(compiledDir)
-            .filter((file) => /^\d+_.+\.up\.sql$/.test(file))
-            .map((file) => file.slice(0, -".up.sql".length))
-        : [];
-      const file = join(folder, ".stackra/migration-safety.json");
-      let safety: MigrationStream["safety"];
-      try {
-        safety = existsSync(file)
-          ? MIGRATION_SAFETY_FILE_SCHEMA.parse(JSON.parse(readFileSync(file, "utf8")))
-          : undefined;
-      } catch {
-        // An unreadable safety file is unknown, never an empty stream.
-        safety = undefined;
-      }
-      return { member, safety, compiled };
-    });
   }
 }

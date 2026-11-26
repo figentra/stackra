@@ -4,9 +4,10 @@
  *          `runway-evidence-<environment>-<member>.json` (or without the member) with the repo from
  *          `providers.github`, gives the same evidence as the `--json` data, reads the Worker's wrangler config for
  *          migrations, and refuses a missing target or a short sha with exit 2 before writing anything. For a service
- *          target it reads each service's gen safety file and compiled migrations, fills `destructive` against the
- *          `--previous` runway-migrations file, writes the keys it ships to `runway-migrations-<environment>.json`,
- *          and refuses a previous file of another environment.
+ *          target it reads each service's gen safety file and compiled migrations and fills `destructive` against
+ *          the `--previous` runway-migrations record; it writes no record itself (only `migrations:record` does,
+ *          after the deploy), is `null` for a service gen has not run on (a fresh checkout, no `.stackra/`) and
+ *          for a repository with no service, and refuses a previous file of another environment.
  * Boundary: test only; no network, git or gh runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0533 (decision 3); ADR 0159 (decision 3); STA-2104; STA-2866.
@@ -83,6 +84,19 @@ const BILLING = [
   { id: "billing.0002_drop_note", destructive: true, files: ["0002_billing_0002_drop_note"] },
 ];
 
+/** Writes the runway-migrations record of `environment` with `migrations` as `previous.json`. */
+function previous(cwd: string, migrations: readonly string[], environment = "production"): void {
+  writeFileSync(
+    join(cwd, "previous.json"),
+    JSON.stringify({
+      schema: "runway.migrations/v1",
+      environment,
+      sha: "e".repeat(40),
+      migrations,
+    }),
+  );
+}
+
 /** The JSON file `name` in `cwd`. */
 const readJson = (cwd: string, name: string): unknown =>
   JSON.parse(readFileSync(join(cwd, name), "utf8"));
@@ -152,8 +166,8 @@ describe(RunwayEvidenceCommand, () => {
     expect(existsSync(join(cwd, "runway-evidence-production.json"))).toBe(false);
   });
 
-  /** The first deploy has no baseline, so a destructive migration in the stream is floor; it records what shipped. */
-  it("reads the services' migration classes and writes the keys the job ships", async () => {
+  /** The first deploy has no baseline, so a destructive migration in the stream is floor. */
+  it("reads the services' migration classes and writes no migrations record before the deploy", async () => {
     const cwd = repository();
     service(cwd, "billing", BILLING);
 
@@ -165,27 +179,15 @@ describe(RunwayEvidenceCommand, () => {
       destructive: null,
       destructiveMigrations: [],
     });
-    expect(readJson(cwd, "runway-migrations-production.json")).toEqual({
-      schema: "runway.migrations/v1",
-      environment: "production",
-      sha: SHA,
-      migrations: ["billing:billing.0001_create", "billing:billing.0002_drop_note"],
-    });
+    // The deploy may be rejected or fail: only `migrations:record`, after it succeeded, says what was applied.
+    expect(existsSync(join(cwd, "runway-migrations-production.json"))).toBe(false);
   });
 
-  /** Against the previous deploy's keys, only the new drop is destructive; once shipped it is not. */
-  it("names the destructive migrations the previous deploy did not ship", async () => {
+  /** Against the last successful deploy's keys, only the new drop is destructive; once applied it is not. */
+  it("names the destructive migrations the last successful deploy did not apply", async () => {
     const cwd = repository();
     service(cwd, "billing", BILLING);
-    writeFileSync(
-      join(cwd, "previous.json"),
-      JSON.stringify({
-        schema: "runway.migrations/v1",
-        environment: "production",
-        sha: "e".repeat(40),
-        migrations: ["billing:billing.0001_create"],
-      }),
-    );
+    previous(cwd, ["billing:billing.0001_create"]);
 
     await run(
       ["production", "--target", "encore-cloud", "--sha", SHA, "--previous", "previous.json"],
@@ -196,6 +198,7 @@ describe(RunwayEvidenceCommand, () => {
       destructiveMigrations: ["billing.0002_drop_note"],
     });
 
+    previous(cwd, ["billing:billing.0001_create", "billing:billing.0002_drop_note"]);
     await run(
       [
         "production",
@@ -206,7 +209,7 @@ describe(RunwayEvidenceCommand, () => {
         "--sha",
         SHA,
         "--previous",
-        "runway-migrations-production.json",
+        "previous.json",
       ],
       cwd,
     );
@@ -216,8 +219,68 @@ describe(RunwayEvidenceCommand, () => {
     });
   });
 
-  /** A compiled file the safety file does not class means gen's classes are stale: unknown, and nothing recorded. */
-  it("is null for a stale safety file and writes no keys", async () => {
+  /**
+   * A fresh checkout: `.stackra/` is gitignored, so a service with migration sources has neither the safety file nor
+   * compiled files until gen runs. That is unknown, never "no migrations" (it was `false` before the fix).
+   */
+  it("is null for a service gen has not run on, even against a previous record", async () => {
+    const cwd = repository();
+    mkdirSync(join(cwd, "services/orders/src/modules/orders/database/migrations"), {
+      recursive: true,
+    });
+    writeFileSync(join(cwd, "services/orders/package.json"), "{}\n");
+    writeFileSync(
+      join(
+        cwd,
+        "services/orders/src/modules/orders/database/migrations/0002-drop-note.migration.ts",
+      ),
+      "export class DropNote {}\n",
+    );
+    previous(cwd, []);
+
+    for (const member of [[], ["--member", "orders"]]) {
+      await run(
+        [
+          "production",
+          "--target",
+          "encore-cloud",
+          ...member,
+          "--sha",
+          SHA,
+          "--previous",
+          "previous.json",
+        ],
+        cwd,
+      );
+    }
+
+    expect(readJson(cwd, "runway-evidence-production.json")).toMatchObject({ destructive: null });
+    expect(readJson(cwd, "runway-evidence-production-orders.json")).toMatchObject({
+      destructive: null,
+    });
+  });
+
+  /** gen's empty classification says "no migrations", so a service without any is false. */
+  it("is false for a service gen classified with no migration", async () => {
+    const cwd = repository();
+    service(cwd, "health", []);
+
+    await run(["production", "--target", "encore-cloud", "--sha", SHA], cwd);
+
+    expect(readJson(cwd, "runway-evidence-production.json")).toMatchObject({ destructive: false });
+  });
+
+  /** A service target with no service to read says nothing about what ships. */
+  it("is null for a service target in a repository with no service", async () => {
+    const cwd = repository();
+
+    await run(["production", "--target", "encore-cloud", "--sha", SHA], cwd);
+
+    expect(readJson(cwd, "runway-evidence-production.json")).toMatchObject({ destructive: null });
+  });
+
+  /** A compiled file the safety file does not class means gen's classes are stale: unknown. */
+  it("is null for a stale safety file", async () => {
     const cwd = repository();
     service(cwd, "billing", BILLING.slice(0, 1));
     writeFileSync(
@@ -228,21 +291,12 @@ describe(RunwayEvidenceCommand, () => {
     await run(["production", "--target", "encore-cloud", "--sha", SHA], cwd);
 
     expect(readJson(cwd, "runway-evidence-production.json")).toMatchObject({ destructive: null });
-    expect(existsSync(join(cwd, "runway-migrations-production.json"))).toBe(false);
   });
 
   /** Another environment's keys say nothing about this one. */
   it("refuses a previous file of another environment with exit 2", async () => {
     const cwd = repository();
-    writeFileSync(
-      join(cwd, "previous.json"),
-      JSON.stringify({
-        schema: "runway.migrations/v1",
-        environment: "staging",
-        sha: SHA,
-        migrations: [],
-      }),
-    );
+    previous(cwd, [], "staging");
 
     expect(
       (

@@ -4,8 +4,9 @@
  *          and raw `schema.sql` steps compile to (adds and relaxations are additive, concurrent builds, index drops and
  *          validations are online, drops, renames, `SET NOT NULL` and type changes are contract, data writes, locks
  *          and write-blocking index builds are banned), a table the same migration created makes any change to it
- *          additive, comment lines and literals never change the class, a `DO` block is judged by its body, and an
- *          unknown statement counts as contract.
+ *          additive (only after a plain `CREATE TABLE`: `IF NOT EXISTS` may adopt an existing table), comment
+ *          lines and literals never change the class, a `DO` block is judged by its body, and an unknown statement or
+ *          a string of several statements counts as contract.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 3; the 2026-10-23 note); ADR 0334 (rule 4).
@@ -115,12 +116,29 @@ describe("classifyMigrationStatement", () => {
   /** The created table is named so a later statement of the same migration can find it, quoted or not. */
   it("names the table a create statement creates", () => {
     expect(
-      classifyMigrationStatement('create table if not exists "Orders"."Orders" (id int)', new Set())
-        .creates,
+      classifyMigrationStatement('create table "Orders"."Orders" (id int)', new Set()).creates,
     ).toBe("orders.orders");
     expect(
       classifyMigrationStatement("create unlogged table orders.cache (id int)", new Set()).creates,
     ).toBe("orders.cache");
+  });
+
+  /** IF NOT EXISTS may adopt a table a release already uses (database.0005), so it marks nothing created. */
+  it("marks no table created by CREATE TABLE IF NOT EXISTS", () => {
+    const adopted = classifyMigrationStatement(
+      'create unlogged table if not exists "cache"."entries" (key text primary key)',
+      new Set(),
+    );
+
+    expect(adopted.class).toBe("additive");
+    expect(adopted.creates).toBeUndefined();
+  });
+
+  /** A schema.sql() string runs every statement in it; read alone, its first one would hide the rest. */
+  it("classes a string of several statements as contract", () => {
+    expect(classOf("comment on table orders is null; drop table orders")).toBe("contract");
+    expect(classOf("select 1; update orders.orders set a = 1")).toBe("contract");
+    expect(classOf("select 1;")).toBe("additive");
   });
 
   /** Comment lines (a squawk ignore, a lint reason) and quoted words are not statements. */

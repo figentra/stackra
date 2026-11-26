@@ -79,8 +79,26 @@ describe("destructiveOf", () => {
     expect(destructiveOf({ streams: [SEARCH] })).toEqual(FALSE);
     expect(destructiveOf({ streams: [] })).toEqual(FALSE);
     expect(
-      destructiveOf({ streams: [{ member: "health", safety: undefined, compiled: [] }] }),
+      destructiveOf({
+        streams: [
+          {
+            member: "health",
+            safety: { schema: "stackra.migration-safety/v1", migrations: [] },
+            compiled: [],
+          },
+        ],
+      }),
     ).toEqual(FALSE);
+  });
+
+  /** A checkout where gen has not run has neither file: never the same answer as "no migrations". */
+  it("is null for a stream with no safety file, even with nothing compiled", () => {
+    expect(
+      destructiveOf({
+        streams: [{ member: "orders", safety: undefined, compiled: [] }],
+        previous: [],
+      }),
+    ).toEqual(NULL);
   });
 
   /** Whether the drop shipped before is unknown without the previous deploy's keys. */

@@ -13,8 +13,9 @@
  *          config is `shim_authored`, and the shim gen wrote is not (STA-768); a v2 service (authored `src/main.ts`)
  *          gets no entry, tool config or encore.app and passes, while the same service in the v3 shape is still
  *          `generated_dependency_missing` (STA-344); a `.stackra/gen/blueprint.ts` left after the last own macro is gone
- *          is reported by a check run and deleted by a write run (STA-2062), and so is a
- *          `.stackra/migration-safety.json` left after the last migration is gone (STA-2866).
+ *          is reported by a check run and deleted by a write run (STA-2062), and a service with no migration gets
+ *          an empty `.stackra/migration-safety.json`, which also replaces one left after the last migration is gone,
+ *          so a missing file means gen has not run (STA-2866).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -293,18 +294,35 @@ describe("generate's v2 services (authored src/main.ts, until STA-344)", () => {
     expect(existsSync(stale)).toBe(false);
   });
 
-  /** runway would class migrations that are gone, so a leftover safety file goes with them. */
-  it("reports, then deletes, a migration-safety.json left over after the last migration is gone", async () => {
+  /** runway reads a missing file as "gen has not run", so a service with no migration says so with no rows. */
+  it("writes an empty migration-safety.json for a service with no migration", async () => {
+    const root = exampleService(true);
+    const file = join(root, ".stackra/migration-safety.json");
+    expect((await generate(root)).changed).toContain(".stackra/migration-safety.json");
+    expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
+      schema: "stackra.migration-safety/v1",
+      migrations: [],
+    });
+  });
+
+  /** runway would class migrations that are gone, so a leftover safety file is rewritten without them. */
+  it("reports, then rewrites, a migration-safety.json left over after the last migration is gone", async () => {
     const root = exampleService(true);
     const stale = join(root, ".stackra/migration-safety.json");
     mkdirSync(dirname(stale), { recursive: true });
-    writeFileSync(stale, '{"schema":"stackra.migration-safety/v1","migrations":[]}\n');
+    const gone = {
+      schema: "stackra.migration-safety/v1",
+      migrations: [
+        { id: "example.0001_gone", destructive: true, files: ["0001_example_0001_gone"] },
+      ],
+    };
+    writeFileSync(stale, JSON.stringify(gone));
     expect((await generate(root, { check: true })).changed).toContain(
       ".stackra/migration-safety.json",
     );
-    expect(existsSync(stale)).toBe(true);
+    expect(JSON.parse(readFileSync(stale, "utf8"))).toEqual(gone);
     expect((await generate(root)).changed).toContain(".stackra/migration-safety.json");
-    expect(existsSync(stale)).toBe(false);
+    expect(JSON.parse(readFileSync(stale, "utf8"))).toMatchObject({ migrations: [] });
   });
 
   it("still refuses a v3 service that does not declare what its generated files import", async () => {

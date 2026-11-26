@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `classifyMigrations`, gen's ADR 0159 classification of a member's ordered migrations: every statement of
- *          every compiled step gets its class (`classifyMigrationStatement`, with the tables the migration created
- *          before it), each migration the highest of its statements, `destructive` when that is `contract` or
- *          `banned`, plus the step files it became and every statement above `additive`. A `banned` statement is
+ *          every compiled step gets its class, each top-level statement of a string alone (`splitSqlStatements`,
+ *          then `classifyMigrationStatement` with the tables the migration created before it), each migration the
+ *          highest of its statements, `destructive` when that is `contract` or `banned`, plus the step files it
+ *          became and every statement above `additive`. A `banned` statement is
  *          refused (`migration_banned`), except in a released migration of `RELEASED_BANNED_MIGRATIONS`, which is
  *          frozen and stays classified `banned`.
  * Boundary: pure: ordered units in, the `stackra.migration-safety/v1` document and the refusals out.
@@ -15,6 +16,7 @@ import { RELEASED_BANNED_MIGRATIONS } from "#core/constants/released-banned-migr
 import { classifyMigrationStatement } from "#core/functions/classify-migration-statement.function";
 import { migrationSafetyRank } from "#core/functions/migration-safety-rank.function";
 import { migrationStepNames } from "#core/functions/migration-step-names.function";
+import { splitSqlStatements } from "#core/functions/split-sql-statements.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { MigrationSafetyClass } from "#core/types/migration-safety-class.type";
 import type { MigrationSafety } from "#core/types/migration-safety.type";
@@ -52,30 +54,32 @@ export function classifyMigrations(
     const findings: MigrationSafetyFinding[] = [];
     let highest: MigrationSafetyClass = "additive";
     for (const [step, compiled] of unit.steps.entries())
-      for (const [position, sql] of compiled.sql.entries()) {
-        const classified = classifyMigrationStatement(sql, created);
-        if (classified.creates !== undefined) created.add(classified.creates);
-        if (migrationSafetyRank(classified.class) > migrationSafetyRank(highest))
-          highest = classified.class;
-        if (classified.class === "additive") continue;
-        findings.push({
-          step: step + 1,
-          statement: position + 1,
-          class: classified.class,
-          reason: classified.reason,
-          sql: excerpt(sql),
-        });
-        if (classified.class === "banned" && !released.has(unit.id))
-          errors.push({
-            code: "migration_banned",
-            file: unit.file,
-            line: 0,
-            column: 0,
-            subject: `${unit.id} step ${step + 1} statement ${position + 1}`,
-            message: `${unit.id} ${classified.reason}: ${excerpt(sql)}`,
-            fix: "ship the schema change alone: a backfill is a queue job, an index on an existing table is built with concurrently() in its own step, and a lock or rewrite is replaced by expand and contract (ADR 0159 decision 3)",
+      for (const [position, compiledSql] of compiled.sql.entries())
+        // `schema.sql()` keeps its string as one operation and Postgres runs every statement in it.
+        for (const sql of splitSqlStatements(compiledSql)) {
+          const classified = classifyMigrationStatement(sql, created);
+          if (classified.creates !== undefined) created.add(classified.creates);
+          if (migrationSafetyRank(classified.class) > migrationSafetyRank(highest))
+            highest = classified.class;
+          if (classified.class === "additive") continue;
+          findings.push({
+            step: step + 1,
+            statement: position + 1,
+            class: classified.class,
+            reason: classified.reason,
+            sql: excerpt(sql),
           });
-      }
+          if (classified.class === "banned" && !released.has(unit.id))
+            errors.push({
+              code: "migration_banned",
+              file: unit.file,
+              line: 0,
+              column: 0,
+              subject: `${unit.id} step ${step + 1} statement ${position + 1}`,
+              message: `${unit.id} ${classified.reason}: ${excerpt(sql)}`,
+              fix: "ship the schema change alone: a backfill is a queue job, an index on an existing table is built with concurrently() in its own step, and a lock or rewrite is replaced by expand and contract (ADR 0159 decision 3)",
+            });
+        }
     return {
       id: unit.id,
       owner: unit.owner,

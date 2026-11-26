@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `migrationKeysOf(migrations)`, the `<member>:<id>` key of every migration a deploy job ships, sorted, which
- *          `runway evidence` writes to `runway-migrations-<environment>[-<member>].json` so the next deploy to the
- *          environment can pass it back as `--previous` and `destructiveOf` can tell what is new.
+ *          `runway migrations:record` writes to `runway-migrations-<environment>[-<member>].json` after the deploy
+ *          succeeded, so the next deploy to the environment can pass it to `runway evidence --previous` and
+ *          `destructiveOf` can tell what is new.
  * Boundary: pure. `undefined` when any stream is not current (`streamIsCurrent`): an unknown stream is never recorded
  *           as shipped.
  * Runtime: isomorphic

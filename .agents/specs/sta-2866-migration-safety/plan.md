@@ -51,74 +51,114 @@ streams with the previous deploy's keys. The command writes those keys for the n
 
 ## Correctness properties
 
-- **P-001**: for every statement, the class is one of the four, and a statement gen cannot read is `contract` —
-  Validates: FR-001
-- **P-002**: for every migration, its class is the maximum of its statements' classes and `destructive` holds exactly
-  for `contract` and `banned` — Validates: FR-002
-- **P-003**: the safety file's step names equal the `.up.sql` names `emitMigrations` writes, in order — Validates:
-  FR-002, FR-004
-- **P-004**: a banned statement outside the released set always yields `migration_banned` and no files — Validates:
-  FR-003
-- **P-005**: `destructiveOf` never returns `false` while a stream is not current or a destructive migration lacks a
-  baseline — Validates: FR-005
-- **P-006**: `migrationKeysOf` returns keys only when every stream is current — Validates: FR-007
+- **P-001**: for every statement, the class is one of the four, and a statement gen cannot read is `contract` — Validates: FR-001
+- **P-002**: for every migration, its class is the maximum of its statements' classes and `destructive` holds exactly for `contract` and `banned` — Validates: FR-002
+- **P-003**: the safety file's step names equal the `.up.sql` names `emitMigrations` writes, in order, and every service gets one (no rows when it has no migration) — Validates: FR-002, FR-004
+- **P-004**: a banned statement outside the released set always yields `migration_banned` and no files — Validates: FR-003
+- **P-005**: `destructiveOf` never returns `false` while a stream has no safety file, is not current, or holds a destructive migration that lacks a baseline — Validates: FR-005, FR-006
+- **P-006**: `migrationKeysOf` returns keys only when every stream is current, and `runway evidence` reads a stream with no safety file as unknown — Validates: FR-007
+- **P-007**: a `--previous` record that does not parse or names another environment is refused with exit 2 — Validates: FR-008
+- **P-008**: `runway migrations:record` writes a record only when every stream is current, and refuses a non-service target or a short sha with exit 2 — Validates: FR-009
+- **P-009**: for every compiled string, the class of the migration is the maximum over its top-level statements (`splitSqlStatements`), and a semicolon inside a literal, a quoted identifier, a dollar-quoted body or a comment never splits — Validates: FR-010
 
 ## Architecture overview
 
 ```text
 compileMigrations ── orderMigrations ── classifyMigrations ──► { files, safety, errors(migration_banned) }
                                              │ classifyMigrationStatement (per statement, created tables)
-generate ── writes .stackra/migrations/*.sql + .stackra/migration-safety.json (service) ── sweeps a leftover
-runway evidence ── reads services/<m>/.stackra/{migration-safety.json, migrations/} ── destructiveOf(streams, --previous)
-                └─ writes runway-evidence-<env>.json and runway-migrations-<env>.json
+                                             │ splitSqlStatements (each top-level statement of a string alone)
+generate ── writes .stackra/migrations/*.sql + .stackra/migration-safety.json (every service, empty when no migration)
+runway evidence ── readMigrationStreams(services/<m>/.stackra/{migration-safety.json, migrations/})
+                └─ destructiveOf(streams, --previous) ── writes runway-evidence-<env>.json
+runway migrations:record (after the deploy step succeeded) ── readMigrationStreams ── migrationKeysOf
+                └─ writes runway-migrations-<env>.json, the next deploy's --previous
 ```
 
 ## Components and responsibilities
 
 - `classifyMigrationStatement` (gen core): one statement to a class and a reason, plus the table it creates.
 - `migrationSafetyRank` (gen core): the class order.
+- `splitSqlStatements` (gen core): the top-level statements of one compiled string.
 - `classifyMigrations` (gen core): the per-migration classes, findings, step names and refusals.
 - `migrationStepNames` (gen core): the step file names, shared by `emitMigrations`.
 - `emitMigrationSafety` and `MIGRATION_SAFETY_FILE` (gen core): the generated file.
-- `RELEASED_BANNED_MIGRATIONS` (gen core): the nine frozen released ids.
-- `compileMigrations` and `generate` (gen node): return and write the document; sweep a leftover file.
+- `RELEASED_BANNED_MIGRATIONS` (gen core): the ten frozen released ids.
+- `compileMigrations` and `generate` (gen node): return and write the document for every service.
 - `MIGRATION_SAFETY_FILE_SCHEMA` (runway core): what runway reads of the file.
 - `SERVICE_TARGETS` (runway core): the targets that ship services, shared by the function and the command.
 - `streamIsCurrent`, `destructiveOf`, `migrationKeysOf` (runway core): the judgement and the shipped keys.
 - `deployEvidence` (runway core): `destructive` per target.
-- `RunwayEvidenceCommand` (runway node): reads the streams, `--previous`, writes both files.
+- `readMigrationStreams` (runway node): the streams of the services one job ships.
+- `RunwayEvidenceCommand` (runway node): reads the streams and `--previous`, writes the evidence.
+- `RUNWAY_MIGRATIONS_FILE_SCHEMA` (runway core) and `RunwayMigrationsRecordCommand` (runway node): the record a successful deploy writes.
 
 ## Files and folders
 
-- `packages/developer/gen/src/core/functions/classify-migration-statement.function.ts`
-- `packages/developer/gen/src/core/functions/classify-migrations.function.ts`
-- `packages/developer/gen/src/core/functions/migration-safety-rank.function.ts`
-- `packages/developer/gen/src/core/functions/migration-step-names.function.ts`
-- `packages/developer/gen/src/core/functions/emit-migration-safety.function.ts`
-- `packages/developer/gen/src/core/functions/emit-migrations.function.ts`
-- `packages/developer/gen/src/core/constants/migration-safety-file.constant.ts`
-- `packages/developer/gen/src/core/constants/released-banned-migrations.constant.ts`
-- `packages/developer/gen/src/core/types/classified-statement.type.ts`
-- `packages/developer/gen/src/core/types/migration-safety-class.type.ts`
-- `packages/developer/gen/src/core/types/migration-safety.type.ts`
-- `packages/developer/gen/src/core/types/migration-safety-row.type.ts`
-- `packages/developer/gen/src/core/types/migration-safety-finding.type.ts`
-- `packages/developer/gen/src/core/index.ts`
-- `packages/developer/gen/src/node/functions/compile-migrations.function.ts`
-- `packages/developer/gen/src/node/functions/generate.function.ts`
-- `packages/developer/runway/src/core/constants/migration-safety-file-schema.constant.ts`
-- `packages/developer/runway/src/core/constants/service-targets.constant.ts`
-- `packages/developer/runway/src/core/functions/destructive-of.function.ts`
-- `packages/developer/runway/src/core/functions/stream-is-current.function.ts`
-- `packages/developer/runway/src/core/functions/migration-keys-of.function.ts`
-- `packages/developer/runway/src/core/functions/deploy-evidence.function.ts`
-- `packages/developer/runway/src/core/types/migration-stream.type.ts`
-- `packages/developer/runway/src/core/types/deploy-migrations.type.ts`
-- `packages/developer/runway/src/core/types/deploy-evidence.type.ts`
-- `packages/developer/runway/src/node/commands/runway-evidence.command.ts`
-- tests beside each in `__tests__/`
-- `packages/developer/gen/README.md`, `apps/docs/src/docs/runway/evidence.mdx`,
-  `.changeset/migration-safety-classes.md`
+```text
+packages/developer/gen/
+├── README.md
+├── __golden__/<fixture>/expected/services/<member>/.stackra/migration-safety.json.golden
+└── src/
+    ├── core/
+    │   ├── index.ts
+    │   ├── constants/
+    │   │   ├── migration-safety-file.constant.ts
+    │   │   └── released-banned-migrations.constant.ts
+    │   ├── functions/
+    │   │   ├── classify-migration-statement.function.ts
+    │   │   ├── classify-migrations.function.ts
+    │   │   ├── emit-migration-safety.function.ts
+    │   │   ├── emit-migrations.function.ts
+    │   │   ├── migration-safety-rank.function.ts
+    │   │   ├── migration-step-names.function.ts
+    │   │   ├── split-sql-statements.function.ts
+    │   │   └── __tests__/
+    │   └── types/
+    │       ├── classified-statement.type.ts
+    │       ├── migration-safety-class.type.ts
+    │       ├── migration-safety-finding.type.ts
+    │       ├── migration-safety-row.type.ts
+    │       └── migration-safety.type.ts
+    └── node/functions/
+        ├── compile-migrations.function.ts
+        ├── generate.function.ts
+        └── __tests__/
+packages/developer/runway/
+├── README.md
+├── stackra.manifest.json
+└── src/
+    ├── core/
+    │   ├── constants/
+    │   │   ├── migration-safety-file-schema.constant.ts
+    │   │   ├── runway-migrations-file-schema.constant.ts
+    │   │   └── service-targets.constant.ts
+    │   ├── functions/
+    │   │   ├── deploy-evidence.function.ts
+    │   │   ├── destructive-of.function.ts
+    │   │   ├── migration-keys-of.function.ts
+    │   │   ├── stream-is-current.function.ts
+    │   │   └── __tests__/
+    │   └── types/
+    │       ├── deploy-evidence.type.ts
+    │       ├── deploy-migrations.type.ts
+    │       └── migration-stream.type.ts
+    └── node/
+        ├── commands/
+        │   ├── runway-evidence.command.ts
+        │   ├── runway-migrations-record.command.ts
+        │   └── __tests__/
+        ├── constants/runway-commands.constant.ts
+        └── functions/read-migration-streams.function.ts
+apps/docs/src/
+├── config/docs.config.ts
+└── docs/runway/
+    ├── evidence.mdx
+    └── migrations-record.mdx
+.changeset/
+└── migration-safety-classes.md
+```
+
+Tests sit in `__tests__/` beside each changed file.
 
 ## Data models and migrations
 
@@ -151,9 +191,14 @@ classes, never row values. Every unknown resolves to floor.
   `runway-evidence.command.test.ts` (temp repository with a service, a `--previous` file and a stale file).
 - AC-004, AC-005: `classify-migrations.function.test.ts`, `compile-migrations.function.test.ts` (hermetic host with a
   data write).
+- AC-007, AC-008: `stream-is-current.function.test.ts`, `runway-evidence.command.test.ts` (a service gen has not run
+  on), `runway-migrations-record.command.test.ts`.
+- AC-009: `split-sql-statements.function.test.ts`, `classify-migrations.function.test.ts`.
 - AC-006: the workspace `pnpm gen` run on box 2 and a classification of all 98 package migrations.
 - Revert check: with the gen and runway sources put back to `main` (and the classifier short-circuited) 49 gen tests
-  and 6 runway tests fail.
+  and 6 runway tests fail. Review fixes: with their gen and runway sources put back to the first commit, 19 gen tests
+  fail (the split, `IF NOT EXISTS`, the empty safety file and 12 golden trees) and every runway test file fails to load
+  (the wiring names the new command); with only `streamIsCurrent` put back, 3 runway tests fail.
 
 ## Rollout
 
@@ -162,7 +207,8 @@ workflows add `--previous` when they start calling `runway evidence`.
 
 ## Delegation and risk plan
 
-One session, one branch. Budget: one PR. Follow-up: wire the `runway-migrations` artifact into the deploy workflows.
+One session, one branch. Budget: one PR. Follow-up: in the template's deploy workflows, run `stackra gen` before `runway evidence`, run `runway migrations:record`
+after the deploy step and pass the last successful run's record as `--previous`.
 
 ## ADRs
 
@@ -170,7 +216,8 @@ ADR 0159 (decision 3, decision 4, the 2026-10-23 note), ADR 0334 (rule 4), ADR 0
 
 ## Docs
 
-`packages/developer/gen/README.md`, `apps/docs/src/docs/runway/evidence.mdx`, `.changeset/migration-safety-classes.md`.
+`packages/developer/gen/README.md`, `packages/developer/runway/README.md`, `apps/docs/src/docs/runway/evidence.mdx`,
+`apps/docs/src/docs/runway/migrations-record.mdx`, `.changeset/migration-safety-classes.md`.
 
 ## Complexity tracking
 
