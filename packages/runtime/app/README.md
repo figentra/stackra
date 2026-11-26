@@ -40,8 +40,10 @@ peers, each loaded only by the entry that needs it.
 | `provideRuntimeEnvironment`, `runningEnvironment`, `RuntimeEnvironment` | `./server` | where the runtime runs (the generated Encore `environment.ts`); `createApp` derives `STACKRA_ENVIRONMENT` from it and refuses `dev` or `test` on a deployed runtime (STA-1571) |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
-| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) |
+| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) and `drainTimeoutSeconds` (20) |
+| `nodeBodyStream`                             | `./server`  | a Node or Encore raw request's body as a web stream, with backpressure; `Readable.toWeb` crashes on Encore's `RawRequest` (STA-2794) |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                             |
+| `DrainTimeoutError`                          | `./server`  | reported (never thrown) when the drain deadline passes with calls still in flight     |
 | `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)             |
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
 | `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                             |
@@ -100,6 +102,13 @@ its base class, so a package that injects its base gets the host's override. A v
 with `ConfigInvalidError` naming it; a port with no driver fails with `UnresolvedPortError`. The reporter is the bound
 `ErrorReporter`, or the console when none is bound.
 
+The server `createApp` builds the configuration with `STACKRA_ENVIRONMENT` set to the running environment from the one
+reader (`readEnvironment` of `@stackra/config`), given what the platform reported. A service's generated
+`stackra-encore/<member>/environment.ts` hands Encore's `appMeta().environment` to `providePlatformEnvironment` before
+any other generated file loads the app, so a deployed Encore service (which cannot set the variable) runs as
+`preview`, `staging` or `production`, never `dev`; `dev` or `test` declared on a deployment, a misspelt name, or a
+self-hosted image that reports nothing fails the process at boot (STA-2844).
+
 ## Wiring sections
 
 `Wiring` is open for sections their package owns. This package reads two:
@@ -124,7 +133,10 @@ root); native `Root` and `hydrateRoute` mount it themselves.
 ## Server
 
 `handlers.run(call)` gives one call a request container and counts it until it settles. `drain()` refuses new calls
-with `AppDrainingError` and waits for those in flight; `close()` drains, then shuts the container down. With `boot`
+with `AppDrainingError` and waits for those in flight, for at most `app.http` `drainTimeoutSeconds` (20 by default):
+at that deadline it reports one `DrainTimeoutError` with the count still running and resolves, so a hung call cannot
+keep the shutdown hooks (the outbox flush among them) from running before the platform's SIGKILL. `close()` drains,
+then shuts the container down. With `boot`
 (the generated `#stackra/boot`), `createApp` awaits it once the container is ready, with a shutdown signal; the boot
 connects with its service's Encore database url, so `createApp` passes no url and never reads `DATABASE_URL`. The migrate
 and seed CLIs connect on their own with `directDatabaseUrl()` of `@stackra/database/node` (`DATABASE_DIRECT_URL`, else

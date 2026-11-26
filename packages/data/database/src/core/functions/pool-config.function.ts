@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `poolConfig(pool)`, a `DatabasePool` (whole or in part) as the pool options MikroORM hands the `pg` pool of
  *          the primary and of each replica.
- * Boundary: internal to `PostgresDatabaseDriver.connect`; pure. A field left out keeps the `pg` default.
+ * Boundary: internal to `PostgresDatabaseDriver.connect`; pure. A field left out keeps the `pg` default. `nesting` and
+ *           `acquireTimeout` are the connection gate's, not the `pg` pool's, so they are not mapped.
  * Runtime: isomorphic
  * Governing contract: ADR 0473 (decision 2).
  */

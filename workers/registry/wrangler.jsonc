@@ -14,6 +14,8 @@
   // Figentra Technologies L.L.C. An account id is an identifier, not a credential; the API token grants access.
   "account_id": "d861f9ac9df28b7f0b1298cc0c89bc9d",
   "main": "./dist/main.mjs",
+  // The id of the version that runs, named on every answer as `x-stackra-version` (the deploy smoke's proof, STA-2786).
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   // The bucket, database and namespace are Pulumi resources of @stackra/infra-cloudflare (`registryWorker`).
   // The zero ids below stay zero in git: deploy-registry.yml replaces them on the runner with the `registry`
   // environment's REGISTRY_D1_DATABASE_ID and REGISTRY_KV_NAMESPACE_ID and refuses to deploy while one is left.

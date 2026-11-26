@@ -641,18 +641,13 @@ A model with a subscriber trait, own or a declared package's, adds its subscribe
 (`traitSubscribers`): `TreeSubscriber` for `HasTree` (STA-1419), then
 `ValidateOnFlushSubscriber` for `ValidateOnFlush` (STA-1410), so a row is checked in clear before it is sealed.
 
-## Encore environment (STA-1571)
+## Encore environment (STA-2844)
 
-A service with a server entry gets `stackra-encore/<member>/environment.ts`, which hands Encore's
-`appMeta().environment` (name, type, cloud) to `provideRuntimeEnvironment` of `@stackra/app/server`. Every generated
-Encore file imports it first (`encoreSetupImports`: `./environment`, then `./database`), so the server `createApp`
-knows where it runs before it builds the configuration. Encore Cloud has no plain environment variables, so a deployed
-service cannot set `STACKRA_ENVIRONMENT`; `createApp` derives it instead (`runningEnvironment`): a local runtime
-(`encore run`, `encore test`) is `dev` or `test`, a deployed one is its Encore environment's name when that is
-`preview`, `staging` or `production`, else `production`, `preview` or `staging` by its type, and never `dev` or `test`.
-A set `STACKRA_ENVIRONMENT` wins, except that a deployed runtime naming `dev`, `test` or nothing fails boot. So an
-action with no `AuditTrail` bound fails closed on every deployment (ADR 0212 decisions 1 and 4). A self-hosted image
-declares its cloud in the Encore infra config (`metadata.cloud`); one left at `local` reads as a developer machine.
+A service that runs `@stackra/app` from the generated server entry gets `stackra-encore/<member>/environment.ts`, which
+hands Encore's `appMeta().environment` (name, type, cloud) to `providePlatformEnvironment` of `@stackra/app/server`.
+That reads the running environment through the one reader (`readEnvironment` of `@stackra/config`) and settles
+`STACKRA_ENVIRONMENT` before the app boots. Every generated Encore file imports `./environment` first, then
+`./database` (`encoreSetupImports`). A v2 service with an authored `src/main.ts`, a package and an app get none.
 
 ## Cross-app events (ADR 0511 decisions 11 to 19, STA-1910)
 
