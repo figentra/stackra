@@ -8,8 +8,9 @@
  * Boundary: pure. A model extending another own model takes its base's answer; one extending a package's model is
  *           the package's to answer and is skipped. A member without `@stackra/tenancy` other than a package is not
  *           checked: it cannot declare an owner. A package's findings are errors, as a service's are (the tenancy
- *           contract step, ADR 0239); a service's `model_tenancy_migration_missing` is staged (`STAGED_REFUSAL_CODES`). The migration check judges only a
- *           table some migration of the member creates or alters (`ir.migrationTables`), matched by module and name.
+ *           contract step, ADR 0239), and both codes refuse, with no switch that downgrades them (STA-2808). The
+ *           migration check judges only a table some migration of the member creates or alters (`ir.migrationTables`),
+ *           matched by module and name.
  * Runtime: isomorphic
  * Governing contract: ADR 0239 (decision 1); ADR 0210 (2026-10-24 amendment: `Model.global` documents this refusal;
  *                     gen refuses a model that declares neither); tenancy audit 2026-11-07.

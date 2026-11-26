@@ -8,7 +8,9 @@
  *          refuses, and `@Renamed` accepted by the lock. A generated search query gets its manifest entry (with the
  *          package input and output schemas), endpoint, tool and wiring binding like an authored query, and no
  *          empty `X$` in the schemas file (STA-1459). Every full run ends with the member graph (ADR 0452). A warning
- *          never stops writing and comes back in `warnings`, beside a refusal too (STA-340).
+ *          never stops writing and comes back in `warnings`, beside a refusal too (STA-340). The five once-staged
+ *          checks (write floor, query above L1, step-up, idempotency, tenancy migration) refuse with no switch
+ *          (STA-2808).
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
@@ -22,6 +24,7 @@ import { BILLING_IR } from "#core/__tests__/fixtures/billing-ir.fixture";
 import { COMMERCE_IR } from "#core/__tests__/fixtures/commerce-ir.fixture";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
+import type { MemberIR } from "#core/types/member-ir.type";
 
 /** LOYALTY_KIT_IR (a package) with one model per listed module. */
 const packageWithModels = (...modules: string[]) => ({
@@ -41,23 +44,80 @@ const packageWithModels = (...modules: string[]) => ({
   ],
 });
 
+/** COMMERCE_IR with one class's fields replaced. */
+function withClass(
+  name: string,
+  change: (declared: MemberIR["classes"][number]) => Partial<MemberIR["classes"][number]>,
+): MemberIR {
+  return {
+    ...COMMERCE_IR,
+    classes: COMMERCE_IR.classes.map((declared) =>
+      declared.name === name ? { ...declared, ...change(declared) } : declared,
+    ),
+  };
+}
+
+/** A record without one key. */
+function withoutKey<T extends Record<string, unknown>>(record: T, key: string): T {
+  return Object.fromEntries(Object.entries(record).filter(([name]) => name !== key)) as T;
+}
+
+/** COMMERCE_IR running tenancy, its Order owned, and one migration that creates `orders` with no owner column. */
+function ownedWithoutOwnerMigration(): MemberIR {
+  const owned = withClass("Order", (declared) => ({
+    traits: [...declared.traits, { name: "BelongsToTenant", args: [] }],
+  }));
+  return {
+    ...owned,
+    packages: [...(owned.packages ?? []), "@stackra/tenancy"],
+    migrationTables: [
+      {
+        module: "orders",
+        table: "orders",
+        file: "src/modules/orders/database/migrations/0001-create-orders.migration.ts",
+        ownerColumn: false,
+      },
+    ],
+  };
+}
+
 describe("generateMember", () => {
-  it("warns on a staged check in 0.19, and refuses it when run strict (STA-2096, STA-340)", () => {
-    const permissions = COMMERCE_IR.classes.find((item) => item.name === "OrderPermissions");
-    if (permissions === undefined) throw new Error("the fixture has no OrderPermissions");
-    const ir = {
-      ...COMMERCE_IR,
-      classes: [
-        ...COMMERCE_IR.classes.filter((item) => item.name !== permissions.name),
-        { ...permissions, statics: { ...permissions.statics, cancel: "Permission.L1" } },
-      ],
-    };
-    const staged = generateMember(ir);
-    expect(staged.errors.map((error) => error.code)).not.toContain("action_risk_below_write");
-    expect(staged.warnings?.map((warning) => warning.code)).toContain("action_risk_below_write");
-    expect(staged.files.length).toBeGreaterThan(0);
-    const strict = generateMember(ir, undefined, { strict: true });
-    expect(strict.errors.map((error) => error.code)).toContain("action_risk_below_write");
+  it.each([
+    // The write floor (ADR 0099, STA-2096): an action at L1.
+    [
+      "action_risk_below_write",
+      withClass("OrderPermissions", (declared) => ({
+        statics: { ...declared.statics, cancel: "Permission.L1" },
+      })),
+    ],
+    // A query above L1 with no written reason (http-conventions table, STA-340).
+    [
+      "query_above_l1",
+      withClass("OrderPermissions", (declared) => ({
+        statics: { ...declared.statics, read: "Permission.L2" },
+      })),
+    ],
+    // An L3 user action with no step-up (ADR 0406).
+    [
+      "step_up_missing",
+      withClass("OrderPermissions", (declared) => ({
+        statics: { ...declared.statics, cancel: "Permission.L3" },
+      })),
+    ],
+    // A client write that declares no idempotency (ADR 0136 decision 3).
+    [
+      "idempotency_missing",
+      withClass("CancelOrderAction", (declared) => ({
+        options: withoutKey(declared.options, "idempotency"),
+      })),
+    ],
+    // An owned model whose table no migration gives the tenant column (ADR 0239 decision 1).
+    ["model_tenancy_migration_missing", ownedWithoutOwnerMigration()],
+  ])("refuses %s and writes nothing, with no switch that downgrades it (STA-2808)", (code, ir) => {
+    const { files, errors, warnings } = generateMember(ir);
+    expect(errors.map((error) => error.code)).toContain(code);
+    expect(warnings?.map((warning) => warning.code) ?? []).not.toContain(code);
+    expect(files).toEqual([]);
   });
 
   it("writes every file of a service", () => {

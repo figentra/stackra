@@ -1,14 +1,13 @@
 [
   {
     "member": "services/shop",
-    "code": "idempotency_missing",
+    "code": "endpoint_param_unbound",
     "file": "src/node/actions/void-order.action.ts",
-    "subject": "VoidOrderAction",
-    "severity": "warning"
+    "subject": "VoidOrderAction"
   },
   {
     "member": "services/shop",
-    "code": "endpoint_param_unbound",
+    "code": "idempotency_missing",
     "file": "src/node/actions/void-order.action.ts",
     "subject": "VoidOrderAction"
   },

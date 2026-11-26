@@ -63,16 +63,18 @@ describe("emitIsolationTest", () => {
     );
     expect(test).toContain(
       [
-        "    const warnings = await assertRowSecurity(postgres.database, {",
+        "    await assertRowSecurity(postgres.database, {",
         "      ...tenantIsolationOptions(),",
         "      migrationsDirectory,",
         "      platform: new Map([",
         '        ["achievements.award_verifications", "ADR 0368 decision 5"],',
         "      ]),",
         "    });",
-        "    for (const warning of warnings) console.warn(`row-level security: ${warning}`);",
+        "  });",
       ].join("\n"),
     );
+    // The audit fails on a gap itself (strict by default), so the test reads back no warnings to print (STA-2808).
+    expect(test).not.toContain("warnings");
   });
 
   it("lists a global model's table as a platform table", () => {
