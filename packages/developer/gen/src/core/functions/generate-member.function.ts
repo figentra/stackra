@@ -28,7 +28,8 @@
  *           convention (`checkConventions`, STA-1306), a route or surface option that breaks the endpoint convention or
  *           ADR 0305 rule 30 (`checkEndpoints`, STA-340), a semantic `@Searchable` over an `ai: never` field
  *           (`checkSemanticSearch`, STA-1251), a facet that differs from its table's latest `t.searchable` literals
- *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), an encryption mismatch or a write past the unit of work on an encrypted
+ *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), a facet path that ends at an
+ *           encrypted field (`checkSearchableEncrypted`, `searchable_field_encrypted`, STA-2241), an encryption mismatch or a write past the unit of work on an encrypted
  *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
  *           `model_tenancy_missing`, stackra-258, packages too) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
@@ -62,6 +63,7 @@ import { checkModelScope } from "#core/functions/check-model-scope.function";
 import { checkApproval } from "#core/functions/check-approval.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
 import { checkSearchableDrift } from "#core/functions/check-searchable-drift.function";
+import { checkSearchableEncrypted } from "#core/functions/check-searchable-encrypted.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
 import { checkShownOnce } from "#core/functions/check-shown-once.function";
 import { checkI18n } from "#core/functions/check-i18n.function";
@@ -201,6 +203,7 @@ export function generateMember(
     ...checkEndpoints(ir, manifest),
     ...checkSemanticSearch(ir),
     ...checkSearchableDrift(ir),
+    ...checkSearchableEncrypted(ir),
     ...checkEncryptedFields(ir),
     ...checkBlindIndexes(ir),
     ...checkModelScope(ir),

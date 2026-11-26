@@ -331,6 +331,10 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `@Searchable` text (in order) or filters (as a set) differing from the latest `t.searchable` literals of its table
   (`MemberIR.searchableColumns`, `readSearchableColumns`, a text scan of the member's own migrations; paths compared in
   snake case). A table with no literals is not judged.
+- `checkSearchableEncrypted` (core, full pass only, STA-2241): `searchable_field_encrypted`, an own model's
+  `@Searchable` text, filter, sortable or range path that ends at a field `HasEncryptedFields` names (on the model, an
+  own base model, or an own model a dotted path reaches through a relation). A package model's field is not followed;
+  `refuseEncryptedSearchPath` in `@stackra/search` refuses it at index time.
 - The reader: `port_key_mismatch` (a `~key` brand that is not `<member>.<Port>`, STA-1810), `kind_base_name_reserved` (a model named after a `KIND_BASES` name), `secret_name_missing` (`@Secret`
   without a SCREAMING_SNAKE literal) and `partner_mismatch` for `Resource`, `Factory`, `StateMachine` and `Facts`
   (same-stem subject; `CrudService` keeps its own subject, as many services name a domain word).

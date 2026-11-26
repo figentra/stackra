@@ -62,6 +62,7 @@ import type {
 import { SEMANTIC_SOURCE } from "#core/constants/semantic-source.constant";
 import { SearchCursorInvalidError } from "#core/errors/search-cursor-invalid.error";
 import { arabiziOf } from "#core/functions/arabizi-of.function";
+import { refuseEncryptedSearchPath } from "#core/functions/refuse-encrypted-search-path.function";
 import { searchDocumentOf } from "#core/functions/search-document-of.function";
 import { searchPathsOf } from "#core/functions/search-paths-of.function";
 import { searchPhraseWithheld } from "#core/functions/search-phrase-withheld.function";
@@ -282,9 +283,11 @@ export class SearchIndex<M extends object> {
   /**
    * The excerpt of each row's own text fields around the phrase, by primary key, for a result list. A field whose data
    * class says `no_snippet` (`privileged`) is excerpted only for a member of the record's own team, which
-   * `isTeamMember` answers (IAM's decision, never this index's); a row with nothing to show has no entry.
+   * `isTeamMember` answers (IAM's decision, never this index's); a row with nothing to show has no entry. A text field
+   * that `HasEncryptedFields` keeps sealed is refused, never excerpted.
    *
    * @param locale - the locale a translated field is read in.
+   * @throws TypeError when a text field rests encrypted (`searchable_field_encrypted`).
    */
   snippets(
     rows: readonly M[],
@@ -299,6 +302,7 @@ export class SearchIndex<M extends object> {
       const isTeam = options.isTeamMember?.(row) ?? false;
       for (const path of this.facet.text) {
         if (path.includes(".")) continue;
+        refuseEncryptedSearchPath(row, path);
         const restricted = classes.get(path)?.dataClass.search === SearchSnippet.NoSnippet;
         if (restricted && !isTeam) continue;
         const value = (row as Readonly<Record<string, unknown>>)[path];

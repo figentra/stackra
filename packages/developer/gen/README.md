@@ -192,6 +192,12 @@ nothing until it does.
 scan; `memberId` and `member_id` agree). The fix is a migration with the facet's fields, then
 `stackra search:reindex <Model>`. A table no migration gives search columns is not judged.
 
+`searchable_field_encrypted` (`checkSearchableEncrypted`, full pass only, STA-2241) refuses a model whose `@Searchable`
+text, filter, sortable or range path ends at a field `HasEncryptedFields` keeps sealed (its own, an own base model's,
+or one a dotted path reaches through a relation to an own model). The index reads the loaded row, which holds the
+field opened, so its plain text would rest in the search columns, reach the embedder and show in snippets. The fix
+drops the path; a row is found by an encrypted value through `HasEncryptedFields({ lookup })` and `whereEncrypted`.
+
 Shell slots (ADR 0438, stackra-03): a shell package declares `export const X = defineSlot<Props>({ key, surface })`
 and a product UI package fills it with `export const Y = fillSlot(X, Component, { surface })` (both `@stackra/panel`).
 Gen lists `slots` and `fills` in the manifest for the OS registry and refuses, on the full run, a fill whose slot no

@@ -11,7 +11,8 @@
  *           when given, in the trait registry, which `encryptedFieldsOf` and `encryptedSubjectOf` read (and the scope property,
  *           which `encryptedScopeOf` reads). Sealing and
  *           opening are `EncryptedFieldsSubscriber`'s, through the `FieldCipher` port, or the `SubjectCipherResolver`
- *           port for a subject-sealed model. An encrypted field cannot be searched, sorted or indexed by its value;
+ *           port for a subject-sealed model. An encrypted field cannot be searched, sorted or indexed by its value
+ *           (a `@Searchable` path to one is refused: gen's `searchable_field_encrypted`, and @stackra/search at index time);
  *           a `lookup` field can be found by equal value through its `<field>Bidx` property, which the model declares
  *           and the subscriber writes. `lookup` and `subject` exclude each other.
  * Runtime: isomorphic
