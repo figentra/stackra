@@ -3,9 +3,10 @@
  * Purpose: hold `changeset-check.mjs` to its contract: a changed published member needs a changeset naming it (one
  *          for another member does not count), tests and the generated changelog do not count (a `test/`, `tests/`
  *          or `e2e/` tier only at the member root, so published `src/e2e/` source still counts), private and ignored
- *          members never need one, an empty changeset waives only with a written reason, an unknown package or a
- *          broken front matter fails, the version branch is skipped, and a missing implicit base warns while a bad
- *          explicit base fails.
+ *          members never need one, an empty changeset waives only with a written reason and only when no other
+ *          changeset names a package, a catalog bump touches the published members that ship the entry, an unknown
+ *          package or a broken front matter fails, only `changeset-release/<baseBranch>` from this repository is
+ *          skipped, and a missing implicit base warns while a bad explicit base fails.
  * Boundary: builds throwaway git repositories under the OS temp directory; never reads or writes this checkout.
  * Runtime: node
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy); ADR 0013 (Enforcement);
@@ -18,7 +19,16 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { check, countsAsChange, parseChangeset, run, workspaceDirs } from "../changeset-check.mjs";
+import {
+  catalogTouches,
+  changedCatalogEntries,
+  check,
+  countsAsChange,
+  parseChangeset,
+  pullRequestRepos,
+  run,
+  workspaceDirs,
+} from "../changeset-check.mjs";
 
 const TOOL = fileURLToPath(new URL("../changeset-check.mjs", import.meta.url));
 const scratch = mkdtempSync(join(tmpdir(), "changeset-check-"));
@@ -36,6 +46,7 @@ Object.assign(env, {
   GIT_CONFIG_NOSYSTEM: "1",
 });
 delete env.GITHUB_HEAD_REF;
+delete env.GITHUB_EVENT_PATH;
 const sh = (cwd, ...args) => {
   const r = spawnSync("git", args, { cwd, env, encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
@@ -48,6 +59,15 @@ const put = (root, file, text) => {
 const pkg = (name, extra = {}) => `${JSON.stringify({ name, version: "1.0.0", ...extra })}\n`;
 const changeset = (names, body = "Changed.") =>
   `---\n${names.map((name) => `"${name}": patch\n`).join("")}---\n\n${body}\n`;
+
+/** A pull_request event payload whose head repository is `head`. */
+const prEvent = (head) =>
+  JSON.stringify({
+    pull_request: {
+      head: { repo: { full_name: head } },
+      base: { repo: { full_name: "stackra-inc/stackra" } },
+    },
+  });
 
 let count = 0;
 /** A repository on main with two published members, a private app, an ignored and an excluded member; then a branch. */
@@ -184,6 +204,94 @@ describe("workspaceDirs", () => {
   });
 });
 
+describe("changedCatalogEntries and catalogTouches", () => {
+  const was = {
+    catalog: { zod: "4.0.0", yaml: "2.0.0" },
+    catalogs: { react: { react: "19.0.0" }, gone: { old: "1.0.0" } },
+  };
+  const now = {
+    catalog: { zod: "4.1.0", yaml: "2.0.0", added: "1.0.0" },
+    catalogs: { react: { react: "19.0.0" }, default: { undici: "8.0.0" } },
+  };
+
+  test("names the entries whose version changed, was added or was removed, per catalog", () => {
+    const changed = changedCatalogEntries(was, now);
+    assert.deepEqual(Object.fromEntries([...changed].map(([k, v]) => [k, [...v].toSorted()])), {
+      default: ["added", "undici", "zod"],
+      gone: ["old"],
+    });
+    assert.equal(changedCatalogEntries(was, was).size, 0);
+    assert.equal(changedCatalogEntries(undefined, null).size, 0);
+  });
+
+  test("a member that ships the entry is touched; a devDependency or another catalog is not", () => {
+    const changed = changedCatalogEntries(was, now);
+    const members = [
+      { name: "@x/dep", manifest: { dependencies: { zod: "catalog:" } } },
+      { name: "@x/peer", manifest: { peerDependencies: { undici: "catalog:default" } } },
+      {
+        name: "@x/opt",
+        manifest: { optionalDependencies: { zod: "catalog:", added: "catalog:" } },
+      },
+      { name: "@x/dev", manifest: { devDependencies: { zod: "catalog:" } } },
+      {
+        name: "@x/react",
+        manifest: { dependencies: { react: "catalog:react", yaml: "catalog:" } },
+      },
+      { name: "@x/literal", manifest: { dependencies: { zod: "^4.0.0" } } },
+      { name: "@x/none" },
+    ];
+    assert.deepEqual(Object.fromEntries(catalogTouches(members, changed)), {
+      "@x/dep": ["pnpm-workspace.yaml (catalog default: zod)"],
+      "@x/peer": ["pnpm-workspace.yaml (catalog default: undici)"],
+      "@x/opt": [
+        "pnpm-workspace.yaml (catalog default: added)",
+        "pnpm-workspace.yaml (catalog default: zod)",
+      ],
+    });
+  });
+
+  test("check reports a catalog-touched member with no changeset and covers a named one", () => {
+    const members = [{ name: "@x/a", dir: "packages/core/a" }];
+    const catalogTouched = new Map([["@x/a", ["pnpm-workspace.yaml (catalog default: zod)"]]]);
+    const bare = check({
+      changed: ["pnpm-workspace.yaml"],
+      members,
+      changesets: [],
+      catalogTouched,
+    });
+    assert.equal(bare.ok, false);
+    assert.deepEqual(bare.missing, [
+      { name: "@x/a", files: ["pnpm-workspace.yaml (catalog default: zod)"] },
+    ]);
+    const named = check({
+      changed: ["pnpm-workspace.yaml"],
+      members,
+      changesets: [{ file: ".changeset/z.md", text: changeset(["@x/a"]) }],
+      catalogTouched,
+    });
+    assert.equal(named.ok, true);
+  });
+});
+
+describe("pullRequestRepos", () => {
+  test("reads the head and base repositories of a pull request event, nothing otherwise", () => {
+    const dir = mkdtempSync(join(scratch, "event-"));
+    const event = join(dir, "event.json");
+    writeFileSync(event, prEvent("fork/stackra"));
+    assert.deepEqual(pullRequestRepos(event), {
+      headRepo: "fork/stackra",
+      baseRepo: "stackra-inc/stackra",
+    });
+    writeFileSync(event, JSON.stringify({ push: {} }));
+    assert.equal(pullRequestRepos(event), undefined);
+    writeFileSync(event, "not json");
+    assert.equal(pullRequestRepos(event), undefined);
+    assert.equal(pullRequestRepos(join(dir, "missing.json")), undefined);
+    assert.equal(pullRequestRepos(undefined), undefined);
+  });
+});
+
 describe("run", () => {
   test("no change since the base passes", () => {
     const r = runIn(repo());
@@ -266,11 +374,88 @@ describe("run", () => {
     commit(root);
     const waived = runIn(root);
     assert.equal(waived.code, 0, waived.err);
-    assert.match(waived.out, /waived by \.changeset\/no-release\.md/);
+    assert.match(
+      waived.out,
+      /1 changed package\(s\) waived by \.changeset\/no-release\.md: @x\/a$/,
+    );
     put(root, ".changeset/no-release.md", "---\n---\n");
     const bare = runIn(root);
     assert.equal(bare.code, 1);
     assert.match(bare.err, /names no package and gives no reason/);
+  });
+
+  test("an empty changeset beside one that names packages waives nothing; `none` covers the rest", () => {
+    const root = repo();
+    put(root, "packages/core/a/src/index.ts", "export const a = 2;\n");
+    put(root, "packages/core/b/README.md", "# b\n");
+    put(root, ".changeset/a.md", changeset(["@x/a"]));
+    put(root, ".changeset/no-release.md", changeset([], "b's README wording only."));
+    commit(root);
+    const r = runIn(root);
+    assert.equal(r.code, 1);
+    assert.match(
+      r.err,
+      /@x\/b changed \(packages\/core\/b\/README\.md\) and no changeset names it/,
+    );
+    assert.doesNotMatch(r.err, /@x\/a changed/);
+    assert.match(r.err, /no-release\.md waives nothing beside a changeset that names packages/);
+    assert.match(r.err, /"<package>": none/);
+    put(root, ".changeset/no-release.md", '---\n"@x/b": none\n---\n\nb\'s README wording only.\n');
+    const fixed = runIn(root);
+    assert.equal(fixed.code, 0, fixed.err);
+    assert.match(fixed.out, /2 changed package\(s\) covered/);
+  });
+
+  test("a catalog bump needs a changeset for each published member that ships the entry", () => {
+    const root = repo();
+    sh(root, "checkout", "-q", "main");
+    put(
+      root,
+      "pnpm-workspace.yaml",
+      'packages:\n  - apps/*\n  - "packages/*/*"\n  - "!packages/skip/*"\ncatalog:\n  zod: 4.0.0\n  vitest: 4.0.0\n',
+    );
+    put(
+      root,
+      "packages/core/a/package.json",
+      pkg("@x/a", { dependencies: { zod: "catalog:" }, devDependencies: { vitest: "catalog:" } }),
+    );
+    put(
+      root,
+      "packages/core/b/package.json",
+      pkg("@x/b", { devDependencies: { zod: "catalog:" } }),
+    );
+    put(
+      root,
+      "apps/web/package.json",
+      pkg("@x/web", { private: true, dependencies: { zod: "catalog:" } }),
+    );
+    commit(root);
+    sh(root, "checkout", "-q", "-B", "feature/x");
+    put(
+      root,
+      "pnpm-workspace.yaml",
+      'packages:\n  - apps/*\n  - "packages/*/*"\n  - "!packages/skip/*"\ncatalog:\n  zod: 4.0.0\n  vitest: 4.1.0\n',
+    );
+    commit(root);
+    const devOnly = runIn(root);
+    assert.equal(devOnly.code, 0, devOnly.err);
+    assert.match(devOnly.out, /no published package changed/);
+    put(
+      root,
+      "pnpm-workspace.yaml",
+      'packages:\n  - apps/*\n  - "packages/*/*"\n  - "!packages/skip/*"\ncatalog:\n  zod: 4.1.0\n  vitest: 4.1.0\n',
+    );
+    commit(root);
+    const shipped = runIn(root);
+    assert.equal(shipped.code, 1);
+    assert.match(
+      shipped.err,
+      /@x\/a changed \(pnpm-workspace\.yaml \(catalog default: zod\)\) and no changeset names it/,
+    );
+    assert.doesNotMatch(shipped.err, /@x\/b changed|@x\/web changed/);
+    put(root, ".changeset/zod.md", changeset(["@x/a"]));
+    const covered = runIn(root);
+    assert.equal(covered.code, 0, covered.err);
   });
 
   test("a changeset naming an unknown or private package fails", () => {
@@ -300,10 +485,36 @@ describe("run", () => {
     commit(root);
     assert.equal(runIn(root).code, 1);
     assert.equal(runIn(root, { headRef: "changeset-release/main" }).code, 0);
+    const same = { headRepo: "stackra-inc/stackra", baseRepo: "stackra-inc/stackra" };
+    assert.equal(runIn(root, { headRef: "changeset-release/main", pullRequest: same }).code, 0);
     sh(root, "checkout", "-q", "-b", "changeset-release/main");
     const r = runIn(root);
     assert.equal(r.code, 0);
     assert.match(r.out, /version branch; skipped/);
+  });
+
+  test("only changeset-release/<baseBranch> from this repository is skipped", () => {
+    const root = repo();
+    put(root, "packages/core/a/src/index.ts", "export const a = 2;\n");
+    commit(root);
+    for (const headRef of [
+      "changeset-release/other",
+      "changeset-release/main-x",
+      "changeset-release",
+    ])
+      assert.equal(runIn(root, { headRef }).code, 1, headRef);
+    const fork = runIn(root, {
+      headRef: "changeset-release/main",
+      pullRequest: { headRepo: "someone/stackra", baseRepo: "stackra-inc/stackra" },
+    });
+    assert.equal(fork.code, 1);
+    assert.match(fork.err, /comes from someone\/stackra, not stackra-inc\/stackra; checked/);
+    assert.match(fork.err, /@x\/a changed/);
+    const gone = runIn(root, {
+      headRef: "changeset-release/main",
+      pullRequest: { baseRepo: "stackra-inc/stackra" },
+    });
+    assert.equal(gone.code, 1);
   });
 
   test("an explicit base is honoured and a bad one fails with 2", () => {
@@ -338,5 +549,16 @@ describe("run", () => {
     assert.match(missing.stderr, /@x\/b changed/);
     assert.equal(cli("--base", "HEAD").status, 0);
     assert.equal(cli("--nope").status, 2);
+    const event = join(root, "..", `event-${count}.json`);
+    const release = (head) => {
+      writeFileSync(event, prEvent(head));
+      return spawnSync(process.execPath, [TOOL], {
+        cwd: root,
+        env: { ...env, GITHUB_HEAD_REF: "changeset-release/main", GITHUB_EVENT_PATH: event },
+        encoding: "utf8",
+      });
+    };
+    assert.equal(release("stackra-inc/stackra").status, 0);
+    assert.equal(release("someone/stackra").status, 1);
   });
 });

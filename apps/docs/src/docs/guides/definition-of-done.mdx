@@ -40,8 +40,9 @@ This is deliberately not a prose checklist. A definition of done is only trustwo
   </Step>
   <Step title="A changeset records the change">
     Every changed published member has one (`pnpm changeset`). `pnpm changeset:check`, part of `pnpm
-    verify`, fails without it; an empty changeset with a reason records that no release is needed.
-    See [Release](/runbooks/release).
+    verify`, fails without it (a catalog bump counts for the members that ship the entry). An empty
+    changeset with a reason records that no release is needed when it is the change's only
+    changeset; otherwise name the member with `none`. See [Release](/runbooks/release).
   </Step>
   <Step title="No secret, no literal version, no new dependency by accident">
     gitleaks stays clean, versions come from catalogs, and a new dependency was added to a catalog

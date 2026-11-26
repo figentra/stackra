@@ -11,15 +11,24 @@
  *   `*.spec.*` files at any depth (ADR 0022), plus a `test/`, `tests/` or `e2e/` tier at the member root only: the
  *   same folder name inside `src/` is published source (`@stackra/testing` ships `src/e2e/` as its `./e2e` export),
  *   so it counts. When the config sets `changedFilePatterns`, only member-relative paths matching one of them count.
+ *   A catalog bump counts too: an entry of `pnpm-workspace.yaml` `catalog` / `catalogs.<name>` whose version differs
+ *   from the base touches every published member that ships it (a `dependencies`, `peerDependencies` or
+ *   `optionalDependencies` spec of `catalog:`, `catalog:default` or `catalog:<name>`), because pnpm writes that
+ *   version into the published manifest. A `devDependencies` entry does not ship, so it does not count.
  * Coverage: a changeset names the member with `major`, `minor`, `patch` or `none` (an explicit "no release" for that
  *   member). A changeset with no packages and a written reason (`pnpm changeset --empty`, then say why) waives the
- *   whole change; an empty one with no reason fails. A changeset naming a member that is not a published workspace
- *   member fails, as `changeset version` would.
+ *   change only when no other changeset in it names a package; beside one that does, the empty one waives nothing
+ *   and each member it would have covered must be named (`none` when it needs no release). The waived members are
+ *   printed. An empty changeset with no reason fails. A changeset naming a member that is not a published workspace
+ *   member fails, as `changeset version` would. Editing a pending changeset that already names a member counts as
+ *   covering it: that pending note releases the member, so the change ships with it.
  * Base: `--base <ref>` (CI passes `HEAD~1`, the pull request's merge parent), else the merge base of HEAD and
  *   `origin/<baseBranch>` (else `<baseBranch>`). With no explicit base and neither ref present (a shallow checkout),
  *   it warns and passes; an explicit base that does not resolve fails. Uncommitted and untracked files count, so a
- *   local verify sees the changeset before it is committed. The changesets version branch (`changeset-release/*`,
- *   from `GITHUB_HEAD_REF` or the checked-out branch) is skipped: it consumes changesets by design.
+ *   local verify sees the changeset before it is committed. The changesets version branch is skipped, because it
+ *   consumes changesets by design: only `changeset-release/<baseBranch>` exactly (from `GITHUB_HEAD_REF`, else the
+ *   checked-out branch), and in a pull request (`GITHUB_EVENT_PATH`) only when its head repository is the base
+ *   repository, so a fork cannot name its branch that way to pass.
  * Boundary: reads git and the working tree; writes nothing.
  * Runtime: node
  * Governing contract: ADR 0013 (Enforcement: changeset per changed member, chained into verify); ADR 0025; ADR 0177
@@ -104,7 +113,7 @@ export function workspaceDirs(root, globs) {
  * The published members: name and directory of every workspace member that changesets would release.
  * @param {string} root
  * @param {{ ignore?: string[] }} config
- * @returns {{ name: string, dir: string }[]}
+ * @returns {{ name: string, dir: string, manifest: Record<string, unknown> }[]}
  */
 export function publishedMembers(root, config) {
   const workspace = parseYaml(readFileSync(join(root, "pnpm-workspace.yaml"), "utf8")) ?? {};
@@ -113,7 +122,7 @@ export function publishedMembers(root, config) {
   for (const dir of workspaceDirs(root, workspace.packages ?? [])) {
     const pkg = JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8"));
     if (pkg.name && pkg.private !== true && !ignore.has(pkg.name))
-      members.push({ name: pkg.name, dir });
+      members.push({ name: pkg.name, dir, manifest: pkg });
   }
   return members;
 }
@@ -136,10 +145,11 @@ export function countsAsChange(rel, patterns) {
  *   members: { name: string, dir: string }[],
  *   changesets: { file: string, text: string }[],
  *   changedFilePatterns?: string[],
- * }} input
- * @returns {{ ok: boolean, missing: { name: string, files: string[] }[], invalid: string[], waivedBy: string[], covered: string[] }}
+ *   catalogTouched?: Map<string, string[]>,
+ * }} input `catalogTouched`: member name to the catalog entries it ships that changed (see `catalogTouches`)
+ * @returns {{ ok: boolean, missing: { name: string, files: string[] }[], invalid: string[], waivedBy: string[], waived: string[], ignoredWaivers: string[], covered: string[] }}
  */
-export function check({ changed, members, changesets, changedFilePatterns }) {
+export function check({ changed, members, changesets, changedFilePatterns, catalogTouched }) {
   const byDepth = members.toSorted((a, b) => b.dir.length - a.dir.length);
   const touched = new Map();
   for (const file of changed) {
@@ -149,10 +159,15 @@ export function check({ changed, members, changesets, changedFilePatterns }) {
     if (!touched.has(member.name)) touched.set(member.name, []);
     touched.get(member.name).push(file);
   }
+  for (const [name, entries] of catalogTouched ?? []) {
+    if (!touched.has(name)) touched.set(name, []);
+    touched.get(name).push(...entries);
+  }
   const known = new Set(members.map((m) => m.name));
   const named = new Set();
   const invalid = [];
-  const waivedBy = [];
+  const empties = [];
+  let naming = 0;
   for (const { file, text } of changesets) {
     const parsed = parseChangeset(text);
     if ("error" in parsed) {
@@ -162,21 +177,108 @@ export function check({ changed, members, changesets, changedFilePatterns }) {
     if (parsed.releases.length === 0) {
       if (parsed.summary === "")
         invalid.push(`${file}: names no package and gives no reason; say why no release is needed`);
-      else waivedBy.push(file);
+      else empties.push(file);
       continue;
     }
+    naming += 1;
     for (const { name } of parsed.releases) {
       if (known.has(name)) named.add(name);
       else invalid.push(`${file}: ${name} is not a published workspace member`);
     }
   }
+  // An empty changeset waives a whole change only when it is the change's only kind of note: beside a changeset that
+  // names packages, one reason would silently cover every member the named ones leave out.
+  const waivedBy = naming === 0 ? empties : [];
+  const ignoredWaivers = naming === 0 ? [] : empties;
   const missing = [];
   const covered = [];
+  const waived = [];
   for (const [name, files] of [...touched].toSorted(([a], [b]) => a.localeCompare(b))) {
-    if (named.has(name) || waivedBy.length > 0) covered.push(name);
-    else missing.push({ name, files });
+    if (named.has(name)) covered.push(name);
+    else if (waivedBy.length > 0) {
+      covered.push(name);
+      waived.push(name);
+    } else missing.push({ name, files });
   }
-  return { ok: missing.length === 0 && invalid.length === 0, missing, invalid, waivedBy, covered };
+  return {
+    ok: missing.length === 0 && invalid.length === 0,
+    missing,
+    invalid,
+    waivedBy,
+    waived,
+    ignoredWaivers,
+    covered,
+  };
+}
+
+/**
+ * Read a `pnpm-workspace.yaml` document's catalogs: `catalog` is the default catalog, as is `catalogs.default`.
+ * @param {unknown} workspace the parsed document
+ * @returns {Map<string, Map<string, string>>} catalog name to dependency name to version
+ */
+function readCatalogs(workspace) {
+  const out = new Map();
+  const add = (catalog, entries) => {
+    if (!entries || typeof entries !== "object") return;
+    const into = out.get(catalog) ?? new Map();
+    for (const [dep, version] of Object.entries(entries)) into.set(dep, String(version));
+    out.set(catalog, into);
+  };
+  const doc = workspace && typeof workspace === "object" ? workspace : {};
+  add("default", doc.catalog);
+  for (const [catalog, entries] of Object.entries(doc.catalogs ?? {})) add(catalog, entries);
+  return out;
+}
+
+/**
+ * The catalog entries whose version differs between two `pnpm-workspace.yaml` documents (added and removed ones too).
+ * @param {unknown} before the parsed base document
+ * @param {unknown} after the parsed working-tree document
+ * @returns {Map<string, Set<string>>} catalog name (`default` for `catalog`) to the changed dependency names
+ */
+export function changedCatalogEntries(before, after) {
+  const a = readCatalogs(before);
+  const b = readCatalogs(after);
+  const changed = new Map();
+  for (const catalog of new Set([...a.keys(), ...b.keys()])) {
+    const was = a.get(catalog) ?? new Map();
+    const is = b.get(catalog) ?? new Map();
+    for (const dep of new Set([...was.keys(), ...is.keys()])) {
+      if (was.get(dep) === is.get(dep)) continue;
+      if (!changed.has(catalog)) changed.set(catalog, new Set());
+      changed.get(catalog).add(dep);
+    }
+  }
+  return changed;
+}
+
+/** The dependency fields pnpm publishes with the catalog's version written in; `devDependencies` never ship. */
+const SHIPPED_DEPENDENCIES = ["dependencies", "peerDependencies", "optionalDependencies"];
+
+/**
+ * Which published members ship a changed catalog entry, so a catalog bump needs their changeset.
+ * @param {{ name: string, manifest?: Record<string, unknown> }[]} members
+ * @param {Map<string, Set<string>>} changed from `changedCatalogEntries`
+ * @returns {Map<string, string[]>} member name to labels such as `pnpm-workspace.yaml (catalog default: zod)`
+ */
+export function catalogTouches(members, changed) {
+  const touched = new Map();
+  if (changed.size === 0) return touched;
+  for (const { name, manifest } of members) {
+    const labels = new Set();
+    for (const field of SHIPPED_DEPENDENCIES) {
+      const deps = manifest?.[field];
+      if (!deps || typeof deps !== "object") continue;
+      for (const [dep, spec] of Object.entries(deps)) {
+        if (typeof spec !== "string" || !spec.startsWith("catalog:")) continue;
+        const catalog = spec.slice("catalog:".length).trim() || "default";
+        if (changed.get(catalog)?.has(dep))
+          labels.add(`pnpm-workspace.yaml (catalog ${catalog}: ${dep})`);
+      }
+    }
+    if (labels.size > 0) touched.set(name, [...labels].toSorted());
+  }
+  return touched;
 }
 
 function git(root, args) {
@@ -207,16 +309,31 @@ export function resolveBase(root, explicit, baseBranch) {
 /**
  * Run the check against a repository.
  * @param {string} root repository root
- * @param {{ base?: string, headRef?: string, log?: (s: string) => void, warn?: (s: string) => void }} [opts]
+ * @param {{
+ *   base?: string,
+ *   headRef?: string,
+ *   pullRequest?: { headRepo?: string, baseRepo?: string },
+ *   log?: (s: string) => void,
+ *   warn?: (s: string) => void,
+ * }} [opts] `pullRequest`: the repositories of the pull request being checked (CI), from `pullRequestRepos`
  * @returns {number} exit code
  */
-export function run(root, { base, headRef, log = console.log, warn = console.error } = {}) {
+export function run(
+  root,
+  { base, headRef, pullRequest, log = console.log, warn = console.error } = {},
+) {
   const config = JSON.parse(readFileSync(join(root, ".changeset", "config.json"), "utf8"));
   const baseBranch = config.baseBranch ?? "main";
   const branch = headRef || git(root, ["rev-parse", "--abbrev-ref", "HEAD"]).out;
-  if (branch.startsWith("changeset-release/")) {
-    log(`changeset-check: ${branch} is the changesets version branch; skipped`);
-    return 0;
+  if (branch === `changeset-release/${baseBranch}`) {
+    const fork = pullRequest && pullRequest.headRepo !== pullRequest.baseRepo;
+    if (!fork) {
+      log(`changeset-check: ${branch} is the changesets version branch; skipped`);
+      return 0;
+    }
+    warn(
+      `changeset-check: ${branch} comes from ${pullRequest.headRepo ?? "an unknown repository"}, not ${pullRequest.baseRepo}; checked`,
+    );
   }
   const resolved = resolveBase(root, base, baseBranch);
   if ("fail" in resolved) {
@@ -238,11 +355,24 @@ export function run(root, { base, headRef, log = console.log, warn = console.err
     .filter((f) => /^\.changeset\/[^/]+\.md$/.test(f) && f !== ".changeset/README.md")
     .filter((f) => existsSync(join(root, f)))
     .map((file) => ({ file, text: readFileSync(join(root, file), "utf8") }));
+  const members = publishedMembers(root, config);
+  let catalogTouched;
+  if (changed.includes("pnpm-workspace.yaml")) {
+    const was = git(root, ["show", `${resolved.sha}:pnpm-workspace.yaml`]);
+    if (was.ok) {
+      const entries = changedCatalogEntries(
+        parseYaml(was.out),
+        parseYaml(readFileSync(join(root, "pnpm-workspace.yaml"), "utf8")),
+      );
+      catalogTouched = catalogTouches(members, entries);
+    }
+  }
   const result = check({
     changed,
-    members: publishedMembers(root, config),
+    members,
     changesets,
     changedFilePatterns: config.changedFilePatterns,
+    catalogTouched,
   });
   for (const line of result.invalid) warn(`changeset-check: invalid changeset ${line}`);
   for (const { name, files } of result.missing) {
@@ -251,7 +381,12 @@ export function run(root, { base, headRef, log = console.log, warn = console.err
     warn(`changeset-check: ${name} changed (${shown}) and no changeset names it`);
   }
   if (!result.ok) {
-    if (result.missing.length > 0) {
+    if (result.missing.length > 0 && result.ignoredWaivers.length > 0) {
+      warn(
+        `changeset-check: ${result.ignoredWaivers.join(", ")} waives nothing beside a changeset that names packages; ` +
+          'name each package above in a changeset instead, with `"<package>": none` when it needs no release (ADR 0013).',
+      );
+    } else if (result.missing.length > 0) {
       warn(
         "changeset-check: add one with `pnpm changeset` naming each package above, or, when no release is needed, " +
           "`pnpm changeset --empty` and write why in its body (ADR 0013).",
@@ -262,15 +397,34 @@ export function run(root, { base, headRef, log = console.log, warn = console.err
   const since = resolved.sha.slice(0, 10);
   if (result.covered.length === 0)
     log(`changeset-check: no published package changed since ${since}`);
-  else if (result.waivedBy.length > 0)
+  else if (result.waived.length > 0)
     log(
-      `changeset-check: ${result.covered.length} changed package(s) waived by ${result.waivedBy.join(", ")}`,
+      `changeset-check: ${result.waived.length} changed package(s) waived by ${result.waivedBy.join(", ")}: ` +
+        result.waived.join(", "),
     );
   else
     log(
       `changeset-check: ${result.covered.length} changed package(s) covered by changesets since ${since}`,
     );
   return 0;
+}
+
+/**
+ * The head and base repositories of the pull request a GitHub Actions run checks, from its event payload.
+ * @param {string | undefined} eventPath `GITHUB_EVENT_PATH`
+ * @returns {{ headRepo?: string, baseRepo?: string } | undefined} undefined outside a pull request event
+ */
+export function pullRequestRepos(eventPath) {
+  if (!eventPath || !existsSync(eventPath)) return undefined;
+  let event;
+  try {
+    event = JSON.parse(readFileSync(eventPath, "utf8"));
+  } catch {
+    return undefined;
+  }
+  const pr = event?.pull_request;
+  if (!pr) return undefined;
+  return { headRepo: pr.head?.repo?.full_name, baseRepo: pr.base?.repo?.full_name };
 }
 
 function main(argv) {
@@ -288,7 +442,11 @@ function main(argv) {
     console.error("changeset-check: not inside a git repository");
     return 2;
   }
-  return run(top.stdout.trim(), { base, headRef: process.env.GITHUB_HEAD_REF });
+  return run(top.stdout.trim(), {
+    base,
+    headRef: process.env.GITHUB_HEAD_REF,
+    pullRequest: pullRequestRepos(process.env.GITHUB_EVENT_PATH),
+  });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) process.exit(main(process.argv.slice(2)));
