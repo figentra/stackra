@@ -34,7 +34,9 @@ export default {
       settings,
       secret: env.EDGE_SIGNING_SECRET,
       keys: source.keys,
-      fetcher: fetch,
+      // Not the bare global: the deps call `deps.fetcher(...)`, which would hand `fetch` the deps object as `this`, and
+      // the Workers runtime refuses that ("Illegal invocation").
+      fetcher: (...args: Parameters<typeof fetch>) => fetch(...args),
       now: () => new Date(),
       requestId: () => crypto.randomUUID(),
     };
