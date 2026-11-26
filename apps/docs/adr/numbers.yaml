@@ -1630,3 +1630,8 @@
   status: accepted
   owner: claude
   issue: STA-2115
+"0537":
+  slug: agent-schemas-layers-and-native-install
+  status: proposed
+  owner: claude
+  issue: STA-2787
