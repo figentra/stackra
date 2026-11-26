@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-26
 
-**Status**: Implementing <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
+**Status**: Tasked <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
 
 **Tier**: feature
 
@@ -183,14 +183,11 @@ locked, gen reports a `migration_rule_frozen` warning, and the SQL still hashes 
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
-- **AC-001**: WHEN a service is generated THE gen SHALL write its migration lock to `stackra.manifest.json`, and
-  `stackra gen --check` SHALL report a service manifest without it as stale.
-- **AC-002**: WHEN a locked migration is changed, removed or left behind an unlocked predecessor THE gen SHALL refuse
-  the run with the matching code and write nothing.
+- **AC-001**: WHEN a service is generated THE gen SHALL write its migration lock to `stackra.manifest.json`, and `stackra gen --check` SHALL report a service manifest without it as stale.
+- **AC-002**: WHEN a locked migration is changed, removed or left behind an unlocked predecessor THE gen SHALL refuse the run with the matching code and write nothing.
 - **AC-003**: WHEN a new migration is added THE gen SHALL order it after every locked migration.
-- **AC-004**: WHERE a locked migration breaks a rule added since its lock THE gen SHALL compile it with a
-  `migration_rule_frozen` warning, and a safety rule SHALL still refuse.
-- **AC-005**: IF the lock is malformed THEN gen and `stackra db diff` SHALL refuse it.
+- **AC-004**: WHERE a locked migration breaks a rule added since its lock THE gen SHALL compile it with a `migration_rule_frozen` warning, and a safety rule SHALL still refuse.
+- **AC-005**: IF the committed lock is malformed THEN THE gen and `stackra db diff` SHALL refuse it with `migration_lock_malformed`.
 - **AC-006**: WHILE a member is a package THE gen SHALL check its migrations and lock none.
 
 ## Success Criteria _(mandatory)_
@@ -242,5 +239,4 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-2160 spec, batch 21) · written after the fact from the diff of PR #1123
 - 2026-11-26 · Draft → Clarified · Claude (STA-2160 spec, batch 21) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-2160 spec, batch 21) · plan.md
-- 2026-11-26 · Planned → Tasked · Claude (STA-2160 spec, batch 21) · tasks.md
-- 2026-11-26 · Tasked → Implementing · Claude (STA-2160 spec, batch 21) · T001 to T010 are the commit d574f4d82 on the branch
+- 2026-11-26 · Planned → Tasked · Claude (STA-2160 spec, batch 21) · tasks.md; the tasks marked done are already on the branch (PR); Implementing waits for the approver's Planned approval (ADR 0502)

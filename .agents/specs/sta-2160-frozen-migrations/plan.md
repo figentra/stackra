@@ -56,6 +56,8 @@ compile in one process sees an edited file.
 - **P-005**: a frozen compile and an unfrozen compile of a rule-abiding migration give the same steps and no warning — Validates: FR-006
 - **P-006**: `migrationLockOf` returns no lock only when the section is absent; any other non-conforming value is a refusal — Validates: FR-007
 - **P-007**: `migrationSha256` ignores whole lint comment lines and nothing else — Validates: FR-001
+- **P-008**: for every committed lock, `stackra db diff` compiles and orders the migrations exactly as `stackra gen` does under the same lock — Validates: FR-008
+- **P-009**: for every manifest-only pass the `migrations` section is byte-equal to the committed one, and for every package member no section is written — Validates: FR-009
 
 ## Architecture overview
 
@@ -83,17 +85,37 @@ substitutes the manifest file's content with the lock for a service; `generateMe
 
 ```text
 packages/data/database/src/core/
-├── functions/compile-migration.function.ts
-├── functions/__tests__/compile-migration.function.test.ts
-├── records/blueprint.record.ts
-├── records/schema.record.ts
-└── types/{compile-options,compiled-migration}.type.ts
-packages/developer/gen/src/
-├── core/index.ts
-├── core/__tests__/index.test.ts
-├── core/functions/{check-migration-lock,migration-lock-of,order-migrations,generate-member}.function.ts (+ tests)
-├── core/types/{locked-migration,migration-unit}.type.ts
-└── node/functions/{migration-sha256,compile-migrations,generate,check-migration-drift,load-source-module}.function.ts (+ tests)
+├── functions/
+│   ├── compile-migration.function.ts
+│   └── __tests__/compile-migration.function.test.ts
+├── records/
+│   ├── blueprint.record.ts
+│   └── schema.record.ts
+└── types/
+    ├── compile-options.type.ts
+    └── compiled-migration.type.ts
+packages/developer/gen/
+├── package.json
+└── src/
+    ├── core/
+    │   ├── index.ts
+    │   ├── __tests__/index.test.ts
+    │   ├── functions/
+    │   │   ├── check-migration-lock.function.ts
+    │   │   ├── migration-lock-of.function.ts
+    │   │   ├── order-migrations.function.ts
+    │   │   ├── generate-member.function.ts
+    │   │   └── __tests__/
+    │   └── types/
+    │       ├── locked-migration.type.ts
+    │       └── migration-unit.type.ts
+    └── node/functions/
+        ├── migration-sha256.function.ts
+        ├── compile-migrations.function.ts
+        ├── generate.function.ts
+        ├── check-migration-drift.function.ts
+        ├── load-source-module.function.ts
+        └── __tests__/
 apps/docs/src/docs/adr/0159-migrations-gen-ordered-sql-and-safety-rules.mdx
 .changeset/frozen-migrations-lock.md
 ```
