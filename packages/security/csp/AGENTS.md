@@ -37,7 +37,8 @@ The Content Security Policy baseline, its configuration, nonces and the React no
 - `sanitizeHtml` (STA-2562 audit item b) is the one HTML sanitizer: run it on any HTML from a client or a tenant before
   it is rendered (`dangerouslySetInnerHTML`), mailed or stored for rendering. It rebuilds the output from parsed parts
   against an allowlist (`RICH_TEXT_HTML_POLICY`), so widening the policy to a script, a style, an event handler or
-  `style` is a security change that needs review. ProseMirror JSON needs no pass.
+  `style` is a security change that needs review. ProseMirror JSON needs no pass. A mail body reaches it through
+  `@stackra/notifications`' `useMail().richText` (STA-2582).
 - Third-party scripts (STA-2562 audit item c): `thirdPartyScripts` maps an exact https origin to a `ConsentCategory`
   code. `necessary` always loads (a payment SDK); any other loads only when `CspAdditions.consent` grants it, so without
   consent only `necessary` scripts run. No wildcard, scheme or host pattern; an unlisted script never loads.

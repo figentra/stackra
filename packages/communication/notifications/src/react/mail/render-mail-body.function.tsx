@@ -5,9 +5,13 @@
  * Boundary: internal (`renderMail` in `./testing` and the sending Notifier driver call it). Synchronous static markup
  *           through `react-dom/server`; no template engine at run time (R-26), no container and no I/O: catalogues and
  *           the asset resolver arrive in `options`. Money uses the currency's ISO 4217 exponent, never rounded.
+ *           Every string a body passes is escaped by React; the one way in for HTML is `richText`, which writes only
+ *           what `sanitizeHtml` (@stackra/csp) keeps.
  * Runtime: isomorphic
- * Governing contract: ADR 0223 (as amended by ADR 0294: `.mail.tsx` bodies); ADR 0080; ADR 0192; ADR 0220.
+ * Governing contract: ADR 0223 (as amended by ADR 0294: `.mail.tsx` bodies); ADR 0080; ADR 0192; ADR 0220;
+ *                     STA-2582 (tenant and client HTML in a mail is sanitized).
  */
+import { sanitizeHtml } from "@stackra/csp";
 import { NumberingSystem, formatMessage } from "@stackra/i18n";
 import { Money } from "@stackra/money";
 import type { ComponentType } from "react";
@@ -45,6 +49,10 @@ function toolsFor({ locale, messages, i18n, asset }: MailRenderOptions): MailToo
       }).format(Number(decimal));
     },
     asset,
+    // The one raw-HTML sink a mail body reaches: what it writes is rebuilt by sanitizeHtml from an allowlist.
+    richText: (html, policy) => (
+      <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(html, policy) }} />
+    ),
   } satisfies MailTools);
 }
 

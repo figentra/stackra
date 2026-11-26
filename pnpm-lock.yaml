@@ -2554,6 +2554,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/csp':
+        specifier: workspace:*
+        version: link:../../security/csp
       '@stackra/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
