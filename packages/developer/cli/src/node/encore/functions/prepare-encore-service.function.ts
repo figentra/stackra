@@ -3,11 +3,9 @@
  * Purpose: `prepareEncoreService(service, root)`, the fix-up for the two rules `stackra validate --repository` holds a
  *          service to for Encore to build its app at the member root: `dependencies.encore.dev` becomes the reference
  *          literal version (`encoreReferenceVersion`), and tsconfig.json gets `paths` with each package.json `imports`
- *          key and its first target (`pathsOfImports`: Encore reads no further), resolved from the tsconfig's own
- *          folder (no `baseUrl`, which TypeScript 7 removed; an existing one is deleted).
+ *          key and its first target, resolved from the tsconfig's own folder, with no `baseUrl` (`encoreTsconfig`).
  * Boundary: writes the service's package.json and tsconfig.json, and only when their content changes, laid out as the
- *           repository's formatter leaves them (gen's `formatJson`); a tsconfig's header comments are kept, the
- *           `//` lines above its object and those that open it (a file contract inside the braces). Does not touch pnpm-lock.yaml: run `pnpm install` after a pin change.
+ *           repository's formatter leaves them (gen's `formatJson`); a tsconfig's header comments are kept. Does not touch pnpm-lock.yaml: run `pnpm install` after a pin change.
  * Runtime: node
  * Governing contract: ADR 0091 (decision 2, amendment of 2026-11-09, rule 4 as corrected 2026-11-10).
  */
@@ -15,7 +13,9 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { formatJson } from "@stackra/gen";
-import { encoreReferenceVersion, pathsOfImports, readJsonc } from "@stackra/repo-checks/node";
+import { encoreReferenceVersion } from "@stackra/repo-checks/node";
+
+import { encoreTsconfig } from "#node/encore/functions/encore-tsconfig.function";
 
 /**
  * Prepare one service for Encore.
@@ -52,33 +52,12 @@ export function prepareEncoreService(service: string, root: string): readonly st
   write("package.json", formatJson(pkg));
 
   const tsconfigFile = join(service, "tsconfig.json");
-  const tsconfig = (existsSync(tsconfigFile) ? readJsonc(tsconfigFile) : {}) as {
-    compilerOptions?: Record<string, unknown>;
-  };
-  const header = headerOf(existsSync(tsconfigFile) ? readFileSync(tsconfigFile, "utf8") : "");
-  // TypeScript 7 refuses `baseUrl`; `paths` resolve from the tsconfig's folder without it.
-  const compilerOptions: Record<string, unknown> = { ...tsconfig.compilerOptions };
-  delete compilerOptions["baseUrl"];
-  tsconfig.compilerOptions = { ...compilerOptions, paths: pathsOfImports(pkg.imports) };
-  const [open = "{", ...body] = formatJson(tsconfig).split("\n");
-  write("tsconfig.json", [...header.above, open, ...header.inside, ...body].join("\n"));
+  write(
+    "tsconfig.json",
+    encoreTsconfig(
+      existsSync(tsconfigFile) ? readFileSync(tsconfigFile, "utf8") : undefined,
+      pkg.imports,
+    ),
+  );
   return changed;
-}
-
-/**
- * A tsconfig's header comments: the `//` lines above its object, and those that open the object (a file contract
- * written inside the braces), re-indented as the formatter leaves them.
- */
-function headerOf(text: string): { readonly above: string[]; readonly inside: string[] } {
-  const lines = text.split("\n");
-  const open = lines.findIndex((line) => line.trimStart().startsWith("{"));
-  if (open === -1) return { above: [], inside: [] };
-  const above = lines.slice(0, open).filter((line) => line.startsWith("//"));
-  const inside: string[] = [];
-  if (lines[open]?.trim() === "{")
-    for (const line of lines.slice(open + 1)) {
-      if (!line.trimStart().startsWith("//")) break;
-      inside.push(`  ${line.trim()}`);
-    }
-  return { above, inside };
 }

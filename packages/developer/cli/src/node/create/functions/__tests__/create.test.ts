@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: hold `stackra create`'s pure parts to their contract: a profile writes only its paths and overlays, the
  *          rename list and the catalog pin apply, the starter's own files never reach the app, a malformed manifest or
- *          an unknown profile is refused; the gen tree groups by member and kind; a starter's files describe the
+ *          an unknown profile is refused; a service's tsconfig gets the Encore paths of its imports; the gen tree groups by member and kind; a starter's files describe the
  *          doctor workspace of the app they make.
  * Boundary: pure functions on in-memory files; runs no command.
  * Runtime: node (vitest)
@@ -107,6 +107,34 @@ test("the rename list, the catalog pin and the registry line apply; binary files
     files.get("services/example/assets/logo.png"),
     new Uint8Array([137, 80, 78, 71, 0, 1, 2]),
   );
+});
+
+test("a service's tsconfig gets the paths Encore reads from its imports; other members keep theirs (STA-2794)", () => {
+  const preset = '// header\n{ "extends": "@stackra/typescript-config/service" }\n';
+  const files = starterFiles(
+    starter({
+      "services/example/package.json": JSON.stringify({
+        name: "@figentra/acme-service-example",
+        stackra: { tier: "service", runtimes: ["node"] },
+        imports: {
+          "#modules/*": ["./src/modules/*", "./src/modules/*.ts", "./src/modules/*/index.ts"],
+          "#assets/*": "./assets/*",
+        },
+      }),
+      "services/example/tsconfig.json": preset,
+      "apps/console/tsconfig.json": preset,
+    }),
+    options,
+  );
+  const tsconfig = read(files, "services/example/tsconfig.json");
+  assert.match(tsconfig, /^\/\/ header\n/);
+  assert.deepEqual(JSON.parse(tsconfig.replace(/^\/\/.*\n/, "")), {
+    extends: "@stackra/typescript-config/service",
+    compilerOptions: {
+      paths: { "#modules/*": ["./src/modules/*"], "#assets/*": ["./assets/*"] },
+    },
+  });
+  assert.equal(read(files, "apps/console/tsconfig.json"), preset);
 });
 
 test("tarballs become pnpm overrides; an existing .npmrc keeps its lines", () => {
