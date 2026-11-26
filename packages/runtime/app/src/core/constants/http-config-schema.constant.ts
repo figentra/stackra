@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `HTTP_CONFIG_SCHEMA`, the zod schema this package ships for `HttpConfig` (exported as `HttpConfig$`): the
- *          largest request body a generated HTTP adapter reads, in bytes.
- * Boundary: the stand-in for what gen writes for this package. The field has a default and there is no object-level
- *           refinement, so `.parse({})` gives the full defaults. The default equals `HttpOptions`' initializer (tested).
+ *          largest request body a generated HTTP adapter reads, in bytes, and the drain deadline, in seconds.
+ * Boundary: the stand-in for what gen writes for this package. Each field has a default and there is no object-level
+ *           refinement, so `.parse({})` gives the full defaults. The defaults equal `HttpOptions`' initializers (tested).
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0237 (STA-2577 note: raw adapters).
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0237 (STA-2577 note: raw adapters);
+ *                     ADR 0143 (decision 3: draining timeouts).
  */
 import { z } from "zod";
 
@@ -13,4 +14,5 @@ import { z } from "zod";
 /** The shipped `HttpConfig$`. */
 export const HTTP_CONFIG_SCHEMA = z.object({
   maxBodyBytes: z.number().int().min(1).max(104_857_600).default(1_048_576),
+  drainTimeoutSeconds: z.number().int().min(1).max(600).default(20),
 });

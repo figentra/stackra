@@ -14,6 +14,8 @@
   "compatibility_date": "2026-10-01",
   // Workers Logs: invocation logs and console output (no token or secret is ever logged).
   "observability": { "enabled": true },
+  // The id of the version that runs, named on every answer as `x-stackra-version` (the deploy smoke's proof, ADR 0536).
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   // Every value is a setting; src/settings/read-settings.ts refuses a missing or malformed one.
   "vars": {
     // Where requests go: scheme://host[:port], no path. The owner sets the API origin before the first deploy.
@@ -37,11 +39,12 @@
     // How long the owning product's answer for one "request" path's framers is kept in the isolate.
     "EDGE_FRAME_ANCESTORS_SECONDS": 60,
   },
-  // Wrangler does not inherit `vars` into an environment, so each repeats them; only EDGE_CSP differs (runway's
+  // Wrangler does not inherit `vars` or bindings into an environment, so each repeats them; only EDGE_CSP differs (runway's
   // dev, preview, staging and production).
   "env": {
     "dev": {
       // Pay's checkout: its pages are framed by Pay's console only, `/c/*` by the merchant site Pay names per request.
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "EDGE_ORIGIN": "https://origin.invalid",
         "EDGE_HOST_MAP": "{}",
@@ -56,6 +59,7 @@
     "preview": {
       // A PR's console host is `console-pr-<n>.pay.preview.figentra.com`; no origin can be listed and @stackra/csp refuses
       // wildcards, so Pay answers `/preview` per request with the console of the same PR (STA-2562).
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "EDGE_ORIGIN": "https://origin.invalid",
         "EDGE_HOST_MAP": "{}",
@@ -69,6 +73,7 @@
     },
     "staging": {
       // As dev, on staging's console.
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "EDGE_ORIGIN": "https://origin.invalid",
         "EDGE_HOST_MAP": "{}",
@@ -82,6 +87,7 @@
     },
     "production": {
       // As dev, on the production console.
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "EDGE_ORIGIN": "https://origin.invalid",
         "EDGE_HOST_MAP": "{}",

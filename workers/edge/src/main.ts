@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: the Worker entry of `stackra-edge` (ADR 0437): builds `EdgeDeps` from the environment (settings from the
  *          vars, the signing secret from EDGE_SIGNING_SECRET, the issuer's keys through `jwksKeySource` cached in the
- *          isolate) and hands each request to `handleRequest`.
+ *          isolate) and hands each request to `handleRequest`; every answer names the version that gave it
+ *          (`withVersion`, from the CF_VERSION_METADATA binding).
  * Boundary: wiring only. One key source per isolate and issuer, so the key set is fetched once per cache time.
  * Runtime: worker
  * Governing contract: ADR 0437 (decisions 1, 2 and 4); ADR 0206 (decision 8).
@@ -12,6 +13,7 @@ import type { JsonWebKeys } from "@stackra/app/contracts";
 
 import { handleRequest } from "#src/http/handle-request";
 import { originFrameAncestorResolver } from "#src/http/origin-frame-ancestor-resolver";
+import { withVersion } from "#src/http/with-version";
 import type { EdgeEnv } from "#src/interfaces/edge-env.interface";
 import type { FrameAncestorResolver } from "#src/interfaces/frame-ancestor-resolver.interface";
 import { readSettings } from "#src/settings/read-settings";
@@ -46,6 +48,8 @@ export default {
         id: framersId,
         resolver: originFrameAncestorResolver(base, settings.frameAncestorsSeconds),
       };
-    return handleRequest(request, { ...base, frameAncestors: framers.resolver });
+    const response = await handleRequest(request, { ...base, frameAncestors: framers.resolver });
+    // The version that answered, for the deploy smoke's proof (ADR 0536).
+    return withVersion(response, env.CF_VERSION_METADATA?.id);
   },
 };

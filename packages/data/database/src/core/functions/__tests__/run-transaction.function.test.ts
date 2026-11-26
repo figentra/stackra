@@ -6,11 +6,13 @@
  *          outside a transaction); a serialization failure or deadlock runs the work again up to
  *          `retry` times and then leaves; any other error leaves at once; isolation, read-only and retry are refused
  *          inside a running transaction without `requiresNew`, and a retry outside 0 to 10 is refused; `retryDelay`
- *          stays under a doubling, capped ceiling.
+ *          stays under a doubling, capped ceiling; a transaction on a connection of its own waits for the pool's
+ *          `ConnectionGate`, a savepoint does not (STA-1716).
  * Boundary: test only; a recording entity manager stands in for MikroORM, so no database runs and no back-off waits
  *           longer than its jitter (fake timers).
  * Runtime: node (vitest)
- * Governing contract: ADR 0136 (decision 2); data-layer gap mo6 (stackra-279); ADR 0022; ADR 0269.
+ * Governing contract: ADR 0136 (decision 2); data-layer gap mo6 (stackra-279); ADR 0473 (the 2026-11-26 note);
+ *                     ADR 0022; ADR 0269.
  */
 import { TransactionPropagation } from "@mikro-orm/core";
 import type { EntityManager } from "@mikro-orm/postgresql";
@@ -18,14 +20,18 @@ import { Duration } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { CONNECTION_GATES } from "#core/constants/connection-gates.constant";
 import { TRANSACTION_RETRY } from "#core/constants/transaction-retry.constant";
 import { Isolation } from "#core/enums/isolation.enum";
 import { retryDelay } from "#core/functions/retry-delay.function";
 import { runTransaction } from "#core/functions/run-transaction.function";
+import { ConnectionGate } from "#core/values/connection-gate.value";
 
 /** A recording entity manager; `inTransaction` says whether a transaction is already running. */
 function fakeEm(inTransaction = false) {
+  const driver = {};
   const em = {
+    getDriver: vi.fn(() => driver),
     execute: vi.fn(async (_sql: string) => []),
     isInTransaction: vi.fn(() => inTransaction),
     transactional: vi.fn(
@@ -183,5 +189,26 @@ describe("retryDelay", () => {
     expect(retryDelay(0, 0.999)).toBe(TRANSACTION_RETRY.baseMs - 1);
     expect(retryDelay(2, 0.5)).toBe((TRANSACTION_RETRY.baseMs * 4) / 2);
     expect(retryDelay(20, 0.5)).toBe(TRANSACTION_RETRY.capMs / 2);
+  });
+  it("waits for the pool's gate before a transaction on a connection of its own, never before a savepoint (STA-1716)", async () => {
+    const outside = fakeEm();
+    const inside = fakeEm(true);
+    const gate = new ConnectionGate(4, 2);
+    const hold = vi.spyOn(gate, "hold");
+    CONNECTION_GATES.set(outside.getDriver(), gate);
+    CONNECTION_GATES.set(inside.getDriver(), gate);
+    try {
+      await runTransaction(outside as unknown as EntityManager, async () => undefined);
+      await runTransaction(inside as unknown as EntityManager, async () => undefined, {
+        requiresNew: true,
+      });
+      expect(hold).toHaveBeenCalledTimes(2);
+      await runTransaction(inside as unknown as EntityManager, async () => undefined);
+      expect(hold).toHaveBeenCalledTimes(2);
+      expect(inside.transactional).toHaveBeenCalledTimes(2);
+    } finally {
+      CONNECTION_GATES.delete(outside.getDriver());
+      CONNECTION_GATES.delete(inside.getDriver());
+    }
   });
 });
