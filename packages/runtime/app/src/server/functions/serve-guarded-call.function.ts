@@ -3,8 +3,8 @@
  * Purpose: `serveGuardedCall`, the one path every generated HTTP adapter answers through, in a fixed order: read the
  *          body once under the cap (413 before any guard), run every request guard on a request carrying the exact
  *          bytes, authenticate (an `Authorization` header is verified and never downgraded to anonymous; none is the
- *          anonymous actor only where the call lists it, else 401; an action that declares `credentials: "ignore"` reads
- *          no credential and runs anonymous; an anonymous actor is the visitor its signed token names, and an answer to
+ *          anonymous actor only where the call lists it, else 401; an action that declares `credentials: "ignore"`, or a call
+ *          the adapter states it for (an inbound webhook), reads no credential and runs anonymous; an anonymous actor is the visitor its signed token names, and an answer to
  *          a new or re-signed visitor carries the token back in a header and an httpOnly cookie; an API key's call
  *          carries its key's call options to the call; an anonymous call acts in the tenant the edge signed, and a
  *          credential whose tenant differs from it is 403), parse the input (JSON body, or the query string for
@@ -20,7 +20,8 @@
  *           streamed call ends when its stream does.
  * Runtime: node
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order and the
- *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098.
+ *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098; ADR 0308
+ *                     (rule 16: the inbound webhook route); STA-1955.
  */
 import { kindOf } from "@stackra/container";
 import { ActorKind, actingScopeId, Enum, mintPublicId } from "@stackra/contracts";
@@ -110,9 +111,11 @@ export async function serveGuardedCall(options: GuardedCallOptions): Promise<Res
   const authorization = guarded.headers.get("authorization");
   const onBehalfOf = guarded.headers.get("stackra-on-behalf-of");
   const origin = guarded.headers.get("origin");
-  // `credentials: "ignore"`: the credential is never verified or held, so no user token is forwarded either
+  // `credentials: "ignore"`, stated by the adapter (an inbound webhook, whose `Authorization` is the provider's own) or
+  // declared by the action: the credential is never verified or held, so no user token is forwarded either
   const ignored =
-    options.action !== undefined && kindOf(options.action)?.options["credentials"] === "ignore";
+    options.credentials === "ignore" ||
+    (options.action !== undefined && kindOf(options.action)?.options["credentials"] === "ignore");
   // Set by the edge guard above only for a verified signature; a raw tenant header never counts.
   const signedScope = VERIFIED_EDGE_SCOPE.get(guarded);
   let actor: Actor;

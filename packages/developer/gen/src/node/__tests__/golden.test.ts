@@ -89,6 +89,9 @@ const FIXTURES: readonly GoldenFixture[] = [
   // The pipeline's own ports are bound from what the service declares, not from a constructor (STA-2573): its
   // integration event reaches EventOutbox, its idempotent action IdempotencyStore.
   { name: "pipeline-ports", base: "service", members: ["services/shop"] },
+  // A service that receives provider webhooks gets its inbound route's Encore adapters, one pair per Integration
+  // path, reading no credential (STA-1955).
+  { name: "webhook-route", base: "service", members: ["services/shop"] },
   // A package's own routes get the `Routes` ref table (`#stackra/routes`), keyed as its manifest records them.
   { name: "package-routes", base: "package-drivers", members: ["packages/shop"] },
   { name: "refusal-reader", base: "package-drivers", members: ["packages/shop"] },

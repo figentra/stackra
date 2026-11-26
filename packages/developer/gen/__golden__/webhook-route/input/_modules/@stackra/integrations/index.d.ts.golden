@@ -1,0 +1,3 @@
+export declare abstract class IntegrationBase { protected readonly "~kind": "integration"; }
+export type IntegrationClass = abstract new (...args: never[]) => IntegrationBase;
+export declare function Integration(options: { readonly provider: string; readonly [option: string]: unknown }): abstract new () => IntegrationBase;

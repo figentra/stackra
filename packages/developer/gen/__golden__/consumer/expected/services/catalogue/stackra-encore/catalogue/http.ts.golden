@@ -56,13 +56,17 @@ export function answerHttp(
   });
 }
 
-/** What an endpoint states: its route, whether anonymous callers may reach it, its action, and the call it runs. */
+/**
+ * What an endpoint states: its route, whether anonymous callers may reach it, its action, whether it is raw, whether
+ * it reads no credential (`credentials: "ignore"`, an inbound webhook), and the call it runs.
+ */
 interface Call {
   path: string;
   anonymous: boolean;
   action?: AnyClass;
   input?: AnyClass;
   raw?: boolean;
+  credentials?: "ignore";
   execute: (
     container: Container,
     input: unknown,
@@ -94,6 +98,7 @@ export async function answerCall(req: IncomingMessage, resp: ServerResponse, cal
       action: call.action,
       input: call.input,
       raw: call.raw === true,
+      credentials: call.credentials,
       maxBodyBytes: container.get(HttpConfig).maxBodyBytes,
       guard: (guarded) => app.handlers.guard(guarded, container),
       authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),
