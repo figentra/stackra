@@ -130,6 +130,7 @@ follow-up under Risks.
 
 - 2026-11-26 → Clarified (the PR diff and its independent review)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md; built in the same branch)
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2582 session) · T004: the host policy is intersected with the
   rich-text default (`narrowHtmlPolicy` in `@stackra/csp`), per the CTO's 2026-11-26 verdict on stackra#1119
