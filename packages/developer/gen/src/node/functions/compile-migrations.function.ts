@@ -9,7 +9,12 @@
  *          extends, STA-2006; a compile error from a macro no one supplied names those collected, `macroHint`), orders them across members (`orderMigrations`, `Migration({ after })`
  *          resolved there; `needs`: a module's dependencies and the owners of the macros a migration calls, recorded while
  *          it compiles) and returns the `.stackra/migrations` files (`emitMigrations`), plus, for a service with own
- *          macros, `.stackra/gen/blueprint.ts` (`emitBlueprintMacros`).
+ *          macros, `.stackra/gen/blueprint.ts` (`emitBlueprintMacros`), and the migration lock: each ordered
+ *          migration's id and SHA-256 (`migrationSha256`), which `generate` writes to the `migrations` section of
+ *          `stackra.manifest.json`. A migration the committed lock names is frozen (STA-2160): it compiles with
+ *          `frozen`, so an authoring rule a later `@stackra/database` added comes back as a `migration_rule_frozen`
+ *          warning instead of a refusal; it must still hash as locked (`checkMigrationLock`), and the locked ones keep
+ *          their place at the head of the order (`orderMigrations`). Every other migration meets every rule.
  * Boundary: imports the migration and macro files (Node 24 strips their types; `loadSourceModule` strips those of a
  *           package installed from the registry into `.stackra/cache`) and the member's `@stackra/database`, resolved
  *           from the member root so the migration classes and the compiler share one kind registry. Writes nothing
@@ -22,7 +27,8 @@
  *           rule of owner decisions 2026-10-26 round 3). No migration anywhere: no files and no import.
  * Runtime: node
  * Governing contract: ADR 0159 (decisions 1 to 3, as amended 2026-10-23 and 2026-10-24); ADR 0294 (decision 20: a
- *                     Postgres schema per module); ADR 0220 and data-layer gap db5 (the append-only revoke, stackra-256).
+ *                     Postgres schema per module); ADR 0220 and data-layer gap db5 (the append-only revoke, stackra-256);
+ *                     STA-2160 (frozen migrations: locked in the manifest).
  */
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -34,6 +40,7 @@ import { pascalCase } from "@stackra/support";
 import { isMacroClass } from "#core/functions/is-macro-class.function";
 import { macroHint } from "#core/functions/macro-hint.function";
 import { checkAppendOnly } from "#core/functions/check-append-only.function";
+import { checkMigrationLock } from "#core/functions/check-migration-lock.function";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
@@ -43,11 +50,13 @@ import { moduleDependsOn } from "#core/functions/module-depends-on.function";
 import { orderMigrations } from "#core/functions/order-migrations.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
+import type { LockedMigration } from "#core/types/locked-migration.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { MigrationUnit } from "#core/types/migration-unit.type";
 import type { OwnMacro } from "#core/types/own-macro.type";
 import { dependencyPath } from "#node/functions/dependency-path.function";
 import { loadSourceModule } from "#node/functions/load-source-module.function";
+import { migrationSha256 } from "#node/functions/migration-sha256.function";
 
 /** The part of `@stackra/database` the target calls. */
 interface DatabaseEntry {
@@ -57,8 +66,23 @@ interface DatabaseEntry {
       readonly schema: string;
       readonly createsSchema?: boolean;
       readonly macros?: readonly unknown[];
+      readonly frozen?: boolean;
     },
-  ) => { readonly after: readonly string[]; readonly steps: MigrationUnit["steps"] };
+  ) => {
+    readonly after: readonly string[];
+    readonly steps: MigrationUnit["steps"];
+    readonly warnings?: readonly string[];
+  };
+}
+
+/** What `compileMigrations` returns. */
+interface CompiledMigrations {
+  readonly files: readonly GeneratedFile[];
+  readonly errors: readonly GenError[];
+  /** The `migration_rule_frozen` warnings of the locked migrations. */
+  readonly warnings?: readonly GenError[];
+  /** The migration lock of this run, in apply order; absent when nothing compiled or the run is refused. */
+  readonly lock?: readonly LockedMigration[];
 }
 
 /** The specifiers a migration may import: the frozen-snapshot rule of ADR 0159 (0305 note). */
@@ -139,14 +163,18 @@ const load = async (path: string): Promise<Record<string, unknown>> =>
  *
  * @param root - the member root.
  * @param ir - its discovered IR (`packages`: the declared dependencies).
+ * @param options - `locked`: the committed migration lock (`migrationLockOf`), in apply order; none on a first run.
  * @example
- * const { files, errors } = await compileMigrations("services/billing", ir);
+ * const { files, errors, lock } = await compileMigrations("services/billing", ir, { locked });
  * files[0]?.path; // ".stackra/migrations/0001_search_0001_create_text_functions.up.sql"
  */
 export async function compileMigrations(
   root: string,
   ir: MemberIR,
-): Promise<{ readonly files: readonly GeneratedFile[]; readonly errors: readonly GenError[] }> {
+  options: { readonly locked?: readonly LockedMigration[] } = {},
+): Promise<CompiledMigrations> {
+  const locked = options.locked ?? [];
+  const lockedIds = new Set(locked.map((entry) => entry.id));
   const found: FoundMigration[] = [];
   const macroFiles: { readonly path: string; readonly owner: string }[] = [];
   const ownMacros: OwnMacro[] = [];
@@ -266,7 +294,11 @@ export async function compileMigrations(
       ),
     };
   const blueprint = ir.layout === "service" ? emitBlueprintMacros(ownMacros) : [];
-  if (found.length === 0) return { files: blueprint, errors: [] };
+  // No migration left: a lock that still names one is refused, since a database may have applied it.
+  if (found.length === 0) {
+    const missing = checkMigrationLock(locked, []);
+    return missing.length > 0 ? { files: [], errors: missing } : { files: blueprint, errors: [] };
+  }
 
   const require = createRequire(join(root, "package.json"));
   let database: DatabaseEntry;
@@ -337,6 +369,7 @@ export async function compileMigrations(
     return Recording;
   });
   const units: MigrationUnit[] = [];
+  const warnings: GenError[] = [];
   for (const migration of found) {
     // A migration is a frozen snapshot: refused before it is loaded when it imports more than the two specifiers.
     const forbidden = importsOf(migration.path).filter(
@@ -386,12 +419,26 @@ export async function compileMigrations(
       continue;
     }
     called.clear();
+    // A locked migration may be applied somewhere: a rule added after its lock only warns (STA-2160).
+    const frozen = lockedIds.has(migration.id);
     try {
       const compiled = database.compileMigration(classes[0], {
         schema: migration.module,
         createsSchema: migration.id.slice(migration.module.length + 1).startsWith("0001_"),
         macros,
+        ...(frozen ? { frozen } : {}),
       });
+      for (const rule of frozen ? (compiled.warnings ?? []) : [])
+        warnings.push({
+          ...refusal(
+            "migration_rule_frozen",
+            migration.file,
+            migration.id,
+            `${migration.id} is locked, so it compiles as it was locked although it breaks a rule added since: ${rule}`,
+            "leave the locked migration as it is (ADR 0159: it is frozen); when the schema should meet the rule, change it in a new migration",
+          ),
+          severity: "warning",
+        });
       units.push({
         id: migration.id,
         owner: migration.owner,
@@ -406,6 +453,7 @@ export async function compileMigrations(
           ]),
         ].filter((need) => need !== migration.module),
         steps: compiled.steps,
+        sha256: migrationSha256(compiled),
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -421,9 +469,26 @@ export async function compileMigrations(
     }
   }
   errors.push(...checkAppendOnly(ir, units));
-  if (errors.length > 0) return { files: [], errors };
-  const { ordered, errors: orderErrors } = orderMigrations(units);
+  // A migration on disk that did not compile is refused above; its lock entry is not also reported missing.
+  const compiled = new Set(units.map((unit) => unit.id));
+  const failed = new Set(found.map((migration) => migration.id).filter((id) => !compiled.has(id)));
+  errors.push(
+    ...checkMigrationLock(
+      locked.filter((entry) => !failed.has(entry.id)),
+      units,
+    ),
+  );
+  if (errors.length > 0) return { files: [], errors, warnings };
+  const { ordered, errors: orderErrors } = orderMigrations(
+    units,
+    locked.map((entry) => entry.id),
+  );
   return orderErrors.length > 0
-    ? { files: [], errors: orderErrors }
-    : { files: [...emitMigrations(ordered), ...blueprint], errors: [] };
+    ? { files: [], errors: orderErrors, warnings }
+    : {
+        files: [...emitMigrations(ordered), ...blueprint],
+        errors: [],
+        warnings,
+        lock: ordered.map((unit) => ({ id: unit.id, sha256: unit.sha256 ?? "" })),
+      };
 }

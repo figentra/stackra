@@ -13,10 +13,14 @@
  *          config is `shim_authored`, and the shim gen wrote is not (STA-768); a v2 service (authored `src/main.ts`)
  *          gets no entry, tool config or encore.app and passes, while the same service in the v3 shape is still
  *          `generated_dependency_missing` (STA-344); a `.stackra/gen/blueprint.ts` left after the last own macro is gone
- *          is reported by a check run and deleted by a write run (STA-2062).
+ *          is reported by a check run and deleted by a write run (STA-2062); a service's migrations are locked in its
+ *          manifest, a new one after them, an edit to a locked one is refused with nothing written, a manifest
+ *          missing its lock is stale, a malformed lock is refused, and a package's own migrations are checked but
+ *          never locked (STA-2160).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5); ADR 0159
+ *                     (2026-10-23 note: the SHA-256 lock); STA-2160.
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -381,5 +385,145 @@ describe("generate's shipped manifest check (STA-1308)", () => {
     expect(check.errors).toEqual([]);
     expect(check.changed).toEqual([]);
     expect(existsSync(join(root, ".stackra"))).toBe(false);
+  });
+});
+
+/** A fake `@stackra/database` whose `compileMigration` writes one `create table` per `schema.create` call. */
+const FAKE_DATABASE: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/database/package.json": JSON.stringify({
+    name: "@stackra/database",
+    type: "module",
+    exports: { ".": { types: "./index.d.ts", default: "./index.js" } },
+  }),
+  "node_modules/@stackra/database/index.d.ts": [
+    "export declare abstract class Migration { abstract up(schema: { create(table: string): void }): void }",
+    "",
+  ].join("\n"),
+  "node_modules/@stackra/database/index.js": [
+    "export class Macro {}",
+    "export class Migration {}",
+    "export const compileMigration = (type) => {",
+    "  const tables = [];",
+    "  new type().up({ create: (table) => { tables.push(table); } });",
+    "  return {",
+    "    after: [],",
+    "    steps: tables.map((table) => ({ sql: ['create table ' + table], transactional: true, inverse: false })),",
+    "  };",
+    "};",
+    "",
+  ].join("\n"),
+};
+
+/** The source of the migration `<stem>` that creates `table`; its class is named after the file, as gen requires. */
+const migrationSource = (stem: string, table: string): string =>
+  [
+    'import { Migration } from "@stackra/database";',
+    "",
+    `export class ${stem.replaceAll(/(?:^|-)([a-z])/g, (_match, letter: string) => letter.toUpperCase())}Migration extends Migration {`,
+    "  up(schema: { create(table: string): void }): void {",
+    `    schema.create("${table}");`,
+    "  }",
+    "}",
+    "",
+  ].join("\n");
+
+/** The service's `shop` migration `NNNN-<stem>` that creates `table`. */
+const shopMigration = (number: string, stem: string, table: string): Record<string, string> => ({
+  [`src/modules/shop/database/migrations/${number}-${stem}.migration.ts`]: migrationSource(
+    stem,
+    table,
+  ),
+});
+
+/** The committed manifest of `root`. */
+const manifestOf = (root: string): Record<string, unknown> =>
+  JSON.parse(readFileSync(join(root, "stackra.manifest.json"), "utf8")) as Record<string, unknown>;
+
+describe("generate's migration lock (STA-2160)", () => {
+  it("locks a service's migrations in its manifest, then refuses a change to a locked one", async () => {
+    const root = exampleService(true);
+    for (const [path, content] of Object.entries({
+      ...FAKE_DATABASE,
+      ...shopMigration("0001", "create-shops", "shops"),
+    })) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), content);
+    }
+    expect((await generate(root)).errors).toEqual([]);
+    const locked = manifestOf(root)["migrations"] as { id: string; sha256: string }[];
+    expect(locked.map((entry) => entry.id)).toEqual(["shop.0001_create_shops"]);
+    expect(locked[0]?.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect((await generate(root, { check: true })).changed).toEqual([]);
+
+    // A new migration is locked after the first; the first stays as it was.
+    const second = shopMigration("0002", "create-carts", "carts");
+    for (const [path, content] of Object.entries(second)) writeFileSync(join(root, path), content);
+    expect((await generate(root)).errors).toEqual([]);
+    const grown = manifestOf(root)["migrations"] as { id: string; sha256: string }[];
+    expect(grown.map((entry) => entry.id)).toEqual([
+      "shop.0001_create_shops",
+      "shop.0002_create_carts",
+    ]);
+    expect(grown[0]).toEqual(locked[0]);
+
+    // Editing the locked first migration is refused, and neither the manifest nor the SQL moves.
+    const before = readFileSync(join(root, "stackra.manifest.json"), "utf8");
+    for (const [path, content] of Object.entries(shopMigration("0001", "create-shops", "stores")))
+      writeFileSync(join(root, path), content);
+    const refused = await generate(root);
+    expect(refused.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["migration_locked_changed", "shop.0001_create_shops"],
+    ]);
+    expect(readFileSync(join(root, "stackra.manifest.json"), "utf8")).toBe(before);
+    expect(
+      readFileSync(join(root, ".stackra/migrations/0001_shop_0001_create_shops.up.sql"), "utf8"),
+    ).toContain("create table shops");
+  });
+
+  it("reports a service manifest without its lock as stale, and refuses a malformed lock", async () => {
+    const root = exampleService(true);
+    for (const [path, content] of Object.entries({
+      ...FAKE_DATABASE,
+      ...shopMigration("0001", "create-shops", "shops"),
+    })) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), content);
+    }
+    expect((await generate(root)).errors).toEqual([]);
+    const manifest = manifestOf(root);
+    const path = join(root, "stackra.manifest.json");
+    writeFileSync(path, JSON.stringify({ ...manifest, migrations: undefined }));
+    expect((await generate(root, { check: true })).changed).toContain("stackra.manifest.json");
+
+    writeFileSync(path, JSON.stringify({ ...manifest, migrations: [{ id: "shop.0001" }] }));
+    expect((await generate(root)).errors.map((error) => error.code)).toEqual([
+      "migration_lock_malformed",
+    ]);
+  });
+
+  it("checks a package's own migrations but locks none: the services that host it lock them", async () => {
+    const root = writeFixtureMember("shop", {
+      ...SHOP_SOURCES,
+      ...FAKE_DATABASE,
+      "src/node/database/migrations/0001-create-shops.migration.ts": migrationSource(
+        "create-shops",
+        "shops",
+      ),
+    });
+    const path = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(path, "utf8")) as { dependencies: Record<string, string> };
+    writeFileSync(
+      path,
+      JSON.stringify({
+        ...pkg,
+        dependencies: { ...pkg.dependencies, "@stackra/database": "workspace:*" },
+      }),
+    );
+    const result = await generate(root);
+    expect(result.errors).toEqual([]);
+    expect(result.changed).toContain(
+      ".stackra/tests/migrations/0001_shop_0001_create_shops.up.sql",
+    );
+    expect(manifestOf(root)).not.toHaveProperty("migrations");
   });
 });
