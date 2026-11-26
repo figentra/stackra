@@ -7,7 +7,8 @@
  *          rows. Then the driver itself on those tables, as several instances share them: a value one instance put
  *          is read by another; a write sweeps dead entries and a tag add dead members; `forget` drops only the keys
  *          it covers, so a namespace whose name differs only where `like` reads a wildcard (`_`) keeps its entries;
- *          concurrent tag adds keep the latest instant; `remember` serves a stale entry while one reload replaces it.
+ *          a tag add, again or concurrent, keeps the latest instant; `remember` serves a stale entry while one reload
+ *          replaces it.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0005 migration creates the tables.
  *           `CacheSql` here runs each statement on a forked entity manager, outside any transaction. The driver tests
  *           sit here, not in @stackra/cache, because the tables are this package's migration and @stackra/cache never
@@ -178,6 +179,19 @@ describe(PostgresCacheDriver, () => {
     await expect(cache.get(key)).resolves.toBeUndefined();
     namespace.name = "scpxa";
     await expect(cache.get(key)).resolves.toBe("letter");
+  });
+
+  it("keeps the later instant when a member is added again with a shorter lifetime", async () => {
+    const tag = CacheKey.of(Category, "cat_later");
+    const key = CacheKey.of(Product, "prd_later");
+    await driver().put(key, "long", TEN_MINUTES, { tags: [tag] });
+    await driver().put(key, "short", Duration.minutes(1), { tags: [tag] });
+    expect(
+      await rows(
+        "select bool_and(expires_at > now() + interval '9 minutes') as later from cache.set_members " +
+          "where member like '%prd_later%' and set_name like '%cat_later%'",
+      ),
+    ).toEqual([{ later: true }]);
   });
 
   it("keeps the latest instant when instances add one member to a tag at once", async () => {
