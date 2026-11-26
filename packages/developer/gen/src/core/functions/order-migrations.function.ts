@@ -3,11 +3,15 @@
  * Purpose: `orderMigrations`, the apply order of a host's migrations, its own and its declared packages': each
  *          module's migrations in number order, every `Migration({ after })` id and every migration of a module in the
  *          unit's `needs` (module dependencies, macro owners) before the migration naming it, ties
- *          broken by package migrations first and then by id, so the order is the same on every run.
+ *          broken by package migrations first and then by id, so the order is the same on every run. The locked
+ *          migrations (the committed manifest's `migrations` section) come first, in their locked order: a database
+ *          may have applied them, and the runner applies by sequence number, so a released prefix never moves and a
+ *          new migration, a new package's included, runs after them (STA-2160).
  * Boundary: pure. Refuses an `after` id no loaded migration has (`migration_after_unknown`), a migration id loaded
  *           twice (`migration_id_duplicate`) and a cycle (`migration_cycle`); with a refusal the order is empty.
  * Runtime: isomorphic
- * Governing contract: ADR 0159 (decisions 1 and 2, as amended 2026-10-24: ordering across members is gen's).
+ * Governing contract: ADR 0159 (decisions 1 and 2, as amended 2026-10-24: ordering across members is gen's; 2026-10-23
+ *                     note: a released prefix does not move); STA-2160.
  */
 import type { GenError } from "#core/types/gen-error.type";
 import type { MigrationUnit } from "#core/types/migration-unit.type";
@@ -29,11 +33,16 @@ const moduleOf = (id: string): string => id.slice(0, id.indexOf("."));
 /**
  * Orders `units` for the runner.
  *
+ * @param units - the compiled migrations.
+ * @param locked - the locked ids in their locked order; one no unit has is skipped (`checkMigrationLock` refuses it).
  * @example
  * orderMigrations([billing0001, search0001]).ordered.map((unit) => unit.id);
  * // ["search.0001_create_text_functions", "billing.0001_create_invoices"] when billing's runs after search's
  */
-export function orderMigrations(units: readonly MigrationUnit[]): {
+export function orderMigrations(
+  units: readonly MigrationUnit[],
+  locked: readonly string[] = [],
+): {
   readonly ordered: readonly MigrationUnit[];
   readonly errors: readonly GenError[];
 } {
@@ -84,6 +93,13 @@ export function orderMigrations(units: readonly MigrationUnit[]): {
   const rank = (id: string): string => `${byId.get(id)?.owner === "package" ? 0 : 1}${id}`;
   const ordered: MigrationUnit[] = [];
   const done = new Set<string>();
+  // The locked prefix keeps its place; an edge onto it is met, and one out of it was met when it was applied.
+  for (const id of locked) {
+    const unit = byId.get(id);
+    if (unit === undefined || done.has(id)) continue;
+    done.add(id);
+    ordered.push(unit);
+  }
   while (done.size < needs.size) {
     const ready = [...needs]
       .filter(([id, before]) => !done.has(id) && [...before].every((need) => done.has(need)))

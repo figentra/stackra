@@ -88,26 +88,43 @@ const isAppSource = (p: string): boolean =>
   /^(?:apps|tools\/scaffold\/templates\/apps)\/[^/]+\/src\/.+\.(?:ts|tsx)$/.test(p) &&
   !p.includes("/__tests__/");
 
-/**
- * The built `@stackra/runway` entry, or undefined before it is built or when it is not installed: its sources use
- * extensionless `#core/*` imports that plain Node cannot load (ADR 0233).
- */
-async function loadRunway(root: string): Promise<RunwayApi | undefined> {
+/** The built file of `@stackra/runway`'s `subpath` entry (`.` or `./node`), or undefined when there is none. */
+function runwayEntry(root: string, subpath: "." | "./node"): string | undefined {
   const dir = join(root, RUNWAY_DIR);
-  let entry: string | undefined;
   if (existsSync(join(dir, "package.json"))) {
     const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
       readonly exports: Record<string, { readonly default: string }>;
     };
-    entry = join(dir, pkg.exports["."]?.default ?? "dist/index.mjs");
-  } else {
-    try {
-      entry = createRequire(join(root, "package.json")).resolve("@stackra/runway");
-    } catch {
-      return undefined;
-    }
+    const fallback = subpath === "." ? "dist/index.mjs" : "dist/node.mjs";
+    return join(dir, pkg.exports[subpath]?.default ?? fallback);
   }
-  return existsSync(entry) ? ((await import(pathToFileURL(entry).href)) as RunwayApi) : undefined;
+  try {
+    return createRequire(join(root, "package.json")).resolve(
+      subpath === "." ? "@stackra/runway" : "@stackra/runway/node",
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The built `@stackra/runway` entry, or undefined before it is built or when it is not installed: its sources use
+ * extensionless `#core/*` imports that plain Node cannot load (ADR 0233). The `./node` entry's `runtimeOnlyFieldsOf`
+ * joins it when that entry is built (STA-2844).
+ */
+async function loadRunway(root: string): Promise<RunwayApi | undefined> {
+  const entry = runwayEntry(root, ".");
+  if (entry === undefined || !existsSync(entry)) return undefined;
+  const core = (await import(pathToFileURL(entry).href)) as RunwayApi;
+  const nodeEntry = runwayEntry(root, "./node");
+  if (nodeEntry === undefined || !existsSync(nodeEntry)) return core;
+  const node = (await import(pathToFileURL(nodeEntry).href)) as Pick<
+    RunwayApi,
+    "runtimeOnlyFieldsOf"
+  >;
+  return node.runtimeOnlyFieldsOf === undefined
+    ? core
+    : { ...core, runtimeOnlyFieldsOf: node.runtimeOnlyFieldsOf };
 }
 
 /**
@@ -189,6 +206,7 @@ export async function structureFindings(
             .map(({ dir }) => dir)
             .filter((dir) => /^services\/[^/]+$/.test(dir))
             .map((dir) => dir.slice("services/".length)),
+          runtimeOnly: runway.runtimeOnlyFieldsOf?.(root) ?? [],
         }),
       );
     else if (options.ci && existsSync(join(root, RUNWAY_DIR)))

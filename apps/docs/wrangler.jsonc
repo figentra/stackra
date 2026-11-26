@@ -1,7 +1,8 @@
 // Stackra file contract:
 // Purpose: the Cloudflare Worker `stackra-docs` that serves the Stackra docs site at docs.stackra.figentra.com
-//          (ADR 0514 decisions 1 and 9, STA-2026). Assets only: no Worker script; Cloudflare serves the site
-//          `stackra build` prerenders into .stackra/site/build/client and applies its generated `_redirects`.
+//          (ADR 0514 decisions 1 and 9, STA-2026). Cloudflare serves the site `stackra build` prerenders into
+//          .stackra/site/build/client and applies its generated `_redirects`; the one script route, `/-/version`
+//          (worker/main.ts), names the running version for the deploy smoke's proof (ADR 0536, STA-2783).
 // Owner: release-operations · Secrets: forbidden — CI passes CLOUDFLARE_API_TOKEN in the environment.
 // Code facts only (ADR 0519 decision 1, `pnpm validate` check wrangler-operational-keys): the compatibility date,
 // workers_dev and preview URLs (false), observability and the custom domain docs.stackra.figentra.com
@@ -10,8 +11,14 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "stackra-docs",
+  "main": "./worker/main.ts",
+  // The id of the version that runs, read by worker/main.ts.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "assets": {
     "directory": "./.stackra/site/build/client",
+    "binding": "ASSETS",
+    // Only the version route runs the script first; every other path is the static site.
+    "run_worker_first": ["/-/version"],
     // An unknown path returns status 404 with the prerendered 404.html.
     "not_found_handling": "404-page",
     // `/adr/0001-x` serves adr/0001-x/index.html with no redirect, and `/adr/0001-x/` redirects to it: the paths

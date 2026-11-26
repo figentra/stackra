@@ -14,10 +14,11 @@
  *          declarations), and the system-access mechanism (ADR 0239 amendment, gap A): `t.systemAccess`'s marker line,
  *          role, column grants and role-scoped policies, `schema.systemFunction`'s marker line, definer function with
  *          its pinned search path and its hand-over to the role, both read back by `tableDeclarations`, and their
- *          refusals.
+ *          refusals; and a frozen migration (STA-2160): the column rule warns instead of refusing and the SQL is the
+ *          one it compiles to unfrozen, while a safety rule still refuses.
  * Boundary: test only; pure compilation, no database.
  * Runtime: node (vitest)
- * Governing contract: ADR 0159 (as amended); ADR 0160; ADR 0239; ADR 0327 (decisions 3 and 9);
+ * Governing contract: ADR 0159 (as amended); ADR 0160; STA-2160; ADR 0239; ADR 0327 (decisions 3 and 9);
  *                     `.agents/rules/tenancy.md`; ADR 0231; ADR 0022; ADR 0269.
  */
 import { describe, expect, it } from "@stackra/testing";
@@ -1636,5 +1637,64 @@ describe(compileMigration, () => {
         expect(() => sqlOf(FunctionMigration)).toThrow(message);
       }
     });
+  });
+});
+
+describe("compileMigration of a frozen migration (STA-2160)", () => {
+  /** A migration written before the column rule: `note` states no nullability and has no comment. */
+  class CreateNotesMigration extends Migration {
+    up(schema: SchemaBuilder): void {
+      schema.create("notes", (t) => {
+        t.uuid("id").notNull().comment("The note.");
+        t.string("note", 200);
+      });
+    }
+  }
+
+  it("refuses the column rule when the migration is not frozen", () => {
+    expect(() => compileMigration(CreateNotesMigration, { schema: "outbox" })).toThrow(
+      "notes: every column states notNull() or nullable() and has a comment(); not note",
+    );
+  });
+
+  it("reports the column rule as a warning when frozen, and compiles the table as written", () => {
+    const { steps, warnings } = compileMigration(CreateNotesMigration, {
+      schema: "outbox",
+      frozen: true,
+    });
+    expect(warnings).toEqual([
+      "notes: every column states notNull() or nullable() and has a comment(); not note",
+    ]);
+    expect(steps.flatMap((step) => step.sql)).toEqual([
+      'create table "outbox"."notes" (\n  "id" uuid not null,\n  "note" varchar(200)\n)',
+      'comment on column "outbox"."notes"."id" is \'The note.\'',
+      'comment on column "outbox"."notes"."note" is \'\'',
+    ]);
+  });
+
+  it("compiles a frozen migration that meets every rule to the same SQL, with no warning", () => {
+    class CreateTagsMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.create("tags", (t) => {
+          t.string("name", 64).notNull().comment("The tag.");
+        });
+      }
+    }
+    const frozen = compileMigration(CreateTagsMigration, { schema: "outbox", frozen: true });
+    expect(frozen.warnings).toEqual([]);
+    expect(frozen.steps).toEqual(compileMigration(CreateTagsMigration, { schema: "outbox" }).steps);
+  });
+
+  it("still refuses a safety rule when frozen", () => {
+    class AddDueMigration extends Migration {
+      up(schema: SchemaBuilder): void {
+        schema.table("jobs", (t) => {
+          t.timestamp("due_at").notNull().comment("When it is due.");
+        });
+      }
+    }
+    expect(() => compileMigration(AddDueMigration, { schema: "outbox", frozen: true })).toThrow(
+      TypeError,
+    );
   });
 });
