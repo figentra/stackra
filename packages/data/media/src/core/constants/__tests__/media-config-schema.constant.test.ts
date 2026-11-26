@@ -29,6 +29,7 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
         algorithm: "es256",
         timestampUrl: "",
         formats: ["image/jpeg", "image/png", "image/webp"],
+        trustedSigners: [],
       },
       c2paSigningCertificate: "",
       c2paSigningKey: "",
@@ -78,5 +79,9 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
       false,
     );
     expect(MEDIA_CONFIG_SCHEMA.safeParse({ c2pa: { timestampUrl: "nope" } }).success).toBe(false);
+    // A trusted signer is a PEM certificate, never a bare string (STA-2791).
+    expect(MEDIA_CONFIG_SCHEMA.safeParse({ c2pa: { trustedSigners: ["nope"] } }).success).toBe(
+      false,
+    );
   });
 });

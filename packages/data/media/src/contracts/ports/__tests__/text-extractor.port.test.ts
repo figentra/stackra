@@ -10,10 +10,12 @@ import { Driver } from "@stackra/container";
 import { Port } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
+import { ContentCredentialTrust } from "#contracts/enums/content-credential-trust.enum";
 import { ContentCredentials } from "#contracts/ports/content-credentials.port";
 import { ImageTransformer } from "#contracts/ports/image-transformer.port";
 import { TextExtractor } from "#contracts/ports/text-extractor.port";
 import type { ContentCredential } from "#contracts/types/content-credential.type";
+import type { ContentCredentialReading } from "#contracts/types/content-credential-reading.type";
 import type { ExtractedText } from "#contracts/types/extracted-text.type";
 
 /** Reads plain text only. */
@@ -49,8 +51,9 @@ class KeptContentCredentialsDriver extends Driver(ContentCredentials) {
     return signed;
   }
 
-  async read(bytes: Uint8Array, _contentType: string): Promise<ContentCredential | null> {
-    return this.kept.get(bytes) ?? null;
+  async read(bytes: Uint8Array, _contentType: string): Promise<ContentCredentialReading | null> {
+    const credential = this.kept.get(bytes);
+    return credential === undefined ? null : { trust: ContentCredentialTrust.Trusted, credential };
   }
 }
 
@@ -69,7 +72,10 @@ describe("media processing ports", () => {
     const credentials = new KeptContentCredentialsDriver();
     const credential = { generator: "test", aiGenerated: true, createdAt: new Date(0) };
     const signed = await credentials.attach(new Uint8Array([1]), "image/png", credential);
-    expect(await credentials.read(signed, "image/png")).toBe(credential);
+    expect(await credentials.read(signed, "image/png")).toEqual({
+      trust: ContentCredentialTrust.Trusted,
+      credential,
+    });
     expect(await credentials.read(new Uint8Array([1]), "image/png")).toBeNull();
   });
 });

@@ -35,11 +35,11 @@ on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/vali
 | `.`           | `UploadBucketMismatchError`, `UploadExpiredError`, `UploadIncompleteError`, `UploadRejectedError`, `UploadFailedError` | the refusals                                                                           |
 | `.`           | `registerBuckets`                                                                                                      | how gen's entry hands over the derived bucket keys                                     |
 | `./contracts` | `ImageTransformer`, `ImageTransform`, `ImageLayer`, `TextExtractor`, `ExtractedText`                                   | the processing ports and the types they speak                                          |
-| `./contracts` | `ContentCredentials`, `ContentCredential`                                                                              | the C2PA port and the claim it signs                                                   |
+| `./contracts` | `ContentCredentials`, `ContentCredential`, `ContentCredentialReading`, `ContentCredentialTrust`                        | the C2PA port, the claim it signs, and what `read` finds: trusted, unverified, invalid |
 | `./node`      | `SharpImageTransformerDriver`                                                                                          | `ImageTransformer` on sharp: resize, composite layers, re-encode, no metadata          |
 | `./node`      | `DocumentTextExtractorDriver`                                                                                          | `TextExtractor` for DOCX and PDF text layers, in process (in region)                   |
 | `./node`      | `PaddleOcrTextExtractorDriver`                                                                                         | `TextExtractor` OCR with Arabic, via the in-region PaddleOCR service (cert. pending)   |
-| `./node`      | `C2paContentCredentialsDriver`                                                                                         | `ContentCredentials` on c2pa-rs: sign and read C2PA manifests (cert. pending)          |
+| `./node`      | `C2paContentCredentialsDriver`                                                                                         | `ContentCredentials` on c2pa-rs: sign, read and trust-check C2PA manifests (cert. p.)  |
 | `./node`      | `CreateUploadAction`, `CreateUploadInput`, `CreateUploadOutput`                                                        | `media.upload.create@1`, `POST /uploads`                                               |
 | `./react`     | `useUpload`, `useImageVariant`                                                                                         | upload a file; size an image                                                           |
 | `./testing`   | `fakeUpload`                                                                                                           | a finished upload in a test, on the memory `FileSystem` disk                           |
@@ -123,7 +123,7 @@ config:
       languages: [ar, en] # what the deployed recognition model reads
       maxBytes: 20971520
       timeoutMs: 60000
-    c2pa: { algorithm: es256, timestampUrl: "", formats: [image/jpeg, image/png, image/webp] }
+    c2pa: { algorithm: es256, timestampUrl: "", formats: [image/jpeg, image/png, image/webp], trustedSigners: [] }
   filesystem:
     disk: s3 # memory | local | s3 | gcs | encore_bucket
     url: https://cdn.acme.test
@@ -183,7 +183,28 @@ garbled text. Azure Document Intelligence is a connector in OS integrations, not
 
 `ContentCredentials` signs C2PA manifests on AI-generated images. The `c2pa` driver (`./node`) embeds a manifest with
 one `c2pa.created` action whose IPTC digital source type is `trainedAlgorithmicMedia`, signed with the certificate from
-the secret store; `read` gives the verified credential or `null`. While the certificate is not set, `attach` refuses.
+the secret store. While the certificate is not set, `attach` refuses.
+
+`read` answers `null` for an image with no manifest, and otherwise a `ContentCredentialReading` (STA-2791):
+
+| `trust`      | When                                                                                            | What a product may say                     |
+| ------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `trusted`    | c2pa-rs validates the manifest and its signer chains to an allowed anchor                       | genuine: the credential counts as proof    |
+| `unverified` | the manifest validates, but the signer chains to no allowed anchor (an unknown or self-made CA) | the claims, as claims; never "verified"    |
+| `invalid`    | the manifest does not validate (the image changed after signing, or a bad signature)            | nothing from the manifest; no `credential` |
+
+```ts
+const reading = await credentials.read(bytes, "image/png");
+if (reading?.trust === ContentCredentialTrust.Trusted) showGenuineBadge(reading.credential);
+```
+
+The allowed anchors are the official C2PA trust list, pinned in this package (`c2pa-trust-list.constant.ts`, from
+`c2pa-org/conformance-public` at the commit in `c2pa-trust-list-pin.constant.ts`) and never fetched at run time, plus
+our own signing certificates: the configured `MEDIA_C2PA_SIGNING_CERTIFICATE` and `media.c2pa.trustedSigners` (public
+PEM certificates kept after a rotation). The read fails closed: an expired anchor or signer is dropped, and with no
+usable anchor nothing is `trusted`. It never fetches a remote manifest or an OCSP answer. To update the list, copy the
+newer upstream `trust-list/C2PA-TRUST-LIST.pem` into the constant byte for byte and set the pin's commit and SHA-256 in
+the same pull request; the test checks the hash.
 
 **Certification pending (owner D3, 2026-10-27).** No C2PA signing certificate exists yet and no live PaddleOCR service
 was called: both drivers follow the public docs (PaddleOCR 3.x serving, C2PA 2.x, c2pa-node) and their tests replay

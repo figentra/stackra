@@ -5,8 +5,8 @@
  *          source type is a trained model's, and when the image was made.
  * Boundary: pure. A store whose `validation_state` is `Invalid`, or that lists validation failures without a state,
  *           is `null`; so is one with no active manifest, no generator or no time. The time is the `c2pa.created`
- *           action's `when`, else the signature time. Trust in the signer's certificate authority is the reader's
- *           settings, not this function's.
+ *           action's `when`, else the signature time. Whether the signer is trusted is `credentialTrustOf`'s, never
+ *           this function's: a credential it returns is a claim until that says `trusted`.
  * Runtime: isomorphic
  * Governing contract: COM-73, COM-294; ADR 0245; C2PA 2.x; STA-789.
  */

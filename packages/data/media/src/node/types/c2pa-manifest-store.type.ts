@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `C2paManifestStore`, the part of a c2pa-rs manifest store (`Reader#json()`) a credential is read from: the
- *          active manifest, its generator, assertions and signature time, and the validation outcome.
+ *          active manifest, its generator, assertions and signature time, and the validation outcome and codes.
  * Boundary: a type only; field names are c2pa-rs's JSON names. Unknown fields are ignored.
  * Runtime: isomorphic
- * Governing contract: C2PA 2.x; COM-73, COM-294; STA-789.
+ * Governing contract: C2PA 2.x; COM-73, COM-294; STA-789; STA-2791.
  */
 
 /** The part of a manifest a credential is read from. */
@@ -25,4 +25,11 @@ export interface C2paManifestStore {
   readonly validation_state?: string;
   /** The validation failures (older c2pa-rs). */
   readonly validation_status?: readonly unknown[];
+  /** The active manifest's validation codes (c2pa-rs 0.4x and later): `signingCredential.trusted` among `success`. */
+  readonly validation_results?: {
+    readonly activeManifest?: {
+      readonly success?: readonly { readonly code: string }[];
+      readonly failure?: readonly { readonly code: string }[];
+    };
+  };
 }
