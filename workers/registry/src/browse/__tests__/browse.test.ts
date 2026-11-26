@@ -18,7 +18,7 @@ const CORE = {
   version: "0.1.0",
   license: "MIT",
   description: "Core <b>kernel</b>",
-  repository: { type: "git", url: "git+https://github.com/figentra/stackra.git" },
+  repository: { type: "git", url: "git+https://github.com/stackra-inc/stackra.git" },
   dependencies: { "@stackra/contracts": "0.1.0", zod: "4.1.0" },
   stackra: { kind: "package", category: "foundation" },
 };
@@ -111,7 +111,7 @@ describe("registry browser", () => {
         (
           await registry.publish(pkg, {
             files: PRO_FILES,
-            repository: "figentra/stackra-pro",
+            repository: "stackra-inc/stackra-pro",
             claims: PRO_CLAIMS,
           })
         ).status,
@@ -211,11 +211,11 @@ describe("registry browser", () => {
       expect(html).not.toContain('href="/package/zod"');
       // Provenance from the stored statement.
       expect(html).toContain(
-        'href="https://github.com/figentra/stackra/commit/0d5f464aabbccddeeff00112233445566778899a"',
+        'href="https://github.com/stackra-inc/stackra/commit/0d5f464aabbccddeeff00112233445566778899a"',
       );
       expect(html).toContain(".github/workflows/release.yml@refs/heads/main");
       expect(html).toContain(
-        'href="https://github.com/figentra/stackra/actions/runs/42/attempts/1"',
+        'href="https://github.com/stackra-inc/stackra/actions/runs/42/attempts/1"',
       );
       // Versions and tags.
       expect(html).toContain("<span>latest</span>");
