@@ -25,6 +25,7 @@ security-risk action with no step-up, or a tenant model with no row-security mig
 - **ADR needed**: no: implements ADR 0099 (write floor), ADR 0136 decision 3 (idempotency), ADR 0406 (step-up),
   ADR 0239 decision 1 (tenancy migration)
 - **New dependencies**: none
+- **Licence tier**: free (MIT, this repo)
 - **Deploy modes**: SaaS and on-prem alike
 - **Lane**: lite
 - **Change risk**: R2 (breaking for adopters whose code trips a refusal; the changeset says how to upgrade)
