@@ -2248,7 +2248,7 @@ test("gate mirrors main's ci.yml: every dependency-scan, gate and mobile step, i
   );
   assert.match(
     installCommand(["esbuild"], [], GATE_FILTERS),
-    /--ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile esbuild$/,
+    /--ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' esbuild$/,
   );
   assert.throws(() => installCommand([], [], ["x; rm -rf /"]), /not a pnpm filter/);
 });
@@ -4138,7 +4138,10 @@ test("runJob gate: installs without the Uniwind Pro members and never lays in a 
   // the scripts-off install, then (from its committed image) main's allowed builds (round 7, M2)
   const install = calls.runs[0].at(-1);
   assert.match(install, /--filter='!@figentra\/mobile' --filter='!@figentra\/playground'$/);
-  assert.equal(calls.runs[1].at(-1), "set -e; cd /work; pnpm rebuild --ignore-pnpmfile esbuild");
+  assert.equal(
+    calls.runs[1].at(-1),
+    "set -e; cd /work; pnpm rebuild --ignore-pnpmfile --filter='!@figentra/mobile' --filter='!@figentra/playground' esbuild",
+  );
   for (const run of calls.runs.slice(0, 2)) assert.doesNotMatch(run.at(-1), /uniwind-pro|prebuilt/);
   assert.equal(calls.runs[2].at(-1), "bash /in/prepare.sh");
   const steps = calls.runs.filter((run) => / --step /.test(run.at(-1)));
@@ -6744,7 +6747,7 @@ test("B judge image: main's tree, installed offline as the gate installs, the ju
   assert.equal(JUDGE_NODE, "/judge/.stackra-node/node");
   assert.match(
     dockerfile,
-    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile --offline --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile esbuild\n/,
+    /pnpm install --frozen-lockfile --store-dir \/store --ignore-scripts --ignore-pnpmfile --offline --filter='!@figentra\/mobile' --filter='!@figentra\/playground' && pnpm rebuild --ignore-pnpmfile --filter='!@figentra\/mobile' --filter='!@figentra\/playground' esbuild\n/,
   );
   assert.doesNotMatch(dockerfile, /uniwind-pro|prebuilt/);
   assert.match(
@@ -7537,7 +7540,10 @@ test("round 7 M2: the install is two parts, scripts off first; licence-policy ju
     parts.install,
     "pnpm install --frozen-lockfile --store-dir /store --ignore-scripts --ignore-pnpmfile --filter='!@figentra/mobile' --filter='!@figentra/playground'",
   );
-  assert.equal(parts.rebuild, "pnpm rebuild --ignore-pnpmfile esbuild");
+  assert.equal(
+    parts.rebuild,
+    "pnpm rebuild --ignore-pnpmfile --filter='!@figentra/mobile' --filter='!@figentra/playground' esbuild",
+  );
   assert.equal(
     installCommand(["esbuild"], [], GATE_FILTERS),
     `${parts.install} && ${parts.rebuild}`,

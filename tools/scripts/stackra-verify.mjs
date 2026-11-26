@@ -364,9 +364,12 @@ export function installCommands(builds, licensed = LICENSED_BUILDS, filters = []
   for (const filter of filters)
     if (!FILTER.test(filter)) throw new Error(`not a pnpm filter: ${filter}`);
   const free = builds.filter((b) => !licensed.includes(b));
-  const install = [INSTALL_COMMAND, ...filters.map((f) => `--filter='${f}'`)].join(" ");
+  const filterArgs = filters.map((f) => `--filter='${f}'`);
+  const install = [INSTALL_COMMAND, ...filterArgs].join(" ");
   const steps = [];
-  if (free.length) steps.push(`pnpm rebuild --ignore-pnpmfile ${free.join(" ")}`);
+  // the same filters as the install: an unfiltered rebuild lays in every member the install left out, and their
+  // dependencies (box 1, proof 3: apps/mobile and apps/playground in the gate's install)
+  if (free.length) steps.push(["pnpm rebuild --ignore-pnpmfile", ...filterArgs, ...free].join(" "));
   for (const name of licensed.filter((l) => builds.includes(l)))
     steps.push(
       `for d in node_modules/.pnpm/${name}@*/node_modules/${name}; do [ -e "$d" ] || continue; ` +
