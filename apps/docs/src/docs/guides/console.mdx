@@ -82,6 +82,28 @@ process.exitCode = await createConsole({
 
 Running with no command lists the commands by namespace, `--help` after a command shows its arguments and options, and `--version` prints the name and version. A misspelt name suggests up to three close names. A name that is a unique abbreviation by segment runs the command, so `t:s` runs `tenant:seed`.
 
+## Run a service's or app's commands with stackra
+
+In a Stackra workspace you write no `main.ts`. `stackra gen` lists each command in a service's, app's or worker's
+`commands/` folder, and each command a package it hosts contributes, in the member's committed `stackra.manifest.json`.
+`stackra` then runs it by its own name from anywhere in the workspace, with the flags as you type them:
+
+```bash
+stackra db:status --json        # runs db:status in the member that declares it
+stackra                         # lists the commands, a member's under its own heading
+stackra db:status -- --help     # the command's own arguments and options
+```
+
+- When one member declares the command, it runs there, in the member's folder (or in the folder you stand in, when
+  that is inside the member). When several do, it runs in the member you are standing in;
+  anywhere else a terminal asks which one, and a run with no terminal (CI, a pipe, an assistant) exits 2 naming the
+  members.
+- `stackra db:status --help` shows where the command runs; `stackra db:status -- --help` hands `--help` to the command
+  itself. Everything after the name goes to the command, less the first lone `--`.
+- `stackra`'s own commands keep their names. A member command called `gen` or `db:migrate` runs only as
+  `stackra console <member> db:migrate`, which names one member's console by its folder, package name or path.
+- A package has no console of its own: its commands run in each member that hosts it.
+
 ## Output
 
 `io.output` writes in the one layout every product shares. Messages go to stdout, except warnings and errors, which go to stderr.

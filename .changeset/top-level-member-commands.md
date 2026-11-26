@@ -1,0 +1,5 @@
+---
+"@stackra/cli": minor
+---
+
+Run a member's own console commands at the top level: `stackra db:status --json` runs what `stackra console <member> db:status -- --json` ran, with the flags as typed. `stackra` reads the commands each app, service and worker declares in its committed `stackra.manifest.json` (never a package's, whose commands run in its host) and adds them beside its own, so `stackra` lists them under a heading per member and help, Tab completion and "did you mean" know them. When several members declare a name, the command runs in the member you stand in; elsewhere a terminal asks which one and a run with no terminal exits 2 naming the members and `stackra console <member> <command>`. `stackra`'s own commands keep their names, the first lone `--` is dropped as `stackra console` drops it (`stackra db:status -- --help` shows the command's own help), and a line that names a `stackra` command reads no manifest. A member's console, by either form, now runs in the member's folder (or in the folder you stand in inside it), so a command whose default folder is the current one, `db:status --cwd`, acts on its member from the workspace root.

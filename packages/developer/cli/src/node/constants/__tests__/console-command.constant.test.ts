@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `CONSOLE_COMMAND`: it runs the member's console entry with the arguments and returns its exit
- *          code, finds the member by path or by workspace folder name, exits 2 and says so when the member has no
+ *          code, runs it in the member's folder (STA-2888), finds the member by path or by workspace folder name,
+ *          exits 2 and says so when the member has no
  *          console entry, and refuses a missing or unknown member.
  * Boundary: test only; the member is a throwaway folder whose entry is a plain script, run by the real `node`.
  * Runtime: node (vitest)
@@ -86,6 +87,28 @@ describe("CONSOLE_COMMAND", () => {
   });
 
   // @covers sta-1731:FR-009
+  // @covers sta-2888:FR-007
+  it("runs the member's console in the member's folder from the workspace root, and puts the process back", async () => {
+    service(
+      "orders",
+      [
+        "const importedIn = process.cwd();",
+        "export const run = async (): Promise<number> => {",
+        "  (globalThis as { consoleFolder?: unknown }).consoleFolder = [importedIn, process.cwd()];",
+        "  return 0;",
+        "};",
+        "",
+      ].join("\n"),
+    );
+    const before = process.cwd();
+    expect(await CONSOLE_COMMAND.run(context(["orders"]).run)).toBe(0);
+    expect((globalThis as { consoleFolder?: unknown }).consoleFolder).toEqual([
+      join(root, "services", "orders"),
+      join(root, "services", "orders"),
+    ]);
+    expect(process.cwd()).toBe(before);
+  });
+
   it("finds the member by its path from the working directory too", async () => {
     service("orders", "export const run = async (): Promise<number> => 3;\n");
     expect(await CONSOLE_COMMAND.run(context(["services/orders"]).run)).toBe(3);
