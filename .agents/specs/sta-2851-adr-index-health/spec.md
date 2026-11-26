@@ -68,11 +68,13 @@ two `stackra check` rules beside `adr-numbers` (STA-1732), with new exports from
   a status outside reserved, external, proposed, accepted, deferred, rejected, superseded.
 - **AC-004**: THE `customer-adr-links` rule SHALL report a Markdown link on a customer page to an ADR that is superseded
   or rejected, or to no ADR page, with its line; links to accepted and proposed ADRs and bare "ADR NNNN" mentions pass.
-- **AC-005**: A repository without ADR pages SHALL get no `adr-index` finding; a register that does not parse SHALL be
-  left to `adr-numbers`.
-- **AC-006**: ON main after this change, `stackra check --only config` SHALL pass: every page indexed with its status,
-  the register matching, 0531 kept only as an `external` register entry, and the customer pages citing ADRs in force
-  or the release runbook.
+- **AC-005**: WHERE a repository has no ADR pages, THE `adr-index` rule SHALL report nothing; IF
+  `apps/docs/adr/numbers.yaml` does not parse THEN THE `adr-index` rule SHALL report no register finding and leave the
+  parse failure to `adr-numbers`.
+- **AC-006**: WHEN `stackra check --only config` runs on main after this change, THE config phase SHALL report no
+  `adr-numbers`, `adr-index` or `customer-adr-links` finding: every page indexed with its status, the register
+  matching, 0531 kept only as an `external` register entry, and the customer pages citing ADRs in force or the release
+  runbook.
 
 ## Status history
 
