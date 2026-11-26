@@ -181,5 +181,6 @@ None.
 - 2026-11-26 · — → Draft · spec author · written from pull request #1098's diff
 - 2026-11-26 · Draft → Clarified · spec author · questions answered from the diff and ADR 0437
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing (built on the branch, tasks ticked)
