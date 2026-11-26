@@ -6,10 +6,12 @@
  *          nullability or type change, an unmapped type, an index of another shape; implied columns and indexes are
  *          tolerated, other modules are not compared, and a difference prints as one line; a migrated pivot agrees
  *          and an absent one is missing; search columns are expected on a searchable table and undeclared elsewhere;
- *          each predicate Postgres rewrites agrees and a predicate of another meaning is `index_shape`.
+ *          each predicate Postgres rewrites agrees and a predicate of another meaning is `index_shape`; a trait's column
+ *          on a table whose model lacks the trait is undeclared, an expected `nullable: "either"` column agrees with
+ *          both, an optional index may be absent, and an expected index's access method is compared (STA-1408).
  * Boundary: test only; pure.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0159; ADR 0231; ADR 0221; STA-1808; STA-2071.
+ * Governing contract: ADR 0022 (test placement); ADR 0159; ADR 0231; ADR 0221; STA-1808; STA-2071; STA-1408.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -18,7 +20,7 @@ import { formatSchemaDifference } from "#core/functions/format-schema-difference
 import type { SchemaSnapshot } from "#core/types/schema-snapshot.type";
 
 /** A column of `tax_documents` in module `invoicing`. */
-const column = (name: string, type: string | undefined, nullable = false) => ({
+const column = (name: string, type: string | undefined, nullable: boolean | "either" = false) => ({
   schema: "invoicing",
   table: "tax_documents",
   name,
@@ -135,7 +137,7 @@ describe("diffSchemas", () => {
     );
   });
 
-  it("reports a migrated column no model declares, but not a trait's column", () => {
+  it("reports a migrated column no model declares, a trait's column included when the model lacks the trait", () => {
     const columns = [
       ...ACTUAL.columns,
       column("legacy", "text", true),
@@ -144,8 +146,79 @@ describe("diffSchemas", () => {
     ];
 
     expect(diff(EXPECTED, { ...ACTUAL, columns }).map((each) => [each.kind, each.subject])).toEqual(
-      [["undeclared_column", "legacy"]],
+      [
+        ["undeclared_column", "legacy"],
+        ["undeclared_column", "metadata"],
+        ["undeclared_column", "tree_path"],
+      ],
     );
+  });
+
+  describe("trait columns and indexes (STA-1408)", () => {
+    /** The tree index `expectedSchema` derives from `HasTree`. */
+    const TREE = {
+      schema: "invoicing",
+      table: "tax_documents",
+      name: "idx_tax_documents_tree_path",
+      columns: ["tree_path"],
+      unique: false,
+      method: "gist",
+    };
+    /** The optional GIN index of `HasMetadata`. */
+    const BAG = {
+      ...TREE,
+      name: "idx_tax_documents_metadata",
+      columns: ["metadata"],
+      method: "gin",
+    };
+    const expected: SchemaSnapshot = {
+      ...EXPECTED,
+      columns: [
+        ...EXPECTED.columns,
+        column("tree_path", "ltree", "either"),
+        column("metadata", "jsonb"),
+      ],
+      indexes: [...EXPECTED.indexes, TREE, { ...BAG, optional: true }],
+    };
+    const actual = (
+      pathNullable: boolean,
+      indexes: SchemaSnapshot["indexes"] = [...ACTUAL.indexes, TREE],
+    ): SchemaSnapshot => ({
+      ...ACTUAL,
+      columns: [
+        ...ACTUAL.columns,
+        column("tree_path", "ltree", pathNullable),
+        column("metadata", "jsonb"),
+      ],
+      indexes,
+    });
+
+    it("agrees with a trait column of either nullability, and with or without an optional index", () => {
+      expect(diff(expected, actual(false))).toEqual([]);
+      expect(diff(expected, actual(true))).toEqual([]);
+      expect(diff(expected, actual(false, [...ACTUAL.indexes, TREE, BAG]))).toEqual([]);
+    });
+
+    it("reports a trait's missing index and an index of another access method", () => {
+      expect(
+        diff(expected, actual(false, ACTUAL.indexes)).map((each) => [each.kind, each.expected]),
+      ).toEqual([["missing_index", "using gist (tree_path)"]]);
+      expect(
+        diff(expected, actual(false, [...ACTUAL.indexes, { ...TREE, method: "btree" }])).map(
+          (each) => [each.kind, each.expected, each.actual],
+        ),
+      ).toEqual([["index_shape", "using gist (tree_path)", "using btree (tree_path)"]]);
+    });
+
+    it("reports a trait column of another type", () => {
+      const columns = actual(false).columns.map((each) =>
+        each.name === "tree_path" ? { ...each, type: "text" } : each,
+      );
+
+      expect(
+        diff(expected, { ...actual(false), columns }).map((each) => [each.kind, each.subject]),
+      ).toEqual([["column_type", "tree_path"]]);
+    });
   });
 
   it("reports a nullability change and a type change", () => {

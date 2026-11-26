@@ -5,6 +5,7 @@
  *           InboundEventsController (#stackra/inbox) untouched, through answerHttp.
  * Runtime: node
  */
+import "./environment";
 import "./database";
 import { InboundEventsController } from "#stackra/inbox";
 import { api } from "encore.dev/api";

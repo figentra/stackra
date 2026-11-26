@@ -67,8 +67,12 @@ const rejection = async (load: Promise<unknown>) => {
   }
 };
 
-/** The market-packs config with `values` over the defaults. */
-const config = (values: Record<string, unknown>) => buildConfig(MarketPacksConfig, { values });
+/** The market-packs config with `values` over the defaults; `environment` is the runtime's (STA-2844). */
+const config = ({ environment, ...values }: Record<string, unknown>) =>
+  buildConfig(MarketPacksConfig, {
+    values,
+    ...(environment === undefined ? {} : { env: { STACKRA_ENVIRONMENT: environment as string } }),
+  });
 
 describe("BundledResolvedPackSourceDriver", () => {
   it("serves a pinned live pack, once", async () => {

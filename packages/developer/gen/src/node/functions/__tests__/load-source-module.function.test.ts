@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `loadSourceModule`: a typed module under `node_modules` (a registry package's shipped source)
  *          loads through a stripped copy in `.stackra/cache/sources` and resolves its bare import from the member
- *          root; a module outside `node_modules` loads directly and writes no copy.
+ *          root; a module outside `node_modules` loads directly and writes no copy, and loads anew once edited
+ *          (STA-2160).
  * Boundary: test only; writes a fixture member into a temporary folder.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 2).
+ * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 2); STA-2160.
  */
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -68,5 +69,18 @@ describe("loadSourceModule", () => {
 
     expect((await loadSourceModule(root, path))["OWN"]).toBe(1);
     expect(existsSync(join(root, ".stackra/cache"))).toBe(false);
+  });
+
+  it("loads an edited module anew in the same process, and the same content once (STA-2160)", async () => {
+    const path = write(
+      "src/modules/sales/database/migrations/0001-own.migration.ts",
+      "export const OWN = 1;\n",
+    );
+    const first = await loadSourceModule(root, path);
+    expect(first["OWN"]).toBe(1);
+    expect(await loadSourceModule(root, path)).toBe(first);
+
+    write("src/modules/sales/database/migrations/0001-own.migration.ts", "export const OWN = 2;\n");
+    expect((await loadSourceModule(root, path))["OWN"]).toBe(2);
   });
 });

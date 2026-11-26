@@ -5,10 +5,13 @@
  *          the same-module foreign key (a link has none), an `@Index` under its derived name with `unique` and
  *          `where`, a base model's fields and indexes, and no table for an abstract model; a side table has its id;
  *          an `m:n` relation gives its pivot (derived or named, a self-reference, a cross-module target, the owner's
- *          tenant column, through a base model, one table per name); `@Searchable` gives the search columns.
+ *          tenant column, through a base model, one table per name); `@Searchable` gives the search columns; a
+ *          model's traits, its own and an own base model's, give their columns and indexes over the fields they mirror
+ *          (`HasTree`, `HasMetadata`, `Versioned`, `Partitioned`), an `@Index` of the same name wins over a trait's,
+ *          and a `version` field without `Versioned` is unmapped (STA-1408).
  * Boundary: test only; pure IR in, schema out.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 28); ADR 0231; STA-1808; STA-2071.
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 20 and 28); ADR 0231; STA-1808; STA-2071; STA-1408.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -51,6 +54,7 @@ function member(
     readonly base?: string;
     readonly kind?: string;
     readonly abstract?: true;
+    readonly traits?: DeclaredClass["traits"];
   }[],
 ): MemberIR {
   const shapes = models.map((model): ShapeIR => ({
@@ -80,7 +84,7 @@ function member(
         methods: [],
         refusals: [],
         statics: {},
-        traits: [],
+        traits: model.traits ?? [],
         ...(model.base === undefined ? {} : { base: { name: model.base, from: "#x", own: true } }),
         ...(model.abstract === true ? { abstract: true as const } : {}),
       }) as DeclaredClass,
@@ -105,6 +109,14 @@ const relation = (
     options: {},
     ...extra,
   }) as RelationIR;
+
+/** A trait as discovery records it. */
+const use = (name: string, ...args: unknown[]) => ({ name, args });
+/** The columns of `table` as `[name, type, nullable]`. */
+const columnsOf = (schema: ReturnType<typeof expectedSchema>, table: string) =>
+  schema.columns
+    .filter((column) => column.table === table)
+    .map((column) => [column.name, column.type, column.nullable]);
 
 describe("expectedSchema", () => {
   it("builds a table with data and trait columns, nullability and types", () => {
@@ -441,5 +453,124 @@ describe("expectedSchema", () => {
       ["receipts", "search_text", "text", true],
       ["receipts", "search_filters", "jsonb", true],
     ]);
+  });
+
+  describe("trait columns (STA-1408)", () => {
+    it("types the columns a trait writes by the trait, over the fields the checker read", () => {
+      const schema = expectedSchema(
+        member([
+          {
+            name: "Category",
+            // As the checker reads the trait fields: `parentId: string | null`, `treePath: string`.
+            fields: [
+              ID,
+              field("name", { kind: "string" }),
+              field("parentId", { kind: "string" }, { nullable: true }),
+              field("treePath", { kind: "string" }),
+              field("metadata", { kind: "record", value: { kind: "string" } }),
+            ],
+            traits: [use("HasPublicId", "cat"), use("HasTree"), use("HasMetadata")],
+          },
+        ]),
+      );
+
+      expect(columnsOf(schema, "categories")).toEqual([
+        ["id", "varchar(33)", false],
+        ["name", "text", false],
+        ["parent_id", "varchar(33)", true],
+        ["tree_path", "ltree", "either"],
+        ["metadata", "jsonb", false],
+      ]);
+      expect(schema.indexes).toEqual([
+        {
+          schema: "billing",
+          table: "categories",
+          name: "idx_categories_tree_path",
+          columns: ["tree_path"],
+          unique: false,
+          method: "gist",
+          predicate: undefined,
+        },
+        {
+          schema: "billing",
+          table: "categories",
+          name: "idx_categories_metadata",
+          columns: ["metadata"],
+          unique: false,
+          method: "gin",
+          predicate: undefined,
+          optional: true,
+        },
+      ]);
+    });
+
+    it("expects a trait's column the checker did not read, and the traits of an own base model", () => {
+      const schema = expectedSchema(
+        member([
+          { name: "Document", fields: [ID], abstract: true, traits: [use("SoftDeletes")] },
+          { name: "Receipt", fields: [], base: "Document", traits: [use("UserStamps")] },
+        ]),
+      );
+
+      expect(columnsOf(schema, "receipts")).toEqual([
+        ["id", "varchar(33)", false],
+        ["deleted_at", "timestamptz", true],
+        ["created_by", "varchar(33)", true],
+        ["updated_by", "varchar(33)", true],
+      ]);
+    });
+
+    it("types version as integer only under Versioned, and gives Partitioned its optional BRIN index", () => {
+      const version = field("version", { kind: "number" });
+      const schema = expectedSchema(
+        member([
+          {
+            name: "Entry",
+            fields: [ID, version, field("occurredAt", { kind: "date" })],
+            traits: [use("Versioned"), use("Partitioned", { by: "occurredAt", interval: "month" })],
+          },
+          { name: "Catalogue", fields: [ID, version] },
+        ]),
+      );
+
+      expect(columnsOf(schema, "entries")).toContainEqual(["version", "integer", false]);
+      expect(columnsOf(schema, "catalogues")).toContainEqual(["version", undefined, false]);
+      expect(schema.indexes).toEqual([
+        {
+          schema: "billing",
+          table: "entries",
+          name: "idx_entries_occurred_at",
+          columns: ["occurred_at"],
+          unique: false,
+          method: "brin",
+          predicate: undefined,
+          optional: true,
+        },
+      ]);
+    });
+
+    it("lets an @Index of the same name win over a trait's index", () => {
+      const schema = expectedSchema(
+        member([
+          {
+            name: "Category",
+            fields: [ID],
+            facets: [index(["treePath"], { unique: true })],
+            traits: [use("HasTree")],
+          },
+        ]),
+      );
+
+      expect(schema.indexes).toEqual([
+        {
+          schema: "billing",
+          table: "categories",
+          name: "idx_categories_tree_path",
+          columns: ["tree_path"],
+          unique: true,
+          predicate: undefined,
+        },
+      ]);
+    });
   });
 });
