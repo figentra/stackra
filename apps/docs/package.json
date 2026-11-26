@@ -51,6 +51,7 @@
     "@mikro-orm/pglite": "catalog:",
     "@react-router/dev": "catalog:frontend",
     "@stackra/actions": "workspace:*",
+    "@stackra/app": "workspace:*",
     "@stackra/cli": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",
@@ -58,9 +59,17 @@
     "@stackra/database": "workspace:*",
     "@stackra/errors": "workspace:*",
     "@stackra/events": "workspace:*",
+    "@stackra/feature-flags": "workspace:*",
     "@stackra/filesystem": "workspace:*",
+    "@stackra/i18n": "workspace:*",
+    "@stackra/iam": "workspace:*",
+    "@stackra/identity": "workspace:*",
+    "@stackra/logger": "workspace:*",
     "@stackra/media": "workspace:*",
     "@stackra/model": "workspace:*",
+    "@stackra/notifications": "workspace:*",
+    "@stackra/queue": "workspace:*",
+    "@stackra/scope": "workspace:*",
     "@stackra/search": "workspace:*",
     "@stackra/settings": "workspace:*",
     "@stackra/tenancy": "workspace:*",
@@ -74,7 +83,8 @@
     "tailwindcss": "catalog:frontend",
     "vite": "catalog:frontend",
     "vitest": "catalog:quality",
-    "wrangler": "catalog:deploy"
+    "wrangler": "catalog:deploy",
+    "zod": "catalog:"
   },
   "engines": {
     "node": ">=24.0.0"

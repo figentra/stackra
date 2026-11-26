@@ -1,0 +1,201 @@
+---
+title: "Settings and feature flags"
+description: "Give each tenant values it can change without a deploy, and roll a new feature out to some tenants first."
+icon: "sliders-horizontal"
+---
+
+Two kinds of switch change how an app behaves without a code change. A **setting** is a value an admin owns: how many
+hours agents have to answer, whether surveys go out. Each tenant may set its own, and the platform sets the default.
+A **feature flag** is a release switch the team owns: the new inbox is on for a few tenants first, then everyone, then
+the flag is deleted. A flag is never a paid right; a paid feature is an entitlement. This guide adds one of each to
+the support module. The code is copied from `apps/docs/scripts/guides/settings-and-flags`, which the docs site's tests
+run.
+
+Read [Tenancy in an app](/build-an-app/tenancy) first. The module also depends on `@stackra/settings` and
+`@stackra/feature-flags`.
+
+## Which one?
+
+| You need                                                   | Use                                      |
+| ---------------------------------------------------------- | ---------------------------------------- |
+| a value an admin or a person changes at run time           | a setting                                |
+| a value fixed per deployment (a URL, a pool size, a limit) | configuration (`@stackra/config`)        |
+| a feature turned on gradually, then removed                | a feature flag                           |
+| something a plan pays for                                  | an entitlement (`@stackra/entitlements`) |
+| a key, a token or a password                               | a secret, never any of the above         |
+
+## 1. Declare the settings group
+
+One settings class per module. Each field is a setting; its initial value is the default:
+
+```ts src/modules/support/support.settings.ts
+import { Setting, SettingScope, Settings } from "@stackra/settings";
+import { TenancyScopes } from "@stackra/tenancy";
+import { Int } from "@stackra/validation";
+
+/** The support module's runtime values. */
+export class SupportSettings extends Settings({
+  scopes: [SettingScope.Platform, TenancyScopes.Tenant],
+}) {
+  /** Hours an agent has to answer a new ticket. */
+  @Int({
+    min: 1,
+    max: 168,
+  })
+  @Setting()
+  firstReplyHours = 24;
+
+  /** Whether a resolved ticket asks the customer to rate the answer; the apps read it too. */
+  @Setting({ client: true })
+  surveysEnabled = true;
+}
+```
+
+- `scopes` are the levels that may hold a value, outermost first: the platform, then each tenant. Add
+  `SettingScope.User` for a person's own preference.
+- `@Setting({ client: true })` lets the apps read it; `approval: true` makes a change wait for a second person;
+  `lockable` lets a level above stop the levels below from changing it.
+- From the class gen writes the group's schema (defaults and bounds), the settings page in the console, the
+  `support.settings.get|update|history|revert` operations, their permissions and the labels.
+
+## 2. Read the resolved value
+
+Code reads the whole group, resolved for a scope: the platform's value, then each node down to the tenant, an inner
+value winning:
+
+```ts src/modules/support/services/reply-deadline.service.ts
+/** First-reply deadlines. */
+export class ReplyDeadlineService extends Service {
+  /** Reads the resolved settings. */
+  private readonly settings: SettingsReader;
+
+  /**
+   * @param settings - reads the resolved settings.
+   */
+  constructor(settings: SettingsReader) {
+    super();
+    this.settings = settings;
+  }
+
+  /** When the first answer to a ticket opened at `openedAt` in `scope` is due. */
+  async dueAt(openedAt: Date, scope: ScopeRef): Promise<Date> {
+    const { firstReplyHours } = await this.settings.get(SupportSettings, { scope });
+    return new Date(openedAt.getTime() + firstReplyHours * HOUR);
+  }
+}
+```
+
+The scope comes from the running call (`ctx.scope` in an action), never from input. The answer is an instance of
+`SupportSettings`, parsed by its schema, so an unset field reads its default.
+
+## 3. Let a tenant change it
+
+An admin changes a value on the generated settings page, which writes through the `update` operation at their
+tenant's node. The change reaches that tenant only:
+
+```ts
+const settings = new SettingsReader(new MemorySettingValueStoreDriver());
+const deadlines = new ReplyDeadlineService(settings);
+const opened = new Date("2026-11-26T09:00:00Z");
+
+expect(await deadlines.dueAt(opened, ACME)).toEqual(new Date("2026-11-27T09:00:00Z"));
+
+// what the generated `support.settings.update` operation does for an Acme admin
+await settings.write(SupportTenantPage, { firstReplyHours: 4 }, { scope: ACME });
+
+expect(await deadlines.dueAt(opened, ACME)).toEqual(new Date("2026-11-26T13:00:00Z"));
+expect(await deadlines.dueAt(opened, GLOBEX)).toEqual(new Date("2026-11-27T09:00:00Z"));
+```
+
+A new platform default reaches every tenant that has not set its own:
+
+```ts
+const platformPage = settingsPage("support", { scope: SettingScope.Platform });
+await settings.write(platformPage, { firstReplyHours: 48 });
+
+expect(await deadlines.dueAt(opened, GLOBEX)).toEqual(new Date("2026-11-28T09:00:00Z"));
+expect(await deadlines.dueAt(opened, ACME)).toEqual(new Date("2026-11-26T13:00:00Z"));
+```
+
+A value outside the setting's bounds, and a write at a level the setting does not list, are refused before anything
+is stored:
+
+```ts
+const tooLong = settings.write(SupportTenantPage, { firstReplyHours: 500 }, { scope: ACME });
+await expect(tooLong).rejects.toSatisfy((error) => isRefusal(error, SettingValueInvalidError));
+
+const forAda = settings.write(SupportTenantPage, { firstReplyHours: 2 }, { user: ADA });
+await expect(forAda).rejects.toSatisfy((error) => isRefusal(error, SettingScopeRefusedError));
+```
+
+In production the store is Postgres (`settings.store: postgres` in the runway values). Each write is a revision with
+its author, so `history` and `revert` work, and a market pack can set a legal floor a tenant cannot go below. In a
+module's tests, `fakeSettings([[SupportSettings, { firstReplyHours: 4 }]])` from `@stackra/settings/testing` replaces
+the reader.
+
+## 4. Declare a feature flag
+
+One `<name>.flag.ts` per flag, with its default and the day it must be gone:
+
+```ts src/modules/support/access/new-inbox.flag.ts
+import { Flag } from "@stackra/feature-flags";
+
+/** The rebuilt agent inbox; off until the rollout reaches a tenant. */
+export class NewInboxFlag extends Flag({
+  default: false,
+  expires: "2027-03-31",
+}) {}
+```
+
+Gen derives the key `support.new_inbox` and writes the typed reference `Flags.support.new_inbox` into
+`#stackra/flags`. A lint rule refuses a flag named after a plan, a tier or an entitlement.
+
+## 5. Roll it out per tenant
+
+Flag values come from a provider: `config` reads fixed values from configuration (development, on-premises), and
+`posthog` asks PostHog. Split by tenant, a rollout turns the flag on for whole tenants at a time:
+
+```ts src/config/feature-flags.config.ts
+/** Flags from PostHog, targeted per tenant. */
+export class FeatureFlagsConfig extends BaseFeatureFlagsConfig {
+  override provider: DriverName<FlagProvider> = "posthog";
+
+  override targeting: FlagTargeting = FlagTargeting.Scope;
+}
+```
+
+The PostHog project key is public and comes from the app's env configuration. In PostHog, release the flag
+`support-new_inbox` (PostHog keys cannot hold a dot) to the tenants you choose. The reader sends the tenant as the
+group, and answers the flag's default until the provider says otherwise:
+
+```ts
+const config = buildConfig(FeatureFlagsConfig, { values: { posthogKey: "phc_guide_dummy" } });
+const flags = new FlagReader(config, new PosthogFlagProviderDriver(config));
+
+expect(flags.get(Flags.support.new_inbox)).toBe(false); // the declared default
+
+await flags.load({ visitor: null, user: ADA, scope: ACME.id });
+expect(flags.get(Flags.support.new_inbox)).toBe(true);
+
+await flags.load({ visitor: null, user: BEN, scope: GLOBEX.id });
+expect(flags.get(Flags.support.new_inbox)).toBe(false);
+```
+
+In a screen, `useFlag(Flags.support.new_inbox)` reads the same reader, which the app's flags context loads for the
+signed-in session and refreshes every `refreshEvery`. With no subject (nobody signed in, no consent) PostHog is never
+asked and every flag keeps its default. In a test, set the value directly:
+
+```ts
+const flags = fakeFlags((fake) => fake.set(Flags.support.new_inbox, true));
+expect(flags.get(Flags.support.new_inbox)).toBe(true);
+```
+
+## Rules
+
+- A setting is never a secret: a credential is a secret, and a setting that names one holds a connection's id.
+- Read settings for the call's scope; never take a tenant or a scope from input to choose whose values apply.
+- A flag hides or shows; the server still checks permissions and entitlements on every call.
+- Every flag has an `expires` day. When the rollout reaches everyone, delete the flag and the old code path.
+- Never target a flag by plan: that is an entitlement.
+
+Next: [Observability](/build-an-app/observability) shows what the app is doing in production.

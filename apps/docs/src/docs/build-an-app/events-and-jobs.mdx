@@ -1,0 +1,232 @@
+---
+title: "Events and background jobs"
+description: "Publish an event when something happens, react to it in a listener after the commit, and run slow work as a queued job with retries and a dead-letter queue."
+icon: "workflow"
+---
+
+An action should finish fast and commit once. Anything another part of the app reacts to goes out as an **event**,
+and anything slow or flaky (a call to another company's API, a report, an export) runs as a **job** on a queue. This
+guide escalates a support ticket: the action publishes `TicketEscalated`, a listener pages whoever is on call for an
+outage, and a job files the full report with the on-call tool, retrying while the tool is down. The code is copied from
+`apps/docs/scripts/guides/events-and-jobs`, which the docs site's tests run.
+
+Read [Sign-in and permissions](/build-an-app/sign-in-and-permissions) first. The module also depends on
+`@stackra/events`, `@stackra/outbox` and `@stackra/queue`.
+
+## How it works
+
+1. An event is written to the **outbox** in the same transaction as the action's writes. If the call rolls back, the
+   event never existed.
+2. The **relay** publishes committed outbox rows, and each service's **inbox** hands an event to its listeners once
+   per event id, in the call's tenant, as the call's actor. Listeners run after the commit, never inside it, and a
+   failing listener never fails the action that published.
+3. A **job** is an action with a `job` option. The queue stores it (in Postgres by default, `queue.jobs`, leased with
+   `SKIP LOCKED`), and a worker runs each attempt through the action pipeline, in the scope of the call that queued
+   it, with a timeout, retries with backoff and jitter, and a dead-letter queue.
+
+## 1. Declare the event
+
+An event's fields are its payload: ids and codes, never a person's data. The id, time, tenant and actor travel beside
+it:
+
+```ts src/modules/support/events/ticket-escalated.event.ts
+import { IntegrationEvent } from "@stackra/events";
+
+/** A ticket was handed to the on-call team. */
+export class TicketEscalated extends IntegrationEvent({ name: "ticket.escalated" }) {
+  /** The escalated ticket. */
+  ticketId!: string;
+
+  /** Why: `outage`, `security` or `vip`. */
+  reason!: string;
+}
+```
+
+Gen adds the module and the version, so it leaves as `support.ticket.escalated.v1`. An `IntegrationEvent` can reach
+other services, webhooks and live screens; a `DomainEvent` stays in the service. When the event is a model's own
+change, record it on the model (`ticket.record(TicketEscalated.create({ ... }))`) and the unit of work writes it at
+commit.
+
+## 2. Publish it and queue the slow work
+
+This event belongs to no model (an escalation is a notice, not a change to the ticket), so the action publishes it:
+
+```ts src/modules/support/actions/escalate-ticket.action.ts
+/** Hands a ticket to the on-call team. */
+export class EscalateTicketAction extends Action({
+  key: "ticket.escalate",
+  actors: [ActorKind.User],
+}) {
+  /** Publishes the event now and queues the report for after the commit. */
+  async handle(
+    input: { ticketId: string; reason: string },
+    ctx: ActionContext,
+  ): Promise<{ ticketId: string }> {
+    await ctx.publish(TicketEscalated.create({ ticketId: input.ticketId, reason: input.reason }));
+    ctx.afterCommit(() => ctx.dispatch(SendEscalationReportAction, { ticketId: input.ticketId }));
+    return { ticketId: input.ticketId };
+  }
+}
+```
+
+`ctx.publish` writes to the outbox in the call's transaction. `ctx.dispatch` queues a job in the call's scope, with
+the caller as the one it acts for; call it from `ctx.afterCommit`, so nothing is queued for a call that rolls back. No
+external call runs inside `handle`.
+
+## 3. React in a listener
+
+The type of `handle`'s first parameter is the subscription. Gen reads it and registers the listener:
+
+```ts src/modules/support/listeners/page-on-call.listener.ts
+/** Pages on call when an outage is escalated. */
+export class PageOnCallListener extends Listener {
+  /** The on-call tool. */
+  private readonly desk: EscalationDesk;
+
+  /**
+   * @param desk - the on-call tool.
+   */
+  constructor(desk: EscalationDesk) {
+    super();
+    this.desk = desk;
+  }
+
+  /** Pages for an outage; other reasons wait for the report. */
+  async handle(event: TicketEscalated, ctx: ListenerContext): Promise<void> {
+    if (event.reason !== "outage") return;
+    await this.desk.page(event.ticketId, event.reason);
+    ctx.audit({ ticketId: event.ticketId });
+  }
+}
+```
+
+`EscalationDesk` is a port, the guide's on-call tool; the host binds a driver for its own tool. A listener reads the
+committed state (load the row by id), never what the action held in memory. Another service subscribes the same way,
+importing the event class from its generated client (`#stackra/clients/support`).
+
+## 4. Write the job
+
+A job is an action whose `job` option says how it runs in the background:
+
+```ts src/modules/support/actions/send-escalation-report.action.ts
+/** Files an escalation report in the background. */
+export class SendEscalationReportAction extends Action({
+  key: "escalation.send_report",
+  actors: [ActorKind.Job],
+  job: {
+    queue: Queues.Support,
+    retries: 4,
+    backoff: Backoff.Exponential,
+    timeout: "PT1M",
+    deadLetter: true,
+    onDeadLetter: "markUnsent",
+  },
+}) {
+  /** The on-call tool. */
+  private readonly desk: EscalationDesk;
+
+  /**
+   * @param desk - the on-call tool.
+   */
+  constructor(desk: EscalationDesk) {
+    super();
+    this.desk = desk;
+  }
+
+  /** One attempt: files the report, or throws so the queue retries. */
+  async handle(input: { ticketId: string }): Promise<void> {
+    await this.desk.report(input.ticketId);
+  }
+
+  /** Called once, after the last attempt failed: a person follows the ticket up instead. */
+  async markUnsent(input: { ticketId: string }): Promise<void> {
+    await this.desk.page(input.ticketId, "report_failed");
+  }
+}
+```
+
+- `Queues` comes from `#stackra/queues`, which gen writes from the queues your jobs name.
+- A refusal that is not retryable ends the job at once; any other error, a timeout included, is retried while
+  attempts remain. Here: the first attempt and four retries, exponential waits between them.
+- After the last attempt, a `deadLetter: true` job waits in the dead-letter queue and `onDeadLetter` runs once.
+- Every attempt carries an idempotency key, so an attempt that ran but was not recorded replays instead of running
+  twice. Write `handle` so running it twice is harmless anyway.
+- `unique: true` keeps one job per scope waiting or running; `cron: { schedule }` runs the job on a schedule.
+
+## 5. Test it
+
+`run` calls the action through the real pipeline of a testing app compiled with
+`createTestingModule(SupportModule).useDrivers("memory").compile()`, and its result carries the events the call
+published:
+
+```ts
+const escalated = await run(
+  EscalateTicketAction,
+  { ticketId: TICKET, reason: "outage" },
+  { as: actors.staff() },
+);
+expect(escalated.output).toEqual({ ticketId: TICKET });
+expect(escalated).toRecord(TicketEscalated, { ticketId: TICKET, reason: "outage" });
+```
+
+Nothing has run yet. `drainOutbox()` plays the relay and the inbox, and `drainQueue()` the worker:
+
+```ts
+expect(desk.pages).toEqual([]); // nothing ran inside the call
+
+await drainOutbox(); // the relay hands the committed event to the listener
+expect(desk.pages).toEqual([`${TICKET}:outage`]);
+expect(app.listeners.calls(PageOnCallListener)).toHaveLength(1);
+
+await drainQueue(); // the worker runs the job the action queued after its commit
+expect(desk.reports).toEqual([TICKET]);
+```
+
+`runJob` runs one job through all its attempts without waiting for the backoff. With the tool down, the job ends in
+the dead-letter queue and pages once:
+
+```ts
+desk.down = true;
+const job = await runJob(SendEscalationReportAction, { ticketId: TICKET });
+
+expect(job).toDeadLetter({ attempts: 5 }); // the first attempt and four retries
+expect(job.runs.map((attempt) => attempt.outcome)).toEqual([
+  JobOutcome.Retried,
+  JobOutcome.Retried,
+  JobOutcome.Retried,
+  JobOutcome.Retried,
+  JobOutcome.DeadLettered,
+]);
+expect(desk.pages).toEqual([`${TICKET}:report_failed`]); // markUnsent, once
+```
+
+Once the tool is back, redrive the dead letters; each runs again with all its attempts:
+
+```ts
+desk.down = false;
+const queue = app.get(QueueService);
+for (const parked of await queue.deadLetters("support")) await queue.redrive(parked.id);
+await drainQueue();
+expect(desk.reports).toEqual([TICKET]);
+```
+
+The same test checks that a failing listener is recorded as a failed delivery while the action still succeeds.
+
+## Running it
+
+A service's generated boot connects the listeners and the outbox relay. Run the workers with
+`QueueWorkerService.work(queue, { concurrency, signal })` of `@stackra/queue/node`, or set `queue.driver: broker` for
+Encore Pub/Sub, where the generated subscription runs each job. Bind `QueueHealthIndicatorDriver` and `/readyz` fails
+while the queue does not answer. The [Observability](/build-an-app/observability) guide covers readiness and what the
+deployed stack monitors.
+
+## Rules
+
+- No external call inside a transaction: publish an event, or queue a job from `ctx.afterCommit`.
+- Events carry ids and codes. A listener loads what it needs.
+- Every listener and job must be safe to run twice: delivery is at least once.
+- A job that must never be lost declares `deadLetter: true` and an `onDeadLetter` that tells a person.
+- One tenant must not starve the others: a noisy job takes a per-scope cap or a throttle (the `@stackra/queue` README,
+  "Fair queues, throttles, batches and chains").
+
+Next: [Notifications](/build-an-app/notifications) tells a person what happened.

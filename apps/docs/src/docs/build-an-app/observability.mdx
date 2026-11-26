@@ -1,0 +1,224 @@
+---
+title: "Observability"
+description: "Log structured lines, count and time work, trace it across services, keep personal data out, and tell the platform when the app is ready."
+icon: "activity"
+---
+
+When something goes wrong in production you need to know what the app did, how often, how fast, and whether it can
+work at all. Stackra gives every service the same three signals, logs, metrics and traces, sent to one OpenTelemetry
+collector, plus a readiness check the deploy waits on. This guide instruments ticket triage and adds a readiness check
+for the support mailbox. The code is copied from `apps/docs/scripts/guides/observability`, which the docs site's tests
+run.
+
+Read [Sign-in and permissions](/build-an-app/sign-in-and-permissions) first. The module uses the `Logger`, `Metrics`,
+`Tracer` and `HealthIndicator` ports of `@stackra/contracts`; `@stackra/logger` ships their drivers.
+
+## What you get without writing code
+
+- **A span per call.** With a `Tracer` bound, every action and query runs in a span named `action <key>` or
+  `query <key>`, carrying the call id, the caller's kind and id, the scope, the origin, the outcome and the latency:
+  ids and codes only, never input or output.
+- **The caller's trace.** The server joins an inbound `traceparent` and stamps each span with the edge's request id,
+  so a call's spans sit in the trace of the request that made it.
+- **Readiness.** `GET /readyz` runs every bound health check (database, cache, queue, search, storage and your own) and
+  answers 503 when a critical one is down.
+- **Monitors.** The observability stack (`@stackra/infra-observability`) declares the log pipeline, an error-tracking
+  project per app, a heartbeat monitor per cron, outbox relay and queue worker, and uptime monitors for the public URLs
+  the runway lists.
+
+## 1. Instrument your own work
+
+Take the ports in the constructor and use them; which driver sends the data is configuration:
+
+```ts src/modules/support/services/ticket-triage.service.ts
+/** Routes new tickets, observably. */
+export class TicketTriageService extends Service {
+  /** Structured logs. */
+  private readonly logger: Logger;
+
+  /** Counters and histograms. */
+  private readonly metrics: Metrics;
+
+  /** Spans. */
+  private readonly tracer: Tracer;
+
+  /**
+   * @param logger - structured logs.
+   * @param metrics - counters and histograms.
+   * @param tracer - spans.
+   */
+  constructor(logger: Logger, metrics: Metrics, tracer: Tracer) {
+    super();
+    this.logger = logger;
+    this.metrics = metrics;
+    this.tracer = tracer;
+  }
+
+  /** The queue a ticket goes to: `on_call` for an urgent one, `general` otherwise. */
+  triage(ticketId: string, priority: string): Promise<string> {
+    return this.tracer.span("support.triage", { ticketId, priority }, async (span) => {
+      const started = performance.now();
+      const queue = priority === "urgent" ? "on_call" : "general";
+      span.set({ queue });
+      this.metrics.counter("support.tickets_triaged", 1, { queue });
+      this.metrics.histogram("support.triage_ms", performance.now() - started, { queue });
+      this.logger.info("support.ticket_triaged", { ticketId, queue });
+      return queue;
+    });
+  }
+}
+```
+
+- A log line is an **event name** (`<channel>.<what_happened>`, snake_case) and **fields**, never a sentence. The
+  channel is the first segment (`support`), and `logger.logging.channels.support` can set its own level.
+- A span nests under the span running when it starts, so the triage shows inside the action's span in the trace.
+- Metric and attribute values are ids and codes. A label with one value per person or per ticket (a ticket id on a
+  counter) makes a series per value: keep those on spans and logs.
+
+## 2. Send it to the collector
+
+A deployment sets `logger.logging.reporter: otlp` and the collector's endpoint and service name (`logger.otlp`) in its
+runway values, and binds the `otlp` `Tracer` and `Metrics` drivers. The collector's headers, when it needs any, are
+one secret, `OTEL_EXPORTER_OTLP_HEADERS`. The guide's test builds the same drivers by hand:
+
+```ts
+const otlp = buildConfig(OtlpConfig, {
+  values: { endpoint: "https://otel.support.example", serviceName: "support" },
+});
+const secrets = new MemorySecretStoreDriver(); // OTEL_EXPORTER_OTLP_HEADERS, when the collector needs them
+const reporter = new OtlpLogReporterDriver(otlp, secrets);
+const logger = new ChannelLoggerDriver(
+  buildConfig(LoggingConfig),
+  reporter,
+  new SystemClockDriver(),
+);
+const metrics = new OtlpMetricsDriver(otlp, secrets);
+const tracer = new OtlpTracerDriver(otlp, secrets);
+```
+
+and checks what a collector receives for one triage:
+
+```ts
+const triage = new TicketTriageService(logger, metrics, tracer);
+expect(await triage.triage(TICKET, "urgent")).toBe("on_call");
+await flush(); // a request's end, or shutdown, flushes in a deployed service
+
+expect(collector.spans()).toEqual([
+  {
+    name: "support.triage",
+    attributes: { ticketId: TICKET, priority: "urgent", queue: "on_call" },
+  },
+]);
+expect(collector.metrics()).toMatchObject({
+  "support.tickets_triaged": 1,
+  "support.triage_ms": 0,
+});
+expect(collector.logs()).toEqual([
+  {
+    event: "support.ticket_triaged",
+    fields: { "log.channel": "support", ticketId: TICKET, queue: "on_call" },
+  },
+]);
+```
+
+The drivers batch and send in the background; a collector that fails never reaches the traced code, and a lost batch
+is counted, not retried forever. Locally the default `console` reporter writes one JSON line per log.
+
+## 3. Keep personal data out
+
+Log ids, never people. Redaction is the safety net, not the plan: before any reporter sees a line, a field whose name
+ends with a credential or personal-data name (`password`, `token`, `email`, `phone`, ...) is masked, as are bearer
+tokens, JWTs and API keys inside any string:
+
+```ts
+logger.warn("support.reply_bounced", { ticketId: TICKET, customerEmail: "ada@example.com" });
+await flush();
+
+const [line] = collector.logs();
+expect(line?.fields["ticketId"]).toBe(TICKET);
+expect(line?.fields["customerEmail"]).not.toBe("ada@example.com");
+expect(JSON.stringify(collector.logs())).not.toContain("ada@example.com");
+```
+
+Add your own field names to `logger.logging.redaction.extraFields` when a module holds other personal fields.
+
+## 4. Tell the platform when you are ready
+
+A dependency your app cannot work without gets a health check. It is a `HealthIndicator` driver, which `/readyz`
+finds among the bound indicators:
+
+```ts src/modules/support/drivers/support-mailbox-health-indicator.driver.ts
+/** Whether the support mailbox answers. */
+export class SupportMailboxHealthIndicatorDriver extends Driver(HealthIndicator) {
+  /** The probe's name in the `/readyz` body. */
+  override readonly name = "support_mailbox";
+
+  /** The mailbox it probes. */
+  private readonly mailbox: SupportMailbox;
+
+  /**
+   * @param mailbox - the mailbox it probes.
+   */
+  constructor(mailbox: SupportMailbox) {
+    super();
+    this.mailbox = mailbox;
+  }
+
+  /** Up when the mailbox answers in time, down otherwise. */
+  override async check(): Promise<HealthReport> {
+    const started = performance.now();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const late = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("timed out")), Duration.toMilliseconds(TIMEOUT));
+    });
+    try {
+      await Promise.race([this.mailbox.ping(), late]);
+      return {
+        status: HealthStatus.Up,
+        latency: Duration.seconds((performance.now() - started) / 1000),
+      };
+    } catch (error) {
+      return {
+        status: HealthStatus.Down,
+        detail: `mailbox unreachable (${(error as Error).name})`,
+      };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+```
+
+`/readyz` answers each check's status by name, and never its detail, so the body says which dependency failed without
+leaking why:
+
+```ts
+const mailbox = new StandInMailboxDriver();
+const app = await createApp(SupportModule, {
+  wiring,
+  health: [new SupportMailboxHealthIndicatorDriver(mailbox)],
+});
+
+expect(await app.probe("GET", "/readyz")).toEqual({
+  status: 200,
+  body: { support_mailbox: "up" },
+});
+
+StandInMailboxDriver.up = false;
+expect(await app.probe("GET", "/readyz")).toEqual({
+  status: 503,
+  body: { support_mailbox: "down" },
+});
+```
+
+Answer `HealthStatus.Degraded` instead of `Down` for a dependency the app can limp without: it is reported and stays
+ready. A deploy that checks `/readyz` then fails a release whose critical dependency does not answer.
+
+## Rules
+
+- Logs are events with fields, metrics and spans carry ids and codes, and nothing carries a person's data.
+- Code depends on the ports only; the drivers and where they send are configuration.
+- Every dependency the app cannot work without has a health check, and every check has a timeout.
+- Errors and crashes go to error tracking through the `ErrorReporter`, never a `console.log`.
+
+Back to the [Build an app](/build-an-app/models-and-migrations) guides.

@@ -5,10 +5,12 @@
  *          run of lines of an example or support file (a block titled with a file name must come from a file of that
  *          name) or a whole `// #region` of one, dedented; every SQL block is a run of the statements the guide's
  *          migrations compile to. A page block that no longer matches its example fails here, so the page cannot
- *          drift from the code the guide's tests run.
+ *          drift from the code the guide's tests run. The second set of guides (STA-2852) has no migrations, so its pages
+ *          hold TypeScript blocks only.
  * Boundary: test only; reads the pages and the example files, compiles the migrations (pure, no database).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0159 (the compiled SQL); STA-2843 (tested task guides).
+ * Governing contract: ADR 0022 (test placement); ADR 0159 (the compiled SQL); STA-2843 (tested task guides);
+ *                     STA-2852 (task guides II).
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -129,9 +131,19 @@ const pages = existsSync(PAGES)
   : [];
 
 describe("task guide pages", () => {
-  it("are there, four of them at least", () => {
+  it("are there, the nine of the two sets at least", () => {
     expect(pages).toEqual(
-      expect.arrayContaining(["models-and-migrations", "tenancy", "files", "search"]),
+      expect.arrayContaining([
+        "models-and-migrations",
+        "tenancy",
+        "files",
+        "search",
+        "sign-in-and-permissions",
+        "events-and-jobs",
+        "notifications",
+        "settings-and-flags",
+        "observability",
+      ]),
     );
   });
 
