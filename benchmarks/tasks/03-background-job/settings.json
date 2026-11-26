@@ -1,0 +1,5 @@
+{
+  "env": {
+    "ARCHIVE_AFTER_SECONDS": "2"
+  }
+}

@@ -13,7 +13,7 @@
     "gen:workspace": "node packages/developer/cli/dist/stackra.mjs gen",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint && pnpm lint:root",
-    "lint:root": "oxlint tools/scripts .agents/hooks .opencode/plugins",
+    "lint:root": "oxlint tools/scripts benchmarks .agents/hooks .opencode/plugins",
     "format": "oxfmt --write . && git ls-files -z '*.sh' ':!.flow/**' | xargs -0 shfmt -w",
     "format:check": "oxfmt --check . && git ls-files -z '*.sh' ':!.flow/**' | xargs -0 shfmt -d",
     "test": "turbo run test",
@@ -89,7 +89,8 @@
         ".notes": "the private owner-only notes submodule",
         "THIRD_PARTY_NOTICES.md": "the notices of code the published packages carry",
         "TRADEMARKS.md": "the Stackra trademark policy of the public framework",
-        "apps": "the published docs site and the console and mobile reference apps (ADR 0526 d2, d3)"
+        "apps": "the published docs site and the console and mobile reference apps (ADR 0526 d2, d3)",
+        "benchmarks": "the AI-era benchmark harness: plain Node scripts and data, not a workspace member (STA-2709)"
       }
     }
   }

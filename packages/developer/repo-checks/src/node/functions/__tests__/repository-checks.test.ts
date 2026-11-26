@@ -662,6 +662,25 @@ test("checkJsonConfigs: a service's assets/defaults JSON stays JSON (imported as
   assert.equal(checkJsonConfigs(["services/notifications/config.json"]).length, 1);
 });
 
+test("checkJsonConfigs: the benchmark harness's framework, agent-script and settings JSON stay JSON (read with JSON.parse)", () => {
+  assert.deepEqual(
+    checkJsonConfigs([
+      "benchmarks/baselines/nestjs/framework.json",
+      "benchmarks/baselines/reference/framework.json",
+      "benchmarks/baselines/nestjs/solutions/01-add-a-field/agent-script.json",
+      "benchmarks/baselines/reference/solutions/05-business-rule-across-layers/agent-script.json",
+      "benchmarks/tasks/02-authenticated-endpoint/settings.json",
+    ]),
+    [],
+  );
+  // The entry is those three names only: any other JSON in the harness is still a finding.
+  assert.equal(checkJsonConfigs(["benchmarks/runner/limits.json"]).length, 1);
+  assert.equal(
+    checkJsonConfigs(["benchmarks/tasks/02-authenticated-endpoint/other.json"]).length,
+    1,
+  );
+});
+
 test("checkYamlFlowMaps: reads every document of a multi-document file (a Maestro flow)", () => {
   const flow = "appId: com.figentra.os\n---\n- launchApp\n- tapOn:\n    text: Sign in\n";
   assert.deepEqual(checkYamlFlowMaps("flow.yaml", flow), []);

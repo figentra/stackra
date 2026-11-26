@@ -74,6 +74,10 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /^packages\/[\w-]+\/[\w-]+\/showcase\/[\w-]+\.json$/,
     "a module UI kit's showcase entry; the showcase gen-barrel (load-kit-entries) JSON.parses it (ADR 0504)",
   ],
+  [
+    /^benchmarks\/(?:baselines\/[\w-]+\/(?:framework|solutions\/[\w-]+\/agent-script)|tasks\/[\w-]+\/settings)\.json$/,
+    "the benchmark runner (benchmarks/runner, plain Node with no dependency, STA-2709) reads these with JSON.parse: Node has no YAML parser, and JSON.parse rejects the comments a .jsonc name promises",
+  ],
   [/^\.github\/branch-protection\.json$/, "GitHub REST API payload"],
   [/^\.github\/rulesets\/[\w-]+\.json$/, "GitHub REST ruleset payload (PUT …/rulesets/<id>)"],
   [
