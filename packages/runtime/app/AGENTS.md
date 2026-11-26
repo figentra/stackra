@@ -57,6 +57,9 @@ note).
   the boot connects with its service's Encore database url (STA-1401), and the migrate and seed CLIs use
   `directDatabaseUrl()` of `@stackra/database/node` (ADR 0473), so nothing here reads `DATABASE_URL`.
 - Report each unexpected error once through the `ErrorReporter`; never report a refusal.
+- The server drain is bounded by `HttpConfig.drainTimeoutSeconds` (ADR 0143 decision 3): at the deadline `drain()`
+  reports one `DrainTimeoutError` (a count, never a call's data) and resolves, so `close()` still runs the shutdown
+  hooks. Never wait on calls in flight without that deadline.
 - No rate-limit code here: the area bucket per tenant lives in the `@stackra/actions` pipeline (`RateLimitBudget`);
   this package only forwards the verified tenant from the signed edge headers.
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).
