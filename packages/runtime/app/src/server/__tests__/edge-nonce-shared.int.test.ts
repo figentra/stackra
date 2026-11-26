@@ -5,7 +5,7 @@
  *          tables; a signed request accepted by one instance is refused as a replay by the other, concurrent deliveries
  *          of one signed request to both instances let exactly one through, and a request id is free again once its
  *          claim's row has expired.
- * Boundary: integration tier (`.int`): needs Postgres for `usePostgres` (Testcontainers). The cache tables are made with
+ * Boundary: integration tier (`.int`): needs Postgres for `usePostgres` (Testcontainers). The `cache` schema and its tables are made with
  *           `postgresCacheTables("cache")`; `CacheSql` runs each statement on a forked entity manager, outside any
  *           transaction, as @stackra/database binds it. The signing keys are test strings, never secrets.
  * Runtime: node (vitest)
@@ -63,6 +63,8 @@ class ShiftedClock extends Clock {
 const clock = new ShiftedClock();
 
 beforeAll(async () => {
+  // raw-sql: test setup; the schema the 0005 migration of @stackra/database makes in a service
+  await new TestCacheSql().query('create schema if not exists "cache"', []);
   for (const { statement } of postgresCacheTables("cache"))
     await new TestCacheSql().query(statement, []);
 });
