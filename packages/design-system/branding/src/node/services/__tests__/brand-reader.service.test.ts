@@ -16,7 +16,7 @@ import { Clock } from "@stackra/contracts";
 import type { PublicId, ScopeRef } from "@stackra/contracts";
 import { FilesystemConfig, MemoryFileSystemDriver } from "@stackra/filesystem";
 import { Locale } from "@stackra/i18n";
-import { MediaConfig, MediaLibrary, MediaType } from "@stackra/media";
+import { MediaConfig, MediaLibrary, MediaType, MemoryFileScannerDriver } from "@stackra/media";
 import { MemorySettingValueStoreDriver, SettingsReader } from "@stackra/settings";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -49,7 +49,12 @@ function setup() {
   );
   const store = new MemorySettingValueStoreDriver();
   const reader = new BrandReader(new SettingsReader(store), store, disk);
-  return { disk, store, reader, media: new MediaLibrary(disk, buildConfig(MediaConfig), clock) };
+  return {
+    disk,
+    store,
+    reader,
+    media: new MediaLibrary(disk, buildConfig(MediaConfig), clock, new MemoryFileScannerDriver()),
+  };
 }
 
 /** `BrandReader`. */

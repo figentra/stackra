@@ -60,6 +60,20 @@
   ],
   "errors": [
     {
+      "code": "file_blocked",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "media",
+      "class": "FileBlockedError"
+    },
+    {
+      "code": "scan_pending",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "media",
+      "class": "ScanPendingError"
+    },
+    {
       "code": "upload_bucket_mismatch",
       "kind": "validation",
       "category": "validation",
@@ -274,6 +288,12 @@
           "class": {
             "name": "Clock",
             "from": "@stackra/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "FileScanner",
+            "from": "@stackra/media/contracts"
           }
         }
       ]

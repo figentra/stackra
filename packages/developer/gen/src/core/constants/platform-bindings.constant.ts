@@ -9,7 +9,8 @@
  *          numbers), `SettingsReader` with the market floor source, so the default reader of every service lifts a
  *          value below a legal floor, `SettingsResolver`, and `RuleSetService` over content's revisions repository, so
  *          a service that injects it gets the rules node without wiring it by hand, and `MediaLibrary` over the
- *          `FileSystem` disk and its config (STA-1297; ADR 0465 folded `MediaDisk` into `FileSystem`), and the workflow
+ *          `FileSystem` disk, its config, the clock and the `FileScanner` `media.scanner` picks (STA-1297; ADR 0465
+ *          folded `MediaDisk` into `FileSystem`; STA-669: the ADR 0222 scan gate), and the workflow
  *          node's `AutomationService`, `ChecklistService` and `ServiceAckService` (the waiting side of the cross-service
  *          ack a provisioning workflow injects; STA-1708).
  * Boundary: a frozen map keyed by `<package>#<Class>`; each value lists the constructor tokens in parameter order:
@@ -63,6 +64,7 @@ export const PLATFORM_BINDINGS: Readonly<Record<string, readonly (ClassRef | Tok
       { name: "FileSystem", from: "@stackra/filesystem/contracts" },
       { name: "MediaConfig", from: "@stackra/media" },
       { name: "Clock", from: "@stackra/contracts" },
+      { name: "FileScanner", from: "@stackra/media/contracts" },
     ],
     "@stackra/rules#RuleSetService": [
       {

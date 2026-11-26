@@ -19,6 +19,7 @@ import { afterEach, describe, expect, it } from "@stackra/testing";
 import { MediaConfig } from "#config/media.config";
 import { Bucket } from "#core/bases/bucket.base";
 import { BUCKET_REGISTRY } from "#core/constants/bucket-registry.constant";
+import { MemoryFileScannerDriver } from "#core/drivers/memory-file-scanner.driver";
 import { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 import { MediaType } from "#core/enums/media-type.enum";
 import { UploadRejectedError } from "#core/errors/upload-rejected.error";
@@ -54,7 +55,9 @@ let disk = new MemoryFileSystemDriver(buildConfig(FilesystemConfig), new FixedCl
 function action(): CreateUploadAction {
   const clock = new FixedClock();
   disk = new MemoryFileSystemDriver(buildConfig(FilesystemConfig), clock);
-  return new CreateUploadAction(new MediaLibrary(disk, buildConfig(MediaConfig), clock));
+  return new CreateUploadAction(
+    new MediaLibrary(disk, buildConfig(MediaConfig), clock, new MemoryFileScannerDriver()),
+  );
 }
 
 /** The bucket key `MediaLibrary` recorded beside the upload. */

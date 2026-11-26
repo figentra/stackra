@@ -5,8 +5,13 @@
  *          again at claim, a claim moves the file to its bucket path once and drops the record, a disk that cannot sign
  *          refuses, and a foreign, expired, missing, malformed or oversized upload, or one whose bytes are not its
  *          declared type, is refused; `store` writes the server's bytes under the same rules and refuses each break.
+ *          The scan gate (ADR 0222): claim and store place a file only after the scanner called it clean where it
+ *          waits under `uploads/`; an infected or unscannable file is deleted and refused, a pending verdict keeps the
+ *          upload for a later claim (store's retention included), an unreachable scanner keeps the upload, and
+ *          `temporaryUrl` links only a clean record, scanning one without a verdict first.
  * Boundary: test only; the memory `FileSystem` disk stands in for S3 and receives the bytes as a browser's signed `PUT`
- *           would. A hand-moved clock drives expiry.
+ *           would. A hand-moved clock drives expiry. The memory scanner finds the EICAR test file; a scripted scanner
+ *           answers the verdicts a test needs (GuardDuty's `pending`, `failed`, an unreachable scanner).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0222 (decisions 1 to 3).
  */
@@ -16,10 +21,16 @@ import { FileRetainedError, FilesystemConfig, MemoryFileSystemDriver } from "@st
 import { afterEach, describe, expect, it } from "@stackra/testing";
 
 import { MediaConfig } from "#config/media.config";
+import { ScanVerdict } from "#contracts/enums/scan-verdict.enum";
+import { FileScanner } from "#contracts/ports/file-scanner.port";
+import type { ScanResult } from "#contracts/types/scan-result.type";
 import { Bucket } from "#core/bases/bucket.base";
 import { BUCKET_REGISTRY } from "#core/constants/bucket-registry.constant";
+import { MemoryFileScannerDriver } from "#core/drivers/memory-file-scanner.driver";
 import { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 import { MediaType } from "#core/enums/media-type.enum";
+import { FileBlockedError } from "#core/errors/file-blocked.error";
+import { ScanPendingError } from "#core/errors/scan-pending.error";
 import { UploadBucketMismatchError } from "#core/errors/upload-bucket-mismatch.error";
 import { UploadExpiredError } from "#core/errors/upload-expired.error";
 import { UploadIncompleteError } from "#core/errors/upload-incomplete.error";
@@ -49,16 +60,69 @@ class InvoicesBucket extends Bucket({
   accept: [MediaType.Pdf],
 }) {}
 
-/** A library over a memory disk serving from `https://cdn.test`. */
+/**
+ * A scanner that answers the verdict a test sets (`null` throws, as an unreachable scanner does), and records each
+ * call with the bytes it read and what the bucket paths held at that moment.
+ */
+class ScriptedScanner extends FileScanner {
+  readonly calls: { path: string; bytes: Uint8Array; placed: string[] }[] = [];
+
+  verdict: ScanVerdict | null = ScanVerdict.Clean;
+
+  /** Runs while the scan is in flight (a client's second PUT, say). */
+  during: () => Promise<void> = async () => {};
+
+  constructor(private readonly disk: MemoryFileSystemDriver) {
+    super();
+  }
+
+  async scan(path: string, read: () => Promise<Uint8Array>): Promise<ScanResult> {
+    const placed = [...(await this.disk.list("public/")), ...(await this.disk.list("private/"))];
+    this.calls.push({ path, bytes: await read(), placed });
+    await this.during();
+    if (this.verdict === null) throw new Error("connect ECONNREFUSED 127.0.0.1:3310");
+    return { verdict: this.verdict, threats: [] };
+  }
+}
+
+/** A library over a memory disk serving from `https://cdn.test`, scanned by the memory (EICAR) scanner. */
 function setup(values: { uploadExpiresIn?: Duration } = {}) {
   const clock = new TestClock();
   const disk = new MemoryFileSystemDriver(
     buildConfig(FilesystemConfig, { values: { url: "https://cdn.test" } }),
     clock,
   );
-  const media = new MediaLibrary(disk, buildConfig(MediaConfig, { values }), clock);
+  const media = new MediaLibrary(
+    disk,
+    buildConfig(MediaConfig, { values }),
+    clock,
+    new MemoryFileScannerDriver(),
+  );
   return { clock, disk, media };
 }
+
+/** A library over a memory disk scanned by a scripted scanner. */
+function scripted() {
+  const clock = new TestClock();
+  const disk = new MemoryFileSystemDriver(
+    buildConfig(FilesystemConfig, { values: { url: "https://cdn.test" } }),
+    clock,
+  );
+  const scanner = new ScriptedScanner(disk);
+  const media = new MediaLibrary(disk, buildConfig(MediaConfig), clock, scanner);
+  return { clock, disk, media, scanner };
+}
+
+/**
+ * A PDF head followed by the EICAR anti-malware test string, which the memory scanner finds anywhere (clamd needs it in a
+ * PDF stream: the int test's fixture).
+ */
+const EICAR_PDF = new TextEncoder().encode(
+  "%PDF-X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
+);
+
+/** A real PDF head. */
+const PDF = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]);
 
 /** The first bytes of a real file of each media type these tests upload. */
 const HEADS: Readonly<Record<string, readonly number[]>> = {
@@ -107,7 +171,12 @@ describe("MediaLibrary.createUpload", () => {
       }
     }
     const unsigned = new UnsignedDisk(buildConfig(FilesystemConfig), clock);
-    const media = new MediaLibrary(unsigned, buildConfig(MediaConfig), clock);
+    const media = new MediaLibrary(
+      unsigned,
+      buildConfig(MediaConfig),
+      clock,
+      new MemoryFileScannerDriver(),
+    );
     await expect(
       media.createUpload(ProductImagesBucket, { mediaType: MediaType.Png, size: 4 }),
     ).rejects.toThrow(TypeError);
@@ -170,6 +239,7 @@ describe("MediaLibrary.claim", () => {
       url: `https://cdn.test/${path}`,
       mediaType: MediaType.Png,
       size: 8,
+      scan: ScanVerdict.Clean,
     });
     expect(await disk.list("uploads/")).toEqual([]);
     expect(await disk.stat(path)).toMatchObject({ size: 8, contentType: "image/png" });
@@ -322,12 +392,18 @@ describe("MediaLibrary.claim", () => {
 describe("MediaLibrary.store", () => {
   it("stores the server's bytes as a file of the bucket and returns it", async () => {
     const { disk, media } = setup();
-    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37]);
+    const pdf = PDF;
 
     const file = await media.store(InvoicesBucket, pdf, MediaType.Pdf);
 
     expect(file.path).toBe(`private/invoices/${file.id}.pdf`);
-    expect(file).toMatchObject({ bucket: "invoices", mediaType: MediaType.Pdf, size: 8 });
+    expect(file).toMatchObject({
+      bucket: "invoices",
+      mediaType: MediaType.Pdf,
+      size: 8,
+      scan: ScanVerdict.Clean,
+    });
+    expect(await disk.list("uploads/")).toEqual([]);
     expect(await disk.read(file.path)).toEqual(pdf);
     expect(await disk.stat(file.path)).toMatchObject({ contentType: "application/pdf" });
   });
@@ -377,5 +453,249 @@ describe("MediaLibrary.store", () => {
       media.store(InvoicesBucket, new TextEncoder().encode("<html></html>"), MediaType.Pdf),
     ).rejects.toMatchObject({ reason: "content" });
     expect(await disk.list("private/")).toEqual([]);
+  });
+});
+
+/** An upload into the invoices bucket whose bytes have arrived. */
+async function uploaded(
+  disk: MemoryFileSystemDriver,
+  media: MediaLibrary,
+  bytes: Uint8Array<ArrayBuffer> = PDF,
+): Promise<PendingUpload<InvoicesBucket>> {
+  const pending = await media.createUpload(InvoicesBucket, {
+    mediaType: MediaType.Pdf,
+    size: bytes.byteLength,
+  });
+  await put(disk, pending, bytes);
+  return pending;
+}
+
+describe("MediaLibrary scan gate (ADR 0222)", () => {
+  describe("claim", () => {
+    it("scans the staged upload with its bytes before anything reaches a bucket path", async () => {
+      const { disk, media, scanner } = scripted();
+      const pending = await uploaded(disk, media);
+
+      const file = await media.claim(pending.upload, InvoicesBucket);
+
+      expect(scanner.calls).toEqual([
+        { path: `uploads/${pending.upload.id}`, bytes: PDF, placed: [] },
+      ]);
+      expect(file.scan).toBe(ScanVerdict.Clean);
+      expect(await disk.exists(file.path)).toBe(true);
+    });
+
+    it("places the bytes it scanned, not ones put again while the scan ran", async () => {
+      const { disk, media, scanner } = scripted();
+      const pending = await uploaded(disk, media);
+      scanner.during = async () => {
+        await put(disk, pending, EICAR_PDF);
+      };
+
+      const file = await media.claim(pending.upload, InvoicesBucket);
+
+      expect(await disk.read(file.path)).toEqual(PDF);
+      expect(await disk.list("uploads/")).toEqual([]);
+    });
+
+    it("refuses and deletes an infected upload, and never places it", async () => {
+      const { disk, media } = setup();
+      const pending = await uploaded(disk, media, EICAR_PDF);
+
+      const refused = media.claim(pending.upload, InvoicesBucket);
+
+      await expect(refused).rejects.toBeInstanceOf(UploadRejectedError);
+      await expect(refused).rejects.toMatchObject({ bucket: "invoices", reason: "malware" });
+      expect(await disk.list("")).toEqual([]);
+      await expect(media.claim(pending.upload, InvoicesBucket)).rejects.toBeInstanceOf(
+        UploadIncompleteError,
+      );
+    });
+
+    it("refuses and deletes an upload the scanner cannot scan", async () => {
+      const { disk, media, scanner } = scripted();
+      scanner.verdict = ScanVerdict.Failed;
+      const pending = await uploaded(disk, media);
+
+      await expect(media.claim(pending.upload, InvoicesBucket)).rejects.toMatchObject({
+        code: "upload_rejected",
+        reason: "unscannable",
+      });
+      expect(await disk.list("")).toEqual([]);
+    });
+
+    it("keeps a pending upload unplaced and claims it once the scanner calls it clean", async () => {
+      const { disk, media, scanner } = scripted();
+      scanner.verdict = ScanVerdict.Pending;
+      const pending = await uploaded(disk, media);
+
+      const waiting = media.claim(pending.upload, InvoicesBucket);
+
+      await expect(waiting).rejects.toBeInstanceOf(ScanPendingError);
+      await expect(waiting).rejects.toMatchObject({ upload: pending.upload.id, retryable: true });
+      expect(await disk.list("private/")).toEqual([]);
+      expect((await disk.list("uploads/")).sort()).toEqual(
+        [`uploads/${pending.upload.id}`, `uploads/${pending.upload.id}.json`].sort(),
+      );
+
+      scanner.verdict = ScanVerdict.Clean;
+      const file = await media.claim(pending.upload, InvoicesBucket);
+      expect(file.path).toBe(`private/invoices/${pending.upload.id}.pdf`);
+      expect(await disk.list("uploads/")).toEqual([]);
+    });
+
+    it("keeps the upload when the scanner cannot be reached", async () => {
+      const { disk, media, scanner } = scripted();
+      scanner.verdict = null;
+      const pending = await uploaded(disk, media);
+
+      await expect(media.claim(pending.upload, InvoicesBucket)).rejects.toThrow("ECONNREFUSED");
+      expect(await disk.list("private/")).toEqual([]);
+
+      scanner.verdict = ScanVerdict.Clean;
+      expect((await media.claim(pending.upload, InvoicesBucket)).scan).toBe(ScanVerdict.Clean);
+    });
+  });
+
+  describe("store", () => {
+    it("scans the bytes where they wait under uploads/ before writing the bucket path", async () => {
+      const { disk, media, scanner } = scripted();
+
+      const file = await media.store(InvoicesBucket, PDF, MediaType.Pdf);
+
+      expect(scanner.calls).toEqual([{ path: `uploads/${file.id}`, bytes: PDF, placed: [] }]);
+      expect(await disk.list("")).toEqual([file.path]);
+    });
+
+    it("refuses infected bytes and keeps nothing", async () => {
+      const { disk, media } = setup();
+
+      await expect(media.store(InvoicesBucket, EICAR_PDF, MediaType.Pdf)).rejects.toMatchObject({
+        code: "upload_rejected",
+        reason: "malware",
+      });
+      expect(await disk.list("")).toEqual([]);
+    });
+
+    it("refuses bytes the scanner cannot scan and keeps nothing", async () => {
+      const { disk, media, scanner } = scripted();
+      scanner.verdict = ScanVerdict.Failed;
+
+      await expect(media.store(InvoicesBucket, PDF, MediaType.Pdf)).rejects.toMatchObject({
+        reason: "unscannable",
+      });
+      expect(await disk.list("")).toEqual([]);
+    });
+
+    it("keeps nothing when the scanner cannot be reached", async () => {
+      const { disk, media, scanner } = scripted();
+      scanner.verdict = null;
+
+      await expect(media.store(InvoicesBucket, PDF, MediaType.Pdf)).rejects.toThrow("ECONNREFUSED");
+      expect(await disk.list("")).toEqual([]);
+    });
+
+    it("stages pending bytes as an upload that a later claim places with their retention", async () => {
+      const { disk, media, scanner } = scripted();
+      scanner.verdict = ScanVerdict.Pending;
+      const retainUntil = new Date("2032-11-09T10:30:00.000Z");
+
+      const staging = media.store(InvoicesBucket, PDF, MediaType.Pdf, { retainUntil });
+
+      await expect(staging).rejects.toBeInstanceOf(ScanPendingError);
+      const id = (await disk.list("uploads/")).find((path) => !path.endsWith(".json"));
+      await expect(staging).rejects.toMatchObject({ upload: id?.slice("uploads/".length) });
+      const upload = {
+        id: id?.slice("uploads/".length),
+      } as PendingUpload<InvoicesBucket>["upload"];
+      expect(await disk.list("private/")).toEqual([]);
+      const record = JSON.parse(
+        new TextDecoder().decode(await disk.read(`uploads/${upload.id}.json`)),
+      );
+      expect(record).toEqual({
+        bucket: "invoices",
+        expires: "2026-10-24T10:00:00.000Z",
+        retainUntil: "2032-11-09T10:30:00.000Z",
+      });
+
+      await expect(media.claim(upload, InvoicesBucket)).rejects.toBeInstanceOf(ScanPendingError);
+      scanner.verdict = ScanVerdict.Clean;
+      const file = await media.claim(upload, InvoicesBucket);
+
+      expect(file).toMatchObject({
+        path: `private/invoices/${upload.id}.pdf`,
+        scan: ScanVerdict.Clean,
+      });
+      expect(await disk.read(file.path)).toEqual(PDF);
+      expect(await disk.list("uploads/")).toEqual([]);
+      await expect(disk.delete(file.path)).rejects.toBeInstanceOf(FileRetainedError);
+    });
+  });
+
+  describe("temporaryUrl", () => {
+    it("links a clean record without scanning it again", async () => {
+      const { disk, media, scanner } = scripted();
+      const file = await media.store(InvoicesBucket, PDF, MediaType.Pdf);
+      scanner.calls.length = 0;
+      scanner.verdict = null;
+
+      expect(await media.temporaryUrl(file, Duration.minutes(5))).toBe(
+        `${disk.url(file.path)}?expires=2026-10-24T09%3A05%3A00.000Z`,
+      );
+      expect(scanner.calls).toEqual([]);
+    });
+
+    it("scans a record made before the gate and links it when clean", async () => {
+      const { disk, media, scanner } = scripted();
+      const path = "private/invoices/upl_01jd8x0000000000000000000a.pdf";
+      await disk.write(path, PDF, { contentType: "application/pdf" });
+
+      const url = await media.temporaryUrl(
+        { id: "upl_01jd8x0000000000000000000a" as never, path },
+        Duration.minutes(5),
+      );
+
+      expect(url).toBe(`${disk.url(path)}?expires=2026-10-24T09%3A05%3A00.000Z`);
+      expect(scanner.calls.map(({ path: scanned, bytes }) => ({ scanned, bytes }))).toEqual([
+        { scanned: path, bytes: PDF },
+      ]);
+    });
+
+    it("refuses an infected file recorded before the gate, and leaves it in place", async () => {
+      const { disk, media } = setup();
+      const path = "private/invoices/upl_01jd8x0000000000000000000a.pdf";
+      await disk.write(path, EICAR_PDF, { contentType: "application/pdf" });
+
+      const refused = media.temporaryUrl(
+        { id: "upl_01jd8x0000000000000000000a" as never, path },
+        Duration.minutes(5),
+      );
+
+      await expect(refused).rejects.toBeInstanceOf(FileBlockedError);
+      await expect(refused).rejects.toMatchObject({ code: "file_blocked", reason: "malware" });
+      expect(await disk.exists(path)).toBe(true);
+    });
+
+    it.each([
+      [ScanVerdict.Pending, ScanPendingError, { code: "scan_pending" }],
+      [ScanVerdict.Failed, FileBlockedError, { reason: "unscannable" }],
+      [ScanVerdict.Infected, FileBlockedError, { reason: "malware" }],
+    ])(
+      "refuses a record that is not clean while the scanner says %s",
+      async (verdict, type, fields) => {
+        const { disk, media, scanner } = scripted();
+        const file = await media.store(InvoicesBucket, PDF, MediaType.Pdf);
+        scanner.verdict = verdict;
+
+        const refused = media.temporaryUrl(
+          { ...file, scan: ScanVerdict.Pending },
+          Duration.minutes(5),
+        );
+
+        await expect(refused).rejects.toBeInstanceOf(type);
+        await expect(refused).rejects.toMatchObject(fields);
+        expect(await disk.exists(file.path)).toBe(true);
+      },
+    );
   });
 });

@@ -4,8 +4,8 @@
  *          its constructor tokens in parameter order (`RequestContext`, `IntegrationRuntime`, `Locks`,
  *          `WebhookReceiver`, `AgentRuntime` with its meter and discovery and `AiMeter` (STA-1385), `SequenceService`,
  *          the settings reader and resolver, and `RuleSetService`, whose one token is the per-model
- *          `repositoryOf(Revision)`, and `MediaLibrary` over the `FileSystem` disk, its config and the clock, STA-1297,
- *          ADR 0465); the map is frozen.
+ *          `repositoryOf(Revision)`, and `MediaLibrary` over the `FileSystem` disk, its config, the clock and the
+ *          `FileScanner`, STA-1297, ADR 0465, STA-669); the map is frozen.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0263; ADR 0136; ADR 0308; ADR 0224; ADR 0331.
@@ -52,6 +52,7 @@ describe("PLATFORM_BINDINGS", () => {
       "FileSystem",
       "MediaConfig",
       "Clock",
+      "FileScanner",
     ]);
     expect(PLATFORM_BINDINGS["@stackra/ai#AgentRuntime"]?.map(nameOf).slice(-3)).toEqual([
       "Clock",

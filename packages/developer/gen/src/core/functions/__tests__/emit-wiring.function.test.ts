@@ -9,7 +9,7 @@
  *          their selecting config and package config rows, no registry entry; STA-1297; a candidate without the
  *          tokens of a library the member does not declare, nor in a package's own wiring of an undeclared `@stackra/*`
  *          package; no abstract driver), MediaLibrary over the media
- *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
+ *          disk and the scanner the media config selects (STA-669), a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
  *          request guards and health indicator drivers from its declared packages with their config rows (a package's
  *          own row wins; none for a member that is not a service; STA-1385), a package's own default driver (memory,
  *          else its one testing driver, else its one testDefault driver), a selected port's included, no internal driver,
@@ -894,7 +894,7 @@ describe("emitWiring", () => {
     );
   });
 
-  it("binds MediaLibrary over the filesystem disk table and a media config row (STA-1297, ADR 0465)", () => {
+  it("binds MediaLibrary over the filesystem disk table, the scanner table and a media config row (STA-1297, ADR 0465, STA-669)", () => {
     const media: MemberIR["dependencies"][number] = {
       package: "@stackra/media",
       manifest: {
@@ -902,6 +902,23 @@ describe("emitWiring", () => {
         package: "@stackra/media",
         version: "0.1.0",
         config: [{ key: "media", class: "MediaConfig", from: "@stackra/media" }],
+        drivers: [
+          {
+            port: "FileScanner",
+            key: "media.FileScanner",
+            candidates: ["memory", "clamav"],
+            selectedBy: "config:media.scanner",
+            classes: {
+              memory: { class: "MemoryFileScannerDriver", from: "@stackra/media" },
+              clamav: {
+                class: "ClamavFileScannerDriver",
+                from: "@stackra/media/node",
+                deps: [{ class: { name: "MediaConfig", from: "@stackra/media" } }],
+              },
+            },
+            config: { class: "MediaConfig", from: "@stackra/media" },
+          },
+        ],
       },
     };
     const filesystem: MemberIR["dependencies"][number] = {
@@ -959,7 +976,9 @@ describe("emitWiring", () => {
       dependencies: [...BILLING_IR.dependencies, media, filesystem],
     });
     for (const line of [
-      '    { module: "billing", kind: "service", provide: MediaLibrary, deps: [FileSystem, MediaConfig, Clock] },',
+      '    { module: "billing", kind: "service", provide: MediaLibrary, deps: [FileSystem, MediaConfig, Clock, FileScanner] },',
+      '      key: "media.FileScanner",',
+      '        "clamav": () => import("@stackra/media/node").then((m) => m.ClamavFileScannerDriver),',
       '      key: "filesystem.FileSystem",',
       '        "memory": () => import("@stackra/filesystem").then((m) => m.MemoryFileSystemDriver),',
       '      deps: { "memory": [FilesystemConfig, Clock], "s3": [FilesystemConfig] },',

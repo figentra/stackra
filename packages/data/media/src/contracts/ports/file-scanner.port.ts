@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: the `FileScanner` port: the malware scan of a stored upload before the files service hands it out. Config
+ * Purpose: the `FileScanner` port: the malware scan of a stored file before `MediaLibrary` places it at a served path
+ *          or links it (the ADR 0222 scan gate). Config
  *          `media.scanner` picks the driver: `guard_duty` where AWS GuardDuty malware protection runs in the region,
  *          `clamav` where it does not (GCP Dammam, a local stack), `memory` in tests.
  * Boundary: an abstract class that is its own token, keyed `media.FileScanner`. `path` is the `FileSystem` key of the
