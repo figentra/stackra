@@ -20,6 +20,7 @@ import {
   correlationIdOf,
   HttpConfig,
   type KeyCallOptions,
+  nodeBodyStream,
   serveGuardedCall,
   VisitorConfig,
   VisitorIdentityService,
@@ -94,7 +95,9 @@ export async function answerCall(req: IncomingMessage, resp: ServerResponse, cal
   const request = new Request(new URL(req.url ?? "/", "http://encore"), {
     method,
     headers,
-    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),
+    // Never `Readable.toWeb(req)`: its end-of-stream cleanup calls `req.req.removeListener`, and Encore's raw request
+    // keeps its native request, no emitter, in `req` (STA-2794).
+    ...(method === "GET" || method === "HEAD" ? {} : { body: nodeBodyStream(req), duplex: "half" }),
   } as RequestInit);
   const response = await answerHttp(request, (incoming, container, correlationId) =>
     serveGuardedCall({

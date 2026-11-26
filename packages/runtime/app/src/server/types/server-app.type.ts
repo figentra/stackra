@@ -6,7 +6,8 @@
  * Boundary: a type only. Whether the member runs alone, in a group or in a monolith is root runway topology, never a
  *           field here (ADR 0295 decision 9).
  * Runtime: node
- * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0232 (decision 8: report what was not handled, once).
+ * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0143 (decision 3: draining timeouts); ADR 0232 (decision 8:
+ *                     report what was not handled, once).
  */
 import type { ErrorReporter } from "@stackra/errors/contracts";
 
@@ -21,7 +22,10 @@ export interface ServerApp {
   /** True from boot until a drain starts: the readiness probe. */
   ready: () => boolean;
 
-  /** Refuses new calls and resolves once every call in flight has settled; idempotent. */
+  /**
+   * Refuses new calls and resolves once every call in flight has settled, or at the deadline
+   * (`HttpConfig.drainTimeoutSeconds`), reporting the calls still running as one `DrainTimeoutError`; idempotent.
+   */
   drain: () => Promise<void>;
 
   /** Drains, aborts the boot's shutdown signal, then shuts the container down (each instance's `onApplicationShutdown`, last built first); idempotent. */

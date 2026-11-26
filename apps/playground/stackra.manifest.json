@@ -50,9 +50,10 @@
       "risk": "L2",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/account-deletions/cancel",
+        "path": "/app/account-deletions/cancel",
         "derived": true
       },
       "toolOff": "the account owner's own decision, never an agent's",
@@ -105,9 +106,10 @@
       "risk": "L4",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "PUT",
-        "path": "/passkeys/:passkeyId/confirm",
+        "path": "/app/passkeys/:passkeyId/confirm",
         "derived": true
       },
       "toolOff": "a passkey is created on the person's own device, never by an agent",
@@ -130,9 +132,10 @@
       "risk": "L4",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/account-deletions/request",
+        "path": "/app/account-deletions/request",
         "derived": true
       },
       "toolOff": "deleting an account is the person's own decision, never an agent's",
@@ -155,9 +158,10 @@
       "risk": "L2",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/sessions/end-all",
+        "path": "/app/sessions/end-all",
         "derived": true
       },
       "toolOff": "the account owner's own security settings, never an agent's",
@@ -180,9 +184,10 @@
       "risk": "L2",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "PUT",
-        "path": "/sessions/:sessionId/end",
+        "path": "/app/sessions/:sessionId/end",
         "derived": true
       },
       "toolOff": "the account owner's own security settings, never an agent's",
@@ -205,9 +210,10 @@
       "risk": "L3",
       "actors": ["user", "service"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/sessions/end-user",
+        "path": "/app/sessions/end-user",
         "derived": true
       },
       "toolOff": "signing a person out is an administrator's decision, never an agent's",
@@ -229,6 +235,7 @@
       "permission": "identity.account_deletion.erase",
       "risk": "L4",
       "actors": ["system"],
+      "area": "app",
       "job": {
         "unique": true,
         "timeout": "10m",
@@ -255,9 +262,10 @@
       "risk": "L2",
       "actors": ["user"],
       "idempotency": "optional",
+      "area": "app",
       "endpoint": {
         "method": "POST",
-        "path": "/passkeys/register",
+        "path": "/app/passkeys/register",
         "derived": true
       },
       "toolOff": "a passkey is created on the person's own device, never by an agent",
@@ -309,9 +317,10 @@
       "permission": "identity.session.list",
       "risk": "L1",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/sessions",
+        "path": "/app/sessions",
         "derived": true
       },
       "toolOff": "the account owner's own security settings, never an agent's",
@@ -332,9 +341,10 @@
       "permission": "identity.account_deletion.read",
       "risk": "L1",
       "actors": ["user"],
+      "area": "app",
       "endpoint": {
         "method": "GET",
-        "path": "/account-deletions/read",
+        "path": "/app/account-deletions/read",
         "derived": true
       },
       "toolOff": "the account owner's own settings, never an agent's",
@@ -1829,6 +1839,35 @@
       "from": "@stackra/ai"
     },
     {
+      "port": "EdgeSigningKeys",
+      "key": "app.EdgeSigningKeys",
+      "candidates": ["env", "memory"],
+      "classes": {
+        "env": {
+          "class": "EnvEdgeSigningKeysDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "EdgeConfig",
+                "from": "@stackra/app/server"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemoryEdgeSigningKeysDriver",
+          "from": "@stackra/app/server"
+        }
+      },
+      "selectedBy": "config:app.edge.keys",
+      "config": {
+        "class": "EdgeConfig",
+        "from": "@stackra/app/server"
+      },
+      "from": "@stackra/app"
+    },
+    {
       "port": "EdgeNonceStore",
       "key": "app.EdgeNonceStore",
       "candidates": ["memory"],
@@ -1838,17 +1877,10 @@
           "from": "@stackra/app/server"
         }
       },
-      "from": "@stackra/app"
-    },
-    {
-      "port": "EdgeSigningKeys",
-      "key": "app.EdgeSigningKeys",
-      "candidates": ["memory"],
-      "classes": {
-        "memory": {
-          "class": "MemoryEdgeSigningKeysDriver",
-          "from": "@stackra/app/server"
-        }
+      "selectedBy": "config:app.edge.nonces",
+      "config": {
+        "class": "EdgeConfig",
+        "from": "@stackra/app/server"
       },
       "from": "@stackra/app"
     },
@@ -1903,6 +1935,49 @@
       "from": "@stackra/app"
     },
     {
+      "port": "Signer",
+      "key": "contracts.Signer",
+      "candidates": ["ephemeral", "kms"],
+      "classes": {
+        "ephemeral": {
+          "class": "EphemeralSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        },
+        "kms": {
+          "class": "KmsSignerDriver",
+          "from": "@stackra/config",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
+                "from": "@stackra/config"
+              }
+            },
+            {
+              "class": {
+                "name": "KmsClient",
+                "from": "@stackra/config/contracts"
+              }
+            }
+          ]
+        }
+      },
+      "selectedBy": "config:config.signer.driver",
+      "config": {
+        "class": "SignerConfig",
+        "from": "@stackra/config"
+      },
+      "from": "@stackra/config"
+    },
+    {
       "port": "SecretStore",
       "key": "config.SecretStore",
       "candidates": ["memory", "aws_secrets_manager"],
@@ -1918,6 +1993,31 @@
             {
               "class": {
                 "name": "AwsSecretsManagerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        }
+      },
+      "selectedBy": "config:config.secrets.store",
+      "config": {
+        "class": "SecretsConfig",
+        "from": "@stackra/config"
+      },
+      "from": "@stackra/config"
+    },
+    {
+      "port": "KmsClient",
+      "key": "config.KmsClient",
+      "candidates": ["aws_sdk"],
+      "classes": {
+        "aws_sdk": {
+          "class": "AwsSdkKmsClientDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "SignerConfig",
                 "from": "@stackra/config"
               }
             }
@@ -2006,6 +2106,11 @@
           ]
         }
       },
+      "selectedBy": "config:identity.sessionStore",
+      "config": {
+        "class": "IdentityConfig",
+        "from": "@stackra/identity"
+      },
       "from": "@stackra/identity"
     },
     {
@@ -2035,11 +2140,35 @@
     {
       "port": "ApiKeyStore",
       "key": "identity.ApiKeyStore",
-      "candidates": ["memory"],
+      "candidates": ["memory", "service"],
       "classes": {
         "memory": {
           "class": "MemoryApiKeyStoreDriver",
           "from": "@stackra/identity"
+        },
+        "service": {
+          "class": "ServiceApiKeyStoreDriver",
+          "from": "@stackra/identity/node",
+          "deps": [
+            {
+              "class": {
+                "name": "ClientTransport",
+                "from": "@stackra/clients/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "IdentityConfig",
+                "from": "@stackra/identity"
+              }
+            },
+            {
+              "class": {
+                "name": "Clock",
+                "from": "@stackra/contracts"
+              }
+            }
+          ]
         }
       },
       "from": "@stackra/identity"
@@ -2053,6 +2182,11 @@
           "class": "MemoryAppApprovalChallengesDriver",
           "from": "@stackra/identity"
         }
+      },
+      "selectedBy": "config:identity.approvalChallenges",
+      "config": {
+        "class": "IdentityConfig",
+        "from": "@stackra/identity"
       },
       "from": "@stackra/identity"
     },
@@ -2664,6 +2798,11 @@
       "file": "src/routes/attachment-card/attachment-card.route.ts"
     },
     {
+      "key": "autocomplete",
+      "class": "AutocompleteRoute",
+      "file": "src/routes/autocomplete/autocomplete.route.ts"
+    },
+    {
       "key": "avatar_group",
       "class": "AvatarGroupRoute",
       "file": "src/routes/avatar-group/avatar-group.route.ts"
@@ -2699,9 +2838,19 @@
       "file": "src/routes/barcode/barcode.route.ts"
     },
     {
+      "key": "bento_card",
+      "class": "BentoCardRoute",
+      "file": "src/routes/bento-card/bento-card.route.ts"
+    },
+    {
       "key": "bidi",
       "class": "BidiRoute",
       "file": "src/routes/bidi/bidi.route.ts"
+    },
+    {
+      "key": "blueprint_section",
+      "class": "BlueprintSectionRoute",
+      "file": "src/routes/blueprint-section/blueprint-section.route.ts"
     },
     {
       "key": "box_plot_chart",
@@ -2727,6 +2876,11 @@
       "key": "button_group",
       "class": "ButtonGroupRoute",
       "file": "src/routes/button-group/button-group.route.ts"
+    },
+    {
+      "key": "button_link",
+      "class": "ButtonLinkRoute",
+      "file": "src/routes/button-link/button-link.route.ts"
     },
     {
       "key": "button",
@@ -2859,9 +3013,19 @@
       "file": "src/routes/collection-engine/collection-engine.route.ts"
     },
     {
+      "key": "color_field",
+      "class": "ColorFieldRoute",
+      "file": "src/routes/color-field/color-field.route.ts"
+    },
+    {
       "key": "color_picker",
       "class": "ColorPickerRoute",
       "file": "src/routes/color-picker/color-picker.route.ts"
+    },
+    {
+      "key": "color_swatch",
+      "class": "ColorSwatchRoute",
+      "file": "src/routes/color-swatch/color-swatch.route.ts"
     },
     {
       "key": "combo_box",
@@ -2984,6 +3148,11 @@
       "file": "src/routes/disclosure/disclosure.route.ts"
     },
     {
+      "key": "dither_art",
+      "class": "DitherArtRoute",
+      "file": "src/routes/dither-art/dither-art.route.ts"
+    },
+    {
       "key": "docs",
       "class": "DocsRoute",
       "file": "src/routes/docs/docs.route.ts"
@@ -3069,6 +3238,11 @@
       "file": "src/routes/filter-panel/filter-panel.route.ts"
     },
     {
+      "key": "flag",
+      "class": "FlagRoute",
+      "file": "src/routes/flag/flag.route.ts"
+    },
+    {
       "key": "flip_card",
       "class": "FlipCardRoute",
       "file": "src/routes/flip-card/flip-card.route.ts"
@@ -3107,6 +3281,11 @@
       "key": "foundations",
       "class": "FoundationsRoute",
       "file": "src/routes/foundations/foundations.route.ts"
+    },
+    {
+      "key": "frame",
+      "class": "FrameRoute",
+      "file": "src/routes/frame/frame.route.ts"
     },
     {
       "key": "fullscreen_bar",
@@ -3172,6 +3351,11 @@
       "key": "icon",
       "class": "IconRoute",
       "file": "src/routes/icon/icon.route.ts"
+    },
+    {
+      "key": "illustration",
+      "class": "IllustrationRoute",
+      "file": "src/routes/illustration/illustration.route.ts"
     },
     {
       "key": "image_cropper",
@@ -3277,6 +3461,11 @@
       "key": "locale_switcher",
       "class": "LocaleSwitcherRoute",
       "file": "src/routes/locale-switcher/locale-switcher.route.ts"
+    },
+    {
+      "key": "marker_map",
+      "class": "MarkerMapRoute",
+      "file": "src/routes/marker-map/marker-map.route.ts"
     },
     {
       "key": "marquee",
@@ -3424,6 +3613,11 @@
       "file": "src/routes/overflow-toolbar/overflow-toolbar.route.ts"
     },
     {
+      "key": "package_list",
+      "class": "PackageListRoute",
+      "file": "src/routes/package-list/package-list.route.ts"
+    },
+    {
       "key": "page_header",
       "class": "PageHeaderRoute",
       "file": "src/routes/page-header/page-header.route.ts"
@@ -3522,6 +3716,11 @@
       "key": "property_list",
       "class": "PropertyListRoute",
       "file": "src/routes/property-list/property-list.route.ts"
+    },
+    {
+      "key": "props_playground",
+      "class": "PropsPlaygroundRoute",
+      "file": "src/routes/props-playground/props-playground.route.ts"
     },
     {
       "key": "qr_code",
@@ -3639,6 +3838,16 @@
       "file": "src/routes/scheduler/scheduler.route.ts"
     },
     {
+      "key": "scheduling_board",
+      "class": "SchedulingBoardRoute",
+      "file": "src/routes/scheduling-board/scheduling-board.route.ts"
+    },
+    {
+      "key": "schematic",
+      "class": "SchematicRoute",
+      "file": "src/routes/schematic/schematic.route.ts"
+    },
+    {
       "key": "screen",
       "class": "ScreenRoute",
       "file": "src/routes/screen/screen.route.ts"
@@ -3652,6 +3861,11 @@
       "key": "search_field",
       "class": "SearchFieldRoute",
       "file": "src/routes/search-field/search-field.route.ts"
+    },
+    {
+      "key": "section_dock",
+      "class": "SectionDockRoute",
+      "file": "src/routes/section-dock/section-dock.route.ts"
     },
     {
       "key": "section",
@@ -3897,6 +4111,11 @@
       "key": "task_tray",
       "class": "TaskTrayRoute",
       "file": "src/routes/task-tray/task-tray.route.ts"
+    },
+    {
+      "key": "terminal_demo",
+      "class": "TerminalDemoRoute",
+      "file": "src/routes/terminal-demo/terminal-demo.route.ts"
     },
     {
       "key": "text_area_field",

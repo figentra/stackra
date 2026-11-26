@@ -6,11 +6,12 @@
  *          `private, no-store` (ADR 0325 rule 22); everything `handle` throws, and a refused run, is answered by
  *          `answerFailure` with `app.reporter` and the request's one correlation id (`correlationIdOf` over Encore's
  *          trace id), which `answerCall` hands `serveGuardedCall`, so no error reaches Encore's own 500 (STA-2048);
- *          the adapter no longer needs @stackra/errors; a service without @stackra/app, a package and an app get none.
+ *          the request body is `nodeBodyStream(req)`, never `Readable.toWeb` (STA-2794); the adapter no longer needs
+ *          @stackra/errors; a service without @stackra/app, a package and an app get none.
  * Boundary: test only; asserts on the generated source text of the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0437; ADR 0295 (decision 8); ADR 0325 (rule 22); STA-1385;
- *                     STA-1448; ADR 0140; STA-2048.
+ *                     STA-1448; ADR 0140; STA-2048; STA-2794.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -43,7 +44,8 @@ describe(emitEncoreHttp, () => {
     const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
     for (const line of [
       "export async function answerCall(req: IncomingMessage, resp: ServerResponse, call: Call): Promise<void> {",
-      '    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),',
+      "  nodeBodyStream,",
+      '    ...(method === "GET" || method === "HEAD" ? {} : { body: nodeBodyStream(req), duplex: "half" }),',
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
@@ -56,6 +58,8 @@ describe(emitEncoreHttp, () => {
       "      correlationId,",
     ])
       expect(content).toContain(line);
+    // Readable.toWeb crashes on Encore's RawRequest at the end of every body (STA-2794).
+    expect(content).not.toContain("body: Readable.toWeb(req)");
   });
 
   it("answers every error with answerFailure and the request's correlation id, never Encore's 500 (STA-2048)", () => {

@@ -12,7 +12,10 @@
  *          carry `requestId` (ADR 0184 decision 1, STA-1572). `/readyz` runs the given
  *          `health` indicators plus every `HealthIndicator` the container binds (each package's health driver),
  *          resolved once after boot. The app carries boot's `reporter`, so the generated adapter reports a call's
- *          unexpected error where shutdown failures go.
+ *          unexpected error where shutdown failures go. The drain waits for calls in flight for at most
+ *          `HttpConfig.drainTimeoutSeconds` (read once after boot; its default when the wiring binds no `HttpConfig`); at
+ *          the deadline it reports one `DrainTimeoutError` with the count still running and resolves, so a hung call never
+ *          keeps the shutdown hooks from running before the platform's SIGKILL (STA-2820).
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
@@ -20,23 +23,30 @@
  * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263 (decisions 1, 5 and 12); ADR 0124; ADR 0143 as amended
  *                     by 0263 (lifecycle); ADR 0014 (decision 5: the runtime provides the connection); ADR 0260
  *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards);
- *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here).
+ *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here);
+ *                     ADR 0143 (decision 3: draining timeouts).
  */
+import { buildConfig } from "@stackra/config";
 import type { AnyClass, ModuleClass } from "@stackra/container";
 import { HealthIndicator, Tracer } from "@stackra/contracts";
 import type { TraceCarrier } from "@stackra/contracts";
 
+import { HttpConfig } from "#config/http.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { bootApp } from "#core/functions/boot-app.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { answerProbe } from "#server/functions/answer-probe.function";
 import { AppDrainingError } from "#server/errors/app-draining.error";
+import { DrainTimeoutError } from "#server/errors/drain-timeout.error";
 import type { ServerApp } from "#server/types/server-app.type";
 import type { ServerAppOptions } from "#server/types/server-app-options.type";
 import type { ServerHandlers } from "#server/types/server-handlers.type";
 
 /** The signals that stop a server member. */
 const STOP_SIGNALS = ["SIGTERM", "SIGINT"] as const;
+
+/** What the drain deadline resolves with, so a race tells it from the calls settling. */
+const DEADLINE = Symbol("drain deadline");
 
 /**
  * Boots `root` and returns its server app.
@@ -59,6 +69,9 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
       byKind.set(binding.kind, [...(byKind.get(binding.kind) ?? []), binding.provide]);
 
   const tracer = container.has(Tracer) ? container.get(Tracer) : undefined;
+  const { drainTimeoutSeconds } = container.has(HttpConfig)
+    ? container.get(HttpConfig)
+    : buildConfig(HttpConfig);
   // The trace carrier of each call, by its request container, which `guard` receives.
   const carriers = new WeakMap<object, TraceCarrier>();
 
@@ -102,7 +115,21 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
 
   const drain = (): Promise<void> =>
     (draining ??= (async () => {
-      while (inFlight.size > 0) await Promise.all(inFlight);
+      if (inFlight.size === 0) return;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const deadline = new Promise<typeof DEADLINE>((resolve) => {
+        timer = setTimeout(resolve, drainTimeoutSeconds * 1000, DEADLINE);
+      });
+      try {
+        // `run` refuses new calls once `draining` is set, so the set only shrinks while this waits.
+        while (inFlight.size > 0)
+          if ((await Promise.race([Promise.all(inFlight), deadline])) === DEADLINE) {
+            reporter.report(new DrainTimeoutError(inFlight.size, drainTimeoutSeconds));
+            return;
+          }
+      } finally {
+        clearTimeout(timer);
+      }
     })());
 
   const onSignal = (): void => {

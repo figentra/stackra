@@ -1,10 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `HttpOptions`, the shape of `HttpConfig`: the largest request body, in bytes, a generated HTTP adapter
- *          reads before any guard runs; a larger one is answered 413.
+ *          reads before any guard runs (a larger one is answered 413), and the drain deadline, in seconds: how long a
+ *          stopping server waits for its calls in flight before it shuts down anyway.
  * Boundary: a shape class; it registers this package's own schema (`HTTP_CONFIG_SCHEMA`) when the module loads.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 19 and 26); ADR 0237 (STA-2577 note: raw adapters).
+ * Governing contract: ADR 0294 (decisions 19 and 26); ADR 0237 (STA-2577 note: raw adapters); ADR 0143 (decision 3:
+ *                     draining timeouts).
  */
 import { Int, registerSchemas, Schema } from "@stackra/validation";
 
@@ -25,6 +27,16 @@ export class HttpOptions extends Schema {
     max: 104_857_600,
   })
   maxBodyBytes = 1_048_576;
+
+  /**
+   * How long `drain()` waits for calls in flight, in seconds (1 to 600; 20 by default, inside the 30-second grace a
+   * container platform gives before SIGKILL, leaving the rest for the shutdown hooks).
+   */
+  @Int({
+    min: 1,
+    max: 600,
+  })
+  drainTimeoutSeconds = 20;
 }
 
 registerSchemas([[HttpOptions, HTTP_CONFIG_SCHEMA]]);
