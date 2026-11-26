@@ -4,7 +4,7 @@ description: "How Stackra versions its packages, what 0.x means, how deprecation
 icon: "life-buoy"
 ---
 
-{/* Stackra file contract: Purpose: the customer page on versions, deprecation, dist-tags and support terms; the support terms are owner placeholders. Boundary: customer-facing documentation only; it records decided rules (ADR 0013, 0025, 0177, 0453) and invents no service level. Runtime: docs. Governing contract: ADR 0013; ADR 0025; ADR 0177 (decisions 5 to 7); ADR 0453 (decisions 7 and 18); SECURITY.md; STA-1575, STA-1576. */}
+{/* Stackra file contract: Purpose: the customer page on versions, deprecation, dist-tags and support terms; the support terms are owner placeholders. Boundary: customer-facing documentation only; it records decided rules (ADR 0013, 0025, 0177, 0453), points to the proposed cadence of ADR 0539 as an owner placeholder, and invents no service level. Runtime: docs. Governing contract: ADR 0013; ADR 0025; ADR 0177 (decisions 5 to 7); ADR 0453 (decisions 7 and 18); ADR 0539 (proposed); SECURITY.md; STA-1575, STA-1576, STA-2865. */}
 
 ## Versions
 
@@ -36,6 +36,19 @@ deprecation warning with the version to move to.
 ## Changes and upgrades
 
 What changed in each release is in each package's changelog: see [Changelog](/customers/changelog).
+
+## Release cadence and 1.0
+
+<Warning>
+  **Owner to supply (STA-2865).** Not decided yet.
+  [0539](/adr/0539-release-cadence-the-1-0-bar-and-the-pro-offer) proposes a weekly minor release
+  with only patches between, breaking changes only in the first minor of each month, published
+  criteria for `1.0.0`, and security fixes for the previous major for 12 months after `1.0`. Until
+  the owner rules, any minor release before `1.0.0` may break an API, as **0.x** above says, and
+  `1.0.0` has no date.
+</Warning>
+
+What the free and the Pro packages each hold is on [Free and Pro](/customers/free-and-pro).
 
 ## Security fixes
 

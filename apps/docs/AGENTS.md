@@ -7,7 +7,7 @@ Stackra file contract:
 Purpose: the agent notes of @figentra/docs: the docs layout, its checks, the system map and the personal data it holds.
 Boundary: this member only; the project rules are in the root AGENTS.md.
 Runtime: none
-Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177; STA-1373; STA-1575.
+Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0452; root AGENTS.md; stackra-177; STA-1373; STA-1575; STA-2865.
 -->
 
 Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, React Router prerenders it, and the
@@ -26,6 +26,11 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
   `customers/packages.mdx` is a snapshot of every package's `package.json` (`stackra.summary`, `exports`): update its
   row when a package is added, renamed or gains an entry. `/licensing` redirects to `customers/install` (the registry
   points `npm login` there).
+- `customers/free-and-pro.mdx` compares the free and Pro scopes (ADR 0461). The docs test fails when it names a
+  `@stackra/*` package this repository does not publish, a `@stackra-pro/*` package off `PRO_PACKAGES`, or leaves one
+  out (`scripts/free-and-pro/`, one declaration per file). `PRO_PACKAGES` changes only with an ADR that changes the Pro
+  line, in the same pull request; run `node apps/docs/scripts/free-and-pro/check-free-and-pro.ts` after renaming a
+  package the page names.
 - Never write the site, `llms.txt` or the API reference: gen writes them into `.stackra/site/`, which is never edited
   or committed. Moved paths go in `redirects` of `src/config/docs.config.ts`.
 - A new page is an `.mdx` under `src/docs/` plus an entry in a group of `src/config/docs.config.ts`; a new ADR needs no

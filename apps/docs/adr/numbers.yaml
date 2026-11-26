@@ -1630,3 +1630,8 @@
   status: accepted
   owner: claude
   issue: STA-2115
+"0539":
+  slug: release-cadence-the-1-0-bar-and-the-pro-offer
+  status: proposed
+  owner: claude
+  issue: STA-2865
