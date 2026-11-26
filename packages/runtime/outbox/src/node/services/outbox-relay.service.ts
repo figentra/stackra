@@ -29,9 +29,10 @@
  *           a message's load, fan-out and outcome run in its tenant's isolation (`inRowOwner`), the fan-out with the
  *           delivery's outcome so the deliveries take the message's tenant. A claimed row that does not load, or a
  *           tenant's row with no isolation bound, fails the tick (`ClaimNotLoadedError`, `RowIsolationMissingError`):
- *           it is never skipped. Every poll that completed, whether it held the lock or another relay did, beats the
- *           `outbox-relay` heartbeat through the bound `HeartbeatService` of @stackra/queue (ADR 0184 decision 4)
- *           without waiting for it; a poll that failed does not beat.
+ *           it is never skipped. Every poll that took the lock and completed its work beats the `outbox-relay`
+ *           heartbeat through the bound `HeartbeatService` of @stackra/queue (ADR 0184 decision 4) without waiting for
+ *           it; a poll that failed does not beat, and neither does one another relay held the lock for, so a relay
+ *           stuck inside the lock (which it keeps renewing) stops the beats of every replica and pages on-call.
  * Runtime: node
  * Governing contract: ADR 0078 (decision 4: the relay); ADR 0221 (decision 5: under five seconds of lag); ADR 0142
  *                     (decision 1); ADR 0149 (one runner under a lock); ADR 0327 (decision 9: the scope session);
@@ -202,7 +203,8 @@ export class OutboxRelayService extends Service {
    * retried or dead (inside the batch window a part batch is held for a later tick), then up to a batch of changes to
    * each bound change consumer from its cursor.
    *
-   * Once it completes it beats the `outbox-relay` heartbeat, without waiting for the beat.
+   * Once it completes holding the lock it beats the `outbox-relay` heartbeat, without waiting for the beat; a tick
+   * another relay held the lock for does not beat (that relay beats).
    *
    * @returns how many messages and changes the tick handled; `0` when none was due, the batch was held or another
    *          relay held the lock.
@@ -211,18 +213,22 @@ export class OutboxRelayService extends Service {
   async relay(): Promise<number> {
     const resolver = this.connected();
     let handled = 0;
-    await this.locks.tryWith(OUTBOX_DEFAULTS.lockKey, OUTBOX_DEFAULTS.lockTtl, async () => {
-      const now = this.clock.now();
-      const due = await this.driver.claim(now, OUTBOX_DEFAULTS.batchSize);
-      if (!this.holds(due, now))
-        for (const claim of due) {
-          await this.deliver(claim, now, resolver);
-          handled += 1;
-        }
-      for (const [type, models] of consumersOf())
-        if (resolver.has(type)) handled += await this.deliverChanges(type, models, now, resolver);
-    });
-    if (resolver.has(HeartbeatService))
+    const ran = await this.locks.tryWith(
+      OUTBOX_DEFAULTS.lockKey,
+      OUTBOX_DEFAULTS.lockTtl,
+      async () => {
+        const now = this.clock.now();
+        const due = await this.driver.claim(now, OUTBOX_DEFAULTS.batchSize);
+        if (!this.holds(due, now))
+          for (const claim of due) {
+            await this.deliver(claim, now, resolver);
+            handled += 1;
+          }
+        for (const [type, models] of consumersOf())
+          if (resolver.has(type)) handled += await this.deliverChanges(type, models, now, resolver);
+      },
+    );
+    if (ran && resolver.has(HeartbeatService))
       void resolver.get(HeartbeatService).beat(RELAY_HEARTBEATS.outbox);
     return handled;
   }

@@ -11,8 +11,8 @@
  *          live change is published again at the older version, same id, its data run through `down` (stackra-403).
  *          An owned claim is loaded, fanned out and removed (or retried) in its owner through the bound isolation, and
  *          its changes loaded in their owner; an owned claim with no isolation bound, or a claim that does not load,
- *          fails the tick and is never skipped. Every completed poll beats `outbox-relay` through a bound
- *          `HeartbeatService`, a held lock included; a failed poll beats nothing.
+ *          fails the tick and is never skipped. Every poll that held the lock and completed beats `outbox-relay`
+ *          through a bound `HeartbeatService`; a poll another relay held the lock for and a failed poll beat nothing.
  * Boundary: test only; the memory store, the memory lock driver, a recording publisher, a stand-in database that
  *           records the scopes it opens, a fixed clock and a map resolver.
  * Runtime: node (vitest)
@@ -578,17 +578,28 @@ class RecordingHeartbeats extends HeartbeatService {
 }
 
 describe("OutboxRelayService heartbeats", () => {
-  it("beats outbox-relay after every poll that completed, a held lock included", async () => {
+  it("beats outbox-relay after every poll it held the lock for and completed", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { relay, store } = relayOf(new MemoryLockDriver(clock), 0, [
+      [HeartbeatService, heartbeats],
+    ]);
+    await store.write([eventMessage()]);
+    await expect(relay.relay()).resolves.toBe(1);
+    await expect(relay.relay()).resolves.toBe(0);
+    expect(heartbeats.beats).toEqual(["outbox-relay", "outbox-relay"]);
+  });
+
+  it("beats nothing for a poll another relay held the lock for, so a stuck holder is not hidden", async () => {
     const heartbeats = new RecordingHeartbeats();
     const lockDriver = new MemoryLockDriver(clock);
     const { relay, store } = relayOf(lockDriver, 0, [[HeartbeatService, heartbeats]]);
     await store.write([eventMessage()]);
-    await expect(relay.relay()).resolves.toBe(1);
-    await expect(relay.relay()).resolves.toBe(0);
+    // Another replica holds the lock (and, stuck inside it, keeps it): every poll here is skipped and beats nothing.
     await new Locks(lockDriver, clock).tryWith("outbox.relay", Duration.minutes(1), async () => {
       await expect(relay.relay()).resolves.toBe(0);
+      await expect(relay.relay()).resolves.toBe(0);
     });
-    expect(heartbeats.beats).toEqual(["outbox-relay", "outbox-relay", "outbox-relay"]);
+    expect(heartbeats.beats).toEqual([]);
   });
 
   it("beats nothing for a poll that failed", async () => {

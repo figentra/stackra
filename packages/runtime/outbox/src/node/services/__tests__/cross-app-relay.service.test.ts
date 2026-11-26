@@ -9,8 +9,9 @@
  *          sends them outside the lock, so another tick takes none in flight and a crashed relay's rows return when the
  *          lease ends; `work` logs a failed tick and stops when its signal aborts. A leased delivery is loaded and its
  *          outcome recorded in its owner through the bound `CallIsolation`; an owned delivery with no isolation bound,
- *          or one that does not load, fails the tick and is never skipped. Every completed tick beats `cross-app-relay`
- *          through a bound `HeartbeatService`; a failed tick beats nothing.
+ *          or one that does not load, fails the tick and is never skipped. Every tick that held the lock and completed
+ *          beats `cross-app-relay` through a bound `HeartbeatService`; a tick another relay held the lock for and a
+ *          failed tick beat nothing.
  * Boundary: test only; the memory delivery store, the memory lock driver, the real Ed25519 signer with a fresh key, a
  *           fixed clock, a recording logger and a stubbed `fetch`.
  * Runtime: node (vitest)
@@ -394,6 +395,20 @@ describe("CrossAppRelayService heartbeats", () => {
     await expect(relay.relay()).resolves.toBe(1);
     await expect(relay.relay()).resolves.toBe(0);
     expect(heartbeats.beats).toEqual(["cross-app-relay", "cross-app-relay"]);
+  });
+
+  it("beats nothing for a tick another relay held the lock for", async () => {
+    transport();
+    const heartbeats = new RecordingHeartbeats();
+    const { relay, lockDriver } = await relayOf([deliveryOf()], {}, { heartbeats });
+    await new Locks(lockDriver, clock).tryWith(
+      "outbox.cross-app",
+      Duration.minutes(1),
+      async () => {
+        await expect(relay.relay()).resolves.toBe(0);
+      },
+    );
+    expect(heartbeats.beats).toEqual([]);
   });
 
   it("beats nothing for a tick that failed", async () => {

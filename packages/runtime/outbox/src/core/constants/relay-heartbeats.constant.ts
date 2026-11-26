@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `RELAY_HEARTBEATS`, the heartbeat job names of this package's relays (ADR 0184 decision 4), as
  *          `@stackra/infra-observability` plans them: `outbox-relay` for `OutboxRelayService` and `cross-app-relay`
- *          for `CrossAppRelayService`. Each relay beats its name after every poll that completed.
+ *          for `CrossAppRelayService`. Each relay beats its name after every poll it ran holding its lock.
  * Boundary: a frozen constant, internal to this package; the URL of each comes from `@stackra/queue`'s
  *           `HeartbeatConfig`, never from here.
  * Runtime: isomorphic
