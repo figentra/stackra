@@ -72,14 +72,15 @@ requirements FR-007 to FR-012 before either switch goes on.
 
 ## Tasks
 
-- [x] T001 tools/scripts/stackra-deploy.mjs: the service (FR-001 to FR-012)
-- [x] T002 tools/scripts/d1-migration-gate.mjs: the additive-only gate with trust tables (FR-005)
-- [x] T003 tools/scripts/worker-smoke.mjs: the smoke suites with the version proof (FR-006)
-- [x] T004 tools/scripts/**tests**/stackra-deploy.test.mjs, d1-migration-gate.test.mjs, worker-smoke.test.mjs and
-      tools/scripts/**tests**/**fixtures**/: the fake box and the tests
-- [x] T005 apps/docs/worker/main.ts, apps/docs/wrangler.jsonc, apps/docs/tsconfig.json, apps/docs/vitest.config.ts,
-      apps/docs/AGENTS.md: the docs Worker's `/-/version`
-- [x] T006 workers/edge/src/http/with-version.ts, workers/edge/src/main.ts, workers/edge/wrangler.jsonc,
-      workers/edge/src/interfaces/edge-env.interface.ts: edge's `x-stackra-version`
-- [x] T007 apps/docs/src/docs/adr/0536-box-deploys-promote-automatically-behind-mandatory-gates.mdx, apps/docs/adr/
-      numbers.yaml, the ADR index, 0468's note, tools/scripts/README.md: the decision and its index
+- [x] T001 `tools/scripts/stackra-deploy.mjs`: the service (FR-001 to FR-012)
+- [x] T002 `tools/scripts/d1-migration-gate.mjs`: the additive-only gate with trust tables (FR-005)
+- [x] T003 `tools/scripts/worker-smoke.mjs`: the smoke suites with the version proof (FR-006)
+- [x] T004 `tools/scripts/__tests__/stackra-deploy.test.mjs`, `tools/scripts/__tests__/d1-migration-gate.test.mjs`,
+      `tools/scripts/__tests__/worker-smoke.test.mjs` and `tools/scripts/__tests__/__fixtures__/`: the fake box and
+      the tests
+- [x] T005 `apps/docs/worker/main.ts`, `apps/docs/wrangler.jsonc`, `apps/docs/tsconfig.json`,
+      `apps/docs/vitest.config.ts`, `apps/docs/AGENTS.md`: the docs Worker's `/-/version`
+- [x] T006 `workers/edge/src/http/with-version.ts`, `workers/edge/src/main.ts`, `workers/edge/wrangler.jsonc`,
+      `workers/edge/src/interfaces/edge-env.interface.ts`: edge's `x-stackra-version`
+- [x] T007 `apps/docs/src/docs/adr/0536-box-deploys-promote-automatically-behind-mandatory-gates.mdx`,
+      `apps/docs/adr/numbers.yaml`, the ADR index, 0468's note, `tools/scripts/README.md`: the decision and its index
