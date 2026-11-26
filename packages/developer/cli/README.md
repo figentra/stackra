@@ -39,7 +39,7 @@ and `yaml`.
 | `stackra promote --to <e> [--from <e>] [--sha <sha>]`     | ship what `--from` (default staging) runs to `--to` through runway's providers; `--approved` behind an approval                           |
 | `stackra start`                                           | gen, then `vite preview` of an app's web build                                                                                            |
 | `stackra typecheck`                                       | gen, then `tsc --noEmit`                                                                                                                  |
-| `stackra test [--tier unit\|int\|e2e]`                    | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e) |
+| `stackra test [--tier unit\|int\|e2e] [--coverage]`       | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e); `--coverage` measures the unit tier against the member's floor (ADR 0182) |
 | `stackra lint`                                            | `oxlint .`                                                                                                                                |
 | `stackra check [flags]`                                   | the quality gate: every check phase in order at the workspace root (see below)                                                            |
 | `stackra validate`                                        | `check --only config,structure,docs,catalogues,spec`                                                                                      |
@@ -116,7 +116,8 @@ eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change),
   from SSM `/imagebuilder/stackra-testbed/ami`.
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
-run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
+run `turbo run <task>` (`test:e2e` for `--tier e2e`, `test:coverage` for `test --coverage`); each member's script calls
+`stackra <task>` again.
 
 `stackra dev --surface <surface>` runs at a product root (ADR 0436 decision 6, app-shells section 15 point 2). It reads
 `surfaces.<surface>` (`shell: os/console@3`, `packages`) from the root `runway.yaml`, runs `stackra gen`, writes the
@@ -191,7 +192,8 @@ token of its OIDC exchange (ADR 0453 decision 6); the registry Worker runs the l
 component homes, where `lint` has the rule off because it flags a class component's hook fields; ADR 0305), `gen`
 (`stackra gen --check`), `typecheck` (`turbo run typecheck`; `tsc --noEmit -p <member>` per member when turbo is
 absent or refuses a dependency cycle), `catalogues`, `spec` (the spec checks of `@stackra/repo-checks`, run in any repository that has `.agents/specs` and skipped without) and,
-opt-in, `test` (`turbo run test`). The `config`, `structure`, `docs` and `catalogues` checks come from
+opt-in, `test` (`turbo run test`) and `coverage` (`turbo run test:coverage`: each member's unit tier under its ADR 0182
+floor, one finding per member below it). `--with-tests` (and so `stackra verify`) adds both. The `config`, `structure`, `docs` and `catalogues` checks come from
 `@stackra/repo-checks`. The run stops after the first phase that fails, unless `--keep-going` (every phase runs, so a baseline is one call).
 A finding two tools report for the same file under the same meaning (gen `two_declarations_in_file` and lint
 `stackra(one-declaration-per-file)`) is reported once, by the earlier phase, noting the later tool agrees; the pairs
@@ -244,7 +246,8 @@ existing `runway.yaml` (ports and sizes are authored), and writes nothing under 
 
 A service is complete on creation: `stackra new service demo --area app --summary "Demo."`, then `pnpm install`, then
 `stackra gen` and `stackra test` in the member, with no hand edit and no tool config written. It gets the root module
-`src/<name>.module.ts` and one `createTestingModule` test. `--data` adds the database test peers, `@stackra/testing`, an
+`src/<name>.module.ts` and one `createTestingModule` test, and joins the coverage gate (`"test:coverage": "stackra test
+--coverage"` and `@vitest/coverage-v8`). `--data` adds the database test peers, `@stackra/testing`, an
 example module (`src/modules/notes/`: model, migration, a PGlite unit test, one `.int.test.ts`) and
 `"test:int": "stackra test --tier int"`; gen writes `.stackra/vitest.int.config.ts` for a member with an int test.
 `--repo <path>` names the workspace for every kind; a service written into a folder with no `pnpm-workspace.yaml` also
