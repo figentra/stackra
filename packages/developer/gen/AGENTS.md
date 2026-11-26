@@ -347,6 +347,9 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
 - `runwayQueues` (STA-1727): a service's full run refuses `queue_unprovisioned` for each job queue (`default` aside)
   that an environment of the member's `runway.yaml` leaves out of `queues`; the file is read with `yamlKeyTree`, a
   block-YAML key reader, for the same reason as `encoreApp`.
+- `encore_side_effects_dropped` (STA-2794): a run that writes files under `stackra-encore/<member>/` refuses a
+  package.json `"sideEffects": false`, which lets Encore's bundler drop their side-effect `import "./database"` (the
+  service then boots with "no database url was provided"). A service never declares it.
 - `compileMigrations` (stackra-248, ADR 0159): a service's full run imports each migration file (Node 24 strips the
   types) and compiles it with the member's own `@stackra/database` `compileMigration`, so the classes and the compiler
   share one kind registry. Own migrations are `src/modules/<key>/database/migrations/`; a declared package's are its
