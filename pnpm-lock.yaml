@@ -863,6 +863,9 @@ importers:
       '@stackra/cli':
         specifier: workspace:*
         version: link:../../packages/developer/cli
+      '@stackra/config':
+        specifier: workspace:*
+        version: link:../../packages/foundation/config
       '@stackra/container':
         specifier: workspace:*
         version: link:../../packages/foundation/container
@@ -872,6 +875,9 @@ importers:
       '@stackra/database':
         specifier: workspace:*
         version: link:../../packages/data/database
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../../packages/foundation/errors
       '@stackra/events':
         specifier: workspace:*
         version: link:../../packages/foundation/events
@@ -899,6 +905,9 @@ importers:
       '@stackra/typescript-config':
         specifier: workspace:*
         version: link:../../packages/tooling/typescript
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../packages/foundation/validation
       '@stackra/vitest-config':
         specifier: workspace:*
         version: link:../../packages/tooling/vitest
