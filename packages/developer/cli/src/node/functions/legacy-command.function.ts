@@ -4,7 +4,7 @@
  *          passthrough command: the name has `:` for spaces (`mcp sync` is `mcp:sync`; the kernel joins spaced words, so
  *          `stackra mcp sync` still works), the summary is its description and the usage its one example. Its `handle`
  *          does what `runCli` did: split the raw tokens at `--`, `parseArgs` strictly, run it with the run's streams and
- *          return its exit code, a usage error becoming the console's `UsageError` (exit 2).
+ *          return its exit code (the run's abort `signal` goes with it), a usage error becoming the console's `UsageError` (exit 2).
  * Boundary: migration only (ADR 0500 decision 7); a command leaves it by becoming a native console command class.
  *           Output stays byte-identical: the command writes through `io.stdout` and `io.stderr`.
  * Runtime: node
@@ -61,6 +61,7 @@ export function legacyCommand(
           values: values as Record<string, string | boolean | undefined>,
           positionals,
           rest,
+          signal: io.signal,
           cli: recurse,
         });
       } catch (error) {

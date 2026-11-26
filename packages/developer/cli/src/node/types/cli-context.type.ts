@@ -25,6 +25,12 @@ export type CliContext = {
   /** The arguments after `--`, passed on untouched. */
   readonly rest: readonly string[];
 
+  /**
+   * Aborts when the run is interrupted (SIGINT or SIGTERM). A command that keeps a handle open until something ends
+   * it, such as `mcp` reading standard input, must close it on this, or the process outlives its signal.
+   */
+  readonly signal?: AbortSignal;
+
   /** Runs another `stackra` command (its arguments without the program name) and resolves with its exit code. */
   readonly cli: (args: readonly string[], io: CliIo) => Promise<number>;
 };
