@@ -101,9 +101,9 @@ describe("handleRequest", () => {
       expect(rows).toEqual([
         expect.objectContaining({
           name: "@stackra/core",
-          repository: "figentra/stackra",
+          repository: "stackra-inc/stackra",
           expires_at: "2026-10-27T12:15:00.000Z",
-          run: "https://github.com/figentra/stackra/actions/runs/42/attempts/1",
+          run: "https://github.com/stackra-inc/stackra/actions/runs/42/attempts/1",
         }),
       ]);
       expect(JSON.stringify(rows)).not.toContain(token);
@@ -119,7 +119,7 @@ describe("handleRequest", () => {
       expect(
         (
           await exchangeAs(registry, {
-            workflow_ref: "figentra/stackra/.github/workflows/ci.yml@refs/heads/main",
+            workflow_ref: "stackra-inc/stackra/.github/workflows/ci.yml@refs/heads/main",
           })
         ).status,
       ).toBe(403);
@@ -278,7 +278,7 @@ describe("handleRequest", () => {
         (
           await registry.publish(PRO, {
             files: { "dist/index.mjs": "" },
-            repository: "figentra/stackra-pro",
+            repository: "stackra-inc/stackra-pro",
             claims: PRO_CLAIMS,
           })
         ).status,
@@ -287,7 +287,7 @@ describe("handleRequest", () => {
         (
           await registry.publish(PRO, {
             files: { ...PRO_FILES, "src/index.ts": "" },
-            repository: "figentra/stackra-pro",
+            repository: "stackra-inc/stackra-pro",
             claims: PRO_CLAIMS,
           })
         ).status,
@@ -296,7 +296,7 @@ describe("handleRequest", () => {
         (
           await registry.publish(PRO, {
             files: { ...PRO_FILES, "dist/index.mjs.map": "{}" },
-            repository: "figentra/stackra-pro",
+            repository: "stackra-inc/stackra-pro",
             claims: PRO_CLAIMS,
           })
         ).status,
@@ -305,7 +305,7 @@ describe("handleRequest", () => {
         (
           await registry.publish(PRO, {
             files: PRO_FILES,
-            repository: "figentra/stackra-pro",
+            repository: "stackra-inc/stackra-pro",
             claims: PRO_CLAIMS,
           })
         ).status,
@@ -421,7 +421,7 @@ describe("handleRequest", () => {
     it("answers whoami for a publish token", async () => {
       const token = await registry.publishToken("@stackra/core");
       expect(await body(await registry.request("/-/whoami", { token }))).toEqual({
-        username: "ci:figentra/stackra",
+        username: "ci:stackra-inc/stackra",
       });
       expect((await registry.request("/-/whoami")).status).toBe(401);
     });
@@ -431,7 +431,7 @@ describe("handleRequest", () => {
     beforeEach(async () => {
       await registry.publish(PRO, {
         files: PRO_FILES,
-        repository: "figentra/stackra-pro",
+        repository: "stackra-inc/stackra-pro",
         claims: PRO_CLAIMS,
       });
     });
@@ -518,7 +518,7 @@ describe("handleRequest", () => {
       });
       await registry.publish(PRO, {
         files: PRO_FILES,
-        repository: "figentra/stackra-pro",
+        repository: "stackra-inc/stackra-pro",
         claims: PRO_CLAIMS,
       });
     });
