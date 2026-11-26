@@ -37,7 +37,7 @@ MIN_MEM_MB=${TESTBED_MIN_MEM_MB:-1024}
 MEMINFO=${TESTBED_MEMINFO:-/proc/meminfo}
 LABEL=stackra.testbed.job
 # What the Mac's rsync leaves out; the seed refresh leaves out the same.
-EXCLUDES='node_modules .git .claude/worktrees .env* *.secrets.local.cue .mcp.json .turbo dist .next .cache'
+EXCLUDES='node_modules .git .claude/worktrees .env* *.secrets.local.cue .stackra/dev-secrets.json .mcp.json .turbo dist .next .cache'
 # The registry read token (FIGENTRA_REGISTRY_TOKEN; STACKRA_REGISTRY_TOKEN until the registry move retires it) under
 # both names, and the repository's own .npmrc as pnpm's auth file: pnpm 12 expands no variable in a project .npmrc,
 # so its `_authToken=${...}` line is ignored otherwise. The token stays in the environment, never in a file; every
