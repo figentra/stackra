@@ -1,6 +1,6 @@
 ---
 title: "0468 — Agents deploy dev and staging end to end; production waits on one Environment approval"
-description: "Accepted · 2026-10-28"
+description: "Accepted · 2026-10-28, amended 2026-11-25"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0468 (Accepted 2026-10-28, owner decision of that date, "Yes, apply it", then "everywhere"), the deploy model: agents develop and deploy end to end, dev and staging deploy and publish without asking, production waits on one owner GitHub Environment approval, secret values stay with the owner; it lists every ADR it retires or amends. Boundary: decision text; the code is batch stackra-244 (STA-1395) in .github/workflows/release.yml and .agents/rules; the guard (.agents/hooks/_rules.mjs) and the settings and opencode.jsonc permission entries are owner steps listed here; the ADR index row and docs nav belong to stackra-90; the other repositories are stackra-245 (STA-1394). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0012, 0013, 0017, 0025, 0030, 0119, 0170, 0193, 0230, 0293, 0325, 0453. */}
@@ -124,6 +124,14 @@ deploy`: production only with `--prod`. `eas submit`, `--auto-submit`, `channel:
 - Create the `release-pr` environment (deployment branches: main; no reviewer).
 - Apply the settings and `opencode.jsonc` edits listed on STA-1395, and the guard change (or clear an agent to).
 - Encore repository relink and the Infisical identity for deploy-static (STA-15), when an Encore app ships.
+
+## Amendment 2026-11-25: box deploys of Stackra's own Workers
+
+While figentra's GitHub Actions is billing-locked, box 1 deploys Stackra's own Workers (docs and edge) in the Stackra
+Cloudflare account (STA-2783, STA-2784). For those box deploys only, decision 2's per-deploy approval is replaced by
+automatic promotion behind the mandatory gates of [0536](/adr/0536-box-deploys-promote-automatically-behind-mandatory-gates)
+(the owner's "All automatic"). The shared services in the main account (the registry, the build cache, static), Encore
+production and package releases keep decision 2, through CI.
 
 ## Supersedes and sources
 
