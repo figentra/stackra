@@ -17,7 +17,7 @@ vi.mock("#node/functions/run-process.function", () => ({ runProcess: vi.fn() }))
 
 const spawn = vi.mocked(runProcess);
 
-/** What Encore 1.58.8 prints for `encore secret list` with no login (box 2, 2026-11-26). */
+/** What Encore 1.58.8 prints for `encore secret list` with no login (Encore 1.58.8, logged out). */
 const LOGGED_OUT =
   "error: POST /graphql: Post \"https://api.encore.dev/graphql\": not logged in: run 'encore auth login' first\n";
 
