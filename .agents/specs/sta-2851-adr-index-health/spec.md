@@ -81,4 +81,4 @@ two `stackra check` rules beside `adr-numbers` (STA-1732), with new exports from
 - 2026-11-26 → Clarified (the audit item re-checked against main at fa7235b40)
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md)
-- 2026-11-26 → Implementing (built in this branch on box 2)
+- 2026-11-26 → Implementing
