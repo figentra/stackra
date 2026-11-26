@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `runProcess`: piped output reaches the io, the exit code is returned, arguments are not
  *          shell-parsed, a missing program resolves 127, `node_modules/.bin` above the directory is on `PATH`, and a
- *          process past its `timeoutMs` is stopped and resolves 124 while one that ends first keeps its code.
+ *          process past its `timeoutMs` is stopped and resolves 124 while one that ends first keeps its code, and one
+ *          whose signal aborts (before or while it runs) is stopped (STA-2840).
  * Boundary: test only; starts `node` and throwaway scripts in the OS temp directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5).
+ * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); STA-2840.
  */
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -75,6 +76,27 @@ describe("runProcess", () => {
       expect(await runProcess({ command: "true", args: [], cwd: root, timeoutMs: 5000 }, io)).toBe(
         0,
       );
+    },
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "stops a process when its signal aborts, already aborted or while it runs",
+    async () => {
+      const { io } = captureIo();
+      const running = new AbortController();
+      const started = Date.now();
+      const run = runProcess(
+        { command: "sleep", args: ["10"], cwd: root, signal: running.signal },
+        io,
+      );
+      setTimeout(() => running.abort(), 100);
+      expect(await run).not.toBe(0);
+      const ended = new AbortController();
+      ended.abort();
+      expect(
+        await runProcess({ command: "sleep", args: ["10"], cwd: root, signal: ended.signal }, io),
+      ).not.toBe(0);
+      expect(Date.now() - started).toBeLessThan(5000);
     },
   );
 

@@ -5,9 +5,10 @@
  *          up goes first on `PATH`, so the member's own pinned tools win.
  * Boundary: never uses a shell, so no argument is parsed as shell syntax; never reads or prints a secret. A tool that
  *           cannot start resolves 127 with the reason written to `io.err`. One still running past `run.timeoutMs` gets
- *           SIGTERM (SIGKILL 5 s later) and resolves 124, the `timeout` convention.
+ *           SIGTERM (SIGKILL 5 s later) and resolves 124, the `timeout` convention; one whose `run.signal` aborts gets
+ *           SIGTERM (SIGKILL 5 s later) and resolves with its own exit code.
  * Runtime: node
- * Governing contract: ADR 0295 (decision 5); POSIX exit status 127 for a command that cannot run.
+ * Governing contract: ADR 0295 (decision 5); POSIX exit status 127 for a command that cannot run; STA-2840.
  */
 import { spawn } from "node:child_process";
 import { delimiter, dirname, join } from "node:path";
@@ -63,7 +64,15 @@ export function runProcess(run: ToolRun, io: CliIo): Promise<number> {
       io.err(`stackra: cannot start ${run.command}: ${error.message}\n`);
       resolve(127);
     });
+    // A run that ends elsewhere (the root dev run's encore exiting) stops this one.
+    const stop = (): void => {
+      child.kill("SIGTERM");
+      setTimeout(() => child.kill("SIGKILL"), 5000).unref();
+    };
+    if (run.signal?.aborted === true) stop();
+    else run.signal?.addEventListener("abort", stop, { once: true });
     child.on("close", (code) => {
+      run.signal?.removeEventListener("abort", stop);
       if (settled) return;
       settled = true;
       clearTimeout(deadline);

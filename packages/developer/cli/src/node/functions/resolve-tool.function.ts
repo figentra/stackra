@@ -11,16 +11,17 @@
  *          `.int.test.ts`). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
  *          member-root config it finds itself.
  * Boundary: pure apart from checking which generated configs exist, whether a Fumadocs site's dependencies are
- *           installed, and reading a docs app's dev port from its `runway.yaml` (`environments.dev.port`, the one place
- *           a port is written); starts nothing. A combination with no tool is refused with the reason, never guessed,
+ *           installed, reading a docs app's dev port from its `runway.yaml` (`environments.dev.port`, the one place
+ *           a port is written) and a worker's from the dev facts `stackra dev` wrote (`.stackra/dev/ports.json`, the
+ *           lane applied, so the Workers of a root run and of two lanes never share Wrangler's 8787); starts nothing. A combination with no tool is refused with the reason, never guessed,
  *           and a Fumadocs site with no installed dependencies with the one command to run first (STA-2026, FR-008).
  * Runtime: node
  * Governing contract: ADR 0295 (decisions 2 and 5: targets pick the outputs; tool configs live in `.stackra/`); ADR
  *                     0091 and 0124 (Encore is generated into `stackra-encore`); ADR 0182 (test tiers); ADR 0284
- *                     (workers on Wrangler).
+ *                     (workers on Wrangler); STA-2840 (a worker's dev port).
  */
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 import {
   DOCS_CONFIG_FILE,
@@ -31,6 +32,7 @@ import {
 import { parse } from "yaml";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
+import { workspaceRoot } from "#node/functions/workspace-root.function";
 import type { Member } from "#node/types/member.type";
 import type { ToolRun } from "#node/types/tool-run.type";
 import type { ToolTask } from "#node/types/tool-task.type";
@@ -43,6 +45,25 @@ const NATIVE_TARGETS = new Set(["ios", "android"]);
 
 /** The test tiers a member command runs; the other tiers of ADR 0182 run under their own tasks. */
 const TIERS = new Set(["unit", "int", "e2e"]);
+
+/**
+ * A worker's `wrangler dev` port flags from the dev facts: its runway's dev port with the lane applied, and the
+ * inspector 10 000 above it (Wrangler's own 9229 would collide between Workers); none without facts or a port.
+ */
+function workerPort(root: string): readonly string[] {
+  const facts = join(workspaceRoot(root), ".stackra", "dev", "ports.json");
+  if (!existsSync(facts)) return [];
+  const { members } = JSON.parse(readFileSync(facts, "utf8")) as {
+    members?: Record<string, { port?: unknown }>;
+  };
+  const port = members?.[basename(root)]?.port;
+  if (typeof port !== "number") return [];
+  return [
+    "--port",
+    String(port),
+    ...(port + 10_000 <= 65_535 ? ["--inspector-port", String(port + 10_000)] : []),
+  ];
+}
 
 /**
  * The tool process for `task` in `member`.
@@ -162,7 +183,8 @@ export function resolveTool(
       return refuse("the app declares no targets");
     }
     case "dev": {
-      if (layout === "worker") return at("wrangler", ["dev", ...config("wrangler.jsonc")]);
+      if (layout === "worker")
+        return at("wrangler", ["dev", ...config("wrangler.jsonc"), ...workerPort(root)]);
       if (layout === "service") {
         // `encore run` in the member root, where encore.app is; it discovers the services gen wrote beside it.
         if (!existsSync(join(root, ENCORE_SERVICES_DIR)))
