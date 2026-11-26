@@ -118,6 +118,11 @@
       "types": "./dist/react.d.mts",
       "default": "./dist/react.mjs"
     },
+    "./react/session": {
+      "@stackra/source": "./src/react/session/index.ts",
+      "types": "./dist/react-session.d.mts",
+      "default": "./dist/react-session.mjs"
+    },
     "./testing": {
       "@stackra/source": "./src/testing/index.ts",
       "types": "./dist/testing.d.mts",

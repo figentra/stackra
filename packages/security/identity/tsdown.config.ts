@@ -28,6 +28,8 @@ export default {
       native: "src/native/index.ts",
       node: "src/node/index.ts",
       react: "src/react/index.ts",
+      // The session alone, with no `@stackra/ui`, for a lean app (STA-2832).
+      "react-session": "src/react/session/index.ts",
       testing: "src/testing/index.ts",
     },
     // The native entry's lazy optional peers, kept as literal requires for Metro (STA-1722).
