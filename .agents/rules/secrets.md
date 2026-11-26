@@ -68,9 +68,11 @@ A CI job logs in to Infisical by GitHub OIDC for one step and reads `/ci` only (
 secret. Workers deploy from CI with a Cloudflare token read from Infisical `/ci` over GitHub OIDC (ADR 0284, ADR 0289). A workstation `encore deploy` stays denied (`guard-bash` and settings): Encore deploys run from a CI workflow, staging on a merge to main and production behind the owner's Environment approval, once a repository ships an Encore app (ADR 0468 decision 6).
 
 **MCP servers:**
-Token-based MCP servers launch through `tools/scripts/mcp.sh`, which runs `secrets-exec.mjs` with only the names the
-server's `.mcp.yaml` arguments reference (`$NAME`) and the ones it reads from its environment, and expands those
-arguments inside the server's process. This is a convention; no hook enforces it.
+Token-based MCP servers launch through `tools/scripts/mcp.sh --env NAME[,NAME…] --`, which runs `secrets-exec.mjs`
+with only those names and puts each value in the server's environment, never its arguments: a value on a command line
+shows in every process listing (STA-1617). The server reads its token from its environment, or a `${NAME}` placeholder
+in a committed file it reads itself (mcp-remote's `--header-file`); `mcp.sh` refuses a `$NAME` left in the arguments,
+and `tools/scripts/__tests__/mcp-sh.test.mjs` fails when a `.mcp.yaml` server would get a secret on its argv.
 
 ### Required Secrets
 

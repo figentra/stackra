@@ -1,0 +1,4 @@
+# Headers mcp-remote sends to the GitHub MCP server (`.mcp.yaml` server `github`, STA-1617).
+# `${GITHUB_PERSONAL_ACCESS_TOKEN}` is a placeholder, never a value: mcp-remote replaces it from its own environment,
+# where tools/scripts/mcp.sh put the decrypted token, so the token never sits on a command line or in this file.
+Authorization: Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}

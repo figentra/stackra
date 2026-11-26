@@ -10,7 +10,10 @@
 export type McpIssue = {
   /** Dotted path inside the document (`mcpServers.context7.args`); empty for the whole document. */
   readonly path: string;
-  /** A snake_case code: a zod issue code, or `secret_without_exec`, `secret_in_remote_server`, `unpinned_npx_server`. */
+  /**
+   * A snake_case code: a zod issue code, or `secret_on_argv`, `secret_without_exec`, `secret_in_remote_server`,
+   * `unpinned_npx_server`.
+   */
   readonly code: string;
   /** What is wrong and how to fix it. */
   readonly message: string;

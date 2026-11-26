@@ -4,10 +4,10 @@
   "preset": {
     "name": "./packages/developer/flow-preset/preset",
     "version": "0.11.0",
-    "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
+    "digest": "sha256:aa00c08d9f8ca8521f6a9ca7c77ef4bca20b19fc25f787fc2cab9e14c2aab972"
   },
   "profile": "framework",
-  "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
+  "overrides": "sha256:a7a61dbc7671593dccea20012eaf72eb2d69caf95d7059338cfa9cac7ab434c0",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:e9bd4919bafea5d6e8ce7dd7d88a47d8ff841bd48d19ccbad8756ecea302d973",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:a21f86c0761479111b99ec88802b44a06c7a0bcab44a9344fb41c109c197bb35",
@@ -56,7 +56,7 @@
     ".agents/rules/module-boundary.md": "sha256:78953dd61387f3386f44506c602efd807ab3057979cb0e89ac381a4b0a7b3b6b",
     ".agents/rules/naming-and-casing.md": "sha256:65b952c312518023e0356a0e3496fc83ce288302e9b8f61131387c73bb9a53ed",
     ".agents/rules/not-built-yet.md": "sha256:70fbc346476d23bb3b461b473cfe7b70d21de51672f9cafcb6f885f0a0514459",
-    ".agents/rules/secrets.md": "sha256:11afd53634a2f4679bb83446c25d0f02a0b58e168f97d9316f81334f7f2b25c8",
+    ".agents/rules/secrets.md": "sha256:5646bb4c4029ec0eb0d948d2c3b8382690c9d27bba067ae4681b7319375cf057",
     ".agents/rules/service-checklist.md": "sha256:9fcde412b327604fdcbe2fac2406379fb8c5673773fefa2831b53906ffa928c6",
     ".agents/rules/task-vocabulary.md": "sha256:3d45624c18766d6552ee11da53f085ec9770d274496a29e4147b63737c63d87c",
     ".agents/rules/tenancy.md": "sha256:1f4abda4c1b0e5102e574e72f37b57b477a2cfa2d2d541f56d8ff633769c4121",
@@ -116,7 +116,7 @@
     ".claude/settings.json": "sha256:99e65448049bb178bd290f66d87c9a0ed1c69d1957f369c1750d450b59dfb2e6",
     "opencode.jsonc": "sha256:91e93423ab0dec77ff76f5916ddc0148f26b4ac8a6bff817df407e6a2f74279b",
     ".opencode/plugins/fflow-guard.mjs": "sha256:771cd2dcb0636bfb9913e0280682baae345586c8dd7b339c556a9907815da867",
-    ".mcp.yaml": "sha256:3b9cd6e6f147b2037a293f4b7ef168ff02f5e2eb3293e5c50786dba161660a0f",
+    ".mcp.yaml": "sha256:bb3eb5cfc8bb6180732f57ae4b877cd3359276cf053c18a4deaa53ad1ebdea45",
     "AGENTS.md": "sha256:dab4cf454062d629d97175371c2c1d40a21800cb60dd4df29881bad305b97017",
     "CLAUDE.md": "sha256:1bb66f4650b13073d4dab49176c59479864a28274e4c6fb4a7902500a3c21dfc",
     "lefthook.yml": "sha256:56d729654d9993aebf75d7b7bedf829cbdd138ae121d08f3d30bcbdba9459c6b",

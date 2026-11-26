@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MCP_EXEC_COMMAND`: it starts the command after `--` in the working directory (the clone of
- *          figentra/secrets is `execWithSecrets`' default) and returns its exit code, and refuses an empty command
- *          before starting anything.
+ *          figentra/secrets is `execWithSecrets`' default) with the `--env` names as its secrets and returns its exit
+ *          code, and refuses an empty command or an empty `--env` before starting anything.
  * Boundary: test only; `execWithSecrets` is replaced by a fake, so no process starts and no secret store is touched.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0173; ADR 0257; ADR 0282 (decision 3).
@@ -30,16 +30,29 @@ const context = (rest: readonly string[], values: CliContext["values"] = {}): Cl
 
 describe("MCP_EXEC_COMMAND", () => {
   it("starts the command after -- in the working directory and returns its code", async () => {
-    const rest = ["npx", "-y", "server@1.0.0", "--key", "$CONTEXT7_API_KEY"];
-    expect(await MCP_EXEC_COMMAND.run(context(rest))).toBe(5);
-    expect(execWithSecrets).toHaveBeenLastCalledWith(rest, { cwd: "/repo" });
+    const rest = ["npx", "-y", "server@1.0.0"];
+    expect(await MCP_EXEC_COMMAND.run(context(rest, { env: "CONTEXT7_API_KEY,OTHER_KEY" }))).toBe(
+      5,
+    );
+    expect(execWithSecrets).toHaveBeenLastCalledWith(rest, {
+      cwd: "/repo",
+      secrets: ["CONTEXT7_API_KEY", "OTHER_KEY"],
+    });
     await MCP_EXEC_COMMAND.run(context(["node", "server.js"]));
     expect(execWithSecrets).toHaveBeenLastCalledWith(["node", "server.js"], { cwd: "/repo" });
   });
 
-  it("refuses an empty command", async () => {
+  it("refuses an empty command or an empty --env", async () => {
     vi.mocked(execWithSecrets).mockClear();
     await expect(MCP_EXEC_COMMAND.run(context([]))).rejects.toThrow(CliUsageError);
+    await expect(MCP_EXEC_COMMAND.run(context(["node"], { env: "" }))).rejects.toThrow(
+      CliUsageError,
+    );
     expect(execWithSecrets).not.toHaveBeenCalled();
+  });
+
+  it("declares --env, so the parser accepts it", () => {
+    expect(MCP_EXEC_COMMAND.options).toEqual({ env: { type: "string" } });
+    expect(MCP_EXEC_COMMAND.usage).toContain("--env NAME");
   });
 });
