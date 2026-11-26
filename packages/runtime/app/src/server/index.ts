@@ -7,7 +7,8 @@
  *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check, API keys included) with its call types,
  *          `ServiceClientSessionDriver` (a service call's own token and the user's token it forwards),
  *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, `nodeBodyStream`
- *          (the adapter's request body as a web stream, STA-2794), and `apiCacheControl`, the rule 22 `private, no-store` header), until
+ *          (the adapter's request body as a web stream, STA-2794), and `apiCacheControl`, the rule 22 `private, no-store` header),
+ *          `providePlatformEnvironment` (the generated Encore `environment.ts` settles the running environment, STA-2844), until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` through `#core/*`; `.` never imports it.
  * Runtime: node
@@ -38,6 +39,7 @@ export { apiCacheControl } from "#server/functions/api-cache-control.function";
 export { corsHeaders } from "#server/functions/cors-headers.function";
 export { createApp } from "#server/functions/create-app.function";
 export { nodeBodyStream } from "#server/functions/node-body-stream.function";
+export { providePlatformEnvironment } from "#server/functions/provide-platform-environment.function";
 export { serveGuardedCall } from "#server/functions/serve-guarded-call.function";
 export { BearerTokenGuard } from "#server/services/bearer-token.guard";
 export { CallAuthenticator } from "#server/services/call-authenticator.service";
