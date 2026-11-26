@@ -1,0 +1,215 @@
+---
+title: "Models and migrations"
+description: "Declare a model, write its migrations, read and write it through a service, and test it on real Postgres."
+icon: "database"
+---
+
+This guide adds a `projects` module to a service: a `Project` model, the migrations that create and later change its
+table, a service with the reads the module needs, and a test that runs all of it on Postgres. Every TypeScript block
+below is copied from example files the docs site's own tests run (`apps/docs/scripts/guides/models-and-migrations`).
+
+You need a service made with `stackra new service <name>` (or the template's `services/example`), whose
+`package.json` depends on `@stackra/model`, `@stackra/database` and `@stackra/validation`.
+
+## 1. Declare the model
+
+A model is a class. Its traits add the system columns, each field's type is the column and wire type, an initializer
+is the default, and `| null` makes the field nullable.
+
+```ts src/modules/projects/models/project.model.ts
+import { HasPublicId, Index, Model, SoftDeletes, Timestamps } from "@stackra/model";
+import { Int, Str } from "@stackra/validation";
+
+/** A piece of work a team tracks. */
+@Index(["status", "createdAt"])
+export class Project extends Model.with(HasPublicId("prj"), Timestamps, SoftDeletes) {
+  /** What the team calls it. */
+  @Str({ max: 120 })
+  name!: string;
+
+  /** The team's estimate in days, added by the second migration. */
+  @Int({ min: 1 })
+  estimateDays: number | null = null;
+
+  /** `active` until someone closes it, then `closed`. */
+  status = "active";
+
+  /** When it is due, if anyone said. */
+  dueOn: Date | null = null;
+}
+```
+
+- `HasPublicId("prj")` gives the row an id such as `prj_01jab3k4…`, minted on create. The prefix is 2 to 6 lowercase
+  letters and names the model everywhere: in URLs, logs and support requests.
+- `Timestamps` adds `createdAt` and `updatedAt`; `SoftDeletes` adds `deletedAt`, and every read hides a deleted row
+  unless it asks for it.
+- Validation decorators (`@Str`, `@Int`) state a field's limits, and gen reads them: an `@Int` number is an integer
+  column, any other number a double. Decorated fields come first in the class.
+- `@Index` declares an index your reads rely on. Gen refuses a list query that sorts or filters on a column with no
+  index.
+- Never build a model with `new`: the ORM loads rows without running a constructor. Rows come from a service's
+  `create` or `insert`, or from a factory in tests.
+
+Run `stackra gen`. It reads the model and writes its entity metadata under `.stackra/gen/entities/`, the
+`[OptionalProps]` that let `create` leave out fields with a default, and the wiring that gives `ProjectService` its
+model. You never edit those files.
+
+## 2. Write the migration
+
+The migration is a separate file, written by hand, because a released migration is frozen: once it has run anywhere,
+you never edit it, you add another.
+
+```ts src/modules/projects/database/migrations/0001-create-projects.migration.ts
+import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database";
+
+/** Creates the projects table. */
+export class CreateProjectsMigration extends Migration {
+  /** The table, its columns and its one index. */
+  up(schema: SchemaBuilder): void {
+    schema.create("projects", (t: Blueprint) => {
+      t.hasPublicId("prj");
+      t.timestamps();
+      t.softDeletes();
+      t.string("name", 120).notNull().comment("What the team calls the project.");
+      t.string("status", 20).notNull().default("active").comment("active or closed.");
+      t.timestamp("due_on").nullable().comment("When the project is due, if anyone said.");
+      t.index(["status", "created_at"]);
+    });
+  }
+}
+```
+
+The compiler holds you to a few rules, and refuses the migration when one is broken:
+
+- Every column states `notNull()` or `nullable()` and has a `comment(...)`.
+- A `NOT NULL` column added to an existing table needs a default.
+- An index on an existing table is `concurrently()`.
+- The module's tables live in its own Postgres schema, here `projects`.
+
+`stackra gen` compiles each migration into `.stackra/migrations/` as plain SQL, with a `.down.sql` inverse for
+development. The first one starts like this:
+
+```sql
+create schema if not exists "projects";
+create table "projects"."projects" (
+  "id" varchar(33) not null,
+  "created_at" timestamptz default now() not null,
+  "updated_at" timestamptz default now() not null,
+  "deleted_at" timestamptz null,
+  "name" varchar(120) not null,
+  "status" varchar(20) default 'active' not null,
+  "due_on" timestamptz null,
+  primary key ("id")
+);
+```
+
+## 3. Change the table later
+
+A new field is a new migration. Add the field to the model (`estimateDays` above) and write the second migration:
+
+```ts src/modules/projects/database/migrations/0002-add-project-estimate.migration.ts
+import { type Blueprint, Migration, type SchemaBuilder } from "@stackra/database";
+
+/** Adds the estimate column. */
+export class AddProjectEstimateMigration extends Migration {
+  /** A nullable column needs no default, so the add takes no table rewrite. */
+  up(schema: SchemaBuilder): void {
+    schema.table("projects", (t: Blueprint) => {
+      t.integer("estimate_days").nullable().comment("The team's estimate in days.");
+    });
+  }
+}
+```
+
+```sql
+alter table "projects"."projects" add column "estimate_days" integer null;
+```
+
+A change that would lock or rewrite a large table goes in steps across releases: add the new column, backfill it, then
+make it `NOT NULL` in a later migration (`t.change("estimate_days").notNull()`). The "Changing a column" section of
+the `@stackra/database` README lists every change `t.change(...)` supports.
+
+To apply the migrations, run `stackra db migrate`. It takes an advisory lock, so two pods starting at once never apply
+the same file twice, and it refuses to start when a file that already ran has been edited. On a development database,
+`stackra db rollback` reverts the last batch.
+
+## 4. Read and write through a service
+
+A service extends `CrudService<Model>`. It inherits `create`, `insert`, `find`, `findOneOrFail`, `update`, `delete`,
+`table` (a cursor page for a list screen) and the rest, and adds the reads your module needs.
+
+```ts src/modules/projects/services/project.service.ts
+import { SortDirection } from "@stackra/contracts";
+import { CrudService } from "@stackra/database";
+
+import type { Project } from "./project.model";
+
+/** The projects module's reads and writes. */
+export class ProjectService extends CrudService<Project> {
+  /** The active projects due before `cutoff`, soonest first. */
+  dueBefore(cutoff: Date): Promise<Project[]> {
+    return this.find(
+      { status: "active", dueOn: { $lt: cutoff } },
+      { orderBy: { dueOn: SortDirection.Asc } },
+    );
+  }
+
+  /** Closes a project; a stale or missing id refuses with `not_found`. */
+  close(id: Project["id"]): Promise<Project> {
+    return this.update({ id }, { status: "closed" });
+  }
+}
+```
+
+(In an app the import reads `#modules/projects/models/project.model`.) The service never opens a transaction or picks a
+connection: it uses the running call's, so every write in an action commits or rolls back with the action. Actions and
+queries take the service in their constructor; gen writes the wiring.
+
+## 5. Test it on Postgres
+
+Unit tests run on the `memory` database driver: real Postgres compiled to WebAssembly (PGlite) inside the test
+process, started from your compiled migrations, so constraints, defaults and indexes behave as in production. No Docker
+is needed. In an app, `createTestingModule(ProjectsModule).useDrivers("memory").compile()` connects one for you; the
+guide's test connects it directly and writes inside `database.transaction`, as an action's unit of work would:
+
+```ts
+const projects = new ProjectService();
+
+await database.transaction(async () => {
+  projects.create({ name: "Website refresh", dueOn: new Date("2026-12-01") });
+  projects.create({ name: "Mobile app", dueOn: new Date("2027-03-01") });
+  projects.create({ name: "Brand book", dueOn: new Date("2026-12-15"), estimateDays: 5 });
+});
+
+const due = await projects.dueBefore(new Date("2027-01-01"));
+expect(due.map((project) => project.name)).toEqual(["Website refresh", "Brand book"]);
+expect(due[0]?.id).toMatch(/^prj_/);
+```
+
+`create` adds the row to the unit of work, which writes it when the transaction commits. The soft delete hides a row
+from every read until a read asks for it:
+
+```ts
+const [website, brandBook] = due;
+if (website === undefined || brandBook === undefined) throw new Error("two projects are due");
+
+await database.transaction(() => projects.close(website.id));
+expect((await projects.findOneOrFail({ id: website.id })).status).toBe("closed");
+
+await database.transaction(() => projects.delete({ id: brandBook.id }));
+expect(await projects.count({})).toBe(2);
+expect(await projects.count({}, { withDeleted: true })).toBe(3);
+```
+
+The same test also checks that every migration applies, reverts and applies again (`checkMigrations` from
+`@stackra/database/testing`), which catches a `.down.sql` that does not undo its `.up.sql`.
+
+## Checklist
+
+- The model has `HasPublicId` and the traits for the columns it needs; no constructor.
+- Each migration states nullability and a comment for every column; an applied migration is never edited.
+- Reads that sort or filter a list have an index.
+- The service has no transaction, connection or tenant code of its own.
+- Tests run on the `memory` driver, from the compiled migrations.
+
+Next: [Tenancy in an app](/build-an-app/tenancy) makes a model belong to a tenant.
