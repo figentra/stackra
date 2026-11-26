@@ -35,7 +35,7 @@ rules. The owner's answers DP17, DP18, SC5, SC6 and SC7 (mem L447, L551, 2026-10
 
 ## Enforcement
 
-planned — Trivy and OSV-Scanner in the release job; cosign verification at deploy; the Renovate configuration is reviewed under `runbooks/renovate.mdx` (final pass).
+partial — Trivy (lockfile) and a cosign-signed SBOM in the npm release job; OSV-Scanner in CI; for deploy images, `runway-image.yml` builds, Trivy-gates, pushes, writes a syft SBOM, signs and attests the digest with cosign (keyless, or a KMS key) and verifies it, and `stackra runway image:verify` is the check at deploy (`@stackra/runway` `publishImage`, `verifyImage`, STA-609). Planned: the Renovate configuration is reviewed under `runbooks/renovate.mdx` (final pass).
 
 ## Alternatives
 

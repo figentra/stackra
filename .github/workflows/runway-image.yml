@@ -1,0 +1,235 @@
+# Stackra file contract:
+# Purpose: Runway's image step for a self-hosted deploy (AWS ECS, Compose, on-prem), a public reusable workflow (ADR 0168
+#          decision 1; `encore build docker` runs only here, in a deploy or release job, never in a pull-request gate,
+#          decision 2). Checks out the commit, refuses one that is not on main, builds the product and runs gen, signs in
+#          to the image registry, then `stackra runway image:publish` (@stackra/runway `publishImage`, ADR 0174): builds the
+#          generated Encore app as one image from its deploy commit, scans it with Trivy (a critical vulnerability with a
+#          released fix fails the job before anything is pushed), pushes it, writes a syft CycloneDX SBOM, signs the
+#          digest with cosign (keyless with this job's GitHub OIDC identity, or `kms-key` for an air-gapped signer),
+#          attests the SBOM to it and verifies both. The record and the SBOM are uploaded as the `runway-image` artifact;
+#          `reference` (image@digest) is what the caller's deploy pins and checks with `stackra runway image:verify`.
+# Secrets: none in the repository. The registry login is the job's own: ECR through GitHub OIDC (`aws-role`, an ARN,
+#          not a secret), GHCR through this job's GITHUB_TOKEN. A keyless signature needs no key; a KMS key is used by
+#          reference through the job's cloud identity. A product caller reads STACKRA_REGISTRY_TOKEN from the sops
+#          scope ci/build/registry (ADR 0525); every caller reads the turbo values from ci/build/turbo.
+# Owner: release-operations
+name: Runway image
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: >-
+          The image repository, `<registry>/<path>` with no tag or digest (an ECR repository in the shared account,
+          ADR 0174 decision 1; `ghcr.io/<owner>/<name>` for a public repository, ADR 0287 decision 10).
+        type: string
+        required: true
+      base-image:
+        description: The base image pinned by digest (`node:24-slim@sha256:<digest>`); a tag alone is refused.
+        type: string
+        required: true
+      environment:
+        description: >-
+          The GitHub environment the job runs in (a deploy or release environment). Its name is in the caller principal
+          figentra/infra grants scopes to, and its protection decides which refs may build an image.
+        type: string
+        required: true
+      sha:
+        description: The commit to build. Empty builds the triggering commit.
+        type: string
+        default: ""
+      arch:
+        description: The target architecture, `amd64` or `arm64`.
+        type: string
+        default: amd64
+      registry:
+        description: "`ecr` (sign in with `aws-role` over GitHub OIDC) or `ghcr` (sign in with this job's GITHUB_TOKEN)."
+        type: string
+        default: ecr
+      aws-role:
+        description: For `ecr`, the role ARN the job assumes over GitHub OIDC to push (a value, never a secret).
+        type: string
+        default: ""
+      aws-region:
+        description: For `ecr`, the registry's region.
+        type: string
+        default: ""
+      kms-key:
+        description: >-
+          A KMS key reference (`awskms://…`, `gcpkms://…`) for an air-gapped signer (ADR 0174 decision 2); empty signs
+          keyless with this job's GitHub OIDC identity (Sigstore).
+        type: string
+        default: ""
+      install-args:
+        description: Arguments to `pnpm install`, space-separated words with no quoting.
+        type: string
+        default: --frozen-lockfile
+      product:
+        description: >-
+          A product repository calls: read the Stackra registry token before the install, and run the product's
+          installed `stackra` (`pnpm exec stackra`) instead of building core's CLI from the workspace.
+        type: boolean
+        default: false
+    outputs:
+      reference:
+        description: The image by digest (`<image>@sha256:<digest>`), signed, attested and verified.
+        value: ${{ jobs.image.outputs.reference }}
+      digest:
+        description: The manifest digest (`sha256:<digest>`).
+        value: ${{ jobs.image.outputs.digest }}
+
+# ADR 0019 D2: nothing by default; the job asks for what it needs (the caller's job must grant the same).
+permissions: {}
+
+jobs:
+  image:
+    name: Image (${{ inputs.arch }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Only a called workflow can take its environment from an input: the environment binds the image to its
+    # protection, its OIDC subject and the keyless certificate the verify pins.
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read # checkout
+      id-token: write # keyless cosign signature (Fulcio), the ECR sign-in and secrets-decrypt (GitHub OIDC)
+      packages: write # a `ghcr` push; unused for `ecr`
+    outputs:
+      reference: ${{ steps.image.outputs.reference }}
+      digest: ${{ steps.image.outputs.digest }}
+
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+
+      # Every image is of a commit on main (ADR 0170 decision 6), checked before anything is built or signed in to.
+      - name: Release commit
+        id: commit
+        env:
+          REGISTRY: ${{ inputs.registry }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          git merge-base --is-ancestor "$sha" origin/main || {
+            echo "::error title=Not on main::$sha is not on main; Runway builds images only of commits of main."
+            exit 1
+          }
+          case "$REGISTRY" in
+            ecr | ghcr) ;;
+            *) echo "::error title=registry::$REGISTRY is not ecr or ghcr"; exit 1 ;;
+          esac
+
+      # ADR 0027 D2: node and pnpm come from the caller's mise.toml; the image tools are pinned below.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node pnpm
+
+      - name: Registry token (sops)
+        if: inputs.product
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        with:
+          scope: ci/build/registry
+          names: STACKRA_REGISTRY_TOKEN
+
+      # pnpm 12 reads registry tokens only from the user-level ~/.npmrc, never the repository's.
+      - name: Registry token (user .npmrc)
+        if: inputs.product
+        run: |
+          echo "::add-mask::${STACKRA_REGISTRY_TOKEN}"
+          umask 077
+          printf '//npm.stackra.figentra.com/:_authToken=%s\n' "${STACKRA_REGISTRY_TOKEN}" >> "$HOME/.npmrc"
+
+      # The arguments arrive through the environment, never spliced into the script (zizmor template-injection).
+      - name: Install dependencies
+        env:
+          INSTALL_ARGS: ${{ inputs.install-args }}
+        run: |
+          set -f
+          # shellcheck disable=SC2086 # word splitting of the argument list is the point
+          pnpm install $INSTALL_ARGS
+
+      # STA-1393: Turborepo remote cache. The cache only speeds the build.
+      - name: Turborepo remote cache (sops)
+        continue-on-error: true
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        with:
+          scope: ci/build/turbo
+
+      # The same build and gen the gate runs, so the deploy tree carries every member's generated app and every
+      # package's build output.
+      - name: Build and gen
+        run: |
+          pnpm build
+          pnpm gen
+
+      - name: AWS (GitHub OIDC)
+        if: inputs.registry == 'ecr'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ inputs.aws-role }}
+          aws-region: ${{ inputs.aws-region }}
+          role-session-name: runway-image-${{ github.run_id }}
+
+      # The password goes over stdin, never as an argument; the host is the image's registry part.
+      - name: Registry login
+        env:
+          IMAGE: ${{ inputs.image }}
+          REGISTRY: ${{ inputs.registry }}
+          AWS_REGION_INPUT: ${{ inputs.aws-region }}
+          GITHUB_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          host="${IMAGE%%/*}"
+          if [ "$REGISTRY" = ecr ]; then
+            aws ecr get-login-password --region "$AWS_REGION_INPUT" | docker login --username AWS --password-stdin "$host"
+          else
+            printf '%s' "$GITHUB_TOKEN" | docker login --username "$ACTOR" --password-stdin "$host"
+          fi
+
+      # ADR 0174: build, Trivy gate, push, syft SBOM, cosign signature and SBOM attestation, verify. Trivy is past the
+      # March 2026 compromise of its releases (CVE-2026-33634), as the release job's lockfile scan.
+      - name: Image (Runway)
+        id: image
+        env:
+          IMAGE: ${{ inputs.image }}
+          BASE: ${{ inputs.base-image }}
+          ARCH: ${{ inputs.arch }}
+          KMS_KEY: ${{ inputs.kms-key }}
+          SHA: ${{ steps.commit.outputs.sha }}
+          PRODUCT: ${{ inputs.product }}
+        run: |
+          set -euo pipefail
+          stackra=(node packages/developer/cli/dist/stackra.mjs)
+          [ "$PRODUCT" = true ] && stackra=(pnpm exec stackra)
+          key=()
+          [ -n "$KMS_KEY" ] && key=(--key "$KMS_KEY")
+          mise exec aqua:aquasecurity/trivy@0.76.1 aqua:anchore/syft@1.57.0 aqua:sigstore/cosign@3.1.4 \
+            aqua:encoredev/encore@1.58.8 -- \
+            "${stackra[@]}" runway image:publish --image "$IMAGE" --base "$BASE" --sha "$SHA" --arch "$ARCH" \
+            --out dist/images "${key[@]}"
+          record="dist/images/runway-image-${IMAGE##*/}.json"
+          echo "reference=$(jq -r .reference "$record")" >> "$GITHUB_OUTPUT"
+          echo "digest=$(jq -r .digest "$record")" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Image::$(jq -r .reference "$record") (signed $(jq -r .signing "$record"), SBOM attested)"
+
+      - name: Image record and SBOM
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: runway-image-${{ inputs.arch }}
+          path: dist/images/
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Registry logout
+        if: always()
+        env:
+          IMAGE: ${{ inputs.image }}
+        run: docker logout "${IMAGE%%/*}" || true

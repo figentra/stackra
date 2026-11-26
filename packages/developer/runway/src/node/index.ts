@@ -20,6 +20,8 @@
  *          App Store Connect, Play, Expo, Google Cloud, Firebase and Sentry ports, ADR 0482; the vault port's
  *          memory driver only, ADR 0525).
  *          The local edge for a built surface (`previewServe`, `LocalEdgeKvDriver`, `renderShellPage`, STA-1676).
+ *          The image step of a self-hosted deploy (`publishImage`, `verifyImage`, `IMAGE_SUPPLY_CHAIN_SETTINGS`,
+ *          ADR 0174, STA-609).
  * Boundary: names each re-export and declares nothing. Node only: it reads files. Imports `.` internals one way
  *           (ADR 0294 decision 15); exports none of `.`'s symbols.
  * Runtime: node
@@ -55,6 +57,7 @@ export { EdgeKvOptions } from "#node/schemas/edge-kv-options.schema";
 export { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.constant";
 export { PULL_REQUEST_PREVIEW_SETTINGS } from "#node/constants/pull-request-preview-settings.constant";
 export { RUNWAY_COMMANDS } from "#node/constants/runway-commands.constant";
+export { IMAGE_SUPPLY_CHAIN_SETTINGS } from "#node/constants/image-supply-chain-settings.constant";
 export { BRAND_STEP_SETTINGS } from "#node/constants/brand-step-settings.constant";
 export { SCREENSHOT_CAPTURE_DEFAULTS } from "#node/constants/screenshot-capture-defaults.constant";
 export { LAUNCH_CHECK_DEFAULTS } from "#node/constants/launch-check-defaults.constant";
@@ -85,7 +88,9 @@ export { platformRows } from "#node/functions/platform-rows.function";
 export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { previewServe } from "#node/functions/preview-serve.function";
 export { promoteCanary } from "#node/functions/promote-canary.function";
+export { publishImage } from "#node/functions/publish-image.function";
 export { publishProduct } from "#node/functions/publish-product.function";
+export { verifyImage } from "#node/functions/verify-image.function";
 export { pullRequestPreviewHost } from "#node/functions/pull-request-preview-host.function";
 export { publishShell } from "#node/functions/publish-shell.function";
 export { readBundles } from "#node/functions/read-bundles.function";
@@ -115,6 +120,9 @@ export type { AppLinkKeys } from "#node/types/app-link-keys.type";
 export type { BundleManifest } from "#node/types/bundle-manifest.type";
 export type { CanaryPromotion } from "#node/types/canary-promotion.type";
 export type { GithubJobClaims } from "#node/types/github-job-claims.type";
+export type { ImagePublication } from "#node/types/image-publication.type";
+export type { ImagePublishRequest } from "#node/types/image-publish-request.type";
+export type { ImageVerifyRequest } from "#node/types/image-verify-request.type";
 export type { CanaryPromotionRequest } from "#node/types/canary-promotion-request.type";
 export type { CanarySample } from "#node/types/canary-sample.type";
 export type { CanarySettings } from "#node/types/canary-settings.type";

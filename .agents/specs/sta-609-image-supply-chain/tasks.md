@@ -1,0 +1,10 @@
+# Tasks: deploy images are scanned, described by an SBOM and signed
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-609
+
+- [x] T001 the settings, the error and its step type, the trust arguments with their tests, in `packages/developer/runway/src/node/constants/image-supply-chain-settings.constant.ts`, `packages/developer/runway/src/core/errors/runway-image-rejected.error.ts`, `packages/developer/runway/src/core/types/image-step.type.ts`, `packages/developer/runway/src/node/functions/image-trust-arguments.function.ts` — covers: AC-004, P-004 — route: spec-task
+- [x] T002 `verifyImage` and its test, in `packages/developer/runway/src/node/functions/verify-image.function.ts` — covers: AC-005, P-005 — route: spec-task — deps: T001
+- [x] T003 `publishImage`, `EncoreDeployTree.dir` and the test, in `packages/developer/runway/src/node/functions/publish-image.function.ts`, `packages/developer/runway/src/node/functions/encore-deploy-tree.function.ts` — covers: AC-001, AC-002, AC-003, AC-006, AC-007, P-001, P-002, P-003, P-006, P-007 — route: spec-task — deps: T002
+- [x] T004 the two commands, `RUNWAY_COMMANDS` and the entry barrels with their tests, in `packages/developer/runway/src/node/commands/runway-image-publish.command.ts`, `packages/developer/runway/src/node/commands/runway-image-verify.command.ts`, `packages/developer/runway/src/node/index.ts`, `packages/developer/runway/src/core/index.ts` — covers: AC-004, AC-005 — route: spec-task — deps: T003
+- [x] T005 the reusable workflow, in `.github/workflows/runway-image.yml` — covers: AC-008 — route: spec-task — deps: T004
+- [x] T006 the docs and the changeset, in `packages/developer/runway/README.md`, `packages/developer/runway/AGENTS.md`, `apps/docs/src/docs/runbooks/runway.mdx`, `.github/workflows/README.md`, the ADR 0174 Enforcement line and `.changeset/runway-image-supply-chain.md` — covers: AC-001, AC-008 — route: spec-task — deps: T005

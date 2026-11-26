@@ -54,6 +54,7 @@ describe("@stackra/runway", () => {
       "RunwayConfig$",
       "RunwayDeployFailedError",
       "RunwayEnvironment",
+      "RunwayImageRejectedError",
       "RunwayInvalidError",
       "RunwayKind",
       "RunwayLockedError",

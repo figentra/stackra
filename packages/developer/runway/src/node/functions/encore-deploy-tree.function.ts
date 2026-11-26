@@ -216,7 +216,7 @@ export async function encoreDeployTree(
         { cwd: tree },
       )
     ).trim();
-    return { sha: deploy, members, dispose };
+    return { sha: deploy, members, dir: tree, dispose };
   } catch (error) {
     await dispose();
     throw error;

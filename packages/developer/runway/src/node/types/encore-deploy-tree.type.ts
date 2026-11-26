@@ -14,6 +14,8 @@ export type EncoreDeployTree = {
   readonly sha: string;
   /** The service members the app holds, relative to the repository (`services/billing`, `services/usage`). */
   readonly members: readonly string[];
+  /** The temporary checkout of the deploy commit, until `dispose`: the app root `encore build docker` runs in. */
+  readonly dir: string;
   /** Removes the temporary checkout; the deploy commit stays in the repository's object store. */
   readonly dispose: () => Promise<void>;
 };
