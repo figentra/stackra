@@ -33,7 +33,11 @@ owner plus agents, so the Enterprise 24/7 tier needs a second human before it is
 
 ## Enforcement
 
-planned — the Better Stack on-call schedule and the status page are configured in `@stackra/infra-observability` (ADR 0171); the runbook split is checked when runbooks are published.
+partly live — the runbooks are [Incident response](/runbooks/incident-response), [On-call](/runbooks/on-call) and
+[Postmortem](/runbooks/postmortem) (STA-27), and the runbook split is checked: the `apps/docs/scripts/runbooks` tests,
+run by `pnpm verify`, refuse an account id, a host address, a phone number or an e-mail address in a published runbook
+and check that the three pages state decisions 1 and 2. Planned — the monitors and the status page are declared in
+`@stackra/infra-observability` (ADR 0171) and the Better Stack on-call schedule is set by the owner (STA-1574).
 
 ## Open questions
 

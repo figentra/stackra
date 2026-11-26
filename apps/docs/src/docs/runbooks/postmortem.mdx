@@ -1,0 +1,99 @@
+---
+title: "Postmortem"
+description: "The blameless postmortem every incident gets within five business days: who writes it, the template, how corrective actions become checks rather than promises, the review, and what may be published."
+icon: "notebook-pen"
+---
+
+Every incident gets a postmortem within five business days of being resolved, at every level
+([ADR 0185](/adr/0185-incident-response-on-call-status-page-and-support-tiers) decision 2). A SEV1 or SEV2 gets the
+full template below; a SEV3 or SEV4 may use the short form (summary, timeline and actions) in its Linear issue. The
+incident's issue stays open until the postmortem is linked and every corrective action is filed.
+
+## Blameless
+
+A postmortem looks for the gap in the system or the process that let a person's ordinary action cause harm. It never
+names a person as the cause. People are named only as actors on the timeline, and an unexplained change is a question
+to answer, not a finding about who made it. The test of a good postmortem: someone else on a bad day could not repeat
+the incident the same way.
+
+## Who writes it
+
+The incident commander owns it. The `incident-commander` agent can draft it from the timeline on the Linear issue and
+the evidence (logs, deploy records, `git log`); the incident commander checks every line of the draft against the
+evidence before it is reviewed.
+
+## The template
+
+Attach it to the incident's Linear issue as a document named `Postmortem: <slug>`.
+
+```markdown
+# Postmortem: <slug>
+
+- **Severity:** SEV1 | SEV2 | SEV3 | SEV4 (and any change during the incident)
+- **Class:** outage | degraded | data loss | security | personal-data breach | pipeline | release
+- **Detected / Mitigated / Resolved (UTC):** <t> / <t> / <t>
+- **Detected by:** uptime monitor | heartbeat | Sentry | customer | person
+- **Impact:** <what broke, for whom, how many, for how long; data lost or exposed, if any>
+- **Root cause:** <one paragraph: a system or process gap, never a person>
+
+## Timeline
+
+| UTC | Event | Actor |
+| --- | ----- | ----- |
+
+## What went well
+
+## What went badly
+
+## Where we got lucky
+
+## Contributing factors
+
+- <factor>: could a check have refused this? <yes: which / no: why>
+
+## Corrective actions
+
+| Issue | Action | Owner | Enforced by a check? |
+| ----- | ------ | ----- | -------------------- |
+
+## Runbook changes
+
+- `apps/docs/src/docs/runbooks/<slug>.mdx`: <added / amended>
+```
+
+The times give the two numbers worth tracking across incidents: time to detect (start of impact to detection) and time
+to mitigate (detection to the end of customer impact).
+
+## Corrective actions
+
+- **Each action is a Linear issue** linked from the postmortem, with an owner and a priority. An action without an
+  issue is not an action.
+- **Prefer a check to a promise.** A precondition written only in prose is not a precondition. For every contributing
+  factor ask which test, lint rule, gate or alert would have refused it, and file that.
+- **Fix the runbook in the same week.** If a step was missing, wrong or hard to find, amend the page and list it under
+  "Runbook changes". A new runbook goes in the Runbooks group of `apps/docs/src/config/docs.config.ts`.
+- **A decision the incident forces is the owner's.** Write it up as a question for the owner; an ADR records the
+  answer.
+
+## Review
+
+The owner reads every SEV1 and SEV2 postmortem and agrees the actions and their priority. When a second person joins,
+the review is a short meeting with whoever took part. The incident's issue closes once the postmortem is linked and its
+actions are filed, not when the actions are done.
+
+## Publishing
+
+Postmortems are internal. For a SEV1 or SEV2 that customers saw, the incident commander may post a short public
+summary on the status page: what happened, how long, what we changed. It names no customer, no person and no
+environment detail ([ADR 0185](/adr/0185-incident-response-on-call-status-page-and-support-tiers) decision 4). A
+security incident or a personal-data breach is never summarised in public beyond what notification requires
+([Incident response: Personal-data breaches](/runbooks/incident-response#personal-data-breaches)).
+
+## Checks that back this page
+
+| Rule                                                               | Check                                                     | State  |
+| ------------------------------------------------------------------ | --------------------------------------------------------- | ------ |
+| This page states the five-business-day rule and the blameless rule | `apps/docs/scripts/runbooks` tests (STA-27)               | Live   |
+| A postmortem exists for every incident                             | The incident's Linear issue stays open until it is linked | Manual |
+
+See also [Incident response](/runbooks/incident-response) and [On-call](/runbooks/on-call).

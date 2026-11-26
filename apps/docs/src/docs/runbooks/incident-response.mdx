@@ -1,0 +1,165 @@
+---
+title: "Incident response"
+description: "How an incident is declared, sized SEV1 to SEV4, brought to a safe stop and closed: the roles, the first steps, mitigation before diagnosis, who is told what, and the extra steps for a leaked secret and a personal-data breach."
+icon: "siren"
+---
+
+<Note>
+  Status: the procedure holds now. Paging needs the Better Stack on-call schedule the owner sets up
+  ([On-call](/runbooks/on-call), STA-1574), and the public status page stays unpublished until the
+  first external customer ([ADR
+  0185](/adr/0185-incident-response-on-call-status-page-and-support-tiers) decision 3). This page is
+  public, so it holds generic steps only: the names, phone numbers, account ids and hosts of one
+  environment belong in that environment's private runbook in the stacks repository (decision 4),
+  and the check under "Checks that back this page" refuses them here.
+</Note>
+
+An incident is anything that hurts customers now or will soon: a service or the registry down, data lost or wrong,
+a secret or personal data exposed. The order is always the same: **stop the harm, then find the cause, then make sure
+it cannot happen the same way again.**
+
+## Severity levels
+
+Pick the level from the impact on customers, not from the cause. When in doubt, pick the higher level; lowering it later
+costs nothing. Every incident, at every level, has a Linear issue and a postmortem
+([ADR 0185](/adr/0185-incident-response-on-call-status-page-and-support-tiers) decision 2).
+
+| Level    | Impact                                                                                                                                                                                                         | Who is told                                                                            | Linear priority |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | --------------- |
+| **SEV1** | Production is down or unsafe for many customers: a production service or the registry is unavailable, data is lost or corrupted, personal data is exposed, a production secret leaked and is still valid.      | Better Stack pages the on-call person at any hour. Status page and affected customers. | Urgent          |
+| **SEV2** | A major function is broken or badly degraded for some customers with no workaround, or a SEV1 is likely if nothing is done (backups failing, a critical heartbeat missing, an exposed secret already revoked). | The on-call person at once, by push and e-mail. Status page when customers can see it. | High            |
+| **SEV3** | A minor function is broken or slow and a workaround exists, or internal delivery is blocked (the gate red on `main`, a release stuck).                                                                         | The Linear issue; worked the next business day.                                        | Medium          |
+| **SEV4** | No customer impact: a cosmetic fault, a noisy monitor, a near miss worth learning from.                                                                                                                        | The Linear issue; planned like other work.                                             | Low             |
+
+- A security or personal-data incident starts at SEV2 or higher and stays there until it is triaged.
+- The level can change while the incident runs. Write every change on the timeline with the time and the reason.
+
+## Roles
+
+The team is small, so one person may hold every role. Name who holds each one on the issue anyway, so a second person
+who joins knows who decides.
+
+| Role                   | Does                                                                                                                                                                                                     |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Incident commander** | Owns the incident until it is handed over in writing. Decides the level, the mitigation and when it is resolved. Starts as the on-call person who acknowledged the page.                                 |
+| **Operator**           | Runs the commands: rollback, deploy, rotation, restore. Production deploys and rollbacks are the owner's ([ADR 0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted) decision 8). |
+| **Communications**     | Writes the status page updates and the customer messages. The incident commander until someone else takes it.                                                                                            |
+| **Scribe**             | Keeps the timeline. The `incident-commander` agent can do this and draft the postmortem; it writes documents only and never runs a mitigation or reads a secret.                                         |
+
+## The response
+
+<Steps>
+  <Step title="Acknowledge">
+    Acknowledge the page in Better Stack before anything else. An unacknowledged page escalates to the
+    next person on the escalation policy ([On-call](/runbooks/on-call)).
+  </Step>
+  <Step title="Declare">
+    Open a Linear issue titled `SEV<n>: <what customers see>`, set its priority from the table above
+    and start the timeline in it: UTC times, one line per event, each with who acted. The first line
+    is when the problem was detected and by what (a monitor, a heartbeat, Sentry, a customer).
+  </Step>
+  <Step title="Stop the harm">
+    Mitigate before you diagnose. In order of preference:
+
+    1. **Roll back** the last deploy if the incident started after it: `stackra runway rollback <sha>`
+       redeploys the last good release within 15 minutes ([Deploys: Rollback](/runbooks/deploys#rollback),
+       [runway rollback](/runway/rollback)). A release whose migration contracted the schema is rolled
+       forward instead.
+    2. **Switch the feature off** with its setting or flag, if it has one.
+    3. **Revoke** a leaked credential at its vendor ([Secrets: A value was exposed](/runbooks/secrets#a-value-was-exposed)).
+    4. **Restore** lost or corrupted data ([Disaster recovery](/runbooks/disaster-recovery)).
+
+    Fix forward under pressure only when none of these is possible, and write down why.
+
+  </Step>
+  <Step title="Tell people">
+    Update the status page (once it is published) when the incident is declared and at every state
+    change: investigating, identified, monitoring, resolved. Say what customers see and what they
+    can do; never the cause before it is known, a customer's name or any personal data. Post the same
+    update on the Linear issue.
+  </Step>
+  <Step title="Find the cause">
+    Work from evidence: the Better Stack incident and logs, Workers Logs in Cloudflare, Sentry, the
+    traces, the deploy records (GitHub Deployments) and `git log` of the deployed commit. An
+    unexplained change is a question to answer, not a conclusion about who made it.
+  </Step>
+  <Step title="Resolve">
+    Resolve when customers are no longer affected and the monitors that fired are green again. Close
+    the incident in Better Stack and on the status page. Leave the Linear issue open: it closes when
+    the postmortem is written and its actions are filed.
+  </Step>
+  <Step title="Write the postmortem">
+    Within five business days of resolving, at every level ([Postmortem](/runbooks/postmortem)).
+  </Step>
+</Steps>
+
+## Telling customers
+
+The support terms are Figentra's and live in [OS ADR 0062](https://docs.os.figentra.com/adr/0062-operations-slas-and-support-tiers)
+(summarised in the Note of ADR 0185): the next business day by e-mail for the entry tier, 8 business hours for the mid
+tier and a 4-hour urgent response for Enterprise. There is no 24/7 cover in any contract until a second on-call person
+exists. Community support is GitHub Discussions (ADR 0185 decision 6).
+
+- Answer inside the customer's tier, even when the answer is only "we are on it, next update at a stated time".
+- Promise a next update, never a fix time.
+- An Enterprise customer affected by a SEV1 or SEV2 hears from us directly, not only through the status page.
+
+## Security incidents
+
+A leaked secret, an unexpected operator session, a suspected intrusion. Everything above applies, plus:
+
+- **A leaked secret** is revoked at the vendor first, then rotated ([Secrets: A value was exposed](/runbooks/secrets#a-value-was-exposed),
+  [Token rotation after exposure](/runbooks/token-rotation)). Rewriting git history does not un-leak it. Report
+  scanner hits by rule id and path only, never the value.
+- **An unexpected break-glass alert** is a SEV1 until it is explained: operator access to production is break-glass
+  only, and every session raises an alert ([ADR 0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy)
+  decision 1).
+- **Keep the evidence.** Do not delete logs, rotate away an attacker's session record or rebuild a host before the
+  audit trail is copied. The audit log is hash-chained ([ADR 0212](/adr/0212-audit-evidence-access-logs-hash-chain-and-retention)).
+- **Keep it private.** The Linear issue holds the detail; the status page says only what customers need to act on.
+
+## Personal-data breaches
+
+A breach is personal data lost, changed, disclosed or made unavailable without authority. GDPR, the UAE and KSA PDPL
+and the children's data rules apply ([ADR 0189](/adr/0189-privacy-operations-and-data-retention) decision 6), and
+their notification clocks start when we become aware, not when the cause is found.
+
+<Steps>
+  <Step title="Record the moment of awareness">
+    Write the UTC time on the issue. Under GDPR a controller notifies its supervisory authority
+    within 72 hours of awareness when the breach is likely to put people at risk (Article 33), and a
+    processor tells each controller without undue delay. For a tenant's data we are usually the
+    processor and the tenant is the controller.
+  </Step>
+  <Step title="Scope it">
+    Which tenants, which field classes ([ADR
+    0134](/adr/0134-data-invariants-classification-and-delete-lifecycle)), how many people, whether
+    any are children, and whether the data was encrypted with a key the attacker did not have.
+  </Step>
+  <Step title="Contain it">
+    Close the path, revoke the credentials it used, and keep the evidence as above.
+  </Step>
+  <Step title="Decide on notification (owner)">
+    The owner decides, with counsel, who is notified and when: the affected tenants, the supervisory
+    authorities and, where the risk to people is high, the people themselves (GDPR Article 34). The
+    UAE and KSA laws have their own duties, which counsel confirms for the case. Agents never
+    contact a regulator, a tenant or a data subject.
+  </Step>
+  <Step title="Record it">
+    Every breach is recorded with its facts, effects and remedy, even one that needs no
+    notification. The record stays in the private issue.
+  </Step>
+</Steps>
+
+## Checks that back this page
+
+| Rule                                                                        | Check                                                                  | State                                |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------ |
+| Public runbooks hold no environment details (ADR 0185 decision 4)           | `apps/docs/scripts/runbooks` tests, in `pnpm verify` (STA-27)          | Live                                 |
+| This page states the levels, the rollback time and the postmortem deadline  | the same tests                                                         | Live                                 |
+| A monitor or heartbeat miss opens a Better Stack incident and pages on-call | `@stackra/infra-observability` (`uptimeMonitors`, `heartbeatMonitors`) | Built; applied once STA-1574 is done |
+| Rollback redeploys a recorded release                                       | `stackra runway rollback`                                              | Built                                |
+| Leaked values are caught before they are committed                          | gitleaks in `lefthook.yml` and `pnpm secrets:scan`                     | Live                                 |
+
+See also [On-call](/runbooks/on-call), [Postmortem](/runbooks/postmortem), [Disaster recovery](/runbooks/disaster-recovery),
+[Monitoring](/runbooks/monitoring) and [Deploys](/runbooks/deploys).

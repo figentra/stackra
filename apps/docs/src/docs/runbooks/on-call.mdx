@@ -1,0 +1,120 @@
+---
+title: "On-call"
+description: "Who is paged and for what: the Better Stack on-call schedule and escalation policy, what to do in the first minutes after a page, the hand-over note, keeping pages actionable, and what the owner sets up once."
+icon: "phone-call"
+---
+
+<Note>
+  Status: the schedule is not live yet. The monitors and heartbeats that page are declared in
+  `@stackra/infra-observability` and applied by `apply-observability.yml` once the owner finishes
+  the Better Stack setup ([Monitoring](/runbooks/monitoring), STA-1574). One person is on call
+  today, so SEV1 pages reach that person at any hour, but no contract offers 24/7 cover until a
+  second on-call person or an outside provider exists ([ADR
+  0185](/adr/0185-incident-response-on-call-status-page-and-support-tiers) open question 1). The
+  rota, names and phone numbers live in Better Stack and the private runbook, never on this page
+  (decision 4).
+</Note>
+
+Better Stack runs on-call (ADR 0185 decision 1). The person on call is the first responder for every page and the
+incident commander until they hand over ([Incident response](/runbooks/incident-response)).
+
+## What pages
+
+| Source                                                         | Declared in                                          | Pages as                                       |
+| -------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------- |
+| An uptime monitor misses (a public host is down from outside)  | `observability.uptime` of the root `runway.yaml`     | A Better Stack incident: e-mail and push       |
+| A heartbeat misses (a cron, an outbox relay or a queue worker) | `observability.heartbeats`, from each job's manifest | A Better Stack incident: e-mail and push       |
+| A person declares an incident by hand                          | Better Stack, "Report an incident"                   | The escalation policy, like any incident       |
+| A new or regressed error in an app                             | Sentry alert per deployed environment                | E-mail to the issue's owners; it does not page |
+
+SEV1 pages at any hour. Anything that pages must need a person now; a signal that can wait for the morning is an
+e-mail or a Linear issue, not a page.
+
+## The escalation policy
+
+The policy in Better Stack decides who hears about an unacknowledged incident, and when. Keep it this shape:
+
+1. The person on call, by push and e-mail, then by phone call if the incident is not acknowledged.
+2. The backup on-call person, when one exists.
+3. The owner.
+
+The waits between steps are set in Better Stack and recorded in the private runbook. Change them there, not here.
+
+## When you are paged
+
+<Steps>
+  <Step title="Acknowledge">
+    Acknowledge in the Better Stack app. That stops the escalation; it does not resolve anything.
+  </Step>
+  <Step title="Look">
+    Open the monitor or heartbeat that fired and the logs for the same minutes (Better Stack,
+    Workers Logs in Cloudflare, Sentry). Check whether a deploy went out just before.
+  </Step>
+  <Step title="Decide">
+    If customers are affected, or could be, declare the incident and follow [Incident
+    response](/runbooks/incident-response). If it was a false alarm, resolve it in Better Stack with
+    one line saying why, and open a SEV4 issue to fix or remove the noisy check.
+  </Step>
+  <Step title="Get help early">
+    Escalate by hand in Better Stack when the incident is beyond you or you cannot reach a laptop. A
+    page you cannot work on is not a page you keep.
+  </Step>
+</Steps>
+
+## Before a shift
+
+- The Better Stack app is installed, signed in, and allowed through Do Not Disturb for critical alerts.
+- You can reach a laptop with access to GitHub, the cloud consoles, the deploy approvals and `figentra/secrets`
+  ([Secrets](/runbooks/secrets)). Break-glass production access works for you and raises its alert
+  ([ADR 0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy) decision 1).
+- You have read the last hand-over note.
+- After a change to your phone or to the escalation policy, send yourself a test incident from Better Stack and
+  acknowledge it.
+
+## Hand-over
+
+At the end of a shift write a hand-over note for the next person, as a Linear issue titled `On-call hand-over <date>`, with:
+
+- incidents still open, with their level and the next step;
+- deploys or migrations in flight;
+- monitors that are paused or muted, and when they come back;
+- anything that paged and was resolved as noise, with its SEV4 issue.
+
+When the next person acknowledges the note, the open incidents are theirs.
+
+## Keeping pages worth answering
+
+- Every page needs an action. A page that needed none gets a SEV4 issue to tune or remove the check.
+- A paused monitor has an end date. Pause it in Better Stack with a note, never by deleting it from `runway.yaml`.
+- Review the month's pages once a month: what paged, at what hour, and whether it was real.
+
+## What the owner sets up once
+
+<Steps>
+  <Step title="People and phones">
+    In Better Stack, invite each on-call person, verify their phone for calls and push, and set
+    their time zone.
+  </Step>
+  <Step title="The schedule">
+    Create the on-call calendar. With one person, that person is on call all the time; add a
+    rotation when a second person joins.
+  </Step>
+  <Step title="The escalation policy">
+    Create the policy above and make it the default for the team, so every monitor and heartbeat
+    that `apply-observability.yml` creates uses it.
+  </Step>
+  <Step title="Test it">
+    Report a test incident and check that it reaches the person on call by push, then by phone.
+  </Step>
+</Steps>
+
+## Checks that back this page
+
+| Rule                                                               | Check                                                                  | State                                |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------ |
+| Every public host and job has a monitor that opens an incident     | `@stackra/infra-observability` (`uptimeMonitors`, `heartbeatMonitors`) | Built; applied once STA-1574 is done |
+| This page holds no environment details and names the on-call facts | `apps/docs/scripts/runbooks` tests (STA-27)                            | Live                                 |
+| The rota and the escalation policy                                 | Better Stack, set by the owner                                         | Not set                              |
+
+See also [Incident response](/runbooks/incident-response), [Monitoring](/runbooks/monitoring) and
+[Postmortem](/runbooks/postmortem).
