@@ -404,8 +404,10 @@ const page = await book.list({ after: lastId, limit: 500 });
 
 `PostgresIdempotencyStoreDriver` and `PostgresRateLimitStoreDriver` are the durable drivers (name `postgres`) of
 `@stackra/actions`' `IdempotencyStore` and `RateLimitStore` ports, for a deployment that runs no Valkey (ADR 0396).
-Their tables come from `database.0002_create_action_store_tables`; each call commits in its own transaction, so a
-claim holds before the action's unit of work starts. Selecting them in runway (`config.actions.stores`) needs
+Their tables come from `database.0002_create_action_store_tables`. The idempotency store joins the running
+transaction (ADR 0495 notes of 2026-11-01 and 2026-11-26): the pipeline claims the key and writes its result inside the
+call's transaction, so the result commits with the action's writes or not at all, and a concurrent claim of the same
+key waits for it. A held key lapses after its 15-minute lease; a done key replays for the window. Selecting them in runway (`config.actions.stores`) needs
 `@stackra/actions` to list `postgres` among its store driver names.
 
 ## Cache tables on Postgres
