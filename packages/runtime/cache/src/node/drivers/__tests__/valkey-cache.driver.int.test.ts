@@ -2,10 +2,10 @@
  * Stackra file contract:
  * Purpose: integration tests of `ValkeyCacheDriver` on a real Valkey: entries, sorted sets and their lifetimes as the
  *          server keeps them. A value put by one instance is read by another; the server reclaims an entry and its
- *          sets once their lifetimes pass, and a set never outlives its longest member nor lives forever; `forget` and
- *          `forgetTag` reach the entries another instance wrote and only them; a dead member leaves its set on the next
- *          add; `remember` serves a stale entry inside its window while one reload replaces it; two namespaces stay
- *          apart on one server.
+ *          sets once their lifetimes pass; a set is extended for a longer member, never shortened for a shorter one,
+ *          and never lives forever; a dead member leaves a set that lives on at the next add; `forget` and
+ *          `forgetTag` reach the entries another instance wrote and only them; `remember` serves a stale entry inside
+ *          its window while one reload replaces it; two namespaces stay apart on one server.
  * Boundary: integration tier (`.int`): needs Docker for the Testcontainers Valkey (`useValkey`). Each test has a key
  *           prefix of its own; the clock is the system clock, since the server's `PX` runs on real time.
  * Runtime: node (vitest)
@@ -100,11 +100,12 @@ describe(ValkeyCacheDriver, () => {
     expect(await keysUnder("b:")).toEqual([]);
   });
 
-  it("keeps a set as long as its longest member, never shorter after a shorter add", async () => {
+  it("extends a set for a longer member and never shortens it for a shorter one", async () => {
     const cache = cacheOn("c:");
     const tag = CacheKey.of(Category, "cat_c");
-    await cache.put(CacheKey.of(Product, "prd_long"), 1, Duration.minutes(5), { tags: [tag] });
-    await cache.put(CacheKey.of(Product, "prd_short"), 2, Duration.seconds(2), { tags: [tag] });
+    await cache.put(CacheKey.of(Product, "prd_first"), 1, Duration.seconds(2), { tags: [tag] });
+    await cache.put(CacheKey.of(Product, "prd_long"), 2, Duration.minutes(5), { tags: [tag] });
+    await cache.put(CacheKey.of(Product, "prd_short"), 3, Duration.seconds(2), { tags: [tag] });
     const sets = (await keysUnder("c:")).filter((name) => name.startsWith("c:#"));
     expect(sets.length).toBeGreaterThan(0);
     const lifetimes = await Promise.all(sets.map((name) => valkey.client.pttl(name)));
@@ -136,9 +137,10 @@ describe(ValkeyCacheDriver, () => {
     await expect(writer.get(CacheKey.of(Product, "prd_e3"))).resolves.toBe(3);
   });
 
-  it("drops a dead member from its set on the next add", async () => {
+  it("drops a dead member from a set that lives on, on the next add", async () => {
     const cache = cacheOn("f:");
     const tag = CacheKey.of(Category, "cat_f");
+    await cache.put(CacheKey.of(Product, "prd_anchor"), 0, TEN_MINUTES, { tags: [tag] });
     await cache.put(CacheKey.of(Product, "prd_gone"), 1, Duration.parse("100ms"), { tags: [tag] });
     await sleep(250);
     await cache.put(CacheKey.of(Product, "prd_kept"), 2, TEN_MINUTES, { tags: [tag] });
@@ -148,6 +150,7 @@ describe(ValkeyCacheDriver, () => {
     ).flat();
     expect(members.some((member) => member.includes("prd_gone"))).toBe(false);
     expect(members.some((member) => member.includes("prd_kept"))).toBe(true);
+    expect(members.some((member) => member.includes("prd_anchor"))).toBe(true);
   });
 
   it("serves a stale entry inside its window while one reload replaces it", async () => {

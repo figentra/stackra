@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: integration tests of `PostgresLockDriver` on real Postgres, with transactions on separate connections as
  *          two instances of a service have: a key taken in one transaction is refused to every other until that
- *          transaction ends, commit or rollback; a refused multi-key try keeps the keys it took before the busy one
+ *          transaction ends, commit or rollback, and no advisory lock outlives it (never a session-level lock that a
+ *          pooled connection would keep); a refused multi-key try keeps the keys it took before the busy one
  *          until its own transaction ends; each lease writes its keys' `locking.lock_tokens` rows and draws a token
  *          larger than every earlier lease's, a rolled-back one included; `within` joins a running transaction and
  *          opens one only when none runs; and `Locks` over two drivers serialises a read-modify-write and lets one
@@ -54,6 +55,16 @@ const sleep = (milliseconds: number): Promise<void> =>
     setTimeout(resolve, milliseconds);
   });
 
+/** How many advisory locks any session of the cluster holds now. */
+async function advisoryLocks(): Promise<number> {
+  const [row] = (await em()
+    .fork()
+    .execute(
+      "select count(*)::int as held from pg_locks where locktype = 'advisory'",
+    )) as unknown as readonly { readonly held: number }[];
+  return taken(row).held;
+}
+
 /** Tries `keys` in a transaction of its own, which ends at once. */
 const tryAlone = (keys: readonly string[], owner = "other"): Promise<LockLease | undefined> =>
   postgres.database.transaction(() => driver().tryAcquire(keys, owner, TTL));
@@ -96,8 +107,10 @@ describe(PostgresLockDriver, () => {
     expect(holder.lease).toMatchObject({ keys: ["a1"], owner: "holder" });
     expect(await tryAlone(["a1"])).toBeUndefined();
     expect(await tryAlone(["a2"])).toBeDefined();
+    expect(await advisoryLocks()).toBeGreaterThan(0);
     release.open();
     await holder.ended;
+    expect(await advisoryLocks()).toBe(0);
     const next = await tryAlone(["a1"]);
     expect(taken(next).token).toBeGreaterThan(taken(holder.lease).token);
   });
@@ -108,6 +121,7 @@ describe(PostgresLockDriver, () => {
     expect(await tryAlone(["b1"])).toBeUndefined();
     release.open();
     await holder.ended;
+    expect(await advisoryLocks()).toBe(0);
     const next = await tryAlone(["b1"]);
     expect(taken(next).token).toBeGreaterThan(taken(holder.lease).token);
   });

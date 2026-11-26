@@ -5,8 +5,8 @@
  *          on them, the driver never creates a table (a schema the migration did not make rejects the call and stays
  *          absent), and the migration runs over tables `postgresCacheTables("cache")` made earlier and keeps their
  *          rows. Then the driver itself on those tables, as several instances share them: a value one instance put
- *          is read by another; a write sweeps dead entries and a tag add dead members; `forget` matches its prefix
- *          literally, so a namespace whose name differs only where `like` reads a wildcard (`_`) keeps its entries;
+ *          is read by another; a write sweeps dead entries and a tag add dead members; `forget` drops only the keys
+ *          it covers, so a namespace whose name differs only where `like` reads a wildcard (`_`) keeps its entries;
  *          concurrent tag adds keep the latest instant; `remember` serves a stale entry while one reload replaces it.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0005 migration creates the tables.
  *           `CacheSql` here runs each statement on a forked entity manager, outside any transaction. The driver tests
@@ -165,7 +165,7 @@ describe(PostgresCacheDriver, () => {
     await expect(driver().get(CacheKey.of(Product, "prd_live"))).resolves.toBe("live");
   });
 
-  it("forgets by a literal prefix, so a namespace differing only at a like wildcard keeps its entries", async () => {
+  it("forgets only covered keys, so a namespace differing only at a like wildcard keeps its entries", async () => {
     const namespace = new SettableCacheNamespace();
     const cache = driver("cache", namespace);
     const key = CacheKey.of(Product, "prd_like", "en");
