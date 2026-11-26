@@ -193,7 +193,7 @@ test:coverage`, stopping at the first failure.
   `resolve-tool.function.test.ts`, `tool-command.function.test.ts`, `service-template.function.test.ts`) prove FR-005
   to FR-007, AC-004, AC-006, EC-04 to EC-06 — verified by: unit
 - **SC-004**: `turbo run test:coverage` passes for `@stackra/tenancy`, `@stackra/testing`, `@stackra/cli` and
-  `@stackra/vitest-config` on box 2 — verified by: manual
+  `@stackra/vitest-config` on a Linux box — verified by: manual
 
 ## Compatibility and migration
 
