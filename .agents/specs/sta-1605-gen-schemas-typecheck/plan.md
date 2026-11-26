@@ -10,7 +10,8 @@ Put the generated folders in the `library` preset's program, then fix every erro
 gen's emitters, never by loosening a check. Literal defaults go through a new curried `withDefault` that types the
 literal by the field's output; `X$Check` omits a model's getters and reads generic shapes over `any`; the `~defaults`
 brand is limited to call-input shapes; the wiring stops re-declaring authored `DriverRegistry` keys, duplicate
-client variants and Worker-only drivers; driver names follow a member-named port's stand-in; a member off the
+client variants and Worker-only drivers (a portable `./worker` driver the `./node` entry also exports is listed from
+`./node`, which the package manifest records as `node`); driver names follow a member-named port's stand-in; a member off the
 container gets no module. Four package schemas that disagreed with their own types are corrected.
 
 ## Technical Context
@@ -52,9 +53,11 @@ container gets no module. Four package schemas that disagreed with their own typ
 - **P-001**: for every library member, the typecheck program includes `.stackra/gen` and `.stackra/entry` — Validates: FR-001
 - **P-002**: for every literal default, the generated expression parses `undefined` to an equal fresh copy of the literal, and a literal that violates the field's output does not compile — Validates: FR-002
 - **P-003**: for every model and generic shape, `X$Check` holds when the class and the schema agree — Validates: FR-003, FR-004, FR-005
-- **P-004**: for every `DriverRegistry` key, exactly one declaration exists in a member's program — Validates: FR-006
+- **P-004**: for every `DriverRegistry` key, exactly one declaration exists in a member's program, and every `./worker` driver a member that is no Worker lists comes from the package's `./node` entry — Validates: FR-006
 - **P-005**: for every driver file of a member-named port, the driver name equals the stand-in's name — Validates: FR-007
 - **P-006**: for every member without `@stackra/container`, no generated file names a module — Validates: FR-009
+- **P-007**: for every class gen reads from an import, the generated wiring imports the name that import's specifier exports — Validates: FR-008
+- **P-008**: for every driver-name field whose port no driver reaches, the generated schema parses any string — Validates: FR-010
 
 ## Architecture overview
 
@@ -80,6 +83,24 @@ with `portMember`, and `rootModuleOf`. The reader adds what the emitters need: a
 ## Files and folders
 
 ```text
+packages/developer/gen/
+├── AGENTS.md
+├── package.json
+└── __golden__/
+    ├── anonymous-route/expected/services/shop/.stackra/gen/entities/shop.ts.golden
+    ├── anonymous-route/expected/services/shop/.stackra/gen/schemas/shop.ts.golden
+    ├── contracts-only-host/expected/services/shop/.stackra/gen/entities/shop.ts.golden
+    ├── contracts-only-host/expected/services/shop/.stackra/gen/schemas/shop.ts.golden
+    ├── contracts-pipeline-port/expected/services/shop/.stackra/gen/entities/shop.ts.golden
+    ├── contracts-pipeline-port/expected/services/shop/.stackra/gen/schemas/shop.ts.golden
+    ├── contracts-port-host/expected/services/shop/.stackra/gen/entities/shop.ts.golden
+    ├── contracts-port-host/expected/services/shop/.stackra/gen/schemas/shop.ts.golden
+    ├── cross-app-producer/expected/services/shop/.stackra/gen/entities/shop.ts.golden
+    ├── cross-app-producer/expected/services/shop/.stackra/gen/schemas/shop.ts.golden
+    ├── pipeline-ports/expected/services/shop/.stackra/gen/entities/shop.ts.golden
+    ├── pipeline-ports/expected/services/shop/.stackra/gen/schemas/shop.ts.golden
+    ├── service/expected/services/shop/.stackra/gen/entities/shop.ts.golden
+    └── service/expected/services/shop/.stackra/gen/schemas/shop.ts.golden
 packages/developer/gen/src/
 ├── core/functions/
 │   ├── emit-schemas.function.ts
@@ -104,6 +125,7 @@ packages/developer/gen/src/
     │   └── ts-node.type.ts
     └── __tests__/generated-schemas-typecheck.test.ts
 packages/foundation/validation/src/core/
+├── index.ts
 ├── functions/with-default.function.ts
 ├── types/default-literal.type.ts
 ├── types/fields.type.ts
@@ -111,6 +133,23 @@ packages/foundation/validation/src/core/
 packages/foundation/container/src/core/types/wiring.type.ts
 packages/tooling/typescript/src/library.json
 packages/tooling/typescript/README.md
+packages/application/registry/src/core/schemas/catalogue-manifest.schema.ts
+packages/cross-cutting/analytics/src/core/constants/analytics-config-schema.constant.ts
+packages/experience/panel/src/node/constants/export-config-schema.constant.ts
+packages/state/settings/src/node/constants/setting-values-schema.constant.ts
+packages/commerce/fiscal/stackra.manifest.json
+packages/data/database/stackra.manifest.json
+packages/developer/cli/stackra.manifest.json
+packages/developer/runway/stackra.manifest.json
+packages/experience/platform/stackra.manifest.json
+packages/security/csp/stackra.manifest.json
+workers/edge/stackra.manifest.json
+workers/registry/stackra.manifest.json
+workers/static/stackra.manifest.json
+workers/turbo-cache/stackra.manifest.json
+<member>/
+├── .stackra/gen/
+└── .stackra/entry/
 .changeset/gen-schemas-typecheck.md
 ```
 
@@ -153,6 +192,11 @@ No change.
 - AC-004: `driver-name.function.test.ts`, `port-member.function.test.ts`.
 - AC-005: `root-module-of.function.test.ts`.
 - AC-006: the member-wide typecheck (`@stackra/platform`'s stand-in); `driver-name.type.test.ts` in the container.
+- AC-007: `emit-wiring.function.test.ts` ("keeps a portable ./worker driver from its ./node entry off a Worker"),
+  `build-manifest.function.test.ts` ("records a ./worker driver's ./node entry only when the ./node barrel exports it").
+- AC-008: `fields.type.test.ts` (validation).
+- AC-009: `create-source-reader.function.test.ts` ("names an imported class as its import does").
+- AC-010: `emit-schemas.function.test.ts` ("compiles a driver-name field no driver reaches to any string").
 
 ## Rollout
 
@@ -170,7 +214,8 @@ ADR 0295: Accepted; implemented as written.
 
 ## Docs
 
-`packages/tooling/typescript/README.md`, `.changeset/gen-schemas-typecheck.md`.
+`packages/tooling/typescript/README.md`, `packages/developer/gen/AGENTS.md` (portable `./worker` drivers),
+`.changeset/gen-schemas-typecheck.md`.
 
 ## Complexity tracking
 

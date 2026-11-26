@@ -26,16 +26,24 @@ a generated fixture, and the presets include the generated entries. This spec is
 
 ### Sources
 
-- `packages/developer/gen/src/core/functions/emit-schemas.function.ts`, `emit-entities.function.ts`,
-  `emit-hosted-entities.function.ts`, `emit-wiring.function.ts`, `driver-name.function.ts`,
-  `root-module-of.function.ts`, `system-driver-defaults.function.ts`, `build-manifest.function.ts` (before and after)
-- `packages/developer/gen/src/node/functions/create-source-reader.function.ts`, `discover-member.function.ts`
-- `packages/foundation/validation/src/core/types/fields.type.ts`, `input-fields.type.ts`
-- `packages/foundation/container/src/core/types/wiring.type.ts`, `packages/tooling/typescript/src/library.json`
-- ADR 0294 (decision 26: the shape compiler and `X$Check`), ADR 0263 (gen writes the wiring; drivers by file prefix),
-  ADR 0305 (rules 15 and 16: the root module), ADR 0295 (generated entries)
-- A typecheck of every member with `.stackra/gen` (99 packages) with the generated folders included, before (72
-  errors in the probe on main) and after (none)
+- FR-001: `packages/tooling/typescript/src/library.json`; ADR 0295 (generated entries); a typecheck of every member
+  with `.stackra/gen` (99 packages) with the generated folders included, before (72 errors in the probe on main) and
+  after (none)
+- FR-002, FR-003, FR-004 and FR-010: `packages/developer/gen/src/core/functions/emit-schemas.function.ts`,
+  `emit-entities.function.ts`, `emit-hosted-entities.function.ts` (before and after); ADR 0294 (decision 26: the
+  shape compiler and `X$Check`); the compiler errors of that probe (TS2769, TS2344, TS2314, TS2741, TS2428)
+- FR-005: `packages/foundation/validation/src/core/types/fields.type.ts`, `input-fields.type.ts`; MikroORM's
+  `[OptionalProps]` marker on the models of the probe (TS2344)
+- FR-006: `packages/developer/gen/src/core/functions/emit-wiring.function.ts`, `build-manifest.function.ts`;
+  ADR 0263 (gen writes the wiring; decision 9, stand-ins); ADR 0127 (the `./worker` entry, and its 2026-10-26 note:
+  a portable driver from `./worker` and `./node`); the probe's TS2717 and TS1117 errors; the review of this branch
+  (a service lost `turnstile` for `platform.CaptchaVerifier`)
+- FR-007: `packages/developer/gen/src/core/functions/driver-name.function.ts`, `build-manifest.function.ts`,
+  `system-driver-defaults.function.ts`; ADR 0263 (drivers by file prefix); the packages' `DriverRegistry` stand-ins
+- FR-008: `packages/developer/gen/src/node/functions/create-source-reader.function.ts`; the probe's TS2305
+  (`MikroORM` from `@mikro-orm/postgresql`)
+- FR-009: `packages/developer/gen/src/core/functions/root-module-of.function.ts`; ADR 0305 (rules 15 and 16: the root
+  module); the probe's TS2307 in `.stackra/entry`
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
@@ -52,7 +60,9 @@ a generated fixture, and the presets include the generated entries. This spec is
 - **Public contract change**: additive exports and a manifest change. `@stackra/validation` exports `withDefault` and
   the type `DefaultLiteral`; `Fields` and `InputFields` drop symbol keys; `Wiring.platform` admits `Container`. Gen's
   `ShapeIR` gains an optional `typeParameters`, `MemberIR` an optional `authoredDriverKeys`, `SourceReader` a
-  `driverRegistryKeys()`, and `driverName` an optional third argument (the port's member). A driver of a port named
+  `driverRegistryKeys()`, and `driverName` an optional third argument (the port's member). A package manifest's
+  driver class row gains an optional `node`: the `./node` entry of a portable `./worker` driver (`@stackra/platform`'s
+  `turnstile`). A driver of a port named
   after its member gets a shorter name in the manifest (`expo_push_transport` → `expo`, `cloudflare_workers_provider`
   → `cloudflare_workers`, `cades_signer` → `cades`), the names the packages' `DriverRegistry` stand-ins already used.
   A member off the container gets no module class in its manifest. The `library` preset includes `.stackra/gen` and
@@ -143,6 +153,8 @@ driver variant and a Worker-only driver all produce generated code that typechec
 - **EC-04**: Each parse of a literal default gets its own object.
 - **EC-05**: Gen's own output under `.stackra/` never counts as an authored `DriverRegistry` augmentation.
 - **EC-06**: A server member's wiring still lists no browser, React Native or Electron driver.
+- **EC-07**: A `./worker` driver the `./node` barrel does not export (`@stackra/cache`'s `workers`, `@stackra/seo`'s
+  `satori`) records no `node` and stays out of every wiring but a Worker's.
 
 ## Requirements _(mandatory)_
 
@@ -158,7 +170,8 @@ driver variant and a Worker-only driver all produce generated code that typechec
 - **FR-005**: `Fields` and `InputFields` SHALL drop symbol keys.
 - **FR-006**: THE wiring SHALL not augment a `DriverRegistry` key an authored augmentation in the member's program
   declares, SHALL keep one candidate per driver name (the neutral one over a client variant) and SHALL list a
-  package's `./worker` driver only for a Worker member.
+  package's `./worker` driver from `./worker` only for a Worker member; a `./worker` driver the package's `./node`
+  entry also exports SHALL be recorded with that entry and listed from it for every other member.
 - **FR-007**: `driverName` SHALL strip a port's member-named prefix from the port's name when matching the stem.
 - **FR-008**: An imported class SHALL keep the name its import specifier exports it under.
 - **FR-009**: A member that does not use the container SHALL have no root module.
@@ -172,6 +185,10 @@ driver variant and a Worker-only driver all produce generated code that typechec
 - **AC-004**: WHERE a port is named after its member THE driver names SHALL be the stem without the member-less port name.
 - **AC-005**: IF a member does not declare `@stackra/container` THEN THE gen SHALL name no root module for it.
 - **AC-006**: WHILE an authored stand-in declares a `DriverRegistry` key THE generated wiring SHALL not declare it again.
+- **AC-007**: WHERE a package's `./worker` driver is also exported from its `./node` entry THE manifest SHALL record that entry and a member that is no Worker SHALL list the driver from it, while a Worker-only driver SHALL stay out of that member's wiring.
+- **AC-008**: IF a class declares a symbol key such as `[OptionalProps]` THEN THE `Fields` and `InputFields` types of it SHALL not list that key.
+- **AC-009**: WHEN gen reads a class imported under its export's name THE generated wiring SHALL import that name.
+- **AC-010**: IF no driver of a driver-name field's port reaches the member THEN THE generated schema SHALL accept any string.
 
 ## Success Criteria _(mandatory)_
 
@@ -180,6 +197,10 @@ driver variant and a Worker-only driver all produce generated code that typechec
 - **SC-002**: `driver-name.function.test.ts`, `port-member.function.test.ts`, `root-module-of.function.test.ts` (gen),
   `with-default.function.test.ts`, `fields.type.test.ts` (validation), `driver-name.type.test.ts` (container) and
   `presets.test.ts` (typescript-config) prove FR-001, FR-002, FR-005, FR-007, FR-009 — verified by: unit
+- **SC-005**: `emit-wiring.function.test.ts` and `build-manifest.function.test.ts` (gen) prove FR-006 and AC-007
+  (a service lists `turnstile` from `./node`, a Worker from `./worker`, and the cache `workers` driver only in a
+  Worker), `create-source-reader.function.test.ts` proves FR-008, and `emit-schemas.function.test.ts` proves FR-010;
+  each new test fails without its change — verified by: unit
 - **SC-003**: every one of the 99 members with `.stackra/gen` passes `tsc --noEmit` after `pnpm gen` — verified by:
   manual (box 2)
 - **SC-004**: the touched packages' tests, typecheck, oxlint and oxfmt pass — verified by: manual
@@ -190,7 +211,9 @@ driver variant and a Worker-only driver all produce generated code that typechec
   old long name selects it by the short name; no file in this repo or the template used a long name.
 - A library member outside this repo on the `library` preset now typechecks its generated files; a type error there
   is a real mismatch between a class and its schema to fix in the source.
-- Run `stackra gen` and commit the regenerated manifests.
+- Run `stackra gen` and commit the regenerated manifests. A manifest generated before this change has no `node` on a
+  portable driver, so a host reading it lists that driver only when it is a Worker, until the package is generated
+  again.
 
 ## Risks
 
@@ -216,7 +239,10 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-27 · review of the branch: FR-006 dropped every `./worker` driver off a Worker, which left a service's
+  `platform.CaptchaVerifier` with the memory driver alone. FR-006 now keeps a portable driver from its `./node` entry
+  (manifest `node`), with AC-007, EC-07 and SC-005. AC-008 to AC-010 name what FR-005, FR-008 and FR-010 already
+  delivered; the Sources map each FR.
 
 ## Status history
 
@@ -225,3 +251,4 @@ None.
 - 2026-11-26 · Clarified → Planned · Claude (STA-1605, batch 13) · plan.md
 - 2026-11-26 · Planned → Tasked · Claude (STA-1605, batch 13) · tasks.md
 - 2026-11-26 · Tasked → Implementing · Claude (STA-1605, batch 13) · T001 to T010 done on the branch; the Planned approval is the approver's to write (ADR 0502)
+- 2026-11-27 · Implementing (amended) · Claude (STA-1605, batch 13) · review fixes: portable `./worker` drivers (T011), sources and criteria mapped; still Implementing, the Planned approval stays the approver's
