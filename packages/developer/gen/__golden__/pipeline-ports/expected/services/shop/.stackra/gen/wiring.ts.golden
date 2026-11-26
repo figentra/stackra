@@ -19,6 +19,7 @@ import { OrderFactory } from "#node/database/factories/order.factory";
 import { ShipOnOrderPaidListener } from "#node/listeners/ship-on-order-paid.listener";
 import { ShopModule as ImportedShopModule } from "#node/shop.module";
 import { ShopModule } from "#stackra/module";
+import { AuditConfig } from "@stackra/actions";
 import { IdempotencyStore } from "@stackra/actions/contracts";
 import { EdgeNonceStore, EdgeSigningKeys } from "@stackra/app/contracts";
 import { CorsConfig, CsrfConfig, CsrfGuard, EdgeConfig, EdgeHeaderGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
@@ -63,6 +64,7 @@ export const wiring = {
   ],
   config: [
     { key: "shop", provide: ShopConfig, schema: ShopOptions, env: {"gateway":"STACKRA_SHOP_GATEWAY"} },
+    { key: "actions.audit", provide: AuditConfig },
     { key: "app.edge", provide: EdgeConfig },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },

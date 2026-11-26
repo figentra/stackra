@@ -47,6 +47,15 @@ Decision 6's thirteen months is the code constant `AUDIT_HOT_RETENTION` in `@sta
 pruned early). The approval binding prune (ADR 0509) reads it. The access log's `auditRetentionDays` stays the owner's
 stated number with no code default.
 
+## Note 2026-11-26: no action unaudited outside dev and test (STA-1571)
+
+Decisions 1 and 4 hold in code: the action pipeline treats a missing `AuditTrail` the way it treats a missing
+`AccessControl`. Outside `dev` and `test` an action with no trail bound is an error before any step runs, never an
+unaudited write. The environment is `AuditConfig.environment` of `@stackra/actions` (key `actions.audit`), read from
+`STACKRA_ENVIRONMENT`: `dev` when it is unset (as every reader of that variable), refused at boot when it is empty, and
+any other name (`preview`, `staging`, `production`, a typo) needs a trail. Gen binds `AuditConfig` in every service that
+runs an action. Queries are not audited by this step.
+
 ## Supersedes and sources
 
 Supersedes: [0047](/adr/0047-audit-service-via-events). Sources: owner audit answers AU1–AU8 (`stackra-decisions-2026-10-19.md` L644–653, 2026-10-20); SC8 (L552). Closes gap C43 (audit part).

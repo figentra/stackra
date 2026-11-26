@@ -71,6 +71,9 @@ The design ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks),
 ## Audit evidence
 
 - Every action and data change is audited, and the evidence enters the outbox in the same transaction as the change.
+- Audit fails closed (STA-1571): outside `dev` and `test` (`STACKRA_ENVIRONMENT`), an action with no audit trail bound
+  is refused with an error before it runs, the same way a call with no access control is. A deployment cannot write
+  unaudited by leaving the audit driver out.
 - `@stackra/access-log` keeps each tenant's records in a SHA-256 hash chain: a changed, removed or reordered record
   breaks verification. `stackra audit:verify` checks an exported proof bundle offline (the chain and its checkpoints).
 - Built (STA-1579): `ExportAuditAction` streams a tenant's write audit as NDJSON (chain fields included, so the
