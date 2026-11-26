@@ -94,12 +94,10 @@ workspace root. That folder exists only in core, so every one of them failed. A 
   that folder.
 - **AC-002**: WHEN the workspace has no templates THE `scaffoldTemplates` function SHALL return the shipped copy under
   the `@stackra/cli` package root.
-- **AC-003**: IF neither the workspace's templates nor the shipped copy exists THEN THE `scaffoldTemplates` function
-  SHALL throw an error naming both places.
+- **AC-003**: IF neither templates folder exists THEN THE `scaffoldTemplates` function SHALL throw an error naming both.
 - **AC-004**: THE `@stackra/cli` build SHALL copy core's templates to `dist/scaffold-templates`, inside the published
   `files`.
-- **AC-005**: WHEN a template names a catalog that does not hold the package THE `retargetCatalogs` function SHALL
-  point it at the catalog that holds it and return the ones no catalog holds as `missing`.
+- **AC-005**: WHEN a template names a catalog that lacks the package THE `retargetCatalogs` function SHALL repoint it at the catalog holding it, and return those no catalog holds as `missing`.
 - **AC-006**: WHEN a package is rendered into a product THE `scaffold` function SHALL name it after the product and take
   the framework from `catalog:stackra`.
 - **AC-007**: WHEN `--dry-run` is given THE `new` command SHALL leave the workspace unchanged for every kind and print
@@ -187,17 +185,17 @@ tools/scaffold/templates/packages/
 └── package/
     ├── AGENTS.md
     ├── package.json
+    ├── tsdown.config.ts (removed)
+    ├── vitest.config.ts (removed)
     └── src/
-        ├── config/{{NAME}}.config.ts
-        ├── config/__tests__/{{NAME}}.config.test.ts
-        ├── core/schemas/{{NAME}}-options.schema.ts
-        ├── node/{{NAME}}.module.ts
-        └── node/__tests__/{{NAME}}.module.test.ts
+        ├── config/          {{NAME}}.config.ts and its test (the Config kind)
+        ├── core/schemas/    {{NAME}}-options.schema.ts (new: the options fields)
+        └── node/            {{NAME}}.module.ts and its test (the Module kind)
 apps/docs/src/docs/guides/scaffolding.mdx
 .changeset/cli-new-in-a-created-app.md
 ```
 
-Removed: `tools/scaffold/templates/packages/package/tsdown.config.ts` and `vitest.config.ts`.
+The two files marked removed are deleted: gen writes a package's tsdown and vitest configs.
 
 ### Data models and migrations
 
