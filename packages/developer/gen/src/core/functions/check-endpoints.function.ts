@@ -3,7 +3,7 @@
  * Purpose: `checkEndpoints`, the endpoint and surface refusals of a member's actions and queries:
  *          `endpoint_collision` (two calls on one route shape: one method, one path once parameter names are erased),
  *          `endpoint_versioned` (a `v<digits>` path segment), `endpoint_area_mismatch` (a path that is neither
- *          `/<area>` nor under `/<area>/`), `endpoint_method_mismatch` (a query not on `GET`, an action on `GET`, or a
+ *          `/<area>` nor under `/<area>/`, except a public call under RFC 8615's `/.well-known/`), `endpoint_method_mismatch` (a query not on `GET`, an action on `GET`, or a
  *          transition overridden away from `PUT`), `job_without_system_actor` (a `job` without the `system` or `job`
  *          actor), `cron_input_invalid` (a `job.cron.input` property the input schema does not have, a required one it
  *          omits, or a value of another JSON type) and `intent_phrases_missing` (`intent: true` without a non-empty
@@ -43,6 +43,9 @@ interface JsonSchema {
 
 /** A version path segment: `v1`, `v10`. */
 const VERSION_SEGMENT = /^v\d+$/;
+
+/** RFC 8615's well-known prefix: a cross-host convention, not an area route, so a public call may sit under it. */
+const WELL_KNOWN_PREFIX = "/.well-known/";
 
 /** The actors a job runs as. */
 const JOB_ACTORS = new Set(["system", "job"]);
@@ -224,7 +227,8 @@ function routeRefusals(manifest: StackraManifest, entry: Entry): GenError[] {
       ),
     );
   const area = areaOf(entry);
-  if (route.path !== `/${area}` && !route.path.startsWith(`/${area}/`))
+  const isWellKnown = area === "public" && route.path.startsWith(WELL_KNOWN_PREFIX);
+  if (route.path !== `/${area}` && !route.path.startsWith(`/${area}/`) && !isWellKnown)
     errors.push(
       refusal(
         "endpoint_area_mismatch",

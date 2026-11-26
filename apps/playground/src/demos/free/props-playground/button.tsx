@@ -17,7 +17,7 @@ import { PROPS_PLAYGROUND_KEYS } from "#src/demos/free/props-playground/props-pl
 /** The demo's keys. */
 const K = PROPS_PLAYGROUND_KEYS.props_playground;
 
-/** PropsPlayground: Button. */
+/** The PropsPlayground demo: Button. */
 export default function ButtonPlayground() {
   const t = useCatalogueText(MESSAGES.en);
   return (

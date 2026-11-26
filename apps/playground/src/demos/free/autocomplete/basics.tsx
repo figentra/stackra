@@ -16,7 +16,7 @@ import { AUTOCOMPLETE_KEYS } from "#src/demos/free/autocomplete/autocomplete-key
 /** The demo's keys. */
 const K = AUTOCOMPLETE_KEYS.autocomplete;
 
-/** Autocomplete: Basics. */
+/** The Autocomplete demo: Basics. */
 export default function Basics() {
   const t = useCatalogueText(MESSAGES.en);
   const [country, setCountry] = useState<string | null>(null);

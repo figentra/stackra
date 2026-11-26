@@ -1,5 +1,13 @@
 # @stackra/vitest-config
 
+## 0.33.1
+
+No changes in this release.
+
+## 0.33.0
+
+No changes in this release.
+
 ## 0.32.0
 
 No changes in this release.

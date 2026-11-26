@@ -19,7 +19,7 @@ const K = BUTTON_LINK_KEYS.button_link.variants;
 /** The row that lays the links out, wrapping on a narrow frame. */
 const ROW = "flex flex-wrap items-center gap-3";
 
-/** ButtonLink: Variants. */
+/** The ButtonLink demo: Variants. */
 export default function Variants() {
   const t = useCatalogueText(MESSAGES.en);
   const { pathname, search } = useLocation();

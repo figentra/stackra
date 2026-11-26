@@ -53,15 +53,33 @@ export const SETTINGS: RegistrySettings = {
   retiredKeys: [],
 };
 
+/** The `vars` of wrangler.jsonc as the Worker receives them: what `readSettings` parses into `SETTINGS`. */
+export const ENV_VARS = {
+  REGISTRY_HOST: "npm.stackra.figentra.com",
+  REGISTRY_MAX_TARBALL_BYTES: 52_428_800,
+  REGISTRY_MAX_UNPACKED_BYTES: 104_857_600,
+  REGISTRY_PUBLISH_TOKEN_SECONDS: 900,
+  REGISTRY_TOKEN_CACHE_SECONDS: "60",
+  REGISTRY_LICENCE_GRACE_DAYS: 14,
+  REGISTRY_LICENCE_MAX_TOKENS: 20,
+  REGISTRY_OIDC_ISSUER: "https://token.actions.githubusercontent.com",
+  REGISTRY_OIDC_KEYS_SECONDS: 3600,
+  REGISTRY_OPEN_PACKUMENT_MAX_AGE: 60,
+  REGISTRY_CATALOGUE_MAX_LIMIT: 100,
+  REGISTRY_LICENCE_DOCS_URL: "https://docs.stackra.figentra.com/licensing",
+  REGISTRY_SIGNING_KEY_EXPIRES: "",
+  REGISTRY_RETIRED_KEYS: "[]",
+};
+
 /** The claims of the @stackra trusted publisher (migrations/0001_registry.sql). */
 export const STACKRA_CLAIMS: GithubClaims = {
   iss: ISSUER,
   aud: `npm:${HOST}`,
   exp: NOW.getTime() / 1000 + 300,
-  repository: "figentra/stackra",
+  repository: "stackra-inc/stackra",
   repository_id: "1425140001",
-  repository_owner_id: "314302700",
-  workflow_ref: "figentra/stackra/.github/workflows/release.yml@refs/heads/main",
+  repository_owner_id: "277548342",
+  workflow_ref: "stackra-inc/stackra/.github/workflows/release.yml@refs/heads/main",
   ref: "refs/heads/main",
   environment: "release",
   run_id: "42",
@@ -71,9 +89,9 @@ export const STACKRA_CLAIMS: GithubClaims = {
 /** The claims of the @stackra-pro trusted publisher. */
 export const PRO_CLAIMS: GithubClaims = {
   ...STACKRA_CLAIMS,
-  repository: "figentra/stackra-pro",
+  repository: "stackra-inc/stackra-pro",
   repository_id: "1435812554",
-  workflow_ref: "figentra/stackra-pro/.github/workflows/release.yml@refs/heads/main",
+  workflow_ref: "stackra-inc/stackra-pro/.github/workflows/release.yml@refs/heads/main",
 };
 
 /**
@@ -96,14 +114,14 @@ export function sigstoreBundle(digest: Readonly<Record<string, string>>, identit
         },
         resolvedDependencies: [
           {
-            uri: "git+https://github.com/figentra/stackra@refs/heads/main",
+            uri: "git+https://github.com/stackra-inc/stackra@refs/heads/main",
             digest: { gitCommit: "0d5f464aabbccddeeff00112233445566778899a" },
           },
         ],
       },
       runDetails: {
         metadata: {
-          invocationId: "https://github.com/figentra/stackra/actions/runs/42/attempts/1",
+          invocationId: "https://github.com/stackra-inc/stackra/actions/runs/42/attempts/1",
         },
       },
     },
@@ -140,7 +158,7 @@ export async function publishBody(
   const tgz = makeTarball({ "package.json": JSON.stringify(pkg), ...options.files });
   const computed = await tarballDigests(tgz);
   const bare = pkg.name.slice(pkg.name.indexOf("/") + 1);
-  const repository = options.repository ?? "figentra/stackra";
+  const repository = options.repository ?? "stackra-inc/stackra";
   const attachments: Record<string, unknown> = {
     [`${bare}-${pkg.version}.tgz`]: {
       content_type: "application/octet-stream",

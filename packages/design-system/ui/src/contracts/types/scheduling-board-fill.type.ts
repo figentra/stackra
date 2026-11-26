@@ -8,8 +8,8 @@
 
 /** Seats taken of seats offered. */
 export interface SchedulingBoardFill {
-  /** Seats taken. */
+  /** The seats taken. */
   readonly used: number;
-  /** Seats offered. */
+  /** The seats offered. */
   readonly total: number;
 }

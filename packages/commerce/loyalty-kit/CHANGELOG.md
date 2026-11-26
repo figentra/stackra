@@ -1,5 +1,85 @@
 # @stackra/loyalty-kit
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/tenancy@0.33.1
+  - @stackra/settings@0.33.1
+  - @stackra/scheduler@0.33.1
+  - @stackra/ledger@0.33.1
+  - @stackra/search@0.33.1
+  - @stackra/panel@0.33.1
+  - @stackra/outbox@0.33.1
+  - @stackra/queue@0.33.1
+  - @stackra/workflow@0.33.1
+  - @stackra/iam@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/integrations@0.33.1
+  - @stackra/versioning@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/experience@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/testing@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4937622]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [628b60d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [03da426]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+- Updated dependencies [44ca288]
+  - @stackra/actions@0.33.0
+  - @stackra/i18n@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/workflow@0.33.0
+  - @stackra/settings@0.33.0
+  - @stackra/iam@0.33.0
+  - @stackra/queue@0.33.0
+  - @stackra/testing@0.33.0
+  - @stackra/tenancy@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/integrations@0.33.0
+  - @stackra/search@0.33.0
+  - @stackra/panel@0.33.0
+  - @stackra/outbox@0.33.0
+  - @stackra/scheduler@0.33.0
+  - @stackra/experience@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/ledger@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/versioning@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes
