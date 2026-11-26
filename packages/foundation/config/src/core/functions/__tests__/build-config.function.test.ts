@@ -4,7 +4,8 @@
  *          environment strings are coerced to the field's type, a nested object is replaced whole, the result is
  *          validated and frozen, errors name the path and the variable but never the value, and a `@Secret` field is
  *          resolved blind through the `SecretStore`, never set by a layer and never visible to `JSON.stringify`,
- *          `Object.keys`, spreads, `util.inspect` or an error message.
+ *          `Object.keys`, spreads, `util.inspect` or an error message. A field mapped to `STACKRA_ENVIRONMENT` is
+ *          runtime-only: a value for it is refused, and a name outside the closed list fails (STA-2844).
  * Boundary: test only; registers the schemas the way a generated schemas file does and binds an in-memory store.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 19);
@@ -54,6 +55,12 @@ class CommerceOptions extends Schema {
   storefrontBaseUrl!: string;
 }
 
+class SiteOptions extends Schema {
+  environment = "dev";
+
+  sentryEnvironment = "";
+}
+
 registerSchemas([
   [
     KitOptions,
@@ -64,6 +71,7 @@ registerSchemas([
       ledgers: z.record(z.string(), z.string()),
     }),
   ],
+  [SiteOptions, z.object({ environment: z.string(), sentryEnvironment: z.string() })],
   [
     CommerceOptions,
     z.object({
@@ -91,6 +99,11 @@ class HostKitConfig extends BaseKitConfig {
 
   override ledgers: Record<string, string> = { primary: "memory", replica: "memory" };
 }
+
+class SiteConfig extends Config({
+  schema: SiteOptions,
+  env: { environment: "STACKRA_ENVIRONMENT", sentryEnvironment: "SENTRY_ENVIRONMENT" },
+}) {}
 
 class CommerceConfig extends Config({
   schema: CommerceOptions,
@@ -225,5 +238,41 @@ describe("buildConfig", () => {
     class UnregisteredConfig extends Config({ schema: Unregistered }) {}
     expect(() => buildConfig(UnregisteredConfig)).toThrow(/no registered schema/);
     expect(() => buildConfig(class Plain {} as never)).toThrow(TypeError);
+  });
+
+  it("reads a field mapped to STACKRA_ENVIRONMENT from the runtime and refuses it as a value (STA-2844)", () => {
+    expect(
+      buildConfig(SiteConfig, { env: { STACKRA_ENVIRONMENT: "production" } }).environment,
+    ).toBe("production");
+    let refusal: unknown;
+    try {
+      buildConfig(SiteConfig, {
+        env: { STACKRA_ENVIRONMENT: "production" },
+        values: { environment: "dev" },
+      });
+    } catch (error) {
+      refusal = error;
+    }
+    expect(refusal).toBeInstanceOf(ConfigInvalidError);
+    expect((refusal as ConfigInvalidError).config).toBe("SiteConfig");
+    expect((refusal as ConfigInvalidError).issues).toEqual([
+      {
+        path: "environment",
+        message: expect.stringContaining(
+          "is safety-critical: it is read from STACKRA_ENVIRONMENT in the runtime environment only",
+        ) as string,
+      },
+    ]);
+    // Another field of the same class, mapped to a variable that is not safety-critical, stays a value.
+    expect(buildConfig(SiteConfig, { values: { sentryEnvironment: "eu" } }).sentryEnvironment).toBe(
+      "eu",
+    );
+  });
+
+  it("refuses a STACKRA_ENVIRONMENT outside the closed list, named by the field (STA-2844)", () => {
+    expect(() => buildConfig(SiteConfig, { env: { STACKRA_ENVIRONMENT: "prod" } })).toThrow(
+      /SiteConfig is invalid: environment: is not a Stackra environment.*\(STACKRA_ENVIRONMENT\)/,
+    );
+    expect(buildConfig(SiteConfig, { env: { STACKRA_ENVIRONMENT: "" } }).environment).toBe("");
   });
 });

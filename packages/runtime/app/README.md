@@ -101,6 +101,13 @@ its base class, so a package that injects its base gets the host's override. A v
 with `ConfigInvalidError` naming it; a port with no driver fails with `UnresolvedPortError`. The reporter is the bound
 `ErrorReporter`, or the console when none is bound.
 
+The server `createApp` builds the configuration with `STACKRA_ENVIRONMENT` set to the running environment from the one
+reader (`readEnvironment` of `@stackra/config`), given what the platform reported. A service's generated
+`stackra-encore/<member>/environment.ts` hands Encore's `appMeta().environment` to `providePlatformEnvironment` before
+any other generated file loads the app, so a deployed Encore service (which cannot set the variable) runs as
+`preview`, `staging` or `production`, never `dev`; `dev` or `test` declared on a deployment, a misspelt name, or a
+self-hosted image that reports nothing fails the process at boot (STA-2844).
+
 ## Wiring sections
 
 `Wiring` is open for sections their package owns. This package reads two:
