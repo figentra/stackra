@@ -60,7 +60,7 @@ describe("provenanceOf", () => {
             buildDefinition: {
               externalParameters: {
                 workflow: {
-                  repository: "https://github.com/figentra/stackra",
+                  repository: "https://github.com/stackra-inc/stackra",
                   path: ".github/workflows/release.yml",
                   ref: "refs/heads/main",
                 },
@@ -68,18 +68,18 @@ describe("provenanceOf", () => {
               resolvedDependencies: [{ digest: { gitCommit: "abc123" } }],
             },
             runDetails: {
-              metadata: { invocationId: "https://github.com/figentra/stackra/actions/runs/1" },
+              metadata: { invocationId: "https://github.com/stackra-inc/stackra/actions/runs/1" },
             },
           },
         }),
         "fallback",
       ),
     ).toEqual({
-      repository: "https://github.com/figentra/stackra",
+      repository: "https://github.com/stackra-inc/stackra",
       commit: "abc123",
       workflow: ".github/workflows/release.yml",
       ref: "refs/heads/main",
-      run: "https://github.com/figentra/stackra/actions/runs/1",
+      run: "https://github.com/stackra-inc/stackra/actions/runs/1",
     });
   });
 
