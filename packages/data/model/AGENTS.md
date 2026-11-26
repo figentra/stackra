@@ -54,6 +54,11 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   `CreateInput` derives from `SystemField`). `ValidateOnFlush` is a marker; the check lives in @stackra/database.
 - Marker traits (`AppendOnly`, `Commentable`, `HasAttachments`) add no column; the owning package acts on them
   (ADR 0321). `HasCorrections` stays apart from `AppendOnly` so existing append-only tables keep their columns.
+- An attachment is served only to whoever can view its parent record (ADR 0333 2026-10-24 amendment, STA-1960): the
+  parent's owning service binds `AttachmentParentVisibility`, the files service calls `canViewAttachment` after its own
+  tenant and scope checks. Keep it fail-closed (no driver, or anything but a literal `true`, refuses; an error
+  propagates) and keep `AttachmentVisibilityCache` keyed by the whole actor chain, capped at 60 s, never keeping a
+  failed answer.
 - Data classes (ADR 0341): `DataClass` records the four effects; their readers (AI context, support access, search,
   export) apply them. The effects of the six classes of ADR 0134 are not set here yet; only `privileged` ships.
 - `@Searchable` keeps its options frozen and adds no key the caller left out; `semantic`, `sortable`, `ranges`,
