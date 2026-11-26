@@ -67,6 +67,7 @@ describe("@stackra/runway", () => {
       "VaultWriter",
       "WorkerPreset",
       "baseUrlOf",
+      "checkActionStores",
       "checkDestinations",
       "checkEnvironmentRegion",
       "checkHosts",

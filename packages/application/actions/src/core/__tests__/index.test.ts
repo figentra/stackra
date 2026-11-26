@@ -96,6 +96,7 @@ describe("@stackra/actions", () => {
       "RequestContext",
       "RowIsolationMissingError",
       "SHARED_CACHE_CONTEXT",
+      "StoreEnvironment",
       "StoresConfig",
       "StoresConfig$",
       "StoresOptions",

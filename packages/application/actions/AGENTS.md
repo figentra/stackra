@@ -81,6 +81,10 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   (`CallClient` reaches no port) (STA-1588).
 - A bound `RateLimitCapSource` (a scope's settings) only lowers a bucket: take the minimum of each number, never its
   value alone. A failed caps read fails the call.
+- `StoresConfig` refuses the `memory` idempotency and rate-limit stores outside `dev` and `test`
+  (`STACKRA_ENVIRONMENT`, `MEMORY_STORE_ENVIRONMENTS`): the refusal is the config schema's, so boot fails before the
+  first call. Never widen that list, add an opt-out, or move the check into the pipeline (STA-2798); runway's
+  `checkActionStores` reports the same before a deploy.
 - A bound `IdempotencyRetentionSource` sets the idempotency window, capped at `IDEMPOTENCY_TTL` (24 hours); an action's
   own shorter `idempotencyTtl` wins over it. A failed read fails the call.
 - Never import `@stackra/iam`, `@stackra/workflow`, `@stackra/queue`, `@stackra/database` or `@stackra/tenancy`; they

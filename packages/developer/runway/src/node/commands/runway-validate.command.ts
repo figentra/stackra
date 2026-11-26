@@ -3,18 +3,21 @@
  * Purpose: `RunwayValidateCommand`, `runway validate` (ADR 0352): every runway file of the repository against its
  *          kind's schema (the root, and each member under apps/, services/ and workers/), then the root's placement
  *          (`checkPlacement`), its destinations and target blocks against the drivers (`checkDestinations`, owner
- *          decision O8) and each service's requirements (`checkRequires`). Each finding is one line,
+ *          decision O8), each service's requirements (`checkRequires`) and its action stores in every deployed
+ *          environment (`checkActionStores` against its generated manifest, STA-2798). Each finding is one line,
  *          `<file>: <path>: <message>`; it exits 1 on any. `stackra validate --repository` runs the same checks.
- * Boundary: reads the runway files only; changes nothing.
+ * Boundary: reads the runway files and each service's committed `stackra.manifest.json` only; changes nothing.
  * Runtime: node
- * Governing contract: ADR 0352; ADR 0296 (enforcement); ADR 0506 (decision 8); STA-2100.
+ * Governing contract: ADR 0352; ADR 0296 (enforcement); ADR 0506 (decision 8); STA-2100; STA-2798.
  */
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { Command, type CommandIo } from "@stackra/console";
 
 import { RunwayKind } from "#core/enums/runway-kind.enum";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
+import { checkActionStores } from "#core/functions/check-action-stores.function";
 import { checkDestinations } from "#core/functions/check-destinations.function";
 import { checkEnvironmentRegion } from "#core/functions/check-environment-region.function";
 import { checkPlacement } from "#core/functions/check-placement.function";
@@ -51,12 +54,21 @@ export class RunwayValidateCommand extends Command({
     };
     const { members } = readRunways(root);
     const parsedRoot = read("runway.yaml", RunwayKind.Root) as RootRunway | undefined;
-    const services: [string, ServiceRunway][] = [];
+    const services: [string, ServiceRunway, unknown][] = [];
     for (const { member, folder = "apps" } of members) {
       const file = `${folder}/${member}/runway.yaml`;
       if (folder === "services") {
         const service = read(file, RunwayKind.Service) as ServiceRunway | undefined;
-        if (service !== undefined) services.push([file, service]);
+        // the generated manifest says which action stores the member binds; none yet, nothing to check
+        const manifest = join(root, folder, member, "stackra.manifest.json");
+        if (service !== undefined)
+          services.push([
+            file,
+            service,
+            existsSync(manifest)
+              ? (JSON.parse(readFileSync(manifest, "utf8")) as unknown)
+              : undefined,
+          ]);
       } else read(file, RunwayKind.App);
     }
     if (parsedRoot !== undefined) {
@@ -75,8 +87,11 @@ export class RunwayValidateCommand extends Command({
         ...unusedCloudOptIns(parsedRoot),
       ])
         io.output.warn(`runway.yaml: ${path}: ${message}`);
-      for (const [file, service] of services)
-        for (const { path, message } of checkRequires(parsedRoot, service))
+      for (const [file, service, manifest] of services)
+        for (const { path, message } of [
+          ...checkRequires(parsedRoot, service),
+          ...checkActionStores(parsedRoot, service, manifest),
+        ])
           findings.push(`${file}: ${path}: ${message}`);
     }
     for (const finding of findings) io.output.error(finding);

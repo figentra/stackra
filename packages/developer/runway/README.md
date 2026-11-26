@@ -81,6 +81,11 @@ root runway states where members run: providers, destinations, shared pools, def
 `topology`. In a grouped environment every service member sits in exactly one group, or in the `default` group;
 `checkPlacement` reports what is not. `checkRequires(root, service)` reports each `valkey` requirement that no environment's
 cache driver serves (`config.cache.driver`, in the member or the root's `defaults.service.config`).
+`checkActionStores(root, service, manifest)` reports each deployed environment (`preview`, `staging`, `production`)
+that keeps an action store the member's generated manifest binds (`actions.IdempotencyStore`,
+`actions.RateLimitStore`) in `memory`: set `config.actions.stores.idempotency` and `.rateLimit` to `postgres` or
+`valkey`, in the member or the root's `defaults.service.config`. `@stackra/actions` refuses the same thing at boot
+(STA-2798).
 
 `providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
 and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);

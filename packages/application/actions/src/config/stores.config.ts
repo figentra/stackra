@@ -1,11 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `StoresConfig`, the configuration of the action pipeline's hot-path stores (key `actions.stores`): the
- *          idempotency and rate-limit drivers and the Valkey server and key prefix they share.
- * Boundary: a configuration class over `StoresOptions` with no env map; runway's `config.actions.stores` layer sets it
- *           per environment, and the `ACTIONS_VALKEY_URL` secret comes from the secret store.
+ *          idempotency and rate-limit drivers, the Valkey server and key prefix they share, and the running
+ *          environment, which refuses the `memory` stores outside `dev` and `test` at boot.
+ * Boundary: a configuration class over `StoresOptions`; its env map is `STACKRA_ENVIRONMENT` only. Runway's
+ *           `config.actions.stores` layer sets the drivers per environment, and the `ACTIONS_VALKEY_URL` secret comes
+ *           from the secret store.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 19 and 20); ADR 0146 as amended; ADR 0136; ADR 0217.
+ * Governing contract: ADR 0294 (decisions 19 and 20); ADR 0146 as amended; ADR 0136; ADR 0217; ADR 0266 (decision 2);
+ *                     STA-2798.
  */
 import { Config } from "@stackra/config";
 
@@ -21,4 +24,7 @@ import { StoresOptions } from "#core/schemas/stores-options.schema";
  *   override idempotency: DriverName<IdempotencyStore> = "valkey";
  * }
  */
-export class StoresConfig extends Config({ schema: StoresOptions }) {}
+export class StoresConfig extends Config({
+  schema: StoresOptions,
+  env: { environment: "STACKRA_ENVIRONMENT" },
+}) {}
