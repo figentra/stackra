@@ -28,4 +28,10 @@ describe("field access helpers", () => {
     );
     expect(() => assertFieldsWritable({ medical_notes: "" }, access)).toThrow(ForbiddenError);
   });
+
+  it("refuses a write that adds one hidden field to writable ones (a Stryker survivor, STA-2887)", () => {
+    expect(() => assertFieldsWritable({ name: "Omar", medical_notes: "" }, access)).toThrow(
+      ForbiddenError,
+    );
+  });
 });

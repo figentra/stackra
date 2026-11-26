@@ -35,4 +35,12 @@ describe("breakGlassGrant", () => {
       breakGlassGrant({ ...base, approvedBy: base.openedBy }, Duration.hours(2)),
     ).toThrow(RangeError);
   });
+
+  it("accepts a grant approved by someone else, and one exactly as long as allowed (Stryker survivors, STA-2887)", () => {
+    const approver = "usr_01j9z3k4m5n6p7q8r9s0t1v2b2";
+    expect(breakGlassGrant({ ...base, approvedBy: approver }, Duration.hours(2)).approvedBy).toBe(
+      approver,
+    );
+    expect(breakGlassGrant(base, Duration.hours(1)).expiresAt).toEqual(base.expiresAt);
+  });
 });
