@@ -216,6 +216,7 @@ describe("@stackra/database", () => {
       "StaleVersionError",
       "StampSubscriber",
       "SystemFieldWriteError",
+      "TableCursorInvalidError",
       "TableFilterInvalidError",
       "TimeSeries",
       "TransactionConflictError",

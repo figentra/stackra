@@ -100,6 +100,13 @@
       "class": "SystemFieldWriteError"
     },
     {
+      "code": "table_cursor_invalid",
+      "kind": "validation",
+      "category": "validation",
+      "module": "database",
+      "class": "TableCursorInvalidError"
+    },
+    {
       "code": "table_filter_invalid",
       "kind": "validation",
       "category": "validation",

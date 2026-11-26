@@ -51,6 +51,7 @@ export { pruneRecords } from "#core/functions/prune-records.function";
 export { SequenceBlockClosedError } from "#core/errors/sequence-block-closed.error";
 export { SequenceNotReservableError } from "#core/errors/sequence-not-reservable.error";
 export { SequenceNumberOutOfOrderError } from "#core/errors/sequence-number-out-of-order.error";
+export { TableCursorInvalidError } from "#core/errors/table-cursor-invalid.error";
 export { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error";
 export { ancestorOf } from "#core/functions/ancestor-of.function";
 export { areaCovers } from "#core/functions/area-covers.function";
