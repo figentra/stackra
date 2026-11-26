@@ -54,6 +54,9 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
 - Regenerate after changing a package's `package.json` (`version`, `stackra.summary`, `exports`) or any exported
   declaration or its TSDoc: `pnpm --filter @figentra/docs api-reference`, and commit the pages. `pnpm validate` runs
   it with `--check` and fails on a missing, changed or stale page (STA-2857); oxfmt skips the pages so the bytes match.
+- The release version step regenerates them: `changeset:version` in the root package.json (the changesets bot's
+  `version-script` in runway-npm.yml) ends with the same command, so the "chore(release): version packages" PR carries
+  the new versions in the index and every page and passes the check. Keep it the last step (a test pins it).
 - The renderers are pure; tests sit in `scripts/api-reference/__tests__/` (a throwaway repository, never the real one).
 - MDX safety lives in `prose`: braces escaped, `<` written `&lt;` (gen's component scan reads `\<X>` as a tag), a
   line-start `import`/`export` kept out of ESM; code spans and fences pass through.

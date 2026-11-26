@@ -33,7 +33,7 @@
     "clean": "turbo run clean",
     "changeset": "changeset",
     "changeset:status": "changeset status",
-    "changeset:version": "changeset version && pnpm install --lockfile-only && turbo run gen:workspace gen --output-logs=errors-only",
+    "changeset:version": "changeset version && pnpm install --lockfile-only && turbo run gen:workspace gen --output-logs=errors-only && pnpm --filter @figentra/docs api-reference",
     "secrets:scan": "gitleaks git . --config .gitleaks.toml --no-banner --redact",
     "delegate": "node tools/scripts/delegate.mjs",
     "linear": "node tools/scripts/secrets-exec.mjs --names LINEAR_AGENT_TOKEN,LINEAR_AGENT_CLIENT_ID,LINEAR_AGENT_CLIENT_SECRET,LINEAR_API_KEY -- node tools/scripts/linear.mjs",
