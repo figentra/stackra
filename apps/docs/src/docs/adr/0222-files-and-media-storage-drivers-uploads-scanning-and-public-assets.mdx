@@ -30,6 +30,13 @@ description: "Accepted · 2026-10-20"
 
 planned — the scan gate is a state check before a file URL is issued; the key layout is checked by the storage tests.
 
+Decision 2's tus uploads are enforced in `@stackra/media` (STA-669): `MediaLibrary.createResumableUpload` records each
+tus upload before any byte moves, tusd's `pre-create` hook (`TusHookController`, behind the `MEDIA_TUS_HOOK_SECRET`
+password) admits it once with exactly the recorded size and stores it under the server's id and media type, and the
+claim applies the bucket rules to what tusd wrote. The unit tests and a tusd integration test
+(`tus-hook.controller.int.test.ts`: a dropped request resumed from tusd's offset, a forged type replaced, a repeated
+or unauthenticated start refused) fail when a check is removed.
+
 ## Supersedes and sources
 
 Supersedes: [0034](/adr/0034-object-storage-malware-scan-limits). Sources: owner file answers F1–F8, DA3, DA4 (`stackra-decisions-2026-10-19.md` L105, L532, L692–701, 2026-10-20). Closes gaps B32 and C38.

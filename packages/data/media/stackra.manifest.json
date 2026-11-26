@@ -13,6 +13,40 @@
   ],
   "actions": [
     {
+      "key": "media.upload.create_resumable@1",
+      "kind": "action",
+      "module": "media",
+      "class": "CreateResumableUploadAction",
+      "file": "src/node/actions/create-resumable-upload.action.ts",
+      "permission": "media.upload.create_resumable",
+      "risk": "L2",
+      "actors": ["user", "agent"],
+      "idempotency": "optional",
+      "area": "app",
+      "endpoint": {
+        "method": "POST",
+        "path": "/app/uploads/create-resumable",
+        "derived": true
+      },
+      "tool": {
+        "name": "media_upload_create_resumable",
+        "default": true,
+        "hints": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        }
+      },
+      "input": {
+        "$ref": "#/schemas/media.CreateUploadInput"
+      },
+      "output": {
+        "$ref": "#/schemas/media.CreateResumableUploadOutput"
+      },
+      "refusals": ["not_found"]
+    },
+    {
       "key": "media.upload.create@1",
       "kind": "action",
       "module": "media",
@@ -55,6 +89,14 @@
       "class": "UploadPermissions",
       "module": "media",
       "member": "create",
+      "file": "src/node/access/upload.permissions.ts"
+    },
+    {
+      "key": "media.upload.create_resumable",
+      "risk": "L2",
+      "class": "UploadPermissions",
+      "module": "media",
+      "member": "createResumable",
       "file": "src/node/access/upload.permissions.ts"
     }
   ],
@@ -100,7 +142,7 @@
     {
       "port": "Uploader",
       "key": "media.Uploader",
-      "candidates": ["http", "memory"],
+      "candidates": ["http", "memory", "tus"],
       "classes": {
         "http": {
           "class": "HttpUploaderDriver",
@@ -117,6 +159,18 @@
         "memory": {
           "class": "MemoryUploaderDriver",
           "from": "@stackra/media"
+        },
+        "tus": {
+          "class": "TusUploaderDriver",
+          "from": "@stackra/media",
+          "deps": [
+            {
+              "class": {
+                "name": "MediaConfig",
+                "from": "@stackra/media"
+              }
+            }
+          ]
         }
       },
       "selectedBy": "config:media.uploader",
@@ -251,6 +305,15 @@
       "config": "media",
       "class": "MediaConfig",
       "field": "c2paSigningKey"
+    },
+    {
+      "name": "MEDIA_TUS_HOOK_SECRET",
+      "kind": "secret",
+      "type": "string",
+      "required": false,
+      "config": "media",
+      "class": "MediaConfig",
+      "field": "tusHookSecret"
     }
   ],
   "services": [
@@ -279,12 +342,43 @@
       ]
     },
     {
+      "class": "CreateResumableUploadAction",
+      "from": "@stackra/media/node",
+      "deps": [
+        {
+          "class": {
+            "name": "MediaLibrary",
+            "from": "@stackra/media"
+          }
+        }
+      ]
+    },
+    {
       "class": "CreateUploadAction",
       "from": "@stackra/media/node",
       "deps": [
         {
           "class": {
             "name": "MediaLibrary",
+            "from": "@stackra/media"
+          }
+        }
+      ]
+    },
+    {
+      "class": "TusHookController",
+      "from": "@stackra/media/node",
+      "path": "/media/tus-hooks",
+      "deps": [
+        {
+          "class": {
+            "name": "MediaLibrary",
+            "from": "@stackra/media"
+          }
+        },
+        {
+          "class": {
+            "name": "MediaConfig",
             "from": "@stackra/media"
           }
         }
@@ -315,6 +409,36 @@
         "application/pdf",
         "video/mp4"
       ]
+    },
+    "media.CreateResumableUploadOutput": {
+      "type": "object",
+      "required": ["upload", "url", "headers", "expiresAt"],
+      "properties": {
+        "upload": {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^upl_[0-9A-Za-z]{26}$"
+            }
+          },
+          "x-stackra-type": "upload"
+        },
+        "url": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "media.CreateUploadInput": {
       "type": "object",

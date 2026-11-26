@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: `MediaOptions`, the shape of `MediaConfig`: which uploader the client uses, how long an upload stays valid, where the HTTP uploader asks for a signed URL, the in-region OCR
- *          service and the C2PA signing slot.
+ * Purpose: `MediaOptions`, the shape of `MediaConfig`: which uploader the client uses, how long an upload stays valid,
+ *          where the HTTP uploader asks for a signed URL and the tus uploader for a resumable upload, the tus server and
+ *          its chunking, the tus hook password slot, the in-region OCR service and the C2PA signing slot.
  * Boundary: a shape class; it registers this package's own schema (`MEDIA_CONFIG_SCHEMA`) for itself when the module
- *           loads, so `buildConfig(MediaConfig)` validates with no generated file. Deploy-time values only; the one
- *           credential, the C2PA certificate chain and key, is two `@Secret` names resolved blind from the secret store
- *           (ADR 0173), empty until the certificate exists. The disk, bucket, region and public base URL are
+ *           loads, so `buildConfig(MediaConfig)` validates with no generated file. Deploy-time values only; the
+ *           credentials, the C2PA certificate chain and key and the password tusd's hook calls carry, are `@Secret`
+ *           names resolved blind from the secret store (ADR 0173), empty until set (an empty hook password refuses
+ *           every hook call). The disk, bucket, region and public base URL are
  *           `FilesystemConfig`'s: media stores on the one `FileSystem` disk per region and environment (ADR 0222
  *           decision 1; ADR 0465, which dropped the `disk` field here).
  * Runtime: isomorphic
@@ -40,6 +42,29 @@ export class MediaOptions extends Schema {
   /** The private key of the C2PA signing certificate (PEM, PKCS#8). Empty until the certificate is issued. */
   @Secret("MEDIA_C2PA_SIGNING_KEY")
   c2paSigningKey = "";
+
+  /**
+   * The password tusd's hook calls carry (HTTP basic auth, from the user info of tusd's `-hooks-http` URL). Empty until
+   * set; while empty, `TusHookReceiver` refuses every hook call, so no tus upload starts.
+   */
+  @Secret("MEDIA_TUS_HOOK_SECRET")
+  tusHookSecret = "";
+
+  /**
+   * The tus server (tusd) a resumable upload goes to, and how the `tus` uploader sends it: `endpoint` is the server's
+   * creation URL, `chunkBytes` the most one `PATCH` carries, `retryDelaysMs` the pauses before each retry after a
+   * failed request (one entry per retry; progress resets the count).
+   */
+  // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
+  @Field(MEDIA_CONFIG_SCHEMA.shape.tus)
+  tus: {
+    /** The tus server's creation URL (`https://uploads.example.com/files/`, or a same-origin path). */
+    endpoint: string;
+    /** The most bytes one `PATCH` carries. */
+    chunkBytes: number;
+    /** The pause before each retry, in milliseconds. */
+    retryDelaysMs: number[];
+  } = { endpoint: "/files/", chunkBytes: 8_388_608, retryDelaysMs: [0, 1000, 3000, 5000, 10_000] };
 
   /** The clamd daemon the `clamav` scanner streams to, and the largest file it sends (clamd's `StreamMaxLength`). */
   // reason: a nested driver option a host override replaces whole; the shipped config schema holds its rules
@@ -91,7 +116,7 @@ export class MediaOptions extends Schema {
     formats: string[];
   } = { algorithm: "es256", timestampUrl: "", formats: ["image/jpeg", "image/png", "image/webp"] };
 
-  /** The client's uploader: `http` in an app, `memory` in tests. */
+  /** The client's uploader: `http` in an app, `tus` where large files need a resumable upload, `memory` in tests. */
   uploader: DriverName<Uploader> = "memory";
 
   /** How long a signed upload URL, and the token it was issued with, stay valid; at most seven days. */
@@ -99,6 +124,9 @@ export class MediaOptions extends Schema {
 
   /** Where the `http` uploader asks for a signed URL: the `upload.create` endpoint of the media module. */
   uploadEndpoint = "/api/uploads";
+
+  /** Where the `tus` uploader asks for a resumable upload: the `upload.create_resumable` endpoint of the media module. */
+  resumableUploadEndpoint = "/api/uploads/create-resumable";
 
   /** The malware scanner: `guard_duty` where GuardDuty runs in the region, `clamav` elsewhere, `memory` in tests. */
   scanner: DriverName<FileScanner> = "memory";

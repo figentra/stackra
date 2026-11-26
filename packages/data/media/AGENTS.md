@@ -9,7 +9,7 @@ Runtime: none
 Governing contract: ADR 0222; ADR 0294; ADR 0305; STA-1218; ADR 0234; R3-SO-13; ADR 0173; COM-73; STA-789.
 -->
 
-The `Bucket` kind, signed direct uploads and their claim, the media store and uploader ports with their drivers, and
+The `Bucket` kind, signed direct uploads and resumable tus uploads and their claim, the media store and uploader ports with their drivers, and
 the React hooks. Member at `packages/data/media` (`tier:lib`), in the programming model v3.1 shape (ADR 0294, 0305).
 Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 
@@ -22,6 +22,7 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 | An isomorphic driver               | `src/core/drivers/<name>.driver.ts`            |
 | A server-only driver               | `src/node/drivers/<name>.driver.ts`            |
 | An action, its input or output     | `src/node/{actions,schemas}/`                  |
+| A raw endpoint (the tus hook)      | `src/node/raw/<name>.controller.ts`            |
 | `MediaLibrary`                     | `src/core/services/`                           |
 | A pure helper                      | `src/core/functions/`                          |
 | React code                         | `src/react/<hook>/`                            |
@@ -30,7 +31,13 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 
 ## This package
 
-- The bytes never pass through a service (ADR 0222 decision 2). Never add an endpoint that takes a file body.
+- The bytes never pass through a service (ADR 0222 decision 2). Never add an endpoint that takes a file body. A tus
+  upload's bytes go to tusd, never to `TusHookController`: the controller answers tusd's hook calls only.
+- A tus upload starts only through `admitResumableUpload` (tusd's `pre-create` hook): once, with exactly the size
+  recorded at creation, no deferred length, no concatenation. The hook answer replaces tusd's metadata whole from the
+  server's record (`upload`, `filetype`); never pass a client's metadata, id or type through to tusd.
+- The tus hook password is the `@Secret` `MEDIA_TUS_HOOK_SECRET` (`tusHookSecret`), compared as digests in constant
+  time; an empty one refuses every hook call. Never accept a hook call without it.
 - Media stores on the one `FileSystem` disk of `@stackra/filesystem` (`signUpload`, `move`, `stat`, `read`); there is
   no media disk port any more (ADR 0465, stackra-226). Never add a storage port or driver here: extend `FileSystem`.
 - A token carries the upload id only. The bucket key and expiry are written by the server beside the upload
@@ -77,4 +84,6 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
 | Scans sent to OCR     | the in-region service  | Only to `media.ocr.endpoint`; the service keeps nothing.                        |
 | C2PA signing key      | the secret store       | A `@Secret` field; never logged, never in an error.                             |
 | Signed upload URLs    | `upload.create` output | A short-lived credential for one object; returned to the caller only.           |
+| tus hook password     | the secret store       | A `@Secret` field; never logged or put in an error. tusd prints its hook URL with it once at start-up: keep tusd's output out of shared logs. |
+| tus upload metadata   | tusd's `.info` file    | The upload id and media type only (the hook replaces the client's); deleted at claim. |
 | Upload and bucket ids | refusal details, paths | Ids only.                                                                       |

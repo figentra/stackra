@@ -4,9 +4,13 @@
  *          and its bucket key and expiry are recorded beside it, a bucket's type and size rules hold at signing and
  *          again at claim, a claim moves the file to its bucket path once and drops the record, a disk that cannot sign
  *          refuses, and a foreign, expired, missing, malformed or oversized upload, or one whose bytes are not its
- *          declared type, is refused; `store` writes the server's bytes under the same rules and refuses each break.
+ *          declared type, is refused; `store` writes the server's bytes under the same rules and refuses each break. A
+ *          tus upload records its media type and size, is admitted to the tus server once with exactly that size,
+ *          is claimed with the recorded type, kept while still short of its size, refused when larger, and its tus
+ *          `.info` file is dropped with the record.
  * Boundary: test only; the memory `FileSystem` disk stands in for S3 and receives the bytes as a browser's signed `PUT`
- *           would. A hand-moved clock drives expiry.
+ *           would, and the bytes and `.info` file a tus server (tusd) writes beside the record. A hand-moved clock
+ *           drives expiry.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0222 (decisions 1 to 3).
  */
@@ -377,5 +381,247 @@ describe("MediaLibrary.store", () => {
       media.store(InvoicesBucket, new TextEncoder().encode("<html></html>"), MediaType.Pdf),
     ).rejects.toMatchObject({ reason: "content" });
     expect(await disk.list("private/")).toEqual([]);
+  });
+});
+
+/** Writes `bytes` (by default a PNG head) and a tus `.info` file for the tus upload `id`, as tusd does on finishing it. */
+async function tusWrite(
+  disk: MemoryFileSystemDriver,
+  id: string,
+  bytes = new Uint8Array(HEADS["image/png"] ?? []),
+): Promise<void> {
+  await disk.write(`uploads/${id}`, bytes, { contentType: "application/octet-stream" });
+  await disk.write(`uploads/${id}.info`, "{}", { contentType: "application/json" });
+}
+
+describe("MediaLibrary.createResumableUpload", () => {
+  it("records the bucket, media type, size and expiry and answers how to start the tus upload", async () => {
+    const { disk, media } = setup();
+    const resumable = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    const id = resumable.upload.id;
+    expect(id).toMatch(/^upl_[0-9a-hjkmnp-tv-z]{26}$/);
+    expect(resumable.url).toBe("/files/");
+    expect(resumable.headers).toEqual({
+      "tus-resumable": "1.0.0",
+      "upload-metadata": `upload ${btoa(id)}`,
+    });
+    expect(resumable.expiresAt).toEqual(new Date("2026-10-24T10:00:00.000Z"));
+    const record = await disk.read(`uploads/${id}.json`);
+    expect(JSON.parse(new TextDecoder().decode(record))).toEqual({
+      bucket: "product_images",
+      expires: "2026-10-24T10:00:00.000Z",
+      transfer: "tus",
+      mediaType: "image/png",
+      size: 8,
+      started: false,
+    });
+  });
+
+  it("works on a disk that cannot sign uploads: nothing is signed", async () => {
+    const { clock } = setup();
+    class UnsignedDisk extends MemoryFileSystemDriver {
+      override async signUpload(): Promise<never> {
+        throw new TypeError("This disk cannot sign uploads");
+      }
+    }
+    const unsigned = new UnsignedDisk(buildConfig(FilesystemConfig), clock);
+    const media = new MediaLibrary(unsigned, buildConfig(MediaConfig), clock);
+    const resumable = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    expect(await unsigned.list("uploads/")).toEqual([`uploads/${resumable.upload.id}.json`]);
+  });
+
+  it("names the configured tus server", async () => {
+    const clock = new TestClock();
+    const disk = new MemoryFileSystemDriver(buildConfig(FilesystemConfig), clock);
+    const media = new MediaLibrary(
+      disk,
+      buildConfig(MediaConfig, {
+        values: {
+          tus: { endpoint: "https://uploads.test/files/", chunkBytes: 1024, retryDelaysMs: [] },
+        },
+      }),
+      clock,
+    );
+    const resumable = await media.createResumableUpload(InvoicesBucket, {
+      mediaType: MediaType.Pdf,
+      size: 50,
+    });
+    expect(resumable.url).toBe("https://uploads.test/files/");
+  });
+
+  it("refuses a media type or size the bucket does not take, and records nothing", async () => {
+    const { disk, media } = setup();
+    await expect(
+      media.createResumableUpload(ProductImagesBucket, { mediaType: MediaType.Pdf, size: 4 }),
+    ).rejects.toMatchObject({ code: "upload_rejected", reason: "media_type" });
+    for (const size of [0, 1.5, 11])
+      // oxlint-disable-next-line no-await-in-loop -- each size is its own refusal
+      await expect(
+        media.createResumableUpload(ProductImagesBucket, { mediaType: MediaType.Png, size }),
+      ).rejects.toMatchObject({ code: "upload_rejected", reason: "size" });
+    expect(await disk.list("uploads/")).toEqual([]);
+  });
+});
+
+describe("MediaLibrary.admitResumableUpload", () => {
+  it("admits the tus upload once, with the id and media type of its record", async () => {
+    const { disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    expect(await media.admitResumableUpload(upload.id, 8)).toEqual({
+      id: upload.id,
+      mediaType: MediaType.Png,
+    });
+    const record = JSON.parse(
+      new TextDecoder().decode(await disk.read(`uploads/${upload.id}.json`)),
+    );
+    expect(record.started).toBe(true);
+    await expect(media.admitResumableUpload(upload.id, 8)).rejects.toMatchObject({
+      code: "upload_rejected",
+      bucket: "product_images",
+      reason: "started",
+    });
+  });
+
+  it.each([7, 9, null])(
+    "refuses a start with a size of %s, and leaves it to start right",
+    async (size) => {
+      const { media } = setup();
+      const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+        mediaType: MediaType.Png,
+        size: 8,
+      });
+      await expect(media.admitResumableUpload(upload.id, size)).rejects.toMatchObject({
+        code: "upload_rejected",
+        reason: "size",
+      });
+      expect((await media.admitResumableUpload(upload.id, 8)).id).toBe(upload.id);
+    },
+  );
+
+  it("refuses an id that is not a waiting tus upload", async () => {
+    const { media } = setup();
+    const signed = await media.createUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 4,
+    });
+    for (const id of [
+      "",
+      "../uploads/x",
+      "upl_../../public/x",
+      "upl_01jb3m0000000000000000000a",
+      signed.upload.id,
+    ])
+      // oxlint-disable-next-line no-await-in-loop -- each id is its own refusal
+      await expect(media.admitResumableUpload(id, 4)).rejects.toBeInstanceOf(UploadIncompleteError);
+  });
+
+  it("refuses a tus upload whose lifetime has passed", async () => {
+    const { clock, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    clock.at = new Date("2026-10-24T10:00:00.001Z");
+    await expect(media.admitResumableUpload(upload.id, 8)).rejects.toBeInstanceOf(
+      UploadExpiredError,
+    );
+  });
+
+  it("refuses a record that names a media type it does not know", async () => {
+    const { disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    const path = `uploads/${upload.id}.json`;
+    const record = JSON.parse(new TextDecoder().decode(await disk.read(path)));
+    await disk.write(path, JSON.stringify({ ...record, mediaType: "image/svg+xml" }));
+    await expect(media.admitResumableUpload(upload.id, 8)).rejects.toBeInstanceOf(
+      UploadIncompleteError,
+    );
+  });
+});
+
+describe("MediaLibrary.claim of a tus upload", () => {
+  it("claims it with the recorded media type and drops the record and the .info file", async () => {
+    const { disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    await media.admitResumableUpload(upload.id, 8);
+    await tusWrite(disk, upload.id);
+
+    const file = await media.claim(upload, ProductImagesBucket);
+
+    const path = `public/product_images/${upload.id}.png`;
+    expect(file).toMatchObject({ id: upload.id, path, mediaType: MediaType.Png, size: 8 });
+    expect(await disk.list("uploads/")).toEqual([]);
+    expect(await disk.stat(path)).toMatchObject({ size: 8 });
+  });
+
+  it("keeps an upload still short of its size and claims it once complete", async () => {
+    const { disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    await media.admitResumableUpload(upload.id, 8);
+    await tusWrite(disk, upload.id, new Uint8Array((HEADS["image/png"] ?? []).slice(0, 5)));
+    await expect(media.claim(upload, ProductImagesBucket)).rejects.toBeInstanceOf(
+      UploadIncompleteError,
+    );
+    expect(await disk.list("uploads/")).toHaveLength(3);
+
+    await tusWrite(disk, upload.id);
+    expect((await media.claim(upload, ProductImagesBucket)).size).toBe(8);
+  });
+
+  it("refuses and deletes an upload larger than its recorded size", async () => {
+    const { disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    await tusWrite(disk, upload.id, new Uint8Array([...(HEADS["image/png"] ?? []), 0]));
+    await expect(media.claim(upload, ProductImagesBucket)).rejects.toMatchObject({
+      code: "upload_rejected",
+      reason: "size",
+    });
+    expect(await disk.list("uploads/")).toEqual([]);
+  });
+
+  it("refuses and deletes an upload whose bytes are not the recorded media type", async () => {
+    const { disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 4,
+    });
+    await tusWrite(disk, upload.id, new Uint8Array(HEADS["image/jpeg"] ?? []));
+    await expect(media.claim(upload, ProductImagesBucket)).rejects.toMatchObject({
+      code: "upload_rejected",
+      reason: "content",
+    });
+    expect(await disk.list("uploads/")).toEqual([]);
+  });
+
+  it("refuses a tus upload whose bytes never arrived", async () => {
+    const { media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    await expect(media.claim(upload, ProductImagesBucket)).rejects.toBeInstanceOf(
+      UploadIncompleteError,
+    );
   });
 });
