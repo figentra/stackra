@@ -22,9 +22,9 @@ import { verifyGithubToken } from "#src/oidc/verify-github-token";
 
 const PUBLISHER: PublisherRow = {
   scope: "@stackra",
-  repository: "figentra/stackra",
+  repository: "stackra-inc/stackra",
   repository_id: "1425140001",
-  repository_owner_id: "314302700",
+  repository_owner_id: "277548342",
   workflow: ".github/workflows/release.yml",
   ref: "refs/heads/main",
   environment: "release",
