@@ -5,7 +5,8 @@
  *          and pushes to whoever is on call (ADR 0185 decision 1). Returns each heartbeat's URL as a secret output,
  *          keyed by environment, service and job name, for runway to hand to the service as a secret.
  * Boundary: declares Pulumi resources only. The URL is the credential that beats, so it is a secret output and is
- *           never printed. Sending the beat is the job's (`@stackra/scheduler`, `@stackra/outbox`, `@stackra/queue`).
+ *           never printed. The jobs send the beats through `@stackra/queue`'s `HeartbeatService` (the scheduler, the
+ *           outbox relays and the queue worker), reading the URLs from their `STACKRA_HEARTBEAT_URLS` secret.
  *           The provider's API token (`better-uptime:apiToken`) is the owner's stack config.
  * Runtime: node
  * Governing contract: ADR 0184 (decision 4), ADR 0185 (decision 1: Better Stack runs on-call), ADR 0173.

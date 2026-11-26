@@ -32,6 +32,8 @@ Postgres (`SKIP LOCKED`) drivers (ADR 0148, ADR 0305 rule 28).
 | `JobIsolationMissingError`                          | `.`           | `job_isolation_missing`: a scoped job on a worker with no `CallIsolation` (dead-lettered at once)  |
 | `QueueConfig`, `QueueConfig$`                       | `.`           | key `queue`: `driver` (`postgres` default, `memory`, `broker`)                                     |
 | `JobNotDueError`                                    | `.`           | `job_not_due`: a broker delivered a job before its `runAt` (redelivered later)                     |
+| `HeartbeatService`, `heartbeatName`                 | `.`           | `beat(job)`: a background job's heartbeat (ADR 0184 decision 4); the job-name formula              |
+| `HeartbeatConfig`, `HeartbeatConfig$`             | `.`           | key `queue.heartbeat`: the `STACKRA_HEARTBEAT_URLS` secret, `minInterval`, `timeout`             |
 | `BrokerQueueDriver`                                 | `./node`      | the `broker` driver: jobs ride the generated Pub/Sub topics, dead letters stay in `queue.jobs`     |
 | `QueueOptions`, `MemoryQueueDriver`                 | `.`           | the shape of `QueueConfig`; the driver for tests and a single process                              |
 | `QueueDriver`, `QueuedJob`, `JobError`, `JobStatus` | `./contracts` | the port a driver implements and the stored job                                                    |
@@ -164,6 +166,32 @@ none is due. Redrive a dead letter with `queue.redrive(id)`; it runs again with 
 | `critical` | `true`  | A failed probe is `down` and fails `/readyz`; `false` reports `degraded`. |
 
 A failed probe never throws; its detail names the error type only.
+
+## Heartbeats
+
+Every background job beats a Better Stack heartbeat while it runs (ADR 0184 decision 4), so a dead scheduler, relay or
+worker opens an incident. `@stackra/infra-observability` declares one heartbeat per job and exports its URL; this
+package sends the beats. `HeartbeatService.beat(job)` requests the job's URL with a `GET`:
+
+| Who beats                                      | Job name                                           | When                                    |
+| ---------------------------------------------- | -------------------------------------------------- | --------------------------------------- |
+| `QueueWorkerService.work(queue)`               | `queue-<queue>` (`heartbeatName("queue-" + queue)`) | each loop pass that reached the store   |
+| `OutboxRelayService` (@stackra/outbox)        | `outbox-relay`                                     | each poll that completed                |
+| `CrossAppRelayService` (@stackra/outbox)      | `cross-app-relay`                                  | each poll that completed                |
+| `SchedulerService` (@stackra/scheduler), cron  | the cron's CronJob id (`cronJobId(key)`)           | each run pushed, by `tick` or `fire`     |
+| `SchedulerService.tick`                        | `scheduler-schedules`                              | each tick that ran with no failed push |
+
+The URLs are one secret, `STACKRA_HEARTBEAT_URLS`: a JSON object of job name to `https://` URL, the stack output
+`heartbeats.<environment>.<service>` of `@stackra/infra-observability` copied into the service's sops secrets. A job
+with no URL, and every job when the secret is unset (dev, preview, tests), beats nothing. A malformed value fails the
+configuration at boot, naming the rule and never the value.
+
+A beat never throws and never takes longer than `timeout` (`PT3S`, at most ten seconds); the loops do not wait for it.
+Beats of one job are at least `minInterval` apart (`PT10S`, from one to ten seconds, a third of Better Stack's
+shortest period) and never overlap, so a loop that polls every second sends one request every ten seconds. A refused,
+failed or slow beat is logged as `queue.heartbeat_failed` with the job name and the status code or the error's name,
+never the URL, and the next call tries again. A failed loop pass, tick or poll sends no beat, so the monitor fires
+after the period and its grace. `process` (a broker delivery) and `drain` do not beat: a quiet queue is not a dead one.
 
 ## Testing
 

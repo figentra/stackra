@@ -11,12 +11,15 @@
  *          its attempt when no `RateLimitStore` is bound); a chain runs its links in order; a batch counts done and
  *          failed jobs. Across owners: a claimed job loads, settles and queues its next link in its owner (the link in a
  *          `requiresNew` transaction), an owned job with no isolation bound or a claim that does not load fails the
- *          drain and never runs, and a delivered job's row work runs in its own scope's isolation.
+ *          drain and never runs, and a delivered job's row work runs in its own scope's isolation. Each pass of a `work`
+ *          loop that reached its store beats `queue-<queue>` through a bound `HeartbeatService`; a pass whose store
+ *          failed, `drain` and a worker with none bound beat nothing.
  * Boundary: test only; the memory driver, a fixed clock and a map resolver with an allowing `AccessControl`. Fake timers
  *           only in the timeout test.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0148 (decisions 1 and 3); ADR 0305 (rules 28 and 30); ADR 0136
- *                     (decision 3); ADR 0327 (decision 6); ADR 0239 (2026-11-07 amendment, gaps A and C).
+ *                     (decision 3); ADR 0327 (decision 6); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0184
+ *                     (decision 4).
  */
 import {
   Action,
@@ -31,6 +34,7 @@ import {
   IdempotencyStore,
   RateLimitStore,
 } from "@stackra/actions/contracts";
+import { buildConfig } from "@stackra/config";
 import { type AnyClass, Driver } from "@stackra/container";
 import { type Actor, ActorKind, Backoff, Clock, Duration, Logger, Realm } from "@stackra/contracts";
 import { ErrorKind, isRefusal, Refusal } from "@stackra/errors";
@@ -48,6 +52,8 @@ import { JobIsolationMissingError } from "#core/errors/job-isolation-missing.err
 import { JobRowIsolationMissingError } from "#core/errors/job-row-isolation-missing.error";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
+import { HeartbeatConfig } from "#config/heartbeat.config";
+import { HeartbeatService } from "#core/services/heartbeat.service";
 import { QueueService } from "#core/services/queue.service";
 import type { JobFairnessOptions } from "#core/types/job-fairness-options.type";
 import { QueueWorkerService } from "#node/services/queue-worker.service";
@@ -608,5 +614,59 @@ describe(QueueWorkerService, () => {
       { kind: ActorKind.System, id: "sys_queue_worker" },
       scope,
     ]);
+  });
+});
+
+/** A heartbeat sender that records each beat instead of sending it. */
+class RecordingHeartbeats extends HeartbeatService {
+  readonly beats: string[] = [];
+
+  constructor() {
+    super(buildConfig(HeartbeatConfig), new FixedClock(), new RecordingLogger());
+  }
+
+  override async beat(name: string): Promise<void> {
+    this.beats.push(name);
+  }
+}
+
+describe("QueueWorkerService heartbeats", () => {
+  it("beats queue-<queue> on each pass of a work loop, with a job or with none due", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { queue, worker, deliver } = setup([[HeartbeatService, heartbeats]]);
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    const controller = new AbortController();
+    const working = worker.work("delivery", { signal: controller.signal });
+    await vi.waitFor(() => expect(deliver.contexts).toHaveLength(1));
+    // The pass that ran the job, then the pass that found none due.
+    await vi.waitFor(() => expect(heartbeats.beats.length).toBeGreaterThanOrEqual(2));
+    controller.abort();
+    await working;
+    expect(new Set(heartbeats.beats)).toEqual(new Set(["queue-delivery"]));
+  });
+
+  it("does not beat a pass whose store failed, and drain never beats", async () => {
+    const heartbeats = new RecordingHeartbeats();
+    const { driver, queue, worker, logger } = setup([[HeartbeatService, heartbeats]]);
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    await worker.drain();
+    expect(heartbeats.beats).toEqual([]);
+    vi.spyOn(driver, "reserve").mockRejectedValue(new Error("store down"));
+    const controller = new AbortController();
+    const working = worker.work("delivery", { signal: controller.signal });
+    await vi.waitFor(() => expect(logger.errors).toContain("queue.worker_failed"));
+    controller.abort();
+    await working;
+    expect(heartbeats.beats).toEqual([]);
+  });
+
+  it("works without a HeartbeatService bound", async () => {
+    const { queue, worker, deliver } = setup();
+    await queue.push(DeliverMessageAction, { messageId: "msg_1" });
+    const controller = new AbortController();
+    const working = worker.work("delivery", { signal: controller.signal });
+    await vi.waitFor(() => expect(deliver.contexts).toHaveLength(1));
+    controller.abort();
+    await expect(working).resolves.toBeUndefined();
   });
 });

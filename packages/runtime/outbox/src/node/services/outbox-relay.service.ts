@@ -29,12 +29,15 @@
  *           a message's load, fan-out and outcome run in its tenant's isolation (`inRowOwner`), the fan-out with the
  *           delivery's outcome so the deliveries take the message's tenant. A claimed row that does not load, or a
  *           tenant's row with no isolation bound, fails the tick (`ClaimNotLoadedError`, `RowIsolationMissingError`):
- *           it is never skipped.
+ *           it is never skipped. Every poll that completed, whether it held the lock or another relay did, beats the
+ *           `outbox-relay` heartbeat through the bound `HeartbeatService` of @stackra/queue (ADR 0184 decision 4)
+ *           without waiting for it; a poll that failed does not beat.
  * Runtime: node
  * Governing contract: ADR 0078 (decision 4: the relay); ADR 0221 (decision 5: under five seconds of lag); ADR 0142
  *                     (decision 1); ADR 0149 (one runner under a lock); ADR 0327 (decision 9: the scope session);
  *                     OS-289 (the audit read trail's five-second batch); ADR 0078 and ADR 0221 (2026-10-28 amendment:
- *                     per-consumer cursors on the retained change log); data-layer gap se3 (batches and coalescing).
+ *                     per-consumer cursors on the retained change log); data-layer gap se3 (batches and coalescing);
+ *                     ADR 0184 (decision 4: heartbeats).
  */
 import { ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
@@ -46,7 +49,7 @@ import type { Actor, Clock, ScopeRef } from "@stackra/contracts";
 import type { Database } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
 import type { Locks } from "@stackra/locking";
-import { JOB_BACKOFF } from "@stackra/queue";
+import { HeartbeatService, JOB_BACKOFF } from "@stackra/queue";
 
 import type { OutboxConfig } from "#config/outbox.config";
 import { MessageKind } from "#contracts/index";
@@ -71,6 +74,7 @@ import { olderEnvelopes } from "#core/functions/older-envelopes.function";
 import { pauseFor } from "#core/functions/pause-for.function";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
+import { RELAY_HEARTBEATS } from "#core/constants/relay-heartbeats.constant";
 import { CrossAppFanOut } from "#node/services/cross-app-fan-out.service";
 
 /** A run of one model's changes in one scope by one actor, consecutive in the log. */
@@ -198,6 +202,8 @@ export class OutboxRelayService extends Service {
    * retried or dead (inside the batch window a part batch is held for a later tick), then up to a batch of changes to
    * each bound change consumer from its cursor.
    *
+   * Once it completes it beats the `outbox-relay` heartbeat, without waiting for the beat.
+   *
    * @returns how many messages and changes the tick handled; `0` when none was due, the batch was held or another
    *          relay held the lock.
    * @throws Error before `connect`; a store's or the lock's error.
@@ -216,6 +222,8 @@ export class OutboxRelayService extends Service {
       for (const [type, models] of consumersOf())
         if (resolver.has(type)) handled += await this.deliverChanges(type, models, now, resolver);
     });
+    if (resolver.has(HeartbeatService))
+      void resolver.get(HeartbeatService).beat(RELAY_HEARTBEATS.outbox);
     return handled;
   }
 

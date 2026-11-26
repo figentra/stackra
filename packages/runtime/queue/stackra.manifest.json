@@ -204,6 +204,11 @@
       "from": "@stackra/queue"
     },
     {
+      "key": "queue.heartbeat",
+      "class": "HeartbeatConfig",
+      "from": "@stackra/queue"
+    },
+    {
       "key": "queue",
       "class": "QueueConfig",
       "from": "@stackra/queue"
@@ -218,9 +223,42 @@
       "config": "queue.broker",
       "class": "BrokerConfig",
       "field": "valkeyUrl"
+    },
+    {
+      "name": "STACKRA_HEARTBEAT_URLS",
+      "kind": "secret",
+      "type": "string",
+      "required": false,
+      "config": "queue.heartbeat",
+      "class": "HeartbeatConfig",
+      "field": "urls"
     }
   ],
   "services": [
+    {
+      "class": "HeartbeatService",
+      "from": "@stackra/queue",
+      "deps": [
+        {
+          "class": {
+            "name": "HeartbeatConfig",
+            "from": "@stackra/queue"
+          }
+        },
+        {
+          "class": {
+            "name": "Clock",
+            "from": "@stackra/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "Logger",
+            "from": "@stackra/contracts"
+          }
+        }
+      ]
+    },
     {
       "class": "QueueService",
       "from": "@stackra/queue",

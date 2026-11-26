@@ -1,0 +1,10 @@
+# Tasks: crons, outbox relays and queue workers send their heartbeats
+
+**Spec**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Linear**: STA-2834
+
+- [x] T001 the sender, its configuration and the secret reader, with their tests, in `packages/runtime/queue/src/core/services/heartbeat.service.ts`, `packages/runtime/queue/src/config/heartbeat.config.ts`, `packages/runtime/queue/src/core/schemas/heartbeat-options.schema.ts`, `packages/runtime/queue/src/core/constants/heartbeat-config-schema.constant.ts`, `packages/runtime/queue/src/core/functions/heartbeat-urls.function.ts`, `packages/runtime/queue/src/core/functions/heartbeat-name.function.ts` — covers: AC-004, AC-005, AC-006, P-004, P-005, P-006 — route: spec-task
+- [x] T002 the queue worker loop beats `queue-<queue>`, with its tests, in `packages/runtime/queue/src/node/services/queue-worker.service.ts` — covers: AC-001, P-001 — route: spec-task — deps: T001
+- [x] T003 the outbox and cross-app relays beat after each completed poll, with their tests, in `packages/runtime/outbox/src/node/services/outbox-relay.service.ts`, `packages/runtime/outbox/src/node/services/cross-app-relay.service.ts`, `packages/runtime/outbox/src/core/constants/relay-heartbeats.constant.ts` — covers: AC-002, P-002 — route: spec-task — deps: T001
+- [x] T004 the scheduler beats each pushed cron and its tick, with its tests, in `packages/runtime/scheduler/src/core/services/scheduler.service.ts`, `packages/runtime/scheduler/src/core/constants/schedules-job-name.constant.ts` — covers: AC-003, P-003 — route: spec-task — deps: T001
+- [x] T005 the queue manifest regenerated and the barrel and its test updated in `packages/runtime/queue/stackra.manifest.json`, `packages/runtime/queue/src/core/index.ts` — covers: AC-006 — route: spec-task — deps: T001
+- [x] T006 the READMEs and the changeset in `packages/runtime/queue/README.md`, `packages/runtime/scheduler/README.md`, `packages/runtime/outbox/README.md`, `packages/infrastructure/infra-observability/README.md`, `.changeset/background-job-heartbeats.md` — covers: AC-001, AC-002, AC-003 — route: spec-task — deps: T002, T003, T004

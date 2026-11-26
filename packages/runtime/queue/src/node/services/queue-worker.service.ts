@@ -27,12 +27,15 @@
  *           or an owned one with no isolation bound, fails the reservation (`JobClaimNotLoadedError`,
  *           `JobRowIsolationMissingError`): it is never skipped, and runs again once its lease lapses. A job a broker
  *           delivered has no claimed row: its row work (a dead letter kept in the store) runs in its own scope's
- *           isolation, so it takes that scope's tenant.
+ *           isolation, so it takes that scope's tenant. Each pass of a `work` loop that reached its store, a job run or
+ *           none due, beats the `queue-<queue>` heartbeat through the bound `HeartbeatService` (ADR 0184 decision 4),
+ *           without waiting for it; a loop whose store failed does not beat. `process` and `drain` never beat: a
+ *           delivery or a drain is not a loop that a quiet queue would stop.
  * Runtime: node
  * Governing contract: ADR 0495 (decision 2 and the note of 2026-11-01); ADR 0148 (decisions 1, 2 and 3); ADR 0305
  *                     (rules 28 and 30); ADR 0138 (as amended: the pipeline); ADR 0136 (decision 3: jobs derive their
  *                     Idempotency-Keys); ADR 0260 (decision 4); ADR 0327 (decisions 6 and 9: the call's scope, the
- *                     scope session); ADR 0239 (2026-11-07 amendment, gaps A and C).
+ *                     scope session); ADR 0239 (2026-11-07 amendment, gaps A and C); ADR 0184 (decision 4: heartbeats).
  */
 import { ActionPipeline } from "@stackra/actions";
 import type { Action, Resolver } from "@stackra/actions";
@@ -60,8 +63,10 @@ import { JobClaimNotLoadedError } from "#core/errors/job-claim-not-loaded.error"
 import { JobIsolationMissingError } from "#core/errors/job-isolation-missing.error";
 import { JobTimedOutError } from "#core/errors/job-timed-out.error";
 import { UnknownJobError } from "#core/errors/unknown-job.error";
+import { heartbeatName } from "#core/functions/heartbeat-name.function";
 import { inJobOwner } from "#core/functions/in-job-owner.function";
 import { readJob } from "#core/functions/read-job.function";
+import { HeartbeatService } from "#core/services/heartbeat.service";
 import type { JobPlan } from "#core/types/job-plan.type";
 import type { JobRun } from "#core/types/job-run.type";
 
@@ -138,7 +143,8 @@ export class QueueWorkerService extends Service {
 
   /**
    * Works `queue` with `concurrency` loops (one when absent) until `signal` aborts: each reserves the next due job and
-   * runs it, and waits a second when none is due. A store that fails is logged and retried after the same pause.
+   * runs it, and waits a second when none is due. A store that fails is logged and retried after the same pause. Each
+   * pass that reached the store beats the `queue-<queue>` heartbeat when a `HeartbeatService` is bound.
    *
    * @throws Error before `connect`.
    * @throws RangeError when `concurrency` is not a whole number from 1.
@@ -156,9 +162,12 @@ export class QueueWorkerService extends Service {
 
   /** One worker loop. */
   private async loop(queue: string, signal: AbortSignal): Promise<void> {
+    const heartbeat = heartbeatName(`queue-${queue}`);
     while (!signal.aborted) {
       try {
-        if ((await this.next(queue, this.clock.now())) === undefined) await this.pause(signal);
+        const run = await this.next(queue, this.clock.now());
+        this.beat(heartbeat);
+        if (run === undefined) await this.pause(signal);
       } catch (error) {
         this.logger()?.error(QUEUE_LOG_EVENTS.workerFailed, { queue, cause: error });
         await this.pause(signal);
@@ -467,6 +476,12 @@ export class QueueWorkerService extends Service {
       code: isRefusal(error) ? error.code : "internal",
       message: error instanceof Error ? error.message : String(error),
     };
+  }
+
+  /** Beats heartbeat `name` through the bound `HeartbeatService`, without waiting: a beat never throws. */
+  private beat(name: string): void {
+    const resolver = this.connection?.resolver;
+    if (resolver?.has(HeartbeatService) === true) void resolver.get(HeartbeatService).beat(name);
   }
 
   /** The bound logger, when there is one. */

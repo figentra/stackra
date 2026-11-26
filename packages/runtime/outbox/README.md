@@ -94,6 +94,10 @@ exponential backoff (from ten seconds, capped at an hour: the contracts `backoff
 batch holds them until the oldest has been due that long, then delivers them together. A service that sends in batches
 sets it in runway (the audit read trail uses `5`); every other service keeps `0` and ADR 0221's one-second lag.
 
+Every poll that completed, whether it held the lock or another relay did, beats the `outbox-relay` heartbeat through
+`@stackra/queue`'s `HeartbeatService` when the container binds it (ADR 0184 decision 4); `CrossAppRelayService`
+beats `cross-app-relay` the same way. A failed poll beats nothing, so the heartbeat misses and on-call is paged.
+
 ## Receiving once
 
 `InboxService.receive(envelope)` rebuilds the event from its registered class, claims its id and, on the first claim

@@ -19,11 +19,13 @@
  *           recorded in its tenant's isolation (`inRowOwner`, through the `CallIsolation` `connect` gives), each in a
  *           short transaction of its own while no transaction is open for the send. A leased row that does not load,
  *           or a tenant's row with no isolation bound, fails the tick (`ClaimNotLoadedError`,
- *           `RowIsolationMissingError`): it is never skipped. `connect` gives the logger and the isolation; without
- *           it only platform rows are sent.
+ *           `RowIsolationMissingError`): it is never skipped. `connect` gives the logger, the isolation and the
+ *           `HeartbeatService` of @stackra/queue; without it only platform rows are sent. Every tick that completed
+ *           beats the `cross-app-relay` heartbeat without waiting for it (ADR 0184 decision 4); a failed tick does not.
  * Runtime: node
  * Governing contract: ADR 0511 (decisions 12, 13 and 16, amendment of 2026-11-02); ADR 0078 (decision 4); ADR 0149
- *                     (one runner under a lock); ADR 0148 (backoff); ADR 0239 (2026-11-07 amendment, gaps A and C).
+ *                     (one runner under a lock); ADR 0148 (backoff); ADR 0239 (2026-11-07 amendment, gaps A and C);
+ *                     ADR 0184 (decision 4: heartbeats).
  */
 import { ClaimNotLoadedError, inRowOwner } from "@stackra/actions";
 import type { Resolver } from "@stackra/actions";
@@ -32,7 +34,7 @@ import { Service } from "@stackra/container";
 import { backoffDelay, Duration, Logger } from "@stackra/contracts";
 import type { Clock } from "@stackra/contracts";
 import type { Locks } from "@stackra/locking";
-import { JOB_BACKOFF } from "@stackra/queue";
+import { HeartbeatService, JOB_BACKOFF } from "@stackra/queue";
 
 import type {
   Delivery,
@@ -46,6 +48,7 @@ import { CROSS_APP_DEFAULTS } from "#core/constants/cross-app-defaults.constant"
 import { OUTBOX_ACTOR_ID } from "#core/constants/outbox-actor-id.constant";
 import { OUTBOX_DEFAULTS } from "#core/constants/outbox-defaults.constant";
 import { OUTBOX_LOG_EVENTS } from "#core/constants/outbox-log-events.constant";
+import { RELAY_HEARTBEATS } from "#core/constants/relay-heartbeats.constant";
 import { pauseFor } from "#core/functions/pause-for.function";
 
 /** Whether an answered status is worth another attempt: a 4xx other than 408 and 429 is a permanent refusal. */
@@ -112,6 +115,8 @@ export class CrossAppRelayService extends Service {
    * its first failure, recording each outcome on its own. A row left unsent (a failure before it, a crash) is due
    * again when its lease ends.
    *
+   * Once it completes it beats the `cross-app-relay` heartbeat through the bound `HeartbeatService`, without waiting.
+   *
    * @returns how many deliveries the tick tried; `0` when none was due or another relay held the lock.
    * @throws Error a store's, the signer's or the lock's error.
    */
@@ -131,6 +136,9 @@ export class CrossAppRelayService extends Service {
     const counts = await Promise.all(
       [...bySubscriber.values()].map((deliveries) => this.deliverInOrder(deliveries, now)),
     );
+    const resolver = this.resolver;
+    if (resolver?.has(HeartbeatService) === true)
+      void resolver.get(HeartbeatService).beat(RELAY_HEARTBEATS.crossApp);
     return counts.reduce((sum, count) => sum + count, 0);
   }
 
