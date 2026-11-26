@@ -68,7 +68,8 @@ pnpm --filter @figentra/docs api-reference         # rewrite the pages
 pnpm --filter @figentra/docs api-reference:check   # what pnpm validate runs: fails on a missing, changed or stale page
 ```
 
-Run it after changing a package's `package.json` or an exported declaration or its TSDoc, and commit the pages.
+Run it after changing a package's `package.json` or an exported declaration or its TSDoc, and commit the pages. The
+release version step (`pnpm changeset:version`) runs it after the bump, so the version PR carries the new versions.
 
 ## Architecture map
 
