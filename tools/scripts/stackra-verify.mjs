@@ -364,9 +364,12 @@ export function installCommands(builds, licensed = LICENSED_BUILDS, filters = []
   for (const filter of filters)
     if (!FILTER.test(filter)) throw new Error(`not a pnpm filter: ${filter}`);
   const free = builds.filter((b) => !licensed.includes(b));
-  const install = [INSTALL_COMMAND, ...filters.map((f) => `--filter='${f}'`)].join(" ");
+  const filterArgs = filters.map((f) => `--filter='${f}'`);
+  const install = [INSTALL_COMMAND, ...filterArgs].join(" ");
   const steps = [];
-  if (free.length) steps.push(`pnpm rebuild --ignore-pnpmfile ${free.join(" ")}`);
+  // the same filters as the install: an unfiltered rebuild lays in every member the install left out, and their
+  // dependencies (box 1, proof 3: apps/mobile and apps/playground in the gate's install)
+  if (free.length) steps.push(["pnpm rebuild --ignore-pnpmfile", ...filterArgs, ...free].join(" "));
   for (const name of licensed.filter((l) => builds.includes(l)))
     steps.push(
       `for d in node_modules/.pnpm/${name}@*/node_modules/${name}; do [ -e "$d" ] || continue; ` +
@@ -896,30 +899,60 @@ const insideWorkspace = (path) =>
     posix.normalize(path) === path &&
     !path.split("/").includes(".."));
 
+/** The dependency sections of a lockfile importer that pnpm links into the member's node_modules. */
+const IMPORTER_SECTIONS = Object.freeze([
+  "dependencies",
+  "optionalDependencies",
+  "devDependencies",
+]);
+
+/** The package a lockfile version installs under another name (`uniwind: uniwind-pro@1.9.0(…)`), or null. */
+const lockedAliasTarget = (version) =>
+  /^((?:@[^/@(]+\/)?[^@(:/][^@(:]*)@/.exec(String(version))?.[1] ?? null;
+
 /**
  * What the tested tree's lockfile says each node_modules holds (round 7, R6-H1), for prepare and the judge view:
- * `importers`, the member directories ("." the root), and `entries`, one `<importer>\t<name>\t<target>` line per
- * direct dependency, `<target>` being `registry` or the member directory its `link:` names. From lockfileGraph's
- * importers; a name or directory with a tab or a newline is refused.
+ * `importers`, the member directories ("." the root), and `entries`, one line per direct dependency:
+ * `<importer>\t<name>\t<member>` for a `link:` (the member directory it names), or
+ * `<importer>\t<name>\tregistry\t<package>` for a registry one, `<package>` being the package pnpm installs, which an
+ * `npm:` alias names (`typescript6: typescript@6.0.3` links to .pnpm/typescript@6.0.3/node_modules/typescript). Reads
+ * lockfileGraph's importers as they are (`{ dir: { dependencies, optionalDependencies, devDependencies } }`, each
+ * `{ name: version }`); a name, package or directory with a tab or a newline is refused, and so is a name two
+ * sections lock differently.
  */
 export function nodeModulesPlan(importers) {
-  const entries = [];
-  for (const [dir, deps] of Object.entries(importers)) {
+  const entries = new Set();
+  for (const [dir, sections] of Object.entries(importers)) {
+    if (/[\t\n]/.test(dir)) throw new Error(`not a lockfile importer entry: ${dir}`);
     // round 8 (NIT): an importer and a link stay inside the workspace, in pnpm's normal form
-    if (!/[\t\n]/.test(dir) && !insideWorkspace(dir))
-      throw new Error(`not a workspace member directory: ${dir}`);
-    for (const [name, version] of Object.entries(deps)) {
-      if (/[\t\n]/.test(dir + name))
-        throw new Error(`not a lockfile importer entry: ${dir} ${name}`);
-      const target = String(version).startsWith("link:")
-        ? posix.normalize(posix.join(dir, String(version).slice(5))).replace(/\/$/, "")
-        : "registry";
-      if (target !== "registry" && !insideWorkspace(target))
-        throw new Error(`a link outside the workspace: ${dir} ${name} ${version}`);
-      entries.push(`${dir}\t${name}\t${target}`);
-    }
+    if (!insideWorkspace(dir)) throw new Error(`not a workspace member directory: ${dir}`);
+    if (sections === null || typeof sections !== "object")
+      throw new Error(`not a lockfile importer: ${dir}`);
+    for (const section of Object.keys(sections))
+      if (!IMPORTER_SECTIONS.includes(section))
+        throw new Error(`not a lockfile importer section: ${dir} ${section}`);
+    const seen = new Map();
+    for (const section of IMPORTER_SECTIONS)
+      for (const [name, version] of Object.entries(sections[section] ?? {})) {
+        if (/[\t\n]/.test(name)) throw new Error(`not a lockfile importer entry: ${dir} ${name}`);
+        if (typeof version !== "string" || version === "")
+          throw new Error(`not a lockfile version: ${dir} ${name}`);
+        if (seen.has(name) && seen.get(name) !== version)
+          throw new Error(`locked twice, differently: ${dir} ${name}`);
+        seen.set(name, version);
+        if (version.startsWith("link:")) {
+          const target = posix.normalize(posix.join(dir, version.slice(5))).replace(/\/$/, "");
+          if (!insideWorkspace(target))
+            throw new Error(`a link outside the workspace: ${dir} ${name} ${version}`);
+          entries.add(`${dir}\t${name}\t${target}`);
+          continue;
+        }
+        const pkg = lockedAliasTarget(version) ?? name;
+        if (/[\t\n]/.test(pkg)) throw new Error(`not a lockfile importer entry: ${dir} ${name}`);
+        entries.add(`${dir}\t${name}\tregistry\t${pkg}`);
+      }
   }
-  return { importers: Object.keys(importers).toSorted(), entries: entries.toSorted() };
+  return { importers: Object.keys(importers).toSorted(), entries: [...entries].toSorted() };
 }
 
 /**
@@ -937,13 +970,15 @@ export function nodeModulesPlan(importers) {
  */
 export const plantedCheck = (inDir = IN_DIR) =>
   [
+    // a scratch directory of its own, so two checks on one host (the tests) never share a file
+    'pt=$(mktemp -d "${TMPDIR:-/tmp}/stackra-planted.XXXXXX")',
     "planted() {",
-    `  tar -tf ${inDir}/src.tar | { grep -v '/$' || true; } | LC_ALL=C sort -u > /tmp/stackra-tracked`,
-    "  find . \\( -name node_modules -o -path ./.git \\) -prune -o \\( -type f -o -type l \\) -print | sed 's|^\\./||' | LC_ALL=C sort -u > /tmp/stackra-present",
-    "  LC_ALL=C comm -13 /tmp/stackra-tracked /tmp/stackra-present",
-    "  local nm p imp e n real target id",
+    `  tar -tf ${inDir}/src.tar | { grep -v '/$' || true; } | LC_ALL=C sort -u > "$pt/tracked"`,
+    "  find . \\( -name node_modules -o -path ./.git \\) -prune -o \\( -type f -o -type l \\) -print | sed 's|^\\./||' | LC_ALL=C sort -u > \"$pt/present\"",
+    '  LC_ALL=C comm -13 "$pt/tracked" "$pt/present"',
+    "  local nm p imp e n real target pkg id",
     // to a file first, so a failing find stops prepare (set -e) instead of feeding the loop nothing
-    "  find . -path ./.git -prune -o -name node_modules -prune -print0 > /tmp/stackra-modules",
+    '  find . -path ./.git -prune -o -name node_modules -prune -print0 > "$pt/modules"',
     "  while IFS= read -r -d '' nm; do",
     '    p=${nm#./}; imp=$(dirname -- "$p")',
     '    if [ -L "$p" ] || [ ! -d "$p" ]; then echo "$p (a node_modules that is not a directory)"; continue; fi',
@@ -965,18 +1000,22 @@ export const plantedCheck = (inDir = IN_DIR) =>
     `      target=$(awk -F '\\t' -v i="$imp" -v n="$n" '$1 == i && $2 == n { print $3; exit }' ${inDir}/node-modules.tsv)`,
     '      case "$target" in',
     '        "") echo "$e (not a dependency the lockfile names)" ;;',
-    // round 8 (NIT): exactly one directory between .pnpm and the package's own node_modules, as pnpm writes it
+    // round 8 (NIT): exactly one directory between .pnpm and the package's own node_modules, as pnpm writes it; the
+    // package an alias names (nodeModulesPlan's fourth column) is the directory pnpm links to
     "        registry)",
-    '          id=${real#"$PWD/node_modules/.pnpm/"}; id=${id%"/node_modules/$n"}',
-    '          case "$real" in "$PWD/node_modules/.pnpm/"*"/node_modules/$n") ;; *) id=/ ;; esac',
-    '          case "$id" in "" | */* | . | ..) echo "$e (not a link to node_modules/.pnpm/<id>/node_modules/$n)" ;; esac ;;',
+    `          pkg=$(awk -F '\\t' -v i="$imp" -v n="$n" '$1 == i && $2 == n { print $4; exit }' ${inDir}/node-modules.tsv)`,
+    '          id=${real#"$PWD/node_modules/.pnpm/"}; id=${id%"/node_modules/$pkg"}',
+    '          case "$real" in "$PWD/node_modules/.pnpm/"*"/node_modules/$pkg") ;; *) id=/ ;; esac',
+    '          if [ -z "$pkg" ]; then id=/; fi',
+    '          case "$id" in "" | */* | . | ..) echo "$e (not a link to node_modules/.pnpm/<id>/node_modules/${pkg:-$n})" ;; esac ;;',
     '        *) if [ "$real" != "$PWD/$target" ]; then echo "$e (not a link to $target)"; fi ;;',
     "      esac",
     "    done",
-    "  done < /tmp/stackra-modules",
+    '  done < "$pt/modules"',
     "}",
-    "planted > /tmp/stackra-planted",
-    `if [ -s /tmp/stackra-planted ]; then head -n 50 /tmp/stackra-planted | sed 's|^|${PLANTED_LINE}|'; exit ${PLANTED_EXIT}; fi`,
+    'planted > "$pt/planted"',
+    `if [ -s "$pt/planted" ]; then head -n 50 "$pt/planted" | sed 's|^|${PLANTED_LINE}|'; rm -rf -- "$pt"; exit ${PLANTED_EXIT}; fi`,
+    'rm -rf -- "$pt"',
   ].join("\n");
 
 /**
@@ -2331,28 +2370,31 @@ export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work", inDir = IN_D
     "mode=${1-}",
     'case "$mode" in main|pr) ;; *) echo "usage: judge-view.sh main|pr"; exit 2 ;; esac',
     `refuse() { echo "stackra-verify: the judge view refuses $1"; exit ${VIEW_REFUSED_EXIT}; }`,
+    // a scratch directory of its own, so two views on one host (the tests) never share a file
+    't=$(mktemp -d "${TMPDIR:-/tmp}/stackra-view.XXXXXX")',
+    "trap 'rm -rf -- \"$t\"' EXIT",
     // main's generated files
     `cd ${root}`,
-    "find . -name node_modules -prune -o -type d \\( -name .stackra -o -name stackra-encore \\) -print0 > /tmp/stackra-generated",
+    'find . -name node_modules -prune -o -type d \\( -name .stackra -o -name stackra-encore \\) -print0 > "$t/generated"',
     "while IFS= read -r -d '' d; do",
     "  p=${d#./}",
     '  case "$p" in packages/developer/gen/__golden__/*) continue ;; esac',
     '  parent=$(dirname -- "$p")',
     `  if [ ! -d "${tree}/$parent" ] || [ -L "${tree}/$parent" ] || [ -L "${tree}/$p" ]; then continue; fi`,
-    '  (cd "$p" && find . -print0) > /tmp/stackra-generated-files',
+    '  (cd "$p" && find . -print0) > "$t/generated-files"',
     "  while IFS= read -r -d '' f; do",
     '    case "$f" in ./migrations|./migrations/*) continue ;; esac',
     `    if [ -d "$p/$f" ] && [ ! -L "$p/$f" ]; then mkdir -p "${tree}/$p/$f"`,
     `    elif [ ! -e "${tree}/$p/$f" ] && [ ! -L "${tree}/$p/$f" ]; then cp -P -- "$p/$f" "${tree}/$p/$f"; fi`,
     "    true",
-    "  done < /tmp/stackra-generated-files",
+    '  done < "$t/generated-files"',
     "  true",
-    "done < /tmp/stackra-generated",
+    'done < "$t/generated"',
     `cd ${tree}`,
-    "find . -path ./.git -prune -o -name node_modules -prune -print0 > /tmp/stackra-modules",
+    'find . -path ./.git -prune -o -name node_modules -prune -print0 > "$t/modules"',
     'if [ "$mode" = main ]; then',
     // main's node_modules for every member; the prepared tree has none of its own (no install ran on it)
-    '  if [ -s /tmp/stackra-modules ]; then refuse "a node_modules in a tree that had no install"; fi',
+    '  if [ -s "$t/modules" ]; then refuse "a node_modules in a tree that had no install"; fi',
     "  while IFS= read -r imp; do",
     `    if [ -z "$imp" ] || [ ! -d "$imp" ] || [ -L "$imp" ]; then continue; fi`,
     '    nm=$imp/node_modules; if [ "$imp" = . ]; then nm=node_modules; fi',
@@ -2386,10 +2428,10 @@ export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work", inDir = IN_D
     `      if [ -e "$p/.bin/turbo" ]; then ln -sfn ${inDir}/bin/turbo "$p/.bin/turbo"; fi`,
     "    fi",
     "    true",
-    "  done < /tmp/stackra-modules",
+    '  done < "$t/modules"',
     "fi",
     // every .bin a judge's pnpm could put on PATH (a member's node_modules/.bin) holds main's tools only
-    "find . -path ./.git -prune -o -name node_modules -prune -print0 > /tmp/stackra-modules",
+    'find . -path ./.git -prune -o -name node_modules -prune -print0 > "$t/modules"',
     "while IFS= read -r -d '' nm; do",
     // main's node_modules (the main view): a link into the judge image, nothing of the tree's inside
     '  if [ -L "${nm#./}" ]; then',
@@ -2402,7 +2444,7 @@ export const judgeViewScript = (root = JUDGE_MOUNT, tree = "/work", inDir = IN_D
     `    case "$link" in ${root}/*|${inDir}/bin/turbo) ;; *) refuse "$b (a bin that is not main's)" ;; esac`,
     "  done",
     "  true",
-    "done < /tmp/stackra-modules",
+    'done < "$t/modules"',
     "",
   ].join("\n");
 
@@ -3880,8 +3922,10 @@ const overrideTarget = (selector) =>
  * reference, or an `npm:<name>@<range>` alias; `workspace:` only between members (`memberNames`). `link:`, `file:`,
  * `portal:`, git, GitHub and http(s) tarball specs, and paths, are refused. An alias that renames a gate-tool package
  * (GATE_TOOL_PACKAGES) to another registry name is refused too, and so is a `workspace:` spec for one: either would
- * swap the gate's runner for a stub. An override may also be `-` (removal) or a `$name` reference, which is checked as
- * the root package.json's spec for `name` (`rootManifest`); `memberNames` are the lockfile importers' names.
+ * swap the gate's runner for a stub. The one exception is a gate tool that is main's own workspace member
+ * (`gateMembers`, @stackra/cli, box 1 proof B2): a `workspace:` spec for it links to that member, as main's own
+ * manifests do. An override may also be `-` (removal) or a `$name` reference, which is checked as the root
+ * package.json's spec for `name` (`rootManifest`); `memberNames` are the lockfile importers' names.
  */
 /**
  * Round 6, H2: every package the tested tree's lockfile resolves comes from a package registry under its own name.
@@ -3951,6 +3995,7 @@ export function dependencySpecProblems({
   workspace = {},
   manifests = [],
   memberNames = new Set(),
+  gateMembers = new Set(),
   rootManifest = {},
 }) {
   const problems = [];
@@ -3979,7 +4024,8 @@ export function dependencySpecProblems({
     }
     if (/^catalog:[\w.-]*$/.test(spec)) return;
     if (spec.startsWith("workspace:")) {
-      if (isGateToolPackage(key)) return bad("links a gate tool to a workspace member");
+      if (isGateToolPackage(key) && !gateMembers.has(key))
+        return bad("links a gate tool to a workspace member");
       return workspaceOk
         ? undefined
         : bad("is a workspace: spec for a package that is not a member");
@@ -5558,17 +5604,32 @@ export function buildTree(mirror, base, sha, scratchIndex, yaml = null, out = {}
     // What an allowed build installs is the registry's package under its own name, never a tarball the PR chose.
     problems.push(...lockfileResolutionProblems(lockText));
   }
-  const memberNames = new Set(
-    manifests
-      .filter((m) => importerDirs.has(definitionDirectory(m.path) || "."))
-      .map((m) => m.json?.name)
-      .filter(Boolean),
-  );
+  const members = manifests.filter((m) => importerDirs.has(definitionDirectory(m.path) || "."));
+  const memberNames = new Set(members.map((m) => m.json?.name).filter(Boolean));
+  // A gate tool that is main's own member (@stackra/cli) may be linked with workspace: when it is the same member in
+  // both trees: one manifest of that name, at the path where main has it, and an importer of main's lockfile.
+  const gateMembers = new Set();
+  const mainImporters = mainByPath.has("pnpm-lock.yaml")
+    ? new Set(Object.keys(lockfileGraph(blob(mainByPath.get("pnpm-lock.yaml"))).importers))
+    : new Set();
+  for (const name of memberNames) {
+    if (!isGateToolPackage(name)) continue;
+    const same = members.filter((m) => m.json?.name === name);
+    const mainEntry = mainByPath.get(same[0].path);
+    if (same.length !== 1 || !mainEntry) continue;
+    if (!mainImporters.has(definitionDirectory(same[0].path) || ".")) continue;
+    try {
+      if (JSON.parse(blob(mainEntry))?.name === name) gateMembers.add(name);
+    } catch {
+      // main's manifest is not JSON: no exception
+    }
+  }
   problems.push(
     ...dependencySpecProblems({
       workspace,
       manifests,
       memberNames,
+      gateMembers,
       rootManifest: manifests.find((m) => m.path === "package.json")?.json ?? {},
     }),
   );
