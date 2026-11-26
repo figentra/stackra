@@ -21,6 +21,11 @@
  *      here, either way.
  *   6. a PR that changes what the verify service checks (`isVerifyDefinition`, or a package.json definition field)
  *      is labelled `risk:R3`, so it needs the owner's approval below: the verify service runs main's definition.
+ *   Conditions 5 and 6 hold only once `VERIFY_ENFORCED` is true (CTO read of #1043, High): until the verify service
+ *   is live and its gate is green on main (STA-2788, STA-2781), they would refuse every PR, the ones that make the
+ *   gate green included. The go-live PR flips it, labelled `risk:R3`, with the owner's approval. A success counts
+ *   only against current main when the base has no merge queue (no queue commit is verified after it); with a queue,
+ *   one against an older main counts for VERIFY_FRESH_MS.
  *   A PR labelled `design` or `risk:R3` also needs an owner APPROVED review on the head SHA, or `owner-approved` put
  *   there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is the owner
  *   user, never a bot (ADR 0119 decision 2 as amended 2026-10-28, ADR 0293). The events are read only then; an API
@@ -44,6 +49,11 @@ export const OWNER = "figentra-usr";
 const GATED_LABELS = ["design", "risk:R3"];
 /** The label that stops a merge (ADR 0523 decision 3: the merger honours a HOLD label). */
 export const HOLD_LABEL = "hold";
+/**
+ * The go-live switch for conditions 5 and 6 (CTO read of #1043, High): false until the stackra-verify service runs and
+ * main's gate is green under it. The PR that sets it true is labelled `risk:R3` and carries the owner's approval.
+ */
+export const VERIFY_ENFORCED = false;
 /** The check run `stackra-verify.mjs` posts on a head SHA; condition 5 needs it green (STA-2761). */
 export const VERIFY_CHECK = "stackra/verify";
 /**
@@ -248,8 +258,9 @@ export const isJudgePath = (path, members) =>
   members === null || members.some((dir) => dir !== "." && path.startsWith(`${dir}/`));
 
 /**
- * How long a stackra/verify success against an older main counts (CTO ruling M3): long enough to enter the merge
- * queue, whose own commit verify sees the latest main. Older than this, the head waits for its re-verify.
+ * How long a stackra/verify success against an older main counts when the base has a merge queue (CTO ruling M3):
+ * long enough to enter the queue, whose own commit verify sees the latest main. Older than this, the head waits for its
+ * re-verify. Without a queue nothing verifies the merge against current main, so only a current base counts.
  */
 export const VERIFY_FRESH_MS = 24 * 60 * 60 * 1000;
 
@@ -259,13 +270,16 @@ export function isRecent(completedAt, now = Date.now()) {
   return Number.isFinite(age) && age >= 0 && age < VERIFY_FRESH_MS;
 }
 
-/** Conditions 1 to 6 for the main block: the facts from `verifyFacts` (runs, main, definition changes) always go in. */
+/**
+ * Conditions 1 to 6 for the main block: the facts from `verifyFacts` (runs, main, definition changes) always go in.
+ * `facts` is null only while conditions 5 and 6 are off (`options.enforced`, VERIFY_ENFORCED); then nothing is read.
+ */
 export const mergeBlockers = (pr, runs, options, facts) =>
   blockers(pr, runs, {
     ...options,
-    verifyRuns: facts.verifyRuns,
-    mainSha: facts.mainSha,
-    definitionChanges: facts.definitionChanges,
+    verifyRuns: facts?.verifyRuns ?? [],
+    mainSha: facts?.mainSha,
+    definitionChanges: facts?.definitionChanges ?? [],
   });
 
 export const isVerifyOverlay = (path) => VERIFY_OVERLAY.test(path) || isRootDefinition(path);
@@ -503,7 +517,8 @@ const STATE_HINTS = {
  * "Quality Gate" runs; `queue` says the base branch has a merge queue; `reviews` are the REST pull reviews and
  * `events` the REST issue events (`ownerLabelled`), empty when not read; `verifyRuns` the head SHA's REST check runs
  * named stackra/verify (condition 5); `app` the accepted verify App; `definitionChanges` the changed paths that define
- * what pnpm verify checks (condition 6).
+ * what pnpm verify checks (condition 6); `mainSha` main's head; `enforced` whether conditions 5 and 6 apply
+ * (VERIFY_ENFORCED).
  */
 export function blockers(
   pr,
@@ -517,6 +532,7 @@ export function blockers(
     definitionChanges = [],
     mainSha,
     now = Date.now(),
+    enforced = VERIFY_ENFORCED,
   } = {},
 ) {
   const reasons = [];
@@ -529,8 +545,10 @@ export function blockers(
   else if (gate.conclusion !== "success")
     reasons.push(`Quality Gate on ${sha} is ${gate.conclusion ?? gate.status}`);
 
-  const verify = verifyRun(verifyRuns, sha, app);
-  if (!app.id)
+  const verify = enforced ? verifyRun(verifyRuns, sha, app) : undefined;
+  if (!enforced) {
+    // conditions 5 and 6 are off until go-live (VERIFY_ENFORCED)
+  } else if (!app.id)
     reasons.push(
       `the ${app.slug} App is not registered (VERIFY_APP has no id), so no ${VERIFY_CHECK} can pass`,
     );
@@ -544,17 +562,22 @@ export function blockers(
     reasons.push(
       `${VERIFY_CHECK} on ${sha} is ${verify.conclusion}${verify.html_url ? ` (${verify.html_url})` : ""}`,
     );
-  else if (
-    mainSha &&
-    verify.external_id !== `base:${mainSha}` &&
-    !isRecent(verify.completed_at, now)
-  )
+  else if (!mainSha)
+    reasons.push(`main's head was not read, so ${VERIFY_CHECK}'s base cannot be checked`);
+  else if (verify.external_id === `base:${mainSha}`) {
+    // verified against current main
+  } else if (!queue)
+    // no merge queue: nothing verifies the merge against current main after this, so only a current base counts
+    reasons.push(
+      `${VERIFY_CHECK} on ${sha} was run against ${verify.external_id ?? "an unknown base"}, and main is now ${mainSha}; without a merge queue only a run against current main counts: wait for the re-verify`,
+    );
+  else if (!isRecent(verify.completed_at, now))
     reasons.push(
       `${VERIFY_CHECK} on ${sha} was run against ${verify.external_id ?? "an unknown base"} more than a day ago, and main is now ${mainSha}: wait for the re-verify`,
     );
 
   const labelNames = new Set(pr.labels.map((l) => l.name));
-  if (definitionChanges.length && !labelNames.has("risk:R3"))
+  if (enforced && definitionChanges.length && !labelNames.has("risk:R3"))
     reasons.push(
       `it changes what the verify service checks (${definitionChanges.slice(0, 5).join(", ")}${definitionChanges.length > 5 ? ", …" : ""}), which the verify service never runs from a PR: label it risk:R3 for the owner's review`,
     );
@@ -665,31 +688,33 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       gated && labels.has(OWNER_LABEL)
         ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
         : [];
-    // Conditions 5 and 6: read through verifyFacts, so the wiring is tested with fakes.
-    const facts = verifyFacts({
-      repo,
-      n,
-      headSha: pr.headRefOid,
-      api: (path) => JSON.parse(gh(["api", path], token, true)),
-      list: (path) => list(path, token),
-      raw: (path, ref) => {
-        const r = spawnSync(
-          "gh",
-          [
-            "api",
-            "-H",
-            "Accept: application/vnd.github.raw",
-            `repos/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${ref}`,
-          ],
-          {
-            encoding: "utf8",
-            env: { ...process.env, GH_TOKEN: token },
-            maxBuffer: 16 * 1024 * 1024,
+    // Conditions 5 and 6: read through verifyFacts, so the wiring is tested with fakes; nothing is read before go-live.
+    const facts = !VERIFY_ENFORCED
+      ? null
+      : verifyFacts({
+          repo,
+          n,
+          headSha: pr.headRefOid,
+          api: (path) => JSON.parse(gh(["api", path], token, true)),
+          list: (path) => list(path, token),
+          raw: (path, ref) => {
+            const r = spawnSync(
+              "gh",
+              [
+                "api",
+                "-H",
+                "Accept: application/vnd.github.raw",
+                `repos/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${ref}`,
+              ],
+              {
+                encoding: "utf8",
+                env: { ...process.env, GH_TOKEN: token },
+                maxBuffer: 16 * 1024 * 1024,
+              },
+            );
+            return r.status === 0 ? r.stdout : null;
           },
-        );
-        return r.status === 0 ? r.stdout : null;
-      },
-    });
+        });
     const reasons = mergeBlockers(
       pr,
       runs,
@@ -702,6 +727,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       );
       process.exit(1);
     }
+    if (!VERIFY_ENFORCED)
+      process.stdout.write(
+        `pr-merge: conditions 5 and 6 (${VERIFY_CHECK}, risk:R3 on a verify definition change) are off until go-live (VERIFY_ENFORCED)\n`,
+      );
     // The gate is condition 2; a red non-required check is reported, not blocking.
     if (pr.mergeStateStatus === "UNSTABLE")
       process.stdout.write(

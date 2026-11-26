@@ -11,6 +11,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import * as network from "../bot-token.mjs";
 import {
   blockers,
@@ -35,6 +36,7 @@ import {
   parseArgs,
   VERIFY_APP,
   VERIFY_CHECK,
+  VERIFY_ENFORCED,
   VERIFY_MOBILE_CHECK,
   CODEQL_CHECK,
   DEFINITION_FIELDS,
@@ -63,6 +65,8 @@ const pr = (over = {}) => ({
 const green = [{ id: 2, status: "completed", conclusion: "success" }];
 // A stand-in verify App, so each case names the App it trusts; VERIFY_APP is the registered one (id 5907714).
 const APP = { slug: "stackra-verify", id: 4242 };
+// main's head in every case that does not name another; a run's base is it unless the case says otherwise
+const MAIN_HEAD = "f".repeat(40);
 const appRun = (
   conclusion,
   { id = 1, sha = SHA, app = APP, status = "completed", name = VERIFY_CHECK } = {},
@@ -74,11 +78,15 @@ const appRun = (
   conclusion: status === "completed" ? conclusion : null,
   app,
   html_url: `https://github.com/figentra/stackra/runs/${id}`,
+  external_id: `base:${MAIN_HEAD}`,
 });
 const verified = [appRun("success")];
+/** blockers with conditions 5 and 6 on (as after go-live, VERIFY_ENFORCED true) and main's head read. */
+const enforcedBlockers = (p, runs, options = {}) =>
+  blockers(p, runs, { enforced: true, mainSha: MAIN_HEAD, ...options });
 // Every pre-STA-2761 case runs with a green stackra/verify; conditions 5 and 6 have their own tests below.
 const check = (p, runs, options = {}) =>
-  blockers(p, runs, { verifyRuns: verified, app: APP, ...options });
+  enforcedBlockers(p, runs, { verifyRuns: verified, app: APP, ...options });
 // Shapes as the REST pull reviews API returns them.
 const review = (over = {}) => ({
   user: { login: OWNER, type: "User" },
@@ -268,7 +276,7 @@ test("STA-302: gh() and graphql() retry reads only; a write that omits the flag 
 
 test("condition 5: no stackra/verify check run from the verify App refuses (STA-2761, replaces merge-now)", () => {
   assert.match(
-    blockers(pr(), green, { app: APP }).join(),
+    enforcedBlockers(pr(), green, { app: APP }).join(),
     /no stackra\/verify check run from stackra-verify on 0123/,
   );
 });
@@ -277,17 +285,17 @@ test("condition 5: VERIFY_APP is the registered stackra-verify App; an App witho
   assert.deepEqual({ ...VERIFY_APP }, { slug: "stackra-verify", id: 5_907_714 });
   assert.equal(Object.isFrozen(VERIFY_APP), true);
   const registered = [appRun("success", { app: { slug: "stackra-verify", id: 5_907_714 } })];
-  assert.deepEqual(blockers(pr(), green, { verifyRuns: registered }), []);
+  assert.deepEqual(enforcedBlockers(pr(), green, { verifyRuns: registered }), []);
   // the slug check stays: the right id under another slug never counts
   const otherSlug = [appRun("success", { app: { slug: "stackra-bot", id: 5_907_714 } })];
   assert.match(
-    blockers(pr(), green, { verifyRuns: otherSlug }).join(),
+    enforcedBlockers(pr(), green, { verifyRuns: otherSlug }).join(),
     /no stackra\/verify check run/,
   );
   const unregistered = { slug: "stackra-verify", id: null };
   const runs = [appRun("success", { app: unregistered })];
   assert.match(
-    blockers(pr(), green, { verifyRuns: runs, app: unregistered }).join(),
+    enforcedBlockers(pr(), green, { verifyRuns: runs, app: unregistered }).join(),
     /App is not registered/,
   );
   assert.equal(verifyRun(runs, SHA, unregistered), undefined);
@@ -327,14 +335,14 @@ test("condition 5: stackra/verify-mobile and stackra/codeql never pass or block 
 test("condition 5: a failed, neutral, cancelled or unfinished run refuses and names its link", () => {
   for (const conclusion of ["failure", "neutral", "cancelled", "timed_out", "skipped"])
     assert.match(
-      blockers(pr(), green, { app: APP, verifyRuns: [appRun(conclusion)] }).join(),
+      enforcedBlockers(pr(), green, { app: APP, verifyRuns: [appRun(conclusion)] }).join(),
       new RegExp(
         `stackra/verify on ${SHA} is ${conclusion} \\(https://github.com/figentra/stackra/runs/1\\)`,
       ),
     );
   for (const status of ["queued", "in_progress"])
     assert.match(
-      blockers(pr(), green, { app: APP, verifyRuns: [appRun(null, { status })] }).join(),
+      enforcedBlockers(pr(), green, { app: APP, verifyRuns: [appRun(null, { status })] }).join(),
       new RegExp(`is ${status}: wait`),
     );
 });
@@ -349,13 +357,13 @@ test("condition 5: forgery — a run from stackra-bot, another App, a same-slug 
   for (const forgery of forged) {
     assert.equal(verifyRun([forgery], SHA, APP), undefined, JSON.stringify(forgery.app));
     assert.match(
-      blockers(pr(), green, { app: APP, verifyRuns: [forgery] }).join(),
+      enforcedBlockers(pr(), green, { app: APP, verifyRuns: [forgery] }).join(),
       /no stackra\/verify check run/,
     );
   }
   // A newer forged success never hides the App's own failure.
   assert.match(
-    blockers(pr(), green, {
+    enforcedBlockers(pr(), green, {
       app: APP,
       verifyRuns: [appRun("failure", { id: 1 }), ...forged],
     }).join(),
@@ -367,28 +375,28 @@ test("condition 5: a stale SHA — a run for another commit never stands in for 
   const stale = appRun("success", { sha: "f".repeat(40) });
   assert.equal(verifyRun([stale], SHA, APP), undefined);
   assert.match(
-    blockers(pr(), green, { app: APP, verifyRuns: [stale] }).join(),
+    enforcedBlockers(pr(), green, { app: APP, verifyRuns: [stale] }).join(),
     /no stackra\/verify check run/,
   );
 });
 
 test("condition 5: only the newest App run counts (a re-run in progress refuses)", () => {
   assert.deepEqual(
-    blockers(pr(), green, {
+    enforcedBlockers(pr(), green, {
       app: APP,
       verifyRuns: [appRun("failure", { id: 1 }), appRun("success", { id: 2 })],
     }),
     [],
   );
   assert.match(
-    blockers(pr(), green, {
+    enforcedBlockers(pr(), green, {
       app: APP,
       verifyRuns: [appRun("success", { id: 1 }), appRun("failure", { id: 2 })],
     }).join(),
     /is failure/,
   );
   assert.match(
-    blockers(pr(), green, {
+    enforcedBlockers(pr(), green, {
       app: APP,
       verifyRuns: [appRun("success", { id: 1 }), appRun(null, { id: 2, status: "in_progress" })],
     }).join(),
@@ -455,12 +463,16 @@ test("condition 6: a PR that changes what the verify service checks needs risk:R
   assert.equal(scriptsChanged(null, '{"scripts":{"verify":"true"}}'), true);
   const changes = ["turbo.jsonc", "package.json"];
   assert.match(
-    blockers(pr(), green, { app: APP, verifyRuns: verified, definitionChanges: changes }).join(),
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: verified,
+      definitionChanges: changes,
+    }).join(),
     /label it risk:R3/,
   );
   // with risk:R3 the owner's approval decides (the existing gated-label rule)
   assert.match(
-    blockers(pr({ labels: [{ name: "risk:R3" }] }), green, {
+    enforcedBlockers(pr({ labels: [{ name: "risk:R3" }] }), green, {
       app: APP,
       verifyRuns: verified,
       definitionChanges: changes,
@@ -590,7 +602,11 @@ test("condition 6: a PR that adds only a patch and a workspace entry needs risk:
   assert.equal(isVerifyOverlay(".pnpmfile.cjs"), true);
   const changes = ["patches/vitest@5.0.5.patch", "pnpm-workspace.yaml"];
   assert.match(
-    blockers(pr(), green, { app: APP, verifyRuns: verified, definitionChanges: changes }).join(),
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: verified,
+      definitionChanges: changes,
+    }).join(),
     /label it risk:R3/,
   );
 });
@@ -620,15 +636,62 @@ test("condition 6: package.json definition fields — scripts, pnpm, overrides, 
   assert.equal(definitionFieldsChanged('{"name":"gone"}', null, "removed"), false);
 });
 
-test("condition 5: a success against an older main refuses until the re-verify", () => {
+test("condition 5: without a merge queue only a run against current main counts, however recent (CTO read of #1043)", () => {
   const MAIN = "e".repeat(40);
+  const NOW = Date.parse("2026-11-24T15:00:00Z");
   const ok = { ...appRun("success"), external_id: `base:${MAIN}` };
-  assert.deepEqual(blockers(pr(), green, { app: APP, verifyRuns: [ok], mainSha: MAIN }), []);
-  const old = { ...appRun("success"), external_id: `base:${"d".repeat(40)}` };
-  assert.match(
-    blockers(pr(), green, { app: APP, verifyRuns: [old], mainSha: MAIN }).join(),
-    /main is now e{40}: wait for the re-verify/,
+  assert.deepEqual(
+    enforcedBlockers(pr(), green, { app: APP, verifyRuns: [ok], mainSha: MAIN }),
+    [],
   );
+  // a minute old, against the previous main: refused without a queue, counted with one
+  const old = {
+    ...appRun("success"),
+    external_id: `base:${"d".repeat(40)}`,
+    completed_at: new Date(NOW - 60_000).toISOString(),
+  };
+  for (const queue of [false, undefined])
+    assert.match(
+      enforcedBlockers(pr(), green, {
+        app: APP,
+        verifyRuns: [old],
+        mainSha: MAIN,
+        now: NOW,
+        queue,
+      }).join(),
+      /run against base:d{40}, and main is now e{40}; without a merge queue only a run against current main counts: wait for the re-verify/,
+    );
+  assert.deepEqual(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [old],
+      mainSha: MAIN,
+      now: NOW,
+      queue: true,
+    }),
+    [],
+  );
+  // no base on the run, or main's head not read: refused either way
+  const unknown = { ...old, external_id: undefined };
+  assert.match(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [unknown],
+      mainSha: MAIN,
+      now: NOW,
+    }).join(),
+    /run against an unknown base/,
+  );
+  for (const queue of [false, true])
+    assert.match(
+      enforcedBlockers(pr(), green, {
+        app: APP,
+        verifyRuns: [ok],
+        mainSha: undefined,
+        queue,
+      }).join(),
+      /main's head was not read/,
+    );
 });
 
 /** A lockfile whose importers link the CLI to support (and support to errors); packages/c links nothing a judge uses. */
@@ -777,24 +840,26 @@ const oldBase = (completed_at) => ({
   completed_at,
 });
 
-test("condition 5: a green against an older main stands for a day (to enter the queue), then refuses", () => {
+test("condition 5: with a merge queue a green against an older main stands for a day (to enter it), then refuses", () => {
   const MAIN = "e".repeat(40);
   const NOW = Date.parse("2026-11-24T15:00:00Z");
   assert.deepEqual(
-    blockers(pr(), green, {
+    enforcedBlockers(pr(), green, {
       app: APP,
       verifyRuns: [oldBase(new Date(NOW - 60_000).toISOString())],
       mainSha: MAIN,
       now: NOW,
+      queue: true,
     }),
     [],
   );
   assert.match(
-    blockers(pr(), green, {
+    enforcedBlockers(pr(), green, {
       app: APP,
       verifyRuns: [oldBase(new Date(NOW - VERIFY_FRESH_MS - 60_000).toISOString())],
       mainSha: MAIN,
       now: NOW,
+      queue: true,
     }).join(),
     /more than a day ago/,
   );
@@ -812,9 +877,50 @@ test("mergeBlockers: the main block always passes main, the runs and the definit
     mainSha: "e".repeat(40),
     definitionChanges: ["turbo.jsonc"],
   };
-  const reasons = mergeBlockers(pr(), green, { app: APP }, facts).join();
+  const reasons = mergeBlockers(pr(), green, { app: APP, enforced: true }, facts).join();
   assert.match(reasons, /main is now e{40}/);
   assert.match(reasons, /label it risk:R3/);
+});
+
+test("go-live switch (CTO read of #1043, High): conditions 5 and 6 are off until VERIFY_ENFORCED is flipped", () => {
+  // today: off, so the PRs that make the gate green (STA-2788, STA-2781) can merge before the service is live
+  assert.equal(VERIFY_ENFORCED, false);
+  const changes = ["turbo.jsonc", "tools/scripts/pr-merge.mjs"];
+  // off (the default): no stackra/verify run, a red one, or an unlabelled definition change refuses nothing
+  for (const verifyRuns of [[], [appRun("failure")], [appRun(null, { status: "in_progress" })]])
+    assert.deepEqual(
+      blockers(pr(), green, { app: APP, verifyRuns, definitionChanges: changes }),
+      [],
+    );
+  assert.deepEqual(blockers(pr(), green, { app: { slug: "x", id: 0 } }), []);
+  // the main block reads no verify facts while off
+  assert.deepEqual(mergeBlockers(pr(), green, { app: APP }, null), []);
+  // conditions 1 to 4 and the owner's approval hold either way
+  assert.match(blockers(pr({ isDraft: true }), green).join(), /draft/);
+  assert.match(blockers(pr(), []).join(), /no Quality Gate run/);
+  assert.match(blockers(pr({ mergeStateStatus: "DIRTY" }), green).join(), /merge conflicts/);
+  assert.match(blockers(pr({ labels: [{ name: "hold" }] }), green).join(), /labelled hold/);
+  assert.match(
+    blockers(pr({ labels: [{ name: "risk:R3" }] }), green).join(),
+    /needs an owner approval/,
+  );
+  // on (the go-live PR): the same cases refuse
+  const on = (options) =>
+    blockers(pr(), green, { enforced: true, mainSha: MAIN_HEAD, app: APP, ...options }).join();
+  assert.match(on({ verifyRuns: [] }), /no stackra\/verify check run/);
+  assert.match(on({ verifyRuns: [appRun("failure")] }), /stackra\/verify on .* is failure/);
+  assert.match(on({ verifyRuns: verified, definitionChanges: changes }), /label it risk:R3/);
+  assert.match(
+    blockers(pr(), green, { enforced: true, mainSha: MAIN_HEAD, app: { slug: "x", id: 0 } }).join(),
+    /is not registered/,
+  );
+  assert.match(
+    mergeBlockers(pr(), green, { app: APP, enforced: true }, null).join(),
+    /no stackra\/verify check run/,
+  );
+  // the main block reads the facts exactly when the switch is on
+  const source = readFileSync(new URL("../pr-merge.mjs", import.meta.url), "utf8");
+  assert.match(source, /const facts = !VERIFY_ENFORCED\s*\?\s*null\s*:\s*verifyFacts\(/);
 });
 
 test("isRecent: a future completed_at never counts as recent", () => {
