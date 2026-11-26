@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `SentryErrorReporterDriver`: it is the `ErrorReporter` port; with the DSN secret set it POSTs
- *          one envelope to the project's endpoint with the auth header; with no secret, a malformed one or a zero
+ *          one envelope to the project's endpoint with the auth header, tagged with the context's correlation id when
+ *          given; with no secret, a malformed one or a zero
  *          sample it sends nothing; a failed send and a throwing fetch never reach the caller; `flush` waits for sends.
  * Boundary: test only; `fetch` is stubbed, so nothing leaves the process. The DSN is made up.
  * Runtime: node (vitest)
@@ -63,6 +64,20 @@ describe(SentryErrorReporterDriver, () => {
     expect(init.method).toBe("POST");
     expect((init.headers as Record<string, string>)["x-sentry-auth"]).toContain("sentry_key=pub");
     expect(String(init.body)).toContain('"value":"boom"');
+  });
+
+  it("tags the envelope with the correlation id the caller gave", async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetch);
+    const driver = reporter(DSN);
+    driver.report(new Error("boom"), { correlationId: "req-7f3a" });
+    driver.report(new Error("bare"));
+    await driver.flush();
+    const bodies = fetch.mock.calls.map((call) =>
+      String((call as unknown as [string, RequestInit])[1].body),
+    );
+    expect(bodies[0]).toContain('"tags":{"correlation_id":"req-7f3a"}');
+    expect(bodies[1]).not.toContain("correlation_id");
   });
 
   it("sends nothing without a DSN, with a malformed one, or at a zero sample", async () => {

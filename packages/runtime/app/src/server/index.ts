@@ -7,7 +7,8 @@
  *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check, API keys included) with its call types,
  *          `ServiceClientSessionDriver` (a service call's own token and the user's token it forwards),
  *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, `nodeBodyStream`
- *          (the adapter's request body as a web stream, STA-2794), and `apiCacheControl`, the rule 22 `private, no-store` header), until
+ *          (the adapter's request body as a web stream, STA-2794), `apiCacheControl`, the rule 22 `private, no-store` header,
+ *          and the error answers every adapter writes (`answerRefusal`, `answerFailure`, `correlationIdOf`; ADR 0140), until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Imports `.` through `#core/*`; `.` never imports it.
  * Runtime: node
@@ -34,7 +35,10 @@ export { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.err
 export { CsrfTokenInvalidError } from "#server/errors/csrf-token-invalid.error";
 export { EdgeSignatureInvalidError } from "#server/errors/edge-signature-invalid.error";
 export { OriginNotAllowedError } from "#server/errors/origin-not-allowed.error";
+export { answerFailure } from "#server/functions/answer-failure.function";
+export { answerRefusal } from "#server/functions/answer-refusal.function";
 export { apiCacheControl } from "#server/functions/api-cache-control.function";
+export { correlationIdOf } from "#server/functions/correlation-id-of.function";
 export { corsHeaders } from "#server/functions/cors-headers.function";
 export { createApp } from "#server/functions/create-app.function";
 export { nodeBodyStream } from "#server/functions/node-body-stream.function";

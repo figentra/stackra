@@ -9,18 +9,23 @@
  *          to the `ServerResponse` (STA-2577), its body piped as it is produced, so a server-sent-events answer streams. It answers an `OPTIONS` preflight with 204
  *          and `corsHeaders(request, CorsConfig)`, and adds the same CORS headers to every other answer, with
  *          `Cache-Control: private, no-store` where `apiCacheControl` forces it (ADR 0325 rule 22), inside
- *          `app.handlers.run` so a drain waits for it. When the service declares `@stackra/errors`, a
- *          `RateLimitedError` thrown by `handle` answers 429 with its envelope and `rateLimitHeaders` (`Retry-After`,
- *          `RateLimit-*`).
+ *          `app.handlers.run` so a drain waits for it. Whatever `handle` throws, and a refused run (the app draining), is
+ *          answered by `answerFailure` (`@stackra/app/server`) instead of reaching Encore: a refusal with its kind's
+ *          status and ADR 0140 envelope (a `RateLimitedError` with `rateLimitHeaders`), anything else reported once to
+ *          `app.reporter` (Sentry in production) and answered 500 with the `internal` envelope. Every error answer
+ *          carries one `correlationId` per request (`correlationIdOf`: the edge's request id, the `traceparent`, else
+ *          Encore's trace id), which `answerCall` hands `serveGuardedCall` and the report carries.
  * Boundary: pure; written only for a service that declares `@stackra/app` (the wiring then binds `CorsConfig` as
  *           `app.cors`). The adapter never decides an origin itself: `corsHeaders` echoes only an allowed one and
  *           `OriginGuard` refuses the request. `Vary: Origin` is appended to what the handler set, never replacing it.
- *           Only the rate-limited refusal is answered here; any other error propagates as before.
+ *           No error reaches Encore's own 500 (no code, no correlation id, its message in `internal_message`); an
+ *           answer to a refused run has no CORS headers, since no request container was made.
  * Runtime: isomorphic
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order); ADR 0325 (rule 22: the gateway marks signed-in answers); ADR 0295
  *                     (decision 8: the adapters reach the member through `handlers`); ADR 0091 and 0124 (Encore is
  *                     generated); STA-1374 (stackra-216); STA-1385; ADR 0217 (decision 2: the `RateLimit-*` headers
- *                     are sent), STA-1477; STA-2794.
+ *                     are sent), STA-1477; ADR 0140 (decisions 1 to 4: the envelope on every error answer); ADR 0232
+ *                     (decision 8: report what was not handled, once); STA-2048; STA-2794.
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
@@ -41,16 +46,15 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
     (ir.packages ?? []).includes(name) ||
     ir.dependencies.some((dependency) => dependency.package === name);
   if (!declares("@stackra/app")) return undefined;
-  // The 429 answer imports @stackra/errors, so it is written only for a service that declares it.
-  const errors = declares("@stackra/errors");
   const header = generatedHeader({
     from: "the service layout and its @stackra/app dependency",
     purpose:
       `the HTTP adapter of ${ir.package}: CORS preflights answered with 204, CORS headers on every answer, ` +
-      "signed-in answers private, no-store.",
+      "signed-in answers private, no-store, and every error answered with the ADR 0140 envelope and a correlation id.",
     boundary:
       "every raw endpoint answers through `answerHttp`; the headers come from `corsHeaders` over the bound " +
-      "`CorsConfig` (`app.cors`) and `apiCacheControl`, never from this file.",
+      "`CorsConfig` (`app.cors`) and `apiCacheControl`, and the error answers from `answerFailure` (an unexpected " +
+      "error reported to `app.reporter`), never from this file.",
     runtime: "node",
   });
   return {
@@ -62,10 +66,12 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       'import type { IncomingMessage, ServerResponse } from "node:http";',
       "",
       "import {",
+      "  answerFailure,",
       "  apiCacheControl,",
       "  CallAuthenticator,",
       "  CorsConfig,",
       "  corsHeaders,",
+      "  correlationIdOf,",
       "  HttpConfig,",
       "  type KeyCallOptions,",
       "  nodeBodyStream,",
@@ -75,44 +81,44 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       '} from "@stackra/app/server";',
       'import type { AnyClass, Container } from "@stackra/container";',
       'import type { Actor } from "@stackra/contracts";',
-      ...(errors
-        ? ['import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";']
-        : []),
+      'import { currentRequest } from "encore.dev";',
       "",
       ENCORE_APP_IMPORT,
       "",
       "/**",
       " * Answers one request: an `OPTIONS` preflight with 204 and the CORS headers, any other with `handle`'s answer and",
-      ` * the CORS headers${errors ? " (a rate-limited refusal as 429 with its back-off headers)" : ""}; \`private, no-store\` when the`,
-      " * request is signed in or the answer sets a cookie (ADR 0325 r22).",
+      " * the CORS headers; `private, no-store` when the request is signed in or the answer sets a cookie (ADR 0325 r22).",
+      " * Nothing it is handed throws past it: a refusal answers its kind's status and envelope, anything else is reported",
+      " * to `app.reporter` and answered 500 `internal`, each with the request's one `correlationId` (ADR 0140).",
       " */",
-      "export function answerHttp(",
+      "export async function answerHttp(",
       "  request: Request,",
-      "  handle: (request: Request, container: Container) => Promise<Response>,",
+      "  handle: (request: Request, container: Container, correlationId: string) => Promise<Response>,",
       "): Promise<Response> {",
-      "  return app.handlers.run(async (container) => {",
-      "    const cors = corsHeaders(request, container.get(CorsConfig));",
-      '    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });',
-      ...(errors
-        ? [
-            "    let answered: Response;",
-            "    try {",
-            "      answered = await handle(request, container);",
-            "    } catch (error) {",
-            "      if (!isRefusal(error, RateLimitedError)) throw error;",
-            "      answered = Response.json(error.toEnvelope(), { status: 429, headers: rateLimitHeaders(error) });",
-            "    }",
-          ]
-        : ["    const answered = await handle(request, container);"]),
-      "    // A fetched answer's headers are immutable: copy it once.",
-      "    const response = new Response(answered.body, answered);",
-      "    for (const [name, value] of cors)",
-      '      if (name === "vary") response.headers.append(name, value);',
-      "      else response.headers.set(name, value);",
-      "    const cacheControl = apiCacheControl(request, response);",
-      '    if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
-      "    return response;",
-      "  });",
+      "  const correlationId = correlationIdOf(request, currentRequest()?.trace?.traceId);",
+      "  try {",
+      "    return await app.handlers.run(async (container) => {",
+      "      const cors = corsHeaders(request, container.get(CorsConfig));",
+      '      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });',
+      "      let answered: Response;",
+      "      try {",
+      "        answered = await handle(request, container, correlationId);",
+      "      } catch (error) {",
+      "        answered = answerFailure(error, { correlationId, reporter: app.reporter });",
+      "      }",
+      "      // A fetched answer's headers are immutable: copy it once.",
+      "      const response = new Response(answered.body, answered);",
+      "      for (const [name, value] of cors)",
+      '        if (name === "vary") response.headers.append(name, value);',
+      "        else response.headers.set(name, value);",
+      "      const cacheControl = apiCacheControl(request, response);",
+      '      if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
+      "      return response;",
+      "    });",
+      "  } catch (error) {",
+      "    // The run was refused (the app is draining: 503) or failed around the call: no request container, no CORS.",
+      "    return answerFailure(error, { correlationId, reporter: app.reporter });",
+      "  }",
       "}",
       "",
       "/** What an endpoint states: its route, whether anonymous callers may reach it, its action, and the call it runs. */",
@@ -147,9 +153,10 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "    // keeps its native request, no emitter, in `req` (STA-2794).",
       '    ...(method === "GET" || method === "HEAD" ? {} : { body: nodeBodyStream(req), duplex: "half" }),',
       "  } as RequestInit);",
-      "  const response = await answerHttp(request, (incoming, container) =>",
+      "  const response = await answerHttp(request, (incoming, container, correlationId) =>",
       "    serveGuardedCall({",
       "      request: incoming,",
+      "      correlationId,",
       "      path: call.path,",
       "      anonymous: call.anonymous,",
       "      action: call.action,",

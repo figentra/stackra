@@ -3,14 +3,15 @@
  * Purpose: unit tests of `emitEncoreHttp`: a service that declares @stackra/app gets `stackra-encore/<member>/http.ts`,
  *          whose `answerHttp` runs through `app.handlers.run`, answers `OPTIONS` with 204 and `corsHeaders` over the
  *          bound `CorsConfig`, and adds those headers to every other answer (`Vary` appended) with `apiCacheControl`'s
- *          `private, no-store` (ADR 0325 rule 22); a service that declares @stackra/errors answers a `RateLimitedError`
- *          with 429 and `rateLimitHeaders` (STA-1477), one without it keeps the plain answer; the request body is
- *          `nodeBodyStream(req)`, never `Readable.toWeb` (STA-2794); a service without
- *          @stackra/app, a package and an app get none.
+ *          `private, no-store` (ADR 0325 rule 22); everything `handle` throws, and a refused run, is answered by
+ *          `answerFailure` with `app.reporter` and the request's one correlation id (`correlationIdOf` over Encore's
+ *          trace id), which `answerCall` hands `serveGuardedCall`, so no error reaches Encore's own 500 (STA-2048);
+ *          the request body is `nodeBodyStream(req)`, never `Readable.toWeb` (STA-2794); the adapter no longer needs
+ *          @stackra/errors; a service without @stackra/app, a package and an app get none.
  * Boundary: test only; asserts on the generated source text of the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0437; ADR 0295 (decision 8); ADR 0325 (rule 22); STA-1385;
- *                     STA-1448; STA-2794.
+ *                     STA-1448; ADR 0140; STA-2048; STA-2794.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -29,12 +30,12 @@ describe(emitEncoreHttp, () => {
     for (const line of [
       "  corsHeaders,",
       `import { app } from "${GENERATED_ENTRY}";`,
-      "  return app.handlers.run(async (container) => {",
-      "    const cors = corsHeaders(request, container.get(CorsConfig));",
-      '    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });',
-      '      if (name === "vary") response.headers.append(name, value);',
-      "    const cacheControl = apiCacheControl(request, response);",
-      '    if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
+      "    return await app.handlers.run(async (container) => {",
+      "      const cors = corsHeaders(request, container.get(CorsConfig));",
+      '      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });',
+      '        if (name === "vary") response.headers.append(name, value);',
+      "      const cacheControl = apiCacheControl(request, response);",
+      '      if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
     ])
       expect(content).toContain(line);
   });
@@ -53,26 +54,41 @@ describe(emitEncoreHttp, () => {
       "      action: call.action,",
       "  if (response.body === null) resp.end();",
       "  else Readable.fromWeb(response.body as never).pipe(resp);",
+      "  const response = await answerHttp(request, (incoming, container, correlationId) =>",
+      "      correlationId,",
     ])
       expect(content).toContain(line);
     // Readable.toWeb crashes on Encore's RawRequest at the end of every body (STA-2794).
     expect(content).not.toContain("body: Readable.toWeb(req)");
   });
 
-  it("answers a rate-limited refusal with 429 and its back-off headers when @stackra/errors is declared", () => {
+  it("answers every error with answerFailure and the request's correlation id, never Encore's 500 (STA-2048)", () => {
     const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
     for (const line of [
-      'import { isRefusal, RateLimitedError, rateLimitHeaders } from "@stackra/errors";',
-      "      if (!isRefusal(error, RateLimitedError)) throw error;",
-      "      answered = Response.json(error.toEnvelope(), { status: 429, headers: rateLimitHeaders(error) });",
+      'import { currentRequest } from "encore.dev";',
+      "  answerFailure,",
+      "  correlationIdOf,",
+      "  const correlationId = correlationIdOf(request, currentRequest()?.trace?.traceId);",
+      "        answered = await handle(request, container, correlationId);",
+      "        answered = answerFailure(error, { correlationId, reporter: app.reporter });",
+      "    return answerFailure(error, { correlationId, reporter: app.reporter });",
     ])
       expect(content).toContain(line);
+    // Both catches answer; nothing is rethrown to Encore.
+    expect(content).not.toMatch(/throw error/);
+    expect(content.match(/answerFailure\(error/g)).toHaveLength(2);
+  });
+
+  it("writes the same error answers whether or not the service declares @stackra/errors", () => {
     const bare = emitEncoreHttp({
       ...BILLING_IR,
       packages: (BILLING_IR.packages ?? []).filter((name) => name !== "@stackra/errors"),
+      dependencies: BILLING_IR.dependencies.filter(
+        (dependency) => dependency.package !== "@stackra/errors",
+      ),
     })?.content;
-    expect(bare).not.toContain("@stackra/errors");
-    expect(bare).toContain("    const answered = await handle(request, container);");
+    expect(bare).not.toContain('from "@stackra/errors"');
+    expect(bare).toBe(emitEncoreHttp(BILLING_IR)?.content);
   });
 
   it("writes none without @stackra/app or outside a service", () => {

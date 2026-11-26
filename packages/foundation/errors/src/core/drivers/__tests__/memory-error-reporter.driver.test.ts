@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MemoryErrorReporterDriver`: it is the `ErrorReporter` port and keeps each reported error in
- *          order until `clear()`.
+ * Purpose: unit tests of `MemoryErrorReporterDriver`: it is the `ErrorReporter` port and keeps each reported error, and
+ *          the context it came with, in order until `clear()`.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0232 (decision 8).
@@ -17,9 +17,11 @@ describe(MemoryErrorReporterDriver, () => {
     expect(reporter).toBeInstanceOf(ErrorReporter);
     const first = new Error("first");
     reporter.report(first);
-    reporter.report("second");
+    reporter.report("second", { correlationId: "req-1" });
     expect(reporter.errors).toEqual([first, "second"]);
+    expect(reporter.contexts).toEqual([undefined, { correlationId: "req-1" }]);
     reporter.clear();
     expect(reporter.errors).toEqual([]);
+    expect(reporter.contexts).toEqual([]);
   });
 });
