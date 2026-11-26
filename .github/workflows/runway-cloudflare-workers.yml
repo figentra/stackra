@@ -4,7 +4,9 @@
 #          so each caller keeps its own GitHub environment. Checks out the commit, refuses one that is not on main,
 #          builds what the member needs, reads the credentials and variables, then hands over to `stackra deploy`, which builds,
 #          swaps the binding ids, applies D1 migrations, uploads a version with the commit as the message and its secrets on
-#          stdin, smoke-tests it and moves traffic to it. Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml, deploy-docs.yml,
+#          stdin, adds it to the deployment at 0% (an override reaches only a version in the deployment), smoke-tests it
+#          by override and moves traffic to it, smoking each step; every smoke proves the version that answered is the
+#          new one (STA-2786). Callers: deploy-static.yml, deploy-registry.yml, deploy-turbo-cache.yml, deploy-docs.yml,
 #          and a product repository's own caller (`product: true`, e.g. its docs Worker): the product's installed
 #          `stackra` ships, and the job first reads the Stackra registry token so the install resolves @figentra/*.
 # Secrets: none in the repository. The job decrypts figentra/secrets scopes as itself (ADR 0525, the shared
@@ -110,12 +112,15 @@ jobs:
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
 
       # Every deploy is of a commit on main (ADR 0170 decision 6): a tag or an explicit SHA can name any commit, so
-      # the check runs before anything is built or any credential is read. The SHA is the release's identity.
+      # the check runs before anything is built or any credential is read. The SHA is the release's identity. The
+      # deadline (epoch seconds, 3 minutes inside the job's 30) bounds the promotion: Runway starts no traffic move
+      # whose holds do not fit and stops a step's smoke before it, so a timeout never kills the job mid-split.
       - name: Release commit
         id: commit
         run: |
           sha="$(git rev-parse HEAD)"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "deadline=$(( $(date +%s) + 27 * 60 ))" >> "$GITHUB_OUTPUT"
           git merge-base --is-ancestor "$sha" origin/main || {
             echo "::error title=Not on main::$sha is not on main; Runway deploys only commits of main."
             exit 1
@@ -133,7 +138,7 @@ jobs:
       # A product's install reads @figentra/* from the Stackra registry, which answers 401 without a read token.
       - name: Registry token (sops)
         if: inputs.product
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/registry
           names: STACKRA_REGISTRY_TOKEN
@@ -160,7 +165,7 @@ jobs:
       # TURBO_REMOTE_CACHE_SIGNATURE_KEY from the sops scope ci/build/turbo (ADR 0525). The turbo-cache member's
       # TURBO_CACHE_TOKEN secret and smoke bearer read this TURBO_TOKEN.
       - name: Turborepo remote cache (sops)
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/turbo
 
@@ -180,14 +185,14 @@ jobs:
 
       # Only CLOUDFLARE_API_TOKEN from the scope, so no other value of it enters the job.
       - name: Cloudflare token (sops)
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ${{ inputs.scope }}
           names: CLOUDFLARE_API_TOKEN
 
       - name: Member secret (sops)
         if: inputs.secret-scope != ''
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ${{ inputs.secret-scope }}
           names: ${{ inputs.secret-name }}
@@ -195,7 +200,7 @@ jobs:
       # The names stay literal so `runway env check` sees them (STA-2133).
       - name: Bot App (sops)
         if: inputs.bot-app
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ${{ inputs.scope }}/release
           names: STACKRA_BOT_APP_ID,STACKRA_BOT_PRIVATE_KEY
@@ -215,15 +220,21 @@ jobs:
             echo "$name=$value" >> "$GITHUB_ENV"
           done
 
-      # Runway checks every id, secret and bearer before anything ships, then builds, migrates, deploys with the commit
-      # as the message and its secrets on stdin, and retries the smoke checks while a new domain's certificate comes
-      # up. `--kind web` with `--member` ships only the named Worker member (the docs site is the `docs` member).
+      # Runway checks every id, secret, bearer and smoke check before anything ships, then builds, migrates, uploads
+      # with the commit as the message and its secrets on stdin, stages the version at 0% beside the one serving and
+      # smokes it by version override, then promotes it (10/50/100 for an `api` member in production) with a smoke at
+      # each step. Each smoke must see the new version answer (`x-stackra-version`, or `/-/version` for a static
+      # member), so one that reaches the old version fails (STA-2786); the 0% smoke retries while a new domain's
+      # certificate comes up, a promotion step's smoke only briefly and never past RUNWAY_DEPLOY_DEADLINE, after which
+      # the previous version goes back. `--kind web` with `--member` ships only the named Worker member (the docs site
+      # is the `docs` member).
       - name: Deploy (Runway)
         id: deploy
         env:
           MEMBER: ${{ inputs.member }}
           SHA: ${{ steps.commit.outputs.sha }}
           PRODUCT: ${{ inputs.product }}
+          RUNWAY_DEPLOY_DEADLINE: ${{ steps.commit.outputs.deadline }}
         run: |
           stackra=(node packages/developer/cli/dist/stackra.mjs)
           [ "$PRODUCT" = true ] && stackra=(pnpm exec stackra)
