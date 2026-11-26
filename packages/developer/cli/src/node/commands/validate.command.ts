@@ -1,7 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `ValidateCommand`, `stackra validate`: the repository's shape (the config, structure, docs, catalogues and spec phases of `stackra check`), or with `--repository` the repo gate (config, layout, catalogues, structure and the repository findings). Its flags are `stackra check`'s; a flag on the command line wins over
- *          the preset. `--json`: the phases (status, findings, fixable, duration) and every finding.
+ *          the preset. `--json`: `{ phases, findings }`, each phase (phase, status, findings, fixable, durationMs) and every
+ *          finding, whatever `--format` says (`runCheck` reports them).
+ *          With `--repository`, `--json` is `{ findings: [{ dir, text }] }`.
  * Boundary: the body is `VALIDATE_COMMAND`, unchanged; it writes findings and never changes a file (except `--fix` phases).
  * Runtime: node
  * Governing contract: ADR 0282 (decision 3); the quality-gate coverage audit of 2026-10-27; ADR 0506; ADR 0500

@@ -5,11 +5,13 @@
  *          fails unless `--keep-going`; a finding that repeats an earlier phase's on the same file
  *          (`SAME_MEANING_RULES`) is reported once; then the findings (text lines grouped by phase, a JSON array, or
  *          GitHub annotations) and, except for JSON, the summary table. Resolves 1 when any phase failed, 0 otherwise.
+ *          Reports `{ phases, findings }` (`context.report`, the `--json` data of the command classes): each phase's
+ *          status, findings and fixable counts and `durationMs`, and every finding.
  * Boundary: writes findings and the table to `io.out` and phase notices to `io.err`; a phase that throws becomes one
  *           `crash` finding, never an uncaught error. Reads `CI` from the environment.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 3: the CLI runs every check); the quality-gate coverage audit of 2026-10-27
- *                     (proposed `stackra check`: order, flags, output).
+ *                     (proposed `stackra check`: order, flags, output); ADR 0506 (`--json` data); STA-2883 FR-005.
  */
 import type { Finding } from "@stackra/repo-checks/node";
 
@@ -97,6 +99,16 @@ export async function runCheck(
     });
   }
 
+  context.report?.({
+    phases: rows.map(({ phase, status, findings, fixable, ms }) => ({
+      phase,
+      status,
+      findings,
+      fixable,
+      durationMs: Math.round(ms),
+    })),
+    findings: all,
+  });
   const { io } = context;
   if (options.format === "json") {
     io.out(`${JSON.stringify(all, null, 2)}\n`);

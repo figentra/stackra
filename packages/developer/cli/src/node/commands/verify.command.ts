@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `VerifyCommand`, `stackra verify`: `stackra check --with-tests`: every phase, the tests included. Its flags are `stackra check`'s; a flag on the command line wins over
- *          the preset. `--json`: the phases (status, findings, fixable, duration) and every finding.
+ *          the preset. `--json`: `{ phases, findings }`, each phase (phase, status, findings, fixable, durationMs) and every
+ *          finding, whatever `--format` says (`runCheck` reports them).
  * Boundary: the body is `checkCommand("verify")` over `runCheck`, unchanged; phases return findings and never print.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 3); the quality-gate coverage audit of 2026-10-27; ADR 0506; ADR 0500

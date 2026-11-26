@@ -165,7 +165,9 @@ examples; an unknown option or a bad choice (`gen --backend tsc`) exits 2 before
 - **`--json`**: every command writes one document, `{"ok": …, "data": …}`, or `{"ok": false, "error": {code, message,
   why, fix}}`. The text a command prints moves to standard error. `stackra gen --json` reports each member's outcome and
   every refusal and warning with its `code`, `file` (from the working directory), `line`, `column`, `subject`, `message`
-  and `fix`; `stackra db diff --json` the differences; `stackra check --json` the phases and findings; a command with
+  and `fix`; `stackra db diff --json` the differences; `stackra check --json` (and `validate`, `verify`, `code:check`,
+  `code:fix`) `{ phases, findings }`: each phase's `status`, `findings` and `fixable` counts and `durationMs`, and every
+  finding, whatever `--format` says (`validate --repository --json`: `{ findings: [{ dir, text }] }`); a command with
   no data of its own reports its exit code and output lines.
 - **Exit codes**: 0 success, 1 failure, 2 a line that cannot run as written (the error names the flag or the usage).
 

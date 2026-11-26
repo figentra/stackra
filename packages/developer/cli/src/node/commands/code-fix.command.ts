@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `CodeFixCommand`, `stackra code:fix`: `stackra check --only format,lint --fix`. Its flags are `stackra check`'s; a flag on the command line wins over
- *          the preset. `--json`: the phases (status, findings, fixable, duration) and every finding.
+ *          the preset. `--json`: `{ phases, findings }`, each phase (phase, status, findings, fixable, durationMs) and every
+ *          finding, whatever `--format` says (`runCheck` reports them).
  * Boundary: the body is `checkCommand("code:fix")` over `runCheck`, unchanged; phases return findings and never print.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 3); the quality-gate coverage audit of 2026-10-27; ADR 0506; ADR 0500
