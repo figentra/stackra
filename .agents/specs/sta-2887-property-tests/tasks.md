@@ -10,7 +10,7 @@ description: "Tasks for STA-2887: property tests for money, ledger, ids and vali
 
 ## Phase 1: The tools
 
-- [x] T001 Add `fast-check` and the Stryker pair to `catalog:quality` in `pnpm-workspace.yaml` (lock in `pnpm-lock.yaml`) and the members' dev dependencies in `packages/commerce/money/package.json`, `packages/commerce/ledger/package.json`, `packages/foundation/contracts/package.json`, `packages/data/model/package.json`, `packages/foundation/validation/package.json` and `packages/security/iam/package.json` (with its `test:mutation` script) — covers: FR-001, FR-004, FR-005 — route: package
+- [x] T001 Add `fast-check` and the Stryker pair to `catalog:quality` in `pnpm-workspace.yaml` (lock in `pnpm-lock.yaml`) and the members' dev dependencies in `packages/commerce/money/package.json`, `packages/commerce/ledger/package.json`, `packages/foundation/contracts/package.json`, `packages/data/model/package.json`, `packages/foundation/validation/package.json` and `packages/security/iam/package.json` (with its `test:mutation` script) — covers: FR-001, FR-004, FR-005, AC-001, AC-004, AC-005 — route: package
 
 ## Phase 2: User Story 1 - Money rounding and allocation (Priority: P1)
 
@@ -32,5 +32,5 @@ description: "Tasks for STA-2887: property tests for money, ledger, ids and vali
 
 ## Phase 6: Polish
 
-- [x] T008 Rewrite the enforcement line of `apps/docs/src/docs/adr/0220-stackra-money-and-the-ledger-package.mdx` and note the property tests in `packages/commerce/money/AGENTS.md` and `packages/commerce/ledger/AGENTS.md` — covers: FR-001, FR-003 — route: steward-docs — deps: T004, T005
+- [x] T008 Rewrite the enforcement line of `apps/docs/src/docs/adr/0220-stackra-money-and-the-ledger-package.mdx` and note the property tests in `packages/commerce/money/AGENTS.md` and `packages/commerce/ledger/AGENTS.md` — covers: FR-001, FR-003, AC-001, AC-002 — route: steward-docs — deps: T004, T005
 - [x] T009 Run the touched packages' tests, typecheck, oxlint and oxfmt in `packages/commerce/ledger/package.json` and the other five members — covers: SC-001, SC-002, SC-003, SC-005, AC-001, AC-002, AC-003, AC-004 — route: verify-fix — deps: T008

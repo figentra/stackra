@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-26
 
-**Status**: Implementing <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
+**Status**: Tasked <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
 
 **Tier**: feature
 
@@ -35,6 +35,8 @@ package. This spec is written from what the branch built.
 - `packages/security/iam/src/core/functions/` (the decision functions the trial mutates)
 - ADR 0220 (decisions 1 to 4 and its enforcement line), ADR 0182 (test tiers, the security coverage floor), ADR 0135
   (public id format), ADR 0022 and ADR 0269 (test placement and imports)
+- FR-001 to FR-006: the branch's diff against `main`, its test runs and the two Stryker runs (listed under Success
+  Criteria)
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
@@ -165,9 +167,9 @@ the mutants that survived, file by file.
   refused with nothing written, a balance is the sum of its entries and a floor is never crossed.
 - **FR-004**: `@stackra/contracts`, `@stackra/model` and `@stackra/validation` SHALL have property tests for id minting,
   the UUID round trip and order, and the identifier checks (one check value, single-digit changes, never throws).
-- **FR-005**: `@stackra/iam` SHALL run Stryker over its decision functions with `pnpm test:mutation`, and its AGENTS.md
+- **FR-005** (example-only): `@stackra/iam` SHALL run Stryker over its decision functions with `pnpm test:mutation`, and its AGENTS.md
   SHALL record the score.
-- **FR-006**: Every counterexample a property found SHALL stay as an example test.
+- **FR-006** (example-only): Every counterexample a property found SHALL stay as an example test.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
@@ -224,5 +226,4 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-2887, batch 14) · written from the branch's diff and test runs
 - 2026-11-26 · Draft → Clarified · Claude (STA-2887, batch 14) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-2887, batch 14) · plan.md
-- 2026-11-26 · Planned → Tasked · Claude (STA-2887, batch 14) · tasks.md
-- 2026-11-26 · Tasked → Implementing · Claude (STA-2887, batch 14) · the tasks marked done are on the branch; the approver's Planned approval is still to be written by the approver (ADR 0502)
+- 2026-11-26 · Planned → Tasked · Claude (STA-2887, batch 14) · tasks.md; the tasks marked done are already on the branch; Implementing waits for the approver's Planned approval (ADR 0502)
