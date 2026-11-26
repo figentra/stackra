@@ -9,7 +9,7 @@ Stackra is a TypeScript framework shipped as the `@stackra/*` packages, plus the
 (generates the Encore app), the `stackra` CLI, the Runway deploy layer, the Figentra Flow preset and the docs site.
 The apps, services and workers here are small reference members and the hosting for the registry, docs and caches;
 no product feature lands here. It is built by AI agent lanes (as the `stackra-bot` GitHub App) under the owner
-`figentra-usr`, who approves production environments.
+`stackra-usr`, who approves production environments.
 
 ## 2. Current
 

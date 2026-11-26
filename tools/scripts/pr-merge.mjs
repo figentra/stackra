@@ -31,7 +31,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import * as botNetwork from "./bot-token.mjs";
 
-export const OWNER = "figentra-usr";
+export const OWNER = "stackra-usr";
 const GATED_LABELS = ["design", "risk:R3"];
 /** The label that stops a merge (ADR 0523 decision 3: the merger honours a HOLD label). */
 export const HOLD_LABEL = "hold";

@@ -125,7 +125,7 @@ workstation.
 ## GitHub identity: agents are stackra-bot
 
 Owner decision 2026-11-04 (STA-2105): agents act on GitHub only as the `stackra-bot` App. Raw `gh` and a plain
-`git push` run as the owner's login `figentra-usr`, so they mean the owner; an agent never runs them, in any
+`git push` run as the owner's login `stackra-usr`, so they mean the owner; an agent never runs them, in any
 repository or directory.
 
 - In this repository: `pnpm bot:gh -- …`, `pnpm bot:git -- push origin HEAD`, `pnpm pr:merge <n>`.

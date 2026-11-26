@@ -161,7 +161,7 @@ test("STA-330 review: owner-approved counts only when the owner added it and it 
   ])
     assert.match(
       merge(events).join(),
-      /owner-approved label added by figentra-usr/,
+      /owner-approved label added by stackra-usr/,
       JSON.stringify(events),
     );
   // the latest event decides, in time order whatever the array order
