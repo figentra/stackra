@@ -131,7 +131,7 @@ Use this only when the host cannot run workflows at all (billing lock, outage, s
 | `list`, `create-note`, `replay`, `read-back` | an authenticated call to the example `notes` service fails, the same `Idempotency-Key` makes a second note, or the new note does not read back |
 | `stop`                                       | the API still answers after the dev run stops                                                                                                  |
 
-To run it on the box (never on a workstation), build core, then: `node tools/scripts/create-smoke.mjs --core . --template <template checkout> --out <empty folder> [--lane <n>]`. `--lane` moves every dev port by `n × 100`, so it runs beside another dev run; `--tarballs <dir>` reuses a packed set.
+To run it on the box (never on a workstation), build core, then: `node tools/scripts/create-smoke.mjs --core . --template <template checkout> --out <empty folder> [--lane <n>]`. `--lane <n>` sets `STACKRA_LANE` for the app's dev facts; the service's API is wherever `encore run` reports it (Encore's own port, 4000), so run one smoke test per host at a time. `--tarballs <dir>` reuses a packed set, and `--keep-running` leaves the dev run up after the summary for a look at a failure.
 
 ## Enforcement status
 

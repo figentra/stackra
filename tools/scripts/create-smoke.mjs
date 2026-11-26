@@ -13,7 +13,8 @@
  *          `refusals` (the notes list answers 401 with no token and with the token's signature altered),
  *          `list` (the signed-in caller's notes page), `create-note` (`POST` a note with an `Idempotency-Key`),
  *          `replay` (the same key and body answer the same note), `read-back` (the note by id, and in the list), and
- *          `stop` (the dev run stopped, the API no longer answers). It writes `create-smoke.json` and
+ *          `stop` (the dev run stopped, the API no longer answers). `--lane` sets `STACKRA_LANE` (the dev facts' lane);
+ *          the API is the address `encore run` prints, so one run per host at a time. It writes `create-smoke.json` and
  *          `create-smoke.md` (one row per step) and each step's log to `<out>/logs/<step>.log`.
  * Boundary: writes only under `--out`, which must be missing or empty, and never into the core or template trees (the
  *           caller builds core first: no CLI build is exit 2). Reads no secret and prints none: the dev token goes to
