@@ -20,6 +20,11 @@
  *           `receive`'s `producer` is the service the caller's transport verified (the topic's owner, the cross-app
  *           sender, this service's own relay in process); relays and listeners see it as `ctx.producer`, and nothing
  *           else sets it: the envelope's own `producer` and any `producer` in its metadata are ignored (STA-1792).
+ *           A generated topic subscription calls `receiveFromTopic` with the topic's owning service: the owner is the
+ *           verified producer only when the publishing relay's stamp names it too, since another service's relay can
+ *           reach the owner's topic (its event class is importable from `#stackra/clients`, and importing the
+ *           owner's topics registers their publishers) and stamps its own service; on a mismatch the event is
+ *           delivered with no producer.
  * Runtime: node
  * Governing contract: ADR 0078 (decisions 2 to 4: the inbox deduplicates on the event id); ADR 0141 (decisions 2 and 3);
  *                     ADR 0260 (decision 4: the relay); ADR 0509 (decision 7) and ADR 0511 (decision 11: the
@@ -170,6 +175,22 @@ export class InboxService extends Service {
     return this.isolation === undefined
       ? this.database.withScope(envelope.scope ?? [], receive)
       : this.receiveIsolated(this.isolation, await this.actorOf(envelope), envelope, receive);
+  }
+
+  /**
+   * Receives an envelope delivered on a topic `owner` declares: `owner` is its verified producer only when the
+   * publishing relay's stamp (`envelope.producer`) names the same service; otherwise it runs with no producer, so a
+   * listener that acts only for `owner` ignores it.
+   *
+   * @param owner - the member of the service whose generated events file declares the topic.
+   * @returns what `receive` returns.
+   * @throws what `receive` throws.
+   * @example
+   * // a generated subscription handler
+   * await inbox.receiveFromTopic(message.body as EventEnvelope, "tasks");
+   */
+  receiveFromTopic(envelope: EventEnvelope, owner: string): Promise<boolean> {
+    return this.receive(envelope, envelope.producer === owner ? owner : undefined);
   }
 
   /** Forgets the ids received before `before`; the retention purge a scheduled job runs. */

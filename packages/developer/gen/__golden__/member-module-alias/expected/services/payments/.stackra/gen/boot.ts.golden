@@ -50,7 +50,7 @@ export async function boot(
   else options.signal.addEventListener("abort", disconnect, { once: true });
   if (options.relay !== false) {
     const relay = container.get(OutboxRelayService);
-    relay.connect(container, { service: "payments" });
+    relay.connect(container, { service: "payments", publishes: [] });
     void relay.work({ signal: options.signal });
   }
 }

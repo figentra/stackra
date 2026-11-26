@@ -23,8 +23,8 @@ import type { ErasedRecordsLine } from "#core/schemas/erased-records-line.schema
 export class EraseSubjectOutput extends Schema implements ErasureReceipt {
   /**
    * Held outbox messages that name the subject and carry a personal field but could not be redacted (a platform
-   * message, which the subject's tenant may not change); above zero, the erasure is incomplete and needs a
-   * platform operator.
+   * message, which the subject's tenant may not change), also listed in `kept` with reason `unredacted`; above zero,
+   * the erasure is incomplete and needs a platform operator, and the saga logs a warning.
    */
   @Int({ min: 0 })
   unredacted!: number;
@@ -38,7 +38,7 @@ export class EraseSubjectOutput extends Schema implements ErasureReceipt {
   /** What was disposed of, per model. */
   erased!: ErasedRecordsLine[];
 
-  /** What a legal hold kept, per model. */
+  /** What a legal hold kept, per model, then the outbox messages that could not be redacted. */
   kept!: KeptRecords[];
 
   /** Whether the subject key's salt was destroyed. */

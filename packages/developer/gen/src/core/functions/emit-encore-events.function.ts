@@ -18,9 +18,11 @@
  *           configuration; the topics cost nothing while the in-process driver is used. A relay service gets no typed
  *           subscription for a wire name its relay already hears (the inbox runs the typed listeners from either).
  *           The cross-service topic imports are not yet checked by an Encore build (STA-597). Each subscription hands
- *           the inbox its topic's owning service as the verified producer (`ctx.producer`, STA-1792): a topic is
- *           declared only in its publishing service's generated events file, so the topic, never the message body,
- *           proves who published it.
+ *           the inbox its topic's owning service (`InboxService.receiveFromTopic`), which is the verified producer
+ *           (`ctx.producer`, STA-1792) only when the publishing relay's stamp names the same service: importing a
+ *           producer's events file here registers its topics' publishers in this process too, and its event classes
+ *           are importable, so the topic alone does not prove the sender. The generated boot gives each relay the wire
+ *           names its service publishes, so a relay refuses another service's event before any topic sees it.
  * Runtime: isomorphic
  * Governing contract: ADR 0509 (decision 7) and ADR 0511 (decision 11: the verified producer); ADR 0260 (decision 4: the relay hears every event; typed consumers by the event class); ADR 0141 (decision 2: the envelope, wire
  *                     names); ADR 0148 (decisions 3 and 6: Encore Pub/Sub in SaaS); ADR 0142 (decision 1: transports
@@ -35,21 +37,10 @@ import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { integrationWireNames } from "#core/functions/integration-wire-names.function";
 import { serviceManifest } from "#core/functions/service-manifest.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
-
-/** The integration event wire names a manifest publishes, sorted. */
-function wireNames(manifest: StackraManifest): string[] {
-  return [
-    ...new Set(
-      (manifest.events ?? [])
-        .filter((event) => event.kind === "integration" && typeof event["name"] === "string")
-        .map((event) => String(event["name"])),
-    ),
-    // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
-  ].sort();
-}
 
 /** The snake_case stem of a wire name: `orders.order.paid.v1` → `orders_order_paid_v1`. */
 function stem(wire: string): string {
@@ -73,10 +64,10 @@ function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
     ENCORE_APP_IMPORT,
     ...imports,
     "",
-    "/** Hands one delivered envelope to this service's inbox, with the topic's owning service as its verified producer. */",
-    "function receive(message: BrokerMessage, producer: string): Promise<void> {",
+    "/** Hands one delivered envelope to this service's inbox; the topic's owner is its producer when the relay's stamp agrees. */",
+    "function receive(message: BrokerMessage, owner: string): Promise<void> {",
     "  return app.handlers.run(async (container) => {",
-    "    await container.get(InboxService).receive(message.body as EventEnvelope, producer);",
+    "    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);",
     "  });",
     "}",
     "",
@@ -93,7 +84,7 @@ function inboxPreamble(ir: MemberIR, imports: readonly string[]): string[] {
 export function emitEncoreEvents(ir: MemberIR, manifest: StackraManifest): GeneratedFile[] {
   if (ir.layout !== "service") return [];
   const files: GeneratedFile[] = [];
-  const own = wireNames(manifest);
+  const own = integrationWireNames(manifest);
   if (own.length > 0) {
     const header = generatedHeader({
       from: "stackra.manifest.json (the integration events)",
@@ -150,7 +141,7 @@ function emitRelay(ir: MemberIR, own: readonly string[], files: GeneratedFile[])
       .filter((publisher) => publisher.member !== ir.member)
       .map((publisher) => ({
         from: `../../../${publisher.folder}/${encoreServiceFolder(publisher.member)}/events`,
-        wires: wireNames(publisher.manifest),
+        wires: integrationWireNames(publisher.manifest),
         producer: publisher.member,
       })),
   ];

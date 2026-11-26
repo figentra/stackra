@@ -37,9 +37,9 @@ export interface ListenerContext {
   readonly connection?: string;
 
   /**
-   * The service that published the event, as the transport that carried it verified it: the topic's owner, the
-   * cross-app sender whose key signed it, or this service for its own in-process relay. Absent for an event
-   * dispatched in process, or one whose transport proves no producer. Never taken from the event or its metadata, so
+   * The service that published the event, as the transport that carried it verified it: the topic's owner when the
+   * publishing relay's stamp names it too, the cross-app sender whose key signed it, or this service for its own
+   * in-process relay. Absent for an event dispatched in process, or one whose transport proves no producer. Never taken from the event or its metadata, so
    * a listener that must act only on one service's events checks this, never `actor`.
    */
   readonly producer?: string;

@@ -83,10 +83,16 @@ transaction. The wire name is the one gen registered (`orders.order.paid.v1`), e
 ## Relaying
 
 Every envelope the relay publishes names its service as `producer`, from the deployment identity the generated boot
-passes (`relay.connect(container, { service: "orders" })`), never from the stored message. A consumer never trusts
-that field of a body: the inbox takes the producer from what its transport verified (the generated subscription's
-topic owner, the cross-app signer, the in-process relay) and hands it to listeners as `ctx.producer`. A listener that
-must act on one service's events only (the approval executor) checks `ctx.producer`, never `ctx.actor`.
+passes (`relay.connect(container, { service: "orders", publishes: ["orders.order.paid.v1"] })`), never from the
+stored message. The relay publishes only the wire names in `publishes` (the service's integration events, hosted
+packages' included): another service's event, which a consumer can record since it imports that service's event
+class to listen to it, is dead-lettered unpublished (`event_not_published`) and logged (`outbox.message_foreign`).
+A consumer never trusts the `producer` of a body on its own: the inbox takes the producer from what its transport
+verified and hands it to listeners as `ctx.producer`. A generated subscription calls
+`inbox.receiveFromTopic(envelope, owner)`, which takes the topic's owner only when the relay's stamp names it too
+(else the event runs with no producer); the cross-app inbox passes the verified signer, the in-process publisher its
+own relay's stamp. A listener that must act on one service's events only (the approval executor) checks
+`ctx.producer`, never `ctx.actor`.
 
 ```ts
 relay.connect(container);

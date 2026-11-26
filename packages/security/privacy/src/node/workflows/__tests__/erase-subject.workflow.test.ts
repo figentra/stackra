@@ -5,14 +5,17 @@
  *          `redact` nulls the declared fields in held outbox messages naming the subject and the receipt counts them,
  *          and a held message it could not rewrite shows as `unredacted` (STA-2629);
  *          `receipt` records `SubjectErased` and, when asked, the `ServiceAcked` erasure ack; `output` is the receipt;
+ *          an unredacted message reaches the recorded `SubjectErased` (its count and a `kept` entry) and the ack's
+ *          `kept`, and is logged as a warning with ids and counts only;
  *          a shredded field that is not subject-sealed refuses the erasure before any row is touched.
  * Boundary: test only; the steps are called directly in order with a hand-built run and step context, the memory
  *           store, the salt fake, the memory outbox and a hold registry connected through `connectHoldRegistry`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0189 (decisions 2 and 4); ADR 0134; ADR 0212; STA-1375; stackra-263.
  */
-import type { AnyClass } from "@stackra/container";
+import type { AnyClass, Container } from "@stackra/container";
 import { Driver } from "@stackra/container";
+import { Logger } from "@stackra/contracts";
 import { HasEncryptedFields, Model } from "@stackra/model";
 import { connectHoldRegistry } from "@stackra/database";
 import { HoldRegistry } from "@stackra/database/contracts";
@@ -56,6 +59,32 @@ class NotePersonalData extends PersonalData({
 
 /** When every run ends. */
 const NOW = new Date("2026-10-28T12:00:00Z");
+
+/** Keeps the warnings it is given. */
+class RecordingLogger extends Logger {
+  readonly warnings: { event: string; context: unknown }[] = [];
+
+  debug(): void {}
+
+  info(): void {}
+
+  warn(event: string, context?: unknown): void {
+    this.warnings.push({ event, context });
+  }
+
+  error(): void {}
+}
+
+/** A container that binds `logger` as the `Logger`. */
+function logging(logger: RecordingLogger): Container {
+  return {
+    has: (type: unknown) => type === Logger,
+    get: () => logger,
+  } as unknown as Container;
+}
+
+/** A container that binds no logger. */
+const QUIET = { has: () => false, get: () => undefined } as unknown as Container;
 
 /** Holds the listed ids of one model. */
 class ListHoldRegistryDriver extends Driver(HoldRegistry) {
@@ -114,7 +143,7 @@ describe("EraseSubjectWorkflow", () => {
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
 
     const { output, events } = await runAll(
-      new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver()),
+      new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver(), QUIET),
       {
         erasureId: "era_1",
         subject: SUBJECT,
@@ -142,6 +171,7 @@ describe("EraseSubjectWorkflow", () => {
     });
     expect(events).toHaveLength(1);
     expect(events[0]).toBeInstanceOf(SubjectErased);
+    expect((events[0] as SubjectErased).unredacted).toBe(0);
   });
 
   it("keeps held rows and the key when a held row has shredded fields", async () => {
@@ -151,7 +181,7 @@ describe("EraseSubjectWorkflow", () => {
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
 
     const { output } = await runAll(
-      new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver()),
+      new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver(), QUIET),
       {
         erasureId: "era_2",
         subject: SUBJECT,
@@ -178,7 +208,7 @@ describe("EraseSubjectWorkflow", () => {
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
 
     const { output } = await runAll(
-      new EraseSubjectWorkflow(seeded(), salts, new MemoryOutboxDriver()),
+      new EraseSubjectWorkflow(seeded(), salts, new MemoryOutboxDriver(), QUIET),
       {
         erasureId: "era_3",
         subject: SUBJECT,
@@ -211,7 +241,7 @@ describe("EraseSubjectWorkflow", () => {
     ]);
 
     const { output } = await runAll(
-      new EraseSubjectWorkflow(seeded(), SubjectSaltStoreFake.holding([SUBJECT]), outbox),
+      new EraseSubjectWorkflow(seeded(), SubjectSaltStoreFake.holding([SUBJECT]), outbox, QUIET),
       { erasureId: "era_5", subject: SUBJECT },
     );
 
@@ -246,13 +276,30 @@ describe("EraseSubjectWorkflow", () => {
       { ...held, id: "evt_P", data: { userId: SUBJECT, phone: "+966500000000" } },
     ]);
 
-    const { output } = await runAll(
-      new EraseSubjectWorkflow(seeded(), SubjectSaltStoreFake.holding([SUBJECT]), outbox),
-      { erasureId: "era_6", subject: SUBJECT },
+    const logger = new RecordingLogger();
+    const { output, events } = await runAll(
+      new EraseSubjectWorkflow(
+        seeded(),
+        SubjectSaltStoreFake.holding([SUBJECT]),
+        outbox,
+        logging(logger),
+      ),
+      { erasureId: "era_6", subject: SUBJECT, ackAs: "commerce" },
     );
 
+    const unredacted = { kind: "outbox.message", reason: "unredacted", count: 1 };
     expect(output.unredacted).toBe(1);
+    expect(output.kept).toEqual([unredacted]);
     expect(output.erased).toContainEqual({ kind: "outbox.message", method: "anonymise", count: 1 });
+    // what completeness is read from: the durable receipt and the ack the coordinating service waits on
+    const receipt = events.find((event) => event instanceof SubjectErased) as SubjectErased;
+    expect(receipt.unredacted).toBe(1);
+    expect(receipt.kept).toEqual([unredacted]);
+    const ack = events.find((event) => event instanceof ServiceAcked) as ServiceAcked;
+    expect(ack.kept).toEqual([unredacted]);
+    expect(logger.warnings).toEqual([
+      { event: "privacy.erasure_unredacted", context: { erasureId: "era_6", unredacted: 1 } },
+    ]);
   });
 
   it("reads a redact result stored as a bare count by a run started before STA-2629", async () => {
@@ -261,6 +308,7 @@ describe("EraseSubjectWorkflow", () => {
       seeded(),
       SubjectSaltStoreFake.holding([SUBJECT]),
       new MemoryOutboxDriver(),
+      QUIET,
     );
     const results: Record<string, unknown> = {};
     const run = { id: "wfr_1", input: { erasureId: "era_7", subject: SUBJECT }, results } as never;
@@ -282,6 +330,7 @@ describe("EraseSubjectWorkflow", () => {
         seeded(),
         SubjectSaltStoreFake.holding([]),
         new MemoryOutboxDriver(),
+        QUIET,
       ),
       { erasureId: "era_4", subject: SUBJECT, ackAs: "commerce" },
     );
@@ -303,7 +352,7 @@ describe("EraseSubjectWorkflow", () => {
     registerPersonalData("crm", [CustomerPersonalData, NotePersonalData]);
     const store = seeded();
     const salts = SubjectSaltStoreFake.holding([SUBJECT]);
-    const workflow = new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver());
+    const workflow = new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver(), QUIET);
 
     await expect(runAll(workflow, { erasureId: "era_1", subject: SUBJECT })).rejects.toThrow(
       /crm\.note\.body/,

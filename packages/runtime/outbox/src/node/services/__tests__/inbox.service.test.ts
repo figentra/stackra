@@ -9,7 +9,8 @@
  *          `#stackra/clients/<service>`) is rebuilt and delivered to its typed listener; an older version is lifted by
  *          its change's `up` and runs the listener once with the current version, and a newer version than this
  *          process reads is left unclaimed (stackra-403). Listeners and relays see as `ctx.producer` only the producer
- *          the caller's transport verified, never the envelope's own or one its metadata claims (STA-1792).
+ *          the caller's transport verified, never the envelope's own or one its metadata claims (STA-1792); on a
+ *          topic, the owner only when the publishing relay's stamp names it too.
  * Boundary: test only; the memory inbox, the real bus with a fixed clock, and a stand-in database that records the
  *           scopes it opens.
  * Runtime: node (vitest)
@@ -128,6 +129,16 @@ describe(InboxService, () => {
     await inbox.receive({ ...forged, id: "evt_B" }, "billing");
     expect(listener.seen.map(({ ctx }) => ctx.producer)).toEqual([undefined, "billing"]);
     expect("producer" in (listener.seen[0]?.ctx ?? {})).toBe(false);
+  });
+
+  it("takes a topic's owner as the producer only when the publishing relay's stamp names it (STA-1792)", async () => {
+    const { inbox, listener } = inboxWithListener();
+    await expect(inbox.receiveFromTopic(envelope({ producer: "orders" }), "orders")).resolves.toBe(
+      true,
+    );
+    await inbox.receiveFromTopic(envelope({ id: "evt_B", producer: "channels" }), "orders");
+    await inbox.receiveFromTopic(envelope({ id: "evt_C" }), "orders");
+    expect(listener.seen.map(({ ctx }) => ctx.producer)).toEqual(["orders", undefined, undefined]);
   });
 
   it("runs each receipt in the event's scope, or in none", async () => {

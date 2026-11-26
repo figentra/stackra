@@ -23,8 +23,9 @@
  *          registered listeners and relays, disconnected when the signal aborts), the live queries' refresh (one
  *          `liveQueryRoutes` call per query with `cache.invalidateOn`, each route subscribed on the bus and sent through
  *          `RealtimeRelay` or `RealtimeBroadcaster`, when the service runs `@stackra/realtime`; STA-1445), then
- *          `relay.connect(container, { service: "<member>" })` (the deployment identity every envelope names as its
- *          producer, STA-1792) and
+ *          `relay.connect(container, { service: "<member>", publishes: [...] })` (the deployment identity every
+ *          envelope names as its producer, and, from the built manifest, the wire names the service publishes, so the
+ *          relay dead-letters any other event; STA-1792) and
  *          the relay's `work` loop until the signal aborts, beside it the cross-app relay's (`CrossAppRelayService`, for
  *          a producer with a runway `events` block) and, before them, `RelayInboxService#connect` for a service with the
  *          cross-app inbox (STA-1910). A signal already aborted when `boot` starts connects
@@ -47,6 +48,7 @@ import type { StackraManifest } from "@stackra/contracts";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { hasEncryptedFields } from "#core/functions/has-encrypted-fields.function";
 import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
+import { integrationWireNames } from "#core/functions/integration-wire-names.function";
 import { traitSubscribers } from "#core/functions/trait-subscribers.function";
 import { usesDatabase } from "#core/functions/uses-database.function";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -111,7 +113,8 @@ function liveQueryRows(manifest: StackraManifest | undefined): string[] {
  * The boot file of a service, or undefined when it has nothing to connect.
  *
  * @param ir - the member read by discovery.
- * @param built - the manifest built from `ir`, whose live queries (own and hosted) get their refresh wired.
+ * @param built - the manifest built from `ir`, whose live queries (own and hosted) get their refresh wired and whose
+ *                integration events (own and hosted) are the only wire names its relay publishes.
  * @example
  * emitBoot(serviceIr); // "...export async function boot(container: Container, options: ...): Promise<void> {..."
  */
@@ -261,8 +264,8 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     steps.push(
       "  if (options.relay !== false) {",
       "    const relay = container.get(OutboxRelayService);",
-      // The deployment identity every envelope names as its producer (STA-1792): the member, never a runtime value.
-      `    relay.connect(container, { service: ${JSON.stringify(ir.member)} });`,
+      // The deployment identity every envelope names as its producer, and the wire names it may publish (STA-1792).
+      `    relay.connect(container, { service: ${JSON.stringify(ir.member)}${built === undefined ? "" : `, publishes: ${JSON.stringify(integrationWireNames(built))}`} });`,
       "    void relay.work({ signal: options.signal });",
       ...(crossApp
         ? [

@@ -79,7 +79,9 @@ A declared stage fails closed when any of the first three is missing, and with `
 
 The executor acts only on a grant the store's service published: set `actions.approvals.storeService` in runway to
 the store's member (`tasks`). It compares that with `ctx.producer`, which the inbox takes from what the transport
-verified (the topic's owner, or the cross-app signer), never from the event. Left empty, it acts on no grant.
+verified (the topic's owner when the publishing relay names the same service, or the cross-app signer), never
+from the event; a relay publishes only its own service's events, so another service cannot send a grant as
+`tasks`. Left empty, it acts on no grant.
 
 ## Failure and retry
 

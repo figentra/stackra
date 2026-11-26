@@ -2,18 +2,20 @@
  * Stackra file contract:
  * Purpose: `SubjectErased`, `privacy.subject.erased.v1`: the receipt of one erasure, recorded by the erasure saga's
  *          last step so the audit service and the requester's workflow see what was disposed of, what a legal hold
- *          kept, and whether the subject key was shredded.
+ *          kept, whether the subject key was shredded, and how many held outbox messages naming the subject it could
+ *          not redact (`unredacted`, also a `kept` entry of reason `unredacted`; above zero the erasure is incomplete,
+ *          STA-2629). A receipt recorded before STA-2629 has no `unredacted`.
  * Boundary: an integration event leaving through the outbox in the step's transaction. Counts and kinds only, never
  *           row ids or contents; the subject's public id identifies the request.
  *           The name is `<aggregate>.<verb>`; gen adds the module key (`event_name_prefixed`, STA-1299).
  * Runtime: isomorphic
- * Governing contract: ADR 0189 (decision 2); ADR 0141 (event names); ADR 0305 (rules 19 and 21); STA-1375.
+ * Governing contract: ADR 0189 (decision 2); ADR 0141 (event names); ADR 0305 (rules 19 and 21); STA-1375; STA-2629.
  */
 import { Enum } from "@stackra/contracts";
 import { IntegrationEvent } from "@stackra/events";
 import { KeptRecords$ } from "@stackra/workflow";
 import type { KeptRecords } from "@stackra/workflow";
-import { registerSchemas } from "@stackra/validation";
+import { Int, registerSchemas } from "@stackra/validation";
 import { z } from "zod";
 
 import { ErasureMethod } from "#contracts/enums/erasure-method.enum";
@@ -26,6 +28,10 @@ import type { ErasedRecordsLine } from "#core/schemas/erased-records-line.schema
  * ctx.record(SubjectErased.create({ erasureId, subject, erased, kept, shredded: true, at: ctx.now().toISOString() }));
  */
 export class SubjectErased extends IntegrationEvent({ name: "subject.erased" }) {
+  /** Held outbox messages naming the subject that could not be redacted; above zero the erasure is incomplete. */
+  @Int({ min: 0 })
+  unredacted?: number;
+
   /** The erasure request's id. */
   erasureId!: string;
 
@@ -35,7 +41,7 @@ export class SubjectErased extends IntegrationEvent({ name: "subject.erased" }) 
   /** What was disposed of, per model. */
   erased!: ErasedRecordsLine[];
 
-  /** What a legal hold kept, per model. */
+  /** What a legal hold kept, per model, then the outbox messages that could not be redacted (reason `unredacted`). */
   kept!: KeptRecords[];
 
   /** Whether the subject key's salt was destroyed. */
@@ -63,6 +69,7 @@ registerSchemas([
         .max(500),
       kept: z.array(KeptRecords$).max(500),
       shredded: z.boolean(),
+      unredacted: z.number().int().min(0).optional(),
       at: z.string(),
     }),
   ],

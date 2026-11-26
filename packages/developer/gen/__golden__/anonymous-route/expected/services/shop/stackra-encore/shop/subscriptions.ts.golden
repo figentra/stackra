@@ -17,10 +17,10 @@ import type { BrokerMessage } from "./broker-message";
 import { app } from "../../.stackra/entry/server";
 import { eventShopOrderPaidV1 } from "./events";
 
-/** Hands one delivered envelope to this service's inbox, with the topic's owning service as its verified producer. */
-function receive(message: BrokerMessage, producer: string): Promise<void> {
+/** Hands one delivered envelope to this service's inbox; the topic's owner is its producer when the relay's stamp agrees. */
+function receive(message: BrokerMessage, owner: string): Promise<void> {
   return app.handlers.run(async (container) => {
-    await container.get(InboxService).receive(message.body as EventEnvelope, producer);
+    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);
   });
 }
 

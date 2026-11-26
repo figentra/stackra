@@ -32,6 +32,17 @@ describe("SubjectErased", () => {
     expect({ ...SubjectErased.create(RECEIPT) }).toMatchObject(RECEIPT);
   });
 
+  it("carries the unredacted count and its kept entry, and reads a receipt without them (STA-2629)", () => {
+    const incomplete = {
+      ...RECEIPT,
+      kept: [...RECEIPT.kept, { kind: "outbox.message", reason: "unredacted" as const, count: 2 }],
+      unredacted: 2,
+    };
+    expect({ ...SubjectErased.create(incomplete) }).toMatchObject(incomplete);
+    expect(SubjectErased.create(RECEIPT).unredacted).toBeUndefined();
+    expect(() => SubjectErased.create({ ...RECEIPT, unredacted: -1 })).toThrow();
+  });
+
   it("refuses an unknown method", () => {
     expect(() =>
       SubjectErased.create({

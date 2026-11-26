@@ -101,8 +101,9 @@ unit of work runs none (ADR 0078 decision 4). The path differs by event kind:
 | The service's own `IntegrationEvent`                   | written to the outbox in the transaction; the relay publishes the committed row; the service's inbox claims its id, `deliver`s it to the bus and drains it | once per event id, within the relay's lag (under five seconds, ADR 0221) |
 | Another service's event (`#stackra/clients/<service>`) | the producer's relay, the broker topic, this service's generated subscription, its inbox                                                                   | once per event id                                                        |
 
-`ctx.producer` names the service that published a delivered event, as its transport verified it (the topic's owner,
-the cross-app signer, or this service's own relay); it is absent for a dispatched event. The bus sets it only from
+`ctx.producer` names the service that published a delivered event, as its transport verified it (the topic's owner
+when the publishing relay's stamp agrees, the cross-app signer, or this service's own relay); it is absent for a
+dispatched event, and for a topic delivery whose relay names another service. The bus sets it only from
 `deliver`'s third argument and drops a `producer` key in the metadata, so a listener that must act on one service's
 events only checks `ctx.producer`, never `ctx.actor` (STA-1792). In a test, `deliverRemoteEvent(Type, fields, meta,
 "orders")` delivers as `orders`.

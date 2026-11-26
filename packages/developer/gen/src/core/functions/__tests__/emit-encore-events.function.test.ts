@@ -129,9 +129,9 @@ describe("emitEncoreEvents", () => {
       'export const eventOrdersOrderPaidV1Relay = new Subscription(eventOrdersOrderPaidV1, "webhooks-relay", {',
     );
     expect(content).toContain(
-      "    await container.get(InboxService).receive(message.body as EventEnvelope, producer);",
+      "    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);",
     );
-    // the topic's owner is the verified producer (STA-1792): commerce's topic says commerce, billing's billing
+    // the topic's owner, the producer when the relay's stamp agrees (STA-1792): commerce's topic says commerce, billing's billing
     expect(content).toContain(
       [
         'export const eventOrdersOrderPaidV1Relay = new Subscription(eventOrdersOrderPaidV1, "webhooks-relay", {',
@@ -167,7 +167,7 @@ describe("emitEncoreEvents", () => {
       'export const eventOrdersOrderPaidV1Subscription = new Subscription(eventOrdersOrderPaidV1, "shipping-orders-order-paid-v1", {',
     );
     expect(content).toContain(
-      "    await container.get(InboxService).receive(message.body as EventEnvelope, producer);",
+      "    await container.get(InboxService).receiveFromTopic(message.body as EventEnvelope, owner);",
     );
     expect(content).toContain('  handler: (message) => receive(message, "commerce"),');
     expect(content.match(/new Subscription\(/g)).toHaveLength(1);
