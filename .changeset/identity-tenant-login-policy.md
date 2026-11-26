@@ -14,3 +14,8 @@ no longer fails with 409 (ZITADEL leaves `isDefault: false` out of its answer, s
 policy); saving rules already in force no longer fails with `Errors.Org.LoginPolicy.NotChanged`; and the first change
 keeps the default's check lifetimes, passkey (multi-factor) setting, second factors and providers instead of resetting
 them.
+
+The policy's separate provider writes now run in a sign-in-safe order: the missing second factors and providers are
+added first, a forced second factor or a sign-in method turned off is applied only after every addition succeeded,
+and the factors and providers no longer listed are removed last (a relaxed rule goes first). A write that fails part
+way leaves a looser policy, never a tenant forced to a factor it is not offered or with no way to sign in.

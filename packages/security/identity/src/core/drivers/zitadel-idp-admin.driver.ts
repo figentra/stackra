@@ -4,8 +4,9 @@
  *          users and their client secret through the management API, sessions (listed and ended) through the v2 session service, the
  *          device flow through the OAuth endpoints (RFC 8628), and an organisation's login policy through the
  *          management API (added the first time with the default's factors and providers, updated after only when a
- *          rule changes, the settings Stackra does not manage carried over, then its external providers and second
- *          factors brought to exactly the listed ones; read back with the providers and factors it offers); the claims action as an Actions v2 target and its `preuserinfo` and
+ *          rule changes, the settings Stackra does not manage carried over, its external providers and second factors
+ *          brought to exactly the listed ones in a sign-in-safe order: additions, then the tightening rules, then
+ *          removals; read back with the providers and factors it offers); the claims action as an Actions v2 target and its `preuserinfo` and
  *          `preaccesstoken` executions; a user's enrolled authentication methods through the
  *          v2 user service, mapped to RFC 8176 `amr` codes; a Stackra user's provider user through the v2 user search on
  *          the `stackra_user_id` metadata `createUser` writes, and an email's Stackra user through the v2 user search on
@@ -20,7 +21,7 @@
  *           in its associated domains. Personal data and secrets are never logged.
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0376; ADR 0410 (STA-834); RFC 8176; STA-1264; STA-1263;
- *                     STA-1538 (passkeys); STA-1543 (erasure); STA-1580 (session list); STA-1586 (operator bootstrap); STA-2817 (reading the login policy).
+ *                     STA-1538 (passkeys); STA-1543 (erasure); STA-1580 (session list); STA-1586 (operator bootstrap); STA-2817 (reading the login policy; the sign-in-safe write order).
  */
 import { Driver } from "@stackra/container";
 import { Enum } from "@stackra/contracts";
@@ -104,6 +105,23 @@ const SECOND_FACTOR_TYPE: Readonly<Record<IdpSecondFactor, string>> = {
 const PASSWORDLESS_ALLOWED = "PASSWORDLESS_TYPE_ALLOWED";
 const PASSWORDLESS_NOT_ALLOWED = "PASSWORDLESS_TYPE_NOT_ALLOWED";
 
+/** The management API path of an organisation's login policy. */
+const LOGIN_POLICY = "/management/v1/policies/login";
+
+/** The owner type of a login-policy provider: the regional providers (national IDs) are configured on the instance. */
+const SYSTEM_OWNED = "IDP_OWNER_TYPE_SYSTEM";
+
+/** The sign-in rules Stackra manages, as ZITADEL's login policy spells them. */
+interface LoginRules {
+  readonly allowUsernamePassword: boolean;
+  readonly allowRegister: boolean;
+  readonly allowExternalIdp: boolean;
+  readonly forceMfa: boolean;
+  readonly passwordlessType: string;
+  readonly hidePasswordReset: boolean;
+  readonly ignoreUnknownUsernames: boolean;
+}
+
 /**
  * The login policy settings Stackra does not manage, carried over from the policy in force on every add or update, so
  * setting the sign-in rules never resets the check lifetimes, the redirect or the login-name switches to zero.
@@ -141,6 +159,42 @@ function sameRules(
     if (field === "passwordlessType") return (value ?? PASSWORDLESS_NOT_ALLOWED) === wanted;
     return (value === true) === wanted;
   });
+}
+
+/** `policy`'s rules as ZITADEL's login policy spells them. */
+function rulesOf(policy: LoginPolicy): LoginRules {
+  return {
+    allowUsernamePassword: policy.allowUsernamePassword,
+    allowRegister: policy.allowRegister,
+    allowExternalIdp: policy.allowExternalIdp,
+    forceMfa: policy.forceMfa,
+    passwordlessType: policy.allowPasswordless ? PASSWORDLESS_ALLOWED : PASSWORDLESS_NOT_ALLOWED,
+    hidePasswordReset: policy.hidePasswordReset,
+    ignoreUnknownUsernames: policy.ignoreUnknownUsernames,
+  };
+}
+
+/**
+ * The rules to write before any provider or second factor is added: `target`, except that nothing tightens yet. A
+ * sign-in method on now (or wanted) stays on, and a second factor is forced only if it is forced now (when the factors
+ * offered now still stand). The tightening waits until every addition succeeded, so a write that fails between the
+ * two never leaves a tenant forced to a factor it is not offered or without a way to sign in.
+ */
+function widenedRules(
+  answered: Readonly<Record<string, unknown>> | undefined,
+  target: LoginRules,
+): LoginRules {
+  const on = (field: string) => answered?.[field] === true;
+  const passwordless =
+    target.passwordlessType === PASSWORDLESS_ALLOWED ||
+    answered?.["passwordlessType"] === PASSWORDLESS_ALLOWED;
+  return {
+    ...target,
+    allowUsernamePassword: target.allowUsernamePassword || on("allowUsernamePassword"),
+    allowExternalIdp: target.allowExternalIdp || on("allowExternalIdp"),
+    passwordlessType: passwordless ? PASSWORDLESS_ALLOWED : PASSWORDLESS_NOT_ALLOWED,
+    forceMfa: target.forceMfa && on("forceMfa"),
+  };
 }
 
 /** One request: the method, the path, a JSON or form body, and the organisation it acts in. */
@@ -588,61 +642,82 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
    * See `IdpAdmin.setLoginPolicy`: adds the organisation's own policy while it uses the default, updates it after (and
    * sends no update when the rules already match, which ZITADEL would refuse as not changed). The settings Stackra does
    * not manage (`KEPT_LOGIN_POLICY_FIELDS`) are carried over from the policy in force; the first add also keeps the
-   * default's second and multi factors and its providers, so a list the call leaves out stays as the organisation
-   * offered it.
+   * default's multi factors, and the default's second factors and providers for a list the call leaves out.
+   *
+   * The writes are separate calls, so they run in an order where each one leaves the organisation able to sign in:
+   * the rules first without tightening (`widenedRules`), then the missing second factors and providers, then the rules
+   * as asked (a forced second factor, a method turned off), and the factors and providers no longer listed last. A
+   * call that fails part way (`IdpAdminUnavailableError` is retryable) leaves a looser policy, never a lock-out.
    */
   async setLoginPolicy(organizationId: string, policy: LoginPolicy): Promise<void> {
-    const current = await this.call({
-      method: "GET",
-      path: "/management/v1/policies/login",
-      organizationId,
-    });
+    const current = await this.call({ method: "GET", path: LOGIN_POLICY, organizationId });
     const answered = (current.body as { policy?: Record<string, unknown> }).policy;
     // ZITADEL leaves a false flag out of its answer, so an organisation's own policy comes back with no `isDefault`:
     // only an explicit `true` (or no policy at all) means it still inherits the default and needs adding.
     const inherits = answered === undefined || answered["isDefault"] === true;
-    const rules: Record<string, unknown> = {
-      allowUsernamePassword: policy.allowUsernamePassword,
-      allowRegister: policy.allowRegister,
-      allowExternalIdp: policy.allowExternalIdp,
-      forceMfa: policy.forceMfa,
-      passwordlessType: policy.allowPasswordless ? PASSWORDLESS_ALLOWED : PASSWORDLESS_NOT_ALLOWED,
-      hidePasswordReset: policy.hidePasswordReset,
-      ignoreUnknownUsernames: policy.ignoreUnknownUsernames,
-    };
+    const target = rulesOf(policy);
     const kept = Object.fromEntries(
       KEPT_LOGIN_POLICY_FIELDS.filter((field) => answered?.[field] !== undefined).map((field) => [
         field,
         answered?.[field],
       ]),
     );
+    const wantedTypes =
+      policy.secondFactors === undefined
+        ? undefined
+        : [...new Set(policy.secondFactors.map((factor) => SECOND_FACTOR_TYPE[factor]))];
     if (inherits) {
-      const inheritedProviders = await this.providersOf(organizationId);
+      const inherited = await this.providersOf(organizationId);
+      const wantedProviders = policy.externalProviderIds ?? inherited;
+      const first = widenedRules(answered, target);
+      // One add carries the factors and providers with the loosened rules, so the new policy never starts empty.
       await this.call({
         method: "POST",
-        path: "/management/v1/policies/login",
+        path: LOGIN_POLICY,
         organizationId,
         json: {
           ...kept,
-          secondFactors: listOf(answered?.["secondFactors"]),
+          secondFactors: wantedTypes ?? listOf(answered?.["secondFactors"]),
           multiFactors: listOf(answered?.["multiFactors"]),
-          ...rules,
+          idps: wantedProviders.map((idpId) => ({ idpId, ownerType: SYSTEM_OWNED })),
+          ...first,
         },
       });
-      await this.syncProviders(organizationId, policy.externalProviderIds ?? inheritedProviders);
-    } else {
-      if (!sameRules(answered, rules))
-        await this.call({
-          method: "PUT",
-          path: "/management/v1/policies/login",
-          organizationId,
-          json: { ...kept, ...rules },
-        });
-      if (policy.externalProviderIds !== undefined)
-        await this.syncProviders(organizationId, policy.externalProviderIds);
+      // A provider the add did not link is linked before the rules tighten.
+      const linked = await this.providersOf(organizationId);
+      await this.addProviders(
+        organizationId,
+        wantedProviders.filter((id) => !linked.includes(id)),
+      );
+      if (!sameRules(first, target)) await this.putRules(organizationId, kept, target);
+      await this.removeProviders(
+        organizationId,
+        linked.filter((id) => !wantedProviders.includes(id)),
+      );
+      return;
     }
-    if (policy.secondFactors !== undefined)
-      await this.syncSecondFactors(organizationId, policy.secondFactors);
+    const wantedProviders = policy.externalProviderIds;
+    const providers = wantedProviders === undefined ? [] : await this.providersOf(organizationId);
+    const types = wantedTypes === undefined ? [] : await this.secondFactorTypesOf(organizationId);
+    const addedProviders = (wantedProviders ?? []).filter((id) => !providers.includes(id));
+    const addedTypes = (wantedTypes ?? []).filter((type) => !types.includes(type));
+    // With nothing to add, the factors and providers in force cover the ones asked for, so the rules go first as asked.
+    const first =
+      addedProviders.length + addedTypes.length === 0 ? target : widenedRules(answered, target);
+    if (!sameRules(answered, first)) await this.putRules(organizationId, kept, first);
+    await this.addSecondFactors(organizationId, addedTypes);
+    await this.addProviders(organizationId, addedProviders);
+    if (!sameRules(first, target)) await this.putRules(organizationId, kept, target);
+    if (wantedTypes !== undefined)
+      await this.removeSecondFactors(
+        organizationId,
+        types.filter((type) => !wantedTypes.includes(type)),
+      );
+    if (wantedProviders !== undefined)
+      await this.removeProviders(
+        organizationId,
+        providers.filter((id) => !wantedProviders.includes(id)),
+      );
   }
 
   /**
@@ -700,47 +775,65 @@ export class ZitadelIdpAdminDriver extends Driver(IdpAdmin) {
     );
   }
 
-  /** Brings the organisation's login-policy providers to exactly `wanted`: adds the missing, removes the others. */
-  private async syncProviders(organizationId: string, wanted: readonly string[]): Promise<void> {
-    const current = await this.providersOf(organizationId);
-    for (const idpId of wanted.filter((id) => !current.includes(id)))
+  /** Updates the organisation's own policy to `rules`, with the settings Stackra does not manage carried over. */
+  private async putRules(
+    organizationId: string,
+    kept: Readonly<Record<string, unknown>>,
+    rules: LoginRules,
+  ): Promise<void> {
+    await this.call({
+      method: "PUT",
+      path: LOGIN_POLICY,
+      organizationId,
+      json: { ...kept, ...rules },
+    });
+  }
+
+  /** Links `idpIds` to the organisation's login policy. */
+  private async addProviders(organizationId: string, idpIds: readonly string[]): Promise<void> {
+    for (const idpId of idpIds)
       await this.call({
         method: "POST",
-        path: "/management/v1/policies/login/idps",
+        path: `${LOGIN_POLICY}/idps`,
         organizationId,
-        // The regional providers (national IDs) are configured on the instance, so they are system-owned.
-        json: { idpId, ownerType: "IDP_OWNER_TYPE_SYSTEM" },
+        json: { idpId, ownerType: SYSTEM_OWNED },
       });
-    for (const idpId of current.filter((id) => !wanted.includes(id)))
+  }
+
+  /** Unlinks `idpIds` from the organisation's login policy; one already gone is fine. */
+  private async removeProviders(organizationId: string, idpIds: readonly string[]): Promise<void> {
+    for (const idpId of idpIds)
       await this.call(
         {
           method: "DELETE",
-          path: `/management/v1/policies/login/idps/${encodeURIComponent(idpId)}`,
+          path: `${LOGIN_POLICY}/idps/${encodeURIComponent(idpId)}`,
           organizationId,
         },
         [404],
       );
   }
 
-  /** Brings the organisation's second factors to exactly `wanted`: adds the missing, removes the others. */
-  private async syncSecondFactors(
-    organizationId: string,
-    wanted: readonly IdpSecondFactor[],
-  ): Promise<void> {
-    const current = await this.secondFactorTypesOf(organizationId);
-    const wantedTypes = [...new Set(wanted.map((factor) => SECOND_FACTOR_TYPE[factor]))];
-    for (const type of wantedTypes.filter((wantedType) => !current.includes(wantedType)))
+  /** Offers the `SECOND_FACTOR_TYPE_*` values `types` on the organisation's login policy. */
+  private async addSecondFactors(organizationId: string, types: readonly string[]): Promise<void> {
+    for (const type of types)
       await this.call({
         method: "POST",
-        path: "/management/v1/policies/login/second_factors",
+        path: `${LOGIN_POLICY}/second_factors`,
         organizationId,
         json: { type },
       });
-    for (const extra of current.filter((currentType) => !wantedTypes.includes(currentType)))
+  }
+
+  /** Stops offering the `SECOND_FACTOR_TYPE_*` values `types`; one already gone is fine. */
+  private async removeSecondFactors(
+    organizationId: string,
+    types: readonly string[],
+  ): Promise<void> {
+    for (const type of types)
       await this.call(
         {
           method: "DELETE",
-          path: `/management/v1/policies/login/second_factors/${encodeURIComponent(extra)}`,
+          path: `${LOGIN_POLICY}/second_factors/${encodeURIComponent(type)}`,
           organizationId,
         },
         [404],

@@ -8,8 +8,10 @@
  *          id, times and the device's description only; a device poll maps the RFC 8628 errors; a
  *          user's authentication methods come back as unique `amr` codes; a policy is added with the default's settings,
  *          factors and providers carried over, updated when ZITADEL answers it without `isDefault`, and not sent when
- *          its rules already hold; its providers and second factors are brought to exactly the listed ones, and read
- *          back with them (a missing flag read as off); a user is created with and found by its `stackra_user_id` metadata, and an email's Stackra id is read from
+ *          its rules already hold; its providers and second factors are brought to exactly the listed ones, in an order
+ *          where a failed addition never leaves a second factor forced with none offered or every sign-in method off
+ *          (additions first, the tightening rules after, removals last; a relaxed rule goes first), and read back with
+ *          them (a missing flag read as off); a user is created with and found by its `stackra_user_id` metadata, and an email's Stackra id is read from
  *          its one user's metadata (none on no user or no metadata, an error on two users);
  *          passkey sign-in and registration send the v2 session and passkey calls, unwrap `publicKey` (sign-in keeps
  *          only the challenge, relying party and user verification), answer an unknown login a decoy that never
@@ -277,6 +279,7 @@ describe(ZitadelIdpAdminDriver, () => {
       [200, {}],
       [200, { result: [] }],
       [200, {}],
+      [200, {}],
     ]);
     await added.idp.setLoginPolicy("org_1", policy);
     expect(
@@ -289,24 +292,32 @@ describe(ZitadelIdpAdminDriver, () => {
       "POST /management/v1/policies/login",
       "POST /management/v1/policies/login/idps/_search",
       "POST /management/v1/policies/login/idps",
+      "PUT /management/v1/policies/login",
     ]);
-    // The default's settings and factors are carried into the organisation's own policy, never reset.
+    // The default's settings, factors and providers are carried into the organisation's own policy, never reset, and
+    // the add does not force a second factor the default did not: that waits until the providers are linked.
     expect(JSON.parse(added.sent[2]?.body ?? "")).toEqual({
       passwordCheckLifetime: "240h0m0s",
       allowDomainDiscovery: true,
       secondFactors: ["SECOND_FACTOR_TYPE_OTP"],
       multiFactors: ["MULTI_FACTOR_TYPE_U2F_WITH_VERIFICATION"],
+      idps: [{ idpId: "idp_nafath", ownerType: "IDP_OWNER_TYPE_SYSTEM" }],
       allowUsernamePassword: true,
       allowRegister: false,
       allowExternalIdp: true,
-      forceMfa: true,
+      forceMfa: false,
       passwordlessType: "PASSWORDLESS_TYPE_NOT_ALLOWED",
       hidePasswordReset: false,
       ignoreUnknownUsernames: true,
     });
+    // A provider the add did not link (a ZITADEL that drops `idps`) is linked before the rules tighten.
     expect(JSON.parse(added.sent[4]?.body ?? "")).toEqual({
       idpId: "idp_nafath",
       ownerType: "IDP_OWNER_TYPE_SYSTEM",
+    });
+    expect(JSON.parse(added.sent[5]?.body ?? "")).toMatchObject({
+      passwordCheckLifetime: "240h0m0s",
+      forceMfa: true,
     });
     const updated = driverWith([
       [200, { policy: { isDefault: false, passwordCheckLifetime: "240h0m0s" } }],
@@ -431,13 +442,13 @@ describe(ZitadelIdpAdminDriver, () => {
   it("brings the policy's providers and second factors to exactly the listed ones", async () => {
     const { idp, sent } = driverWith([
       [200, { policy: { isDefault: false } }],
-      [200, {}],
       [200, { result: [{ idpId: "idp_old" }, { idpId: "idp_keep" }] }],
-      [200, {}],
-      [404, {}],
       [200, { result: ["SECOND_FACTOR_TYPE_OTP", "SECOND_FACTOR_TYPE_OTP_SMS"] }],
       [200, {}],
       [200, {}],
+      [200, {}],
+      [200, {}],
+      [404, {}],
     ]);
     await idp.setLoginPolicy("org_1", {
       allowUsernamePassword: true,
@@ -456,19 +467,19 @@ describe(ZitadelIdpAdminDriver, () => {
       ),
     ).toEqual([
       "GET /management/v1/policies/login",
-      "PUT /management/v1/policies/login",
       "POST /management/v1/policies/login/idps/_search",
-      "POST /management/v1/policies/login/idps",
-      "DELETE /management/v1/policies/login/idps/idp_old",
       "POST /management/v1/policies/login/second_factors/_search",
+      "PUT /management/v1/policies/login",
       "POST /management/v1/policies/login/second_factors",
+      "POST /management/v1/policies/login/idps",
       "DELETE /management/v1/policies/login/second_factors/SECOND_FACTOR_TYPE_OTP_SMS",
+      "DELETE /management/v1/policies/login/idps/idp_old",
     ]);
-    expect(JSON.parse(sent[3]?.body ?? "")).toEqual({
+    expect(JSON.parse(sent[4]?.body ?? "")).toEqual({ type: "SECOND_FACTOR_TYPE_U2F" });
+    expect(JSON.parse(sent[5]?.body ?? "")).toEqual({
       idpId: "idp_new",
       ownerType: "IDP_OWNER_TYPE_SYSTEM",
     });
-    expect(JSON.parse(sent[6]?.body ?? "")).toEqual({ type: "SECOND_FACTOR_TYPE_U2F" });
     expect(sent.every((request) => request.headers["x-zitadel-orgid"] === "org_1")).toBe(true);
   });
 
@@ -487,6 +498,138 @@ describe(ZitadelIdpAdminDriver, () => {
       ignoreUnknownUsernames: true,
     });
     expect(sent).toHaveLength(2);
+  });
+
+  it("adds a second factor before it forces one, and a failed add leaves nothing forced", async () => {
+    const rules = {
+      allowUsernamePassword: true,
+      allowRegister: true,
+      allowExternalIdp: false,
+      allowPasswordless: false,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: false,
+    };
+    const forced = { ...rules, forceMfa: true, secondFactors: [IdpSecondFactor.Totp] };
+    const answered = { policy: { isDefault: false, allowUsernamePassword: true } };
+    const ok = driverWith([
+      [200, answered],
+      [200, { result: [] }],
+      [200, {}],
+      [200, {}],
+      [200, {}],
+    ]);
+    await ok.idp.setLoginPolicy("org_1", forced);
+    expect(
+      ok.sent.map(
+        (request) => `${request.method} ${request.url.replace("https://id.acme.example", "")}`,
+      ),
+    ).toEqual([
+      "GET /management/v1/policies/login",
+      "POST /management/v1/policies/login/second_factors/_search",
+      "PUT /management/v1/policies/login",
+      "POST /management/v1/policies/login/second_factors",
+      "PUT /management/v1/policies/login",
+    ]);
+    expect(JSON.parse(ok.sent[2]?.body ?? "")).toMatchObject({
+      allowRegister: true,
+      forceMfa: false,
+    });
+    expect(JSON.parse(ok.sent[4]?.body ?? "")).toMatchObject({ forceMfa: true });
+    // The factor add fails (retryable): the organisation is left with MFA not forced, never forced with none offered.
+    const failed = driverWith([
+      [200, answered],
+      [200, { result: [] }],
+      [200, {}],
+      [503, {}],
+    ]);
+    await expect(failed.idp.setLoginPolicy("org_1", forced)).rejects.toBeInstanceOf(
+      IdpAdminUnavailableError,
+    );
+    expect(failed.sent).toHaveLength(4);
+    expect(failed.sent.some((request) => request.body?.includes('"forceMfa":true') === true)).toBe(
+      false,
+    );
+  });
+
+  it("links a provider before it turns the other sign-in methods off, and a failed link leaves them on", async () => {
+    const externalOnly = {
+      allowUsernamePassword: false,
+      allowRegister: false,
+      allowExternalIdp: true,
+      forceMfa: false,
+      allowPasswordless: false,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: false,
+      externalProviderIds: ["idp_nafath"],
+    };
+    const answered = {
+      policy: { allowUsernamePassword: true, passwordlessType: "PASSWORDLESS_TYPE_ALLOWED" },
+    };
+    const ok = driverWith([
+      [200, answered],
+      [200, { result: [] }],
+      [200, {}],
+      [200, {}],
+      [200, {}],
+    ]);
+    await ok.idp.setLoginPolicy("org_1", externalOnly);
+    expect(ok.sent.map((request) => request.method)).toEqual(["GET", "POST", "PUT", "POST", "PUT"]);
+    expect(JSON.parse(ok.sent[2]?.body ?? "")).toMatchObject({
+      allowUsernamePassword: true,
+      allowExternalIdp: true,
+      passwordlessType: "PASSWORDLESS_TYPE_ALLOWED",
+    });
+    expect(ok.sent[3]?.url).toBe("https://id.acme.example/management/v1/policies/login/idps");
+    expect(JSON.parse(ok.sent[4]?.body ?? "")).toMatchObject({
+      allowUsernamePassword: false,
+      passwordlessType: "PASSWORDLESS_TYPE_NOT_ALLOWED",
+    });
+    // The link fails: passwords and passkeys still work, so the administrator can sign back in and retry.
+    const failed = driverWith([
+      [200, answered],
+      [200, { result: [] }],
+      [200, {}],
+      [503, {}],
+    ]);
+    await expect(failed.idp.setLoginPolicy("org_1", externalOnly)).rejects.toBeInstanceOf(
+      IdpAdminUnavailableError,
+    );
+    expect(failed.sent).toHaveLength(4);
+    expect(
+      failed.sent.some(
+        (request) => request.body?.includes('"allowUsernamePassword":false') === true,
+      ),
+    ).toBe(false);
+  });
+
+  it("relaxes the rules before it removes a second factor", async () => {
+    const { idp, sent } = driverWith([
+      [200, { policy: { allowUsernamePassword: true, forceMfa: true } }],
+      [200, { result: ["SECOND_FACTOR_TYPE_OTP"] }],
+      [200, {}],
+      [200, {}],
+    ]);
+    await idp.setLoginPolicy("org_1", {
+      allowUsernamePassword: true,
+      allowRegister: false,
+      allowExternalIdp: false,
+      forceMfa: false,
+      allowPasswordless: false,
+      hidePasswordReset: false,
+      ignoreUnknownUsernames: false,
+      secondFactors: [],
+    });
+    expect(
+      sent.map(
+        (request) => `${request.method} ${request.url.replace("https://id.acme.example", "")}`,
+      ),
+    ).toEqual([
+      "GET /management/v1/policies/login",
+      "POST /management/v1/policies/login/second_factors/_search",
+      "PUT /management/v1/policies/login",
+      "DELETE /management/v1/policies/login/second_factors/SECOND_FACTOR_TYPE_OTP",
+    ]);
+    expect(JSON.parse(sent[2]?.body ?? "")).toMatchObject({ forceMfa: false });
   });
 
   it("reads the policy in force with the providers and second factors it offers", async () => {
