@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 
 import { test } from "@stackra/testing";
 
+import { RUNWAY_UNREAD_FIELDS } from "#node/constants/runway-unread-fields.constant";
 import { checkRunwayUnreadFields } from "#node/functions/check-runway-unread-fields.function";
 import type { RunwayUnreadField } from "#node/types/runway-unread-field.type";
 
@@ -77,6 +78,20 @@ test("checkRunwayUnreadFields: the list and the notes must agree", () => {
     checkRunwayUnreadFields(reader({}), [], FIELDS).join("\n"),
     /runway-root\.schema\.json: missing, but 1 of its fields are listed/,
   );
+});
+
+test("RUNWAY_UNREAD_FIELDS: providers.aws.ecr is a runway read, never Pulumi's aws.ecr resource namespace", () => {
+  const ecr = RUNWAY_UNREAD_FIELDS.find((field) => field.path === "providers.aws.ecr");
+  assert.ok(ecr !== undefined);
+  // infra-aws's Docker Hub pull-through cache (docker-hub-cache.function.ts) builds Pulumi resources
+  assert.equal(ecr.access.test("const rule = new aws.ecr.PullThroughCacheRule(name, {"), false);
+  assert.equal(
+    ecr.access.test("): { rule: aws.ecr.PullThroughCacheRule; secret: Secret } {"),
+    false,
+  );
+  assert.equal(ecr.access.test("const registry = providers.aws?.ecr;"), true);
+  assert.equal(ecr.access.test("const account = aws.ecr.account;"), true);
+  assert.equal(ecr.access.test('const registry = aws["ecr"];'), true);
 });
 
 test("checkRunwayUnreadFields: a reader source that accesses a listed field fails at its line", () => {

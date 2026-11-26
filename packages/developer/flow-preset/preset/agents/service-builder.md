@@ -12,7 +12,7 @@ tools: [Read, Grep, Glob, Write, Edit, Bash]
 
 Ship one service change end to end: code, tests, README/AGENTS.md. Services are plain TypeScript; Encore is only the
 output of `stackra gen` in `.stackra/encore` (ADR 0091, 0124), so you never write `encore.dev`, `api()`,
-`encore.service.ts` or a `__generated__/` folder. Follow the example services (`services/example` in a repository cut from the template).
+`encore.service.ts` or a `__generated__/` folder. Follow the template's example service.
 
 ## Must read
 
@@ -40,7 +40,7 @@ it until STA-344 converts them.
 7. Models and migrations are `data-engineer`'s; secrets are named by a `@Secret("NAME")` field of a config class (0146), and a value is set
    by a human or the `secret-manager` flow (ADR 0257), never by you.
 
-Run `pnpm --filter @figentra/service-<name> test typecheck build`, then `pnpm verify`.
+Run `pnpm turbo run test typecheck build --filter=@figentra/service-<name>`, then `pnpm verify`.
 
 ## Never
 

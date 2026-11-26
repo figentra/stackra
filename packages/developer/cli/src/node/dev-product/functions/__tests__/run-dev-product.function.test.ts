@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `stackra dev --product`: it needs `--os` and something to run, runs gen first and stops on a
- *          failed gen, starts every surface except `ops` and every mobile app, and answers the first failing code.
+ * Purpose: unit tests of `stackra dev --product`: it needs `--os` and something to run, runs gen first, goes on past a
+ *          gen refusal and stops on any other gen failure, starts every surface except `ops` and every mobile app, and
+ *          answers the first failing code.
  * Boundary: test only; `readRunway`, the surface runner and the mobile runner are mocked, nothing starts.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0436 (decisions 2, 6 and 9); ADR 0441 (decisions 2 and 3).
@@ -66,6 +67,17 @@ describe("runDevProduct", () => {
     expect(await code).toBe(0);
     expect(output()).toContain("product acme: console, landing, mobile.app");
     expect(cli).toHaveBeenCalledWith(["gen"], expect.anything());
+    expect(vi.mocked(runDevSurface).mock.calls.map((call) => call[1])).toEqual([
+      "console",
+      "landing",
+    ]);
+    expect(vi.mocked(runDevMobile).mock.calls.map((call) => call[1])).toEqual(["app"]);
+  });
+
+  it("goes on past a gen refusal (exit 1), naming it, since gen wrote every other member", async () => {
+    const { code, output } = run({ product: true, os: "../os" }, 1);
+    expect(await code).toBe(0);
+    expect(output()).toContain("stackra dev: gen refused a member");
     expect(vi.mocked(runDevSurface).mock.calls.map((call) => call[1])).toEqual([
       "console",
       "landing",

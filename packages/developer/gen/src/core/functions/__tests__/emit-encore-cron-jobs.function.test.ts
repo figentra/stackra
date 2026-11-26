@@ -19,7 +19,7 @@ import { WEB_APP_IR } from "#core/__tests__/fixtures/web-app-ir.fixture";
 describe("emitEncoreCronJobs", () => {
   it("emits a CronJob per cron action and the stored schedules' tick", () => {
     const file = emitEncoreCronJobs(BILLING_IR, buildManifest(BILLING_IR).manifest);
-    expect(file?.path).toBe(".stackra/encore/billing/cron.ts");
+    expect(file?.path).toBe("stackra-encore/billing/cron.ts");
     const content = file?.content ?? "";
     expect(content).toContain('import { CronJob } from "encore.dev/cron";');
     expect(content).toContain(ENCORE_APP_IMPORT);

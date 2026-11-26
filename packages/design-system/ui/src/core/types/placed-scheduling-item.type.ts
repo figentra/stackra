@@ -10,7 +10,7 @@ import type { SchedulingBoardItem } from "#contracts/types/scheduling-board-item
 
 /** An item placed on a row. */
 export interface PlacedSchedulingItem {
-  /** The item. */
+  /** The item being placed. */
   readonly item: SchedulingBoardItem;
   /** Where it starts, in columns from the first (a fraction inside a column). */
   readonly offset: number;

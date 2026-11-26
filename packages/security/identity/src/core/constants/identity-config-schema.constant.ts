@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `IDENTITY_CONFIG_SCHEMA`, the zod schema this package ships for `IdentityConfig` (exported as
- *          `IdentityConfig$`): the flow per target, the public client of a device, the scopes, the BFF mount and its
+ *          `IdentityConfig$`): the `SessionStore` and `AppApprovalChallenges` drivers, the flow per target, the
+ *          public client of a device, the scopes, the BFF mount and its
  *          CSRF header (STA-1385), the
  *          device redirect path, the route after sign-out, the idle rule and the refresh switches, plus the external
  *          providers, the step-up rule, the staff PIN rules, the API key prefixes, the last-use write interval, the market-pack keys sign-in and
@@ -19,6 +20,7 @@ import { AssuranceLevel, Enum, Target } from "@stackra/contracts";
 import { url } from "@stackra/validation";
 import { z } from "zod";
 
+import { SESSION_STORE_DRIVERS } from "#core/constants/session-store-drivers.constant";
 import { ApiKeyKind } from "#core/enums/api-key-kind.enum";
 import { AuthFlow } from "#core/enums/auth-flow.enum";
 
@@ -43,6 +45,9 @@ const TARGETS: readonly string[] = Enum.values(Target);
 // shortcut: authored until gen compiles this package's IdentityOptions into #stackra/schemas; replace it with STA-339.
 /** The shipped `IdentityConfig$`. */
 export const IDENTITY_CONFIG_SCHEMA = z.object({
+  sessionStore: z.enum(SESSION_STORE_DRIVERS).default("memory"),
+  // reason: a product registers its own driver name beside `memory`, so the name is checked by the container, not here
+  approvalChallenges: z.string().min(1).default("memory"),
   flow: z
     .record(z.string(), z.enum(Enum.values(AuthFlow)))
     .refine((flow) => Object.keys(flow).every((target) => TARGETS.includes(target)), {

@@ -1,0 +1,57 @@
+---
+title: "The CLI"
+description: "stackra new, gen, dev, validate, verify, mcp and the rest; what runs where, and the Testbed behind the heavy commands."
+icon: "terminal"
+---
+
+{/* Stackra file contract: Purpose: the reader's page on the stackra binary: the everyday commands, the gates, the developer MCP, the Testbed. Boundary: an introduction that cites @stackra/cli's README; the table there is the reference. Runtime: docs. Governing contract: ADR 0083; ADR 0282 decision 3; ADR 0484; STA-2676. */}
+
+`stackra` is one binary ([ADR 0083](/adr/0083-npm-scopes-and-cli-names)). It runs gen, runs each member's tools
+against the configs gen writes, lists what a committed manifest locks, and wires the local developer MCP. At a
+workspace root the task commands fan out through Turborepo; in a member they run that member.
+
+## Every day
+
+| Command                              | Does                                                                                          |
+| ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `stackra new <kind> <name>`          | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`, laid out by the rules     |
+| `stackra gen [--check]`              | derive and write `.stackra/`; `--check` fails when a committed manifest no longer matches     |
+| `stackra dev`                        | gen, then serve: Vite for the web, Expo for phones, Wrangler for Workers, Encore for services |
+| `stackra dev --surface <s> --os <c>` | a product surface in its real OS shell, with hot reload                                       |
+| `stackra build`                      | gen, then build: tsdown, Vite, `expo export`, a Wrangler dry run                              |
+| `stackra typecheck`, `test`, `lint`  | gen, then `tsc --noEmit`, vitest (or Playwright and Maestro by tier), `oxlint .`              |
+| `stackra validate`                   | the config, structure, docs, catalogue and spec phases of the quality gate                    |
+| `stackra verify`                     | the whole gate, tests included                                                                |
+| `stackra ls [section]`               | the identities a committed manifest locks: actions, events, permissions, …                    |
+
+A refusal names its code, its position and the fix; nothing is written when gen refuses. `stackra validate` is what
+CI runs on every pull request; `verify` is what runs on the box before a merge counts.
+
+## Products
+
+`stackra build --product` builds every surface bundle and mobile app of the root runway, and
+`stackra deploy --product --env <e>` publishes them to the edge and the stores; `stackra promote --to production`
+ships what staging runs, behind the owner's approval; `stackra smoke --env <e>` runs Playwright on each web surface
+after a preview deploy and blocks promotion when red. `stackra mobile onboard` takes a product's app from nothing to
+store-ready, step by step.
+
+## Agents
+
+`stackra mcp` serves the local developer MCP over stdio, so an assistant inside the repository reads manifests and
+runs `new`, `gen`, `validate` and `verify` through the CLI's own gates; `stackra mcp sync` renders `.mcp.json` from
+`.mcp.yaml`, and `stackra mcp exec --` starts a server with its secrets without anyone reading them
+([ADR 0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)). `stackra add` installs a
+registry skill, agent or plugin; `stackra agents check` fails when `.mcp.json` drifted.
+
+## Where things run
+
+Nothing heavy runs on a workstation. `stackra testbed run "<session> <what>" <dir> "<cmd>"` syncs a checkout to a
+shared box and runs the command there under a lock; `status`, `unlock`, `ssh`, `sync` and `scale` manage the boxes
+([ADR 0484](/adr/0484-the-testbed-disposable-image-built-test-boxes-a-container-per-job-and-secrets-from-infisical)). CI is the gate: a pull request's checks run
+there, and a skipped step counts as red.
+
+## Read next
+
+- `@stackra/cli`: the package README, the full command table and `consumer-gate`.
+- [Development](/development): from a clean clone to a green `pnpm verify`.
+- [Definition of done](/guides/definition-of-done): each line tied to the check that enforces it.

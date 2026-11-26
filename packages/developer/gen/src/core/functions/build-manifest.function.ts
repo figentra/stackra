@@ -49,6 +49,10 @@
  *          rules, the config that declares it; a host adds its packages' rows), STA-2104.
  *          It lists each record `Policy<Model>` in `policies` (class, model, module, file and the model's `modelFile`),
  *          own then hosted (`from`), only when there is one, so `#stackra/registrations` pairs them (STA-2045).
+ *          A package lists each `WebhookEvent<I>` it declares in `webhookEvents` (`webhookEventsOf`: class, type,
+ *          module, public entry, its Integration and that Integration's Connection), so a host registers it from the
+ *          manifest; a service reports `webhook_event_unpaired` and `webhook_route_duplicate` for its hosted ones
+ *          (`hostedWebhookEvents`).
  *          It lists each own settings class in `settings` (`settingsOf`: group key, class, module,
  *          file and keys with path, type, options and earlier paths) with `settings_unsupported_type`,
  *          `settings_too_deep`, `settings_scope_widened`, `settings_group_key_empty` and `settings_group_conflict`
@@ -92,6 +96,7 @@ import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
 import { entitlementKey } from "#core/functions/entitlement-key.function";
 import { envOf } from "#core/functions/env-of.function";
 import { eventName } from "#core/functions/event-name.function";
+import { hostedWebhookEvents } from "#core/functions/hosted-webhook-events.function";
 import { integrationKey } from "#core/functions/integration-key.function";
 import { jsonSchemaOf } from "#core/functions/json-schema-of.function";
 import { modelEntityFacts } from "#core/functions/model-entity-facts.function";
@@ -118,6 +123,7 @@ import { toolHints } from "#core/functions/tool-hints.function";
 import { toolName } from "#core/functions/tool-name.function";
 import { uiMenusOf } from "#core/functions/ui-menus-of.function";
 import { uiRoutesOf } from "#core/functions/ui-routes-of.function";
+import { webhookEventsOf } from "#core/functions/webhook-events-of.function";
 import { webhookPath } from "#core/functions/webhook-path.function";
 import type { ClassValue } from "#core/types/class-value.type";
 import type { DeclaredClass } from "#core/types/declared-class.type";
@@ -1461,6 +1467,11 @@ export function buildManifest(ir: MemberIR): {
   const settings = settingsOf(ir);
   errors.push(...settings.errors);
 
+  // A package's webhook events with their Integration and Connection, so a host registers them from this manifest;
+  // a service's hosted ones refused when half paired or routed twice (ADR 0308 rules 15 and 16).
+  const webhookEvents = webhookEventsOf(ir, integrations);
+  errors.push(...hostedWebhookEvents(ir).errors);
+
   const manifest: Entry = {
     $comment: MANIFEST_NOTICE,
     member: ir.member,
@@ -1473,6 +1484,7 @@ export function buildManifest(ir: MemberIR): {
     ...(facets.size > 0 ? { facets: [...facets.values()] } : {}),
     ...(replaces.length > 0 ? { replaces } : {}),
     ...sections,
+    ...(webhookEvents.length > 0 ? { webhookEvents } : {}),
     ...(configs.length > 0 ? { config: configs } : {}),
     ...(env.length > 0 ? { env } : {}),
     ...(services.length > 0 ? { services } : {}),

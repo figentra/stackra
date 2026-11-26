@@ -1,5 +1,24 @@
 # @stackra/shortcuts
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/icons@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/icons@0.33.0
+  - @stackra/container@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

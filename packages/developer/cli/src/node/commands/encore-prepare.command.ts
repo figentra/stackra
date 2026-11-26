@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `EncorePrepareCommand`, `stackra encore:prepare`: in a service, pins `encore.dev` to the default catalog's
- *          version and writes tsconfig `baseUrl` and `paths` from package.json `imports`, the two things Encore needs
- *          to build the app at the member root. The `--json` data is the files changed.
+ *          version and writes tsconfig `paths` from package.json `imports` (removing a `baseUrl`, which TypeScript 7
+ *          refuses), the two things Encore needs to build the app at the member root, laid out as the repository's
+ *          formatter leaves them. The `--json` data is the files changed.
  * Boundary: writes the service's package.json and tsconfig.json only, and only when they change; run `pnpm install`
  *           after a pin change so the lockfile follows.
  * Runtime: node

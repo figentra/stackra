@@ -51,13 +51,13 @@ jobs:
 
       - name: Uniwind Pro token (sops)
         if: inputs.preset == 'e2e'
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build
           names: UNIWIND_AUTH_TOKEN
 
       - name: Turborepo remote cache (sops)
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build/turbo
 
