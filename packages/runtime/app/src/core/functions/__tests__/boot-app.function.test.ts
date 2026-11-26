@@ -4,11 +4,13 @@
  *          answers for both), the wiring is bound as `AppWiring`, the bound `ErrorReporter` is picked over the console
  *          fallback, the environment answers the SecretStore port, given overrides win over the built configuration, an invalid configuration fails boot, a
  *          deployed environment refuses the memory action stores (STA-2798), runway's values of the running environment
- *          win over the defaults (ADR 0296), and the roots option boots only the given modules.
+ *          win over the defaults (ADR 0296) for the environment the one reader names, a misspelt environment or a runway
+ *          value for the runtime-only environment fails boot (STA-2844), and the roots option boots only the given
+ *          modules.
  * Boundary: test only; boots real containers over small wirings.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 and 8); ADR 0294 (decision 19); ADR 0266 (decision 2);
- *                     ADR 0296 (decision 1); STA-2798.
+ *                     ADR 0296 (decision 1; amendment 2026-11-26); STA-2844; STA-2798.
  */
 import { StoresConfig } from "@stackra/actions";
 import { buildConfig, ConfigInvalidError } from "@stackra/config";
@@ -160,6 +162,35 @@ describe("bootApp", () => {
     await expect(
       bootApp(wiring, { env: { STACKRA_ENVIRONMENT: "staging" }, runway }),
     ).rejects.toThrow(/^StoresConfig is invalid: idempotency: .*staging refuses it/);
+  });
+
+  it("names the runway environment through the one reader: a misspelt one fails boot (STA-2844)", async () => {
+    // no configuration here maps STACKRA_ENVIRONMENT, so only the reader can refuse the typo
+    const wiring = { member: "orders", config: [{ key: "i18n", provide: I18nConfig }] };
+    const runway = {
+      production: { i18n: { locales: [Locale.En, Locale.Ar], defaultLocale: Locale.Ar } },
+    };
+    for (const typo of ["prod", "Production"])
+      await expect(bootApp(wiring, { env: { STACKRA_ENVIRONMENT: typo }, runway })).rejects.toThrow(
+        /^env is invalid: STACKRA_ENVIRONMENT: is not a Stackra environment/,
+      );
+    const production = await bootApp(wiring, {
+      env: { STACKRA_ENVIRONMENT: " production " },
+      runway,
+    });
+    expect(production.container.get(I18nConfig).defaultLocale).toBe(Locale.Ar);
+  });
+
+  it("refuses a runway value that names the environment, so runway cannot make production read as dev (STA-2844)", async () => {
+    const wiring = { member: "orders", config: [{ key: "actions.stores", provide: StoresConfig }] };
+    const runway = {
+      production: { "actions.stores": { environment: "dev", idempotency: "memory" } },
+    };
+    await expect(
+      bootApp(wiring, { env: { STACKRA_ENVIRONMENT: "production" }, runway }),
+    ).rejects.toThrow(
+      /^StoresConfig is invalid: environment: is safety-critical: it is read from STACKRA_ENVIRONMENT/,
+    );
   });
 
   it("boots the given root modules", async () => {

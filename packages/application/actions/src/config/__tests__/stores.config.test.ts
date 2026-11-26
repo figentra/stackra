@@ -2,15 +2,18 @@
  * Stackra file contract:
  * Purpose: unit tests of `StoresConfig`, `StoresOptions` and `STORES_CONFIG_SCHEMA`: keyed `actions.stores`, defaults
  *          equal to the initializers (`memory` for both stores, `dev`), the driver names typed and closed, the Valkey URL
- *          filled only from its secret, and the boot refusal of a `memory` store outside `dev` and `test` (STA-2798).
+ *          filled only from its secret, and the boot refusal of a `memory` store outside `dev` and `test` (STA-2798),
+ *          judged on the one environment reader's closed list, from the runtime only: a value (a runway `config` block,
+ *          a test's values) cannot set the environment, and a misspelt one fails (STA-2844).
  * Boundary: test only; the URL is made up.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 4, 19, 20 and 26); ADR 0173; ADR 0266 (decision 2);
- *                     STA-2798.
+ *                     ADR 0296 (amendment 2026-11-26); STA-2844; STA-2798.
  */
-import { buildConfig, ConfigInvalidError, configKey } from "@stackra/config";
+import { buildConfig, ConfigInvalidError, configKey, StackraEnvironment } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
 import type { DriverName } from "@stackra/container";
+import { Enum } from "@stackra/contracts";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { schemaOf } from "@stackra/validation";
 
@@ -19,6 +22,13 @@ import type { IdempotencyStore } from "#contracts/ports/idempotency-store.port";
 import type { RateLimitStore } from "#contracts/ports/rate-limit-store.port";
 import { STORES_CONFIG_SCHEMA } from "#core/constants/stores-config-schema.constant";
 import { StoresOptions } from "#core/schemas/stores-options.schema";
+
+/** A production build whose values (a runway block, a test) claim `dev`. */
+const buildDevValueInProduction = () =>
+  buildConfig(StoresConfig, {
+    env: { STACKRA_ENVIRONMENT: "production" },
+    values: { environment: "dev" },
+  });
 
 describe("StoresConfig", () => {
   it("is keyed actions.stores with memory defaults", () => {
@@ -110,7 +120,21 @@ describe("StoresConfig", () => {
 
   it("refuses an unknown environment instead of running it as dev", () => {
     expect(() => buildConfig(StoresConfig, { env: { STACKRA_ENVIRONMENT: "prod" } })).toThrow(
-      /environment: .*\(STACKRA_ENVIRONMENT\)/,
+      /environment: is not a Stackra environment.*\(STACKRA_ENVIRONMENT\)/,
+    );
+  });
+
+  it("judges the environment on the one closed list of @stackra/config (STA-2844)", () => {
+    expectTypeOf<StoresOptions["environment"]>().toEqualTypeOf<StackraEnvironment>();
+    expect(STORES_CONFIG_SCHEMA.shape.environment.unwrap().options).toEqual(
+      Enum.values(StackraEnvironment),
+    );
+  });
+
+  it("never takes the environment from a value, so runway cannot make production read as dev (STA-2844)", () => {
+    expect(buildDevValueInProduction).toThrow(ConfigInvalidError);
+    expect(buildDevValueInProduction).toThrow(
+      /environment: is safety-critical: it is read from STACKRA_ENVIRONMENT/,
     );
   });
 

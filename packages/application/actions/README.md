@@ -30,7 +30,7 @@ configuration and the action testing helpers.
 | `.`           | `ActionPipeline`, `PipelineStage`, `RequestContext`                                                            | the runtime: the fixed steps, their names, the running call's context                          |
 | `.`           | `RateLimitConfig`, `RateLimitConfig$`                                                                          | the area and default action buckets (key `actions.rate_limit`)                                 |
 | `.`           | `MemoryIdempotencyStoreDriver`, `MemoryRateLimitStoreDriver`                                                   | the in-process stores                                                                          |
-| `.`           | `StoresConfig`, `StoresConfig$`, `StoresOptions`, `StoreEnvironment`                                           | the store drivers (key `actions.stores`); `memory` only in `dev` and `test`                    |
+| `.`           | `StoresConfig`, `StoresConfig$`, `StoresOptions`                                                               | the store drivers (key `actions.stores`); `memory` only in `dev` and `test`                    |
 | `.`           | `registerActions`, `registerExtensions`, `connectExtensions`                                                   | what gen's entry and the runtime call at boot                                                  |
 | `.`           | `OfflineCap`, `ActionAccepts`, `RuleEvaluator`, `RuleEvaluation`                                               | `offline.cap`, `accepts` (client rule code)                                                    |
 | `.`           | `QueryReplica`, `ReplicaPage`, `ReplicaBounds`, `ReplicaFeed`                                                  | `replica` on a query, `ctx.replica(fill, slice)`, recording changes                            |
@@ -300,15 +300,17 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
 - **Stores**: `StoresConfig` (key `actions.stores`) picks `memory`, `valkey` or `postgres` for the idempotency and
   rate-limit stores; the Valkey drivers are in `./node` (`ACTIONS_VALKEY_URL`), and the `postgres` drivers come
   through `@stackra/database`; the offline queue's Postgres stores through `@stackra/outbox`. `memory` is the
-  default and is allowed only where `STACKRA_ENVIRONMENT` is `dev` or `test` (unset reads as `dev`). In `preview`,
+  default and is allowed only where the running environment is `dev` or `test` (`StackraEnvironment` of
+  `@stackra/config`, read from `STACKRA_ENVIRONMENT` in the runtime only; unset reads as `dev`). In `preview`,
   `staging` or `production` a `memory` store fails boot with `ConfigInvalidError` naming the field: it would forget
   every Idempotency-Key on a restart (a retried write runs twice) and keep one set of buckets per instance. Set both
   in runway (`config.actions.stores`, in the member or the root's `defaults.service.config`): gen writes those values
-  into the service's `#stackra/runway-config`, which the server, seed and console entries hand `bootApp`. On a deployed
-  Encore service the generated `stackra-encore/<member>/environment.ts` sets `STACKRA_ENVIRONMENT` from Encore's own
-  report (`runningEnvironment` of `@stackra/app/server`), so nobody has to set it. `runway validate` reports a deployed
-  environment of a service that uses the stores and sets neither, or names a driver none of its packages provides
-  (STA-2798).
+  into the service's `#stackra/runway-config`, which the server, seed and console entries hand `bootApp`. Runway never
+  sets the environment itself: `actions.stores.environment` in a runway `config` block fails `runway validate` and
+  boot. On a deployed Encore service the generated `stackra-encore/<member>/environment.ts` settles the environment
+  from Encore's own report through the one reader (`providePlatformEnvironment`, STA-2844), so nobody has to set it.
+  `runway validate` reports a deployed environment of a service that uses the stores and sets neither, or names a
+  driver none of its packages provides (STA-2798).
 
 ## Offline clients
 

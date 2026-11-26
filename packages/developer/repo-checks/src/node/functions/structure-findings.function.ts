@@ -203,13 +203,7 @@ export async function structureFindings(
           read: (p) => fillTemplateTokens(p, text(p)),
           readManifest: (p) => {
             const manifest = maybe(p);
-            if (manifest === undefined) return undefined;
-            // a broken manifest is the manifest check's finding; here it binds nothing to check
-            try {
-              return JSON.parse(manifest) as unknown;
-            } catch {
-              return undefined;
-            }
+            return manifest === undefined ? undefined : (JSON.parse(manifest) as unknown);
           },
           runway,
           services: members

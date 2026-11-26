@@ -8,8 +8,7 @@
  *          blocks against the fields only the runtime may set (`checkRuntimeOnlyConfig` over `runtimeOnlyFieldsOf`, the
  *          `env` rows of the manifests the files configure, STA-2844). Each finding is one line,
  *          `<file>: <path>: <message>`; it exits 1 on any. `stackra validate --repository` runs the same checks.
- * Boundary: reads the runway files and the `stackra.manifest.json` files they configure; changes nothing. A service
- *           manifest that does not parse is a finding, never a crash.
+ * Boundary: reads the runway files and the `stackra.manifest.json` files they configure; changes nothing.
  * Runtime: node
  * Governing contract: ADR 0352; ADR 0296 (enforcement, and the amendment of 2026-11-26); ADR 0506 (decision 8);
  *                     STA-2100; STA-2844; STA-2798.
@@ -69,18 +68,11 @@ export class RunwayValidateCommand extends Command({
     const parsedRoot = read("runway.yaml", RunwayKind.Root) as RootRunway | undefined;
     if (parsedRoot !== undefined) runtimeOnlyIn("runway.yaml", parsedRoot);
     const services: [string, ServiceRunway, unknown][] = [];
-    /** A service's committed manifest (which action stores it binds), or undefined when it has none or it is broken. */
-    const manifestOf = (file: string): unknown => {
-      if (!existsSync(join(root, file))) return undefined;
-      try {
-        return JSON.parse(readFileSync(join(root, file), "utf8")) as unknown;
-      } catch {
-        findings.push(
-          `${file}: not valid JSON, so its action stores were not checked: run \`stackra gen\``,
-        );
-        return undefined;
-      }
-    };
+    /** A service's committed manifest (which action stores it binds), or undefined when it has none. */
+    const manifestOf = (file: string): unknown =>
+      existsSync(join(root, file))
+        ? (JSON.parse(readFileSync(join(root, file), "utf8")) as unknown)
+        : undefined;
     for (const { member, folder = "apps" } of members) {
       const file = `${folder}/${member}/runway.yaml`;
       if (folder === "services") {

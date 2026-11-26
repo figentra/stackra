@@ -5,10 +5,11 @@
  *          instances that win over every binding.
  * Boundary: a type only. The raw environment is the target's own (`process.env`, a Worker's bindings,
  *           `import.meta.env`); `bootApp` reads only the variables each configuration class maps, and picks the runway
- *           values of the environment `STACKRA_ENVIRONMENT` names (`dev` when unset).
+ *           values of the running environment `readEnvironment` of @stackra/config reads from it (`dev` when unset; a
+ *           name outside the closed list fails boot).
  * Runtime: isomorphic
  * Governing contract: ADR 0295 (decisions 7 and 8); ADR 0294 (decision 19); ADR 0296 (decision 1: runway's values are
- *                     the last layer); ADR 0263 (decisions 1 and 12); STA-2798.
+ *                     the last layer; amendment 2026-11-26); ADR 0263 (decisions 1 and 12); STA-2844; STA-2798.
  */
 import type { ModuleClass, Token } from "@stackra/container";
 

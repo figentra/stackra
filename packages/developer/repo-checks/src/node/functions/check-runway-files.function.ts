@@ -22,8 +22,8 @@ import type { RuntimeOnlyFieldShape } from "#node/types/runtime-only-field-shape
  * The runway-file findings.
  *
  * @param input - the runway `files`, `read` for their text, the `runway` API, the service member keys `services` and
- *                `readManifest` for a member's parsed `stackra.manifest.json` (`undefined` when it has none or it does
- *                not parse), and the repository's runtime-only fields `runtimeOnly` (none when omitted).
+ *                `readManifest` for a member's parsed `stackra.manifest.json` (`undefined` when it has none), and the
+ *                repository's runtime-only fields `runtimeOnly` (none when omitted).
  * @example
  * checkRunwayFiles({ files: ["runway.yaml"], read, runway, services: ["notes"] });
  */

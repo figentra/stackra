@@ -11,13 +11,15 @@
  * Boundary: pure; returns every failure instead of throwing, for `runway validate` and `stackra validate` to print with
  *           the file. `manifest` is the member's parsed `stackra.manifest.json` (or `undefined`): a member that binds
  *           neither store, or has no manifest yet, has nothing to check; a manifest row without `candidates` (older
- *           than them) is held to durability only. `dev` is never checked. The same refusal runs at boot in
- *           @stackra/actions' `StoresConfig`, which gen's `#stackra/runway-config` feeds these values; this one
- *           reports it before a deploy.
+ *           than them) is held to durability only. An environment is checked when `isDeployedEnvironment` of
+ *           @stackra/config (the one gate the boot refusal uses, STA-2844) says it is deployed, so `dev` never is. The
+ *           same refusal runs at boot in @stackra/actions' `StoresConfig`, which gen's `#stackra/runway-config`
+ *           feeds these values; this one reports it before a deploy.
  * Runtime: isomorphic
  * Governing contract: ADR 0296 (enforcement: a value that cannot serve the environment fails `stackra validate`); ADR
- *                     0266 (decision 2); STA-2798.
+ *                     0266 (decision 2); ADR 0296 (amendment 2026-11-26); STA-2844; STA-2798.
  */
+import { isDeployedEnvironment } from "@stackra/config";
 import { Enum } from "@stackra/contracts";
 
 import { ACTION_STORE_PORTS } from "#core/constants/action-store-ports.constant";
@@ -86,7 +88,7 @@ export function checkActionStores(
   const bound = candidatesOf(manifest);
   const issues: RunwayIssue[] = [];
   for (const environment of Enum.values(RunwayEnvironment)) {
-    if (environment === RunwayEnvironment.Dev || root.environments[environment] === undefined)
+    if (!isDeployedEnvironment(environment) || root.environments[environment] === undefined)
       continue;
     const own = service.environments[environment]?.config?.[STORES_KEY];
     const defaults = root.environments[environment]?.defaults?.service?.config?.[STORES_KEY];

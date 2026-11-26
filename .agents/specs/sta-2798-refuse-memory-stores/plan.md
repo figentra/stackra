@@ -6,11 +6,14 @@
 
 ## Summary
 
-`StoresConfig` learns the running environment and refuses the `memory` action stores outside `dev` and `test`. Two
-supporting changes make the refusal hold on a real deployment and make its advice work: gen writes each Encore
-service an `environment.ts` that sets `STACKRA_ENVIRONMENT` from Encore's report, and gen writes runway's `config`
-values into `#stackra/runway-config`, which `bootApp` applies as the values layer. `checkActionStores` in
-`@stackra/runway` reports the same gap before a deploy, through `runway validate` and repo-checks.
+`StoresConfig` learns the running environment from the one reader of STA-2844 and refuses the `memory` action stores
+where `isDeployedEnvironment` says the app is deployed. Gen writes runway's `config` values into
+`#stackra/runway-config`, which `bootApp` applies as the values layer for the environment `readEnvironment` reads, so
+the advice "set a durable store in runway" works. `checkActionStores` in `@stackra/runway` reports the same gap before
+a deploy, through `runway validate` and repo-checks. The environment on a deployed Encore service, the closed list,
+the runtime-only refusal of `actions.stores.environment` and the generated `environment.ts` are STA-2844's, merged into
+this branch; this change keeps no environment enum, list, mapping or reader of its own (the CTO's verdict of
+2026-11-26).
 
 ## Technical Context
 
@@ -19,74 +22,71 @@ values into `#stackra/runway-config`, which `bootApp` applies as the values laye
   `packages/runtime/app`, `packages/developer/gen`
 - **Testing**: vitest in `src/**/__tests__/`; gen golden fixtures under `__golden__/`
 - **Storage**: none (driver selection only)
-- **Runtime target**: every deployed service that hosts the action pipeline; the Encore mapping checked against
-  encore 1.58.8
+- **Runtime target**: every deployed service that hosts the action pipeline
+- **Depends on**: STA-2844 (stackra#1166), merged in
 
 ## Constitution Check
 
-| Law                                   | Result | Note                                                                          |
-| ------------------------------------- | ------ | ----------------------------------------------------------------------------- |
-| Boundaries (tier direction, ADR 0003) | PASS   | `@stackra/app` takes `HostEnvironment` structurally; no `encore.dev` import   |
-| Secrets (ADR 0009)                    | PASS   | no secret value in runway or config; `ACTIONS_VALKEY_URL` stays a secret      |
-| Security                              | PASS   | the rate limit holds across instances; unknown environments fail closed       |
-| HTTP and events                       | N/A    | no route or event changes                                                     |
-| Tenancy                               | PASS   | idempotency and rate-limit keys keep their tenant scoping                     |
-| Delegation                            | PASS   | Claude only                                                                   |
-| Not built yet (ADR 0011)              | N/A    | none                                                                          |
-| Test placement (ADR 0022)             | PASS   | tests in `__tests__/`, goldens under `__golden__/`                            |
-| Versions and catalogs                 | PASS   | minor changesets for the five packages, no new dependency                     |
-| Deploy modes (ADR 0076)               | PASS   | same refusal in all three                                                     |
-| Licence tier (ADR 0077)               | PASS   | free, MIT                                                                     |
-| Docs and ADRs                         | PASS   | implements ADR 0266 decision 2 and ADR 0296 decision 1; docs and READMEs kept |
+| Law                                   | Result | Note                                                                               |
+| ------------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| Boundaries (tier direction, ADR 0003) | PASS   | actions, app and runway import `@stackra/config` (already dependencies); no Encore |
+| Secrets (ADR 0009)                    | PASS   | no secret value in runway or config; `ACTIONS_VALKEY_URL` stays a secret           |
+| Security                              | PASS   | the rate limit holds across instances; the judging environment is runtime-only     |
+| HTTP and events                       | N/A    | no route or event changes                                                          |
+| Tenancy                               | PASS   | idempotency and rate-limit keys keep their tenant scoping                          |
+| Delegation                            | PASS   | Claude only                                                                        |
+| Not built yet (ADR 0011)              | N/A    | none                                                                               |
+| Test placement (ADR 0022)             | PASS   | tests in `__tests__/`, goldens under `__golden__/`                                 |
+| Versions and catalogs                 | PASS   | minor changesets for the five packages, no new dependency                          |
+| Deploy modes (ADR 0076)               | PASS   | same refusal in all three                                                          |
+| Licence tier (ADR 0077)               | PASS   | free, MIT                                                                          |
+| Docs and ADRs                         | PASS   | implements ADR 0266 decision 2 and ADR 0296 decision 1 (amended 2026-11-26)        |
 
 ## Deploy modes
 
-| Mode       | Behaviour                                                                                               |
-| ---------- | ------------------------------------------------------------------------------------------------------- |
-| SaaS       | Encore Cloud reports the environment; a deployed service with a memory action store fails boot          |
-| On-prem    | a self-hosted Encore build reads its infra metadata, or `STACKRA_ENVIRONMENT`; the same refusal applies |
-| Air-gapped | the same as on-prem; `postgres` needs no outside service, so it serves where Valkey is not installed    |
+| Mode       | Behaviour                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| SaaS       | Encore Cloud reports the environment to STA-2844's reader; a deployed service with a memory store fails boot |
+| On-prem    | the reader reads the image's infra metadata, or `STACKRA_ENVIRONMENT`; the same refusal applies              |
+| Air-gapped | the same as on-prem; `postgres` needs no outside service, so it serves where Valkey is not installed         |
 
 ## Correctness properties
 
-- **P-001**: for every deployed environment and each store field, `memory` fails the parse with an issue at that field's path — Validates: AC-001
+- **P-001**: for every environment `isDeployedEnvironment` accepts and each store field, `memory` fails the parse with an issue at that field's path — Validates: AC-001
 - **P-002**: `dev`, `test` and an unset variable parse the full defaults with both stores `memory` — Validates: AC-002
-- **P-003**: a name outside `StoreEnvironment` fails the parse — Validates: AC-003
+- **P-003**: the schema's `environment` options equal `Enum.values(StackraEnvironment)`, a name outside them fails `buildConfig`, and a value for the field fails `buildConfig` — Validates: AC-003
 - **P-004**: `checkActionStores` returns an issue exactly for each declared deployed environment and bound port whose resolved driver is not durable or not a candidate, and none for `dev`, undeclared environments or a member with no manifest — Validates: AC-004, AC-005
-- **P-005**: the member's runway value wins over the root's default field by field, and `bootApp` applies only the running environment's values — Validates: AC-006, AC-007
-- **P-006**: `runningEnvironment` never returns `dev` or `test` for a deployed host, and returns the declared value under `encore run` and `encore test` — Validates: AC-008, AC-009
+- **P-005**: the member's runway value wins over the root's default field by field, and `bootApp` applies only the values of the environment `readEnvironment` reads, refusing one outside the closed list — Validates: AC-006, AC-007
+- **P-006**: a runway block that sets `actions.stores.environment` is a `runway validate` finding whenever the actions manifest maps the field to `STACKRA_ENVIRONMENT` — Validates: AC-008
 
 ## Architecture overview
 
 Three layers close the gap, outermost first:
 
 1. Before a deploy, `checkActionStores` (pure, in `@stackra/runway`) reads the parsed root and service runway and the
-   member's committed manifest, and reports each deployed environment that keeps a bound store in memory.
-   `runway validate` and repo-checks' `checkRunwayFiles` print it with the file.
-2. At process start, the generated `stackra-encore/<member>/environment.ts` runs first in every generated Encore file
-   (`encoreFirstImports`) and sets `STACKRA_ENVIRONMENT` from `runningEnvironment(declared, appMeta().environment)`.
-3. At boot, `bootApp` takes gen's `runwayConfig` and applies the running environment's values for each config key;
-   `StoresConfig` parses them, and its schema's refinement refuses `memory` outside `dev` and `test`.
+   member's committed manifest, and reports each environment `isDeployedEnvironment` accepts that keeps a bound store
+   in memory. `runway validate` and repo-checks' `checkRunwayFiles` print it with the file, beside STA-2844's
+   `checkRuntimeOnlyConfig`, which refuses `actions.stores.environment` in any runway block.
+2. At process start, STA-2844's generated `environment.ts` settles `STACKRA_ENVIRONMENT` through `readEnvironment`.
+3. At boot, `bootApp` takes gen's `runwayConfig` and applies the values of `readEnvironment(env)` for each config key;
+   `StoresConfig` reads `environment` from `STACKRA_ENVIRONMENT` only, and its schema's refinement refuses `memory`
+   when `isDeployedEnvironment(environment)`.
 
 ## Components and responsibilities
 
-- `StoreEnvironment` and `MEMORY_STORE_ENVIRONMENTS` (actions): the closed set of environments and the two that may
-  keep the stores in memory.
-- `STORES_CONFIG_SCHEMA`, `StoresOptions`, `StoresConfig` (actions): the `environment` field (env
-  `STACKRA_ENVIRONMENT`) and the refusal, a `superRefine` on the object.
+- `STORES_CONFIG_SCHEMA`, `StoresOptions`, `StoresConfig` (actions): the `environment` field (`StackraEnvironment`, env
+  `STACKRA_ENVIRONMENT`) and the refusal, a `superRefine` on the object that asks `isDeployedEnvironment`.
 - `checkActionStores`, `ACTION_STORE_PORTS`, `DURABLE_ACTION_STORES` (runway): the pre-deploy check, with driver
-  candidates read from the manifest; `RunwayValidateCommand` reads each service's manifest and runs it.
+  candidates read from the manifest and deployment judged by `isDeployedEnvironment`; `RunwayValidateCommand` reads
+  each service's manifest and runs it.
 - `checkRunwayFiles`, `structureFindings`, `RunwayApi` (repo-checks): run the optional check for each service runway.
-- `bootApp`, `BootOptions`, server `createApp`, `runningEnvironment`, `HostEnvironment` (app): the values layer and the
-  environment mapping.
-- `readRunwayConfig`, `discoverMember`, `MemberIR.runwayConfig`, `emitRunwayConfig`, `emitEncoreEnvironment`,
-  `encoreFirstImports`, the runtime, console and Encore emitters (gen): the generated files and their import order.
+- `bootApp`, `BootOptions`, server `createApp`, `ServerAppOptions` (app): the values layer, keyed by `readEnvironment`.
+- `readRunwayConfig`, `discoverMember`, `MemberIR.runwayConfig`, `emitRunwayConfig`, the runtime and console emitters
+  (gen): `#stackra/runway-config` and the entries that pass it.
 
 ## Files and folders
 
 ```text
-packages/application/actions/src/core/enums/store-environment.enum.ts
-packages/application/actions/src/core/constants/memory-store-environments.constant.ts
 packages/application/actions/src/core/constants/stores-config-schema.constant.ts
 packages/application/actions/src/core/schemas/stores-options.schema.ts
 packages/application/actions/src/config/stores.config.ts
@@ -103,26 +103,14 @@ packages/developer/repo-checks/src/node/types/runway-api.type.ts
 packages/runtime/app/src/core/functions/boot-app.function.ts
 packages/runtime/app/src/core/types/boot-options.type.ts
 packages/runtime/app/src/server/functions/create-app.function.ts
-packages/runtime/app/src/server/functions/running-environment.function.ts
-packages/runtime/app/src/server/types/host-environment.type.ts
 packages/runtime/app/src/server/types/server-app-options.type.ts
-packages/runtime/app/src/server/index.ts
 packages/developer/gen/src/node/functions/read-runway-config.function.ts
 packages/developer/gen/src/node/functions/discover-member.function.ts
 packages/developer/gen/src/core/types/member-ir.type.ts
 packages/developer/gen/src/core/functions/emit-runway-config.function.ts
-packages/developer/gen/src/core/functions/emit-encore-environment.function.ts
-packages/developer/gen/src/core/functions/encore-first-imports.function.ts
 packages/developer/gen/src/core/functions/emit-runtime-entries.function.ts
 packages/developer/gen/src/core/functions/emit-console-entry.function.ts
 packages/developer/gen/src/core/functions/generate-member.function.ts
-packages/developer/gen/src/core/functions/emit-encore-api.function.ts
-packages/developer/gen/src/core/functions/emit-encore-cron-jobs.function.ts
-packages/developer/gen/src/core/functions/emit-encore-events.function.ts
-packages/developer/gen/src/core/functions/emit-encore-http.function.ts
-packages/developer/gen/src/core/functions/emit-encore-inbox.function.ts
-packages/developer/gen/src/core/functions/emit-encore-queues.function.ts
-packages/developer/gen/__golden__/
 packages/application/actions/README.md
 packages/application/actions/AGENTS.md
 packages/developer/runway/README.md
@@ -141,61 +129,54 @@ none (no table or migration; the durable drivers already exist in `@stackra/data
 
 ## Contracts
 
-- `StoresConfig$` (`actions.stores`): new field `environment: "dev" | "preview" | "test" | "staging" | "production"`
-  (env `STACKRA_ENVIRONMENT`, default `dev`). Outside `dev` and `test`, `idempotency: "memory"` or
-  `rateLimit: "memory"` is an issue at that path. The manifest gains the env row and the `actions.StoreEnvironment`
-  type; `StoreEnvironment` is exported from the package root.
+- `StoresConfig$` (`actions.stores`): new field `environment: StackraEnvironment` (env `STACKRA_ENVIRONMENT`, default
+  `dev`; runtime-only under STA-2844). Where `isDeployedEnvironment(environment)`, `idempotency: "memory"` or
+  `rateLimit: "memory"` is an issue at that path. The manifest gains the env row with `StackraEnvironment`'s values.
 - `checkActionStores(root: RootRunway, service: ServiceRunway, manifest: unknown): RunwayIssue[]`, exported from
   `@stackra/runway`. Issue path: `environments.<env>.config.actions.stores.<field>`.
-- `BootOptions.runway?` and the server `createApp` option `runway?`: environment to config key to field values.
-- `runningEnvironment(declared: string | undefined, host: HostEnvironment): string | undefined` and
-  `interface HostEnvironment { name; type; cloud }`, exported from `@stackra/app/server`.
+- `BootOptions.runway?` and the server `createApp` option `runway?`: environment to config key to field values;
+  `bootApp` picks `runway[readEnvironment(env)]`.
 - `RunwayApi.checkActionStores?` in repo-checks (optional, so an older runway build still works).
-- Generated files: `.stackra/gen/runway-config.ts` (`export const runwayConfig`) and
-  `stackra-encore/<member>/environment.ts`, imported first by every generated Encore file.
+- Generated file: `.stackra/gen/runway-config.ts` (`export const runwayConfig`).
 
 ## Error handling
 
 - Boot: `ConfigInvalidError` from `buildConfig`, naming `actions.stores.idempotency` or `actions.stores.rateLimit`
-  and the durable choices and runway key to set.
-- Environment: `ConfigInvalidError("env", …)` at path `STACKRA_ENVIRONMENT` when a deployed host declares `dev` or
-  `test`, or nothing tells the environment; thrown from `environment.ts`, so the process fails before the app loads.
+  and the durable choices and runway key to set; naming `environment` when a value sets it; and, from
+  `readEnvironment` in `bootApp`, `env` / `STACKRA_ENVIRONMENT` when the name is outside the closed list.
 - Pre-deploy: `checkActionStores` returns issues instead of throwing; `runway validate` prints one line per issue and
   exits non-zero.
 
 ## Security and tenancy
 
 The change narrows behaviour only: a deployed environment can no longer run a per-process store that loses
-Idempotency-Keys or splits the rate limit. Runway holds values, never secrets (ADR 0173). Known gap (spec Risks): the
-values layer can set `actions.stores.environment`; the follow-up refuses or excludes it.
+Idempotency-Keys or splits the rate limit. The environment that judges the stores comes from the runtime only, so a
+runway file cannot claim `dev` for a production deployment (closed by STA-2844's runtime-only refusal, tested here
+for `actions.stores.environment`). Runway holds values, never secrets (ADR 0173).
 
 ## Testing strategy
 
 Each behaviour has a test that fails without the change (revert-checked on the branch):
 
-- AC-001, AC-002, AC-003: `packages/application/actions/src/config/__tests__/stores.config.test.ts` (reads the
-  environment, refuses one memory store, refuses an unknown name) and
-  `packages/application/actions/src/core/enums/__tests__/store-environment.enum.test.ts`.
-- AC-004: `packages/developer/runway/src/core/functions/__tests__/check-action-stores.function.test.ts` (seven cases:
-  durable passes, default memory, explicit memory with member over root, non-candidate driver, bound ports only, no
-  manifest, `dev` and undeclared skipped).
-- AC-005: `packages/developer/runway/src/node/commands/__tests__/runway-validate.command.test.ts` and
+- AC-001, AC-002, AC-003: `packages/application/actions/src/config/__tests__/stores.config.test.ts` (refuses each
+  memory store in each deployed environment, keeps them in dev and test, refuses an unknown name, the field's options
+  are `StackraEnvironment`'s, a value for `environment` fails).
+- AC-004: `packages/developer/runway/src/core/functions/__tests__/check-action-stores.function.test.ts`.
+- AC-005, AC-008: `packages/developer/runway/src/node/commands/__tests__/runway-validate.command.test.ts` and
   `packages/developer/repo-checks/src/node/functions/__tests__/repository-checks.test.ts`.
 - AC-006: `emit-runway-config.function.test.ts`, `read-runway-config.function.test.ts`,
   `emit-runtime-entries.function.test.ts`, `commands-of.function.test.ts` and the gen goldens.
-- AC-007: `packages/runtime/app/src/core/functions/__tests__/boot-app.function.test.ts` (fails boot with memory in a
-  deployed environment; applies runway's values of the running environment).
-- AC-008: `emit-encore-environment.function.test.ts`, `emit-encore-cron-jobs.function.test.ts` (import order) and the
-  `environment.ts.golden` files.
-- AC-009: `packages/runtime/app/src/server/functions/__tests__/running-environment.function.test.ts`.
+- AC-007: `packages/runtime/app/src/core/functions/__tests__/boot-app.function.test.ts` (memory refused in a deployed
+  environment; runway's values of the running environment applied; a misspelt environment refused with runway values;
+  a runway value for `actions.stores.environment` refused).
 
-The touched packages' tests, typecheck, oxlint and oxfmt pass; the Encore mapping was checked against encore 1.58.8.
+The touched packages' tests, typecheck, oxlint and oxfmt pass on box 2 (Linux).
 
 ## Rollout
 
-Ship with the next release train: minor changesets for `@stackra/actions`, `@stackra/runway`, `@stackra/repo-checks`,
-`@stackra/app` and `@stackra/gen`. Consumers set durable stores in runway, run `stackra gen`, then deploy;
-`runway validate` names any service still on memory. Rollback is reverting the release; no data moves.
+Ship with the next release train after STA-2844: minor changesets for `@stackra/actions`, `@stackra/runway`,
+`@stackra/repo-checks`, `@stackra/app` and `@stackra/gen`. Consumers set durable stores in runway, run `stackra gen`,
+then deploy; `runway validate` names any service still on memory. Rollback is reverting the release; no data moves.
 
 ## Delegation and risk plan
 
@@ -203,7 +184,7 @@ Claude only; one wave; route `spec-task`. R2.
 
 ## ADRs
 
-ADR 0266 decision 2; ADR 0296 decision 1; ADR 0136 decision 3; ADR 0217 decision 2; ADR 0091 decision 2; ADR 0124.
+ADR 0266 decision 2; ADR 0296 decision 1 and its amendment of 2026-11-26; ADR 0136 decision 3; ADR 0217 decision 2.
 No new ADR.
 
 ## Docs

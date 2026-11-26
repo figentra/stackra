@@ -21,7 +21,9 @@ For a service whose generated `stackra.manifest.json` binds the action stores (`
 in the root's `defaults.service.config`. The default `memory` store forgets every Idempotency-Key on a restart, so a
 retried write runs twice, and keeps one rate-limit bucket set per instance. The driver must also be one the service's
 packages provide: `postgres` needs `@stackra/database`. The app refuses the same thing at boot: gen writes these
-values into the service's `#stackra/runway-config`, and the generated Encore app reads the environment from Encore.
+values into the service's `#stackra/runway-config`, and the generated Encore app reads the environment from Encore
+through the one environment reader. `config.actions.stores.environment` is not a value runway can set: it comes from
+`STACKRA_ENVIRONMENT` in the runtime only, and setting it is a finding.
 
 ## What it prints
 

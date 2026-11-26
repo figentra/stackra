@@ -38,7 +38,6 @@ export { Idempotency } from "#core/enums/idempotency.enum";
 export { OfflineMode } from "#core/enums/offline-mode.enum";
 export { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 export { PipelineStage } from "#core/enums/pipeline-stage.enum";
-export { StoreEnvironment } from "#core/enums/store-environment.enum";
 export { ApprovalConsumedError } from "#core/errors/approval-consumed.error";
 export { ApprovalExpiredError } from "#core/errors/approval-expired.error";
 export { ApprovalIdentityUnavailableError } from "#core/errors/approval-identity-unavailable.error";

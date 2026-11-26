@@ -479,7 +479,7 @@
       "name": "STACKRA_ENVIRONMENT",
       "kind": "config",
       "type": "enum",
-      "values": ["dev", "preview", "test", "staging", "production"],
+      "values": ["dev", "test", "preview", "staging", "production"],
       "required": false,
       "config": "actions.stores",
       "class": "StoresConfig",
@@ -606,10 +606,6 @@
         "cache",
         "handle"
       ]
-    },
-    "actions.StoreEnvironment": {
-      "type": "string",
-      "enum": ["dev", "preview", "test", "staging", "production"]
     },
     "actions.ApprovalGranted": {
       "type": "object",
