@@ -1,17 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: `SchemaBuilder`, what a migration's `up(schema)` receives: create or change a table of the module's
- *          Postgres schema, run a raw statement with its stated inverse, refuse a contract step while a column still
- *          holds nulls, create an approved extension, or write a system lookup or claim function.
+ *          Postgres schema, rename one (expand) and finish the rename or drop one (contract, gated on an earlier
+ *          release), run a raw statement with its stated inverse, refuse a contract step while a column still holds
+ *          nulls or a backfill has rows to reach, create an approved extension, or write a system lookup or claim
+ *          function.
  * Boundary: a type only; the migration compiler records the calls and writes ordered SQL steps with derived inverses.
  *           Table names are literals relative to the module's schema. A migration writes no data (backfills are
- *           queue jobs) and no `down()`.
+ *           `Backfill` queue jobs; `requireBackfill` only reads) and no `down()`.
  * Runtime: node
- * Governing contract: ADR 0159 as amended by ADR 0294 and ADR 0305; ADR 0160 (approved extensions); ADR 0239
- *                     (2026-11-07 amendment, gap A: `systemFunction`).
+ * Governing contract: ADR 0159 as amended by ADR 0294 and ADR 0305 (decision 3: expand and contract, backfills as queue
+ *                     jobs); ADR 0160 (approved extensions); ADR 0239 (2026-11-07 amendment, gap A: `systemFunction`).
  */
 import type { Extension } from "#core/enums/extension.enum";
 import type { Blueprint } from "#core/types/blueprint.type";
+import type { ContractOptions } from "#core/types/contract-options.type";
 import type { SystemFunctionOptions } from "#core/types/system-function-options.type";
 
 /**
@@ -50,6 +53,40 @@ export interface SchemaBuilder {
     tables: readonly string[],
     remedy: string,
     options?: { readonly where?: string },
+  ) => void;
+
+  /**
+   * The expand step of a table rename: renames `from` to `to` and leaves a view named `from` over it
+   * (`security_invoker`, so the caller's grants and row-level security apply), through which the release that still
+   * names `from` keeps reading and writing (a one-table view is updatable). Rows, indexes, constraints, policies and
+   * triggers move with the table and keep their names (`idx_<from>_…`, `pol_<from>_…`): a later `dropIndex`,
+   * `dropCheck` or `dropRowLevelSecurity` names `from` as their `table`. `finishRename` drops the view in a later
+   * release. The view shows the columns `from` had; one added later is reached through `to` only.
+   */
+  rename: (from: string, to: string) => void;
+
+  /**
+   * The contract step of a table rename, in a later release than `rename`: drops the view `from`, gated on `after` as
+   * every contract step is (`stackra db migrate` refuses it while `after` was applied by the same run). Its dev inverse
+   * creates the view again over `to`.
+   */
+  finishRename: (from: string, to: string, options: ContractOptions) => void;
+
+  /**
+   * Drops `table`, a contract step gated on `after` (the release that stopped the code using it). Postgres refuses it
+   * while another object depends on it (a foreign key, a view), so those go first. Irreversible: the dev inverse is
+   * none, so a migration that drops a table is not rolled back; put the drop in a migration of its own.
+   */
+  drop: (table: string, options: ContractOptions) => void;
+
+  /**
+   * The data gate of a contract step: refuses the migration while any row of `options.table` meets `options.pending`
+   * (SQL over its columns, a literal), naming the backfill `key` to run first (`Backfill({ key })`). Called before the
+   * calls it guards; it reads, never writes, and undoes nothing. A fresh database has no rows, so it passes there.
+   */
+  requireBackfill: (
+    key: string,
+    options: { readonly table: string; readonly pending: string },
   ) => void;
 
   /** Creates one of the approved extensions, if the database does not have it; a down keeps it, since it is shared. */

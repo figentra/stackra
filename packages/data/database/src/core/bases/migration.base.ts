@@ -12,11 +12,9 @@
 import { createKind } from "@stackra/container";
 
 import { MigrationBase } from "#core/bases/migration-base.base";
+import { MIGRATION_ID_PATTERN } from "#core/constants/migration-id-pattern.constant";
 import type { MigrationClass } from "#core/types/migration-class.type";
 import type { MigrationOptions } from "#core/types/migration-options.type";
-
-/** A migration id: `<module>.<NNNN>_<snake stem>`. */
-const MIGRATION_ID = /^[a-z][a-z0-9_]*\.\d{4}_[a-z0-9_]+$/;
 
 /** A migration instance. */
 export type Migration = MigrationBase;
@@ -27,7 +25,7 @@ function read(options: MigrationOptions = {}) {
   if (!Array.isArray(after))
     throw new TypeError("Migration({ after }) lists migration ids from #stackra/migrations");
   for (const id of after)
-    if (typeof id !== "string" || !MIGRATION_ID.test(id))
+    if (typeof id !== "string" || !MIGRATION_ID_PATTERN.test(id))
       throw new TypeError(
         `Migration({ after }) takes ids such as "search.0001_create_text_functions", got ${JSON.stringify(id)}`,
       );

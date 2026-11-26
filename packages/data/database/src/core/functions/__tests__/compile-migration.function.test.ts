@@ -109,6 +109,26 @@ class CreateOrdersMigration extends Migration {
   }
 }
 
+/** The compiled migration of `define` on the existing `jobs` table. */
+function compiledOn(define: (t: Blueprint) => void) {
+  class ContractMigration extends Migration {
+    up(schema: SchemaBuilder): void {
+      schema.table("jobs", define);
+    }
+  }
+  return compileMigration(ContractMigration, { schema: "outbox" });
+}
+
+/** The compiled migration of `up` on the `outbox` schema. */
+function compiledSchema(up: (schema: SchemaBuilder) => void) {
+  class SchemaMigration extends Migration {
+    up(schema: SchemaBuilder): void {
+      up(schema);
+    }
+  }
+  return compileMigration(SchemaMigration, { schema: "outbox" });
+}
+
 describe(compileMigration, () => {
   it("range-partitions a new table with a default partition, the column in the key and a BRIN index", () => {
     class CreateMeterEventsMigration extends Migration {
@@ -1635,6 +1655,382 @@ describe(compileMigration, () => {
         }
         expect(() => sqlOf(FunctionMigration)).toThrow(message);
       }
+    });
+  });
+
+  describe("expand and contract steps, checks and exclusions (STA-1406)", () => {
+    const table = '"outbox"."jobs"';
+    const AFTER = "outbox.0007_stop_writing_note";
+
+    it("drops a column after its release gate, with a reviewed squawk ignore and a dev inverse that adds it back", () => {
+      const { after, steps } = compiledOn((t) => {
+        t.dropColumn("note", { after: AFTER, type: "varchar(200)" });
+      });
+      expect(after).toEqual([AFTER]);
+      expect(steps).toHaveLength(1);
+      const [gate, drop] = steps[0]?.sql ?? [];
+      expect(gate).toMatch(/^do \$\$/);
+      expect(gate).toContain("to_regclass('schema_migrations_history') is null");
+      expect(gate).toContain("current_setting('stackra.migrate_from_version', true)");
+      expect(gate).toContain("name ~ '^[0-9]+_outbox_0007_stop_writing_note(_[0-9]+)?$'");
+      expect(gate).toContain("'outbox.jobs drop column note', 'outbox.0007_stop_writing_note'");
+      expect(drop).toBe(
+        "-- lint: a contract step: the release gate above refuses it until the release that stopped using it has shipped (ADR 0159 d3).\n" +
+          "-- squawk-ignore ban-drop-column\n" +
+          `alter table ${table} drop column "note"`,
+      );
+      expect(steps[0]?.inverse).toEqual([`alter table ${table} add column "note" varchar(200)`]);
+    });
+
+    it("adds a contract step's release to the declared after edges once", () => {
+      class DropMigration extends Migration({
+        after: ["search.0001_create_text_functions" as MigrationId, AFTER as MigrationId],
+      }) {
+        up(schema: SchemaBuilder): void {
+          schema.table("jobs", (t) => {
+            t.dropColumn("note", { after: AFTER, type: "text" });
+            t.dropColumn("memo", { after: "outbox.0008_stop_writing_memo", type: "text" });
+          });
+          schema.drop("old_jobs", { after: "outbox.0008_stop_writing_memo" });
+        }
+      }
+      expect(compileMigration(DropMigration, { schema: "outbox" }).after).toEqual([
+        "search.0001_create_text_functions",
+        AFTER,
+        "outbox.0008_stop_writing_memo",
+      ]);
+    });
+
+    it("refuses a drop on a new table, without a migration id, with an unknown type, twice, or beside another step on the column", () => {
+      class CreateMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("jobs", (t) => {
+            t.dropColumn("note", { after: AFTER, type: "text" });
+          });
+        }
+      }
+      expect(() => sqlOf(CreateMigration)).toThrow(/created by this migration/);
+      expect(refusal((t) => t.dropColumn("note", { after: "v2", type: "text" }))).toThrow(
+        /needs \{ after \}/,
+      );
+      expect(
+        refusal((t) => t.dropColumn("note", { after: AFTER, type: "varchar(200); drop x" })),
+      ).toThrow(/not a column type/);
+      expect(
+        refusal((t) => {
+          t.dropColumn("note", { after: AFTER, type: "text" });
+          t.dropColumn("note", { after: AFTER, type: "text" });
+        }),
+      ).toThrow(/already dropped/);
+      expect(
+        refusal((t) => {
+          t.dropColumn("note", { after: AFTER, type: "text" });
+          t.change("note").nullable();
+        }),
+      ).toThrow(/is dropped by this blueprint/);
+      expect(
+        refusal((t) => {
+          t.string("note").nullable().comment("A note.");
+          t.dropColumn("note", { after: AFTER, type: "text" });
+        }),
+      ).toThrow(/is dropped by this blueprint/);
+    });
+
+    it("starts a column rename with the new column and a sync trigger, undone trigger first", () => {
+      const { after, steps } = compiledOn((t) => {
+        t.renameColumn("note", "memo", { type: "varchar(200)" })
+          .nullable()
+          .comment("The job's note, under its new name.");
+      });
+      expect(after).toEqual([]);
+      const sql = steps[0]?.sql ?? [];
+      expect(sql[0]).toBe(`alter table ${table} add column "memo" varchar(200) null`);
+      expect(sql[1]).toBe(
+        `comment on column ${table}."memo" is 'The job''s note, under its new name.'`,
+      );
+      expect(sql[2]).toBe(
+        [
+          'create function "outbox"."trg_jobs_note_memo"() returns trigger language plpgsql set search_path = pg_catalog, pg_temp as $stackra$',
+          "begin",
+          "  if tg_op = 'INSERT' then",
+          '    if new."memo" is null then new."memo" := new."note";',
+          '    elsif new."note" is null then new."note" := new."memo";',
+          "    end if;",
+          '  elsif new."memo" is distinct from old."memo" then new."note" := new."memo";',
+          '  elsif new."note" is distinct from old."note" then new."memo" := new."note";',
+          "  end if;",
+          "  return new;",
+          "end",
+          "$stackra$",
+        ].join("\n"),
+      );
+      expect(sql[3]).toBe(
+        `create trigger "trg_jobs_note_memo" before insert or update on ${table} for each row execute function "outbox"."trg_jobs_note_memo"()`,
+      );
+      expect(steps[0]?.inverse).toEqual([
+        `drop trigger if exists "trg_jobs_note_memo" on ${table}`,
+        'drop function if exists "outbox"."trg_jobs_note_memo"()',
+        `alter table ${table} drop column if exists "memo"`,
+      ]);
+    });
+
+    it("finishes a rename behind its release and backfill gates, and its dev inverse restores the old column and trigger", () => {
+      const { after, steps } = compiledOn((t) => {
+        t.finishRenameColumn("note", "memo", { after: AFTER, type: "varchar(200)" });
+      });
+      expect(after).toEqual([AFTER]);
+      const sql = steps[0]?.sql ?? [];
+      expect(sql[0]).toContain("'outbox.jobs finish rename note to memo'");
+      expect(sql[1]).toContain(
+        `select count(*) into n from (select 1 from ${table} where "memo" is null and "note" is not null limit 1001) pending;`,
+      );
+      expect(sql[1]).toContain(
+        "run the backfill that copies note into memo before note is dropped",
+      );
+      expect(sql.slice(2)).toEqual([
+        `drop trigger if exists "trg_jobs_note_memo" on ${table}`,
+        "-- lint: the rename's sync trigger function: only its trigger, dropped above, calls it.\n" +
+          "-- squawk-ignore ban-drop-function\n" +
+          'drop function if exists "outbox"."trg_jobs_note_memo"()',
+        expect.stringContaining(
+          `-- squawk-ignore ban-drop-column\nalter table ${table} drop column "note"`,
+        ),
+      ]);
+      const inverse = steps[0]?.inverse;
+      expect(inverse).not.toBe(false);
+      expect((inverse as readonly string[])[0]).toBe(
+        `alter table ${table} add column "note" varchar(200)`,
+      );
+      expect((inverse as readonly string[])[1]).toMatch(
+        /^create function "outbox"\."trg_jobs_note_memo"\(\)/,
+      );
+      expect((inverse as readonly string[])[2]).toMatch(/^create trigger "trg_jobs_note_memo"/);
+    });
+
+    it("refuses a rename to itself, of a column the blueprint adds, or a finished rename beside a drop of it", () => {
+      expect(refusal((t) => t.renameColumn("note", "note", { type: "text" }))).toThrow(/itself/);
+      expect(
+        refusal((t) => {
+          t.string("note").nullable().comment("A note.");
+          t.renameColumn("note", "memo", { type: "text" }).nullable().comment("A memo.");
+        }),
+      ).toThrow(/defined, not renamed/);
+      expect(
+        refusal((t) => {
+          t.dropColumn("note", { after: AFTER, type: "text" });
+          t.finishRenameColumn("note", "memo", { after: AFTER, type: "text" });
+        }),
+      ).toThrow(/its rename is finished by this blueprint/);
+      expect(
+        refusal((t) => t.renameColumn("note", "memo", { type: "money" }).nullable().comment("x")),
+      ).toThrow(/not a column type/);
+      expect(
+        refusal((t) => t.renameColumn("note", "memo", { type: "text" }).notNull().comment("x")),
+      ).toThrow(/nullable or has a default/);
+    });
+
+    it("writes a check inline on a new table, and NOT VALID then validated on an existing one", () => {
+      class CreateMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.create("jobs", (t) => {
+            t.integer("attempts").notNull().comment("Attempts so far.");
+            t.check("attempts_not_negative", "attempts >= 0");
+          });
+        }
+      }
+      expect(sqlOf(CreateMigration)).toContain(
+        `create table ${table} (\n  "attempts" integer not null,\n  constraint "ck_jobs_attempts_not_negative" check (attempts >= 0)\n)`,
+      );
+      const { steps } = compiledOn((t) => {
+        t.check("attempts_not_negative", "attempts >= 0");
+      });
+      expect(steps[0]).toEqual({
+        sql: [
+          `alter table ${table} add constraint "ck_jobs_attempts_not_negative" check (attempts >= 0) not valid`,
+        ],
+        transactional: true,
+        inverse: [`alter table ${table} drop constraint if exists "ck_jobs_attempts_not_negative"`],
+      });
+      expect(steps[1]).toEqual({
+        sql: [`alter table ${table} validate constraint "ck_jobs_attempts_not_negative"`],
+        transactional: true,
+        inverse: [],
+      });
+    });
+
+    it("drops a check under the name it was created with, and its inverse adds it back NOT VALID", () => {
+      const { steps } = compiledOn((t) => {
+        t.dropCheck("attempts_not_negative", { expression: "attempts >= 0", table: "old_jobs" });
+      });
+      expect(steps).toEqual([
+        {
+          sql: [
+            "-- lint: a dropped check only relaxes the table: no release relies on a write being refused.\n" +
+              "-- squawk-ignore ban-drop-constraint\n" +
+              `alter table ${table} drop constraint "ck_old_jobs_attempts_not_negative"`,
+          ],
+          transactional: true,
+          inverse: [
+            `alter table ${table} add constraint "ck_old_jobs_attempts_not_negative" check (attempts >= 0) not valid`,
+          ],
+        },
+      ]);
+    });
+
+    it("refuses a check whose expression could end its statement, and a second check of one name", () => {
+      expect(refusal((t) => t.check("x", "a > 0; drop table jobs"))).toThrow(/without ; or \$\$/);
+      expect(refusal((t) => t.check("x", "a > 0\n or b"))).toThrow(/one line/);
+      expect(refusal((t) => t.check("x", "  "))).toThrow(/one line/);
+      expect(
+        refusal((t) => {
+          t.check("x", "a > 0");
+          t.check("x", "b > 0");
+        }),
+      ).toThrow(/already has the check x/);
+    });
+
+    it("writes an exclusion constraint on a new table and refuses one on an existing table", () => {
+      class CreateMigration extends Migration {
+        up(schema: SchemaBuilder): void {
+          schema.createExtension(Extension.BtreeGist);
+          schema.create("bookings", (t) => {
+            t.uuid("room_id").notNull().comment("The booked room.");
+            t.timestamp("cancelled_at").nullable().comment("When it was cancelled.");
+            t.exclude(
+              "no_double_booking",
+              { room_id: "=", during: "&&" },
+              { where: "cancelled_at is null" },
+            );
+          });
+        }
+      }
+      expect(sqlOf(CreateMigration)).toContain(
+        `constraint "ex_bookings_no_double_booking" exclude using gist ("room_id" with =, "during" with &&) where (cancelled_at is null)\n)`,
+      );
+      expect(refusal((t) => t.exclude("x", { room_id: "=" }))).toThrow(/exclusive lock/);
+    });
+
+    it("refuses an exclusion with no element, a bad operator or method", () => {
+      for (const [define, message] of [
+        [(t: Blueprint) => t.exclude("x", {}), /at least one element/],
+        [(t: Blueprint) => t.exclude("x", { a: "= 1; drop" }), /not an operator/],
+        [
+          (t: Blueprint) => t.exclude("x", { a: "=" }, { using: "hash" as "gist" }),
+          /not gist or btree/,
+        ],
+      ] as const) {
+        class CreateMigration extends Migration {
+          up(schema: SchemaBuilder): void {
+            schema.create("bookings", (t) => {
+              t.uuid("a").notNull().comment("A.");
+              define(t);
+            });
+          }
+        }
+        expect(() => sqlOf(CreateMigration)).toThrow(message);
+      }
+    });
+
+    it("drops an index concurrently in its own step, before any built one, with an inverse that builds it again", () => {
+      const { steps } = compiledOn((t) => {
+        t.index(["status"]).concurrently();
+        t.dropIndex(["status"], { using: "btree", where: "status <> 'done'", table: "old_jobs" });
+      });
+      expect(steps[0]).toEqual({
+        sql: ['drop index concurrently if exists "outbox"."idx_old_jobs_status"'],
+        transactional: false,
+        inverse: [
+          `create index concurrently "idx_old_jobs_status" on ${table} using btree ("status") where status <> 'done'`,
+        ],
+      });
+      expect(steps[1]?.sql).toEqual([
+        `create index concurrently "idx_jobs_status" on ${table} ("status")`,
+      ]);
+    });
+
+    it("renames a table behind a security_invoker view under its old name", () => {
+      const { steps } = compiledSchema((schema) => schema.rename("old_jobs", "jobs"));
+      expect(steps).toEqual([
+        {
+          sql: [
+            "-- lint: an expand step: the view below keeps the old name readable and writable until finishRename (ADR 0159 d3).\n" +
+              "-- squawk-ignore renaming-table\n" +
+              'alter table "outbox"."old_jobs" rename to "jobs"',
+            `create view "outbox"."old_jobs" with (security_invoker = true) as select * from ${table}`,
+            `comment on view "outbox"."old_jobs" is 'The old name of outbox.jobs, kept for the release before the rename; dropped by finishRename.'`,
+          ],
+          transactional: true,
+          inverse: [
+            'drop view if exists "outbox"."old_jobs"',
+            `alter table ${table} rename to "old_jobs"`,
+          ],
+        },
+      ]);
+    });
+
+    it("finishes a table rename behind its release gate, and drops a table irreversibly", () => {
+      const finish = compiledSchema((schema) =>
+        schema.finishRename("old_jobs", "jobs", { after: AFTER }),
+      );
+      expect(finish.after).toEqual([AFTER]);
+      expect(finish.steps[0]?.sql[0]).toContain("'outbox.old_jobs finish rename to jobs'");
+      expect(finish.steps[0]?.sql[1]).toBe(
+        "-- lint: a contract step: the release gate above refuses it until the release that stopped using the old name has shipped (ADR 0159 d3).\n" +
+          "-- squawk-ignore ban-drop-view\n" +
+          'drop view "outbox"."old_jobs"',
+      );
+      expect(finish.steps[0]?.inverse).toEqual([
+        `create view "outbox"."old_jobs" with (security_invoker = true) as select * from ${table}`,
+      ]);
+      const drop = compiledSchema((schema) => schema.drop("old_jobs", { after: AFTER }));
+      expect(drop.steps[0]?.sql[0]).toContain("'outbox.old_jobs drop'");
+      expect(drop.steps[0]?.sql[1]).toBe(
+        "-- lint: a contract step: the release gate above refuses it until the release that stopped using the table has shipped (ADR 0159 d3).\n" +
+          "-- squawk-ignore ban-drop-table\n" +
+          'drop table "outbox"."old_jobs"',
+      );
+      expect(drop.steps[0]?.inverse).toBe(false);
+    });
+
+    it("refuses a table step without its release, or renamed to itself", () => {
+      expect(() => compiledSchema((schema) => schema.drop("jobs", { after: "" }))).toThrow(
+        /needs \{ after \}/,
+      );
+      expect(() =>
+        compiledSchema((schema) => schema.finishRename("jobs", "jobs", { after: AFTER })),
+      ).toThrow(/itself/);
+      expect(() => compiledSchema((schema) => schema.rename("jobs", "jobs"))).toThrow(/itself/);
+    });
+
+    it("gates a contract step on a backfill's pending rows, first in the transaction", () => {
+      const { steps } = compiledSchema((schema) => {
+        schema.requireBackfill("outbox.fill_memo", {
+          table: "jobs",
+          pending: "memo is null and note is not null",
+        });
+        schema.table("jobs", (t) => t.change("memo").notNull({ safe: true }));
+      });
+      const gate = steps[0]?.sql[0] ?? "";
+      expect(gate).toMatch(/^do \$\$/);
+      expect(gate).not.toMatch(/\n\s*\n/);
+      expect(gate).toContain(
+        `from (select 1 from ${table} where memo is null and note is not null limit 1001)`,
+      );
+      expect(gate).toContain(
+        "'the backfill outbox.fill_memo has not finished; run it (runBackfill) until it does, then migrate again'",
+      );
+    });
+
+    it("refuses a backfill gate with a bad key, table or predicate", () => {
+      for (const [key, target, pending, message] of [
+        ["fill_memo", "jobs", "memo is null", /<module>\.<name>/],
+        ["outbox.fill_memo", "Jobs", "memo is null", /database name/],
+        ["outbox.fill_memo", "jobs", "memo is null $$", /without \$\$/],
+        ["outbox.fill_memo", "jobs", " ", /one line/],
+      ] as const)
+        expect(() =>
+          compiledSchema((schema) => schema.requireBackfill(key, { table: target, pending })),
+        ).toThrow(message);
     });
   });
 });

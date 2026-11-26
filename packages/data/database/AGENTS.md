@@ -1,4 +1,4 @@
-<!-- Purpose: agent guide of @stackra/database: where code goes, entries, the package rules (migrations and column changes, scope columns, raw SQL, sequences, projections). Boundary: packages/data/database only. Runtime: none (Markdown). Governing contract: ADR 0097; ADR 0159; ADR 0160; ADR 0294; ADR 0305; STA-918. -->
+<!-- Purpose: agent guide of @stackra/database: where code goes, entries, the package rules (migrations and column changes, scope columns, raw SQL, sequences, projections). Boundary: packages/data/database only. Runtime: none (Markdown). Governing contract: ADR 0097; ADR 0159; ADR 0160; ADR 0294; ADR 0305; STA-918; STA-1406. -->
 
 # AGENTS — @stackra/database
 
@@ -10,7 +10,7 @@ The MikroORM layer on Postgres. Member at `packages/data/database` (`tier:lib`),
 
 | You are writing…                                                     | It goes in…                                                                   |
 | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| A kind base (`CrudService`, `Migration`, `Macro`, …)                 | `src/core/bases/<name>.base.ts`                                               |
+| A kind base (`CrudService`, `Migration`, `Macro`, `Backfill`, …)     | `src/core/bases/<name>.base.ts`                                               |
 | The `Factory` base and the other test helpers                        | `src/testing/{bases,constants,types}/`, `use-postgres.ts`                     |
 | The `memory` driver of `Database` (PGlite, unit tier only)           | `src/testing/drivers/memory-database.driver.ts`                               |
 | A port (`Database`, which carries `Database.current()`)              | `src/core/ports/<name>.port.ts`                                               |
@@ -79,8 +79,9 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
   `Disposal.Edit`; `ServiceHoldRegistryDriver` reaches the holds service only through `HoldChannel` (STA-1241).
 - The yearly period's time zone is the series owner's setting, through the connected `SequenceTimeZone` (ADR 0394);
   never add a time zone constant or read a setting here.
-- The Postgres action stores (`database.idempotency_keys`, `database.rate_limit_buckets`) and the seed ledger
-  (`database.seed_records`) are this package's own tables, written only by their drivers and the seed runner (ADR 0396).
+- The Postgres action stores (`database.idempotency_keys`, `database.rate_limit_buckets`), the seed ledger
+  (`database.seed_records`) and the backfill ledger (`database.backfill_runs`, written only by `runBackfill`) are this
+  package's own tables, written only by their drivers and the seed runner (ADR 0396).
   No row-level security on them: an action-store key is already scoped, and product defaults are not tenant-owned.
   The `postgres` cache driver's `cache.entries` and `cache.set_members` (migration 0005, hosted for @stackra/cache)
   are platform tables too: each key carries its `CacheNamespace` prefix and the driver runs outside any transaction.
@@ -133,6 +134,19 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
 VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); never inline it there.
 - Column changes (`t.change(column)`, `ColumnChangeRecord`): existing tables only, every value a literal, a type change
   states its `from` so the inverse needs no database read. Never read the live schema to fill a change in.
+- Drops and renames (STA-1406) are expand and contract steps, never raw `schema.sql`. A contract step (`t.dropColumn`,
+  `t.finishRenameColumn`, `schema.finishRename`, `schema.drop`) states `{ after }`, the migration of the earlier release
+  that made it safe; it compiles to `releaseGateSql` first in its transaction and becomes one of the migration's `after`
+  edges. The gate reads `schema_migrations_history` and `MIGRATE_FROM_VERSION_SETTING`, which only `migrate` sets, and
+  only outside `ROLLBACK_ENVIRONMENTS`; keep the three in step. A rename's expand (`t.renameColumn`, `schema.rename`)
+  leaves the old name working (the `trg_` sync trigger, the `security_invoker` view); never drop either outside its
+  finish step. A drop or relaxing step carries a squawk ignore with its reason (lint lines never change a checksum).
+- `t.check` is `NOT VALID` plus its own validation step on an existing table; `t.exclude` goes on a new table only
+  (Postgres has no online exclusion constraint). Names: `ck_`, `ex_`, `trg_` through `constraintName`.
+- `Backfill` is the data kind a contract step waits for (ADR 0159 d3): batches by its keyset column, the cursor moved in
+  the batch's transaction, the ledger `database.backfill_runs` (migration 0009, a platform table). `runBackfill` builds
+  SQL from the declaration's literals and quoted keys only, and records an error's SQLSTATE, never its message. A
+  migration's data gate is `schema.requireBackfill`, which reads rows, never the ledger, so a fresh database passes.
 - Raw SQL only through `sql` and the `$raw` filter, or in a subclass method with a `// raw-sql:` reason (ADR 0160).
 - A filter operator MikroORM has no typed form for (jsonb contains or path, `ltree` ancestor or descendant) is a
   function returning a parameterised fragment for `$raw` (`jsonContains`, `jsonPath`, `ancestorOf`, `descendantOf`);

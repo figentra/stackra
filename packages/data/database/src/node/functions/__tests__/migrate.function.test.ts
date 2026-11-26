@@ -111,4 +111,20 @@ describe("migrate", () => {
     expect(sql.some((text) => text.includes("idx_unrelated"))).toBe(false);
     expect(sql).toContain("update schema_migrations set version = 1, dirty = false");
   });
+
+  it("sets the release gate's starting version in a forward-only environment, before any file (STA-1406)", async () => {
+    reset([file(1, "select 1"), file(2, "select 2")], 1);
+    fake.history = [{ version: 1, name: "0001_orders_step", checksum: "sum1" }];
+    await migrate({ cwd: ".", environment: "production" });
+    const sql = fake.executed.map(([statement]) => statement);
+    const gate = sql.indexOf("select set_config('stackra.migrate_from_version', '1', false)");
+    expect(gate).toBeGreaterThanOrEqual(0);
+    expect(gate).toBeLessThan(sql.indexOf("select 2"));
+  });
+
+  it("leaves the release gate unset in a rollback environment (STA-1406)", async () => {
+    reset([file(1, "select 1")]);
+    await run();
+    expect(fake.executed.some(([sql]) => sql.includes("stackra.migrate_from_version"))).toBe(false);
+  });
 });

@@ -220,6 +220,80 @@ Besides `integer` (32-bit), `t.bigint(name)` is a 64-bit count or minor-unit amo
 `t.decimal(name, precision, scale)` an exact `numeric` reading or bound (precision 1 to 1000, scale 0 to precision);
 money is always `t.money`.
 
+### Dropping and renaming (expand and contract)
+
+A destructive step ships in a later release than the change that made it safe (ADR 0159 d3). The blueprint writes both
+halves; nothing needs raw `schema.sql`:
+
+```ts
+// release N: the code stops reading `legacy_ref`; the column is renamed, both names kept equal
+schema.table("orders", (t: Blueprint) => {
+  t.renameColumn("note", "memo", { type: "varchar(200)" }).nullable().comment("The order's note.");
+});
+schema.rename("customer", "customers"); // the old name stays as a view
+
+// release N+1 (a later migration): the contract steps, each gated on the release that made it safe
+schema.requireBackfill("orders.copy_note", { table: "orders", pending: "memo is null and note is not null" });
+schema.table("orders", (t: Blueprint) => {
+  t.finishRenameColumn("note", "memo", { after: "orders.0007_rename_note", type: "varchar(200)" });
+  t.dropColumn("legacy_ref", { after: "orders.0007_rename_note", type: "varchar(64)" });
+});
+schema.finishRename("customer", "customers", { after: "orders.0007_rename_note" });
+schema.drop("order_drafts", { after: "orders.0007_rename_note" });
+```
+
+- **Release gate.** Every contract step (`dropColumn`, `finishRenameColumn`, `finishRename`, `drop`) names `{ after }`,
+  the migration of the earlier release. It compiles to a `DO` block first in the transaction that refuses the
+  migration while `after` was applied by the same `stackra db migrate` run (or never), and `after` becomes one of the
+  migration's edges, so gen orders the two and refuses an id no migration has. The runner sets
+  `stackra.migrate_from_version` in forward-only environments; the gate passes on a fresh database, on dev, preview
+  and test, and wherever Encore's runner or a test applies the files (no `schema_migrations_history`).
+- **Column rename.** `t.renameColumn(from, to, { type })` adds `to` (nullable or defaulted, with its comment) and the
+  trigger `trg_<table>_<from>_<to>`, which keeps the two equal on every insert and update, so the release that writes
+  `from` and the one that writes `to` run side by side. A `Backfill` copies the old rows; `t.finishRenameColumn` refuses
+  while a row still has `to` null and `from` set, then drops the trigger and `from`. Indexes are not copied.
+- **Table rename.** `schema.rename(from, to)` renames the table and leaves a `security_invoker` view under the old
+  name, updatable, through which the older release keeps reading and writing with its own grants and row-level
+  security. Indexes, constraints and policies keep their names; a later `dropIndex`, `dropCheck` or
+  `dropRowLevelSecurity` names the old table as `table`.
+- **Drops.** `t.dropColumn` and `schema.drop` carry a reviewed squawk ignore and the gate. A dropped column's dev
+  inverse adds it back empty (so it states `type`); a dropped table has no inverse. `t.dropIndex(columns, options)`
+  drops concurrently in its own step and `t.dropCheck(name, { expression })` relaxes the table; neither waits for a
+  release.
+
+### Checks and exclusions
+
+`t.check(name, expression)` adds `ck_<table>_<name>`: inline on a new table, `NOT VALID` plus a validation step on an
+existing one. `t.exclude(name, { room_id: "=", during: "&&" }, { where })` adds the exclusion constraint
+`ex_<table>_<name>` to a table the migration creates (GiST by default; `=` on a scalar needs
+`Extension.BtreeGist`); Postgres has no online form, so an existing table is refused. `t.timeRange(name)` is a
+`tstzrange` column for such a constraint.
+
+### Backfills
+
+A backfill is the data half of a contract step (ADR 0159 d3, ADR 0334 rule 4): a `Backfill` class in
+`database/backfills/<name>.backfill.ts`, run in batches by a queue job.
+
+```ts
+export class CopyNoteBackfill extends Backfill({
+  key: "orders.copy_note",
+  table: "orders.orders",
+  pending: "memo is null and note is not null",
+  set: "memo = note", // or override apply(batch) and write through batch.execute(... where ${batch.where})
+  batch: 500,
+  pause: 50,
+}) {}
+```
+
+`backfill(CopyNoteBackfill, { maxBatches: 100 })` (`./node`) runs it on the direct URL with the runner's timeouts;
+`runBackfill(type, session, options)` takes any session. Each batch selects the next `pending` rows past the cursor by
+the keyset column (`by`, `id` by default), fills them and moves the cursor in one transaction, so a crash loses at most
+the batch in flight and the next run resumes. Progress (`rows`, `batches`, `cursor`, `finished`) is kept in
+`database.backfill_runs`; a failed batch records its SQLSTATE only. The job that owns it calls `backfill` with
+`maxBatches` and queues itself again until `finished`. Rows written behind the cursor later are reached with
+`restart: true`. `schema.requireBackfill(key, { table, pending })` is the contract step's data gate: it counts pending
+rows, not the ledger, so a fresh database passes.
+
 ### Running migrations
 
 `stackra db migrate` (`migrate` from `./node`) applies the compiled `.stackra/migrations` files in order:
@@ -235,6 +309,8 @@ checksum, applied_at)` records each applied file's SHA-256. A run refuses to sta
 - When a file fails, the INVALID indexes it named (a failed `create index concurrently`) are dropped and the version
   goes back to the last applied file, clean, so the next run starts that file again. Only a crash mid-file leaves the
   version dirty.
+- Outside dev, preview and test, a run sets `stackra.migrate_from_version` to the version it started from, which the
+  release gate of every contract step reads (see "Dropping and renaming").
 
 ## Scope isolation
 

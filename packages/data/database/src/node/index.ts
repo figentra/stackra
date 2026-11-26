@@ -8,6 +8,7 @@
  *          the `HoldRegistry` every service binds over its `HoldChannel`; `DatabaseRunner`, the three `db:*` commands (`DbMigrateCommand`, `DbRollbackCommand`, `DbStatusCommand`, STA-1731) and `SeedPackStatusCommand` (`seed-pack:status`, STA-1852); `migrate` and `rollback`, the runner
  *          `stackra db` calls; `seedState` and `applySeed`, the runner `stackra seed-pack` calls; `runSeeders`,
  *          `runSeedEntry`, `seederLedger` and `seederOf`, the seeder runner a service's generated seed entry calls (STA-1709);
+ *          `backfill`, a `Backfill`'s run on the direct URL, which the backfill's queue job calls (STA-1406);
  *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
  *          `ConnectionResolver` (stackra-310); `DatabaseQueryBudgetDriver`, the action pipeline's `QueryBudget` (N+1
  *          guard), and `LoggerQueryObserverDriver`, the slow-statement log (stackra-282). The partition upkeep,
@@ -37,6 +38,7 @@ export { ServiceHoldRegistryDriver } from "#node/drivers/service-hold-registry.d
 export { applySeed } from "#node/functions/apply-seed.function";
 export { databaseUrl } from "#node/functions/database-url.function";
 export { directDatabaseUrl } from "#node/functions/direct-database-url.function";
+export { backfill } from "#node/functions/backfill.function";
 export { migrate } from "#node/functions/migrate.function";
 export { provideDatabaseUrl } from "#node/functions/provide-database-url.function";
 export { readMigratedSchema } from "#node/functions/read-migrated-schema.function";

@@ -10,10 +10,16 @@
  *           file's `-- stackra:timeout=` header sets its own statement timeout. When a file fails, the INVALID
  *           indexes it left (a failed `create index concurrently`) are dropped and the version goes back to the last
  *           applied file, clean: the failed transaction rolled back and a failed single statement left nothing else,
- *           so the next run starts that file again.
+ *           so the next run starts that file again. In a forward-only environment (not dev, preview or test) the run
+ *           sets `MIGRATE_FROM_VERSION_SETTING` to the version it started from, which each contract step's release
+ *           gate reads: a drop or finished rename is refused while the migration it waits for was applied by this
+ *           same run.
  * Runtime: node
- * Governing contract: ADR 0159 (decision 2 as amended 2026-10-24, decision 3: timeouts per session).
+ * Governing contract: ADR 0159 (decision 2 as amended 2026-10-24, decision 3: timeouts per session; destructive steps
+ *                     deferred to a later release).
  */
+import { MIGRATE_FROM_VERSION_SETTING } from "#core/constants/migrate-from-version-setting.constant";
+import { ROLLBACK_ENVIRONMENTS } from "#node/constants/rollback-environments.constant";
 import { openMigrationSession } from "#node/functions/open-migration-session.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
 import type { MigrationFile } from "#node/types/migration-file.type";
@@ -42,6 +48,12 @@ export function migrate(options: {
         `version ${current.version} is dirty${last ? ` (${last.name})` : ""}: fix it by hand`,
       );
     await checkHistory(session, current.version);
+    // raw-sql: the release gate of a contract step reads where this run started; a rollback environment has no gate
+    if (!ROLLBACK_ENVIRONMENTS.has(options.environment))
+      await execute(
+        `select set_config(${sqlLiteral(MIGRATE_FROM_VERSION_SETTING)}, ${sqlLiteral(String(current.version))}, false)`,
+        false,
+      );
     const applied: string[] = [];
     let previous = current.version;
     for (const file of files.filter((candidate) => candidate.version > current.version)) {

@@ -4,7 +4,7 @@
  *          decision 13). `.change.ts` is the one suffix with two homes (rule R1).
  * Boundary: data only.
  * Runtime: node
- * Governing contract: ADR 0294 (decision 13, rule R1).
+ * Governing contract: ADR 0294 (decision 13, rule R1); ADR 0159 (decision 3: `database/backfills`, STA-1406).
  */
 import { structureGroups } from "#node/functions/structure-groups.function";
 
@@ -49,6 +49,7 @@ export const MODULE_GROUPS = structureGroups(
     ["database/migrations", ["migration"], "`NNNN-<name>.migration.ts`, numbered per module"],
     ["database/factories", ["factory"], "`<model>.factory.ts`"],
     ["database/seeders", ["seeder"], "minimal, demo and test seeders"],
+    ["database/backfills", ["backfill"], "data backfills a contract step waits for"],
     ["ai", ["prompt", "skill", "facts"], "prompts, skills and facts"],
     ["functions", ["function"], "plain functions"],
     ["constants", ["constant"], "module-level constants"],

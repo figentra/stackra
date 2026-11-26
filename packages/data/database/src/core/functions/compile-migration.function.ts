@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `compileMigration`, the migration compiler: runs a migration's `up(schema)` against a recording schema and
- *          returns its ordered SQL steps with their derived inverses and its `after` edges. Gen calls it for every
+ *          returns its ordered SQL steps with their derived inverses and its `after` edges: those `Migration({ after })`
+ *          declares, then those its contract steps wait for (`{ after }` of a drop or finished rename). Gen calls it for every
  *          migration and writes the ordered files; `usePostgres` applies its output in tests.
  * Boundary: pure: no database connection, no file access. It enforces the rules visible in one migration (explicit
  *           nullability and comments, expand-only column adds, online indexes, approved extensions, stated raw
@@ -38,8 +39,12 @@ export function compileMigration(type: MigrationClass, options: CompileOptions):
     options.publicIds === "uuid" ? "uuid" : PUBLIC_ID_TEXT,
   );
   (Reflect.construct(type, []) as MigrationBase).up(schema);
+  const declared = (kind.options["after"] ?? []) as readonly MigrationId[];
+  // A contract step's release is an edge too: gen orders it first and refuses an id no loaded migration has.
+  // reason: a contract step's id was checked against the migration-id pattern when it was recorded
+  const contract = schema.contractAfter() as readonly MigrationId[];
   return {
-    after: (kind.options["after"] ?? []) as readonly MigrationId[],
+    after: [...declared, ...contract.filter((id) => !declared.includes(id))],
     steps: schema.compile(options.schema, options.createsSchema ?? false),
   };
 }

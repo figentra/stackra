@@ -4,13 +4,17 @@
  *          them to steps, one transactional step first and then each online statement as its own step, each with
  *          its derived inverse. A `systemFunction` compiles to its marker line, the system-access role, the function
  *          and the grants that hand it to the role. A `SET NOT NULL` whose column a whole-table `refuseNulls` above
- *          checked carries a reviewed squawk ignore and its reason; lint lines leave the checksum as it was.
+ *          checked carries a reviewed squawk ignore and its reason; lint lines leave the checksum as it was. A table
+ *          rename (expand) compiles to the rename and a `security_invoker` view under the old name; a finished rename
+ *          and a dropped table (contract) to their release gate, then the drop; `requireBackfill` to its data gate.
+ *          The contract steps' `after` ids are the migration's edges too (`contractAfter`).
  * Boundary: internal. Raw statements keep the inverse the migration stated; a `CONCURRENTLY` statement becomes its
  *           own non-transactional step. Extensions are the ADR 0160 list and PostGIS (ADR 0314) only; an ICU
  *           collation is created in the module's schema. A raw `CREATE SEQUENCE` is refused: a document number is a
  *           `Sequence` (ADR 0342 d5), and an id is a public id, so no migration needs one.
  * Runtime: node
- * Governing contract: ADR 0159 (decision 3; 2026-10-23 and 2026-10-24 notes); ADR 0160 (approved extensions); ADR
+ * Governing contract: ADR 0159 (decision 3: expand and contract, backfills as queue jobs; 2026-10-23 and 2026-10-24
+ *                     notes); ADR 0160 (approved extensions); ADR
  *                     0314 (PostGIS); ADR 0342 (decision 5) and ADR 0394 (decision 3: no Postgres sequence); ADR 0239
  *                     (2026-11-07 amendment, gap A: system functions).
  */
@@ -20,14 +24,18 @@ import { PUBLIC_ID_TEXT } from "#core/constants/public-id-text.constant";
 import { SYSTEM_ACCESS_ROLE } from "#core/constants/system-access-role.constant";
 import { TABLE_DECLARATION_MARKERS } from "#core/constants/table-declaration-markers.constant";
 import { Extension } from "#core/enums/extension.enum";
+import { MIGRATION_ID_PATTERN } from "#core/constants/migration-id-pattern.constant";
 import { declarationReason } from "#core/functions/declaration-reason.function";
+import { pendingRowsGateSql } from "#core/functions/pending-rows-gate-sql.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { releaseGateSql } from "#core/functions/release-gate-sql.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
 import { systemAccessRoleSql } from "#core/functions/system-access-role-sql.function";
 import { BlueprintRecord } from "#core/records/blueprint.record";
 import type { Blueprint } from "#core/types/blueprint.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
 import type { CompiledStep } from "#core/types/compiled-step.type";
+import type { ContractOptions } from "#core/types/contract-options.type";
 import type { MacroClass } from "#core/types/macro-class.type";
 import type { SchemaBuilder } from "#core/types/schema-builder.type";
 import type { SystemFunctionOptions } from "#core/types/system-function-options.type";
@@ -44,7 +52,50 @@ type Operation =
       readonly where: string | undefined;
     }
   | { readonly statement: string; readonly inverse: string | false }
-  | { readonly systemFunction: SystemFunction };
+  | { readonly systemFunction: SystemFunction }
+  | { readonly renameFrom: string; readonly renameTo: string }
+  | { readonly finishFrom: string; readonly finishTo: string; readonly after: string }
+  | { readonly dropTable: string; readonly after: string }
+  | { readonly backfill: string; readonly table: string; readonly pending: string };
+
+/** A backfill key: `<module>.<snake name>`, as `Backfill({ key })` takes it. */
+const BACKFILL_KEY = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
+
+/**
+ * The reason and squawk ignore of a contract step on a table, below its release gate. Lint lines never change a
+ * checksum (STA-2612).
+ */
+const CONTRACT_TABLE_SQUAWK_IGNORE =
+  "-- lint: a contract step: the release gate above refuses it until the release that stopped using the table has shipped (ADR 0159 d3).\n" +
+  "-- squawk-ignore ban-drop-table\n";
+
+/** The reason and squawk ignore of a finished table rename, which drops the old name's view behind its release gate. */
+const FINISH_RENAME_SQUAWK_IGNORE =
+  "-- lint: a contract step: the release gate above refuses it until the release that stopped using the old name has shipped (ADR 0159 d3).\n" +
+  "-- squawk-ignore ban-drop-view\n";
+
+/** The reason and squawk ignore of a table rename's expand step, which leaves a view under the old name. */
+const RENAME_TABLE_SQUAWK_IGNORE =
+  "-- lint: an expand step: the view below keeps the old name readable and writable until finishRename (ADR 0159 d3).\n" +
+  "-- squawk-ignore renaming-table\n";
+
+/**
+ * Refuses a contract step's `after` that is not a migration id.
+ *
+ * @throws TypeError naming the call.
+ */
+function checkedAfter(call: string, options: ContractOptions | undefined): string {
+  const after = options?.after;
+  if (typeof after !== "string" || !MIGRATION_ID_PATTERN.test(after))
+    throw new TypeError(
+      `${call} needs { after }: the migration of the earlier release that made it safe, such as "orders.0007_stop_writing_note"`,
+    );
+  return after;
+}
+
+/** The view a table rename leaves under the old name, over the renamed table, with the caller's rights. */
+const compatViewSql = (view: string, table: string): string =>
+  `create view ${view} with (security_invoker = true) as select * from ${table}`;
 
 /** A checked `systemFunction`: its arguments and columns as name and type pairs. */
 interface SystemFunction {
@@ -120,6 +171,54 @@ function refuseNullsSql(
     "end",
     "$$",
   ].join("\n");
+}
+
+/**
+ * The statements of a table rename (expand), a finished rename or a dropped table (contract, each opened by its release
+ * gate), each with its dev inverse; a dropped table has none.
+ */
+function tableStepSql(
+  schema: string,
+  operation:
+    | { readonly renameFrom: string; readonly renameTo: string }
+    | { readonly finishFrom: string; readonly finishTo: string; readonly after: string }
+    | { readonly dropTable: string; readonly after: string },
+): CompiledStatement[] {
+  const qualified = (table: string) => `${quoteIdentifier(schema)}.${quoteIdentifier(table)}`;
+  if ("renameFrom" in operation) {
+    const { renameFrom: from, renameTo: to } = operation;
+    return [
+      {
+        sql: `${RENAME_TABLE_SQUAWK_IGNORE}alter table ${qualified(from)} rename to ${quoteIdentifier(to)}`,
+        inverse: [`alter table ${qualified(to)} rename to ${quoteIdentifier(from)}`],
+      },
+      {
+        sql: compatViewSql(qualified(from), qualified(to)),
+        inverse: [`drop view if exists ${qualified(from)}`],
+      },
+      {
+        sql: `comment on view ${qualified(from)} is ${sqlLiteral(`The old name of ${schema}.${to}, kept for the release before the rename; dropped by finishRename.`)}`,
+        inverse: [],
+      },
+    ];
+  }
+  if ("finishFrom" in operation) {
+    const { finishFrom: from, finishTo: to, after } = operation;
+    return [
+      { sql: releaseGateSql(after, `${schema}.${from} finish rename to ${to}`), inverse: [] },
+      {
+        sql: `${FINISH_RENAME_SQUAWK_IGNORE}drop view ${qualified(from)}`,
+        inverse: [compatViewSql(qualified(from), qualified(to))],
+      },
+    ];
+  }
+  return [
+    { sql: releaseGateSql(operation.after, `${schema}.${operation.dropTable} drop`), inverse: [] },
+    {
+      sql: `${CONTRACT_TABLE_SQUAWK_IGNORE}drop table ${qualified(operation.dropTable)}`,
+      inverse: false,
+    },
+  ];
 }
 
 /** A statement whose undoing is the function's drop. */
@@ -232,6 +331,72 @@ export class SchemaRecord implements SchemaBuilder {
   }
 
   /**
+   * Implements `SchemaBuilder.rename`, documented there.
+   *
+   * @throws TypeError for a name that is not snake_case, or the same name twice.
+   */
+  rename(from: string, to: string): void {
+    quoteIdentifier(from);
+    quoteIdentifier(to);
+    if (from === to) throw new TypeError(`schema.rename: ${from} is renamed to itself`);
+    this.operations.push({ renameFrom: from, renameTo: to });
+  }
+
+  /**
+   * Implements `SchemaBuilder.finishRename`, documented there.
+   *
+   * @throws TypeError for a name that is not snake_case, the same name twice, or an `after` that is not a migration id.
+   */
+  finishRename(from: string, to: string, options: ContractOptions): void {
+    quoteIdentifier(from);
+    quoteIdentifier(to);
+    if (from === to) throw new TypeError(`schema.finishRename: ${from} is renamed to itself`);
+    const after = checkedAfter(`schema.finishRename("${from}", "${to}")`, options);
+    this.operations.push({ finishFrom: from, finishTo: to, after });
+  }
+
+  /**
+   * Implements `SchemaBuilder.drop`, documented there.
+   *
+   * @throws TypeError for a name that is not snake_case, or an `after` that is not a migration id.
+   */
+  drop(table: string, options: ContractOptions): void {
+    quoteIdentifier(table);
+    const after = checkedAfter(`schema.drop("${table}")`, options);
+    this.operations.push({ dropTable: table, after });
+  }
+
+  /**
+   * Implements `SchemaBuilder.requireBackfill`, documented there.
+   *
+   * @throws TypeError for a key that is not `<module>.<name>`, a table that is not snake_case, or a pending predicate
+   *         that is blank, spans lines or holds `$$`.
+   */
+  requireBackfill(
+    key: string,
+    options: { readonly table: string; readonly pending: string },
+  ): void {
+    if (typeof key !== "string" || !BACKFILL_KEY.test(key))
+      throw new TypeError(
+        `schema.requireBackfill takes the backfill's key, <module>.<name>, got ${JSON.stringify(key)}`,
+      );
+    quoteIdentifier(options?.table);
+    // checked now, so a bad predicate fails at the call
+    pendingRowsGateSql('"t"', options.pending, key);
+    this.operations.push({ backfill: key, table: options.table, pending: options.pending });
+  }
+
+  /** The migrations of earlier releases this migration's contract steps wait for, without repeats. */
+  contractAfter(): readonly string[] {
+    const ids = this.operations.flatMap((operation) => {
+      if ("blueprint" in operation) return operation.blueprint.contractAfter();
+      if ("after" in operation) return [operation.after];
+      return [];
+    });
+    return [...new Set(ids)];
+  }
+
+  /**
    * Implements `SchemaBuilder.createExtension`, documented there.
    *
    * @throws TypeError for an extension ADR 0160 does not approve.
@@ -329,6 +494,22 @@ export class SchemaRecord implements SchemaBuilder {
       }
       if ("systemFunction" in operation) {
         transactional.push(...systemFunctionSql(schema, operation.systemFunction));
+        continue;
+      }
+      if ("renameFrom" in operation || "finishFrom" in operation || "dropTable" in operation) {
+        transactional.push(...tableStepSql(schema, operation));
+        continue;
+      }
+      if ("backfill" in operation) {
+        const qualified = `${quoteIdentifier(schema)}.${quoteIdentifier(operation.table)}`;
+        transactional.push({
+          sql: pendingRowsGateSql(
+            qualified,
+            operation.pending,
+            `the backfill ${operation.backfill} has not finished; run it (runBackfill) until it does, then migrate again`,
+          ),
+          inverse: [],
+        });
         continue;
       }
       if ("blueprint" in operation) {

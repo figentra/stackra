@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `Blueprint`, what `schema.create(table, (t) => ...)` and `schema.table(table, (t) => ...)` hand a migration:
  *          the column types, the partner macros of the model traits and field types, the scope-tree columns, changes of
- *          existing columns, indexes, the primary key, column groups and generated row-level-security policies.
+ *          existing columns, indexes, the primary key, column groups, check and exclusion constraints, generated
+ *          row-level-security policies, and the expand and contract steps of a drop or rename (STA-1406).
  * Boundary: a type only, and an interface so a package's macros merge into it: gen writes
  *           `declare module "@stackra/database" { interface Blueprint { dataClassification(column: string): ColumnGroup } }`
  *           from each `*.macro.ts`, and the compiler installs the macro under that name. Names are literals relative to
@@ -10,7 +11,8 @@
  *           `belongsToTenant`, the search columns of @stackra/search) arrive the same way, never built in here. The
  *           scope-tree columns name no level: levels are deployment data (ADR 0327 d2).
  * Runtime: node
- * Governing contract: ADR 0159 as amended by ADR 0305 (macros, literal snapshots); ADR 0239 (equality policy);
+ * Governing contract: ADR 0159 as amended by ADR 0305 (macros, literal snapshots; decision 3: expand and contract);
+ *                     ADR 0160 note of 2026-11-03 (btree_gist exclusions); ADR 0239 (equality policy);
  *                     ADR 0327 (decisions 3, 8 and 9: `scope_id`, `scope_path`, isolation in the database);
  *                     ADR 0239 (2026-11-07 amendment, gap A: `systemAccess`);
  *                     `.agents/rules/tenancy.md`; ADR 0294 (decision 28: links); ADR 0135 (public ids); ADR 0231 (names).
@@ -18,7 +20,11 @@
 import type { ColumnChange } from "#core/types/column-change.type";
 import type { ColumnDefinition } from "#core/types/column-definition.type";
 import type { ColumnGroup } from "#core/types/column-group.type";
+import type { ContractOptions } from "#core/types/contract-options.type";
+import type { DroppedIndexOptions } from "#core/types/dropped-index-options.type";
+import type { ExclusionOptions } from "#core/types/exclusion-options.type";
 import type { ForeignKeyColumn } from "#core/types/foreign-key-column.type";
+import type { RenamedColumnOptions } from "#core/types/renamed-column-options.type";
 import type { RowLevelSecurityOptions } from "#core/types/row-level-security-options.type";
 import type { SystemAccessOptions } from "#core/types/system-access-options.type";
 import type { TableIndex } from "#core/types/table-index.type";
@@ -65,6 +71,12 @@ export interface Blueprint {
 
   /** A `jsonb` document. */
   jsonb: (name: string) => ColumnDefinition;
+
+  /**
+   * A `tstzrange`, a span of instants (a booking's `during`, a price's validity), which an exclusion constraint compares
+   * with `&&` (`t.exclude`).
+   */
+  timeRange: (name: string) => ColumnDefinition;
 
   /** A `tsvector`, a full-text document for a GIN index; @stackra/search's `t.searchable(...)` macro writes them. */
   tsvector: (name: string) => ColumnDefinition;
@@ -153,6 +165,74 @@ export interface Blueprint {
    * it.
    */
   change: (column: string) => ColumnChange;
+
+  /**
+   * Drops the existing column `column` (`schema.table` only), a contract step: `t.dropColumn("note", { after:
+   * "orders.0007_stop_writing_note", type: "varchar(200)" })`. `after` is the migration of an earlier release that
+   * stopped the code using the column; `stackra db migrate` refuses the step while that migration was applied by the
+   * same run (or not at all), so a release still reading the column never meets it dropped. `type` is the column's
+   * type, for the dev inverse, which adds it back nullable and empty. Never on a column this blueprint adds or changes.
+   */
+  dropColumn: (column: string, options: ContractOptions & RenamedColumnOptions) => void;
+
+  /**
+   * The expand step of a column rename (`schema.table` only): adds `to` with `options.type` (state its nullability
+   * and comment on the returned column; nullable or defaulted, as any added column) and a trigger,
+   * `trg_<table>_<from>_<to>`, that keeps the two equal on every insert and update, so the release that writes `from`
+   * and the one that writes `to` run side by side. A `Backfill` copies the existing rows (`pending: "<to> is null and
+   * <from> is not null"`); `t.finishRenameColumn` drops the trigger and `from` in a later release. Indexes and
+   * constraints of `from` are not copied: add the ones `to` needs.
+   */
+  renameColumn: (from: string, to: string, options: RenamedColumnOptions) => ColumnDefinition;
+
+  /**
+   * The contract step of a column rename (`schema.table` only), in a later release than `t.renameColumn`: refuses
+   * while a row still has `to` null and `from` set (the backfill has not reached it), then drops the sync trigger and
+   * `from`. `after` is the release whose code stopped using `from`, gated as `dropColumn`; `type` is `from`'s type, for
+   * the dev inverse.
+   */
+  finishRenameColumn: (
+    from: string,
+    to: string,
+    options: ContractOptions & RenamedColumnOptions,
+  ) => void;
+
+  /**
+   * A named check constraint, `ck_<table>_<name>`, over `expression` (SQL over the row's columns, a literal):
+   * `t.check("quantity_positive", "quantity > 0")`. On a table being created it is part of the transaction; on an
+   * existing one it is added `NOT VALID` (new rows are checked at once) and validated in a step of its own, which
+   * scans while writes go on (ADR 0159 d3).
+   */
+  check: (name: string, expression: string) => void;
+
+  /**
+   * Drops the check `ck_<table>_<name>` an earlier migration added (`schema.table` only); it only relaxes the table,
+   * so it waits for no release. `expression` is the check as it was, for the dev inverse, which adds it back
+   * `NOT VALID`; `table` names the table it was created under when the table was renamed since.
+   */
+  dropCheck: (
+    name: string,
+    options: { readonly expression: string; readonly table?: string },
+  ) => void;
+
+  /**
+   * An exclusion constraint, `ex_<table>_<name>`, on a table this migration creates: no two rows (meeting
+   * `options.where`) have every element's operator true, such as `t.exclude("no_double_booking", { room_id: "=",
+   * during: "&&" })`. GiST by default, which needs `Extension.BtreeGist` for `=` on a scalar column (ADR 0160 note of
+   * 2026-11-03). Refused on an existing table: Postgres builds its index under an exclusive lock and has no online
+   * form, so a large table gets a new table, or a reviewed `schema.sql` on a small one.
+   */
+  exclude: (
+    name: string,
+    elements: Readonly<Record<string, string>>,
+    options?: ExclusionOptions,
+  ) => void;
+
+  /**
+   * Drops the index `idx_<table>_<columns>` an earlier migration built (`schema.table` only), concurrently in its own
+   * step. `options` states how it was built, for the dev inverse, which builds it again concurrently.
+   */
+  dropIndex: (columns: readonly string[], options?: DroppedIndexOptions) => void;
 
   /** An index over `columns`, named `idx_<table>_<columns>`. */
   index: (columns: readonly string[]) => TableIndex;
