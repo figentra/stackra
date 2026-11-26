@@ -2,11 +2,36 @@
 
 Repository tooling that is not a workspace member: it has no `package.json`, no tier and is never published.
 
-| Path                    | Holds                                                                              |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| [`scripts/`](scripts)   | the Node scripts behind the root `pnpm` commands, with their tests in `__tests__/` |
-| [`scaffold/`](scaffold) | the member templates `pnpm new <kind> <name>` renders                              |
-| [`schemas/`](schemas)   | JSON Schemas (draft 2020-12) for Stackra's own config files: runway, lock, MCP     |
+| Path                    | Holds                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------- |
+| [`scripts/`](scripts)   | the Node scripts behind the root `pnpm` commands, with their tests in `__tests__/`                |
+| [`scaffold/`](scaffold) | the member templates `pnpm new <kind> <name>` renders                                             |
+| [`schemas/`](schemas)   | JSON Schemas (draft 2020-12) for Stackra's own config files: runway, lock, MCP                    |
+| [`policy/`](policy)     | policies the verify service enforces: `licences.json`, the licence policy (CTO ruling 2026-11-24) |
+
+## Licence policy
+
+`policy/licences.json` is the CTO's ruling of 2026-11-24, enforced by `stackra/verify`'s licence-policy step over
+every installed package and every workspace manifest:
+
+- `allow` lists SPDX ids; an id a `deny` pattern matches (GPL, LGPL, AGPL, SSPL, BUSL, Elastic, CC NC/ND, Unknown)
+  never counts as allowed, so it passes only as an OR alternative beside an allowed licence, or through an exception.
+- An exception names one package, its exact licence string, a reason, a `scope` and, when pinned, its `versions`; a
+  change of name, string or pinned version fails the step again, and a malformed exception is itself a failure.
+- `dev-only` and `tool`: the package is never in a publishable member's (no `"private": true`) `dependencies`,
+  `optionalDependencies` or non-optional `peerDependencies`, directly or anywhere in the production closure
+  `pnpm-lock.yaml` records for it (those three edges, through workspace links and every installed package, never
+  devDependencies nor a peer its package marks optional), and in pnpm's own list of the gate's install; the two
+  must agree, and a failure names the path each one found. `optionalDependencies` count as shipped, because
+  consumers install them by default, so a dev-only package there fails the check; devDependencies and peers marked
+  optional in `peerDependenciesMeta` pass.
+- `mobile`: the package is in the closure, devDependencies included, of `apps/mobile` and `apps/playground` only
+  (the two members `stackra/verify-mobile` covers), never of another member and never through an override; the
+  gate's install, which leaves those two out, must not hold it at all.
+- The members are `pnpm-lock.yaml`'s importers, which must match the workspace globs, and both YAML readers fail
+  closed on any construct they do not follow (comments in the lockfile's package sections, flow style, anchors,
+  aliases, tags, block scalars). The step runs right after the install's commit checks, before any PR code.
+- `runtime`: shipped with our packages, so its reason names the path when it is not obvious.
 
 ## Rules
 
