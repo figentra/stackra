@@ -32,7 +32,13 @@ journey), 0143 (`createTestingModule`), 0232 (the errors testing entry), and the
    rows. It is an `.int.test.ts` on Postgres as the NOBYPASSRLS service role (`tenancy` point 8,
    `security-tenancy-isolation-test`); PGlite and the memory driver bypass RLS.
 5. Errors are asserted by category and code, never by message text (0232).
-6. A flaky test is quarantined with a Linear issue, never deleted or retried silently.
+6. A flaky test is quarantined, never deleted or retried silently: mark it (`it.skip`, or `it.fails` for a known bug)
+   and list it under `quarantine` in `tools/scripts/test-markers.yaml` with its Linear issue, reason and an `until`
+   date at most 30 days out. An environment gate (`skipIf` / `runIf`) is listed under `gates` with its reason. Never
+   commit `.only`. `stackra validate --repository` fails an unlisted marker and an ended quarantine (0182 decision 4).
+7. Shared-box safe: listen on port 0 and read the port back, write only into a `mkdtemp` folder, and hand code that
+   takes a host-wide resource (a deploy lock, the home folder) a stand-in. No literal port, fixed `*_PORT` constant or
+   fixed `/tmp` path; a deliberate exception carries `// shared-box: <reason>`.
 
 Run the affected tier tasks (`pnpm turbo run test --filter=<member>` and the `test:int`, `test:contract`, `test:e2e`
 tasks where they exist), then `pnpm verify`.
