@@ -568,13 +568,23 @@ export function emitWiring(ir: MemberIR): string {
         )?.manifest.member ?? ir.member);
     const key = portKey(member, port.name);
     const entry = ports.get(key) ?? { port, key, candidates: [], own: [] };
-    const name = driverName(declared.file, port.name);
-    entry.candidates.push({
+    const name = driverName(declared.file, port.name, member);
+    const candidate = {
       name,
       type: own(declared),
       deps: declared.deps,
       ...(declared.options["testDefault"] === true ? { testDefault: true } : {}),
-    });
+    };
+    // A client entry's driver of the same name (the native `PosthogAnalyticsDriver`, extending the core one) is a
+    // platform variant, not a second candidate: the member's own wiring keeps the neutral one, since two keys of one
+    // name are TS1117 and the last would win at run time (STA-1605).
+    const known = entry.candidates.findIndex((existing) => existing.name === name);
+    if (known === -1) entry.candidates.push(candidate);
+    else if (
+      isClientPath(entry.candidates[known]?.type.from ?? "") &&
+      !isClientPath(candidate.type.from)
+    )
+      entry.candidates[known] = candidate;
     entry.own.push(name);
     ports.set(key, entry);
   }
@@ -650,10 +660,14 @@ export function emitWiring(ir: MemberIR): string {
     if (table === undefined || linked.has(key)) return brought;
     linked.add(key);
     // A server never runs a browser, React Native or Electron driver, so its wiring lists none: a port with only
-    // those (`SignInBrowser`) stays out, else the boot fails choosing a driver nothing on the server asks for.
-    const candidates = server
-      ? table.candidates.filter((candidate) => !isClientEntry(candidate.type.from))
-      : table.candidates;
+    // those (`SignInBrowser`) stays out, else the boot fails choosing a driver nothing on the server asks for. A
+    // package's `./worker` driver runs in a Worker only, against the Workers runtime module (`cloudflare:workers`)
+    // whose types only a Worker member has, so only a Worker member lists it (STA-1605).
+    const candidates = table.candidates.filter(
+      (candidate) =>
+        !(server && isClientEntry(candidate.type.from)) &&
+        (ir.layout === "worker" || !isWorkerEntry(candidate.type.from)),
+    );
     if (candidates.length === 0) return brought;
     const entry = ports.get(key) ?? { port: dep.class, key, candidates: [], own: [] };
     for (const candidate of candidates)
@@ -776,6 +790,7 @@ export function emitWiring(ir: MemberIR): string {
   const driverLines: string[] = [];
   const registry: string[] = [];
   const portRegistry: string[] = [];
+  const authoredKeys = new Set(ir.authoredDriverKeys ?? []);
   for (const { port, key, candidates, own: owned, selectedBy } of ports.values()) {
     const selected = selectors.get(port.name);
     const select = selected?.selectedBy ?? selectedBy;
@@ -826,13 +841,16 @@ export function emitWiring(ir: MemberIR): string {
       ...(deps.length > 0 ? [`      deps: { ${deps.join(", ")} },`] : []),
       "    },",
     );
-    // A package's own port names are its `DriverRegistry` augmentation; the member augments only its own drivers.
+    // A package's own port names are its `DriverRegistry` augmentation; the member augments only its own drivers, and
+    // never a key an authored augmentation in its program already declares: the stand-in names every driver of the
+    // port, and a second declaration with other names is TS2717 (STA-1605).
     // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
     const driverNames = [...new Set(owned)].sort();
     if (driverNames.length > 0) {
-      registry.push(
-        `    ${JSON.stringify(key)}: ${driverNames.map((name) => JSON.stringify(name)).join(" | ")};`,
-      );
+      if (!authoredKeys.has(key))
+        registry.push(
+          `    ${JSON.stringify(key)}: ${driverNames.map((name) => JSON.stringify(name)).join(" | ")};`,
+        );
       portRegistry.push(`    ${JSON.stringify(key)}: typeof ${ref(port)};`);
     }
   }
@@ -859,13 +877,11 @@ export function emitWiring(ir: MemberIR): string {
   }
 
   lines.push(
-    ...(registry.length > 0
+    ...(portRegistry.length > 0
       ? [
           "/** The driver names gen found for each port, keyed by port key; `DriverName<Port>` reads them. */",
           'declare module "@stackra/container" {',
-          "  interface DriverRegistry {",
-          ...registry,
-          "  }",
+          ...(registry.length > 0 ? ["  interface DriverRegistry {", ...registry, "  }"] : []),
           "  /** The port class of each key above; `DriverName<Port>` finds its names by the class. */",
           "  interface PortRegistry {",
           ...portRegistry,
@@ -944,4 +960,14 @@ export function emitWiring(ir: MemberIR): string {
 /** Whether `from` is a client-only entry of a package (`@stackra/identity/native`, `/desktop`, `/react`). */
 function isClientEntry(from: string): boolean {
   return /\/(?:react|native|desktop)(?:\/|$)/.test(from);
+}
+
+/** Whether a package entry is a `./worker` one (`@stackra/cache/worker`). */
+function isWorkerEntry(from: string): boolean {
+  return /^(?:@[^/]+\/)?[^/#]+\/worker(?:\/|$)/.test(from);
+}
+
+/** Whether a member's own import path (`#native/drivers/x.driver`) or a package entry is a client one. */
+function isClientPath(from: string): boolean {
+  return /^#(?:react|native|desktop)\//.test(from) || isClientEntry(from);
 }

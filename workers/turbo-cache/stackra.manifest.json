@@ -6,7 +6,6 @@
   "modules": [
     {
       "key": "turbo_cache",
-      "class": "TurboCacheModule",
       "exports": [],
       "dependsOn": []
     }

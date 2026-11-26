@@ -1073,7 +1073,7 @@ export function buildManifest(ir: MemberIR): {
       : (dependency?.manifest.member ??
         snakeCase(port.from.replace(/^@[^/]+\//, "").split("/")[0] ?? port.from));
     const key = portKey(member, port.name);
-    const name = driverName(declared.file, port.name);
+    const name = driverName(declared.file, port.name, member);
     const entry = drivers.get(key) ?? { port: port.name, key, candidates: [] };
     entry.candidates.push(name);
     if (published)

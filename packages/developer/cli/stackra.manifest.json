@@ -6,7 +6,6 @@
   "modules": [
     {
       "key": "cli",
-      "class": "CliModule",
       "exports": [],
       "dependsOn": []
     }

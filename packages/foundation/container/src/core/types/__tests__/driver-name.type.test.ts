@@ -77,8 +77,9 @@ describe("DriverName", () => {
   });
 
   it("widens to every registered name for a port nobody registered", () => {
+    // `system` is the container's own `contracts.Clock` driver: its generated wiring is in this program (STA-1605).
     expectTypeOf<DriverName<Cache>>().toEqualTypeOf<
-      "postgres" | "memory" | "redis" | "s3" | "disk" | "a" | "b"
+      "postgres" | "memory" | "redis" | "s3" | "disk" | "a" | "b" | "system"
     >();
   });
 

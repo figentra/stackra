@@ -22,6 +22,7 @@
  */
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { driverName } from "#core/functions/driver-name.function";
+import { portMember } from "#core/functions/port-member.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { SystemDriverDefault } from "#core/types/system-driver-default.type";
@@ -146,7 +147,10 @@ export function systemDriverDefaults(
     const only = own.length === 1 ? own[0] : undefined;
     return {
       port,
-      driver: only === undefined ? "memory" : driverName(only.file, port.name),
+      driver:
+        only === undefined
+          ? "memory"
+          : driverName(only.file, port.name, portMember(ir.member, ir.dependencies, port.from)),
       ...config,
     };
   });

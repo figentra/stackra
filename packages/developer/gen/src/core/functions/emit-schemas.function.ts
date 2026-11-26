@@ -19,7 +19,11 @@
  *           form over a consumed shape of `#stackra/clients/<service>` extends that class's `schema` static (aliased
  *           `Remote<Name>`), picked, omitted or made partial first when it derives from it (STA-1363).
  *          A shape with initializers also gets a `declare module "<its import path>"` augmentation naming them in the
- *          type-only `~defaults` brand, so `CallInput` makes them optional (STA-1694).
+ *          type-only `~defaults` brand, so `CallInput` makes them optional (STA-1694); a model or a generic shape gets
+ *          none. A
+ *          literal object or array default is a `withDefault` factory typed by the field's output; the check leaves out a
+ *          model's getters and reads a generic shape over `any` arguments; a driver name no driver of reaches the member
+ *          is any string (STA-1605).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: the shape compiler); ADR 0305 (rules 1 and 14); registry v3.1 gap G1;
  *                     ADR 0162 (decision 2); ADR 0222 (decision 2); ADR 0260 (decision 2: remote shapes); STA-1365
@@ -28,12 +32,16 @@
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import type { ClassValue } from "#core/types/class-value.type";
+import type { FieldDefault } from "#core/types/field-default.type";
 import type { FieldIR } from "#core/types/field-ir.type";
 import type { FieldRule } from "#core/types/field-rule.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { RegexValue } from "#core/types/regex-value.type";
 import type { ShapeIR } from "#core/types/shape-ir.type";
 import type { TypeDesc } from "#core/types/type-desc.type";
+
+/** The shape kinds whose class gets no `~defaults` brand: a config's `X$` is its schema, a model is no call input. */
+const BRANDLESS_KINDS: ReadonlySet<string> = new Set(["config", "model", "model_addition"]);
 
 /** The import map of the file under construction. */
 type Imports = Map<string, Map<string, boolean>>;
@@ -172,7 +180,9 @@ function zodOf(
         : reference(context, type.module, type.name);
     }
     case "driver_name": {
-      return `z.enum(${JSON.stringify(type.values)})`;
+      // No driver of the port reaches this member (they live in a package it does not declare): any name, which the
+      // container checks when it selects one; `z.enum([])` would refuse every value (STA-1605).
+      return type.values.length === 0 ? "z.string()" : `z.enum(${JSON.stringify(type.values)})`;
     }
     case "schema": {
       return reference(context, type.module, type.name);
@@ -216,6 +226,21 @@ function zodOf(
   }
 }
 
+/**
+ * `expression` with the default `value`. A literal object or array gets a factory, so two parses never share one
+ * instance, through `withDefault`, which types the literal by the field's output: a nested code stays its literal, a
+ * record value keeps its type and a nested duration may be its ISO 8601 text (TS2769, STA-1605; STA-1695 did arrays).
+ * A platform constructor's value (Money) is immutable and a primitive is a plain `.default`.
+ */
+function defaulted(context: Context, expression: string, value: FieldDefault): string {
+  for (const [name, from] of value.imports) use(context.imports, from, name);
+  const isLiteral =
+    typeof value.value === "object" && value.value !== null && value.imports.length === 0;
+  if (!isLiteral) return `${expression}.default(${value.code})`;
+  use(context.imports, "@stackra/validation", "withDefault");
+  return `withDefault(${expression})(() => (${value.code}))`;
+}
+
 /** The zod expression of an array element or a map value, with the `each` rules as its own. */
 function elementOf(context: Context, type: TypeDesc, rules: readonly FieldRule[]): string {
   return zodOf(context, type, rules, []);
@@ -232,21 +257,8 @@ function fieldOf(context: Context, field: FieldIR, shape: ShapeIR): string {
   let expression = zodOf(context, field.type, own, each);
   // A hatch may already end in `.nullable()`; nullable is applied once.
   if (field.nullable && !expression.endsWith(".nullable()")) expression += ".nullable()";
-  if (field.default !== undefined) {
-    for (const [name, from] of field.default.imports) use(context.imports, from, name);
-    const value = field.default.value;
-    // A literal object or array default gets a factory, so two parses never share one instance; a platform
-    // constructor's value (Money) is immutable. An array spreads its `as const` literal, so its codes keep their literal
-    // type through zod's overloads instead of widening to `string[]` (TS2769, STA-1695).
-    // shortcut: an object default's nested codes still widen, add a typed factory when a shape needs one.
-    const isLiteral =
-      typeof value === "object" && value !== null && field.default.imports.length === 0;
-    expression += !isLiteral
-      ? `.default(${field.default.code})`
-      : Array.isArray(value)
-        ? `.default(() => [...(${field.default.code} as const)])`
-        : `.default(() => (${field.default.code}))`;
-  } else if (shape.kind === "settings" && field.type.kind === "schema" && !field.optional)
+  if (field.default !== undefined) expression = defaulted(context, expression, field.default);
+  else if (shape.kind === "settings" && field.type.kind === "schema" && !field.optional)
     expression += ".prefault(() => ({}))";
   // A hatch may already end in `.optional()`, whose output also admits `undefined`; `?:` under
   // exactOptionalPropertyTypes does not, so the `$Check` would fail (TS2344): it becomes `.exactOptional()` (STA-2022).
@@ -317,11 +329,11 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
   if (base?.kind === "package") {
     const alias = `Base${base.name}$`;
     use(context.imports, base.from, `${base.name}$ as ${alias}`);
-    const overrides = wire.map((field) => {
-      if (field.default === undefined) return `  ${field.name}: ${alias}.shape.${field.name},`;
-      for (const [name, from] of field.default.imports) use(context.imports, from, name);
-      return `  ${field.name}: ${alias}.shape.${field.name}.default(${field.default.code}),`;
-    });
+    const overrides = wire.map((field) =>
+      field.default === undefined
+        ? `  ${field.name}: ${alias}.shape.${field.name},`
+        : `  ${field.name}: ${defaulted(context, `${alias}.shape.${field.name}`, field.default)},`,
+    );
     lines.push(`export const ${shape.name}$ = ${alias}.extend({`, ...overrides, "});");
   } else if (base?.kind === "member") {
     const parent = reference(context, base.module, base.name).replace(
@@ -360,25 +372,35 @@ function shapeOf(context: Context, shape: ShapeIR): string[] {
         (field.type.kind === "record" && field.type.value.kind === "driver_name"),
     )
     .map((field) => field.name);
-  const omitted = [...shape.relations, ...hidden, ...drivers];
+  // A model's public getters are computed, never a wire field: `Fields` keeps them (a getter is a readonly property to
+  // the checker), so the check leaves them out like a relation (STA-1605).
+  const omitted = [...shape.relations, ...hidden, ...drivers, ...(shape.entity?.computed ?? [])];
+  // A generic shape (an abstract base such as `ChangeBase<S>`) is checked over `any` arguments: its fields do not name
+  // the parameters, and a bare `Fields<ChangeBase>` is TS2314 (STA-1605).
+  const typed =
+    shape.typeParameters === undefined
+      ? shape.name
+      : `${shape.name}<${shape.typeParameters.map(() => "any").join(", ")}>`;
   const fields =
-    omitted.length > 0
-      ? `Omit<Fields<${shape.name}>, ${quotedKeys(omitted)}>`
-      : `Fields<${shape.name}>`;
+    omitted.length > 0 ? `Omit<Fields<${typed}>, ${quotedKeys(omitted)}>` : `Fields<${typed}>`;
   const output =
     drivers.length > 0
       ? `Omit<z.output<typeof ${shape.name}$>, ${quotedKeys(drivers)}>`
       : `z.output<typeof ${shape.name}$>`;
   lines.push(`export type ${shape.name}$Check = Assert<Same<${output}, ${fields}>>;`, "");
   // A type cannot see an initializer: tell it which fields are defaulted, so `CallInput` makes them optional (STA-1694).
-  const defaulted = shape.fields.filter((field) => field.default !== undefined);
-  if (shape.kind !== "config" && defaulted.length > 0)
+  // A generic class merges only with an interface of identical type parameters, constraints included (TS2428), so a
+  // generic base gets none; each subclass lists the defaults it inherits in its own brand. A model gets none either: it
+  // is never a call's input, and `EntitySchema<T>` names every key of `T`, so the brand would have to be listed in the
+  // entity file, which a package checks with or without this file in the program (TS2741, TS2353; STA-1605).
+  const defaults = shape.fields.filter((field) => field.default !== undefined);
+  if (!BRANDLESS_KINDS.has(shape.kind) && shape.typeParameters === undefined && defaults.length > 0)
     lines.splice(
       -1,
       0,
       `declare module ${JSON.stringify(shape.importPath)} {`,
       `  interface ${shape.name} {`,
-      `    readonly "~defaults"?: ${defaulted.map((field) => JSON.stringify(field.name)).join(" | ")};`,
+      `    readonly "~defaults"?: ${defaults.map((field) => JSON.stringify(field.name)).join(" | ")};`,
       "  }",
       "}",
       "",

@@ -68,14 +68,15 @@ describe("ANALYTICS_CONFIG_SCHEMA", () => {
     expect(parsed.consentCategory).toBe("crash_replay");
   });
 
-  it("fills a destination's routing lists", () => {
+  it("keeps a destination's absent routing list absent, which takes every event (STA-1605)", () => {
     const parsed = ANALYTICS_CONFIG_SCHEMA.parse({
       drivers: { segment: "posthog" },
       destinations: [{ driver: "segment", category: "marketing", include: ["order.placed"] }],
     });
     expect(parsed.destinations).toEqual([
-      { driver: "segment", category: "marketing", include: ["order.placed"], exclude: [] },
+      { driver: "segment", category: "marketing", include: ["order.placed"] },
     ]);
+    expect(parsed.destinations[0]).not.toHaveProperty("exclude");
   });
 
   it.each([

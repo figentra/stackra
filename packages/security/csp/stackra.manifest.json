@@ -6,7 +6,6 @@
   "modules": [
     {
       "key": "csp",
-      "class": "CspModule",
       "exports": [],
       "dependsOn": []
     }

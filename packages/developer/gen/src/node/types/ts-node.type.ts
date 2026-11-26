@@ -58,6 +58,9 @@ export interface TsNode {
   /** The type arguments of a call, a heritage type or a type reference. */
   readonly typeArguments?: readonly TsNode[];
 
+  /** A class's or function's type parameters. */
+  readonly typeParameters?: readonly TsNode[];
+
   /** The initializer of a property, variable or property assignment. */
   readonly initializer?: TsNode;
 

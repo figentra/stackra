@@ -3,7 +3,7 @@
  * Purpose: type tests of `Wiring` and its parts: a wiring of the shape the template's committed loyalty-kit and web
  *          samples carry satisfies it (named deps, lazy driver candidates, config overrides, string roots and the
  *          sections other packages own), while a string token, a lifetime outside the three and a binding without its
- *          class are refused; the container boots it.
+ *          class are refused; the container boots it; the platform set may name the container itself (STA-1605).
  * Boundary: test only; the classes are test-local stand-ins for the template's.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0263 (decision 11).
@@ -132,6 +132,11 @@ describe("Wiring", () => {
       links: [],
     } satisfies Wiring;
     expect(app.root).toBe("web");
+  });
+
+  it("accepts the container itself in the platform set, whose constructor is private (STA-1605)", () => {
+    const platform = { member: "maintenance", platform: [Clock, Container] } satisfies Wiring;
+    expect(platform.platform).toContain(Container);
   });
 
   it("refuses a string token, an unknown lifetime and a binding without its class", () => {

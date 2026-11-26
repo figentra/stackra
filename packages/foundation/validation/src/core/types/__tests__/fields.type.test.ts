@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: type tests of `Fields<T>`: methods and the protected kind brand drop out; optional and readonly fields keep
- *          their modifiers; statics are never fields; nested shapes become plain fields; a Json field does not recurse
- *          without end (STA-2215).
+ * Purpose: type tests of `Fields<T>`: methods, the protected kind brand and symbol-keyed markers (STA-1605) drop out;
+ *          optional and readonly fields keep their modifiers; statics are never fields; nested shapes become plain
+ *          fields; a Json field does not recurse without end (STA-2215).
  * Boundary: test only; type assertions through `expectTypeOf`, with one runtime assertion so the file runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 26).
@@ -47,6 +47,14 @@ class BrandedOptions extends Schema {
   retries = 3;
 }
 
+/** A model-like class: a symbol-keyed marker, as MikroORM's `[OptionalProps]` is, beside its data. */
+declare const OPTIONAL: unique symbol;
+class MarkedRow extends Schema {
+  declare [OPTIONAL]?: "status";
+
+  status = "open";
+}
+
 class CartView extends Schema {
   lines!: LineView[];
 
@@ -57,6 +65,12 @@ describe("Fields", () => {
   it("drops every public ~ brand, as a config override's check needs (STA-2215)", () => {
     expectTypeOf<keyof Fields<BrandedOptions>>().toEqualTypeOf<"retries">();
     expectTypeOf<keyof InputFields<BrandedOptions>>().toEqualTypeOf<"retries">();
+  });
+
+  it("drops a symbol-keyed marker, as a model's [OptionalProps] (STA-1605)", () => {
+    expectTypeOf<keyof Fields<MarkedRow>>().toEqualTypeOf<"status">();
+    expectTypeOf<keyof InputFields<MarkedRow>>().toEqualTypeOf<"status">();
+    expect(new MarkedRow().status).toBe("open");
   });
 
   it("keeps a Json field as Json, without recursing into Json[] (TS2589, STA-2215)", () => {

@@ -38,7 +38,8 @@
  *          A driver over another package's base takes its port from that package's entry, never the base's `#` path.
  *          A typed defaulted constructor parameter is a token (the default serves hand construction only), and an
  *          inferred one is `token_not_a_class` (STA-1536). A `.d.mts` base typed `import("@stackra/config").ConfigClass`
- *          keeps its kind (STA-1738).
+ *          keeps its kind (STA-1738). An imported class keeps the name its import gives it, and `driverRegistryKeys`
+ *          lists an authored `DriverRegistry` augmentation's keys (STA-1605).
  * Boundary: test only; writes the fixture under `.cache/` and opens TypeScript on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decision 26, 2026-10-23 item 13, decision 28); ADR 0305
@@ -2394,5 +2395,58 @@ describe("createSourceReader on a .d.mts base typed by an import type (STA-1738)
 
   it('reads the kind from `import("@stackra/config").ConfigClass`', () => {
     expect(classes.find((declared) => declared.name === "TillConfig")?.kind).toBe("config");
+  });
+});
+
+/** A package exporting a class under another name than its declaration's, and an authored driver stand-in (STA-1605). */
+const RENAMED_SOURCES: Readonly<Record<string, string>> = {
+  "node_modules/@stackra/orm-fixture/package.json": JSON.stringify({
+    name: "@stackra/orm-fixture",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/orm-fixture/index.d.ts": [
+    "declare class PostgreSqlMikroORM {",
+    "  readonly url: string;",
+    "}",
+    "export { PostgreSqlMikroORM as MikroORM };",
+    "",
+  ].join("\n"),
+  "src/core/services/orm-health.service.ts": [
+    'import { Service } from "@stackra/container";',
+    'import { MikroORM } from "@stackra/orm-fixture";',
+    "export class OrmHealthService extends Service {",
+    "  constructor(readonly orm: MikroORM) {",
+    "    super();",
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/core/types/push-transport-driver-names.type.ts": [
+    'declare module "@stackra/container" {',
+    "  interface DriverRegistry {",
+    '    "renamed.PushTransport": "web" | "expo";',
+    "  }",
+    "}",
+    "export {};",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on an import's own name and an authored driver stand-in (STA-1605)", async () => {
+  const root = writeFixtureMember("renamed", RENAMED_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  const keys = reader.driverRegistryKeys();
+  host.close();
+
+  it("names an imported class as its import does, which the generated wiring imports (TS2305)", () => {
+    expect(classes.find((declared) => declared.name === "OrmHealthService")?.deps).toEqual([
+      { class: { name: "MikroORM", from: "@stackra/orm-fixture" } },
+    ]);
+  });
+
+  it("lists the DriverRegistry keys an authored augmentation of @stackra/container declares", () => {
+    expect(keys).toEqual(["renamed.PushTransport"]);
   });
 });

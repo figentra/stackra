@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `rootModuleOf`, the member's root module: the authored `<key>.module.ts` class when the member writes one,
  *          or the generated `<Key>Module` of `#stackra/module` otherwise. A package without a class the container
- *          builds (no binding, driver or config) ships no module at all.
+ *          builds (no binding, driver or config) ships no module at all, and neither does a member off the container
+ *          (`usesContainer`): gen writes it no `module.ts`, so naming one would leave its entry and manifest pointing
+ *          at a file that never exists (TS2307 in `.stackra/entry`, STA-1605).
  * Boundary: pure. The same answer feeds the manifest's module entry, the wiring's `root`, the member module file, the
  *           package `node` entry and the runtime entries, so they never disagree.
  * Runtime: isomorphic
@@ -12,6 +14,7 @@
 import { pascalCase } from "@stackra/support";
 
 import { BINDING_KINDS } from "#core/constants/binding-kinds.constant";
+import { usesContainer } from "#core/functions/uses-container.function";
 import type { ClassRef } from "#core/types/class-ref.type";
 import type { MemberIR } from "#core/types/member-ir.type";
 
@@ -32,5 +35,6 @@ export function rootModuleOf(
       declared.kind === "config",
   );
   if (ir.layout === "package" && !builds) return undefined;
+  if (!usesContainer(ir)) return undefined;
   return { name: `${pascalCase(ir.member)}Module`, from: "#stackra/module", generated: true };
 }

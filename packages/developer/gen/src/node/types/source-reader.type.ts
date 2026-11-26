@@ -45,6 +45,12 @@ export interface SourceReader {
   /** The module specifiers each package is imported by across the own source files (tests included), by package name. */
   packageImports: () => Map<string, Set<string>>;
 
+  /**
+   * The `DriverRegistry` keys an authored augmentation of `@stackra/container` declares anywhere in the program (the
+   * member's or a dependency's source or published types), sorted; generated files under `.stackra/` never count.
+   */
+  driverRegistryKeys: () => string[];
+
   /** Every refusal reported so far. */
   readonly errors: readonly GenError[];
 }

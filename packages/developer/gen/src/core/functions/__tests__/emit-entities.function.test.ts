@@ -48,11 +48,11 @@ describe("emitEntities", () => {
 
   it("writes one EntitySchema per model with its runtime facts", () => {
     expect(billing).toContain("export const InvoiceSchema = new EntitySchema<Invoice>({");
-    // A service's `Invoice` carries the `"~defaults"` marker its schemas file adds, which EntitySchema<T> requires a
-    // key for; a package's committed list is checked without that file, so its `T` has no such key (TS2353).
+    // A model gets no `"~defaults"` brand (STA-1605), so no entity file lists one: `EntitySchema<T>` names every key
+    // of `T`, and the brand would exist in one program (with the schemas file) and not in another (TS2741, TS2353).
     const asService = emitEntities({ ...BILLING_IR, layout: "service" }, "billing") ?? "";
     const asPackage = emitEntities({ ...BILLING_IR, layout: "package" }, "billing") ?? "";
-    expect(asService).toContain('    "~defaults": { type: "json", persist: false },');
+    expect(asService).not.toContain("~defaults");
     expect(asPackage).not.toContain("~defaults");
     expect(billing).toContain('  schema: "billing",');
     expect(billing).toContain('  tableName: "invoices",');

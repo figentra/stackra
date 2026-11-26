@@ -96,6 +96,23 @@ describe("@stackra/typescript-config presets", () => {
     }
   });
 
+  it("library checks what gen writes, schemas and entries, beside its sources (STA-1605)", () => {
+    const { include } = JSON.parse(
+      readFileSync(join(root, "src", "library.json"), "utf8")
+        .split("\n")
+        .filter((line) => !line.trimStart().startsWith("//"))
+        .join("\n"),
+    ) as { include: string[] };
+    expect(include).toEqual(
+      expect.arrayContaining([
+        "${configDir}/src",
+        "${configDir}/.stackra/gen",
+        "${configDir}/.stackra/entry",
+      ]),
+    );
+    expect(include).not.toContain("${configDir}/.stackra");
+  });
+
   it("service checks the generated types but never the generated Encore app", () => {
     // The Encore app imports encore.dev, which no member declares (ADR 0091, 0124); gen reads it, tsc never does.
     const { include } = JSON.parse(

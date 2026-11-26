@@ -688,6 +688,75 @@ describe("emitWiring", () => {
     );
   });
 
+  it("declares no DriverRegistry key an authored stand-in declares, and still registers its port (STA-1605)", () => {
+    const content = emitWiring({ ...COMMERCE_IR, authoredDriverKeys: ["commerce.PaymentGateway"] });
+    expect(content).not.toContain('    "commerce.PaymentGateway": "stripe";');
+    expect(content).toContain('    "commerce.PaymentGateway": typeof PaymentGateway;');
+    expect(content).toContain('      key: "commerce.PaymentGateway",');
+  });
+
+  it("keeps the neutral driver over a client entry's variant of the same name, in either order (STA-1605)", () => {
+    const stripe = COMMERCE_IR.classes.find(
+      (declared) => declared.name === "StripePaymentGatewayDriver",
+    );
+    if (stripe === undefined) throw new Error("the fixture has no stripe driver");
+    const native: DeclaredClass = {
+      ...stripe,
+      name: "NativeStripePaymentGatewayDriver",
+      file: "src/native/drivers/stripe-payment-gateway.driver.ts",
+      importPath: "#native/drivers/stripe-payment-gateway.driver",
+    };
+    const others = COMMERCE_IR.classes.filter((declared) => declared !== stripe);
+    for (const classes of [
+      [...others, stripe, native],
+      [...others, native, stripe],
+    ]) {
+      const content = emitWiring({ ...COMMERCE_IR, classes });
+      expect(content).toContain("then((m) => m.StripePaymentGatewayDriver),");
+      expect(content).not.toContain("NativeStripePaymentGatewayDriver");
+      expect(content.match(/^ {8}"stripe": /gm)).toHaveLength(1);
+    }
+  });
+
+  it("lists a package's ./worker driver only in a Worker member's wiring (STA-1605)", () => {
+    const locking: MemberIR["dependencies"][number] = {
+      package: "@stackra/locking",
+      manifest: {
+        member: "locking",
+        package: "@stackra/locking",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "LockDriver",
+            key: "locking.LockDriver",
+            candidates: ["kv", "memory"],
+            classes: {
+              kv: { class: "KvLockDriver", from: "@stackra/locking/worker" },
+              memory: { class: "MemoryLockDriver", from: "@stackra/locking" },
+            },
+          },
+        ],
+      },
+    };
+    const locks: DeclaredClass = {
+      ...service([{ name: "LockDriver", from: "@stackra/locking/contracts" }]),
+      name: "InvoiceLockService",
+    };
+    const ir: MemberIR = {
+      ...BILLING_IR,
+      classes: [...BILLING_IR.classes, locks],
+      dependencies: [...BILLING_IR.dependencies, locking],
+    };
+    const asService = emitWiring(ir);
+    expect(asService).toContain(
+      '        "memory": () => import("@stackra/locking").then((m) => m.MemoryLockDriver),',
+    );
+    expect(asService).not.toContain("KvLockDriver");
+    expect(emitWiring({ ...ir, layout: "worker" })).toContain(
+      '        "kv": () => import("@stackra/locking/worker").then((m) => m.KvLockDriver),',
+    );
+  });
+
   it("uses names @stackra/container exports", () => {
     expect(Lifetime.Request).toBe("request");
     expect(typeof named).toBe("function");

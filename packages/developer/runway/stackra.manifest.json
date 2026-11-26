@@ -35,18 +35,13 @@
     {
       "port": "RunwayProvider",
       "key": "runway.RunwayProvider",
-      "candidates": [
-        "cloudflare_workers_provider",
-        "eas_provider",
-        "encore_cloud_provider",
-        "mintlify_provider"
-      ],
+      "candidates": ["cloudflare_workers", "eas", "encore_cloud", "mintlify"],
       "classes": {
-        "cloudflare_workers_provider": {
+        "cloudflare_workers": {
           "class": "CloudflareWorkersProviderDriver",
           "from": "@stackra/runway/node"
         },
-        "eas_provider": {
+        "eas": {
           "class": "EasProviderDriver",
           "from": "@stackra/runway/node",
           "deps": [
@@ -58,7 +53,7 @@
             }
           ]
         },
-        "encore_cloud_provider": {
+        "encore_cloud": {
           "class": "EncoreCloudProviderDriver",
           "from": "@stackra/runway/node",
           "deps": [
@@ -70,7 +65,7 @@
             }
           ]
         },
-        "mintlify_provider": {
+        "mintlify": {
           "class": "MintlifyProviderDriver",
           "from": "@stackra/runway/node",
           "deps": [
