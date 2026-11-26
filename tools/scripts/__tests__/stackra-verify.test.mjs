@@ -7312,7 +7312,8 @@ test("round 7 R6-H1: prepare accepts exactly what pnpm writes for the lockfile, 
         "-c",
         `set -eo pipefail; cd "${f.dir}"; ${plantedCheck(join(f.dir, "nowhere"))}; echo clean`,
       ],
-      { encoding: "utf8" },
+      // its scratch directory, which the failed tar leaves behind, inside the fixture
+      { encoding: "utf8", env: { ...process.env, TMPDIR: f.dir } },
     );
     assert.notEqual(broken.status, 0);
     assert.doesNotMatch(broken.stdout, /clean/);
