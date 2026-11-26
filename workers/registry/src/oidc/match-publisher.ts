@@ -13,7 +13,7 @@ import type { PublisherRow } from "#src/interfaces/publisher-row.interface";
  * The trusted publisher the claims match, or null.
  *
  * @example
- * matchPublisher(claims, await store.publishers("@stackra")); // the figentra/stackra row
+ * matchPublisher(claims, await store.publishers("@stackra")); // the stackra-inc/stackra row
  */
 export function matchPublisher(
   claims: GithubClaims,

@@ -32,9 +32,11 @@ function close(this: HTMLDialogElement) {
 }
 
 function renderPalette(onClose = vi.fn()) {
-  const dark = vi.fn();
+  const scheme = vi.fn();
+  // The action's words ("dusk", "scheme") are in no catalogue entry, so a query for it finds the action alone and
+  // does not move when a component whose keywords say "dark mode" or "color scheme" joins the registry.
   const actions: PaletteAction[] = [
-    { id: "dark", label: "Dark scheme", detail: "Colour scheme", icon: "moon", run: dark },
+    { id: "scheme", label: "Dusk scheme", detail: "Colour scheme", icon: "moon", run: scheme },
   ];
   const router = createMemoryRouter(
     [
@@ -54,7 +56,7 @@ function renderPalette(onClose = vi.fn()) {
     { initialEntries: ["/"] },
   );
   render(<RouterProvider router={router} />);
-  return { router, onClose, dark };
+  return { router, onClose, scheme };
 }
 
 const input = () => screen.getByRole("combobox", { name: "Search components" });
@@ -82,7 +84,7 @@ describe("CommandPalette", () => {
     expect(
       within(screen.getByRole("group", { name: "Actions" })).getAllByRole("option").length,
     ).toBe(COMPONENTS.filter((entry) => entry.category === "actions").length);
-    expect(labels()[0]).toBe("Dark scheme");
+    expect(labels()[0]).toBe("Dusk scheme");
     expect(screen.getByRole("status").textContent).toBe(`${1 + COMPONENTS.length} results`);
   });
 
@@ -98,9 +100,9 @@ describe("CommandPalette", () => {
         name: /Actions/,
       }),
     ).toBeTruthy();
-    // Both words: "dark" alone also finds QR code, whose description says "dark on light" (a description hit, by design).
-    type("dark scheme");
-    expect(labels()).toEqual(["Dark scheme"]);
+    // Both words must match, and no component says "dusk": the action is the only hit.
+    type("dusk scheme");
+    expect(labels()).toEqual(["Dusk scheme"]);
     expect(screen.getByRole("status").textContent).toBe("1 result");
   });
 
@@ -143,11 +145,11 @@ describe("CommandPalette", () => {
   });
 
   it("runs an action on Enter", () => {
-    const { dark } = renderPalette();
-    // Enter runs the top row; "dark" alone puts QR code (a description hit) above the action.
-    type("dark scheme");
+    const { scheme } = renderPalette();
+    // Enter runs the top row, which is the action: no component matches "dusk".
+    type("dusk scheme");
     press("Enter");
-    expect(dark).toHaveBeenCalledTimes(1);
+    expect(scheme).toHaveBeenCalledTimes(1);
   });
 
   it("lists recent pages first, as rows of their own", () => {

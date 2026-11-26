@@ -6,7 +6,7 @@
 #          KVM). A failed job fails the call, so a caller's promote job that `needs` it does not run. Evidence
 #          (screenshots, JUnit reports) is uploaded per job.
 #          A caller is a thin job after its preview deploy; another repository pins
-#          `figentra/stackra/.github/workflows/runway-smoke.yml@<sha> # runway-v<n>` (runbooks/deploys).
+#          `stackra-inc/stackra/.github/workflows/runway-smoke.yml@<sha> # runway-v<n>` (runbooks/deploys).
 # Secrets: none of the caller's. Each job decrypts STACKRA_REGISTRY_TOKEN from the sops scope ci/build/registry
 #          (ADR 0525), so the caller grants `id-token: write`. Build URLs are EAS artifact
 #          links the caller passes; preview hosts are public.
@@ -83,7 +83,7 @@ jobs:
       # workspace-only install needs none, so a refused decrypt does not stop.
       - name: Registry token (sops)
         continue-on-error: true
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/registry
           names: STACKRA_REGISTRY_TOKEN
@@ -151,7 +151,7 @@ jobs:
       # workspace-only install needs none, so a refused decrypt does not stop.
       - name: Registry token (sops)
         continue-on-error: true
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/registry
           names: STACKRA_REGISTRY_TOKEN
@@ -233,7 +233,7 @@ jobs:
       # workspace-only install needs none, so a refused decrypt does not stop.
       - name: Registry token (sops)
         continue-on-error: true
-        uses: figentra/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
+        uses: stackra-inc/stackra/.github/actions/secrets-decrypt@c8563c852108bb4759827e132b7e5b82b6ae33f4 # @stackra/runway@0.15.0
         with:
           scope: ci/build/registry
           names: STACKRA_REGISTRY_TOKEN
