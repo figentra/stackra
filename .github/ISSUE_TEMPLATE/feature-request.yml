@@ -1,0 +1,48 @@
+# Stackra file contract:
+# Purpose: the feature request issue form: the problem, the proposal and the alternatives considered (STA-314).
+# Owner: docs-governance
+# Secrets: forbidden
+name: Feature request
+description: Propose a new capability or a change in behaviour.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Stackra changes start from a problem, then a spec, and sometimes an architecture decision record (ADR).
+        A maintainer replies on this issue before work starts; see [CONTRIBUTING.md](https://github.com/stackra-inc/stackra/blob/main/CONTRIBUTING.md#before-you-start).
+  - type: input
+    id: packages
+    attributes:
+      label: Packages
+      description: The `@stackra/*` packages or the part of Stackra this concerns.
+      placeholder: "@stackra/actions"
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do, and what stops you today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+      description: How it could work, from the point of view of your code. An API sketch helps.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Workarounds you use now, and other designs you thought about.
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to build it?
+      options:
+        - "Yes, once a maintainer agrees on the approach"
+        - "Maybe, with guidance"
+        - "No"
+    validations:
+      required: true

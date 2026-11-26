@@ -1,0 +1,16 @@
+# Stackra file contract:
+# Purpose: the GitHub issue chooser: no blank issues, the four forms in this folder, and links to private security
+#          reporting, the docs and the support guide (STA-314).
+# Owner: docs-governance
+# Secrets: forbidden
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/stackra-inc/stackra/security/advisories/new
+    about: Report it privately, never in a public issue (SECURITY.md).
+  - name: Documentation
+    url: https://docs.stackra.figentra.com
+    about: Guides, the quickstart and the package reference.
+  - name: Getting help
+    url: https://github.com/stackra-inc/stackra/blob/main/.github/SUPPORT.md
+    about: Where to ask what, and what to include.

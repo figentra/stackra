@@ -1,0 +1,42 @@
+# Stackra file contract:
+# Purpose: the documentation report issue form: the page, what is wrong or missing, and what would fix it (STA-314).
+# Owner: docs-governance
+# Secrets: forbidden
+name: Documentation report
+description: A docs page, README or guide is wrong, unclear, out of date or missing.
+labels: [documentation]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The URL of the page, or the file in this repository.
+      placeholder: "https://docs.stackra.figentra.com/quickstart"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is wrong
+      options:
+        - A step or command does not work
+        - The page says something the code does not do
+        - Unclear or hard to follow
+        - Out of date
+        - Missing
+        - Broken link
+        - Translation (Arabic)
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What you tried, what happened and, for a failing step, the error output.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: What would fix it
+      description: The wording or the change you suggest, if you have one.
