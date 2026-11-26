@@ -9,7 +9,7 @@
  * Governing contract: ADR 0022 (test placement); STA-1813.
  */
 // @covers sta-1813:FR-002 sta-1813:FR-004 sta-1813:FR-005 sta-1813:FR-007 sta-1813:FR-010 sta-1813:FR-011
-// @covers sta-1813:FR-012 sta-1813:FR-013
+// @covers sta-1813:FR-012
 import {
   existsSync,
   mkdirSync,
@@ -224,19 +224,14 @@ describe("runConsumerGate setup rules (exit 2)", () => {
     expect(result.error).toMatch(/core is not built.*turbo run build/);
   });
 
-  it("refuses unknown services, traversal, an unknown or odd product, and a scaffold", () => {
-    const { options } = fixture(
-      "  scaffold:\n    kind: scaffold\n    fixture: f\n    services: [x]\n",
-    );
+  it("refuses unknown services, traversal, and an unknown or odd product", () => {
+    const { options } = fixture();
     expect(runConsumerGate({ ...options, services: ["nope"] }, deps).code).toBe(2);
     expect(runConsumerGate({ ...options, services: ["../../x"] }, deps).error).toMatch(
       /no service/,
     );
     expect(runConsumerGate({ ...options, product: "../x" }, deps).code).toBe(2);
     expect(runConsumerGate({ ...options, product: "constructor" }, deps).code).toBe(2);
-    const scaffold = runConsumerGate({ ...options, product: "scaffold" }, deps);
-    expect(scaffold.code).toBe(2);
-    expect(scaffold.error).toMatch(/scaffold is not yet supported/);
   });
 
   it("refuses missing overlays, an empty plan, an --out inside a tree and a refused allow entry", () => {

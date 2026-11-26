@@ -109,11 +109,15 @@ status --porcelain` into `gen-drift-<key>.txt`, listed in the summary, not a fai
   the product lockfile's sha256 before the run and the copy's after install, the `@stackra/gen` version of the core
   tree, the sha256 of each overlay manifest, and a one-line `reproduce` command that re-runs the exact invocation;
   the markdown has a short block of the same.
-- **FR-013** A matrix entry `kind: scaffold` (the `scaffold` consumer) is a reference app made from core's own
-  scaffold, not a product repository: a service from `stackra new service`, plus the fixture folder
-  `tools/consumer-gate/scaffold-fixture/` (one action, one model with a migration, one test), gated in `pack` mode.
-  The matrix schema and the fixture exist; the temp-workspace runner does not yet (`stackra new` writes only into a
-  pnpm workspace root), so the command exits 2 with "not yet supported" for it.
+- **FR-013** A matrix entry `kind: scaffold` (the `scaffold` consumer) is an app made the way a user makes one, not a
+  product repository: its `repo` and `ref` pin the starter template, the core tree's own built CLI runs
+  `stackra create --starter <checkout> --tarballs <out>/tarballs` (files only), then `stackra new service <service>
+--area app --data`, and the fixture folder `tools/consumer-gate/scaffold-fixture/` (one action, one model with a
+  migration, one test) is copied into that service; it is gated in `pack` mode only (STA-2705). Its repo-own steps
+  run in the app itself. A failed create or service step skips the rest and is never allow-listed.
+- **FR-014** Each matrix entry carries `pinned`, the day its pin was set; the summary flags a pin older than 14 days
+  (or undated) as stale (open question 6: reported, not enforced). `--product <name> --pin` prints `<repo> <ref>`
+  so a workflow checks out exactly the pinned commit (STA-2705).
 
 ## Open questions for the leader
 
@@ -151,3 +155,4 @@ Each has a proposed answer; the plan assumes the proposal until told otherwise.
 - 2026-11-01 → Clarified (leader brief; open questions carry proposed answers)
 - 2026-11-01 → Pack mode, leak check, environment record, scaffold consumer, class-based allow-list, repo-own window and a never-write-core rule added (FR-002 to FR-013)
 - 2026-11-01 → Placement changed: the runner is `stackra consumer-gate` (ADR 0500 decision 3), the matrix is corrected from the hand-run gates (per-service pins; usage, payments-ledger, tamo added)
+- 2026-11-26 → STA-2705: the scaffold consumer runs (`stackra create` from the pinned starter on packed tarballs, FR-013), pins carry a `pinned` date and `--pin` (FR-014), and `.github/workflows/consumer-gate.yml` runs the scaffold on the version packages pull request, a `consumer-gate` label, pushes to main and dispatch (FR-008, scaffold only: the product repositories and overlays are private)

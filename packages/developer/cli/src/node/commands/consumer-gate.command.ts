@@ -7,14 +7,16 @@
  *          `tools/scripts/product-gate.mjs`, STA-1813). The matrix and the allow-list are the repository's own data, by
  *          default `tools/consumer-gate/matrix.yaml` and `allow.yaml` under the working directory. Prints the Markdown
  *          summary (the summary is the `--json` data; a setup error is `{ error }` there). Exit 0 green, 1 red, 2 setup
- *          or usage error.
+ *          or usage error. `stackra consumer-gate --product <name> --pin [--services a,b]` prints the consumer's
+ *          repository and pinned commit (`<repo> <ref>`; the `--json` data `{ product, repo, ref, pinned }`) and runs
+ *          nothing, so a workflow checks out exactly the commit the matrix pins (STA-2705).
  * Boundary: the work is `runConsumerGate`; it writes only under `--out`, never fetches (the caller clones), never
  *           writes the core tree (the caller builds it first; exit 2 if it is not built) and never reads or prints a
  *           secret. Each step's child output goes to its log under `--out`, never to the terminal. `--mode link`
  *           (default) links core; `--mode pack` installs tarballs of the publishable packages and adds the `leak` check.
  * Runtime: node
  * Governing contract: ADR 0500 (decision 3); ADR 0484 (the testbed runs it); ADR 0166 (CI policy); spec
- *                     `.agents/specs/sta-1813-product-gate`; ADR 0506; STA-1966.
+ *                     `.agents/specs/sta-1813-product-gate`; ADR 0506; STA-1966; STA-2705.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -29,7 +31,9 @@ import { createConsumerGateDeps } from "#node/consumer-gate/functions/create-con
 import { loadConsumerGateAllow } from "#node/consumer-gate/functions/load-consumer-gate-allow.function";
 import { loadConsumerGateMatrix } from "#node/consumer-gate/functions/load-consumer-gate-matrix.function";
 import { renderConsumerGateSummary } from "#node/consumer-gate/functions/render-consumer-gate-summary.function";
+import { resolveConsumerGateRef } from "#node/consumer-gate/functions/resolve-consumer-gate-ref.function";
 import { runConsumerGate } from "#node/consumer-gate/functions/run-consumer-gate.function";
+import type { ConsumerGateProduct } from "#node/consumer-gate/types/consumer-gate-product.type";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 
 /** Gates one consumer product against a core tree. */
@@ -99,6 +103,13 @@ export class ConsumerGateCommand extends Command({
   @Option({ description: "Plan the steps and run none" })
   dryRun = false;
 
+  /** Print the pin and run nothing. */
+  @Option({
+    description:
+      "Print the consumer's repository and pinned commit (<repo> <ref>) and run nothing; needs only --product",
+  })
+  pin = false;
+
   /**
    * Runs the gate and resolves with its exit code.
    *
@@ -107,14 +118,23 @@ export class ConsumerGateCommand extends Command({
    */
   handle(io: CommandIo): number {
     const { core, checkout, product, out, mode } = this;
+    const matrixFile = resolve(io.cwd, this.matrix ?? CONSUMER_GATE_DEFAULTS.matrix);
+    const services = this.services?.split(",");
+    if (this.pin) {
+      if (!product) throw new CliUsageError("--pin needs --product");
+      return printPin(
+        io,
+        product,
+        usage(() => loadConsumerGateMatrix(read(matrixFile))),
+        services,
+      );
+    }
     if (!core || !checkout || !product || !out)
       throw new CliUsageError("--core, --checkout, --product and --out are required");
     const today = this.today ?? new Date().toISOString().slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) throw new CliUsageError("--today must be YYYY-MM-DD");
-    const matrixFile = resolve(io.cwd, this.matrix ?? CONSUMER_GATE_DEFAULTS.matrix);
     const allowFile = resolve(io.cwd, this.allow ?? CONSUMER_GATE_DEFAULTS.allow);
     const matrix = usage(() => loadConsumerGateMatrix(read(matrixFile)));
-    const services = this.services?.split(",");
     const steps = this.steps?.split(",");
     const unknownStep = steps?.find((step) => !CONSUMER_GATE_STEPS.includes(step));
     if (unknownStep !== undefined)
@@ -166,6 +186,26 @@ export class ConsumerGateCommand extends Command({
     }
     return result.code;
   }
+}
+
+/**
+ * Prints a consumer's repository and pin (the common pin of `services` when it has per-service pins).
+ *
+ * @throws CliUsageError when the product is unknown, has no repository, or its services disagree on a pin.
+ */
+function printPin(
+  io: CommandIo,
+  product: string,
+  matrix: Readonly<Record<string, ConsumerGateProduct>>,
+  services: readonly string[] | undefined,
+): number {
+  const spec = Object.hasOwn(matrix, product) ? matrix[product] : undefined;
+  if (spec?.repo === undefined) throw new CliUsageError(`unknown product ${product}`);
+  const pin = resolveConsumerGateRef(spec, services ?? spec.services);
+  if ("error" in pin) throw new CliUsageError(pin.error);
+  if (io.json) io.output.json({ product, repo: spec.repo, ref: pin.ref, pinned: spec.pinned });
+  else io.output.line(`${spec.repo} ${pin.ref}`);
+  return 0;
 }
 
 /** A file's text; an unreadable file is a usage error naming it. */

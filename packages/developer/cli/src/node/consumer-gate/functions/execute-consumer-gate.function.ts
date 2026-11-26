@@ -1,18 +1,22 @@
 /**
  * Stackra file contract:
- * Purpose: `executeConsumerGate(options, deps)`, the gate for one product, after `validateConsumerGateSetup`: copy the
- *          checkout into `<out>/work/<key>` without `node_modules`, `.git`, `.stackra` and `.turbo`, drop its
- *          lockfile, point every core `@stackra/*` package at core (`link:` rows in `link` mode; in `pack` mode
- *          `file:` rows to tarballs of every publishable package, packed into `<out>/tarballs`), overlay the manifests
- *          of services the product does not hold, make the copy a one-commit repository (turbo hashes through git),
- *          then run the planned steps: install, leak (pack only), build-deps (then a commit), gen (then a drift
- *          record), typecheck, lint, build, test, test:int, and the repo-own format, spell and validate in the repo-own
- *          window. A failed install, core pack or leak skips the rest; another failure lets later steps run. Writes
- *          `summary-<key>.json`, `summary-<key>.md`, `gen-drift-<key>.txt` and one log per step under `<out>`.
+ * Purpose: `executeConsumerGate(options, deps)`, the gate for one consumer, after `validateConsumerGateSetup`. In
+ *          pack mode it first packs every publishable core package into `<out>/tarballs`. It then makes the work
+ *          copy `<out>/work/<key>`: a `product` is the checkout copied without `node_modules`, `.git`, `.stackra` and
+ *          `.turbo`, its lockfile dropped, every core `@stackra/*` package pointed at core (`link:` rows in `link`
+ *          mode, `file:` rows to the tarballs in `pack` mode) and the manifests of services it does not hold
+ *          overlaid; a `scaffold` is an app `stackra create` makes from the starter checkout on the tarballs, plus a
+ *          service `stackra new service` adds with the fixture copied in (`scaffoldConsumerApp`). The copy becomes a
+ *          one-commit repository (turbo hashes through git), then the planned steps run: install, leak (pack only),
+ *          build-deps (then a commit), gen (then a drift record), typecheck, lint, build, test, test:int, and format,
+ *          spell and validate (a product's in the repo-own window; a scaffold's in the app itself). A failed core
+ *          pack, scaffold, install or leak skips the rest; another failure lets later steps run. Writes
+ *          `summary-<key>.json`, `summary-<key>.md` (with the pin's age), `gen-drift-<key>.txt` and one log per step
+ *          under `<out>`.
  * Boundary: writes only under `options.out`; never touches the checkout or the core tree (core must be built already),
  *           never fetches, never reads a secret. Processes run through `deps.exec`. Throws on a setup error.
  * Runtime: node
- * Governing contract: ADR 0500 (decision 3); ADR 0484; ADR 0166; spec `.agents/specs/sta-1813-product-gate`.
+ * Governing contract: ADR 0500 (decision 3); ADR 0484; ADR 0166; spec `.agents/specs/sta-1813-product-gate`; STA-2705.
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -21,6 +25,7 @@ import { CONSUMER_GATE_REPO_OWN_STEPS } from "#node/consumer-gate/constants/cons
 import { CONSUMER_GATE_STEPS } from "#node/consumer-gate/constants/consumer-gate-steps.constant";
 import { buildConsumerGateEnvironment } from "#node/consumer-gate/functions/build-consumer-gate-environment.function";
 import { checkConsumerGateAllowRefs } from "#node/consumer-gate/functions/check-consumer-gate-allow-refs.function";
+import { consumerGatePinAge } from "#node/consumer-gate/functions/consumer-gate-pin-age.function";
 import { coreTarballLinks } from "#node/consumer-gate/functions/core-tarball-links.function";
 import { hashConsumerGateFile } from "#node/consumer-gate/functions/hash-consumer-gate-file.function";
 import { inspectConsumerGateLeaks } from "#node/consumer-gate/functions/inspect-consumer-gate-leaks.function";
@@ -30,10 +35,12 @@ import { listCoreLinks } from "#node/consumer-gate/functions/list-core-links.fun
 import { listCorePacks } from "#node/consumer-gate/functions/list-core-packs.function";
 import { planConsumerGateSteps } from "#node/consumer-gate/functions/plan-consumer-gate-steps.function";
 import { renderConsumerGateSummary } from "#node/consumer-gate/functions/render-consumer-gate-summary.function";
+import { scaffoldConsumerApp } from "#node/consumer-gate/functions/scaffold-consumer-app.function";
 import { validateConsumerGateSetup } from "#node/consumer-gate/functions/validate-consumer-gate-setup.function";
 import { withConsumerGateRepoOwn } from "#node/consumer-gate/functions/with-consumer-gate-repo-own.function";
 import type { ConsumerGateDeps } from "#node/consumer-gate/types/consumer-gate-deps.type";
 import type { ConsumerGateOptions } from "#node/consumer-gate/types/consumer-gate-options.type";
+import type { ConsumerGateProduct } from "#node/consumer-gate/types/consumer-gate-product.type";
 import type { ConsumerGateRun } from "#node/consumer-gate/types/consumer-gate-run.type";
 import type { ConsumerGateStepResult } from "#node/consumer-gate/types/consumer-gate-step-result.type";
 import type { ConsumerGateSummary } from "#node/consumer-gate/types/consumer-gate-summary.type";
@@ -51,47 +58,26 @@ const GIT_CONFIG = [
 ];
 
 /**
- * Runs the gate.
- *
- * @param options - the resolved paths, matrix, allow-list and flags.
- * @param deps - the process runner and `git rev-parse HEAD`.
- * @example
- * const { code } = executeConsumerGate(options, createConsumerGateDeps());
+ * Copies a product checkout into `root` with core linked or packed and the overlays in place; resolves with the
+ * overlay hashes and the overlay-only services.
  */
-export function executeConsumerGate(
-  options: ConsumerGateOptions,
-  deps: ConsumerGateDeps,
-): ConsumerGateRun {
-  const { core, checkout, product, out, allow, overlays } = options;
-  const { spec, services, ref, sha, key, mode } = validateConsumerGateSetup(options, deps);
-  if (allow.refused.length > 0) {
-    throw new Error(`the allow-list is refused: ${allow.refused.join("; ")}`);
-  }
-  const problems = [
-    ...allow.problems,
-    ...checkConsumerGateAllowRefs(allow.entries, Object.keys(options.matrix)),
-  ];
-  const root = join(out, "work", key);
-  mkdirSync(join(out, "logs", key), { recursive: true });
-  rmSync(root, { recursive: true, force: true });
+function copyProduct(input: {
+  readonly options: ConsumerGateOptions;
+  readonly spec: ConsumerGateProduct;
+  readonly root: string;
+  readonly links: Readonly<Record<string, string>>;
+}): { overlayHashes: Record<string, string>; overlayOnly: string[] } {
+  const { options, spec, root, links } = input;
+  const { checkout, overlays } = options;
   cpSync(checkout, root, {
     recursive: true,
     filter: (path) =>
       !/(^|\/)(node_modules|\.git|\.stackra|\.turbo)(\/|$)/.test(relative(checkout, path)),
   });
   // The checkout's lockfile is never touched: the copy loses it and installs from the registry, core linked or packed.
-  const lockfileBefore = hashConsumerGateFile(join(checkout, "pnpm-lock.yaml"));
   rmSync(join(root, "pnpm-lock.yaml"), { force: true });
-  const tarballs = join(out, "tarballs");
-  const packs = mode === "pack" ? listCorePacks(core) : [];
   const workspace = join(root, "pnpm-workspace.yaml");
-  writeFileSync(
-    workspace,
-    linkConsumerWorkspace(
-      readFileSync(workspace, "utf8"),
-      mode === "pack" ? coreTarballLinks(packs, tarballs) : listCoreLinks(core),
-    ),
-  );
+  writeFileSync(workspace, linkConsumerWorkspace(readFileSync(workspace, "utf8"), links));
   const overlayHashes: Record<string, string> = {};
   const overlayOnly: string[] = [];
   for (const service of spec.overlays ?? []) {
@@ -103,6 +89,97 @@ export function executeConsumerGate(
     overlayHashes[service] = hashConsumerGateFile(from) as string;
     if (!existsSync(join(checkout, "services", service))) overlayOnly.push(service);
   }
+  return { overlayHashes, overlayOnly };
+}
+
+/**
+ * Runs the gate.
+ *
+ * @param options - the resolved paths, matrix, allow-list and flags.
+ * @param deps - the process runner and `git rev-parse HEAD`.
+ * @example
+ * const { code } = executeConsumerGate(options, createConsumerGateDeps());
+ */
+export function executeConsumerGate(
+  options: ConsumerGateOptions,
+  deps: ConsumerGateDeps,
+): ConsumerGateRun {
+  const { core, checkout, product, out, allow } = options;
+  const { spec, services, ref, sha, key, mode } = validateConsumerGateSetup(options, deps);
+  if (allow.refused.length > 0) {
+    throw new Error(`the allow-list is refused: ${allow.refused.join("; ")}`);
+  }
+  const scaffold = spec.kind === "scaffold";
+  const problems = [
+    ...allow.problems,
+    ...checkConsumerGateAllowRefs(allow.entries, Object.keys(options.matrix)),
+  ];
+  const root = join(out, "work", key);
+  mkdirSync(join(out, "logs", key), { recursive: true });
+  rmSync(root, { recursive: true, force: true });
+  mkdirSync(join(out, "work"), { recursive: true });
+  const results: ConsumerGateStepResult[] = [];
+  const logOf = (id: string): string =>
+    join(out, "logs", key, `${id.replaceAll("/", "-").replaceAll("@", "")}.log`);
+  // The checkout's lockfile hash: the product's own, or the starter's.
+  const lockfileBefore = hashConsumerGateFile(join(checkout, "pnpm-lock.yaml"));
+  const tarballs = join(out, "tarballs");
+  const packs = mode === "pack" ? listCorePacks(core) : [];
+  if (mode === "pack" && !options.dryRun) {
+    // Tarballs go under --out; a package is packed from its own folder, which `pnpm pack` does not write.
+    mkdirSync(tarballs, { recursive: true });
+    const failed = packs.filter(
+      (pack) =>
+        deps.exec(["pnpm", "pack", "--pack-destination", tarballs], {
+          cwd: pack.dir,
+          logFile: logOf(`core-pack-${pack.name.replace("/", "-")}`),
+        }) !== 0,
+    );
+    results.push(
+      failed.length === 0
+        ? { id: "core-pack", status: "pass" }
+        : {
+            id: "core-pack",
+            status: "fail",
+            uncovered: failed.map((pack) => `ERR_PNPM_PACK ${pack.name}`),
+          },
+    );
+  }
+
+  let overlayHashes: Record<string, string> = {};
+  let overlayOnly: string[] = [];
+  if (scaffold) {
+    const packFailed = results.some((result) => result.status === "fail");
+    results.push(
+      ...(packFailed
+        ? ["scaffold/create", "scaffold/service"].map((id): ConsumerGateStepResult => ({
+            id,
+            status: "skipped",
+            reason: "the core pack failed",
+          }))
+        : scaffoldConsumerApp(
+            {
+              core,
+              starter: checkout,
+              root,
+              tarballs,
+              spec,
+              logOf,
+              dryRun: options.dryRun === true,
+            },
+            deps,
+          )),
+    );
+    // A failed create leaves no app; the plan and the scratch repository still need the folder.
+    mkdirSync(root, { recursive: true });
+  } else {
+    ({ overlayHashes, overlayOnly } = copyProduct({
+      options,
+      spec,
+      root,
+      links: mode === "pack" ? coreTarballLinks(packs, tarballs) : listCoreLinks(core),
+    }));
+  }
 
   const plan = planConsumerGateSteps({
     root,
@@ -111,9 +188,6 @@ export function executeConsumerGate(
     mode,
   });
   if (plan.length === 0) throw new Error("no step to run: --steps names none of the planned steps");
-  const results: ConsumerGateStepResult[] = [];
-  const logOf = (id: string): string =>
-    join(out, "logs", key, `${id.replaceAll("/", "-").replaceAll("@", "")}.log`);
   const run = (id: string, argv: readonly string[], cwd: string): void => {
     if (options.dryRun) {
       results.push({ id, status: "skipped", reason: `dry run: ${argv.join(" ")}` });
@@ -132,29 +206,9 @@ export function executeConsumerGate(
     // turbo hashes through git, so the scratch copy is a one-commit repository.
     git("git-init", ["init", "-q"]);
     git("git-add", ["add", "-A"]);
-    git("git-commit", ["commit", "-qm", "consumer-gate"]);
+    git("git-commit", ["commit", "-qm", "consumer-gate", "--allow-empty"]);
     if (deps.exec(["pnpm", "--version"], { cwd: root, logFile: logOf("pnpm-version") }) === 0) {
       pnpmOutput = readFileSync(logOf("pnpm-version"), "utf8");
-    }
-    if (mode === "pack") {
-      // Tarballs go under --out; a package is packed from its own folder, which `pnpm pack` does not write.
-      mkdirSync(tarballs, { recursive: true });
-      const failed = packs.filter(
-        (pack) =>
-          deps.exec(["pnpm", "pack", "--pack-destination", tarballs], {
-            cwd: pack.dir,
-            logFile: logOf(`core-pack-${pack.name.replace("/", "-")}`),
-          }) !== 0,
-      );
-      results.push(
-        failed.length === 0
-          ? { id: "core-pack", status: "pass" }
-          : {
-              id: "core-pack",
-              status: "fail",
-              uncovered: failed.map((pack) => `ERR_PNPM_PACK ${pack.name}`),
-            },
-      );
     }
   }
   let genDrift: ConsumerGateSummary["genDrift"];
@@ -164,7 +218,7 @@ export function executeConsumerGate(
       results.push({
         id,
         status: "skipped",
-        reason: skip ?? "an earlier install, core pack or leak check failed",
+        reason: skip ?? "an earlier core pack, scaffold, install or leak check failed",
       });
       continue;
     }
@@ -178,7 +232,7 @@ export function executeConsumerGate(
             ? { id, status: "pass" }
             : { id, status: "fail", uncovered: findings },
       );
-    } else if (CONSUMER_GATE_REPO_OWN_STEPS.includes(id)) {
+    } else if (!scaffold && CONSUMER_GATE_REPO_OWN_STEPS.includes(id)) {
       withConsumerGateRepoOwn({ root, checkout, aside: join(out, "aside", key), overlayOnly }, () =>
         run(id, argv, cwd),
       );
@@ -212,6 +266,7 @@ export function executeConsumerGate(
     verdict,
     date: options.today,
     ref,
+    pin: consumerGatePinAge(spec.pinned, options.today),
     core: { dir: core, sha: deps.head(core) },
     checkout: { sha },
     steps: results,

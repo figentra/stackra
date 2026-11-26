@@ -87,13 +87,19 @@ moved aside). `leak` fails when an installed `@stackra/*` file resolves into the
 under the `@stackra/source` condition names a `./src/` file the tarball lacks; it is never allow-listed. It writes
 `summary-<product>@<pin>.json` and `.md` (with an environment record: core commit, product ref, mode, node, pnpm,
 both lockfile hashes, gen version, overlay hashes and a `reproduce` command) and a log per step. It reads the
-repository's `tools/consumer-gate/matrix.yaml` (products, a `ref` or a `pins` commit per service, services, overlays;
-a `kind: scaffold` entry is a reference app made from core's scaffold, not yet supported: exit 2) and `allow.yaml`
+repository's `tools/consumer-gate/matrix.yaml` (products, a `ref` or a `pins` commit per service and the `pinned` date,
+services, overlays; the summary flags a pin older than 14 days or undated as stale) and `allow.yaml`
 (excused failures: a `class` of `product`, `flaky`, `environment` or `known-core`, an STA issue and an expiry of at
 most 30 days each; a `security`, `tenant-isolation`, `data-integrity` or `leak` class, or none, is refused with exit
 2). `--matrix` and `--allow` override the paths. Services pinned to different commits are gated one pin at a time with
 `--services`. `--steps`, `--dry-run` and `--today` narrow or fake a run. Exit 0 green, 1 red, 2 setup or usage error.
-It never fetches: the caller clones the product at its pin.
+It never fetches: the caller clones the product at its pin; `--product <name> --pin` prints `<repo> <ref>` for that
+and runs nothing. A `kind: scaffold` entry (pack mode only) is an app made the way a user makes one: `--checkout` is the
+starter template at its pin, the core tree's own built CLI runs `stackra create <work> --starter <checkout> --tarballs
+<out>/tarballs` (files only), then `stackra new service <service> --area app --data`, and the matrix `fixture` folder
+is copied into that service; `scaffold/create` and `scaffold/service` are steps of the summary (a failed one skips the
+rest and is never allow-listed), and the repo-own steps run in the app itself. `.github/workflows/consumer-gate.yml`
+runs the scaffold on the version packages pull request, on a `consumer-gate` label, on pushes to main and by dispatch.
 
 `stackra testbed` (ADR 0484) replaces the Mac script `ci-box`; it starts `aws`, `ssh`, `rsync` and `gh` without a shell
 and never prints or passes a secret value. Defaults: AWS profile `academorix`, regions eu-west-1, eu-west-2 and
