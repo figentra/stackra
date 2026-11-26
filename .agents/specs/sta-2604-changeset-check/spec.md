@@ -33,8 +33,12 @@ did not, part of what let 0.33.0 and the partial 0.33.1 out.
 - stackra#766 and #770 (one changeset for another package let a change ship with no note); STA-2043; PR 1128's review
   notes (version-branch prefix match, empty-changeset waiver, catalog bumps)
 - FR-001 to FR-007: `tools/scripts/changeset-check.mjs` and its tests on this branch, the PR 1128 diff against `main`
-- Commands: `changeset status --since=main` and `node tools/scripts/changeset-check.mjs` on box 2
-  (`/work/stackra-b2/wt/sta-2604.proof2.sh`)
+- Commands: `changeset status --since=main` and `pnpm changeset:check`, run two ways anyone can repeat. First, a
+  scratch checkout of this branch with the `zod` catalog entry in `pnpm-workspace.yaml` bumped and no changeset:
+  `pnpm changeset:check` exits 1 and names 83 members. Second, a throwaway git repository in the stackra#766 shape
+  (two packages changed, a changeset for one of them, an empty changeset with a reason):
+  `changeset status --since=main` exits 0 while `pnpm changeset:check` exits 1; naming the other package `none` makes
+  both exit 0
 
 ## Problem
 
@@ -103,8 +107,8 @@ for package A let a change to package B merge with no note (stackra#766, #770). 
 
 - **SC-001**: `tools/scripts/__tests__/changeset-check.test.mjs` proves AC-001 to AC-006 on throwaway git repositories,
   and each of the waiver, catalog and version-branch tests fails with its behaviour reverted — verified by: unit
-- **SC-002**: on box 2, a real `changeset status --since=main` passes the stackra#766 shape while `changeset:check`
-  fails it — verified by: manual
+- **SC-002**: on a throwaway git repository in the stackra#766 shape (see Sources), a real
+  `changeset status --since=main` passes it while `changeset:check` fails it — verified by: manual
 
 ## Design
 
