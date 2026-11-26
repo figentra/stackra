@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `MediaLibrary`, the platform service of server-side media: issues signed uploads into a bucket
  *          (`createUpload`), claims a finished upload for a bucket (`claim`), stores bytes the server made
- *          (`store`), and links a private file (`temporaryUrl`).
+ *          (`store`), and links a private file (`temporaryUrl`, or `temporaryUrlOf` from a stored path of a bucket).
  * Boundary: a client's bytes never pass through it (ADR 0222 decision 2); only `store` takes bytes, the server's own,
  *           under the same bucket rules a claim applies. The client puts its bytes to `uploads/<id>` on the
  *           `FileSystem` disk through a signed URL (`FileSystem.signUpload`), and the token itself carries only the id.
@@ -220,5 +220,24 @@ export class MediaLibrary extends Service {
   /** A URL that reads `file` until `expiresIn` has passed; the way to show a file of a private bucket. */
   temporaryUrl(file: MediaFile, expiresIn: Duration): Promise<string> {
     return this.disk.temporaryUrl(file.path, expiresIn);
+  }
+
+  /**
+   * A URL that reads the file at `path` of `bucket` until `expiresIn` has passed, for a caller that kept only the stored
+   * path (an archive's) and no `MediaFile`.
+   *
+   * @throws TypeError when `path` is not a file of `bucket` (outside `<visibility>/<bucket>/`, or with a `..` segment),
+   *         so a stored path can never sign another bucket's file.
+   * @example
+   * await media.temporaryUrlOf(InvoicesBucket, archive.path, Duration.minutes(5));
+   */
+  temporaryUrlOf(bucket: BucketClass, path: string, expiresIn: Duration): Promise<string> {
+    const { visibility } = bucketOptionsOf(bucket);
+    const prefix = `${visibility}/${bucketKeyOf(bucket).replaceAll(".", "/")}/`;
+    if (!path.startsWith(prefix) || path.length === prefix.length || path.split("/").includes(".."))
+      throw new TypeError(
+        `${path} is not a file of the ${bucketKeyOf(bucket)} bucket (${prefix}…)`,
+      );
+    return this.disk.temporaryUrl(path, expiresIn);
   }
 }
