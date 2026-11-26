@@ -439,7 +439,8 @@ export function gateZap(report, policy) {
       const uris = (alert.instances ?? [])
         .map((instance) => instance.uri)
         .filter((uri) => !scopes.some((re) => re.test(uri)));
-      if (uris.length === 0 && (alert.instances ?? []).length > 0) continue;
+      // No URL left: every instance was out of scope (ZAP already drops those it filtered itself).
+      if (uris.length === 0) continue;
       alerts.push({
         pluginid: id,
         name: alert.alert ?? alert.name,

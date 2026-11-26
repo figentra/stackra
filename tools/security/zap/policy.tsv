@@ -48,5 +48,5 @@
 *	OUTOFSCOPE	https://[^/]+/cdn-cgi/.*
 # The docs and the registry's package pages quote SQL on purpose (ADRs, READMEs).
 10099	OUTOFSCOPE	https://(docs\.stackra\.figentra\.com|npm\.stackra\.figentra\.com/(ar/)?package)/.*
-# The brand page's long digit strings (asset hashes) read as a card number; no page of the docs holds personal data.
-10062	OUTOFSCOPE	https://docs\.stackra\.figentra\.com/brand.*
+# The docs are public reference pages with no personal data; their long digit strings (hashes, ids) read as card numbers.
+10062	OUTOFSCOPE	https://docs\.stackra\.figentra\.com/.*

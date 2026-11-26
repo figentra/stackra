@@ -282,6 +282,8 @@ const zapReport = {
           riskcode: "3",
           instances: [{ uri: "https://docs.example/x" }],
         },
+        // ZAP removed every instance its own OUTOFSCOPE matched: nothing is left to report
+        { pluginid: "10099", alert: "Source Code Disclosure - SQL", riskcode: "2", instances: [] },
         {
           pluginid: "99998",
           alert: "Unlisted medium",
