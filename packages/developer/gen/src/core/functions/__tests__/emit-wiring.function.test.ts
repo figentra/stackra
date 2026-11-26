@@ -9,7 +9,9 @@
  *          their selecting config and package config rows, no registry entry; STA-1297; a candidate without the
  *          tokens of a library the member does not declare, nor in a package's own wiring of an undeclared `@stackra/*`
  *          package; no abstract driver), MediaLibrary over the media
- *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), a service's
+ *          disk, a package config row only for a class its manifest's `config` section lists (STA-1308), only the
+ *          candidates a member's runtimes load (a service no client entry, an app no server entry and no native or
+ *          desktop entry its targets lack; STA-2830), a service's
  *          request guards and health indicator drivers from its declared packages with their config rows (a package's
  *          own row wins; none for a member that is not a service; STA-1385), a package's own default driver (memory,
  *          else its one testing driver, else its one testDefault driver), a selected port's included, no internal driver,
@@ -43,6 +45,15 @@ const service = (deps: readonly { name: string; from: string }[]) => ({
   refusals: [],
   statics: {},
   traits: [],
+});
+
+/** A declared `@stackra/<name>` package whose manifest lists `drivers`. */
+const pkg = (
+  name: string,
+  drivers: NonNullable<MemberIR["dependencies"][number]["manifest"]["drivers"]>,
+): MemberIR["dependencies"][number] => ({
+  package: `@stackra/${name}`,
+  manifest: { member: name, package: `@stackra/${name}`, version: "0.1.0", drivers },
 });
 
 const billingClass = (name: string, kind: string, extra: object = {}) => ({
@@ -804,6 +815,111 @@ describe("emitWiring", () => {
     expect(content).not.toContain('key: "identity.SignInBrowser"');
     expect(content).not.toContain("ExpoSignInBrowserDriver");
     expect(content).not.toContain("ElectronSignInBrowserDriver");
+  });
+
+  it("lists in an app only the drivers its runtimes load, so a web app's one browser session needs no selector", () => {
+    const clients = pkg("clients", [
+      {
+        port: "ClientSession",
+        key: "clients.ClientSession",
+        candidates: ["service", "session"],
+        classes: {
+          service: { class: "ServiceClientSessionDriver", from: "@stackra/app/server" },
+          session: { class: "SessionClientSessionDriver", from: "@stackra/identity" },
+        },
+      },
+    ]);
+    const config = pkg("config", [
+      {
+        port: "SecretStore",
+        key: "config.SecretStore",
+        candidates: ["memory", "aws_secrets_manager"],
+        classes: {
+          memory: { class: "MemorySecretStoreDriver", from: "@stackra/config" },
+          aws_secrets_manager: {
+            class: "AwsSecretsManagerSecretStoreDriver",
+            from: "@stackra/config/node",
+          },
+        },
+      },
+    ]);
+    const platform = pkg("platform", [
+      {
+        port: "Platform",
+        key: "platform.Platform",
+        candidates: ["web", "electron", "expo"],
+        classes: {
+          web: { class: "WebPlatformDriver", from: "@stackra/platform/browser" },
+          electron: { class: "ElectronPlatformDriver", from: "@stackra/platform/desktop" },
+          expo: { class: "ExpoPlatformDriver", from: "@stackra/platform/native" },
+        },
+      },
+    ]);
+    const identity = pkg("identity", [
+      {
+        port: "SignInBrowser",
+        key: "identity.SignInBrowser",
+        candidates: ["electron", "expo"],
+        classes: {
+          electron: { class: "ElectronSignInBrowserDriver", from: "@stackra/identity/desktop" },
+          expo: { class: "ExpoSignInBrowserDriver", from: "@stackra/identity/native" },
+        },
+      },
+    ]);
+    const page: DeclaredClass = {
+      name: "NotesService",
+      kind: "service",
+      module: "console",
+      file: "src/services/notes.service.ts",
+      importPath: "#services/notes.service",
+      options: {},
+      deps: [
+        { class: { name: "ClientSession", from: "@stackra/clients/contracts" } },
+        { class: { name: "SecretStore", from: "@stackra/config/contracts" } },
+        { class: { name: "Platform", from: "@stackra/platform/contracts" } },
+        { class: { name: "SignInBrowser", from: "@stackra/identity/contracts" } },
+      ],
+      facets: [],
+      methods: [],
+      refusals: [],
+      statics: {},
+      traits: [],
+    };
+    const app = (targets: readonly string[]): string =>
+      emitWiring({
+        ...BILLING_IR,
+        layout: "app",
+        targets,
+        classes: [page],
+        dependencies: [...BILLING_IR.dependencies, clients, config, platform, identity],
+      });
+
+    const web = app(["web"]);
+    expect(web).toContain(
+      '        "session": () => import("@stackra/identity").then((m) => m.SessionClientSessionDriver),',
+    );
+    expect(web).toContain(
+      '        "web": () => import("@stackra/platform/browser").then((m) => m.WebPlatformDriver),',
+    );
+    for (const absent of [
+      "ServiceClientSessionDriver",
+      "AwsSecretsManagerSecretStoreDriver",
+      "ElectronPlatformDriver",
+      "ExpoPlatformDriver",
+      'key: "identity.SignInBrowser"',
+    ])
+      expect(web).not.toContain(absent);
+
+    const everywhere = app(["web", "desktop", "ios"]);
+    for (const present of [
+      "ElectronPlatformDriver",
+      "ExpoPlatformDriver",
+      "ElectronSignInBrowserDriver",
+      "ExpoSignInBrowserDriver",
+    ])
+      expect(everywhere).toContain(present);
+    expect(everywhere).not.toContain("ServiceClientSessionDriver");
+    expect(everywhere).not.toContain("AwsSecretsManagerSecretStoreDriver");
   });
 
   it("lists a package candidate without the tokens of a library the member does not declare", () => {

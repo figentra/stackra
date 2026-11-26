@@ -27,8 +27,10 @@
  *          driver of its runtime (STA-1535, STA-1536); a web-and-native app also gets `nativeWiring`, whose defaults are
  *          the native drivers, for its native entry.
  * Boundary: pure. Derived from file paths, base classes and constructor parameter types at build time; no reflection
- *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; an
- *           abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its
+ *           and no string token. A driver is a lazy import, so a node-only driver never reaches a browser bundle; a
+ *           package's candidate is listed only where a runtime of the member loads it (a service or worker no browser,
+ *           native or desktop entry; an app no server, node or worker entry, and no native or desktop entry its targets
+ *           lack, STA-2830); an abstract driver (a base the candidates extend) is never a candidate. In a package's wiring, which only its
  *           own tests register, a port with several candidates (selected or not) defaults to its `memory` driver, else
  *           to its one `./testing` driver, else to the one driver declared `Driver(Port, { testDefault: true })`; a
  *           service's or app's wiring gets a default only for its follow-the-system ports. A driver declared `{ internal: true }` is never a candidate. A package candidate's tokens from a
@@ -624,7 +626,6 @@ export function emitWiring(ir: MemberIR): string {
   }
 
   // The declared packages' driver tables by port key, and the member of each package (STA-1297).
-  const server = ir.layout === "service" || ir.layout === "worker";
   const packageTables = dependencyDriverTables(ir);
   const configKeys = new Set(configLines.map((line) => /key: "([^"]+)"/.exec(line)?.[1]));
   const linked = new Set<string>();
@@ -649,11 +650,11 @@ export function emitWiring(ir: MemberIR): string {
     const table = packageTables.get(key);
     if (table === undefined || linked.has(key)) return brought;
     linked.add(key);
-    // A server never runs a browser, React Native or Electron driver, so its wiring lists none: a port with only
-    // those (`SignInBrowser`) stays out, else the boot fails choosing a driver nothing on the server asks for.
-    const candidates = server
-      ? table.candidates.filter((candidate) => !isClientEntry(candidate.type.from))
-      : table.candidates;
+    // A server never runs a browser, React Native or Electron driver, and an app never runs a server or Node one (nor
+    // a native or desktop one its targets lack), so each wiring lists only what its runtimes load: a port left with
+    // none (`SignInBrowser` on a server or a web app) stays out, and a port left with one (`ClientSession` in a web
+    // app) needs no selector, else the boot fails choosing a driver nothing on that runtime asks for (STA-2830).
+    const candidates = table.candidates.filter((candidate) => isLoadable(ir, candidate.type.from));
     if (candidates.length === 0) return brought;
     const entry = ports.get(key) ?? { port: dep.class, key, candidates: [], own: [] };
     for (const candidate of candidates)
@@ -944,4 +945,25 @@ export function emitWiring(ir: MemberIR): string {
 /** Whether `from` is a client-only entry of a package (`@stackra/identity/native`, `/desktop`, `/react`). */
 function isClientEntry(from: string): boolean {
   return /\/(?:react|native|desktop)(?:\/|$)/.test(from);
+}
+
+/** Whether `from` is a server-only entry of a package (`@stackra/app/server`, `@stackra/config/node`, `/worker`). */
+function isServerEntry(from: string): boolean {
+  return /\/(?:server|node|worker)(?:\/|$)/.test(from);
+}
+
+/**
+ * Whether a runtime of `ir` can load a driver from `from`: a service or a worker loads no client entry; an app loads no
+ * server entry, a `/native` one only with an iOS or Android target and a `/desktop` one only with the desktop target
+ * (an app that names no target keeps both); a package's own wiring, which only its tests register, loads every one.
+ */
+function isLoadable(ir: MemberIR, from: string): boolean {
+  if (ir.layout === "service" || ir.layout === "worker") return !isClientEntry(from);
+  if (ir.layout !== "app") return true;
+  if (isServerEntry(from)) return false;
+  const targets = ir.targets ?? [];
+  if (targets.length === 0) return true;
+  if (/\/native(?:\/|$)/.test(from)) return clientRuntimes(ir).includes("native");
+  if (/\/desktop(?:\/|$)/.test(from)) return targets.includes("desktop");
+  return true;
 }
