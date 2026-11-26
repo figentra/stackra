@@ -121,7 +121,7 @@ API grants only `licensed` scopes, so the owner also inserts an internal scope's
 
 ## Publishing
 
-Only the release workflows publish (`publishers` rows: `figentra/stackra` for `@stackra`, `figentra/stackra-pro` for
+Only the release workflows publish (`publishers` rows: `stackra-inc/stackra` for `@stackra`, `stackra-inc/stackra-pro` for
 `@stackra-pro`, workflow `.github/workflows/release.yml`, ref `refs/heads/main`, environment `release`;
 `figentra/brand`, `figentra/commerce`, `figentra/os`, `figentra/pay`, `figentra/invoicing`, `figentra/billing` and
 `figentra/figentra` for `@figentra`, same workflow and ref, environments `brand-registry`, `release`, `release`, `release`, `release`, `release` and `release`; `figentra/flow` for `@figentra-oss`, same workflow and ref, environment `release`; matched on the numeric
@@ -164,12 +164,17 @@ Secret: `REGISTRY_SIGNING_KEY`, the PKCS#8 PEM of the ECDSA P-256 key (sops scop
 the old key's SPKI (base64, from `/-/npm/v1/keys`) into `REGISTRY_RETIRED_KEYS` with its `expires`, then set the new
 secret.
 
+The registry fails closed when it is not configured: with a var missing or malformed, or `REGISTRY_SIGNING_KEY` unset,
+empty or not a PKCS#8 key, every route (`/-/ping` included) answers `503 { "error": "registry_misconfigured" }`, and the
+Worker log names the cause (`RangeError: REGISTRY_SIGNING_KEY is not set`), never a key or a var's value. Set the secret
+or var and the next request serves normally; nothing else needs a restart.
+
 ## Layout
 
 | Path                      | Holds                                                                                                                                                                                                                                                           |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `wrangler.jsonc`          | Worker name, script, bindings, vars, the custom domain                                                                                                                                                                                                          |
-| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss`, `0006` `figentra/os`, `0008` `figentra/pay` and `figentra/invoicing`, `0009` `figentra/billing`, `0011` `figentra/figentra` |
+| `migrations/`             | numbered D1 migrations; `0001` scopes and publishers, `0002` licences and `name_rules`, `0003` `@figentra`, `0004` `figentra/commerce`, `0005` `@figentra-oss`, `0006` `figentra/os`, `0008` `figentra/pay` and `figentra/invoicing`, `0009` `figentra/billing`, `0011` `figentra/figentra`, `0017` the move to `stackra-inc` |
 | `src/main.ts`             | the Worker entry: builds the dependencies, hands over to `handleRequest`                                                                                                                                                                                        |
 | `src/http/`               | `parsePath`, `splitName`, the router, `json` and `failure`                                                                                                                                                                                                      |
 | `src/npm/`                | the npm read routes (`handle*`), packument rendering and its KV cache, R2 keys                                                                                                                                                                                  |
