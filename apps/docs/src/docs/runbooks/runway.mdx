@@ -216,7 +216,7 @@ tell the owner.
 
 Agents cannot do these (STA-605):
 
-1. Restrict the `static` environment to `main` and `schemas@*` tags, and add the required reviewers `runway.yaml` lists for `static`, `registry` and `release` (`figentra-usr` until a second maintainer joins).
+1. Restrict the `static` environment to `main` and `schemas@*` tags, and add the required reviewers `runway.yaml` lists for `static`, `registry` and `release` (`stackra-usr` until a second maintainer joins).
 2. Create the `docs` environment (main only). figentra/infra's `estate/secret-callers.mjs` already grants the `docs` and `release` callers their scopes.
 3. Before the first docs Worker deploy (ADR 0514), remove the docs.stackra.figentra.com CNAME that points at Mintlify, so Cloudflare can attach the `stackra-docs` custom domain; then cancel the Mintlify project.
 4. Apply `.github/rulesets/release-tags.json` to the `release-tags` ruleset.
