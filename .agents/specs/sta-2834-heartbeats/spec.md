@@ -36,7 +36,7 @@ or, left off, a dead scheduler or a stuck relay would go unnoticed.
 - **Services touched**: none (a service turns beats on by setting the `STACKRA_HEARTBEAT_URLS` secret)
 - **Packages touched**: packages/runtime/queue (sender, config, worker), packages/runtime/scheduler (tick, fire),
   packages/runtime/outbox (outbox and cross-app relays), packages/infrastructure/infra-observability (docs only)
-- **Public contract change**: yes, additive: `@stackra/queue` exports `HeartbeatService`, `HeartbeatConfig`,
+- **Public contract change**: yes, additive: `@stackra/queue` exports `HeartbeatService` (`beat`, `during`, `has`), `HeartbeatConfig`,
   `HeartbeatConfig$`, `HeartbeatOptions` and `heartbeatName`; its manifest gains the `queue.heartbeat` config, the
   `STACKRA_HEARTBEAT_URLS` secret (optional) and the `HeartbeatService` service. No signature changes.
 - **Cross-service events**: none
@@ -58,20 +58,26 @@ or, left off, a dead scheduler or a stuck relay would go unnoticed.
 ## Acceptance criteria
 
 - **AC-001**: WHEN a queue worker loop pass reaches its store (a job run or none due) THE worker SHALL beat
-  `queue-<queue>`; a pass whose store failed, `drain` and `process` SHALL NOT beat.
-- **AC-002**: WHEN `OutboxRelayService.relay()` completes (whether it held the lock or not) THE relay SHALL beat
-  `outbox-relay`; `CrossAppRelayService.relay()` SHALL beat `cross-app-relay`; a poll that throws SHALL NOT beat.
+  `queue-<queue>`; WHILE a loop's attempt runs THE worker SHALL beat `queue-<queue>` every `minInterval` until the
+  attempt settles (bounded by the job's timeout); a pass whose store failed, `drain` and `process` SHALL NOT beat.
+- **AC-002**: WHEN `OutboxRelayService.relay()` completes having taken the lock THE relay SHALL beat `outbox-relay`;
+  `CrossAppRelayService.relay()` SHALL beat `cross-app-relay` the same way; a poll that another relay held the lock
+  for SHALL NOT beat (a holder stuck inside the lock keeps renewing it, so its replicas' beats would hide it), and a
+  poll that throws SHALL NOT beat.
 - **AC-003**: WHEN a scheduler tick runs THE scheduler SHALL beat the CronJob id (`cronJobId(key)`) of each cron whose
   due runs it pushed and, when no push failed, `scheduler-schedules`; WHEN `fire(key)` pushes its runs it SHALL beat
   `cronJobId(key)`; a tick another runner holds and a failed push SHALL NOT beat.
-- **AC-004**: IF no URL is configured for a job (or the secret is unset) THEN no request SHALL be sent and no error
-  raised.
-- **AC-005**: A beat SHALL never throw, SHALL be abandoned after `timeout` (default 3 s), SHALL be sent at most once
-  per `minInterval` (default 10 s) per job and never overlap; a refused, failed or slow beat SHALL be logged as
-  `queue.heartbeat_failed` with the job name and the status code or the error's name, never the URL, and SHALL NOT
-  count, so the next call tries again.
-- **AC-006**: A malformed `STACKRA_HEARTBEAT_URLS` (not a JSON object of kebab-case job names to `https://` URLs)
-  SHALL fail the configuration at boot without echoing the value.
+- **AC-004**: IF no URL is configured for a job (or the secret is unset) THEN THE sender SHALL send no request and
+  raise no error.
+- **AC-005**: THE sender SHALL never throw from a beat, SHALL abandon a beat after `timeout` (default 3 s) with its
+  in-call retries, SHALL try a network error, a 408 or a 5xx again up to twice within that time (100 ms, then 200 ms apart) and SHALL
+  NOT retry a 429 or another 4xx in the call; beats of one job SHALL never overlap, SHALL be at least `minInterval`
+  (default 10 s) apart after one that went through and at least the retry gap (the shorter of `minInterval` and 2 s)
+  after one that failed; a beat that failed SHALL be logged as `queue.heartbeat_failed` with the job name and the
+  status code or the error's name, never the URL, at most once per `minInterval` per job, the next line carrying
+  `unlogged`, the count of failures not logged since.
+- **AC-006**: IF the secret is malformed THEN THE configuration SHALL fail at boot, naming the rule (a JSON object
+  of kebab-case job names to https URLs) and never the value.
 
 ## Status history
 
@@ -80,3 +86,6 @@ or, left off, a dead scheduler or a stuck relay would go unnoticed.
 - 2026-11-26 · Clarified → Planned → Tasked · Claude (STA-2834 session) · plan.md and tasks.md written from the build
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2834 session) · T001 to T006 committed with tests; revert checks
   and a live HTTPS proof on box 2 recorded in the PR; awaiting the CTO's approval
+- 2026-11-26 · Implementing (review fixes) · Claude (STA-2834 session) · T007 to T009 from the review: relays beat
+  only when they took the lock (AC-002), the worker beats while a job runs (AC-001), failed beats are spaced, retried
+  in the call and their log throttled (AC-005); revert checks recorded in the PR
