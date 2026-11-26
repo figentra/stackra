@@ -58,6 +58,9 @@ running the work on the primary when that replica is not fresh enough.
   again once caught up — Validates: AC-006, AC-010, AC-011, AC-014
 - **P-007**: `replicaIsFresh` and `replicaPositionOf` judge positions exactly at their bounds — Validates: AC-006,
   AC-007
+- **P-010**: a standby whose WAL receiver is cut, having replayed all it received, is skipped by a guarded read; the
+  primary's position is read first and handed to the replica's statement, null when the primary does not answer, and
+  then the standby is never caught up — Validates: AC-015, AC-016
 - **P-008**: the schema defaults equal the options class and refuse bad values — Validates: AC-008
 - **P-009**: gen's port reach, manifest and boot line — Validates: AC-009, AC-012, AC-013
 
@@ -65,8 +68,11 @@ running the work on the primary when that replica is not fresh enough.
 
 `ActionPipeline.routed` (query only) → `ReplicaReads.reads(ReplicaQuery)` → `pinned(writer, at, lastWriteAt)` →
 `ReplicaReads.onReplica(handle, ReplicaVisit)` → `DatabaseReplicaReadsDriver` → `Database.onReplica(work,
-{ maxLag, after })` → `PostgresDatabaseDriver`: pick the replica connection, read its position (`REPLICA_POSITION_SQL`,
-reused for `replicaProbe`), `replicaIsFresh`, then the replica's read-only transaction or the primary.
+{ maxLag, after })` → `PostgresDatabaseDriver`: pick the replica connection, read the primary's position
+(`PRIMARY_POSITION_SQL`, null when the primary does not answer), then the replica's position against it
+(`REPLICA_POSITION_SQL`; reused for `replicaProbe`), `replicaIsFresh`, then the replica's read-only transaction or the
+primary. A replica is caught up only once it has replayed through the primary's position: one that only replayed all
+it received (its WAL receiver stopped) is judged by its lag.
 
 ## Components and responsibilities
 
@@ -98,6 +104,7 @@ packages/data/database/
   README.md
   src/core/index.ts
   src/core/constants/database-config-schema.constant.ts
+  src/core/constants/primary-position-sql.constant.ts
   src/core/constants/replica-position-sql.constant.ts
   src/core/constants/replica-reads-schema.constant.ts
   src/core/functions/replica-is-fresh.function.ts
@@ -114,6 +121,7 @@ packages/data/database/
   src/node/drivers/postgres-database.driver.ts
   src/node/drivers/database-replica-reads.driver.ts
   src/node/drivers/__tests__/database-replica-reads.driver.test.ts
+  src/node/drivers/__tests__/postgres-database-replica-probe.driver.test.ts
   src/node/drivers/__tests__/postgres-replica-lag.int.test.ts
 packages/developer/gen/
   README.md
@@ -161,6 +169,9 @@ The replica path still replays the running `app.*` settings; the primary path ru
 - AC-004, AC-005: `database-replica-reads.driver.test.ts`.
 - AC-006, AC-007, AC-010, AC-011, AC-014: `postgres-replica-lag.int.test.ts` on a real standby (replay paused and resumed), and the pure
   function tests.
+- AC-015, AC-016: `postgres-replica-lag.int.test.ts` with the standby's WAL receiver cut (`primary_conninfo` pointed
+  at a host that does not resolve), the statement run with no primary position, and
+  `postgres-database-replica-probe.driver.test.ts` (the primary read first, null when it does not answer).
 - AC-008: `database-config-options.schema.test.ts`.
 - AC-009, AC-012, AC-013: `replica-reads-ports.function.test.ts`, `emit-boot.function.test.ts`, the golden files.
 

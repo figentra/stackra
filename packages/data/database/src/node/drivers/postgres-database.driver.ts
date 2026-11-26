@@ -6,7 +6,8 @@
  *          `deleted`/`archived` filters of the keep-the-row delete policies, sets the scope
  *          settings row-level security reads, and runs read-only work on a read replica when the
  *          runtime handed it one, unless that replica is not fresh enough for the read (the lag guard: its replay point,
- *          read with `REPLICA_POSITION_SQL` and reused for `replicaProbe`, against the read's `maxLag` and `after`);
+ *          read with `REPLICA_POSITION_SQL` against the primary's position read just before with
+ *          `PRIMARY_POSITION_SQL`, and reused for `replicaProbe`, against the read's `maxLag` and `after`);
  *          every statement is counted for the query guard and handed to the
  *          `DatabaseOptions.observers` (`observedLogger`). The ORM's result cache is `EntityResultCacheAdapter`, the
  *          store of `Cached` models.
@@ -18,7 +19,9 @@
  *           unless `onReplica` asks (MikroORM's replica preference is off), because the scope settings live in the
  *           primary's transaction. The lag guard measures the one replica connection the read then uses, so a read
  *           never measures one replica and reads another; a replica that is not fresh sends the read to the primary,
- *           never to an error.
+ *           never to an error. A replica counts as caught up only once it has replayed through the primary's position,
+ *           never through the WAL it received itself, so a standby whose WAL receiver stopped is judged by its growing
+ *           lag (STA-1464 review); a primary that does not answer that reading leaves the lag alone to decide.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0327 (decisions 3 and 5); ADR 0136 (decision 2); the
  *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool);
@@ -36,6 +39,7 @@ import { Duration } from "@stackra/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
+import { PRIMARY_POSITION_SQL } from "#core/constants/primary-position-sql.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
 import { REPLICA_POSITION_SQL } from "#core/constants/replica-position-sql.constant";
 import { connectDetachedRuns } from "#core/functions/connect-detached-runs.function";
@@ -229,13 +233,18 @@ export class PostgresDatabaseDriver extends Driver(Database) {
     return replicaIsFresh(await this.probe(connection), Date.now(), freshness);
   }
 
-  /** Reads `connection`'s replay point (one reading at a time per connection) and keeps it. */
+  /**
+   * Reads `connection`'s replay point (one reading at a time per connection) and keeps it: first the primary's
+   * position, then whether the replica has replayed through it and its lag.
+   */
   private probe(connection: ReplicaConnection): Promise<ReplicaPosition> {
     const running = this.probes.get(connection);
     if (running !== undefined) return running;
     const measuredAt = Date.now();
-    const reading = connection
-      .execute<Record<string, unknown>>(REPLICA_POSITION_SQL, [], "get")
+    const reading = this.primaryPosition()
+      .then((lsn) =>
+        connection.execute<Record<string, unknown>>(REPLICA_POSITION_SQL, [lsn], "get"),
+      )
       .then((row) => {
         const position = replicaPositionOf(row, measuredAt);
         this.positions.set(connection, position);
@@ -244,5 +253,18 @@ export class PostgresDatabaseDriver extends Driver(Database) {
       .finally(() => this.probes.delete(connection));
     this.probes.set(connection, reading);
     return reading;
+  }
+
+  /**
+   * The primary's WAL insert position as text, or null when the primary does not answer (no replica then counts as
+   * caught up, and its lag alone decides).
+   */
+  private async primaryPosition(): Promise<string | null> {
+    const row = await this.orm.em
+      .getConnection("write")
+      .execute<Record<string, unknown>>(PRIMARY_POSITION_SQL, [], "get")
+      .catch(() => undefined);
+    const lsn = row?.["lsn"];
+    return typeof lsn === "string" ? lsn : null;
   }
 }

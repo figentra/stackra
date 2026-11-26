@@ -27,7 +27,7 @@ skipped for the primary.
 - `packages/data/database/src/node/drivers/postgres-database.driver.ts` (`onReplica`)
 - `packages/data/database/src/node/drivers/database-replica-reads.driver.ts`
 - `packages/developer/gen/src/core/functions/replica-reads-ports.function.ts`, `emit-boot.function.ts`
-- Postgres 18 `pg_is_in_recovery`, `pg_last_wal_receive_lsn`, `pg_last_wal_replay_lsn`,
+- Postgres 18 `pg_is_in_recovery`, `pg_current_wal_insert_lsn`, `pg_last_wal_receive_lsn`, `pg_last_wal_replay_lsn`,
   `pg_last_xact_replay_timestamp`
 
 ## Impact
@@ -77,6 +77,10 @@ freshness?)` with `ReplicaFreshness`; `DatabaseConfig.replicaReads` (`ReplicaRea
   work on that replica.
 - **AC-011**: WHEN `Database.onReplica` is given no freshness THE `PostgresDatabaseDriver` SHALL run the work on a
   replica without measuring it.
+- **AC-015**: WHEN a replica has replayed short of the primary's position THE `PostgresDatabaseDriver` SHALL judge it
+  by its lag, even when it has replayed all the WAL it received.
+- **AC-016**: WHEN the primary does not answer the position reading THE `PostgresDatabaseDriver` SHALL judge the replica
+  by its lag alone.
 - **AC-007**: THE lag reading SHALL be reused for `replicaProbe` and taken again once when it fails only because it aged.
 - **AC-008**: THE `DatabaseConfig.replicaReads` defaults SHALL be a 5-second `maxLag`, a 1-second `probeEvery` and no
   overrides, and an unknown area or place SHALL be a config issue.
@@ -92,3 +96,5 @@ freshness?)` with `ReplicaFreshness`; `DatabaseConfig.replicaReads` (`ReplicaRea
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing (built and tested on box 2, the lag guard proved on a real streaming standby)
+- 2026-11-26 → Implementing (review fix: a replica is caught up only once replayed through the primary's position, not
+  through the WAL it received; proved with the standby's WAL receiver cut, AC-015, AC-016)

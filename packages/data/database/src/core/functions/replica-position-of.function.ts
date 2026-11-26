@@ -1,11 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `replicaPositionOf`, a `ReplicaPosition` from the `REPLICA_POSITION_SQL` row read at `measuredAt`: a server
- *          that is not a standby has replayed everything, a standby that has replayed all it received is caught up as
- *          of `measuredAt`, and any other standby has replayed through `measuredAt` less its lag; a standby with no
- *          readable lag (no transaction replayed yet, or no row) has replayed nothing usable.
- * Boundary: pure. `measuredAt` is taken before the statement runs, so the position errs early (a replica is never
- *           judged fresher than it was).
+ *          that is not a standby has replayed everything, a standby that has replayed through the primary's position
+ *          (`caught_up`) is current as of `measuredAt`, and any other standby has replayed through `measuredAt` less
+ *          its lag; a standby with no readable lag (no transaction replayed yet, or no row) has replayed nothing usable.
+ * Boundary: pure. `measuredAt` is taken before the primary's position is read, so the position errs early (a replica
+ *           is never judged fresher than it was). `caught_up` is trusted only because the statement compares the
+ *           replica with the primary; a standby that merely replayed all it received (its WAL receiver may be cut)
+ *           is not caught up and is judged by its lag.
  * Runtime: isomorphic
  * Governing contract: ADR 0057 (decision 6: read replica); data-layer gap scale-performance 11 (stackra-307, STA-1464).
  */

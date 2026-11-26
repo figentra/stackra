@@ -165,8 +165,12 @@ const visits = await database.onReplica(() => this.visits.find({ day: { $gte: fr
   actor. The driver remembers writes per instance; the transport carries the last write to other instances as
   `CallOptions.lastWriteAt`.
 - The lag guard (STA-1464): `onReplica(work, { maxLag, after })` measures the replica it is about to use
-  (`pg_is_in_recovery`, the received and replayed WAL, `pg_last_xact_replay_timestamp`) and runs `work` on the primary
-  when that replica lags more than `maxLag` or has not replayed through `after`. A reading is reused for
+  (`pg_is_in_recovery`, its replayed WAL against the primary's `pg_current_wal_insert_lsn` read just before,
+  `pg_last_xact_replay_timestamp`) and runs `work` on the primary when that replica lags more than `maxLag` or has not
+  replayed through `after`. A replica is caught up only once it has replayed through the primary's position, never
+  through the WAL it received itself: a standby whose WAL receiver stopped (partition, crash, slot or auth error, a
+  failover that left it behind) replays all it received and would otherwise look current forever; it is judged by its
+  growing lag instead. Both readings need no privilege beyond connecting. A reading is reused for
   `DatabaseConfig.replicaReads.probeEvery` (1 second; the boot passes it as `replicaProbe`), and one that fails only
   because it aged is taken again once. Without a freshness `onReplica` reads the replica unmeasured (reports).
   `DatabaseReplicaReadsDriver` always demands the query's `maxLag`, else `replicaReads.maxLag` (5 seconds), and the
