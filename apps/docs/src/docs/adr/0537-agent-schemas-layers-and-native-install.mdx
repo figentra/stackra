@@ -6,10 +6,11 @@ description: "Proposed · 2026-11-25"
 {/* Stackra file contract. Purpose: ADR 0537 (Proposed 2026-11-25, STA-2787): agents and skills are defined by versioned schemas, inherited across company, product, repo and user layers with fixed merge rules, and installed by `stackra agents` into Claude Code's native files. Boundary: decision text only; the design is `.agents/specs/sta-2787-agents-install/plan.md` and the code is `@stackra/mcp` and `@stackra/cli`. Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0502; supersedes ADR 0282 decisions 9 and 10 for agent and skill files once accepted. */}
 
 <Note>
-  Proposed 2026-11-25 (STA-2787, spec `.agents/specs/sta-2787-agents-install/`). Nothing may rely on
-  it until it is accepted with the spec's Planned approval. When accepted it supersedes decisions 9
-  and 10 of [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) for agent
-  and skill files, and amends [0016](/adr/0016-agents-source-of-truth) and
+  Proposed 2026-11-25 (STA-2787, spec `.agents/specs/sta-2787-agents-install/`), revised 2026-11-26
+  at the CTO's read. Nothing may rely on it until it is accepted, which happens only once the CTO's
+  read of the revised spec clears it. When accepted it supersedes decisions 9 and 10 of
+  [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc) for agent and skill
+  files, and amends [0016](/adr/0016-agents-source-of-truth) and
   [0503](/adr/0503-figentra-flow-runs-the-development-workflow).
 </Note>
 
@@ -34,21 +35,28 @@ documented files, so no runtime of our own is needed.
 2. **Layers.** Definitions come from four layers, nearest first: user, repo (`.agents/overrides/`), product (the
    repository's `.agents/`), base (the company roster of platform/figentra, pinned by a 40-hex commit and read through
    an adapter). A definition may `extends` one parent; cycles and chains deeper than 16 are refused.
-3. **Merge rules are fixed per field** (replace, append, keyed, deny-wins), listed in the spec's plan. Every deny is a
-   union over the whole chain and stack and cannot be removed below; every allow, permission mode and MCP server is
-   bounded by the ceiling (`policy`) of each layer on the chain; a layer without a policy inherits its parent's. The
-   base always carries an explicit ceiling from a fixed, documented table (the built-in tools it allows by name,
-   `maxMode` `acceptEdits`, an explicit list of allow rules, an explicit MCP server allowlist) and a deny table; a
-   layer with no parent that lacks a ceiling is refused (`no_ceiling`). No ceiling is ever unbounded, and changing the
-   base table is a reviewed pull request at risk R3.
+3. **Merge rules are fixed per field** (replace, append, keyed, deny-wins), listed in the spec's plan. Every deny and
+   ask is a union over the whole chain and stack and cannot be removed below. On the allow side each layer's effective
+   ceiling is its own policy bounded by its parent's, following the layer chain down to the company base, the only
+   layer allowed to have no parent; a layer that reaches past its parent is refused, and every installed agent, skill
+   and grant must lie inside the nearest layer's effective ceiling, compared by rule subsumption. The base carries an
+   explicit ceiling from a fixed, documented table (built-in tools by name, `maxMode` `acceptEdits`, allow rules, an
+   MCP server allowlist, a hooks ceiling) and deny and ask tables; a rule a product needs outside it enters only as a
+   base-approved extension for that product. No ceiling is ever unbounded, and changing the base table or its
+   extensions is a reviewed pull request at risk R3.
 4. **Install writes native files only.** `stackra agents install|sync` writes Claude Code's own formats: subagent
    Markdown in `.claude/agents/`, skill folders in `.claude/skills/`, permission rules in `.claude/settings.json`, MCP
-   servers in `.mcp.yaml` (or `.mcp.json`), a generated guard hook for an agent's own scoped deny rules, or a plugin
-   folder. It records every path and settings entry in `.claude/stackra-agents.json`, is idempotent, refuses to
-   overwrite a hand edit without showing the diff, and uninstalls cleanly.
-5. **Widening needs a person.** Any install that gives an agent more than the last one did needs an interactive
-   confirmation at a terminal, recorded in the manifest (who, when, what). MCP tool calls and non-interactive runs
-   refuse it. A change to the company base is a reviewed pull request in platform/figentra at risk R3.
+   servers in `.mcp.yaml` (or `.mcp.json`), a generated guard hook that enforces the base deny and ask tables and an
+   agent's own scoped rules, or a plugin folder. `settings.json` receives deny and ask rules and explicit layer grants
+   only, never a ceiling and never one agent's allow. It records every path and settings entry in
+   `.claude/stackra-agents.json`, is idempotent, refuses to overwrite a hand edit without showing the diff, and
+   uninstalls cleanly.
+5. **Widening needs review.** Any install that gives an agent or the session more than the last one did (a tool, a
+   mode, a grant, a server, a hook, a removed deny or ask) asks a person at a terminal and is recorded in the
+   manifest; MCP tool calls, non-interactive runs and runs from an agent session refuse it. That prompt is a
+   convenience, not a boundary: the policy files are code-owned and `stackra agents check` in CI fails on a widening
+   not recorded in the same change, so review is the gate. The files that enforce the policy are denied to agents. A
+   change to the company base is a reviewed pull request in platform/figentra at risk R3.
 6. **Commands and tools.** `stackra agents list|resolve|validate|diff|install|sync|uninstall|check` are CLI commands;
    all but `check` are served by `stackra mcp` as `agents_list` … `agents_uninstall` (ADR 0282 decision 5, house names).
 7. **A project may hold installed agent files.** For agent and skill files this replaces ADR 0282 decisions 9 and 10:
@@ -63,7 +71,8 @@ documented files, so no runtime of our own is needed.
 - One definition of a persona serves every product; a product changes behaviour, not identity, and a fix in the base
   reaches products when they move their pin.
 - Permission changes become reviewable diffs with a named source per rule; a hand edit is never lost silently.
-- Products depend on platform/figentra by commit, and the roster needs an adapter until it adopts the layer schema.
+- Products depend on platform/figentra by commit, through a committed, digest-checked snapshot (so CI needs no
+  credential), and the roster needs an adapter until it adopts the layer schema.
 - `stackra agents check` joins CI wherever a layer file exists; the Academorix layout is migrated in that repository.
 
 ## Enforcement
