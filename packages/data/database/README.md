@@ -22,6 +22,9 @@ strategy, the unit of work and scope sessions, gapless `Sequence` numbers, `Proj
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts`, `src/contracts/index.ts`, `src/node/index.ts` and `src/testing/index.ts` are stand-in barrels.
 
+`DatabaseConfig.driver` (key `database`) picks the `Database` driver: `postgres` unless config says otherwise, so a
+service boots with no database config. `memory` stays the testing driver, which a test picks with `useDrivers`.
+
 ## A module service
 
 ```ts

@@ -1,5 +1,43 @@
 # @stackra/experience
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/clients@0.33.1
+  - @stackra/documents@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/icons@0.33.1
+  - @stackra/tokens@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [4937622]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/i18n@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/clients@0.33.0
+  - @stackra/documents@0.33.0
+  - @stackra/icons@0.33.0
+  - @stackra/tokens@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/support@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

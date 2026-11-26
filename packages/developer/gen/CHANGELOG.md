@@ -1,5 +1,121 @@
 # @stackra/gen
 
+## 0.33.1
+
+### Patch Changes
+
+- d60f9d5: A service's Encore app resolves its `#` imports, and its typecheck no longer resolves a compiled workspace package's
+  `#` imports into the service. Encore honours only the first `./` target of a tsconfig `paths` key, so
+  `stackra encore:prepare` writes, and `stackra validate --repository` expects, each package.json `imports` key with its
+  first target only (`pathsOfImports`). And because tsc applies `paths` to every package a service compiles, gen writes
+  the service's `.stackra/tsconfig.typecheck.json` (its tsconfig without `paths`), and `stackra typecheck` runs on it in a
+  service. After upgrading, run `stackra encore:prepare` in each service and regenerate (ADR 0091, rule 4 as corrected
+  2026-11-10).
+- e885a38: An app's generated `#stackra/i18n` catalogue loaders load in the browser again. gen wrote each loader with
+  `{ with: { type: "json" } }`, and Vite serves the JSON as a JavaScript module, so the browser refused every catalogue
+  ("Expected a JSON module script"). An app's loaders now import the JSON plainly and let its bundler (Vite, Metro) load
+  it; services, packages and Workers keep the attribute, which Node and esbuild need. Regenerate (`stackra gen`).
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- e885a38: A service's Encore app applies its migrations. Encore's runner runs every migration file in one transaction, so the
+  online index builds of `@stackra/database` migration 0006 (`create index concurrently`, which every service declares)
+  failed with SQLSTATE 25001 and no service started under `encore run`. The copy gen writes to the Encore service's
+  `migrations/` folder now builds each online step in its plain form; `.stackra/migrations`, which `stackra db migrate`
+  applies in production, keeps the online form (ADR 0159, amendment of 2026-11-10). Regenerate (`stackra gen`).
+- e885a38: A service's generated Encore topic files pass Encore's parser. Regenerate (`stackra gen`) to pick it up.
+  
+  - `events.ts` and `queues.ts` registered each Pub/Sub topic with `registerBrokerTopics` by passing the topic itself,
+    which Encore refuses ("invalid topic usage"). Each topic is now registered as a publisher ref,
+    `topic.ref<Publisher<BrokerMessage>>()`, the form Encore allows.
+  - The topics and subscriptions named `BrokerMessage` from `@stackra/queue/contracts`, which Encore cannot resolve
+    through the package's dist. gen now writes `.stackra/encore/<member>/broker-message.ts` with the same shape, and the
+    generated files import it from there.
+  
+  Topic names, subscriptions, message bodies and the broker's behaviour are unchanged.
+- e885a38: A service with encrypted fields (a `HasEncryptedFields` model, its own or a declared package's) boots. Its generated
+  boot seals them with `FieldCipher`, but the cipher's one implementation, `AesGcmFieldCipherDriver` in
+  `@stackra/contracts`, is a plain class no manifest lists as a driver, so nothing bound it ("No driver is bound to
+  FieldCipher"). The generated wiring now binds `FieldCipher` to it over `KeyProvider`, and links the `KeyProvider`
+  drivers of a declared package (`@stackra/tenancy`: `ephemeral` by default, `kms` in production). Regenerate
+  (`stackra gen`); a service with encrypted fields declares `@stackra/tenancy`.
+- e885a38: A service's generated wiring binds the services its generated boot resolves. For a service that declares
+  `@stackra/outbox`, boot gets `OutboxWriterService`, `OutboxRelayService`, `InboxService` and `EventBus` from the
+  container (and `SegmentService`, `AutomationService` or `QueueWorkerService` for segments, workflow or queue), but
+  nothing injected them, so the wiring had no row and boot stopped at "Nothing binds OutboxWriterService". Each is now
+  bound with its dependencies from its package's manifest. Regenerate (`stackra gen`).
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/support@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 0a57fb3: Gen builds a Fumadocs site from a docs member too: a member whose package.json has `"stackra": { "kind": "docs" }`, with its pages under `content/`, its navigation in each folder's `meta.json` and its settings in `docs.yaml`, described by the new `@stackra/gen/schema/docs.json`. A docs app with `src/config/docs.config.ts` builds exactly as before.
+- 2e3e323: A connector package's manifest lists its `WebhookEvent` classes in `webhookEvents` (class, entry, Integration and
+  Connection), and a hosting service registers them from it, so the service names no provider. Gen refuses a hosted
+  event that is half paired (`webhook_event_unpaired`) or routed twice (`webhook_route_duplicate`), and an own event
+  typed against a hosted Integration now carries that Integration's Connection, so its connection URL routes.
+- 54aa1e7: Gen reads a `stream: true` action's `Promise<ReadableStream<Chunk>>` output (no output shape), marks the manifest entry `stream: true`, and projects its 200 response as `text/event-stream` in `openapi.json`. A `stream` option and a stream output that disagree fail with `stream_output_mismatch`.
+- 41a5ff0: A package with a `src/**/__tests__/<name>.e2e.page.tsx` now gets `.stackra/e2e/` (`index.html`, `main.tsx`, `vite.config.ts`: a small Vite app that renders the page named by the URL path) and `.stackra/playwright.e2e.config.ts`, both built on `@stackra/testing/e2e`. An app, a service or a package with no e2e page gets none of them.
+
+### Patch Changes
+
+- 6186329: A service's tsconfig no longer needs `baseUrl` for Encore. TypeScript 7 removed `baseUrl` (TS5102), so the rule from 0.30.0 broke typecheck in a TS 7 repository (INVOICING).
+  
+  - **The service check:** it now requires only `compilerOptions.paths` equal to package.json `imports`, which resolve from the tsconfig's folder. It refuses a `baseUrl`.
+  - **`stackra encore:prepare`:**
+    - it removes an existing `baseUrl`;
+    - it writes package.json and tsconfig.json with gen's `formatJson`, now exported from `@stackra/gen`, in the repository formatter's layout, so the format check passes after it.
+  
+  Bump step: run `stackra encore:prepare` in each service, or delete `"baseUrl": "."` from its tsconfig.
+  
+  `stackra encore:prepare` also keeps a tsconfig's file contract written inside the braces (NOTIFY's services). Before, it kept only the `//` lines above the object, so the contract was dropped and the format check failed. `encore.dev` stays the literal catalog version (ADR 0091 rule 3): Encore rewrites `catalog:` to `^<version>`, which breaks the frozen install.
+- 93d63bb: An action or query whose actors include `ActorKind.ApiClient` (`api_client`) now gets an endpoint, derived or written. An API-key caller such as a tenant's servers reaches the service like a user. Before, a `public` action whose only external actor was `api_client` got no route, and strict gen refused it with `public_without_endpoint`, even with an explicit `endpoint` (BILLING-B, `meters.usage_event.record_batch@1`). An action for services alone still gets none.
+- 3c47a3a: A package's `src/node/entities.gen.ts` is stable under gen. Gen counted any `[OptionalProps]` under `src/` as one the
+  member wrote beside its model, and so read its own last augmentation in `entities.gen.ts` as authored: it wrote none
+  (`optional: []`), and the next run wrote it back. The committed file flipped on every run, and the gate's "Committed
+  manifests match gen" passed or failed by which version was there before (stackra#1030 to #1032, `TenantDataKey`).
+  Gen now ignores its own entities file in that check; a member's own `[OptionalProps]` still wins (STA-1750).
+- 93d63bb: A consumed service's lang namespace that its own contract package also ships (`<service package>-contract`, declared) is taken once, from the contract. It no longer fails gen with `i18n_namespace_clash`.
+  
+  PAY hit this as soon as payments declared `@stackra/i18n`. The namespaces were consent (compliance-privacy), delivery and inbox (notify), and domains, entities and memberships (tenancy): each was read from both the declared contract and the consumed service's own `assets/lang`.
+  
+  A namespace shipped by two unrelated packages still clashes.
+- 4bf092e: A webhook event typed by an integration `import type`d from a hosted package's entry is now registered with that integration. For example: `WebhookEvent<QuiqupIntegration>`, with `QuiqupIntegration` from `@figentra/ship-connector-quiqup/node`.
+  
+  Before this, the reader could not resolve the package's types and named the partner `unknown`. `registrations.ts` then imported `unknown` and registered `integration: undefined`, so no route or signature check was tied to the event. Nothing typechecks `.stackra/gen`, so it broke only at runtime: Ship's carriers and Pay's Stripe.
+  
+  - The reader now takes the name from the import itself, using the exported name for an aliased import.
+  - gen refuses a partner it still cannot name, with `partner_unresolved`.
+  - The registrations emitter never imports `unknown`.
+- 93d63bb: `endpoint_area_mismatch` now accepts a public call under RFC 8615's `/.well-known/`. A well-known path is a convention across hosts, not an area route. Checkout's `GET /.well-known/stackra/frame-ancestors`, the edge's frame-ancestors callback, was refused before.
+  
+  Only the public area gets this. A call in any other area under `/.well-known/` is still refused, and the method, collision and version checks apply as before.
+- 93d63bb: Tests on `useDrivers("memory")` no longer need per-test overrides for two fail-closed ports and for seeders' services (os#256).
+  
+  - **`@stackra/actions/testing`:** the testing plugin now offers a memory `RateLimitStore` (`MemoryRateLimitStoreDriver`) and a memory `JobDispatcher`. The new `MemoryJobDispatcherDriver` keeps every queued job in `jobs` and runs none.
+    - Production still fails closed: these bind only in a testing module, and only when the test picks "memory".
+    - `ApprovalGate` is left out on purpose. An action that declares `approval` fails closed without a real gate and its binding store (ADR 0509), so a test that runs one binds `MemoryApprovalGateDriver.of(...)` and `MemoryApprovalBindingStoreDriver` itself.
+  - **gen:** a service that only a seeder injects is now wired. Example: a minimal seeder's `SettingsPackService`. Before, `.seed(XMinimalSeeder)` failed with "Nothing binds SettingsPackService".
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/support@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

@@ -245,6 +245,100 @@ describe("emitWiring", () => {
     expect(content).toMatch(/import \{[^}]*LoyaltyService[^}]*\} from "@acme\/loyalty-kit";/);
   });
 
+  it("binds a package service only a seeder injects, so .seed() can build the seeder (os#256)", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@acme/loyalty-kit"],
+      classes: [
+        ...COMMERCE_IR.classes,
+        {
+          name: "OrdersMinimalSeeder",
+          kind: "seeder",
+          module: "orders",
+          file: "src/modules/orders/database/seeders/orders-minimal.seeder.ts",
+          importPath: "#modules/orders/database/seeders/orders-minimal.seeder",
+          options: {},
+          deps: [{ class: { name: "LoyaltyService", from: "@acme/loyalty-kit" } }],
+          facets: [],
+          methods: [],
+          refusals: [],
+          statics: {},
+          traits: [],
+        },
+      ],
+      dependencies: [{ package: "@acme/loyalty-kit", manifest: kit }],
+    });
+    expect(content).toMatch(
+      /\{ module: "orders", kind: "service", provide: LoyaltyService, deps: \[LoyaltyLedger\] \},/,
+    );
+    // the seeder itself stays out of the bindings: the test setup registers its tokens
+    expect(content).not.toMatch(/provide: OrdersMinimalSeeder/);
+  });
+
+  it("binds what the generated boot resolves for a declared package, which nothing injects (STA-2664 (n))", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const names = ["OutboxWriterService", "OutboxRelayService", "InboxService"];
+    const outbox = {
+      ...kit,
+      package: "@stackra/outbox",
+      services: names.map((name) => ({ class: name, from: "@stackra/outbox/node", deps: [] })),
+    };
+    const content = emitWiring({
+      ...COMMERCE_IR,
+      packages: [...(COMMERCE_IR.packages ?? []), "@stackra/outbox"],
+      dependencies: [{ package: "@stackra/outbox", manifest: outbox }],
+    });
+    for (const name of names)
+      expect(content).toMatch(new RegExp(`kind: "service", provide: ${name}, deps: \\[\\] \\},`));
+  });
+
+  it("binds FieldCipher over a declared KeyProvider for a service with encrypted fields (STA-2664 (l))", () => {
+    const kit = buildManifest(LOYALTY_KIT_IR).manifest;
+    const tenancy = {
+      ...kit,
+      package: "@stackra/tenancy",
+      member: "tenancy",
+      drivers: [
+        {
+          port: "KeyProvider",
+          key: "contracts.KeyProvider",
+          candidates: ["ephemeral"],
+          classes: {
+            ephemeral: { class: "EphemeralKeyProviderDriver", from: "@stackra/tenancy/node" },
+          },
+        },
+      ],
+    } as unknown as typeof kit;
+    const encrypted = (trait: boolean) =>
+      emitWiring({
+        ...COMMERCE_IR,
+        packages: [...(COMMERCE_IR.packages ?? []), "@stackra/tenancy"],
+        classes: COMMERCE_IR.classes.map((declared) =>
+          trait && declared.name === "Order"
+            ? {
+                ...declared,
+                traits: [...declared.traits, { name: "HasEncryptedFields", args: [] }],
+              }
+            : declared,
+        ),
+        dependencies: [{ package: "@stackra/tenancy", manifest: tenancy }],
+      });
+    const content = encrypted(true);
+    expect(content).toContain('key: "contracts.FieldCipher",');
+    expect(content).toContain(
+      '"aes_gcm": () => import("@stackra/contracts").then((m) => m.AesGcmFieldCipherDriver),',
+    );
+    expect(content).toMatch(/deps: \{ "aes_gcm": \[\w*KeyProvider\] \},/);
+    expect(content).toContain('key: "contracts.KeyProvider",');
+    expect(content).toContain(
+      '"ephemeral": () => import("@stackra/tenancy/node").then((m) => m.EphemeralKeyProviderDriver),',
+    );
+    // A service without encrypted fields binds neither.
+    expect(encrypted(false)).not.toContain("contracts.FieldCipher");
+    expect(encrypted(false)).not.toContain("contracts.KeyProvider");
+  });
+
   it("binds a package's extension point that its service injects, from the package's manifest", () => {
     const point = {
       name: "LoyaltyKitExtensionPoint",

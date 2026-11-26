@@ -52,5 +52,16 @@
     "types": []
     // ${configDir} resolves inside the EXTENDING workspace, not this package.
   },
-  "exclude": ["node_modules", "dist", "build", ".turbo", "coverage", "encore.gen"]
+  // A member on tsc's default include would read the Encore services gen writes into `stackra-encore/` (ADR 0091,
+  // amendment of 2026-11-10), and through them encore.dev's own sources, which this baseline's strict options
+  // refuse; Encore builds that folder.
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".turbo",
+    "coverage",
+    "encore.gen",
+    "${configDir}/stackra-encore"
+  ]
 }

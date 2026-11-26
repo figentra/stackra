@@ -80,6 +80,9 @@ export function emitI18n(ir: MemberIR): GeneratedFile | undefined {
     [...namespaces].map(([namespace, { node }]) => [namespace, node]),
   );
   const shipped = [...new Set([...namespaces.values()].flatMap((entry) => entry.package ?? []))];
+  // An app's bundler (Vite, Metro) turns the JSON into a JavaScript module, which the browser refuses under a
+  // `type: "json"` attribute ("Expected a JSON module script"); Node and esbuild need the attribute.
+  const attribute = ir.layout === "app" ? "" : ', { with: { type: "json" } }';
   const content = [
     generatedHeader({
       from:
@@ -108,7 +111,7 @@ export function emitI18n(ir: MemberIR): GeneratedFile | undefined {
       `  ${JSON.stringify(namespace)}: {`,
       ...[...byLocale].map(
         ([locale, specifier]) =>
-          `    ${JSON.stringify(locale)}: () => import(${JSON.stringify(specifier)}, { with: { type: "json" } }),`,
+          `    ${JSON.stringify(locale)}: () => import(${JSON.stringify(specifier)}${attribute}),`,
       ),
       "  },",
     ]),

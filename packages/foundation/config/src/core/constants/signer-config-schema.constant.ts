@@ -10,8 +10,11 @@
  */
 import { z } from "zod";
 
+import { SIGNER_DRIVERS } from "#core/constants/signer-drivers.constant";
+
 /** The shipped `SignerConfig$`. */
 export const SIGNER_CONFIG_SCHEMA = z.object({
+  driver: z.enum(SIGNER_DRIVERS).default("ephemeral"),
   keyId: z.string().default(""),
   kmsKeyId: z.string().default(""),
   region: z.string().default(""),

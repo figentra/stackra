@@ -15,7 +15,7 @@ import { INBOX_IR, PRODUCER_IR } from "#core/__tests__/fixtures/cross-app-ir.fix
 describe(emitEncoreInbox, () => {
   it("writes one raw, exposed, unauthenticated endpoint through answerHttp", () => {
     const file = emitEncoreInbox(INBOX_IR);
-    expect(file?.path).toBe(".stackra/encore/billing/inbox.ts");
+    expect(file?.path).toBe("stackra-encore/billing/inbox.ts");
     expect(file?.content).toContain(
       '  { expose: true, auth: false, method: "POST", path: "/events/inbox" },',
     );

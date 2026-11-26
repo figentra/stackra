@@ -12,12 +12,12 @@ import type { SchedulingBoardResource } from "#contracts/types/scheduling-board-
 
 /** The board's state a draft is checked against. */
 export interface SchedulingConflictContext {
-  /** Every row. */
+  /** Every row of the board. */
   readonly resources: readonly SchedulingBoardResource[];
-  /** Every item. */
+  /** Every item on the board. */
   readonly items: readonly SchedulingBoardItem[];
   /** Working time; none checks no hours. */
   readonly workingTime?: readonly SchedulingBoardInterval[] | undefined;
-  /** Now. */
+  /** The current time the checks use. */
   readonly now: Date;
 }
