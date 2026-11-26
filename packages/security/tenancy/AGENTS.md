@@ -57,8 +57,10 @@ data, the tenancy step of the resolver chain, and the client's tenant switcher (
   not show, or one above every tenant, is refused, and a tree read that fails fails the call. Never compare raw
   `scopeId`s for these kinds. The tree is read in a session
   over the root label of the scope's path, because row security hides a branch's tenant ancestor from the branch's own.
-  `TenantScopeOwnershipDriver` is the `ScopeOwnership` the inbox and the automation service use to distrust an actor
-  whose tenant does not own the scope it comes with. `pnpm validate` refuses a session-level `app.*` setting
+  `TenantScopeOwnershipDriver` is the `ScopeOwnership` the inbox, the approval executor and the automation service use
+  to distrust an actor whose tenant does not own the scope it comes with; it reads the tree the same way, from the root
+  of the scope's path (`readTreeAtRoot`), because its callers ask outside every scope session or inside a branch's,
+  where row security hides the tenant (STA-1717). `pnpm validate` refuses a session-level `app.*` setting
   anywhere else (`stackra validate --repository`).
 - Raw SQL lives only in `TenantIsolationService.withTenant` (one parameterised `set_config`), with a `// raw-sql:`
   comment (ADR 0160).

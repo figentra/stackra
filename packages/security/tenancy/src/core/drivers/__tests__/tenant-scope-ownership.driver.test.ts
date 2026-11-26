@@ -1,14 +1,18 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `TenantScopeOwnershipDriver`: a platform actor holds any scope; a tenant actor holds its own
- *          tenant's scope and a branch below it, and no other tenant's scope, a scope above every tenant, or none.
- * Boundary: test only; the tree is the scope package's memory driver.
+ *          tenant's scope and a branch below it, and no other tenant's scope, a scope above every tenant, or none; the
+ *          tree is read in a scope session over the root label of the scope's path, rolled back after the read, so a
+ *          tree under row security (no node outside a session, only the session's subtree inside one) still answers.
+ * Boundary: test only; the tree is the scope package's memory driver, and a fake `Database` records each scope session
+ *           and, in the last test, a tree that answers only inside one stands in for the row security.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0495 (decision 2).
  */
 import { ScopeOwnership } from "@stackra/actions/contracts";
 import { ActorKind } from "@stackra/contracts";
-import type { Actor } from "@stackra/contracts";
+import type { Actor, ScopeRef } from "@stackra/contracts";
+import type { Database } from "@stackra/database";
 import { MemoryScopeTreeDriver } from "@stackra/scope";
 import type { ScopeEntry } from "@stackra/scope/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -40,8 +44,46 @@ const BRANCH: ScopeEntry = {
   name: "Riyadh",
 };
 
+/** The scope sessions a fake database opened, by path, and the one open now (none: outside every session). */
+const sessions: { opened: string[]; open: string | undefined } = { opened: [], open: undefined };
+
+/** A database that only records each scope session and runs its work, which it rolls back by rethrowing. */
+const database = {
+  withScope: async <T>(
+    scope: ScopeRef | readonly ScopeRef[],
+    work: () => Promise<T>,
+  ): Promise<T> => {
+    const { path } = scope as ScopeRef;
+    sessions.opened.push(path);
+    sessions.open = path;
+    try {
+      return await work();
+    } finally {
+      sessions.open = undefined;
+    }
+  },
+} as unknown as Database;
+
+/** A tree under row security: no node outside a scope session, only the session's own subtree inside one. */
+class RowSecureTree extends MemoryScopeTreeDriver {
+  override async node(id: ScopeEntry["id"]): Promise<ScopeEntry | undefined> {
+    const node = await super.node(id);
+    return node !== undefined && this.shows(node.path) ? node : undefined;
+  }
+
+  override async ancestors(scope: ScopeRef): Promise<readonly ScopeEntry[]> {
+    return (await super.ancestors(scope)).filter((entry) => this.shows(entry.path));
+  }
+
+  private shows(path: string): boolean {
+    const { open } = sessions;
+    return open !== undefined && (path === open || path.startsWith(`${open}.`));
+  }
+}
+
 const driver = new TenantScopeOwnershipDriver(
   new MemoryScopeTreeDriver().seed([ROOT, ACME, GLOBEX, BRANCH]),
+  database,
 );
 const actorIn = (scopeId?: Actor["scopeId"]): Actor => ({
   kind: ActorKind.Service,
@@ -69,5 +111,24 @@ describe(TenantScopeOwnershipDriver, () => {
     await expect(driver.holds(actorIn(GLOBEX.id), BRANCH)).resolves.toBe(false);
     await expect(driver.holds(actorIn(ACME.id), ROOT)).resolves.toBe(false);
     await expect(driver.holds(actorIn(ACME.id), undefined)).resolves.toBe(false);
+  });
+
+  it("reads the tree in a session over the root label of the scope's path, so a tree under row security answers", async () => {
+    sessions.opened = [];
+    const secure = new TenantScopeOwnershipDriver(
+      new RowSecureTree().seed([ROOT, ACME, GLOBEX, BRANCH]),
+      database,
+    );
+    await expect(secure.holds(actorIn(ACME.id), BRANCH)).resolves.toBe(true);
+    await expect(secure.holds(actorIn(GLOBEX.id), BRANCH)).resolves.toBe(false);
+    expect(sessions.opened).toEqual(["platform", "platform"]);
+    expect(sessions.open).toBeUndefined();
+  });
+
+  it("opens no session for a platform actor or an absent scope", async () => {
+    sessions.opened = [];
+    await expect(driver.holds(actorIn(), ACME)).resolves.toBe(true);
+    await expect(driver.holds(actorIn(ACME.id), undefined)).resolves.toBe(false);
+    expect(sessions.opened).toEqual([]);
   });
 });
