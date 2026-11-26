@@ -7,7 +7,9 @@
 #          the lockfile blocks the publish on a critical vulnerability that has a fix (ADR 0174). Every tarball
 #          is made by `pnpm pack`, then published as it is (the dry run packs and checks the same tarballs, reads the registry and
 #          publishes nothing), so the workspace `.pnpmfile.mjs` beforePacking
-#          hook strips the repo-only `imports` map and `@stackra/source` condition first.
+#          hook strips the repo-only `imports` map and `@stackra/source` condition first. Every version is published
+#          under the holding dist-tag `release-pending`; `latest` moves only after every version is on the registry and the
+#          release's dependency closure (each dependency in the plan's own scopes) is complete there (STA-2778).
 # Boundary: publishes only to `registry`; never to npmjs (the optional mirror of ADR 0453 decision 16 is off and not
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
@@ -193,6 +195,155 @@ jobs:
             console.log(`::error title=Publish plan::${message}`);
             process.exit(1);
           };
+          // Versions and ranges (STA-2778): the part of node-semver a packed manifest needs, so the closure walk reads a range
+          // the way pnpm and npm do. A range it cannot read is a stop, never a guess.
+          const VERSION =
+            /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+          const PARTIAL =
+            /^(<=|>=|<|>|=|\^|~>?)?v?(\*|[xX]|0|[1-9]\d*)(?:\.(\*|[xX]|0|[1-9]\d*)(?:\.(\*|[xX]|0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)?)?$/;
+          const triple = (major, minor, patch, pre = []) => ({ tuple: [major, minor, patch], pre });
+
+          /** A version as `{ tuple, pre }`, or null. */
+          function parseVersion(text) {
+            const match = VERSION.exec(String(text).trim());
+            return match === null
+              ? null
+              : triple(Number(match[1]), Number(match[2]), Number(match[3]), match[4] === undefined ? [] : match[4].split("."));
+          }
+
+          /** Semver precedence: negative, zero or positive. */
+          function compareVersions(a, b) {
+            for (let i = 0; i < 3; i++) if (a.tuple[i] !== b.tuple[i]) return a.tuple[i] < b.tuple[i] ? -1 : 1;
+            if (a.pre.length === 0 || b.pre.length === 0) return b.pre.length - a.pre.length;
+            for (let i = 0; i < Math.max(a.pre.length, b.pre.length); i++) {
+              const x = a.pre[i];
+              const y = b.pre[i];
+              if (x === undefined) return -1;
+              if (y === undefined) return 1;
+              if (x === y) continue;
+              const xNumeric = /^\d+$/.test(x);
+              const yNumeric = /^\d+$/.test(y);
+              if (xNumeric && yNumeric) return Number(x) < Number(y) ? -1 : 1;
+              if (xNumeric !== yNumeric) return xNumeric ? -1 : 1;
+              return x < y ? -1 : 1;
+            }
+            return 0;
+          }
+
+          /** One token of a range (`^1.2.3`, `>=0.11`, `1.x`, `*`) as plain comparators, or null when it cannot be read. */
+          function desugar(token) {
+            if (token === "" || token === "*" || token === "x" || token === "X") return [];
+            const match = PARTIAL.exec(token);
+            if (match === null) return null;
+            const op = match[1] ?? "";
+            const raw = [match[2], match[3], match[4]];
+            let known = 0;
+            while (known < 3 && raw[known] !== undefined && !/^[*xX]$/.test(raw[known])) known++;
+            if (match[5] !== undefined && known < 3) return null;
+            if (known === 0) return op === "<" || op === ">" ? [{ op: "<", v: triple(0, 0, 0, ["0"]) }] : [];
+            const [major, minor = 0, patch = 0] = raw.slice(0, known).map(Number);
+            const lower = triple(major, minor, patch, match[5] === undefined ? [] : match[5].split("."));
+            // The first version past a partial one: 1 -> 2.0.0-0, 1.2 -> 1.3.0-0.
+            const next = known === 1 ? triple(major + 1, 0, 0, ["0"]) : triple(major, minor + 1, 0, ["0"]);
+            switch (op) {
+              case "":
+              case "=":
+                return known === 3 ? [{ op: "=", v: lower }] : [{ op: ">=", v: lower }, { op: "<", v: next }];
+              case ">=":
+                return [{ op: ">=", v: lower }];
+              case ">":
+                return known === 3 ? [{ op: ">", v: lower }] : [{ op: ">=", v: triple(...next.tuple) }];
+              case "<":
+                return [{ op: "<", v: known === 3 ? lower : triple(major, minor, 0, ["0"]) }];
+              case "<=":
+                return known === 3 ? [{ op: "<=", v: lower }] : [{ op: "<", v: next }];
+              case "^": {
+                const upper =
+                  major > 0 || known === 1
+                    ? triple(major + 1, 0, 0, ["0"])
+                    : minor > 0 || known === 2
+                      ? triple(0, minor + 1, 0, ["0"])
+                      : triple(0, 0, patch + 1, ["0"]);
+                return [{ op: ">=", v: lower }, { op: "<", v: upper }];
+              }
+              default: // `~` and `~>`
+                return [{ op: ">=", v: lower }, { op: "<", v: next }];
+            }
+          }
+
+          /** A range as sets of comparators (any set may match), or null when a part of it cannot be read. */
+          function parseRange(range) {
+            const sets = [];
+            for (const part of String(range).split("||")) {
+              const text = part.trim().replace(/(<=|>=|<|>|=|\^|~>?)\s+/g, "$1");
+              const hyphen = /^(\S+)\s+-\s+(\S+)$/.exec(text);
+              const tokens = hyphen !== null ? [`>=${hyphen[1]}`, `<=${hyphen[2]}`] : text === "" ? [""] : text.split(/\s+/);
+              const set = [];
+              for (const token of tokens) {
+                const comparators = desugar(token);
+                if (comparators === null) return null;
+                set.push(...comparators);
+              }
+              sets.push(set);
+            }
+            return sets;
+          }
+
+          /** Whether `version` (text) meets a parsed range; a prerelease only where a comparator names its own x.y.z. */
+          function satisfies(versionText, sets) {
+            const version = parseVersion(versionText);
+            if (version === null) return false;
+            const holds = ({ op, v }) => {
+              const order = compareVersions(version, v);
+              return op === "=" ? order === 0 : op === ">" ? order > 0 : op === ">=" ? order >= 0 : op === "<" ? order < 0 : order <= 0;
+            };
+            const sameTuple = ({ v }) => v.pre.length > 0 && v.tuple.join(".") === version.tuple.join(".");
+            return sets.some((set) => set.every(holds) && (version.pre.length === 0 || set.some(sameTuple)));
+          }
+
+          const scopeOf = (name) => (name.startsWith("@") && name.includes("/") ? name.slice(0, name.indexOf("/")) : null);
+
+          /** The rows of the pre-flight's packed list: name, version, integrity, tarball. */
+          function packedRows(file) {
+            return readFileSync(file, "utf8")
+              .split("\n")
+              .filter((line) => line !== "")
+              .map((line) => {
+                const [name, version, integrity, tarball] = line.split("\t");
+                return { name, version, integrity, tarball };
+              });
+          }
+
+          /**
+           * Every dependency, optional or peer dependency the packed manifests name in one of the plan's own scopes, as the
+           * tarball says it (pnpm has already turned `workspace:` into a version). An `npm:` alias counts by its target.
+           */
+          function requirements(rows) {
+            const scopes = new Set(rows.map((row) => scopeOf(row.name)).filter((scope) => scope !== null));
+            const needs = [];
+            for (const row of rows) {
+              const manifest = JSON.parse(
+                execFileSync("tar", ["-xzOf", row.tarball, "package/package.json"], { encoding: "utf8", maxBuffer: 1 << 28 }),
+              );
+              for (const field of ["dependencies", "optionalDependencies", "peerDependencies"])
+                for (const [key, spec] of Object.entries(manifest[field] ?? {})) {
+                  const alias = /^npm:(@[^@/]+\/[^@]+)(?:@(.*))?$/.exec(String(spec));
+                  const dep = alias === null ? key : alias[1];
+                  const range = alias === null ? String(spec) : (alias[2] ?? "*");
+                  if (scopes.has(scopeOf(dep))) needs.push({ from: `${row.name}@${row.version}`, field, dep, range });
+                }
+            }
+            return needs;
+          }
+
+          /** The registry's packument of `name` as `fetch_packuments` saved it, or null when the registry has no such package. */
+          function packument(dir, name) {
+            try {
+              return JSON.parse(readFileSync(`${dir}/${name.replace("/", "%2f")}.json`, "utf8"));
+            } catch {
+              return null;
+            }
+          }
 
           if (mode === "--manifest") {
             // Run in each package directory by `pnpm -r exec`: one JSON line per package.
@@ -280,8 +431,73 @@ jobs:
             if (problems.length > 0) fail(`${expectedName}@${expectedVersion}: ${problems.join("; ")}`);
             // The sha512 integrity of the tarball, as the registry's `dist.integrity` writes it.
             console.log(`sha512-${createHash("sha512").update(readFileSync(out)).digest("base64")}`);
+          } else if (mode === "--closure-names" && out && (expectedName === "plan" || expectedName === "registry")) {
+            // The names whose packuments the closure check reads. Before the publish: only what this release does not meet
+            // itself. Before a dist-tag move: every package of the release and every dependency, read from the registry alone.
+            const rows = packedRows(out);
+            const inPlan = new Map(rows.map((row) => [row.name, row.version]));
+            const names = new Set(expectedName === "registry" ? rows.map((row) => row.name) : []);
+            for (const need of requirements(rows)) {
+              const sets = parseRange(need.range);
+              const own = inPlan.get(need.dep);
+              if (expectedName === "registry" || sets === null || own === undefined || !satisfies(own, sets)) names.add(need.dep);
+            }
+            for (const name of [...names].sort()) console.log(name);
+          } else if (mode === "--closure" && out && expectedName && (expectedVersion === "plan" || expectedVersion === "registry")) {
+            // The closure: every requirement met by a version this release publishes (`plan` only) or one the registry serves.
+            const rows = packedRows(out);
+            const inPlan = new Map(rows.map((row) => [row.name, row.version]));
+            const served = (name) => Object.keys(packument(expectedName, name)?.versions ?? {});
+            const problems = [];
+            if (expectedVersion === "registry")
+              for (const row of rows)
+                if (!served(row.name).includes(row.version)) problems.push(`${row.name}@${row.version} is not on the registry`);
+            const needs = requirements(rows);
+            for (const need of needs) {
+              const sets = parseRange(need.range);
+              if (sets === null) {
+                problems.push(`${need.from} names ${need.dep} as "${need.range}" in ${need.field}, which is not a version range`);
+                continue;
+              }
+              const candidates = [
+                ...(expectedVersion === "plan" && inPlan.has(need.dep) ? [inPlan.get(need.dep)] : []),
+                ...served(need.dep),
+              ];
+              if (candidates.some((version) => satisfies(version, sets))) continue;
+              const where = expectedVersion === "plan" ? "in this release or on the registry" : "on the registry";
+              problems.push(`${need.from} needs ${need.dep}@${need.range} (${need.field}), and no such version is ${where}`);
+            }
+            for (const problem of problems) console.log(`::error title=Closure incomplete::${problem}`);
+            if (problems.length > 0) process.exit(1);
+            const source = expectedVersion === "plan" ? "this release or the registry" : "the registry";
+            console.log(`Closure: ${needs.length} dependencies of ${rows.length} packages, each met by ${source}`);
+          } else if (mode === "--moves" && out && expectedName && expectedVersion && process.argv[6]) {
+            // The dist-tag moves, once the closure holds on the registry: `latest` for a release version (a prerelease gets the
+            // tag its first identifier names, never `latest`), only forward, and the holding tag dropped wherever it is set.
+            const hold = expectedVersion;
+            const lines = [];
+            for (const row of packedRows(out)) {
+              const tags = packument(expectedName, row.name)?.["dist-tags"] ?? {};
+              const version = parseVersion(row.version);
+              const label = version === null ? "" : version.pre.length === 0 ? "latest" : version.pre[0];
+              const target = /^[a-z][a-z0-9-]*$/.test(label) && label !== hold ? label : null;
+              const current = target === null || tags[target] === undefined ? null : parseVersion(tags[target]);
+              const move = target !== null && (current === null || compareVersions(version, current) > 0);
+              if (target === null)
+                console.log(`::notice title=Dist-tag::${row.name}@${row.version} has no tag to move to and stays under ${hold}`);
+              else if (!move && tags[target] !== row.version)
+                console.log(`::notice title=Dist-tag::${row.name}: ${target} stays at ${tags[target]}, newer than ${row.version}`);
+              const drop = target !== null && hold in tags;
+              if (move || drop) lines.push(`${row.name}\t${row.version}\t${move ? target : "-"}\t${drop ? "drop" : "-"}\n`);
+            }
+            writeFileSync(process.argv[6], lines.join(""));
+            console.log(`Dist-tags: ${lines.length} packages to update`);
           } else {
-            fail("usage: registry-plan.mjs --manifest | --plan <file> | --verify <tarball> <name> <version>");
+            fail(
+              "usage: registry-plan.mjs --manifest | --plan <file> | --verify <tarball> <name> <version> | " +
+                "--closure-names <packed> plan|registry | --closure <packed> <packuments> plan|registry | " +
+                "--moves <packed> <packuments> <hold-tag> <out>",
+            );
           }
           MJS
           # The one script `changeset publish` is replaced by, so each package gets its own short-lived token.
@@ -296,6 +512,10 @@ jobs:
           : > "${CHANGESETS_OUTPUT:-/dev/null}"
           # A dry run rehearses every check up to the first write: nothing is published, tagged or announced.
           dry_run="${DRY_RUN:-false}"
+          # Every version is published under this dist-tag, never straight to `latest` (STA-2778): `latest` moves only once
+          # the whole release is on the registry with its dependency closure, so a run that stops anywhere leaves `latest`
+          # where it was and every install that resolves it still works.
+          hold_tag=release-pending
           plan="$RUNNER_TEMP/registry-plan.tsv"
           pnpm -r --workspace-concurrency=1 --reporter=silent exec node "$RUNNER_TEMP/registry-plan.mjs" --manifest |
             node "$RUNNER_TEMP/registry-plan.mjs" --plan "$plan"
@@ -368,19 +588,72 @@ jobs:
             done
           }
 
-          # Per package: a GitHub ID token exchanged for a publish token bound to that one name, then the tarball that was
-          # packed and checked, as it is. Every step answers `|| return 1`, because a function called from `until` runs without
-          # `set -e`. Nothing here reads stdin.
-          publish_one() {
-            local name="$1" tarball="$2" id_token token
+          # A GitHub ID token exchanged for a publish token bound to the one name $1, left masked in `token`. Every step
+          # answers `|| return 1`, because a function called from `until` runs without `set -e`. Nothing here reads stdin.
+          exchange_token() {
+            local id_token
             id_token="$(authed_curl "bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" -f \
               "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:${host%/}" | jq -er '.value')" || return 1
             echo "::add-mask::${id_token}"
             token="$(authed_curl "Bearer ${id_token}" -f -X POST \
-              "${REGISTRY}-/npm/v1/oidc/token/exchange/package/${name/\//%2f}" | jq -er '.token')" || return 1
+              "${REGISTRY}-/npm/v1/oidc/token/exchange/package/${1/\//%2f}" | jq -er '.token')" || return 1
             echo "::add-mask::${token}"
-            NODE_AUTH_TOKEN="$token" pnpm publish "$tarball" --no-git-checks --access public --provenance \
+          }
+
+          # Per package: a token for that name, then the tarball that was packed and checked, as it is, under the holding tag.
+          publish_one() {
+            exchange_token "$1" || return 1
+            NODE_AUTH_TOKEN="$token" pnpm publish "$2" --no-git-checks --access public --provenance --tag "$hold_tag" \
               --registry "$REGISTRY" < /dev/null
+          }
+
+          # One dist-tag move ($3 is the tag, or - for none) and, with $4 = drop, the holding tag removed. Both are
+          # idempotent, so a retry repeats them.
+          move_tag() {
+            local name="$1" version="$2" tag="$3" drop="$4" tags_url
+            tags_url="${REGISTRY}-/package/${name/\//%2f}/dist-tags"
+            exchange_token "$name" || return 1
+            if [ "$tag" != - ]; then
+              authed_curl "Bearer ${token}" -f -o /dev/null -X PUT -H "content-type: application/json" \
+                --data "\"${version}\"" "${tags_url}/${tag}" < /dev/null || return 1
+            fi
+            if [ "$drop" = drop ]; then
+              authed_curl "Bearer ${token}" -f -o /dev/null -X DELETE "${tags_url}/${hold_tag}" < /dev/null || return 1
+            fi
+          }
+
+          # The packuments of the names listed in the file $1, saved under $packuments, read three ways like registry_state:
+          # 200 is kept, 404 means the registry has no such package, any other answer stops the check.
+          packuments="$RUNNER_TEMP/registry-packuments"
+          fetch_packuments() {
+            local names=() name code file
+            while IFS= read -r name; do names+=("$name"); done < "$1"
+            rm -rf "$packuments"
+            mkdir -p "$packuments"
+            for name in "${names[@]}"; do
+              file="$packuments/${name/\//%2f}.json"
+              code="$(curl -o "$file" -w '%{http_code}' "${REGISTRY}${name/\//%2f}" < /dev/null)" || code="no answer"
+              case "$code" in
+                200) ;;
+                404) rm -f "$file" ;;
+                *)
+                  rm -f "$file"
+                  echo "::error title=Registry check failed::${name}: unavailable: the registry answered ${code}"
+                  return 1
+                  ;;
+              esac
+            done
+          }
+
+          # The dependency closure (STA-2778): every dependency, optional or peer dependency that a packed manifest names in
+          # one of the plan's own scopes is met by a version of this release (`plan`) or one the registry serves. With
+          # `registry` only the registry counts. 0.33.1 left @stackra/cli@0.33.1 on `latest` pinning eight versions the
+          # registry answered 404 for, so every install of it failed.
+          closure_check() {
+            local wanted="$RUNNER_TEMP/registry-closure-names.txt"
+            node "$RUNNER_TEMP/registry-plan.mjs" --closure-names "$packed" "$1" > "$wanted" < /dev/null &&
+              fetch_packuments "$wanted" &&
+              node "$RUNNER_TEMP/registry-plan.mjs" --closure "$packed" "$packuments" "$1" < /dev/null
           }
 
           # One git-tag event per version: the action pushes the tag and creates the GitHub release from it. A tag left by an
@@ -423,6 +696,12 @@ jobs:
           fi
           echo "Preflight: ${index} packages packed and checked"
 
+          # Before anything is published: a release that would leave a dependency unmet never starts.
+          if ! closure_check plan; then
+            echo "::error title=Closure incomplete::a package of this release needs a version that is neither in it nor on the registry. Nothing was published."
+            exit 1
+          fi
+
           # A dry run stops here after reading the registry: the same comparison the publish makes, with no write.
           if [ "$dry_run" = true ]; then
             load_lines "$packed"
@@ -455,8 +734,10 @@ jobs:
           # From here every way out that is not success prints what was published, what was already there and what is not.
           published_file="$RUNNER_TEMP/registry-published.txt"
           skipped_file="$RUNNER_TEMP/registry-skipped.txt"
+          moved_file="$RUNNER_TEMP/registry-moved.txt"
           : > "$published_file"
           : > "$skipped_file"
+          : > "$moved_file"
           report() {
             local all="$RUNNER_TEMP/registry-all.txt" settled="$RUNNER_TEMP/registry-settled.txt"
             awk -F'\t' '{ print $1 "@" $2 }' "$packed" > "$all"
@@ -466,6 +747,8 @@ jobs:
             echo "Already on the registry, same content ($(count "$skipped_file"))"
             echo "Not published ($(grep -cvxFf "$settled" "$all" || true)):"
             { grep -vxFf "$settled" "$all" || true; } | sed 's/^/  /'
+            echo "Dist-tags moved ($(count "$moved_file")); every other version stays under ${hold_tag}:"
+            sed 's/^/  /' "$moved_file"
           }
           finish() {
             local status=$?
@@ -508,7 +791,7 @@ jobs:
                   ;;
               esac
               if [ "$attempt" -ge 3 ]; then
-                echo "::error title=Publish stopped::${name}@${version} failed after ${attempt} attempts. Every package published so far has its dependencies on the registry. Re-run the failed jobs of this run: versions already there are skipped and the rest is published."
+                echo "::error title=Publish stopped::${name}@${version} failed after ${attempt} attempts. Every package published so far has its dependencies on the registry, under ${hold_tag}; latest has not moved. Re-run the failed jobs of this run: versions already there are skipped and the rest is published."
                 exit 1
               fi
               attempt=$((attempt + 1))
@@ -532,6 +815,34 @@ jobs:
           done
           [ "$missing" -eq 0 ] || exit 1
           echo "All $(count "$packed") packages are on the registry ($(count "$published_file") published, $(count "$skipped_file") already there)"
+
+          # Only now does a dist-tag move. The closure is walked again against the registry alone (the packuments it serves
+          # now, not this run's plan), and a gap stops the run with no tag moved.
+          if ! closure_check registry; then
+            echo "::error title=Closure incomplete::the registry does not serve every version this release needs; no dist-tag was moved"
+            exit 1
+          fi
+          moves="$RUNNER_TEMP/registry-moves.tsv"
+          node "$RUNNER_TEMP/registry-plan.mjs" --moves "$packed" "$packuments" "$hold_tag" "$moves" < /dev/null
+          load_lines "$moves"
+          for line in "${lines[@]}"; do
+            IFS=$'\t' read -r name version tag drop <<< "$line"
+            attempt=1
+            until move_tag "$name" "$version" "$tag" "$drop"; do
+              if [ "$attempt" -ge 3 ]; then
+                echo "::error title=Dist-tag not moved::${name}@${version}: ${tag} after ${attempt} attempts. Every version of this release is on the registry with its dependencies; re-run the failed jobs to move the rest."
+                exit 1
+              fi
+              attempt=$((attempt + 1))
+              echo "retry dist-tag ${name}@${version}: attempt ${attempt}"
+              sleep "${PUBLISH_RETRY_DELAY:-15}"
+            done
+            if [ "$tag" != - ]; then
+              echo "${name}@${version} ${tag}" >> "$moved_file"
+              echo "dist-tag ${tag}: ${name}@${version}"
+            fi
+          done
+          echo "Dist-tags: $(count "$moved_file") moved after the closure check; ${hold_tag} dropped where it was set"
           SH
 
       # Packs every published package through the beforePacking hook; nothing leaves the runner. The publish plan

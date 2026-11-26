@@ -5,9 +5,12 @@
  *          a run that stops half way, or ends early, is loud and leaves a set that installs. 0.33.1 published 99 of 119
  *          packages in path order and left 22 of them pinning a version of an unpublished package (@stackra/consent ->
  *          @stackra/iam). A version already on the registry counts only with the content packed here (its `dist.integrity`);
- *          the registry's answers are read three ways (present, absent, unavailable).
+ *          the registry's answers are read three ways (present, absent, unavailable). Every version goes out under the
+ *          holding tag and `latest` moves only after the dependency closure holds on the registry (STA-2778: 0.33.1 left
+ *          @stackra/cli on `latest` pinning eight versions that answered 404).
  * Boundary: the two scripts are cut out of the workflow text and run as written; `curl` is a stand-in registry (status
- *           codes, version documents with an integrity, timeouts) and `pnpm publish` records the tarball it was given.
+ *           codes, version documents with an integrity, packuments with their dist-tags, dist-tag writes, timeouts) and
+ *           `pnpm publish` records the tarball and the tag it was given.
  *           Every other `pnpm` command is the real one. The children the script starts (curl, pnpm, node, git) read the
  *           script's standard input greedily, the way a command that prompts would.
  * Runtime: node, bash, jq, pnpm
@@ -108,6 +111,32 @@ if (url.includes("oidc/token/exchange")) {
   if (!fromStdin || !config.includes("Bearer id-token")) reply(401);
   reply(200, JSON.stringify({ token: "publish-token" }));
 }
+const method = args.includes("-X") ? args[args.indexOf("-X") + 1] : "GET";
+const tagWrite = /\\/-\\/package\\/([^/]+)\\/dist-tags\\/([^/]+)$/.exec(url);
+if (tagWrite !== null) {
+  // The Worker's writeDistTag: a publish token, PUT a JSON string version that exists, or DELETE.
+  if (!fromStdin || !config.includes("Bearer publish-token")) reply(401);
+  const [, encoded, tag] = tagWrite;
+  const failures = path.join(state, "tagfail", encoded.replace("%2f", "_"));
+  if (fs.existsSync(failures) && Number(fs.readFileSync(failures, "utf8")) > 0) {
+    fs.writeFileSync(failures, String(Number(fs.readFileSync(failures, "utf8")) - 1));
+    reply(500);
+  }
+  const file = path.join(state, "tags", encoded + ".json");
+  const tags = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : {};
+  let line = method + " " + encoded.replace("%2f", "/") + " " + tag;
+  if (method === "PUT") {
+    const version = JSON.parse(args[args.indexOf("--data") + 1]);
+    if (!fs.existsSync(path.join(state, "registry", encoded + "@" + version))) reply(404);
+    tags[tag] = version;
+    line += " " + version;
+  } else if (method === "DELETE") delete tags[tag];
+  else reply(405);
+  fs.writeFileSync(file, JSON.stringify(tags));
+  fs.appendFileSync(path.join(state, "dist-tags.log"), line + "\\n");
+  fs.appendFileSync(path.join(state, "events.log"), line + "\\n");
+  reply(201, JSON.stringify({ ok: true }));
+}
 const key = url.slice(process.env.REGISTRY.length).replaceAll("/", "@");
 const net = path.join(state, "net", key);
 if (fs.existsSync(net)) {
@@ -122,6 +151,30 @@ if (fs.existsSync(net)) {
       code = codes[Math.min(attempt, codes.length - 1)];
     if (code !== 200) reply(code);
   } else reply(Number(mode.replace("http:", "")));
+}
+if (/^@[^@]+$/.test(key)) {
+  // A packument: every version held, and the dist-tags. A vanishing package answers 404 once its reads are spent.
+  const vanish = path.join(state, "vanish", key);
+  if (fs.existsSync(vanish)) {
+    const left = Number(fs.readFileSync(vanish, "utf8"));
+    if (left <= 0) reply(404);
+    fs.writeFileSync(vanish, String(left - 1));
+  }
+  fs.appendFileSync(path.join(state, "packuments.log"), key.replace("%2f", "/") + "\\n");
+  const prefix = key + "@";
+  const versions = Object.fromEntries(
+    fs.readdirSync(path.join(state, "registry"))
+      .filter((file) => file.startsWith(prefix))
+      .map((file) => {
+        const version = file.slice(prefix.length);
+        const integrity = fs.readFileSync(path.join(state, "registry", file), "utf8");
+        return [version, { name: key.replace("%2f", "/"), version, dist: { integrity } }];
+      }),
+  );
+  const tagsFile = path.join(state, "tags", key + ".json");
+  const tags = fs.existsSync(tagsFile) ? JSON.parse(fs.readFileSync(tagsFile, "utf8")) : {};
+  if (Object.keys(versions).length === 0) reply(404);
+  reply(200, JSON.stringify({ name: key.replace("%2f", "/"), "dist-tags": tags, versions }));
 }
 const document = (integrity) => {
   const at = key.lastIndexOf("@");
@@ -149,6 +202,15 @@ if (args[0] === "publish") {
   if (process.env.NODE_AUTH_TOKEN !== "publish-token") { console.error("no publish token for " + manifest.name); process.exit(3); }
   fs.appendFileSync(path.join(state, "published.log"), manifest.name + "\\n");
   fs.appendFileSync(path.join(state, "published-tarballs.log"), tarball + "\\n");
+  const tag = args.includes("--tag") ? args[args.indexOf("--tag") + 1] : "latest";
+  fs.appendFileSync(path.join(state, "published-tags.log"), manifest.name + " " + tag + "\\n");
+  fs.appendFileSync(path.join(state, "events.log"), "publish " + manifest.name + "\\n");
+  const tagsFile = path.join(state, "tags", manifest.name.replace("/", "%2f") + ".json");
+  const offer = () => {
+    const tags = fs.existsSync(tagsFile) ? JSON.parse(fs.readFileSync(tagsFile, "utf8")) : {};
+    tags[tag] = manifest.version;
+    fs.writeFileSync(tagsFile, JSON.stringify(tags));
+  };
   const plain = manifest.name.replace("/", "_");
   const key = manifest.name.replace("/", "%2f") + "@" + manifest.version;
   const held = path.join(state, "registry", key);
@@ -160,6 +222,7 @@ if (args[0] === "publish") {
       const lag = path.join(state, "lag", plain);
       if (fs.existsSync(lag)) fs.writeFileSync(path.join(state, "lagging", key), fs.readFileSync(lag, "utf8") + " " + content);
       else fs.writeFileSync(held, content);
+      offer();
     }
     process.exit(1);
   }
@@ -167,6 +230,7 @@ if (args[0] === "publish") {
     fs.writeFileSync(path.join(state, "lagging", key), fs.readFileSync(path.join(state, "lag", plain), "utf8") + " " + integrityOf(tarball));
   else if (fs.existsSync(path.join(state, "tamper", plain))) fs.writeFileSync(held, "sha512-TAMPERED");
   else if (!fs.existsSync(path.join(state, "hide", plain))) fs.writeFileSync(held, integrityOf(tarball));
+  if (!fs.existsSync(path.join(state, "hide", plain))) offer();
   process.exit(0);
 }
 if (args[0] === "pack") { drain(); process.exit(real()); }
@@ -202,7 +266,8 @@ const linesOf = (file) =>
 const plainName = (name) => `@t_${name}`;
 
 /**
- * A workspace of packages, `{ name, deps, devDeps, isPrivate, prepack, main }`, with the two scripts and the shims, ready to run.
+ * A workspace of packages, `{ name, version, deps, devDeps, ranges, peers, isPrivate, prepack, main }`, with the two
+ * scripts and the shims, ready to run. `ranges` and `peers` add dependencies and peer dependencies as written.
  *
  * @example
  * const run = fixture([{ name: "a", deps: ["b"] }, { name: "b" }]);
@@ -211,7 +276,18 @@ function fixture(packages) {
   const root = mkdtempSync(join(tmpdir(), "registry-publish-"));
   const state = join(root, "state");
   const bin = join(root, "bin");
-  for (const dir of ["registry", "fail", "hide", "lag", "lagging", "tamper", "net"])
+  for (const dir of [
+    "registry",
+    "fail",
+    "hide",
+    "lag",
+    "lagging",
+    "tamper",
+    "net",
+    "tags",
+    "tagfail",
+    "vanish",
+  ])
     mkdirSync(join(state, dir), { recursive: true });
   mkdirSync(bin, { recursive: true });
   writeFileSync(
@@ -219,18 +295,32 @@ function fixture(packages) {
     JSON.stringify({ name: "fixture-root", private: true }),
   );
   writeFileSync(join(root, "pnpm-workspace.yaml"), 'packages:\n  - "pkgs/*"\n');
-  for (const { name, deps = [], devDeps = [], isPrivate = false, prepack, main } of packages) {
+  for (const {
+    name,
+    version = "1.0.0",
+    deps = [],
+    devDeps = [],
+    ranges = {},
+    peers,
+    isPrivate = false,
+    prepack,
+    main,
+  } of packages) {
     mkdirSync(join(root, "pkgs", name), { recursive: true });
     writeFileSync(
       join(root, "pkgs", name, "package.json"),
       JSON.stringify({
         name: `@t/${name}`,
-        version: "1.0.0",
+        version,
         ...(isPrivate ? { private: true } : {}),
         ...(prepack === undefined ? {} : { scripts: { prepack } }),
         ...(main === undefined ? {} : { main }),
-        dependencies: Object.fromEntries(deps.map((dep) => [`@t/${dep}`, "workspace:*"])),
+        dependencies: {
+          ...Object.fromEntries(deps.map((dep) => [`@t/${dep}`, "workspace:*"])),
+          ...ranges,
+        },
         devDependencies: Object.fromEntries(devDeps.map((dep) => [`@t/${dep}`, "workspace:*"])),
+        ...(peers === undefined ? {} : { peerDependencies: peers }),
       }),
     );
     writeFileSync(join(root, "pkgs", name, "LICENSE"), "MIT\n");
@@ -302,6 +392,31 @@ function fixture(packages) {
     lag(name, count) {
       writeFileSync(join(state, "lag", plainName(name)), String(count));
     },
+    /** Put a version of a package outside the workspace on the registry (other content: it is never this run's). */
+    onRegistry(name, version) {
+      writeFileSync(join(state, "registry", `@t%2f${name}@${version}`), "sha512-ELSEWHERE");
+    },
+    /** Set a package's dist-tags on the registry. */
+    setTags(name, tags) {
+      writeFileSync(join(state, "tags", `@t%2f${name}.json`), JSON.stringify(tags));
+    },
+    /** A package's dist-tags on the registry. */
+    tagsOf(name) {
+      const file = join(state, "tags", `@t%2f${name}.json`);
+      return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
+    },
+    /** Make the next `count` dist-tag writes for a package fail with a 500. */
+    failTag(name, count) {
+      writeFileSync(join(state, "tagfail", `@t_${name}`), String(count));
+    },
+    /** Make a package's packument answer 404 once it has been read `reads` times. */
+    vanish(name, reads) {
+      writeFileSync(join(state, "vanish", `@t%2f${name}`), String(reads));
+    },
+    /** Make the registry answer every read of a package's packument with `http:<code>` or `timeout`. */
+    answerPackument(name, how) {
+      writeFileSync(join(state, "net", `@t%2f${name}`), how);
+    },
     /** Make the registry answer every check of a version with `http:<code>` or `timeout`. */
     answer(name, how) {
       writeFileSync(join(state, "net", `@t%2f${name}@1.0.0`), how);
@@ -357,6 +472,9 @@ function fixture(packages) {
           .split("\n")
           .filter(Boolean),
         events: linesOf(env.CHANGESETS_OUTPUT),
+        distTags: linesOf(join(state, "dist-tags.log")),
+        publishTags: linesOf(join(state, "published-tags.log")),
+        order: linesOf(join(state, "events.log")),
       };
     },
     dispose() {
@@ -1099,4 +1217,393 @@ test("verify refuses a tarball over the registry's size limits, which are the Wo
   });
   assert.equal(heavy.status, 1);
   assert.match(heavy.stdout, /the tarball is over 52428800 bytes/);
+});
+
+/** Run the plan script's `--closure` on hand-made tarballs and packuments: `{ packages: [{ name, version, deps, peers }], registry: { name: [versions] } }`. */
+function closure({ packages, registry = {} }, mode = "plan") {
+  const dir = mkdtempSync(join(tmpdir(), "registry-closure-"));
+  try {
+    writeFileSync(join(dir, "plan.mjs"), PLAN_SCRIPT);
+    const docs = join(dir, "packuments");
+    mkdirSync(docs);
+    for (const [name, versions] of Object.entries(registry))
+      writeFileSync(
+        join(docs, `${name.replace("/", "%2f")}.json`),
+        JSON.stringify({
+          name,
+          versions: Object.fromEntries(versions.map((version) => [version, {}])),
+        }),
+      );
+    const packed = packages.map(({ name, version = "1.0.0", deps = {}, peers }, index) => {
+      const root = join(dir, `p${index}`);
+      mkdirSync(join(root, "package"), { recursive: true });
+      writeFileSync(
+        join(root, "package", "package.json"),
+        JSON.stringify({
+          name,
+          version,
+          dependencies: deps,
+          ...(peers ? { peerDependencies: peers } : {}),
+        }),
+      );
+      execFileSync("tar", ["-czf", join(root, "p.tgz"), "-C", root, "package"]);
+      return `${name}\t${version}\tsha512-X\t${join(root, "p.tgz")}\n`;
+    });
+    writeFileSync(join(dir, "packed.tsv"), packed.join(""));
+    const names = spawnSync(
+      "node",
+      [join(dir, "plan.mjs"), "--closure-names", join(dir, "packed.tsv"), mode],
+      {
+        encoding: "utf8",
+      },
+    );
+    const result = spawnSync(
+      "node",
+      [join(dir, "plan.mjs"), "--closure", join(dir, "packed.tsv"), docs, mode],
+      {
+        encoding: "utf8",
+      },
+    );
+    return {
+      status: result.status,
+      stdout: result.stdout,
+      names: names.stdout.trim().split("\n").filter(Boolean),
+    };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test("the closure reads ranges as npm does: exact, caret, tilde, comparators, x-ranges, hyphens, unions and prereleases", () => {
+  const cases = [
+    ["1.2.3", "1.2.3", true],
+    ["1.2.3", "1.2.4", false],
+    ["=1.2.3", "1.2.3", true],
+    ["v1.2.3", "1.2.3", true],
+    ["^1.2.3", "1.9.0", true],
+    ["^1.2.3", "2.0.0", false],
+    ["^1.2.3", "1.2.2", false],
+    ["^0.2.3", "0.2.9", true],
+    ["^0.2.3", "0.3.0", false],
+    ["^0.0.3", "0.0.3", true],
+    ["^0.0.3", "0.0.4", false],
+    ["^0", "0.9.0", true],
+    ["^0.0", "0.1.0", false],
+    ["~1.2.3", "1.2.9", true],
+    ["~1.2.3", "1.3.0", false],
+    ["~1", "1.9.0", true],
+    ["~1", "2.0.0", false],
+    [">=0.11.0", "0.12.0", true],
+    [">=0.11.0", "0.10.9", false],
+    [">= 1.0.0 < 2", "1.5.0", true],
+    [">= 1.0.0 < 2", "2.0.0", false],
+    [">1.2", "1.2.9", false],
+    [">1.2", "1.3.0", true],
+    ["<=1.2", "1.2.9", true],
+    ["<1.2", "1.2.0", false],
+    ["1.x", "1.5.0", true],
+    ["1.x", "2.0.0", false],
+    ["1.2.*", "1.2.7", true],
+    ["*", "0.0.1", true],
+    ["", "3.0.0", true],
+    ["1.2.3 - 1.4", "1.4.7", true],
+    ["1.2.3 - 1.4", "1.5.0", false],
+    ["1.2.3 - 1.4", "1.2.2", false],
+    ["<1.0.0 || >=3", "3.1.0", true],
+    ["<1.0.0 || >=3", "2.0.0", false],
+    ["^1.0.0", "1.1.0-beta.1", false],
+    ["*", "1.0.0-rc.1", false],
+    ["^1.1.0-beta.0", "1.1.0-beta.1", true],
+    ["^1.1.0-beta.2", "1.1.0-beta.10", true],
+    ["^1.1.0-beta.2", "1.1.0-beta.1", false],
+    ["1.1.0-next.0", "1.1.0-next.0", true],
+  ];
+  for (const [range, version, met] of cases) {
+    const result = closure({
+      packages: [{ name: "@t/a", deps: { "@t/ext": range } }],
+      registry: { "@t/ext": [version] },
+    });
+    assert.equal(result.status === 0, met, `${range} against ${version}: ${result.stdout}`);
+  }
+});
+
+test("the closure refuses a specifier it cannot read as a range, and follows an npm: alias into the plan's scopes", () => {
+  for (const spec of [
+    "github:t/ext",
+    "file:../ext",
+    "https://t.test/ext.tgz",
+    "latest",
+    "1.2.3.4",
+  ]) {
+    const result = closure({
+      packages: [{ name: "@t/a", deps: { "@t/ext": spec } }],
+      registry: { "@t/ext": ["1.2.3"] },
+    });
+    assert.equal(result.status, 1, spec);
+    assert.match(
+      result.stdout,
+      /names @t\/ext as ".*" in dependencies, which is not a version range/,
+    );
+  }
+  const alias = closure({ packages: [{ name: "@t/a", deps: { renamed: "npm:@t/gone@^1.0.0" } }] });
+  assert.equal(alias.status, 1);
+  assert.match(alias.stdout, /@t\/a@1\.0\.0 needs @t\/gone@\^1\.0\.0 \(dependencies\)/);
+  // Another scope is not the release's business: its packages come from their own registry.
+  const foreign = closure({
+    packages: [{ name: "@t/a", deps: { "@other/x": "9.9.9", left: "1.0.0" } }],
+  });
+  assert.equal(foreign.status, 0, foreign.stdout);
+});
+
+test("before the publish a version of the release counts; before a dist-tag move only the registry does", () => {
+  const release = {
+    packages: [
+      { name: "@t/cli", deps: { "@t/runway": "1.0.0" } },
+      { name: "@t/runway", deps: { "@t/iam": "1.0.0" }, peers: { "@t/ext": ">=0.11.0" } },
+      { name: "@t/iam" },
+    ],
+    registry: { "@t/ext": ["0.12.0"] },
+  };
+  const before = closure(release, "plan");
+  assert.equal(before.status, 0, before.stdout);
+  assert.match(
+    before.stdout,
+    /Closure: 3 dependencies of 3 packages, each met by this release or the registry/,
+  );
+  // Only what the release does not meet itself is read from the registry.
+  assert.deepEqual(before.names, ["@t/ext"]);
+  // The 0.33.1 shape: cli and runway on the registry, iam answering 404.
+  const after = closure(
+    { ...release, registry: { ...release.registry, "@t/cli": ["1.0.0"], "@t/runway": ["1.0.0"] } },
+    "registry",
+  );
+  assert.equal(after.status, 1);
+  assert.match(
+    after.stdout,
+    /::error title=Closure incomplete::@t\/iam@1\.0\.0 is not on the registry/,
+  );
+  assert.match(
+    after.stdout,
+    /::error title=Closure incomplete::@t\/runway@1\.0\.0 needs @t\/iam@1\.0\.0 \(dependencies\), and no such version is on the registry/,
+  );
+  assert.deepEqual(after.names, ["@t/cli", "@t/ext", "@t/iam", "@t/runway"]);
+});
+
+test("every version goes out under the holding tag and latest moves only after the last publish, once per package", () => {
+  withFixture(CHAIN, (run) => {
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.deepEqual(
+      result.publishTags.map((line) => line.split(" ")[1]),
+      ["release-pending", "release-pending", "release-pending", "release-pending"],
+    );
+    const lastPublish = result.order.findLastIndex((line) => line.startsWith("publish "));
+    const firstMove = result.order.findIndex((line) => line.startsWith("PUT "));
+    assert.ok(lastPublish < firstMove, result.order.join("\n"));
+    assert.deepEqual(result.distTags.filter((line) => line.startsWith("PUT ")).sort(), [
+      "PUT @t/a latest 1.0.0",
+      "PUT @t/b latest 1.0.0",
+      "PUT @t/c latest 1.0.0",
+      "PUT @t/z latest 1.0.0",
+    ]);
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+    assert.match(
+      result.output,
+      /Closure: 2 dependencies of 4 packages, each met by this release or the registry/,
+    );
+    assert.match(result.output, /Closure: 2 dependencies of 4 packages, each met by the registry/);
+    assert.match(
+      result.output,
+      /Dist-tags: 4 moved after the closure check; release-pending dropped where it was set/,
+    );
+  });
+});
+
+test("a dependency neither in the release nor on the registry stops the run before anything is published", () => {
+  withFixture(
+    [
+      { name: "a", deps: ["b"] },
+      { name: "b", ranges: { "@t/gone": "1.0.0" } },
+    ],
+    (run) => {
+      const result = run.run();
+      assert.equal(result.status, 1);
+      assert.match(
+        result.output,
+        /::error title=Closure incomplete::@t\/b@1\.0\.0 needs @t\/gone@1\.0\.0 \(dependencies\), and no such version is in this release or on the registry/,
+      );
+      assert.match(result.output, /Nothing was published\./);
+      assert.deepEqual(result.published, []);
+      assert.deepEqual(result.distTags, []);
+      assert.deepEqual(result.tags, []);
+    },
+  );
+});
+
+test("a dependency the registry serves outside the release is met by its range; one it cannot meet stops the run", () => {
+  withFixture(
+    [{ name: "a", ranges: { "@t/ext": "^2.1.0" }, peers: { "@t/peer": ">=0.11.0" } }],
+    (run) => {
+      run.onRegistry("ext", "2.3.0");
+      run.onRegistry("peer", "0.12.0");
+      const result = run.run();
+      assert.equal(result.status, 0, result.output);
+      assert.deepEqual(run.tagsOf("a"), { latest: "1.0.0" });
+    },
+  );
+  withFixture([{ name: "a", ranges: { "@t/ext": "^2.1.0" } }], (run) => {
+    run.onRegistry("ext", "3.0.0");
+    run.onRegistry("ext", "2.1.0-beta.1");
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(result.output, /@t\/a@1\.0\.0 needs @t\/ext@\^2\.1\.0 \(dependencies\)/);
+    assert.deepEqual(result.published, []);
+  });
+});
+
+test("a packument the registry cannot serve stops the closure check as unavailable, not as missing", () => {
+  withFixture([{ name: "a", ranges: { "@t/ext": "^2.1.0" } }], (run) => {
+    run.onRegistry("ext", "2.3.0");
+    run.answerPackument("ext", "http:503");
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Registry check failed::@t\/ext: unavailable: the registry answered 503/,
+    );
+    assert.deepEqual(result.published, []);
+  });
+});
+
+test("a gap the registry shows after the publish stops the run before any dist-tag moves", () => {
+  withFixture([{ name: "a", ranges: { "@t/ext": "2.0.0" } }], (run) => {
+    run.onRegistry("ext", "2.0.0");
+    // Served to the pre-flight's read, gone by the read before the dist-tag move.
+    run.vanish("ext", 1);
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.deepEqual(result.published, ["@t/a"]);
+    assert.match(
+      result.output,
+      /::error title=Closure incomplete::@t\/a@1\.0\.0 needs @t\/ext@2\.0\.0 \(dependencies\), and no such version is on the registry/,
+    );
+    assert.match(result.output, /no dist-tag was moved/);
+    assert.deepEqual(result.distTags, []);
+    assert.deepEqual(run.tagsOf("a"), { "release-pending": "1.0.0" });
+    assert.match(
+      result.output,
+      /Dist-tags moved \(0\); every other version stays under release-pending/,
+    );
+  });
+});
+
+test("a run that stops half way moves no dist-tag; the re-run moves latest for everything, the earlier run's versions too", () => {
+  withFixture(CHAIN, (run) => {
+    run.failPublish("a", 5);
+    const first = run.run();
+    assert.equal(first.status, 1);
+    assert.ok(first.published.includes("@t/c"));
+    assert.deepEqual(first.distTags, []);
+    assert.deepEqual(run.tagsOf("c"), { "release-pending": "1.0.0" });
+    assert.match(first.output, /latest has not moved/);
+    run.forgetTags();
+    run.failPublish("a", 0);
+    const second = run.run();
+    assert.equal(second.status, 0, second.output);
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+  });
+});
+
+test("latest never moves back, a prerelease gets the tag it names and never latest, and an untouched latest is left alone", () => {
+  withFixture(
+    [
+      { name: "a", deps: ["n"] },
+      { name: "n", version: "1.1.0-next.0" },
+      { name: "old" },
+      { name: "same" },
+    ],
+    (run) => {
+      run.onRegistry("old", "2.0.0");
+      run.setTags("old", { latest: "2.0.0" });
+      run.preload("same");
+      run.setTags("same", { latest: "1.0.0" });
+      const result = run.run();
+      assert.equal(result.status, 0, result.output);
+      assert.deepEqual(run.tagsOf("n"), { next: "1.1.0-next.0" });
+      assert.deepEqual(run.tagsOf("old"), { latest: "2.0.0" });
+      assert.match(
+        result.output,
+        /::notice title=Dist-tag::@t\/old: latest stays at 2\.0\.0, newer than 1\.0\.0/,
+      );
+      assert.deepEqual(run.tagsOf("same"), { latest: "1.0.0" });
+      assert.ok(
+        !result.distTags.some((line) => line.includes("@t/same")),
+        result.distTags.join("\n"),
+      );
+      assert.deepEqual(run.tagsOf("a"), { latest: "1.0.0" });
+    },
+  );
+});
+
+test("a dist-tag move that fails is retried; one that keeps failing stops the run, names it and lists the moves made", () => {
+  withFixture(CHAIN, (run) => {
+    run.failTag("a", 1);
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /retry dist-tag @t\/a@1\.0\.0: attempt 2/);
+    assert.deepEqual(run.tagsOf("a"), { latest: "1.0.0" });
+  });
+  withFixture(CHAIN, (run) => {
+    run.failTag("a", 9);
+    const result = run.run();
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Dist-tag not moved::@t\/a@1\.0\.0: latest after 3 attempts/,
+    );
+    assert.match(
+      result.output,
+      /Dist-tags moved \(\d\); every other version stays under release-pending:/,
+    );
+    // Its dependencies moved before it (plan order); it keeps the holding tag.
+    for (const name of ["b", "c"]) assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+    assert.deepEqual(run.tagsOf("a"), { "release-pending": "1.0.0" });
+  });
+});
+
+test("the dist-tag moves carry the publish token in curl's config, never on its command line", () => {
+  withFixture(CHAIN, (run) => {
+    const result = run.run();
+    assert.equal(result.status, 0, result.output);
+    const writes = result.argv.filter((line) => line.includes("/dist-tags/"));
+    assert.equal(writes.length, 8);
+    for (const line of writes) {
+      assert.match(line, /--config -/);
+      assert.ok(!line.includes("publish-token"), line);
+    }
+  });
+});
+
+test("the dry run walks the closure too and stops on a gap, with nothing published and no token asked for", () => {
+  withFixture([{ name: "a", ranges: { "@t/gone": "1.0.0" } }], (run) => {
+    const result = run.run({ extraEnv: { DRY_RUN: "true" } });
+    assert.equal(result.status, 1);
+    assert.match(
+      result.output,
+      /::error title=Closure incomplete::@t\/a@1\.0\.0 needs @t\/gone@1\.0\.0/,
+    );
+    assert.deepEqual(result.published, []);
+    assert.ok(!result.argv.some((line) => line.includes("oidc/token/exchange")));
+  });
+  withFixture(CHAIN, (run) => {
+    const result = run.run({ extraEnv: { DRY_RUN: "true" } });
+    assert.equal(result.status, 0, result.output);
+    assert.match(
+      result.output,
+      /Closure: 2 dependencies of 4 packages, each met by this release or the registry/,
+    );
+    assert.deepEqual(result.distTags, []);
+  });
 });
