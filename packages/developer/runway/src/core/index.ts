@@ -9,7 +9,8 @@
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
  *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the approved Postgres extensions (`PostgresExtension`,
  *          `APPROVED_POSTGRES_EXTENSIONS`, ADR 0160), the `SmokeDriver` port of the smoke
- *          step (STA-265), their enums, errors and types.
+ *          step (STA-265), the Worker version proof (`WORKER_VERSION`, `WorkerVersionProof`, `servedVersionProblem`,
+ *          STA-2786), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
  * Runtime: isomorphic
@@ -19,6 +20,7 @@ export { RunwayConfig } from "#config/runway.config";
 export { APPROVED_POSTGRES_EXTENSIONS } from "#core/constants/approved-postgres-extensions.constant";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
 export { TIER_SIZES } from "#core/constants/tier-sizes.constant";
+export { WORKER_VERSION } from "#core/constants/worker-version.constant";
 export { AppleCapability } from "#core/enums/apple-capability.enum";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
 export { CacheMode } from "#core/enums/cache-mode.enum";
@@ -36,6 +38,7 @@ export { RegionKey } from "#core/enums/region-key.enum";
 export { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 export { RunwayKind } from "#core/enums/runway-kind.enum";
 export { WorkerPreset } from "#core/enums/worker-preset.enum";
+export { WorkerVersionProof } from "#core/enums/worker-version-proof.enum";
 export { TopologyMode } from "#core/enums/topology-mode.enum";
 export { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 export { RunwayInvalidError } from "#core/errors/runway-invalid.error";
@@ -67,6 +70,7 @@ export { promote } from "#core/functions/promote.function";
 export { regionsOf } from "#core/functions/regions-of.function";
 export { rollback } from "#core/functions/rollback.function";
 export { diffWorkerSettings } from "#core/functions/diff-worker-settings.function";
+export { servedVersionProblem } from "#core/functions/served-version-problem.function";
 export { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
 export { unusedCloudOptIns } from "#core/functions/unused-cloud-opt-ins.function";
