@@ -149,7 +149,8 @@ summary), and writes the member.
 - **FR-004**: WHEN `stackra new` runs without a terminal THE CLI SHALL ask nothing and exit 2 naming what to pass.
 - **FR-005**: WHEN a ported command runs with `--json` THE CLI SHALL write one document on standard output whose data
   is what the body reports, else its JSON output read back, else its exit code and output lines, and SHALL move the
-  body's text to standard error and keep its tools off the terminal.
+  body's text to standard error and keep its tools off the terminal. The check commands report their phases and
+  findings, whatever `--format` says.
 - **FR-006**: WHEN `stackra gen` runs with `--json` THE CLI SHALL report each member's outcome, every refusal and
   warning with member, code, file (from the working directory), line, column, subject, message and fix, the members
   skipped and the launch files.
@@ -164,6 +165,8 @@ summary), and writes the member.
 - **AC-003**: WHEN `stackra gen --check --json` meets a refusal THE CLI SHALL list it with code, file, line and fix.
 - **AC-004**: IF a body reads an option its class does not declare THEN THE commands test SHALL fail.
 - **AC-005**: IF a command is registered as passthrough (other than `runway`) THEN THE run-cli test SHALL fail.
+- **AC-006**: WHEN `stackra check --json` (or `validate`, `verify`, `code:check`, `code:fix`) runs THE CLI SHALL report
+  `{ phases, findings }`: each phase's status, finding and fixable counts and duration, and every finding.
 
 ## Success Criteria _(mandatory)_
 
@@ -171,7 +174,8 @@ summary), and writes the member.
   `gen.command.test.ts` proves FR-006 and AC-003 and fails without `context.report` — verified by: unit
 - **SC-002**: `commands.constant.test.ts` and `run-cli.function.test.ts` prove FR-001, FR-002, FR-007, AC-004 and
   AC-005 and fail with `commands.constant.ts` and `run-cli.function.ts` back on `legacyCommand`;
-  `run-body.function.test.ts` proves FR-005 — verified by: unit
+  `run-body.function.test.ts` proves FR-005; `check.command.test.ts` and `run-check.function.test.ts` prove AC-006 and
+  fail without `runCheck`'s report — verified by: unit
 - **SC-003**: the built binary asks in a pseudo-terminal, refuses without one and answers `gen --check --json` on a real
   member; the `@stackra/cli` tests, typecheck, oxlint, oxfmt and `gen --check` pass — verified by: manual
 
@@ -207,7 +211,9 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-26 · review of the branch: `check --json` returned only the captured text lines, though the README and the
+  check classes promised the phases and findings. Added AC-006, P-008 and T010: `runCheck` reports `{ phases,
+findings }` and `validate --repository` `{ findings: [{ dir, text }] }`; FR-005 names the check commands.
 
 ## Status history
 
