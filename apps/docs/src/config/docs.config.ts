@@ -93,6 +93,7 @@ export class StackraDocsConfig extends DocsConfig {
             "customers/install",
             "customers/support",
             "customers/security",
+            "customers/threat-model",
             "customers/residency",
             "customers/changelog",
             "customers/packages",

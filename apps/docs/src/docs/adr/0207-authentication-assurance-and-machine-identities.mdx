@@ -1,6 +1,6 @@
 ---
 title: "0207 — Authentication assurance and machine identities"
-description: "Accepted, amended by 0274, 0278 · 2026-10-20"
+description: "Accepted, amended 2026-11-26 (ASVS level), amended by 0274, 0278 · 2026-10-20"
 ---
 
 <Note>
@@ -38,12 +38,43 @@ Some actions need a stronger proof of identity than a session. The owner's answe
 ## Enforcement
 
 The pipeline checks a user caller's assurance against the action's `stepUp` (ADR 0406 as amended 2026-11-03); gen
-refuses an L3 or L4 action a user can call with no `stepUp`, `step_up_missing` (`checkCallShape`, STA-340).
+refuses an L3 or L4 action a user can call with no `stepUp`, `step_up_missing` (`checkCallShape`, STA-340). The ASVS
+level of each security-relevant member is declared in its threat model and checked by `stackra validate`
+(amendment of 2026-11-26).
 
 ## Open questions
 
-1. The ASVS level for SaaS general availability: gap analysis P1-1 proposes L2 for identity, sessions and access control. The owner decides.
+1. ~~The ASVS level for SaaS general availability.~~ Decided on 2026-11-06; see the amendment of 2026-11-26.
+
+## Amendment 2026-11-26 (owner decision 2026-11-06): the ASVS level
+
+The owner accepted the gap analysis' recommendation P1-1 on 2026-11-06 (STA-204): Stackra targets OWASP ASVS **level 2**
+for authentication, sessions and access control, before general availability. This amendment records it and adds it
+to decision 3. STA-316.
+
+- **Decision 3, as amended.** The baseline is ASVS level 1 for every chapter, and **level 2** for ASVS 4.0.3 chapters
+  V2 (authentication), V3 (session management) and V4 (access control). A member that authenticates, holds a session
+  or decides access (`@stackra/identity`, `@stackra/iam`, `@stackra/scope`, `@stackra/tenancy`, `@stackra/actions`
+  and `@stackra/app`) is held to level 2 for those chapters.
+- **Version.** Requirement ids in code and docs are ASVS 4.0.3's (`ASVS 2.2.1`, `ASVS 2.7`). Moving to ASVS 5.0,
+  which renumbers the chapters, is a separate change that updates every cited id at once.
+- **Where it is declared: law SEC10.** This amendment adds a law to [Security](/constitution/security), because a
+  level nobody declares per member is never checked: "Every security-relevant member keeps `docs/threat-model.md` in
+  the template, opening with its OWASP ASVS level and its review date, and the platform model links every one. The
+  level is L2 for authentication, sessions and access control and L1 for every other chapter. A change that adds an
+  asset, a trust boundary or an external call updates the member's model in the same pull request." A member is
+  security-relevant when it authenticates or authorises a caller, holds a secret or credential, keeps personal data,
+  verifies third-party input, or runs code or markup it did not write: every member under `packages/security/` and the
+  members `THREAT_MODEL` of `@stackra/repo-checks` names. The platform model is [Threat model](/customers/threat-model).
+- **Enforcement.** `stackra validate` checks each model's shape, the ASVS and review lines and that a threat with no
+  control names its issue (`threat-model`), and that the platform page links every required member
+  (`threat-model-index`). Whether a listed threat is real or a control works stays review.
+- **What it is not.** A declared level is the target the controls are built and reviewed against. It is not a
+  verification: no third party has tested Stackra against ASVS yet (the penetration test is STA-1321).
+
+Decisions 1 and 2 are unchanged.
 
 ## Supersedes and sources
 
-Supersedes: none. Sources: owner answers I5, I6, SC14 (`stackra-decisions-2026-10-19.md` L553, L609, L610, 2026-10-20).
+Supersedes: none. Sources: owner answers I5, I6, SC14 (`stackra-decisions-2026-10-19.md` L553, L609, L610, 2026-10-20);
+owner decision on STA-204 (2026-11-06) accepting gap analysis P1-1.

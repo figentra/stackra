@@ -6,7 +6,8 @@
  *          native module packages (ADR 0478), row-security tests in the integration tier (ADR 0239), the brand NOTICE, public id prefixes across apps and services, and
  *          per member its manifest, required files and service shape, a notice listing every anonymous-callable call
  *          not in REVIEWED_ANONYMOUS_SURFACES (STA-2025), and in the Stackra repository its npm and
- *          `stackra` metadata.
+ *          `stackra` metadata; each member's threat model, required of the security-relevant ones in the Stackra
+ *          repository, and the platform page that links them (constitution SEC10, STA-316).
  * Boundary: reads the listed files and runs `pnpm -r list`; returns findings and never prints. The runway check loads
  *           the built `@stackra/runway` (local member first, then the installed package); unbuilt is a finding when
  *           `options.ci` and the member is local, otherwise a notice through `options.warn`.
@@ -14,7 +15,7 @@
  * Governing contract: ADR 0022; ADR 0025; ADR 0090; ADR 0124; ADR 0177; ADR 0195; ADR 0233; ADR 0296; STA-461;
  *                     ADR 0024 (decision 2: the brand NOTICE); ADR 0453 (decision 11, amendment of 2026-10-27); ADR 0478;
  *                     ADR 0160 (decision 1: the `raw-sql` reason, stackra-288); ADR 0135 (public id prefixes);
- *                     ADR 0239 (decision 1: row-security tests run on Postgres).
+ *                     ADR 0239 (decision 1: row-security tests run on Postgres); constitution SEC10 (threat models).
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -24,6 +25,10 @@ import { pathToFileURL } from "node:url";
 import { REVIEWED_ANONYMOUS_SURFACES } from "#node/constants/reviewed-anonymous-surfaces.constant";
 import { RAW_SQL_BASELINE } from "#node/constants/raw-sql-baseline.constant";
 import { TEST_FILE_PATTERN } from "#node/constants/test-file-pattern.constant";
+import { THREAT_MODEL } from "#node/constants/threat-model.constant";
+import { checkThreatModel } from "#node/functions/check-threat-model.function";
+import { checkThreatModelIndex } from "#node/functions/check-threat-model-index.function";
+import { needsThreatModel } from "#node/functions/needs-threat-model.function";
 import { checkImports } from "#node/functions/check-imports.function";
 import { checkIosFormFactor } from "#node/functions/check-ios-form-factor.function";
 import { checkIsolationTier } from "#node/functions/check-isolation-tier.function";
@@ -304,6 +309,11 @@ export async function structureFindings(
           stackra: isStackraRepo,
         }),
       );
+    // Constitution SEC10: a threat model anywhere is checked for its shape; the Stackra repository's security-relevant
+    // members must keep one.
+    const threatModel = read(THREAT_MODEL.file);
+    if (dir !== "" && (threatModel !== undefined || (isStackraRepo && needsThreatModel(dir))))
+      report("threat-model", dir, checkThreatModel(`${dir}/${THREAT_MODEL.file}`, threatModel));
     // A library's peers never fork its dependents' installs (FORKING_PEERS).
     if (tierFor(dir) === "tier:lib") report("forking-peers", dir, checkForkingPeers(pkg));
     // A library takes the packages whose values carry an identity in the host as peers (HOSTED_PEER_PACKAGES).
@@ -341,5 +351,16 @@ export async function structureFindings(
         }),
       );
   }
+  // Constitution SEC10: the platform threat model links every member's model.
+  if (isStackraRepo)
+    report(
+      "threat-model-index",
+      "",
+      checkThreatModelIndex(
+        THREAT_MODEL.page,
+        maybe(THREAT_MODEL.page),
+        members.map(({ dir }) => dir).filter((dir) => dir !== "" && needsThreatModel(dir)),
+      ),
+    );
   return out;
 }

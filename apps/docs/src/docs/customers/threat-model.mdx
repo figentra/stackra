@@ -1,0 +1,142 @@
+---
+title: "Threat model"
+description: "What Stackra protects, where trust changes hands, the threats at each boundary, the control in the code today and the work still open, with the OWASP ASVS level Stackra is held to."
+icon: "shield-alert"
+---
+
+{/* Stackra file contract: Purpose: the platform threat model: assets, trust boundaries, threats and controls across the framework, the declared ASVS level, and a link to every security-relevant member's own model. Boundary: customer-facing documentation; each member's docs/threat-model.md is the detail and wins on any difference; no control is described as built unless its code is in this repository. Runtime: docs. Governing contract: constitution SEC10 and the threat model template (constitution/security); ADR 0207 (amendment of 2026-11-26: the ASVS level); ADR 0209; ADR 0212; ADR 0239; ADR 0437; STA-316. */}
+
+Stackra is a framework: your services run its packages. This page models the platform those packages make when they
+run together: what is worth attacking, where trust changes hands, what an attacker could try at each boundary, which
+control stops it today and what is still open. Each security-relevant package keeps its own model with the detail;
+they are listed at the end. A row whose control is "None" is tracked work, named by its issue.
+
+Reviewed: 2026-11-26 (STA-316). The model is kept with the code: a change that adds an asset, a trust boundary or an
+external call updates the member's model in the same pull request, and `stackra validate` refuses a security-relevant
+package without one ([Security](/constitution/security), law SEC10).
+
+## The ASVS level
+
+Stackra is built and reviewed against **OWASP ASVS 4.0.3** ([0207](/adr/0207-authentication-assurance-and-machine-identities),
+amendment of 2026-11-26).
+
+| ASVS chapters                                                                | Level  | Members held to it                                                  |
+| ---------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------- |
+| V2 authentication, V3 session management, V4 access control                  | **L2** | `@stackra/identity`, `iam`, `scope`, `tenancy`, `actions` and `app` |
+| Every other chapter (validation, cryptography, data protection, files, API…) | **L1** | every package                                                       |
+
+The level is a target the controls are built and reviewed against, declared per package in its model. It is not a
+certification: no third party has yet tested Stackra against ASVS. The penetration test and the compliance pack are
+STA-1321.
+
+## The platform
+
+```text
+ browser, phone, desktop, agent, partner system
+        │  B1: TLS, bearer token or BFF cookie, API key, signed webhook
+        ▼
+ edge Worker (product-owned; ADR 0437)  ──B2: HMAC-signed edge headers──►  API service (generated Encore app)
+                                                                               │  request guards → CallAuthenticator
+                                                                               │  → ActionPipeline (tenancy, permission,
+                                                                               │    step-up, entitlement, idempotency,
+                                                                               │    rate limit, audit)
+        ┌───────────────────────────────┬───────────────┬────────────────────┼──────────────────────┐
+        ▼ B4                            ▼ B5            ▼ B6                  ▼ B3                   ▼ B7
+ Postgres (RLS FORCE,              cache / queue   object storage        other services        ZITADEL, KMS, secret
+ tenant + scope settings)          (Valkey, PG)    (signed URLs)         (service token,       store, providers, AI
+                                                                           on-behalf-of)         models, SIEM
+                                                        B8: tenant code in the sandbox, tenant HTML and markup
+```
+
+## Assets
+
+| Asset                                                               | Where it lives                                                           | Class          |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------- |
+| Tenant business records                                             | Postgres, tenant-owned tables (`tenant_id`, RLS `ENABLE` + `FORCE`)      | `confidential` |
+| Personal data of end users                                          | Postgres fields classified `pii`; DSAR zips on the export disk           | `pii`          |
+| Session cookies, access and refresh tokens, API keys                | the browser (sealed `__Host-` cookie), device secure storage, key hashes | `secret`       |
+| Service credentials: edge signing keys, provider keys, OAuth tokens | the secret store, read blind through `@Secret`; Connections' vault       | `secret`       |
+| Tenant data keys and per-subject salts                              | KMS-wrapped keys in Postgres; `privacy.subject_salts`                    | `secret`       |
+| Authorization policy: grants, roles, deny rules, the scope tree     | the policy snapshot store; `scope.scope_nodes`                           | `confidential` |
+| Audit and access-log hash chains                                    | `access_log.audit_log_entries`, `access_log.access_log_entries`          | `confidential` |
+| Uploaded files                                                      | the `FileSystem` disk (S3, R2, GCS), private unless under `public/`      | `pii`          |
+| Money movements and payment records                                 | `payments.payment_records`; the providers                                | `confidential` |
+| Release artifacts: packages, provenance, SBOM                       | the Stackra registry and GitHub releases                                 | `internal`     |
+
+## Trust boundaries
+
+1. **B1, client to the edge or the API.** Anything on the public internet: browsers, apps, agents over MCP, partner
+   systems, providers' webhooks.
+2. **B2, the edge Worker to the API.** Only the Worker may vouch for host, tenant, product and realm.
+3. **B3, service to service.** A service calls another with its own token, and a user's token only on a declared
+   second hop.
+4. **B4, service to Postgres.** Every tenant-owned row is behind row-level security that the table owner cannot bypass.
+5. **B5, service to cache and queue.** Stored jobs and cached answers carry the actor and scope they ran under.
+6. **B6, service to object storage.** Bytes go direct with short-lived signed URLs and never pass through a service.
+7. **B7, service to third parties.** The identity provider, KMS, the secret store, payment and other providers, AI
+   models, a SIEM.
+8. **B8, tenant-authored content.** Automation code, rich text, email HTML and prompts written by a tenant or a user,
+   run or rendered by the platform.
+
+## Threats and controls
+
+| Threat                                                                      | Control today                                                                                                                                                                                                          | Open work                                                                      |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| B1: a forged or expired token reaches a handler                             | `CallAuthenticator` verifies RS256/ES256 JWTs against the issuer's JWKS (issuer, audience, expiry); any failure is one 401 and never anonymous (`@stackra/app`)                                                        | A dev-only sign-in that deployed environments refuse, STA-2795                 |
+| B1: cross-site request forgery on the BFF cookie session                    | `OriginGuard` and `CsrfGuard` on every cookie-bearing write; `__Host-`, `HttpOnly`, `Secure`, `SameSite=Lax` cookies (`@stackra/app`, `@stackra/identity`)                                                             | —                                                                              |
+| B1: brute force, credential stuffing and abuse of public endpoints          | Rate limits per area, action, scope and client address in the pipeline; ZITADEL lockout after five failed checks (`@stackra/infra-identity`)                                                                           | Shared stores refused in deployed environments, STA-2798                       |
+| B1: a retried write runs twice (a double charge)                            | Idempotency keys with a fingerprint of the input (`@stackra/actions`)                                                                                                                                                  | Completion atomic with the commit, STA-2797                                    |
+| B1: a forged provider webhook                                               | The signature is checked before any field is parsed, in constant time, within five minutes (`@stackra/webhooks`)                                                                                                       | Regional schemes certified against each sandbox (owner decision D3)            |
+| B2: a request that skipped the edge claims a tenant or realm                | `EdgeHeaderGuard` verifies the HMAC over headers, method, path and body hash, a 60-second window and a single-use request id                                                                                           | Shared nonce store across instances, STA-2803; the edge itself, STA-2793       |
+| B3: a service acts as a user it was never asked to act for                  | Service tokens per audience; a user token is forwarded only on a declared second hop and never stored (ADR 0209); every link of the actor chain must hold the permission                                               | —                                                                              |
+| B4: one tenant reads or writes another tenant's rows                        | `belongsToTenant()` gives every tenant table RLS `ENABLE` + `FORCE` and an equality policy; the tenant comes only from the verified actor, transaction-local; a forgotten scope returns zero rows (`@stackra/tenancy`) | Isolation proven for queue, outbox, inbox and workflow on Postgres, STA-1717   |
+| B4: a caller sees records or fields its role does not allow                 | `@stackra/iam` denies by default, an explicit deny wins, field redaction, visibility filters in reads; a cross-tenant miss is "not found"                                                                              | Gen's tenancy and step-up refusals made blocking, STA-2808                     |
+| B4: a destructive action on a stolen or idle session                        | L3 and L4 actions need a step-up within 10 minutes (`step_up_required`); break-glass grants are time-boxed and audited                                                                                                 | Per-tenant MFA enforcement as an audited admin action, STA-2817                |
+| B4: a change leaves no trace, or the trace is altered                       | The pipeline audits every action when an `AuditTrail` is bound; per-tenant SHA-256 hash chains; `UPDATE` revoked and refused by trigger (`@stackra/access-log`)                                                        | Audit trail required outside dev and test (fail closed), STA-1571              |
+| B5: a queued job or cached answer runs or reads in the wrong tenant         | Jobs, outbox, inbox and workflow units run through `CallIsolation` as their stored actor; cache keys are namespaced by scope (`@stackra/scope`)                                                                        | Isolation proven on Postgres, STA-1717                                         |
+| B6: an upload carries malware or a script                                   | Bucket type and size checks before signing; SVG is not a media type; a `FileScanner` port (GuardDuty, ClamAV)                                                                                                          | Serve no file before its scan passes, STA-669                                  |
+| B6: a private file is fetched by anyone who learns its address              | Private objects are read through short-lived signed URLs only; the CDN serves `public/*` only                                                                                                                          | Parent visibility checked before an attachment is served, STA-1960             |
+| B7: a secret leaks into a log, an error or a response                       | `@Secret` values are non-enumerable and never serialised; a schema with a secret never reaches a wire surface (gen `secret_on_wire`); the logger redacts                                                               | Secret-store reload on rotation, STA-2804; MCP secrets off argv, STA-1617      |
+| B7: a provider or model receives more personal data than it needs           | Field allow-lists per data class and redaction before a model; model routing by region and data class (`@stackra/ai`)                                                                                                  | One classification source driving every control, STA-1421                      |
+| B7: a stolen tenant data key decrypts another tenant's data                 | Data keys wrapped by KMS and bound to the tenant by the encryption context; per-subject keys destroyed on erasure                                                                                                      | Field encryption port for special-category stores, STA-2241                    |
+| B8: tenant code escapes its run or reaches internal hosts                   | QuickJS-WASM or Pyodide in a pool of child processes, time, memory and output limits, `fetch` only to allowed origins through the host's audited proxy (`@stackra/sandbox`)                                            | —                                                                              |
+| B8: tenant HTML runs script in another user's browser (stored XSS)          | A nonce-based CSP with no `unsafe-inline` or `unsafe-eval` for scripts (`@stackra/csp`); an HTML sanitiser policy in `@stackra/csp`                                                                                    | Rich text sanitised in `@stackra/ui`, STA-2583; email bodies, STA-2582         |
+| B8: a prompt injected through a page, a record or a message steers an agent | Every agent tool call is an action under the caller's permissions; L2 confirms, L3 and L4 need a named human; layered guardrails including an injection heuristic (`@stackra/ai`)                                      | —                                                                              |
+| B7: outbound webhooks or integrations reach internal addresses (SSRF)       | Integrations call only their declared `baseUrl`; the AI page reader refuses private hosts; webhook endpoints must be https                                                                                             | Webhook endpoints refuse private and internal hosts, STA-2816                  |
+| Supply chain: a tampered package or dependency                              | Catalog-pinned versions, allow-listed install scripts, provenance on every package, registry signatures, a signed SBOM ([Security overview](/customers/security))                                                      | Dependency findings and licence allow-list, STA-2781; reviews on main, STA-244 |
+
+## Package threat models
+
+Each model follows the [template](/constitution/security#threat-model-template): assets, trust boundaries, threats with
+the control today and the open work, and the package's ASVS level.
+
+| Package                 | What it guards                                                              | ASVS            | Model                                                                                                                                                              |
+| ----------------------- | --------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@stackra/access-log`   | the audit and access-log hash chains, the SIEM export                       | L1              | [packages/security/access-log/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/access-log/docs/threat-model.md)               |
+| `@stackra/consent`      | visitor consent, signed consent snapshots, consent proofs                   | L1              | [packages/security/consent/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/consent/docs/threat-model.md)                     |
+| `@stackra/csp`          | the Content-Security-Policy, security headers, HTML sanitising              | L1              | [packages/security/csp/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/csp/docs/threat-model.md)                             |
+| `@stackra/entitlements` | plan rights, limits, quotas and plan-sized rate limits                      | L1              | [packages/security/entitlements/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/entitlements/docs/threat-model.md)           |
+| `@stackra/iam`          | permissions, roles, record policies, field access, break-glass              | L2 (V4)         | [packages/security/iam/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/iam/docs/threat-model.md)                             |
+| `@stackra/identity`     | sign-in, sessions, step-up, API keys, passkeys, the login directory         | L2 (V2, V3)     | [packages/security/identity/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/identity/docs/threat-model.md)                   |
+| `@stackra/licensing`    | licence files, the issuer API, install keys                                 | L1              | [packages/security/licensing/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/licensing/docs/threat-model.md)                 |
+| `@stackra/privacy`      | DSAR exports, erasure, subject keys, legal holds                            | L1              | [packages/security/privacy/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/privacy/docs/threat-model.md)                     |
+| `@stackra/scope`        | the scope tree and a request's scope                                        | L2 (V4)         | [packages/security/scope/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/scope/docs/threat-model.md)                         |
+| `@stackra/tenancy`      | tenant isolation in Postgres, tenant data keys, tenant tokens               | L2 (V4)         | [packages/security/tenancy/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/security/tenancy/docs/threat-model.md)                     |
+| `@stackra/actions`      | the fixed pipeline: authorization, step-up, idempotency, rate limits, audit | L2 (V4)         | [packages/application/actions/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/application/actions/docs/threat-model.md)               |
+| `@stackra/ai`           | agent tool calls, approvals, guardrails, model routing, the page reader     | L1              | [packages/application/ai/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/application/ai/docs/threat-model.md)                         |
+| `@stackra/payments`     | payment state, provider tokens, agent and terminal payments                 | L1              | [packages/commerce/payments/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/commerce/payments/docs/threat-model.md)                   |
+| `@stackra/integrations` | tenant credentials, OAuth tokens, the managed client                        | L1              | [packages/communication/integrations/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/communication/integrations/docs/threat-model.md) |
+| `@stackra/webhooks`     | inbound signature checks, outbound signed delivery                          | L1              | [packages/communication/webhooks/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/communication/webhooks/docs/threat-model.md)         |
+| `@stackra/media`        | uploads, signed URLs, scanning, image processing                            | L1              | [packages/data/media/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/data/media/docs/threat-model.md)                                 |
+| `@stackra/config`       | secrets and deploy-time configuration, signers                              | L1              | [packages/foundation/config/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/foundation/config/docs/threat-model.md)                   |
+| `@stackra/app`          | request guards, edge signatures, bearer tokens, CSRF, CORS, service calls   | L2 (V2, V3, V4) | [packages/runtime/app/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/runtime/app/docs/threat-model.md)                               |
+| `@stackra/sandbox`      | tenant automation code                                                      | L1              | [packages/runtime/sandbox/docs/threat-model.md](https://github.com/figentra/stackra/blob/main/packages/runtime/sandbox/docs/threat-model.md)                       |
+
+## What this model does not cover
+
+- **Your own services and their data.** A service you build keeps its own `docs/threat-model.md` in the same template
+  (constitution, threat model template) for what it adds.
+- **The hosting accounts.** Encore Cloud, AWS, GCP and Cloudflare accounts, their IAM and network rules are the
+  deployment's. The infrastructure packages (`@stackra/infra-*`) declare them; operator access is break-glass only
+  ([0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy)).
+- **How a package version reaches you.** Provenance, signatures and the SBOM are on the [security overview](/customers/security).
