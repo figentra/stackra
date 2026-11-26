@@ -52,9 +52,16 @@ stated number with no code default.
 Decisions 1 and 4 hold in code: the action pipeline treats a missing `AuditTrail` the way it treats a missing
 `AccessControl`. Outside `dev` and `test` an action with no trail bound is an error before any step runs, never an
 unaudited write. The environment is `AuditConfig.environment` of `@stackra/actions` (key `actions.audit`), read from
-`STACKRA_ENVIRONMENT`: `dev` when it is unset (as every reader of that variable), refused at boot when it is empty, and
-any other name (`preview`, `staging`, `production`, a typo) needs a trail. Gen binds `AuditConfig` in every service that
-runs an action. Queries are not audited by this step.
+`STACKRA_ENVIRONMENT`: refused at boot when it is empty, and any name but `dev` or `test` (`preview`, `staging`,
+`production`, a typo) needs a trail. Unset means `dev`, where the trail is optional. A deployment does not depend on an
+operator setting it: gen writes `stackra-encore/<member>/environment.ts`, which hands Encore's `appMeta().environment`
+to `@stackra/app/server`, and the server `createApp` derives the variable from it (`runningEnvironment`). A local
+runtime (`encore run`, `encore test`, cloud `local`) is `dev` or `test`; a deployed one is its Encore environment's
+name when that is `preview`, `staging` or `production`, else `production`, `preview` or `staging` by its type, never
+`dev` or `test`; a deployed runtime set to `dev`, `test` or nothing fails boot. Unset therefore means `dev` only under
+`stackra dev`, vitest, `encore run` and `encore test`, and in a self-hosted image whose infra config leaves
+`metadata.cloud` at `local`. Gen binds `AuditConfig` in every service that runs an action. Queries are not audited by
+this step.
 
 ## Supersedes and sources
 

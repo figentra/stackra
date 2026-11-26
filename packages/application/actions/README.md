@@ -287,10 +287,12 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
   not an entitlement does not compile, and one that resolves to no entitlement fails gen (`entitlement_unknown`).
 - **Audit fails closed** (ADR 0212, STA-1571): outside `dev` and `test`, an action with no `AuditTrail` bound is an
   error before any step runs, never an unaudited write. The environment is `AuditConfig.environment` (key
-  `actions.audit`), read from `STACKRA_ENVIRONMENT`: `dev` when it is unset, refused at boot when it is empty, and
-  any other name (`preview`, `staging`, `production`, a typo) needs a trail. Gen binds `AuditConfig` in every service
-  that runs an action. A query is not audited, and a container with no `AuditConfig` (a hand-built test resolver)
-  keeps the old behaviour.
+  `actions.audit`), read from `STACKRA_ENVIRONMENT`: refused at boot when it is empty, and any name but `dev` or
+  `test` (`preview`, `staging`, `production`, a typo) needs a trail. Unset means `dev`, where the trail is optional;
+  on a generated Encore service the server `createApp` of `@stackra/app` sets it from where Encore runs (gen's
+  `environment.ts`), so a deployed service is never `dev` and one set to `dev` or `test` fails boot. Gen binds
+  `AuditConfig` in every service that runs an action. A query is not audited, and a container with no `AuditConfig`
+  (a hand-built test resolver) keeps the old behaviour.
 - **Audit**: `OutboxAuditTrailDriver` writes each audit entry as an `AuditEntryRecorded` event for the audit service.
   `OutboxListenerAuditTrailDriver` does the same for each listener delivery (`@stackra/events`' `ListenerAuditTrail`,
   key `listener:<Listener>`, the event's id as the call id, `ctx.audit` fields; STA-1715).
