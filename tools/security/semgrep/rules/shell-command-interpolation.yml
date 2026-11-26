@@ -1,0 +1,47 @@
+# Stackra file contract:
+# Purpose: Semgrep rule `stackra.shell-command-interpolation`: a shell command line built with `${…}` or `+`, or a
+#          `spawn` with `shell: true`. Run the program with `execFile`/`spawn` and an argument array instead.
+#          Fixture: ../__tests__/__fixtures__/shell-command-interpolation.ts (`pnpm security:sast --test`).
+# Scope: TypeScript under apps, packages, services, workers (tools/scripts/security-scan.mjs)
+# Owner: release-operations
+# Secrets: forbidden
+rules:
+  - id: stackra.shell-command-interpolation
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      A shell command line is built from a value. Run the program with `execFile` or `spawn` and an argument array
+      (no `shell: true`), so a value can never become shell syntax.
+    metadata:
+      category: security
+      cwe:
+        [
+          "CWE-78: Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')",
+        ]
+      owasp: ["A03:2021 - Injection"]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      references:
+        ["https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback"]
+    pattern-either:
+      - patterns:
+          - pattern-either:
+              - patterns:
+                  - pattern-either:
+                      - pattern: $CP.exec($CMD, ...)
+                      - pattern: $CP.execSync($CMD, ...)
+                  # the child_process module object, not RegExp#exec or a database's exec
+                  - metavariable-regex:
+                      metavariable: $CP
+                      regex: "^(cp|childProcess|child_process|child|proc|processes)$"
+              - pattern: exec($CMD, ...)
+              - pattern: execSync($CMD, ...)
+          # a template with `${…}`, or a `+` concatenation
+          - metavariable-regex:
+              metavariable: $CMD
+              regex: '(?s)^(`.*\$\{|[^`(]*\+)'
+      - pattern: "$CP.spawn($C, $ARGS, {..., shell: true, ...})"
+      - pattern: "$CP.spawnSync($C, $ARGS, {..., shell: true, ...})"
+      - pattern: "spawn($C, $ARGS, {..., shell: true, ...})"
+      - pattern: "spawnSync($C, $ARGS, {..., shell: true, ...})"

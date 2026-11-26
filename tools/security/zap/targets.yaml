@@ -1,0 +1,18 @@
+# Stackra file contract:
+# Purpose: the deployed hosts `pnpm security:dast` may scan (ADR 0187 decision 3). Each is Stackra's own: `name` (the
+#          `--target` and the nightly matrix entry), `url` (https), `note` (what it is, who runs it) and `active` (true
+#          only where an active `full` or `api` scan is allowed; omitted means passive `baseline` only). A local or
+#          private host (localhost, 10/8, 172.16/12, 192.168/16, .internal, .local) needs no entry, for any mode.
+# Scope: tools/scripts/security-scan.mjs; .github/workflows/security-scan.yml (nightly baseline per target)
+# Owner: release-operations
+# Secrets: forbidden
+targets:
+  - name: registry
+    url: https://npm.stackra.figentra.com/
+    note: the Stackra registry Worker (ADR 0453); production, so passive only
+  - name: static
+    url: https://static.stackra.figentra.com/
+    note: stackra-static, the hosted static files Worker (workers/static, ADR 0284); production, so passive only
+  - name: docs
+    url: https://docs.stackra.figentra.com/
+    note: the Stackra documentation site (apps/docs); production, so passive only

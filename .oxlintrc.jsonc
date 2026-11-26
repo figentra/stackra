@@ -31,6 +31,9 @@
     "tools/scaffold/templates/**",
     // lint fixtures are banned imports on purpose; their test lints them with the preset directly
     "**/__tests__/fixtures/**",
+    // Semgrep rule fixtures hold the insecure code their rules must find (eval, Math.random tokens); `semgrep --test`
+    // reads them, nothing imports them (tools/security/README.md)
+    "tools/security/semgrep/__tests__/__fixtures__/**",
     // installed skills are upstream content
     ".agents/skills/**",
     // fenced upstream Encore skills, read only by compiler-engineer (ADR 0258)

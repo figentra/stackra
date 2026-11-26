@@ -1,0 +1,109 @@
+---
+title: "Security testing: SAST and DAST"
+description: "The code scans (GitHub CodeQL and the Stackra Semgrep rules) and the running-app scan (OWASP ZAP): what each covers, how to run them on the box, how a finding is fixed or accepted, and what they do not prove."
+icon: "shield-check"
+---
+
+Three scanners look for injection, SSRF, cross-site scripting and similar weaknesses, as
+[ADR 0187](/adr/0187-security-and-compliance-programme) decision 3 asks. They sit beside the dependency scan
+(OSV-Scanner, [ADR 0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)) and the secret scan (gitleaks).
+
+| Scanner                       | Looks at                                            | Runs                                                                                  | Fails on                                   |
+| ----------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------ |
+| CodeQL (GitHub default setup) | the source, with GitHub's standard queries          | every pull request and push to `main`, on GitHub                                      | an alert GitHub raises on the pull request |
+| Semgrep, Stackra rules        | the source, for the patterns this framework forbids | pull requests that touch code, nightly, `pnpm security:sast`                          | a finding not in the baseline              |
+| OWASP ZAP                     | a running site, over HTTP                           | nightly against our deployed hosts (passive), on the box against a local app (active) | an alert the policy marks `FAIL`           |
+
+All three report to the repository's **Security → Code scanning** page (categories `semgrep-stackra` and
+`zap-<target>` next to CodeQL's). The workflow is `.github/workflows/security-scan.yml`; CodeQL is configured in the
+repository settings, not in a workflow, so it is not repeated there.
+
+## The Stackra Semgrep rules
+
+The rules live in `tools/security/semgrep/rules`, one file per rule, each with a fixture in
+`tools/security/semgrep/__tests__/__fixtures__` (`// ruleid:` lines must match, `// ok:` lines must not).
+
+| Rule                                  | Finds                                                                                                                                                                                                                                                          |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stackra.sql-interpolated-string`     | SQL text built with `${…}` and passed to `query`, `execute`, `unsafe` or `raw`; a module constant or `quoteIdentifier(…)` is allowed                                                                                                                           |
+| `stackra.shell-command-interpolation` | `exec` / `execSync` with an interpolated or concatenated command, `spawn` with `shell: true`                                                                                                                                                                   |
+| `stackra.tls-verification-disabled`   | `rejectUnauthorized: false`, `NODE_TLS_REJECT_UNAUTHORIZED`, a no-op `checkServerIdentity`                                                                                                                                                                     |
+| `stackra.dynamic-code`                | `eval`, `new Function`, the `vm` module, a string handed to a timer                                                                                                                                                                                            |
+| `stackra.unsanitised-html-sink`       | `dangerouslySetInnerHTML`, `innerHTML`, `insertAdjacentHTML`, `document.write` without `sanitizeHtml` (`@stackra/csp`)                                                                                                                                         |
+| `stackra.insecure-random-secret`      | `Math.random()` behind a token, secret, nonce, code or key                                                                                                                                                                                                     |
+| `stackra.ssrf-unchecked-url`          | a caller's URL (an action's `input`, a request's body, query, params or headers) reaching `fetch` or an HTTP client without `checkEgress` ([ADR 0450](/adr/0450-ai-page-reader-port-readable-text-product-hints-and-an-egress-bounded-http-driver) decision 3) |
+
+The scan reads `apps`, `packages`, `services` and `workers`, never tests, fixtures or generated output.
+
+## The ZAP scan
+
+`tools/security/zap/policy.tsv` is ZAP's own rules file: each line names a plugin id and `FAIL`, `WARN`, `INFO` or
+`IGNORE`. Injection, SSRF and path traversal fail whatever risk ZAP gives them; a plugin not listed fails at High
+risk, warns at Medium and informs below that.
+
+Where a scan may point is fixed in code, not left to whoever runs it:
+
+- **Passive baseline** (spider plus passive rules, no attack traffic): a host listed in
+  `tools/security/zap/targets.yaml`, or a local or private host.
+- **Active full scan and API scan** (attack traffic): only a local or private host (`localhost`, `10.0.0.0/8`,
+  `172.16.0.0/12`, `192.168.0.0/16`, `.internal`, `.local`), or a listed target marked `active: true`. The listed
+  production hosts are passive only. Any other host is refused before ZAP starts.
+
+## Run it on the box
+
+Both commands run their scanner from a Docker image pinned by digest, so the box and CI run the same tool. Use box 2
+inside its demo container (see [Test infrastructure](/runbooks/test-infrastructure)), never a workstation.
+
+```bash
+pnpm security:sast --test                     # the rule fixtures
+pnpm security:sast                            # the scan, gated by the baseline
+pnpm security:sast --sarif semgrep.sarif      # also write SARIF
+
+pnpm security:dast --target docs              # passive baseline of a listed host
+pnpm security:dast --target http://127.0.0.1:4000/ --mode full --minutes 5 --out zap-out
+pnpm security:dast --target http://127.0.0.1:4000/ --mode api --api http://127.0.0.1:4000/openapi.json
+```
+
+A local app for the active scan is any Stackra app running on the box (for example the demo app
+`stackra new` creates, started with `stackra dev`). The HTML and JSON reports land in `--out` (a temporary folder
+when it is not given).
+
+Exit codes: `0` clean (known findings and warnings only), `1` a new Semgrep finding or a ZAP `FAIL` alert, `2` a usage
+error, a refused target or a scanner failure. A scanner that cannot run is a failure, never a pass.
+
+## When a scan fails
+
+1. **Fix the code.** That is the expected answer for every finding: a bind parameter, `execFile` with an argument
+   array, `sanitizeHtml`, `crypto.getRandomValues`, `checkEgress`.
+2. **A false positive in one place:** add `// nosemgrep: <rule> -- <why this is safe>` on the line above. The reason is
+   required in review.
+3. **A ZAP alert that does not apply to a host:** add an `OUTOFSCOPE` line (plugin id and a URL regex) or downgrade the
+   plugin in `policy.tsv`, with the reason on the line. Never raise a whole plugin to `IGNORE` to make a nightly
+   green.
+4. **A new rule that finds existing code:** land the rule with the existing findings accepted, each tied to the issue
+   that reviews them:
+
+   ```bash
+   node tools/scripts/security-scan.mjs sast --update-baseline --reason "<why accepted for now>" --issue STA-n
+   ```
+
+   The run keeps the reason of entries already accepted, drops fixed ones and names the new ones. The baseline only
+   shrinks after that: a fixed finding is reported as stale until the next update removes it.
+
+## What a green scan does not prove
+
+- **No sign-in.** The ZAP scans run unauthenticated, so they see what an anonymous caller sees. Authorisation is
+  proven by each service's isolation tests ([Tenancy](/constitution/tenancy)), not by ZAP.
+- **Patterns, not proofs.** Semgrep's taint tracking stays inside one function; a URL handed through two helpers
+  before `fetch` is CodeQL's job, and neither replaces review.
+- **A penetration test is separate.** ADR 0187 decision 3 still requires one before general availability, and yearly.
+
+## Enforcement status
+
+| Rule                                          | Check                                                      | State                       |
+| --------------------------------------------- | ---------------------------------------------------------- | --------------------------- |
+| Code is scanned on every pull request         | CodeQL default setup; `security-scan.yml` `SAST` job       | Live (not a required check) |
+| A new Stackra rule finding fails the scan     | `security-scan.mjs sast` against `baseline.yaml`           | Live                        |
+| Nightly ZAP scan (ADR 0187 decision 3)        | `security-scan.yml` `DAST` job, passive, per listed target | Live                        |
+| Active scans never reach a host we do not own | `resolveTarget` in `security-scan.mjs`, with its tests     | Live                        |
+| Accepted findings are reviewed                | each baseline entry names its issue                        | Live                        |

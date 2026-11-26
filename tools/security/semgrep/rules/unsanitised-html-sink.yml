@@ -1,0 +1,43 @@
+# Stackra file contract:
+# Purpose: Semgrep rule `stackra.unsanitised-html-sink`: HTML handed to the DOM or to React without
+#          `sanitizeHtml` from @stackra/csp (ADR 0187 decision 3 scanning; the stored-XSS gap of the 26 Nov audit).
+#          Fixture: ../__tests__/__fixtures__/unsanitised-html-sink.tsx (`pnpm security:sast --test`).
+# Scope: TypeScript and TSX under apps, packages, services, workers (tools/scripts/security-scan.mjs)
+# Owner: release-operations
+# Secrets: forbidden
+rules:
+  - id: stackra.unsanitised-html-sink
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      HTML reaches a DOM sink without `sanitizeHtml` (@stackra/csp). Sanitise it where it is rendered (or render
+      text), or a stored value can run script in a viewer's session.
+    metadata:
+      category: security
+      cwe:
+        [
+          "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+        ]
+      owasp: ["A03:2021 - Injection"]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      references:
+        [
+          "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html",
+        ]
+    patterns:
+      - pattern-either:
+          - pattern: "<$EL dangerouslySetInnerHTML={{__html: $H}} />"
+          - pattern: "<$EL dangerouslySetInnerHTML={{__html: $H}}>...</$EL>"
+          - pattern: "{..., dangerouslySetInnerHTML: {__html: $H}, ...}"
+          - pattern: $NODE.innerHTML = $H
+          - pattern: $NODE.outerHTML = $H
+          - pattern: $NODE.insertAdjacentHTML($POS, $H)
+          - pattern: document.write($H)
+          - pattern: document.writeln($H)
+          - pattern: $RANGE.createContextualFragment($H)
+      # a literal, or the value already through sanitizeHtml
+      - metavariable-regex:
+          metavariable: $H
+          regex: '^(?!["''`])(?!(\w+\.)?sanitizeHtml\()'

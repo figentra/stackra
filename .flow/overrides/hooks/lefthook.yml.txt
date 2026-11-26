@@ -26,6 +26,8 @@ pre-commit:
         - "packages/*/*/src/node/entities.gen.ts"
         - "**/encore.gen/**"
         - "packages/*/api-client/src/generated/**"
+        # Semgrep rule fixtures hold the insecure code their rules must find; .oxlintrc.jsonc ignores them too
+        - "tools/security/semgrep/__tests__/__fixtures__/**"
       run: |
         if [ ! -d node_modules/@stackra/oxlint-config ] && grep -qs @stackra/oxlint-config .oxlintrc.json .oxlintrc.jsonc; then
           echo "oxlint skipped: its config extends @stackra/oxlint-config and no workspace install has it; CI lints this commit"

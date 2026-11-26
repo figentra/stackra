@@ -1,0 +1,47 @@
+# Stackra file contract:
+# Purpose: Semgrep rule `stackra.sql-interpolated-string`: SQL text built with `${…}` and handed to a raw query call.
+#          A value belongs in a bind parameter (`?`, `$1`); an identifier only through the driver's quoting.
+#          Fixture: ../__tests__/__fixtures__/sql-interpolated-string.ts (`pnpm security:sast --test`).
+# Scope: TypeScript under apps, packages, services, workers (tools/scripts/security-scan.mjs)
+# Owner: release-operations
+# Secrets: forbidden
+rules:
+  - id: stackra.sql-interpolated-string
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      SQL text built from an interpolated value reaches `$M`. Pass values as bind parameters (`?` placeholders) and build
+      identifiers only through the driver's identifier quoting (`quoteIdentifier`); a `${…}` in SQL text can inject
+      SQL. A module constant (`${ENTRIES}`) is not reported.
+    metadata:
+      category: security
+      cwe:
+        [
+          "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+        ]
+      owasp: ["A03:2021 - Injection"]
+      confidence: MEDIUM
+      likelihood: MEDIUM
+      impact: HIGH
+      references:
+        ["https://cheatsheetseries.owasp.org/cheatsheets/Query_Parameterization_Cheat_Sheet.html"]
+    patterns:
+      - pattern-either:
+          - pattern: $DB.$M($Q, ...)
+          - pattern: $M($Q, ...)
+      - metavariable-regex:
+          metavariable: $M
+          regex: '^(query|unsafe|raw|execute|exec|\$queryRawUnsafe|\$executeRawUnsafe|sqlRaw)$'
+      - metavariable-pattern:
+          metavariable: $Q
+          patterns:
+            - pattern-either:
+                - pattern: "`...${$X}...`"
+                - pattern: "`...${$X}...` + $REST"
+            # A module constant (`${ENTRIES}`) or a quoted identifier (`${quoteIdentifier(name)}`) is not a value.
+            - metavariable-regex:
+                metavariable: $X
+                regex: '^(?![A-Z][A-Z0-9_]*$)(?!(quoteIdentifier|quoteIdent|escapeIdentifier|identifier|literal|sql\.identifier)\()'
+      - metavariable-regex:
+          metavariable: $Q
+          regex: '(?is)^`\s*(select|insert|update|delete|with|create|alter|drop|truncate|grant|revoke|merge|copy|call|do|set|lock|vacuum|analyze|refresh|comment)\b'

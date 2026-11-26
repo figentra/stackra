@@ -1,0 +1,305 @@
+# Stackra file contract:
+# Purpose: the Semgrep findings accepted when a Stackra rule landed, each a fingerprint (rule, path, matched text) with
+#          the reason it is accepted and the issue that reviews it. `pnpm security:sast` fails on any finding not listed;
+#          a fixed finding drops out on the next `--update-baseline`. Written by
+#          `node tools/scripts/security-scan.mjs sast --update-baseline --reason <text> --issue STA-n`; never hand-edited
+#          except to sharpen a reason.
+# Scope: tools/security/semgrep/rules over apps, packages, services, workers
+# Owner: release-operations
+# Secrets: forbidden
+findings:
+  - rule: stackra.sql-interpolated-string
+    path: packages/commerce/payments/src/node/drivers/postgres-connected-account-limits.driver.ts
+    fingerprint: 7f580aa1c019b8e2f2e3f2d6101bbea5
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/commerce/payments/src/node/drivers/postgres-payment-records.driver.ts
+    fingerprint: 52d6843f7a8bef5bd4a6536676add72b
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/commerce/payments/src/node/drivers/postgres-payment-records.driver.ts
+    fingerprint: 5a4007d9f3daa7a02738ad4b3440b7c2
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.ssrf-unchecked-url
+    path: packages/communication/integrations/src/core/functions/managed-client.function.ts
+    fingerprint: 5c20702664aa74ce3dc2a5515f9137e3
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/core/functions/maintain-partitions.function.ts
+    fingerprint: 71eb630fb02205706d9398089fc199b9
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/core/functions/maintain-partitions.function.ts
+    fingerprint: b4918286945a9bdead9315334a20739e
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/core/functions/maintain-partitions.function.ts
+    fingerprint: c39d72de93bd9c98baaefdcd03de4de2
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/core/functions/replay-row-security-settings.function.ts
+    fingerprint: 1f0b858819b0266647cfee119539cfec
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/core/functions/roll-up-time-series.function.ts
+    fingerprint: 24fdbe82d57c816dad789b72f8021d10
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/core/functions/run-in-scope.function.ts
+    fingerprint: 1759d711133ef96888d790cb481a6143
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/core/functions/run-in-scope.function.ts
+    fingerprint: ff07390c5f76ff684e01300a78f85e41
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/node/functions/migrate.function.ts
+    fingerprint: 6ef292ef0f7ece53314e3a7d3ed2998f
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/node/functions/migrate.function.ts
+    fingerprint: 9574eab417a8f921723b0cd5727deb8d
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/node/functions/migrate.function.ts
+    fingerprint: b41d9be8310634cf4082374f88e9029a
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/node/functions/migrate.function.ts
+    fingerprint: bb2def8931c05671a732821b29eda2f3
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/node/functions/rollback.function.ts
+    fingerprint: 6e6dc08bbe8f97f811d6cd1e29e31a0a
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: 11d2e52a5745f137e0af6f0c849fdd20
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: 24694342f7dd25fb85b352fb808449dc
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: 348e4f433d9345726e5fd3cb4c22bc65
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: 4c15815b88b7f585e763f6a1f41b4f60
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: 7939069c0c4364a500e909028b753f92
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: 7c856169f00953df83b213a7e63afe49
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: 7ebc1dc8add6a18949b24d0013467f6e
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: 87d916ae3980e3054b4ca6852593d835
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: a9c7671b4f28f582a33a44a42d25f366
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: b87fbabc4fc7ac7d396c61ec570a843c
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/database/src/testing/functions/assert-row-security.function.ts
+    fingerprint: c6cc8c5e00404a2e79f5cd4f9ae5ec68
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/pgvector-vector-index.driver.ts
+    fingerprint: 113387032b50a69b75dd59f5e85a97a7
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/pgvector-vector-index.driver.ts
+    fingerprint: 83362db8d2af6da8f93878a021912e4d
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/pgvector-vector-index.driver.ts
+    fingerprint: 95a22895434f59a8ddc3f9b370504653
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/pgvector-vector-index.driver.ts
+    fingerprint: 9f8d8bfd431f3c220437dec3163e6aba
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-recommender.driver.ts
+    fingerprint: 1f25d21e0506a40a4952330ab1c1d176
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-recommender.driver.ts
+    fingerprint: 986059bedd3b035d226b9d5a46eb9b10
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-search-query-log.driver.ts
+    fingerprint: d5e5c7129b1ce42687d19324804e3be1
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-search.driver.ts
+    fingerprint: 1ebec54fd47ba37abee3db2474f2a4c2
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-search.driver.ts
+    fingerprint: 943adcc3954c673626a79485291ffcbe
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-search.driver.ts
+    fingerprint: acf3e73a3aa8a35ee91f4b195b60570c
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-search.driver.ts
+    fingerprint: b734d41f15fe3465f819f6690ba82210
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-search.driver.ts
+    fingerprint: bc42f6e4a25e88de7f9fa96aa988b879
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/drivers/postgres-search.driver.ts
+    fingerprint: d30d82a751a65611f363b83e302a1a27
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/data/search/src/node/services/search-index-registry.service.ts
+    fingerprint: 9530101043ebc02417c5a5c53648f64f
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.ssrf-unchecked-url
+    path: packages/developer/cli/src/node/commands/ops-bootstrap-operator.command.ts
+    fingerprint: b401af5b162ea4b8b74b6e5921755730
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/cache/src/node/drivers/postgres-cache.driver.ts
+    fingerprint: 05c050a3ed5bc9f9dffadced9acee6c0
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/cache/src/node/drivers/postgres-cache.driver.ts
+    fingerprint: 4f32a92f0cde0f999e9f1801f935ccd1
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/cache/src/node/drivers/postgres-cache.driver.ts
+    fingerprint: 7bff1232e01ad8beceadc0ef21f8e109
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/cache/src/node/drivers/postgres-cache.driver.ts
+    fingerprint: 821a0ba0a98d103c4392dbab0eea6df3
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/cache/src/node/drivers/postgres-cache.driver.ts
+    fingerprint: bce3799f133f4b0333f913c499a01a67
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/cache/src/node/drivers/postgres-cache.driver.ts
+    fingerprint: bf4bff0b2ce422df672aae5cfd10e8d7
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/cache/src/node/drivers/postgres-cache.driver.ts
+    fingerprint: f41b6e78f20465369e748d2213fa2ec0
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/cache/src/node/drivers/postgres-cache.driver.ts
+    fingerprint: fc598570931224dcb325f4d243bc2a74
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/locking/src/node/drivers/postgres-lock.driver.ts
+    fingerprint: 7b3568abef10ce48903d39817b8a3a73
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/outbox/src/node/drivers/postgres-change-feed.driver.ts
+    fingerprint: 016068e2e7b9efa23129c0a79b732778
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/outbox/src/node/drivers/postgres-change-feed.driver.ts
+    fingerprint: 7c2e03dc251f57aa248260561eb78482
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/outbox/src/node/drivers/postgres-change-feed.driver.ts
+    fingerprint: d32d73c507ffef4cbc55e876f68eccfb
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/outbox/src/node/drivers/postgres-replica-log.driver.ts
+    fingerprint: 6564164f0b7da15c67104b220ef1bf6e
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/queue/src/node/drivers/postgres-queue.driver.ts
+    fingerprint: 34e4a038faea0958ca036fcc4fb0bfa6
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/runtime/queue/src/node/drivers/postgres-queue.driver.ts
+    fingerprint: 58846714b1001f23dd1e53d4872a6105
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/security/privacy/src/node/drivers/postgres-hold-registry.driver.ts
+    fingerprint: 728d149b7b4aa5e9c07708901d1d5a53
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823
+  - rule: stackra.sql-interpolated-string
+    path: packages/security/privacy/src/node/queries/list-holds.query.ts
+    fingerprint: 53b786ce794b33649d5bc3a3777b27b3
+    reason: found in existing code when the rule landed (2026-11-26); not yet reviewed
+    issue: STA-2823

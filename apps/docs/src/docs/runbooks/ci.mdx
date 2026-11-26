@@ -121,13 +121,14 @@ Use this only when the host cannot run workflows at all (billing lock, outage, s
 
 ## Enforcement status
 
-| Rule                                   | Check                                                                      | State                                                |
-| -------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `pnpm verify` is the single gate       | `ci.yml` `Quality Gate`                                                    | Live                                                 |
-| Merge queue gates every merge          | `ci.yml` `merge_group`; `merge_queue` rule in `.github/rulesets/main.json` | Applied by the owner after STA-233 and STA-302 merge |
-| Hooks are advisory                     | `lefthook.yml` (check-only, no auto-fix)                                   | Live                                                 |
-| Conventional commits                   | commitlint in `commit-msg`; CI range check                                 | Live                                                 |
-| Secrets scan                           | gitleaks in `pre-commit`, `pnpm secrets:scan`                              | Live                                                 |
-| Actions pinned by SHA, least privilege | Done by hand in every workflow; workflow lint (zizmor) and a pin test      | Pins live, lint not built                            |
+| Rule                                   | Check                                                                      | State                                                               |
+| -------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `pnpm verify` is the single gate       | `ci.yml` `Quality Gate`                                                    | Live                                                                |
+| Merge queue gates every merge          | `ci.yml` `merge_group`; `merge_queue` rule in `.github/rulesets/main.json` | Applied by the owner after STA-233 and STA-302 merge                |
+| Hooks are advisory                     | `lefthook.yml` (check-only, no auto-fix)                                   | Live                                                                |
+| Conventional commits                   | commitlint in `commit-msg`; CI range check                                 | Live                                                                |
+| Secrets scan                           | gitleaks in `pre-commit`, `pnpm secrets:scan`                              | Live                                                                |
+| Actions pinned by SHA, least privilege | Done by hand in every workflow; workflow lint (zizmor) and a pin test      | Pins live, lint not built                                           |
+| Code and running-app security scans    | CodeQL default setup; `security-scan.yml` (Semgrep, nightly ZAP)           | Live, not required ([Security testing](/runbooks/security-testing)) |
 
 See also [Definition of done](/guides/definition-of-done), [Release](/runbooks/release) and [Testing](/standards/testing).
