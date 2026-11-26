@@ -61,10 +61,12 @@ declared and who runs the call after the last vote is on [Approvals](/build/appr
 
 ## The developer MCP
 
-Inside a repository, `stackra mcp` serves a local MCP over stdio for an assistant: `manifest` reads the committed
-manifests by member and section, and `new`, `gen`, `validate` and `verify` run the CLI's own commands through its
-gates. Its configuration is `.mcp.yaml`, rendered to `.mcp.json` by `stackra mcp sync`; a server that needs a secret
-is started with `stackra mcp exec --`, which hands the value to the process without anyone reading it
+Inside a repository, `stackra mcp` serves a local MCP over stdio for an assistant: `app_info`, `manifest`, `routes`
+and `ls` read the repository's facts, committed manifests and HTTP routes, and `new`, `gen`, `validate`, `check`,
+`verify`, `test`, `typecheck` and `lint` run the CLI's own commands through its gates and answer with structured
+results (failing tests, diagnostics by file and line). A tool that writes is refused in a deployed environment. Its
+configuration is `.mcp.yaml`, rendered to `.mcp.json` by `stackra mcp sync`; a server that needs a secret is started
+with `stackra mcp exec --`, which hands the value to the process without anyone reading it
 ([ADR 0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)).
 
 ## Read next

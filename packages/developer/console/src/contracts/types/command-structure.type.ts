@@ -34,8 +34,15 @@ export interface CommandStructure {
   /** Its docs link, when it has one. */
   readonly docs?: string;
 
-  /** Its local developer MCP tool, when it is one. */
-  readonly tool?: { readonly readOnly: boolean };
+  /**
+   * Its local developer MCP tool, when it is one, with every hint resolved: a read-only tool is never destructive and
+   * always idempotent.
+   */
+  readonly tool?: {
+    readonly readOnly: boolean;
+    readonly destructive: boolean;
+    readonly idempotent: boolean;
+  };
 
   /** Complete invocations its help shows. */
   readonly examples: readonly string[];

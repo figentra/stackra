@@ -36,8 +36,8 @@ export async function runCli(
 ): Promise<number> {
   const commands = options.commands ?? COMMANDS;
   const cwd = options.cwd ?? process.cwd();
-  const recurse = (next: readonly string[], nextIo: CliIo) =>
-    runCli(next, nextIo, { cwd, commands });
+  const recurse = (next: readonly string[], nextIo: CliIo, at: { readonly cwd?: string } = {}) =>
+    runCli(next, nextIo, { cwd: at.cwd ?? cwd, commands });
   const ports = nodePorts();
   return createConsole({
     name: "stackra",

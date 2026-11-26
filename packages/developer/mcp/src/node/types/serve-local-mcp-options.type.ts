@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `ServeLocalMcpOptions`, what `serveLocalMcp` needs: the CLI's version and, all defaulted, the repository
- *          root, the stdio streams, the CLI runner and the upstream Encore connection.
+ *          root, the stdio streams, the CLI runner, the upstream Encore connection, the host's own tools and the
+ *          environment.
  * Boundary: type only.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5); R-29.
+ * Governing contract: ADR 0282 (decision 5); R-29; STA-2873.
  */
 import type { Readable, Writable } from "node:stream";
 
@@ -31,8 +32,11 @@ export type ServeLocalMcpOptions = {
   readonly encore?: McpPeer | null;
 
   /**
-   * Tools from CLI command definitions (`toolsOf` of `@stackra/console`), served with the command's own schema and
-   * handler; one named like a built-in tool replaces it.
+   * Tools from the host's command definitions (`toolsOf` of `@stackra/console`), served with the command's own schema
+   * and handler; one named like a built-in tool replaces it.
    */
   readonly tools?: readonly LocalTool[];
+
+  /** The environment; `STACKRA_ENVIRONMENT` decides whether writes are refused. Defaults to the process's. */
+  readonly env?: Readonly<Record<string, string | undefined>>;
 };

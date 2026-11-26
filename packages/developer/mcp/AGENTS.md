@@ -18,6 +18,10 @@ shape (ADR 0294, 0305). Entries `.` and `./node` (ADR 0127, 2026-10-24 note).
 - A secret value never passes through this process: `execWithSecrets` hands `$NAME` references to
   `sops exec-env <file> 'exec …'` (one per secret, ADR 0525) and never reads, prints or puts a value on argv. Never add a flag that takes a value.
 - Every write tool of the local server goes through the CLI's `run`, so the CLI's gates apply.
+- A local tool is a console command declared `tool` in `src/node/commands/`, listed in `DEV_TOOL_COMMANDS` and
+  served through `toolsOf`: never a hand-written tool table. A tool describes only kinds, sections and phases that
+  exist; an enum mirrors the CLI (`NEW_KINDS`, `CHECK_PHASE_NAMES`) and `@stackra/cli`'s `MCP_COMMAND` test holds it
+  there. A tool that writes is refused on a deployed target (`deployedTarget`).
 - The hosted server core (`toolTable`, `filterTools`, `protectedResourceMetadata`, `wwwAuthenticate`) is pure and
   lives in `.`. It reads committed manifests only, never adds or annotates a tool by hand, and takes every URL,
   permission and entitlement answer from the host; the deployment itself is the OS `ai` service.

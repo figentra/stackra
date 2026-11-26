@@ -71,6 +71,25 @@ function valueOf(type: CommandClass, property: string, role: CommandField["role"
 }
 
 /**
+ * The resolved hints of a tool declaration: `true` writes and may destroy (the MCP defaults); a read-only tool is
+ * never destructive and always idempotent; a writing tool is destructive unless it says not, and idempotent only
+ * when it says.
+ */
+function toolHints(tool: true | Exclude<CommandOptions["tool"], boolean | undefined>): {
+  readonly readOnly: boolean;
+  readonly destructive: boolean;
+  readonly idempotent: boolean;
+} {
+  if (tool === true) return { readOnly: false, destructive: true, idempotent: false };
+  if (tool.readOnly) return { readOnly: true, destructive: false, idempotent: true };
+  return {
+    readOnly: false,
+    destructive: tool.destructive ?? true,
+    idempotent: tool.idempotent ?? false,
+  };
+}
+
+/**
  * The structure of `type`, read once.
  *
  * @throws ConsoleDeclarationError when the class is not a command or a field is declared wrongly.
@@ -198,7 +217,7 @@ export function readCommand(type: CommandClass): CommandStructure {
     ...(options.docs === undefined ? {} : { docs: options.docs }),
     ...(options.tool === undefined || options.tool === false
       ? {}
-      : { tool: { readOnly: options.tool !== true && options.tool.readOnly } }),
+      : { tool: toolHints(options.tool) }),
     arguments: Object.freeze(argumentFields),
     options: Object.freeze(optionFields),
   });

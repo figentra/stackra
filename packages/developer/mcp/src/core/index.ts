@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `.` entry of @stackra/mcp until `stackra gen` writes the entry barrels (STA-339): the
  *          `.mcp.yaml` check and its `.mcp.json` rendering, the command `stackra mcp exec` starts, and the hosted
- *          server core (the tool table from manifests, the per-tenant filter, the OAuth protected-resource metadata).
+ *          server core (the tool table from manifests, the per-tenant filter, the OAuth protected-resource metadata),
+ *          and the `DevToolHost` port the local server's tool commands are built with.
  * Boundary: names each re-export and declares nothing. Isomorphic: no Node import. The zod schema, the secret
  *           reference pattern and the rule check stay internal.
  * Runtime: isomorphic
@@ -11,6 +12,7 @@
  */
 export { UI_RESOURCE_MIME_TYPE } from "#core/constants/ui-resource-mime-type.constant";
 export { McpConfigInvalidError } from "#core/errors/mcp-config-invalid.error";
+export { DevToolHost } from "#core/ports/dev-tool-host.port";
 export { filterTools } from "#core/functions/filter-tools.function";
 export { mcpConfigJsonSchema } from "#core/functions/mcp-config-json-schema.function";
 export { mcpExecCommand } from "#core/functions/mcp-exec-command.function";

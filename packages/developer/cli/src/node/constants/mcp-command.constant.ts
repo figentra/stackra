@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `MCP_COMMAND`, `stackra mcp`: serves the local developer MCP over stdio until the client disconnects. Its
- *          command tools run through this CLI in-process with a capturing io, so an assistant's `gen`, `validate` or
- *          `verify` passes the same commands and gates as a person's.
+ *          command tools run through this CLI in-process with a capturing io (in a member's folder when the tool names
+ *          one), so an assistant's `gen`, `validate`, `check` or `test` passes the same commands and gates as a
+ *          person's. The CLI's own `tool` commands (`doctor`, `ls`) join the server's built-in tools.
  * Boundary: standard output carries the MCP protocol only; command output is captured and returned as tool results.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 5: local mode shares one core with the CLI); R-29 (proxy the local Encore
@@ -13,6 +14,7 @@ import { NodeProcessRunnerDriver } from "@stackra/console/node";
 import { serveLocalMcp } from "@stackra/mcp/node";
 
 import { DoctorCommand } from "#node/commands/doctor.command";
+import { LsCommand } from "#node/commands/ls.command";
 import { captureIo } from "#node/functions/capture-io.function";
 import { cliVersion } from "#node/functions/cli-version.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -26,14 +28,14 @@ export const MCP_COMMAND: CliCommand = {
     await serveLocalMcp({
       version: cliVersion(),
       root: cwd,
-      // A converted command is served from its own definition; the rest stay on LOCAL_TOOLS until they are converted.
+      // The CLI's own tool commands, served from their definitions; one named like a built-in tool replaces it.
       tools: toolsOf(
-        { name: "stackra", version: cliVersion(), commands: [DoctorCommand] },
+        { name: "stackra", version: cliVersion(), commands: [DoctorCommand, LsCommand] },
         { cwd, process: () => new NodeProcessRunnerDriver() },
       ),
-      run: async (args) => {
+      run: async (args, at) => {
         const { io, output } = captureIo();
-        const exitCode = await cli(args, io);
+        const exitCode = await cli(args, io, at);
         return { exitCode, output: output() };
       },
     });

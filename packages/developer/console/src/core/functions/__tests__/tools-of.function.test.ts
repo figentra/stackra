@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: proves `toolsOf` offers only `tool` commands, under MCP-safe names with a JSON Schema derived from their
- *          fields and their read-only hint; that one command returns equal data as a CLI `--json` run, a tool call and
- *          a test-harness run; that a tool call is checked like a typed line (no value reads as a flag, an unknown
- *          key is refused); and that a failing tool call carries the command's error document.
+ *          fields and their hints (read-only, destructive, idempotent, with the MCP defaults for `tool: true`); that
+ *          one command returns equal data as a CLI `--json` run, a tool call and a test-harness run; that a tool
+ *          call is checked like a typed line (no value reads as a flag, an unknown key is refused); and that a failing
+ *          tool call carries the command's error document.
  * Boundary: unit test in-process.
  * Runtime: node
  * Governing contract: STA-1966 spec FR-020, FR-027, AC-006 and P-008/P-010; ADR 0022 (test placement).
@@ -61,6 +62,17 @@ class SyncCommand extends Command({
   }
 }
 
+/** Regenerates files it owns; a writing tool that says it destroys nothing and may run again. */
+class RegenerateCommand extends Command({
+  name: "regenerate",
+  description: "Regenerate",
+  tool: { readOnly: false, destructive: false, idempotent: true },
+}) {
+  handle() {
+    return 0;
+  }
+}
+
 /** Not a tool. */
 class PrivateCommand extends Command({
   name: "private",
@@ -74,7 +86,7 @@ class PrivateCommand extends Command({
 const CONFIG = {
   name: "acme",
   version: "1.0.0",
-  commands: [SpecStatusCommand, SyncCommand, PrivateCommand],
+  commands: [SpecStatusCommand, SyncCommand, RegenerateCommand, PrivateCommand],
 };
 const tools = toolsOf(CONFIG, { cwd: "/work" });
 const tool = (name: string) => tools.find((candidate) => candidate.name === name);
@@ -84,6 +96,22 @@ describe("toolsOf", () => {
     expect(tools.map((candidate) => [candidate.name, candidate.readOnly])).toEqual([
       ["spec_status", true],
       ["sync", false],
+      ["regenerate", false],
+    ]);
+  });
+
+  it("resolves every hint: read-only is safe, `true` takes the MCP defaults, a writing tool says what it is", () => {
+    expect(
+      tools.map(({ name, readOnly, destructive, idempotent }) => ({
+        name,
+        readOnly,
+        destructive,
+        idempotent,
+      })),
+    ).toEqual([
+      { name: "spec_status", readOnly: true, destructive: false, idempotent: true },
+      { name: "sync", readOnly: false, destructive: true, idempotent: false },
+      { name: "regenerate", readOnly: false, destructive: false, idempotent: true },
     ]);
   });
 
