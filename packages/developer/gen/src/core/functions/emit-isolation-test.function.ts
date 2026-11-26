@@ -29,7 +29,7 @@ import type { MemberIR } from "#core/types/member-ir.type";
  * a package it needs.
  *
  * @example
- * emitIsolationTest(serviceIr); // "...const warnings = await assertRowSecurity(postgres.database, {..."
+ * emitIsolationTest(serviceIr); // "...await assertRowSecurity(postgres.database, {..."
  */
 export function emitIsolationTest(ir: MemberIR): string | undefined {
   const packages = ir.packages ?? [];
@@ -82,7 +82,7 @@ export function emitIsolationTest(ir: MemberIR): string | undefined {
     "",
     'describe("row-level security", () => {',
     '  it("isolates every owned table", async () => {',
-    "    const warnings = await assertRowSecurity(postgres.database, {",
+    "    await assertRowSecurity(postgres.database, {",
     "      ...tenantIsolationOptions(),",
     // The compiled migrations' t.platformTable and t.reviewedPolicy declarations, which the audit reads and holds.
     "      migrationsDirectory,",
@@ -92,8 +92,6 @@ export function emitIsolationTest(ir: MemberIR): string | undefined {
     ),
     "      ]),",
     "    });",
-    // Until 0.20 a table without tenant_id is a warning, printed so the service sees what is left.
-    "    for (const warning of warnings) console.warn(`row-level security: ${warning}`);",
     "  });",
     "});",
     "",

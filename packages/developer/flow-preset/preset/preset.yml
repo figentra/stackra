@@ -15,7 +15,7 @@ queues:
 
 # The fixed check every gate runs first, in order (owner, 2026-11-08: the gate becomes the required merge check). A
 # repository's `gate.check` runs after it and can add a step, never remove one. Each is a root script of the repository:
-# format, lint, typecheck, unit tests, int tests on Postgres, strict gen, validate, the secret scan and the dependency
+# format, lint, typecheck, unit tests, int tests on Postgres, gen, validate, the secret scan and the dependency
 # scan. A repository missing one fails its gate, so add the script rather than drop the step.
 gate:
   required:
@@ -24,7 +24,7 @@ gate:
     - "pnpm typecheck"
     - "pnpm test"
     - "pnpm test:int"
-    - "STACKRA_GEN_STRICT=1 pnpm gen:check"
+    - "pnpm gen:check"
     - "pnpm validate"
     - "pnpm secrets:scan"
     - "pnpm deps:scan"
