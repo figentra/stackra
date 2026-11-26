@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./contracts` entry of @stackra/identity (the `AccountDeletions`, `AccountSecurity` (the
  *          SecurityPage's client port), `SessionStore`, `SignInBrowser`,
- *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `AutomationPrincipals`,
+ *          `Verification`, `StaffPinStore`, `Guardianship`, `ApiKeyStore`, `IdpAdmin`, `IdpOrganizations` (a scope's provider organisation), `AutomationPrincipals`,
  *          `ServicePrincipals`, `ServiceTokens` and
  *          `AppApprovalChallenges` ports, the `Passkeys` port with `PasskeyRefusal`, the `AppleSignIn` port with
  *          `AppleSignInRefusal`, the `LoginDirectoryStore` port
@@ -23,6 +23,7 @@ export { DeviceTokenStatus } from "#contracts/enums/device-token-status.enum";
 export { IdpAuthEvent } from "#contracts/enums/idp-auth-event.enum";
 export { IdpSecondFactor } from "#contracts/enums/idp-second-factor.enum";
 export { LoginIdentifierKind } from "#contracts/enums/login-identifier-kind.enum";
+export { LoginPolicyRejection } from "#contracts/enums/login-policy-rejection.enum";
 export { OperatorBootstrapOutcome } from "#contracts/enums/operator-bootstrap-outcome.enum";
 export { PasskeyRefusal } from "#contracts/enums/passkey-refusal.enum";
 export { VerificationKind } from "#contracts/enums/verification-kind.enum";
@@ -37,6 +38,7 @@ export { AppleSignIn } from "#contracts/ports/apple-sign-in.port";
 export { AutomationPrincipals } from "#contracts/ports/automation-principals.port";
 export { Guardianship } from "#contracts/ports/guardianship.port";
 export { IdpAdmin } from "#contracts/ports/idp-admin.port";
+export { IdpOrganizations } from "#contracts/ports/idp-organizations.port";
 export { LoginDirectoryStore } from "#contracts/ports/login-directory-store.port";
 export { Passkeys } from "#contracts/ports/passkeys.port";
 export { SessionStore } from "#contracts/ports/session-store.port";
@@ -61,6 +63,7 @@ export type { AccountSession } from "#contracts/types/account-session.type";
 export type { DeviceTokenResult } from "#contracts/types/device-token-result.type";
 export type { GuardianLink } from "#contracts/types/guardian-link.type";
 export type { IdpMachineCredential } from "#contracts/types/idp-machine-credential.type";
+export type { IdpOrganization } from "#contracts/types/idp-organization.type";
 export type { IdpMachineUserInput } from "#contracts/types/idp-machine-user-input.type";
 export type { IdpSession } from "#contracts/types/idp-session.type";
 export type { IdpSessionGrant } from "#contracts/types/idp-session-grant.type";

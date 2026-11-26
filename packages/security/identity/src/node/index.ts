@@ -4,7 +4,7 @@
  *          permission and schemas, the passkey actions a BFF serves with their
  *          permissions and schemas, the account deletion actions, query, job, permissions and schemas with its
  *          Postgres store and migration, the session list and sign-out-everywhere actions with their permissions
- *          and schemas, the listener that ends an erased subject's provider sessions, and the BFF's login, callback,
+ *          and schemas, the tenant login policy read and set (MFA enforcement) with their permissions and schemas, the listener that ends an erased subject's provider sessions, and the BFF's login, callback,
  *          session and logout routes (`BffService`) with their configuration, the receiver of ZITADEL's auth
  *          events into the audit chain (`ZitadelAuthEventsService`), and this service's own tokens from its ZITADEL
  *          service account (`ZitadelServiceTokensDriver`) with their configuration until `stackra gen` writes the entry barrels
@@ -20,6 +20,7 @@ export { ServiceTokensConfig } from "#config/service-tokens.config";
 export { SERVICE_TOKENS_CONFIG_SCHEMA as ServiceTokensConfig$ } from "#core/constants/service-tokens-config-schema.constant";
 export { ServiceTokensOptions } from "#core/schemas/service-tokens-options.schema";
 export { AccountDeletionPermissions } from "#node/access/account-deletion.permissions";
+export { LoginPolicyPermissions } from "#node/access/login-policy.permissions";
 export { OperatorPermissions } from "#node/access/operator.permissions";
 export { PasskeyPermissions } from "#node/access/passkey.permissions";
 export { SessionPermissions } from "#node/access/session.permissions";
@@ -33,6 +34,7 @@ export { EndAllMySessionsAction } from "#node/actions/end-all-my-sessions.action
 export { EndMySessionAction } from "#node/actions/end-my-session.action";
 export { EndUserSessionsAction } from "#node/actions/end-user-sessions.action";
 export { RegisterPasskeyAction } from "#node/actions/register-passkey.action";
+export { SetLoginPolicyAction } from "#node/actions/set-login-policy.action";
 export { VerifyPasskeyAction } from "#node/actions/verify-passkey.action";
 export { CreateAccountDeletionsMigration } from "#node/database/migrations/0001-create-account-deletions.migration";
 export { IdentityStepUpCheckDriver } from "#node/drivers/identity-step-up-check.driver";
@@ -44,6 +46,10 @@ export { BffService } from "#node/services/bff.service";
 export { ZitadelAuthEventsService } from "#node/services/zitadel-auth-events.service";
 export { ListMySessionsQuery } from "#node/queries/list-my-sessions.query";
 export { ShowAccountDeletionQuery } from "#node/queries/show-account-deletion.query";
+export { ShowLoginPolicyQuery } from "#node/queries/show-login-policy.query";
+export { LoginPolicyOutput } from "#node/schemas/login-policy-output.schema";
+export { SetLoginPolicyInput } from "#node/schemas/set-login-policy-input.schema";
+export { ShowLoginPolicyInput } from "#node/schemas/show-login-policy-input.schema";
 export { BootstrapOperatorInput } from "#node/schemas/bootstrap-operator-input.schema";
 export { BootstrapOperatorOutput } from "#node/schemas/bootstrap-operator-output.schema";
 export { AccountDeletionInput } from "#node/schemas/account-deletion-input.schema";

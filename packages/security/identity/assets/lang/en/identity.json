@@ -7,6 +7,11 @@
       "unsupported": "Sign in with Apple is not available on this device",
       "cancelled": "Sign in with Apple was cancelled",
       "failed": "Sign in with Apple failed. Try again."
+    },
+    "login_policy_rejection": {
+      "no_sign_in_method": "Choose at least one way to sign in",
+      "no_second_factor": "Offer at least one second factor before requiring one",
+      "unknown_provider": "This sign-in provider is not set up for your organization"
     }
   },
   "ui": {

@@ -6,6 +6,7 @@
  *          (`claimsActionResponse`, `verifyZitadelSignature`), the `ClientSession`,
  *          `OfflineSession` and memory `IdentityResolver` drivers, step-up, external sign-in, staff PINs, API keys and
  *          their verification by hash, automation and service principals and service tokens in memory, the identity provider admin drivers (ZITADEL, memory) with their configuration,
+ *          the memory scope-to-organisation driver and the login policy checks (`loginPolicyRejectionOf`),
  *          guardians acting for minors, KYC and KYB verification, the built-in sign-in methods, app approval (number
  *          matching and QR, sign-in and step-up) with its memory driver and events, the login directory writer with its
  *          configuration and memory driver, the passkeys memory driver with the client halves of a passkey sign-in and
@@ -33,6 +34,7 @@ export { MemoryAppApprovalChallengesDriver } from "#core/drivers/memory-app-appr
 export { MemoryAutomationPrincipalsDriver } from "#core/drivers/memory-automation-principals.driver";
 export { MemoryGuardianshipDriver } from "#core/drivers/memory-guardianship.driver";
 export { MemoryIdpAdminDriver } from "#core/drivers/memory-idp-admin.driver";
+export { MemoryIdpOrganizationsDriver } from "#core/drivers/memory-idp-organizations.driver";
 export { MemoryIdentityResolverDriver } from "#core/drivers/memory-identity-resolver.driver";
 export { MemoryLoginDirectoryStoreDriver } from "#core/drivers/memory-login-directory-store.driver";
 export { MemoryPasskeysDriver } from "#core/drivers/memory-passkeys.driver";
@@ -57,6 +59,7 @@ export { AppApprovalRejectedError } from "#core/errors/app-approval-rejected.err
 export { GuardianshipMissingError } from "#core/errors/guardianship-missing.error";
 export { IdpAdminUnavailableError } from "#core/errors/idp-admin-unavailable.error";
 export { IdpUserExistsError } from "#core/errors/idp-user-exists.error";
+export { LoginPolicyRejectedError } from "#core/errors/login-policy-rejected.error";
 export { ServiceTokenRefusedError } from "#core/errors/service-token-refused.error";
 export { ServiceTokenUnavailableError } from "#core/errors/service-token-unavailable.error";
 export { SessionRevokedError } from "#core/errors/session-revoked.error";
@@ -73,6 +76,7 @@ export { AppApprovalDenied } from "#core/events/app-approval-denied.event";
 export { AppApprovalRequested } from "#core/events/app-approval-requested.event";
 export { actorOf } from "#core/functions/actor-of.function";
 export { claimsActionResponse } from "#core/functions/claims-action-response.function";
+export { loginPolicyRejectionOf } from "#core/functions/login-policy-rejection-of.function";
 export { verifyZitadelSignature } from "#core/functions/verify-zitadel-signature.function";
 export { assuranceOf } from "#core/functions/assurance-of.function";
 export { checkPublishableKey } from "#core/functions/check-publishable-key.function";

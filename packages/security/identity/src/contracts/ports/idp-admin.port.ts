@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the `IdpAdmin` port: run-time administration of the identity provider: create human and machine users,
  *          deactivate and remove a user, list a user's live sessions, end one session or every session of a user, run the OAuth device flow, and set
- *          an organisation's login policy; install the claims action that adds the Stackra claims to tokens; read which authentication methods a user has enrolled (as RFC 8176 `amr`
+ *          and read an organisation's login policy; install the claims action that adds the Stackra claims to tokens; read which authentication methods a user has enrolled (as RFC 8176 `amr`
  *          codes, so `assuranceOf` turns them into the MFA level the security page's enrolment list needs); find the
  *          provider's user of a Stackra user id, and the Stackra user id of an email (the operator bootstrap); and the server half of passkeys (the sign-in challenge and its check
  *          on a provider session, the registration options and their check).
@@ -15,7 +15,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0206; ADR 0207; ADR 0235 (decision 1); RFC 8628; ADR 0410 (STA-834); RFC 8176; STA-1264 (MFA
  *                     enrolment); STA-1538 (passkeys); STA-1543 (erasure); STA-1580 (session list); STA-1586
- *                     (operator bootstrap).
+ *                     (operator bootstrap); STA-2817 (reading the login policy).
  */
 import { Port } from "@stackra/contracts";
 
@@ -94,9 +94,21 @@ export abstract class IdpAdmin extends Port {
 
   /**
    * Sets `organizationId`'s login policy to `policy`; when the policy lists `externalProviderIds` or `secondFactors`,
-   * the organisation offers exactly those afterwards.
+   * the organisation offers exactly those afterwards, and a list it leaves out stays as the organisation offered it
+   * (the inherited default's, the first time). The provider's other login settings (check lifetimes and the like) are
+   * kept, and setting the rules already in force succeeds without a change.
+   *
+   * @throws IdpAdminUnavailableError when the provider cannot be reached or fails.
    */
   abstract setLoginPolicy(organizationId: string, policy: LoginPolicy): Promise<void>;
+
+  /**
+   * The login policy `organizationId`'s login page applies now: its own, or the instance default it inherits until
+   * `setLoginPolicy` gives it one, with the external providers and second factors it offers, both always listed.
+   *
+   * @throws IdpAdminUnavailableError when the provider cannot be reached or fails.
+   */
+  abstract getLoginPolicy(organizationId: string): Promise<LoginPolicy>;
 
   /**
    * Makes the provider add the Stackra claims (`IDENTITY_CLAIMS`) to every token and userinfo answer by calling

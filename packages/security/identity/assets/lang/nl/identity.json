@@ -7,6 +7,11 @@
       "unsupported": "Inloggen met Apple is niet beschikbaar op dit apparaat",
       "cancelled": "Inloggen met Apple is geannuleerd",
       "failed": "Inloggen met Apple is mislukt. Probeer het opnieuw."
+    },
+    "login_policy_rejection": {
+      "no_sign_in_method": "Kies ten minste één manier om in te loggen",
+      "no_second_factor": "Bied ten minste één tweede factor aan voordat je die verplicht stelt",
+      "unknown_provider": "Deze inlogprovider is niet ingesteld voor je organisatie"
     }
   },
   "ui": {

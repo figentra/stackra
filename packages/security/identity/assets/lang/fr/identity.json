@@ -7,6 +7,11 @@
       "unsupported": "Se connecter avec Apple n’est pas disponible sur cet appareil",
       "cancelled": "La connexion avec Apple a été annulée",
       "failed": "La connexion avec Apple a échoué. Réessayez."
+    },
+    "login_policy_rejection": {
+      "no_sign_in_method": "Choisissez au moins un moyen de connexion",
+      "no_second_factor": "Proposez au moins un second facteur avant de l'exiger",
+      "unknown_provider": "Ce fournisseur de connexion n'est pas configuré pour votre organisation"
     }
   },
   "ui": {

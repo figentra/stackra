@@ -7,6 +7,11 @@
       "unsupported": "Iniciar sesión con Apple no está disponible en este dispositivo",
       "cancelled": "Se canceló el inicio de sesión con Apple",
       "failed": "No se pudo iniciar sesión con Apple. Inténtalo de nuevo."
+    },
+    "login_policy_rejection": {
+      "no_sign_in_method": "Elige al menos una forma de iniciar sesión",
+      "no_second_factor": "Ofrece al menos un segundo factor antes de exigirlo",
+      "unknown_provider": "Este proveedor de inicio de sesión no está configurado para tu organización"
     }
   },
   "ui": {

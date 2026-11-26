@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `MemoryIdpAdminDriver`, an `IdpAdmin` held in memory, for tests and local runs: users, machine users,
- *          sessions, device flows, login policies (with their providers and second factors), enrolled authentication
+ *          sessions, device flows, login policies (with their providers and second factors, and the instance default an
+ *          organisation without its own inherits), enrolled authentication
  *          methods and passkeys live in maps a test can read back.
  * Boundary: process-local; never a real provider. Ids and secrets are random; a device flow stays pending until the
  *           test approves or denies it with `approveDevice` / `denyDevice`. `openSession` adds a session to list and end;
@@ -10,7 +11,7 @@
  *           passkey sign-in needs a known login name; any credential passes its check (no signature is verified), and
  *           a finished registration adds the `swk` method.
  * Runtime: isomorphic
- * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834); STA-1263; STA-1538; STA-1543; STA-1580.
+ * Governing contract: ADR 0263 (a driver is named by its class: `memory`); ADR 0266 (decision 2); ADR 0410 (STA-834); STA-1263; STA-1538; STA-1543; STA-1580; STA-2817.
  */
 import { Driver } from "@stackra/container";
 import { UnauthenticatedError } from "@stackra/errors";
@@ -60,6 +61,22 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
 
   /** Organisation id to its login policy. */
   readonly policies = new Map<string, LoginPolicy>();
+
+  /**
+   * The policy an organisation with none of its own inherits (the instance default): passwords and passkeys allowed,
+   * no self-registration, no forced second factor, no provider and no factor listed. A test may change its fields.
+   */
+  readonly defaultPolicy: LoginPolicy = {
+    allowUsernamePassword: true,
+    allowRegister: false,
+    allowExternalIdp: false,
+    forceMfa: false,
+    allowPasswordless: true,
+    hidePasswordReset: false,
+    ignoreUnknownUsernames: false,
+    externalProviderIds: [],
+    secondFactors: [],
+  };
 
   /** User id to the `amr` codes of its enrolled methods. */
   readonly authMethods = new Map<string, string[]>();
@@ -186,6 +203,16 @@ export class MemoryIdpAdminDriver extends Driver(IdpAdmin) {
       ...(providers === undefined ? {} : { externalProviderIds: [...providers] }),
       ...(factors === undefined ? {} : { secondFactors: [...factors] }),
     });
+  }
+
+  /** See `IdpAdmin.getLoginPolicy`; an organisation with none of its own answers `defaultPolicy`, lists filled in. */
+  async getLoginPolicy(organizationId: string): Promise<LoginPolicy> {
+    const policy = this.policies.get(organizationId) ?? this.defaultPolicy;
+    return {
+      ...policy,
+      externalProviderIds: [...(policy.externalProviderIds ?? [])],
+      secondFactors: [...(policy.secondFactors ?? [])],
+    };
   }
 
   /** See `IdpAdmin.installClaimsAction`; the key is answered on the first install only. */

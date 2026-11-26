@@ -23,7 +23,10 @@ export interface LoginPolicy {
   /** Users may sign in through an external identity provider. */
   readonly allowExternalIdp: boolean;
 
-  /** Every user must set up and use a second factor. */
+  /**
+   * Every user must set up and use a second factor, including those who sign in through an external provider. A
+   * provider policy that forces it on local sign-ins only reads as not forced.
+   */
   readonly forceMfa: boolean;
 
   /** Users may sign in with a passkey alone. */
