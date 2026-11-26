@@ -6,7 +6,9 @@
  *          folder is the Encore service of the member; the server app boots from the root module and the generated
  *          wiring; every endpoint `encoreEndpoints` lists is exported and answers its route through `answerCall` (a CORS
  *          preflight is 204, and an action or query that no anonymous caller may reach refuses a call with no credential,
- *          and one whose bearer token does not verify, as 401 `request_refused`, so it never runs); every other
+ *          and one whose bearer token does not verify, before it runs: 401 `request_refused` from authentication, or
+ *          the same refusal as 401 or 403 from a request guard that runs first (ADR 0437's order), or 429
+ *          `rate_limited` from a rate-limiting guard); every other
  *          generated endpoint (a CronJob's, the inbox) is exported; every generated `CronJob`, `Topic` and
  *          `Subscription` is constructed by the Encore runtime; and the service database answers with each of the
  *          member's model tables migrated.
@@ -186,6 +188,18 @@ export function emitEncoreWiringTest(
     "  }",
     "}",
     "",
+    "/**",
+    " * The answers of a call refused before it runs, by status: authentication or a request guard (401 or 403, one",
+    " * `request_refused` saying nothing about which check failed), or a rate-limiting request guard (429).",
+    " */",
+    'const REFUSED: Readonly<Record<number, string>> = { 401: "request_refused", 403: "request_refused", 429: "rate_limited" };',
+    "",
+    "/** Expects `answered` to refuse the call before it runs. */",
+    "function expectRefused({ status, body }: { status: number; body: string }): void {",
+    "  expect(Object.keys(REFUSED).map(Number), body).toContain(status);",
+    "  expect(JSON.parse(body)).toMatchObject({ code: REFUSED[status] });",
+    "}",
+    "",
     "/** Each route of the app: its adapter, the request that probes it, and whether a call needs a credential. */",
     "const ROUTES: readonly {",
     "  handler: RawHandler;",
@@ -244,17 +258,11 @@ export function emitEncoreWiringTest(
     "  });",
     "",
     '  it.each(GUARDED)("refuses $label without a credential", async ({ handler, method, probe }) => {',
-    "    const { status, body } = await answer(handler, method, probe);",
-    "    expect(status).toBe(401);",
-    '    expect(JSON.parse(body)).toMatchObject({ code: "request_refused" });',
+    "    expectRefused(await answer(handler, method, probe));",
     "  });",
     "",
     '  it.each(GUARDED)("refuses $label with a bearer token that does not verify", async ({ handler, method, probe }) => {',
-    "    const { status, body } = await answer(handler, method, probe, {",
-    '      authorization: "Bearer wiring.not-a.token",',
-    "    });",
-    "    expect(status).toBe(401);",
-    '    expect(JSON.parse(body)).toMatchObject({ code: "request_refused" });',
+    '    expectRefused(await answer(handler, method, probe, { authorization: "Bearer wiring.not-a.token" }));',
     "  });",
     ...(databaseAlias === undefined
       ? []

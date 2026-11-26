@@ -42,12 +42,13 @@ split out of STA-229 to build it.
   `.agents/rules/task-vocabulary.md`, `.flow/lock.json` updated)
 - **Public contract change**: additive. `@stackra/gen` exports `ENCORE_WIRING_TEST`, `ENCORE_WIRING_CONFIG` and
   `emitEncoreWiringTest`; `stackra test` accepts `--tier wiring` and reads `STACKRA_TEST_TIER` when no `--tier` is
-  given; `resolveTool` takes an optional `encoreTest` flag. Nothing existing changes shape; the generated `api.ts` is
+  given, and only inside `encore test`; `resolveTool` takes an optional `encoreTest` flag. Nothing existing changes shape; the generated `api.ts` is
   byte-identical.
 - **Cross-service events**: none
 - **Tenancy and data**: none; the suite sends no valid credential and runs no anonymous action, so it writes nothing
 - **Security and privacy**: the suite asserts that every guarded route refuses a call with no credential and one with
-  a bearer token that does not verify (401 `request_refused`), the check ADR 0098 relies on
+  a bearer token that does not verify before it runs (401 or 403 `request_refused`, or 429), the check ADR 0098 relies
+  on; `CallAuthenticator` refuses a malformed token without touching the key source (still 401, never a 500)
 - **Secrets**: none
 - **ADR needed**: no; implements ADR 0182 decision 3 (an enforcement note is added)
 - **New dependencies**: none (the suite uses `vitest`, `encore.dev` and `@stackra/vitest-config`, which a service
@@ -56,32 +57,41 @@ split out of STA-229 to build it.
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none
 - **Docs to update**: `packages/developer/cli/README.md`, `apps/docs/src/docs/guides/scaffolding.mdx`,
-  `apps/docs/src/docs/standards/testing-by-kind.mdx`, `.agents/rules/task-vocabulary.md`, ADR 0182 enforcement
+  `apps/docs/src/docs/standards/testing-by-kind.mdx`, `.agents/rules/task-vocabulary.md`, ADR 0182 enforcement;
+  stackra-template's `services/README.md` (its own branch)
 - **Lane**: full
-- **Change risk**: R1 (a new generated test file and a new CLI tier; runtime code is unchanged)
+- **Change risk**: R1 (a new generated test file and a new CLI tier; one runtime change: `CallAuthenticator` resolves
+  the key source only for a well-formed token)
 
 ## Acceptance criteria
 
-- **AC-001**: WHEN gen runs on a service that runs as a generated Encore app (no authored `src/main.ts`, its
-  `encore.service.ts` written) and declares `vitest` and `@stackra/vitest-config`, THE generator SHALL write
-  `.stackra/tests/encore-wiring.test.ts` and `.stackra/vitest.wiring.config.ts`; for any other member it SHALL write
-  neither.
+- **AC-001**: WHEN gen runs on a service THE generator SHALL write `.stackra/tests/encore-wiring.test.ts` and
+  `.stackra/vitest.wiring.config.ts` when the service runs as a generated Encore app (no authored `src/main.ts`, its
+  `encore.service.ts` written) and declares `vitest` and `@stackra/vitest-config`, and for any other member neither.
 - **AC-002**: THE suite SHALL check that the Encore service is declared with the member's name and that the server app
   boots from the root module and the generated wiring.
 - **AC-003**: THE suite SHALL list one route per endpoint the generated `api.ts` declares (both read from
   `encoreEndpoints`, so they cannot disagree), answer each route's CORS preflight with 204, and, for each route no
-  anonymous caller may reach, expect 401 `request_refused` for a call without a credential and for one whose bearer
-  token does not verify.
+  anonymous caller may reach, expect the call refused before it runs, without a credential and with a bearer token
+  that does not verify: 401 `request_refused` from authentication, the same refusal as 401 or 403 from a request
+  guard that runs first (ADR 0437's order), or 429 `rate_limited` from a rate-limiting guard; never a 2xx or a 500.
 - **AC-004**: THE suite SHALL check that every other generated endpoint is exported and every generated `CronJob`,
   `Topic` and `Subscription` is constructed by the Encore runtime.
 - **AC-005**: WHEN the service has a database, THE suite SHALL check it answers and that every model table of the
   manifest exists after the migrations.
-- **AC-006**: `stackra test --tier wiring` in a service SHALL generate, then start `encore test` with
-  `STACKRA_TEST_TIER=wiring`; the `stackra test` Encore starts SHALL read the tier from that variable, skip gen, and run
-  Vitest with `.stackra/vitest.wiring.config.ts`. A `--tier` on the command line wins over the variable. At the
-  workspace root it SHALL run `turbo run test:wiring`. Outside a service, or before gen wrote the config, it SHALL
-  refuse, naming why.
-- **AC-007**: `stackra new service` SHALL write a `test:wiring` script (`stackra test --tier wiring`).
+- **AC-006**: WHEN `stackra test --tier wiring` runs in a service THE CLI SHALL generate, then start `encore test` with
+  `STACKRA_TEST_TIER=wiring`, and the `stackra test` Encore starts SHALL read the tier from that variable, skip gen
+  and run Vitest with `.stackra/vitest.wiring.config.ts` (a `--tier` on the command line wins over the variable; at
+  the workspace root it runs `turbo run test:wiring`; outside a service, or before gen wrote the config, it refuses,
+  naming why).
+- **AC-007**: WHEN `stackra new service` writes a service THE CLI SHALL give it a `test:wiring` script
+  (`stackra test --tier wiring`).
+- **AC-008**: IF the wiring tier is misrouted THEN THE CLI SHALL refuse it (`STACKRA_TEST_TIER` set outside
+  `encore test`, or `encore test` exiting 0 without the inner run having started the suite): a usage error that starts nothing for a tier read from the
+  variable with no `--tier` and none of Encore's test variables set, never a second `encore test` from a run that
+  already carries the variable, and exit 1 naming why when the marker `.stackra/encore-wiring.ran` is absent.
+- **AC-009**: IF a bearer token is malformed THEN THE `CallAuthenticator` SHALL refuse it as unauthenticated (401)
+  before it resolves the key source, so the probe is refused even where no `JsonWebKeys` driver is bound.
 
 ## Status history
 
@@ -89,3 +99,5 @@ split out of STA-229 to build it.
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing (built in this branch; unit tests and revert checks green on box 2)
+- 2026-11-26 → Implementing (review round 1: AC-003 accepts a guard's refusal, AC-008 stops the recursion and the
+  silent pass, AC-009 makes the key source lazy; the `encore test` run, T005, waits for box 2's root disk)

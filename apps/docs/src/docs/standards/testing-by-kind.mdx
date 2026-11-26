@@ -33,8 +33,8 @@ Encore suite of ADR 0182 decision 3. Gen writes it for every service that runs a
 (`.stackra/tests/encore-wiring.test.ts` and `.stackra/vitest.wiring.config.ts`, STA-2838), and `encore test` runs it
 with the real Encore runtime and a migrated test database. It checks the wiring only, never logic: the Encore service,
 the boot from the root module, every generated endpoint (each route answers its CORS preflight; a guarded action or
-query refuses a call without a credential and one with a bearer token that does not verify, with 401
-`request_refused`), every CronJob, topic and subscription, and each model table in the service database. No call
+query refuses a call without a credential and one with a bearer token that does not verify before it runs: 401
+`request_refused`, the same refusal as 403 from a request guard, or 429 from a rate-limiting guard), every CronJob, topic and subscription, and each model table in the service database. No call
 carries a valid credential, so it changes no data. It needs Encore and Docker.
 
 ## File kind to test

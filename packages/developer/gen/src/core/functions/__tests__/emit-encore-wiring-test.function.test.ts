@@ -156,8 +156,17 @@ describe(emitEncoreWiringTest, () => {
     expect(content).toContain(
       '  it.each(GUARDED)("refuses $label with a bearer token that does not verify"',
     );
-    expect(content.match(/expect\(status\)\.toBe\(401\);/g)).toHaveLength(2);
-    expect(content.match(/toMatchObject\(\{ code: "request_refused" \}\)/g)).toHaveLength(2);
+    // Refused before it runs: by authentication, or first by a request guard (ADR 0437's order), never a 2xx or 500.
+    expect(content).toContain(
+      'const REFUSED: Readonly<Record<number, string>> = { 401: "request_refused", 403: "request_refused", 429: "rate_limited" };',
+    );
+    expect(content).toContain(
+      "  expect(JSON.parse(body)).toMatchObject({ code: REFUSED[status] });",
+    );
+    expect(content).toContain("    expectRefused(await answer(handler, method, probe));");
+    expect(content).toContain(
+      '    expectRefused(await answer(handler, method, probe, { authorization: "Bearer wiring.not-a.token" }));',
+    );
   });
 
   it("lists every exported endpoint and every constructed CronJob, topic and subscription", () => {

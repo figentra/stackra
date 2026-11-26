@@ -58,6 +58,9 @@ gen and runs Vitest with the generated wiring config.
   Validates: AC-005
 - **P-005**: `--tier wiring` resolves to `encore test` (with the variable) outside Encore and to Vitest on the wiring
   config inside; the inner run does not generate — Validates: AC-006
+- **P-006**: no run starts `encore test` from a tier it read in `STACKRA_TEST_TIER`, and an `encore test` that exits 0
+  without the marker is a failure — Validates: AC-008
+- **P-007**: a malformed bearer is refused before `JsonWebKeys` is resolved — Validates: AC-009
 
 ## Architecture overview
 
@@ -87,9 +90,16 @@ packages/developer/gen/src/core/
 packages/developer/cli/src/node/
   constants/test-tier-variable.constant.ts, functions/inside-encore-test.function.ts
   functions/{resolve-tool,tool-command,service-template}.function.ts and their tests
+packages/developer/cli/src/node/constants/wiring-ran-marker.constant.ts
+packages/runtime/app/src/server/services/call-authenticator.service.ts
+packages/runtime/app/src/server/services/__tests__/call-authenticator.service.test.ts
 turbo.jsonc
 .changeset/encore-wiring-suite.md
+services/example/package.json
+services/README.md
 ```
+
+The last two are stackra-template's (its branch adds them with its root `package.json` and `turbo.jsonc`).
 
 ## Data models and migrations
 
@@ -117,12 +127,16 @@ check that a guarded route never runs for an unauthenticated caller.
 - AC-003/P-002: the route rows counted against the real `api.ts` adapters; guarded, anonymous and controller rows.
 - AC-004/P-003, AC-005/P-004: the listed resources and the tables.
 - AC-006/P-005: `resolve-tool`, `tool-command`, `inside-encore-test`; AC-007: `service-template`.
+- AC-008/P-006: `tool-command` (the variable outside Encore, a second `encore test`, a stale marker, Encore's own code).
+- AC-009/P-007: `call-authenticator.service` (a malformed token with no `JsonWebKeys` bound).
 - Revert checks for each behaviour; a run under `encore test` on box 2 when its disk allows.
 
 ## Rollout
 
-Minor changesets for `@stackra/gen` and `@stackra/cli`. After the release, stackra-template's `services/example` and
-`turbo.jsonc` add the `test:wiring` script and task.
+Minor changesets for `@stackra/gen` and `@stackra/cli`, a patch for `@stackra/app`. stackra-template's branch
+`figentra/sta-2838-template-wiring` adds the `test:wiring` script to `services/example`, the root script and the turbo
+task; it merges after this release and the catalog bump that brings it (the template's CLI must know the tier). A CI
+job that runs `turbo run test:wiring` on a created app (Encore and Docker on a box runner) is STA-2862.
 
 ## Delegation and risk plan
 
