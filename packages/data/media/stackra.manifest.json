@@ -292,6 +292,10 @@
     }
   ],
   "schemas": {
+    "media.ContentCredentialTrust": {
+      "type": "string",
+      "enum": ["trusted", "unverified", "invalid"]
+    },
     "media.ScanVerdict": {
       "type": "string",
       "enum": ["clean", "infected", "pending", "failed"]
