@@ -72,7 +72,11 @@ effects" per class that were never listed for encryption, erasure, retention or 
    `subject` for `subject_sealed`), `retention` (the model declares `Retention`) and `erasure` (each `PersonalData`
    declaration of an own model). `@stackra/privacy` reads `erasure` to derive declarations. `maskOf` of `@stackra/model`
    gives each field's `mask`, which the masked-copy job (data-layer gap gov15) applies; no masker keeps its own list of
-   columns.
+   columns. An encrypted field still carries `@Classified`: the log redaction (`redact` of `@stackra/logger`), the
+   panel export and `changeCaptureOf` read only `@Classified`, so gen's `encrypted_field_unclassified` does not count a
+   `@Classify` class alone (a sealed field with only `@Classify` would be logged and exported in clear once decrypted).
+   Moving those readers onto the table is a later change; until then `@Classify` adds to `@Classified`, never replaces
+   it, on a field that holds personal or secret data.
 
 ## Consequences
 
@@ -81,8 +85,8 @@ effects" per class that were never listed for encryption, erasure, retention or 
 - A product data class must state all eight effects; a class declared before this change fails to type-check and is
   refused by `DataClass` until it states the four keeping effects.
 - A model holding a `health` field must encrypt it and declare `Retention`; gen refuses it otherwise.
-- `@stackra/contracts` carries the classification table, so a package that cannot import `@stackra/model` (gen, the
-  logger) reads the same effects.
+- `@stackra/contracts` carries the classification table, so a package that cannot import `@stackra/model` (gen today,
+  the logger once its redaction moves onto the table) reads the same effects.
 - The seeded `data-class` records of 0380 decision 1 remain a later change: today the table is code, and a tenant's
   tightening through settings is not built.
 

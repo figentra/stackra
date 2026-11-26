@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `checkEncryptedFields`: an encrypted field must exist and carry a data class (`@Classified`
- *          or `@Classify`), a field whose class rests sealed must be encrypted (subject-keyed when the class says
+ * Purpose: unit tests of `checkEncryptedFields`: an encrypted field must exist and carry `@Classified` (a `@Classify`
+ *          class alone is refused), a field whose class rests sealed must be encrypted (subject-keyed when the class says
  *          `subject_sealed`), and a native, query-builder or raw SQL write on an encrypted model (own or a declared
  *          package's, by class or table) is refused; a model without `HasEncryptedFields` is left alone.
  * Boundary: test only; runs on the billing IR fixture (its models have shapes) with the first model made encrypted.
@@ -48,10 +48,10 @@ const encrypted = (
   ...extra,
 });
 
-/** The encryption refusals of a `Visit` whose `note` is a clinical note, under `traits`. */
+/** The encryption refusals of a `Visit` whose `note` is a clinical note (and `@Classified(Health)`), under `traits`. */
 function visitCodes(traits: Parameters<typeof model>[1]): string[] {
   const visit = model("Visit", traits, [classify("note", CLINICAL_NOTE)]);
-  return checkEncryptedFields(irOf([visit], [shapeOf(visit, [fieldIr("note")])])).map(
+  return checkEncryptedFields(irOf([visit], [shapeOf(visit, [fieldIr("note", "health")])])).map(
     (error) => error.code,
   );
 }
@@ -99,13 +99,20 @@ describe("checkEncryptedFields", () => {
     ).toEqual([]);
   });
 
-  it("counts a @Classify class as the encrypted field's classification", () => {
+  it("refuses an encrypted field classified by @Classify alone, since logs and exports read only @Classified", () => {
+    // A sealed class the readers outside @stackra/model never see: its decrypted value would reach a log line or a
+    // panel export in clear, so gen keeps requiring @Classified next to it (review of STA-1421, finding 1).
     const visit = model(
       "Visit",
       [{ name: "HasEncryptedFields", args: [{ subject: "userId" }, "note"] }],
-      [classify("note", { key: "note" })],
+      [classify("note", CLINICAL_NOTE)],
     );
-    expect(checkEncryptedFields(irOf([visit], [shapeOf(visit, [fieldIr("note")])]))).toEqual([]);
+    const refused = checkEncryptedFields(irOf([visit], [shapeOf(visit, [fieldIr("note")])]));
+    expect(refused.map((error) => error.code)).toEqual(["encrypted_field_unclassified"]);
+    expect(refused[0]?.message).toContain("carries @Classify but no @Classified");
+    expect(
+      checkEncryptedFields(irOf([visit], [shapeOf(visit, [fieldIr("note", "health")])])),
+    ).toEqual([]);
   });
 
   it("refuses an encrypted field the model does not declare", () => {

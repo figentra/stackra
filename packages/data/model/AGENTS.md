@@ -59,7 +59,9 @@ model v3.1 shape (ADR 0294, 0305). Entry `.` only; `./traits` and `./orm` are fo
   is the built-in class `builtInDataClass(X)`, read from @stackra/contracts' `DATA_CLASSIFICATION_EFFECTS`; never
   restate that table here. `fieldDataClasses` is the one reader of a field's class (the stricter of `@Classify` and
   `@Classified` per effect); `maskOf` and @stackra/privacy's derived `PersonalData` read it. `CredentialDataClass`
-  must equal the table's `credential` row (its test holds them equal).
+  must equal the table's `credential` row (its test holds them equal). `@Classify` adds to `@Classified`, never
+  replaces it, on a personal or secret field: the logger's `redact`, the panel export and `changeCaptureOf` read only
+  `@Classified`, and gen refuses an encrypted field without it (`encrypted_field_unclassified`).
 - `@Searchable` keeps its options frozen and adds no key the caller left out; `semantic`, `sortable`, `ranges`,
   `boost` and `when` only declare (@stackra/search applies them). `boost` names text fields only and `when` is data,
   never a function, so gen and the change consumers can read it. The embedding

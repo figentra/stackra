@@ -180,7 +180,8 @@ fields its model's classes derive.
 
 The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
 `HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without
-`@Classified` or `@Classify`), `credential_field_not_encrypted` (a `@Classified(DataClassification.Credential)` field not named by
+`@Classified`; a `@Classify` class alone does not count, since the log redaction and the exports read only
+`@Classified`), `credential_field_not_encrypted` (a `@Classified(DataClassification.Credential)` field not named by
 `HasEncryptedFields`, ADR 0494), `classified_field_not_encrypted` / `classified_field_not_subject_sealed` (a field
 whose data class rests `sealed` or `subject_sealed` and the trait does not give it, ADR 0540), and `encrypted_native_write` (a `nativeInsert`, `nativeUpdate`, `insert`, `insertMany`, query-builder
 insert or update, or raw `insert into`/`update` statement on an encrypted model, own or a declared package's, found by

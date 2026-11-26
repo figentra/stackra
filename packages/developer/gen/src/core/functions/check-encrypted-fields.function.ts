@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: `checkEncryptedFields`, the gen checks of the model encryption path: a `HasEncryptedFields` field the
- *          model does not declare (`encrypted_field_unknown`), one that carries no data class, neither `@Classified`
- *          nor `@Classify` (`encrypted_field_unclassified`: the classification and the encryption are two statements of
- *          one fact, so they must agree), a field whose data class says `encrypt: sealed` that `HasEncryptedFields`
+ *          model does not declare (`encrypted_field_unknown`), one without `@Classified` (`encrypted_field_unclassified`:
+ *          the classification and the encryption are two statements of one fact, so they must agree; a `@Classify`
+ *          class alone does not count, since the logger's `redact`, the panel export and change capture read only
+ *          `@Classified`, so a field without it would reach a log line or an export in clear once decrypted), a field
+ *          whose data class says `encrypt: sealed` that `HasEncryptedFields`
  *          does not name (`credential_field_not_encrypted` for a `credential` field, a provider secret never rests in
  *          clear, ADR 0494; `classified_field_not_encrypted` for any other class), one whose class says
  *          `subject_sealed` sealed without the `subject` option (`classified_field_not_subject_sealed`), and a write
@@ -90,16 +92,17 @@ export function checkEncryptedFields(ir: MemberIR): GenError[] {
           message: `HasEncryptedFields names ${field}, which ${declared.name} does not declare`,
           fix: `declare \`${field}\` on ${declared.name}, or remove it from HasEncryptedFields`,
         });
-      else if (
-        read !== undefined &&
-        read.classified === undefined &&
-        classifyOptionsOf(declared, field) === undefined
-      )
+      else if (read !== undefined && read.classified === undefined)
+        // `@Classify` alone is not enough: the readers that keep a value out of logs and exports (`redact` of
+        // @stackra/logger, the panel export, `changeCaptureOf`) read only `@Classified` (ADR 0540, decision 4).
         errors.push({
           ...at,
           code: "encrypted_field_unclassified",
-          message: `${declared.name}.${field} is encrypted but carries no data class (@Classified or @Classify), so export, erasure and the logs do not treat it as personal or regulated data`,
-          fix: `add \`@Classified(DataClassification.<Class>)\` to ${field} (Personal, Financial, Health, Pseudonymous, Regulated or Credential)`,
+          message:
+            classifyOptionsOf(declared, field) === undefined
+              ? `${declared.name}.${field} is encrypted but carries no @Classified class, so export, erasure and the logs do not treat it as personal or regulated data`
+              : `${declared.name}.${field} is encrypted and carries @Classify but no @Classified class; the log redaction and the exports read only @Classified, so its decrypted value would be logged and exported in clear`,
+          fix: `add \`@Classified(DataClassification.<Class>)\` to ${field} (Personal, Financial, Health, Pseudonymous, Regulated or Credential), alongside any @Classify`,
         });
     }
   }

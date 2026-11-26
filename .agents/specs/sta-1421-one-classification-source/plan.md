@@ -54,7 +54,7 @@ declarations, and refuses a model or declaration that disagrees with its fields'
 - **P-005**: `maskOf(M).get(f) === fieldDataClasses(M).get(f).mask` for every classified field — Validates: AC-005
 - **P-006**: a declaration without `fields` resolves to exactly the fields whose class's erasure is not `keep`, minus credentials — Validates: AC-006
 - **P-007**: an erasure with a weaker declared method changes no row and destroys no salt — Validates: AC-007
-- **P-008**: a field whose class rests sealed is refused unless `HasEncryptedFields` names it (with `subject` for `subject_sealed`) — Validates: AC-008, AC-011
+- **P-008**: a field whose class rests sealed is refused unless `HasEncryptedFields` names it (with `subject` for `subject_sealed`), and an encrypted field without `@Classified` is refused even with a `@Classify` class — Validates: AC-008, AC-011
 - **P-009**: a looser `@Classify`, a missing effect and a retention-bound model without `Retention` are each refused — Validates: AC-009
 - **P-010**: a `PersonalData` declaration is read with its options and checked against its own model, derived or listed — Validates: AC-010
 
@@ -106,6 +106,14 @@ packages/developer/gen/{README.md,AGENTS.md}
 packages/developer/gen/src/core/functions/{field-data-class-of,check-data-classes,check-personal-data,check-encrypted-fields,generate-member}.function.ts
 packages/developer/gen/src/core/constants/kind-files.constant.ts
 packages/developer/gen/src/node/constants/kind-bases.constant.ts
+apps/docs/adr/numbers.yaml
+packages/data/model/stackra.manifest.json
+packages/data/model/src/core/enums/{ai-audience,export-label,search-snippet,support-access}.enum.ts
+packages/security/privacy/src/core/index.ts
+packages/security/privacy/src/node/functions/unsealed-shred-fields.function.ts
+packages/developer/gen/src/core/index.ts
+packages/developer/gen/src/core/functions/classify-options-of.function.ts
+packages/developer/gen/src/core/types/field-data-class.type.ts
 packages/*/src/**/__tests__/ (the tests)
 ```
 

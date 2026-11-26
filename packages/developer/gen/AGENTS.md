@@ -318,7 +318,8 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `MemberIR.migrationTables` (`readMigrationTables`) for an owned model whose table never gets `t.belongsToTenant()`. `emitIsolationTest` writes
   `.stackra/tests/tenant-isolation.int.test.ts`; the integration task must include `.stackra/tests/**` to run it.
 - `checkEncryptedFields` (core, full pass only, stackra-262): `encrypted_field_unknown`, `encrypted_field_unclassified`
-  (no `@Classified` and no `@Classify`), `credential_field_not_encrypted` (a `credential` field outside
+  (no `@Classified`; `@Classify` alone does not count: `redact`, the panel export and `changeCaptureOf` read only
+  `@Classified`), `credential_field_not_encrypted` (a `credential` field outside
   `HasEncryptedFields`, ADR 0494), `classified_field_not_encrypted` and `classified_field_not_subject_sealed` (a field
   whose data class's `encrypt` is `sealed` or `subject_sealed` and the trait does not give it, ADR 0540)
   (the reader puts the `@Classified` code on `FieldIR.classified`) and `encrypted_native_write` over

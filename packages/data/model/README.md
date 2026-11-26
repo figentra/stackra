@@ -252,6 +252,8 @@ A `@Classified(DataClassification.X)` field carries the built-in class `X`, whos
 @stackra/contracts' `DATA_CLASSIFICATION_EFFECTS` (`health` rests sealed and needs `Retention`; `credential` rests
 sealed, is never exported and is kept out of a subject's erasure). A field with both decorators takes the stricter
 code of each effect (`fieldDataClasses`), and gen refuses a `@Classify` class looser than the `@Classified` one.
+Keep `@Classified` on a personal or secret field even when it has a `@Classify` class: the log redaction, the panel
+export and change capture read only `@Classified`, and gen refuses an encrypted field without it.
 
 ## Factories
 

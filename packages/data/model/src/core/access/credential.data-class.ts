@@ -5,8 +5,10 @@
  *          never does, search shows no snippet, no export carries it, it always rests sealed, a subject's erasure
  *          leaves it to go with its owning record, and a masked copy writes null.
  * Boundary: a declared data class made from the `credential` row of @stackra/contracts' `DATA_CLASSIFICATION_EFFECTS`,
- *           so `@Classify(CredentialDataClass)` and `@Classified(DataClassification.Credential)` mean the same and the
- *           row is stated once; its floor is code, never a tenant setting. Gen refuses a credential field that
+ *           so `@Classify(CredentialDataClass)` and `@Classified(DataClassification.Credential)` carry the same effects
+ *           and the row is stated once; its floor is code, never a tenant setting. A credential field still carries
+ *           `@Classified(DataClassification.Credential)`: the log redaction and the exports read only `@Classified`, so
+ *           gen refuses an encrypted field without it (`encrypted_field_unclassified`) and a credential field that
  *           `HasEncryptedFields` does not name (`credential_field_not_encrypted`).
  * Runtime: isomorphic
  * Governing contract: ADR 0494 (the credential class); ADR 0341 (decision 3, the built-in class shape); ADR 0540
@@ -18,7 +20,7 @@ import { DataClass } from "#core/bases/data-class.base";
 import type { DataClassOptions } from "#core/types/data-class-options.type";
 
 /**
- * The credential class.
+ * The credential class. Use it next to `@Classified(DataClassification.Credential)`, never instead of it.
  *
  * @example
  * ```ts
