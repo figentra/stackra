@@ -78,6 +78,7 @@ describe("@stackra/runway", () => {
       "deploy",
       "deployTargets",
       "deprecatedFields",
+      "devLane",
       "devPorts",
       "diffWorkerSettings",
       "environmentSizesOf",

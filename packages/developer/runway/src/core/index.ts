@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the duplicate dev port check (`checkPorts`, STA-863), the requirement driver check (`checkRequires`, STA-2049), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the dev lane of a repository (`devLane`, STA-2840), the requirement driver check (`checkRequires`, STA-2049), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
@@ -56,6 +56,7 @@ export { checkRegions } from "#core/functions/check-regions.function";
 export { checkZoneOwners } from "#core/functions/check-zone-owners.function";
 export { deploy } from "#core/functions/deploy.function";
 export { deployTargets } from "#core/functions/deploy-targets.function";
+export { devLane } from "#core/functions/dev-lane.function";
 export { devPorts } from "#core/functions/dev-ports.function";
 export { mobileIdsOf } from "#core/functions/mobile-ids-of.function";
 export { parseRunway } from "#core/functions/parse-runway.function";

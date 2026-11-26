@@ -116,6 +116,8 @@ describe("@stackra/runway/node", () => {
       "shellReleaseOf",
       "smokePreview",
       "startWhiteLabelJob",
+      "syncDevEncoreApp",
+      "syncDevEncoreMember",
       "syncSecrets",
       "toolVersionOf",
       "uploadBundle",

@@ -14,7 +14,8 @@
  *          `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`, `EDGE_PUBLISH_SETTINGS`) with the
  *          `wrangler` driver of the `EdgeKvWriter` port and its `EdgeKvConfig` (ADR 0436, 0437; stackra-07), and the
  *          template line step (`checkoutLine`, `shellReleaseOf`) with the dry-run runner and KV driver
- *          (`dryRunCommand`, `DryRunEdgeKvDriver`, ADR 0481), a product mobile app's local run (`prepareMobileDev`), and a product's build and deploy (`buildProduct`,
+ *          (`dryRunCommand`, `DryRunEdgeKvDriver`, ADR 0481), a product mobile app's local run (`prepareMobileDev`), the local monolith Encore app root `stackra dev` runs
+ *          (`syncDevEncoreApp`, `syncDevEncoreMember`, STA-2840), and a product's build and deploy (`buildProduct`,
  *          `deployProduct`, `workspacePackages`).
  *          Mobile onboarding (`onboardMobile`, `easJsonOf`, `toolVersionOf`, and the real and memory drivers of its
  *          App Store Connect, Play, Expo, Google Cloud, Firebase and Sentry ports, ADR 0482; the vault port's
@@ -81,6 +82,8 @@ export { onboardMobile } from "#node/functions/onboard-mobile.function";
 export { deployProduct } from "#node/functions/deploy-product.function";
 export { devServer } from "#node/functions/dev-server.function";
 export { writeDevFacts } from "#node/functions/write-dev-facts.function";
+export { syncDevEncoreApp } from "#node/functions/sync-dev-encore-app.function";
+export { syncDevEncoreMember } from "#node/functions/sync-dev-encore-member.function";
 export { platformRows } from "#node/functions/platform-rows.function";
 export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { previewServe } from "#node/functions/preview-serve.function";
@@ -141,6 +144,8 @@ export type { DeployRunways } from "#node/types/deploy-runways.type";
 export type { SecretSyncEntry } from "#node/types/secret-sync-entry.type";
 export type { DryRunCommand } from "#node/types/dry-run-command.type";
 export type { DevServerOptions } from "#node/types/dev-server-options.type";
+export type { DevEncoreApp } from "#node/types/dev-encore-app.type";
+export type { DevEncoreAppRequest } from "#node/types/dev-encore-app-request.type";
 export type { LineCheckout } from "#node/types/line-checkout.type";
 export type { LineCheckoutRequest } from "#node/types/line-checkout-request.type";
 export type { LineSource } from "#node/types/line-source.type";

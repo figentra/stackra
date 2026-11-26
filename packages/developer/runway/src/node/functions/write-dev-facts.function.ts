@@ -2,12 +2,13 @@
  * Stackra file contract:
  * Purpose: `writeDevFacts(root, lane)`, the writer `readDevFacts` reads back: computes each member runway's dev
  *          facts (`environments.dev` url, port, host, https and open, the Electron dev ports, every port shifted by
- *          `lane × lanes.portStep`; the TLS files the root's `environments.dev.https` names) and writes
- *          `.stackra/dev/ports.json` under `root`.
+ *          `lane × lanes.portStep`; the TLS files the root's `environments.dev.https` names) and each dev infra
+ *          block's `port` (the gateway `encore run` serves on, Postgres, …; shifted too unless the block says
+ *          `perLane: false`) and writes `.stackra/dev/ports.json` under `root`.
  * Boundary: node only; checks the document with `parseRunwayFacts` before writing, so a reader never sees a bad file.
- *           A member without a dev port is left out (it has no dev server). Infra ports are not written yet.
+ *           A member without a dev port is left out (it has no dev server), as is an infra block without a `port`.
  * Runtime: node
- * Governing contract: ADR 0296 (decision 1), ADR 0295 (decision 5); STA-2029.
+ * Governing contract: ADR 0296 (decision 1), ADR 0295 (decision 5); STA-2029; STA-2840 (the infra ports).
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -43,6 +44,7 @@ export function writeDevFacts(root: string, lane = 0): RunwayFacts {
           {
             lanes?: { enabled?: boolean; portStep?: number };
             https?: { cert?: string; key?: string };
+            infra?: Record<string, { port?: unknown; perLane?: unknown }>;
           }
         >
       | undefined
@@ -82,9 +84,22 @@ export function writeDevFacts(root: string, lane = 0): RunwayFacts {
     ];
   });
 
+  // The gateway `encore run` serves on, the Postgres server, …: what `stackra dev` and its proxies connect to.
+  const infra = Object.entries(dev?.infra ?? {}).flatMap(([name, block]) => {
+    if (typeof block.port !== "number") return [];
+    const port = block.perLane === false ? block.port : (shift(block.port) as number);
+    return [[name, { port, url: `http://localhost:${port}` }]];
+  });
+
   const file = join(root, DEV_FACTS_PATH);
   const facts = parseRunwayFacts(
-    { version: 1, environment: "dev", lane, members: Object.fromEntries(entries) },
+    {
+      version: 1,
+      environment: "dev",
+      lane,
+      infra: Object.fromEntries(infra),
+      members: Object.fromEntries(entries),
+    },
     file,
   );
   mkdirSync(dirname(file), { recursive: true });

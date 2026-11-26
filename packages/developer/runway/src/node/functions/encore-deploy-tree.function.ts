@@ -25,15 +25,16 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative } from "node:path";
+import { join, relative } from "node:path";
 
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { LINE_CHECKOUT_SETTINGS } from "#node/constants/line-checkout-settings.constant";
+import { memberImports } from "#node/functions/member-imports.function";
+import { rewriteMemberAliases } from "#node/functions/rewrite-member-aliases.function";
 import { workspacePackages } from "#node/functions/workspace-packages.function";
 import type { EncoreDeployTree } from "#node/types/encore-deploy-tree.type";
 import type { EncoreDeployTreeRequest } from "#node/types/encore-deploy-tree-request.type";
@@ -53,9 +54,6 @@ const OUTPUTS = ["dist", ".stackra", ENCORE_SERVICES] as const;
 /** The folders of a service member whose TypeScript files may import through `#` aliases. */
 const SOURCES = ["src", ".stackra", ENCORE_SERVICES] as const;
 
-/** A static, re-exported, side-effect or dynamic import of a `#` alias: lead, quote, specifier. */
-const ALIAS_IMPORT = /(from\s+|import\s*\(\s*|import\s+)(["'])(#[^"']+)\2/g;
-
 /** The service members with a generated Encore app, relative to the repository. */
 function serviceApps(repository: string): string[] {
   const services = join(repository, "services");
@@ -66,38 +64,12 @@ function serviceApps(repository: string): string[] {
     .toSorted();
 }
 
-/** The file a `#` specifier names through `imports`, the member's package.json map, or `undefined`. */
-function aliasTarget(
-  root: string,
-  imports: Record<string, unknown>,
-  spec: string,
-): string | undefined {
-  for (const [key, value] of Object.entries(imports)) {
-    const prefix = key.endsWith("*") ? key.slice(0, -1) : undefined;
-    if (prefix === undefined ? spec !== key : !spec.startsWith(prefix)) continue;
-    const rest = prefix === undefined ? "" : spec.slice(prefix.length);
-    for (const target of Array.isArray(value) ? value : [value]) {
-      if (typeof target !== "string") continue;
-      const path = join(root, target.replace("*", rest));
-      if (existsSync(path) && statSync(path).isFile()) return path;
-    }
-  }
-  return undefined;
-}
-
 /**
  * Rewrites the `#` imports of every TypeScript file under the member's sources to relative paths, in place, and drops
  * its `__tests__` folders. Returns the specifiers no target was found for.
  */
 function rewriteMember(root: string): string[] {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as Record<
-    string,
-    unknown
-  >;
-  const imports =
-    typeof manifest["imports"] === "object" && manifest["imports"] !== null
-      ? (manifest["imports"] as Record<string, unknown>)
-      : {};
+  const imports = memberImports(root);
   const unresolved: string[] = [];
   const walk = (folder: string): void => {
     for (const entry of readdirSync(folder, { withFileTypes: true })) {
@@ -109,19 +81,9 @@ function rewriteMember(root: string): string[] {
       }
       if (!/\.tsx?$/.test(entry.name)) continue;
       const text = readFileSync(path, "utf8");
-      const next = text.replace(ALIAS_IMPORT, (all, lead: string, quote: string, spec: string) => {
-        const target = aliasTarget(root, imports, spec);
-        if (target === undefined) {
-          unresolved.push(`${relative(root, path)}: ${spec}`);
-          return all;
-        }
-        let rel = relative(dirname(path), target)
-          .replace(/\.tsx?$/, "")
-          .replace(/\/index$/, "");
-        if (!rel.startsWith(".")) rel = `./${rel}`;
-        return `${lead}${quote}${rel}${quote}`;
-      });
-      if (next !== text) writeFileSync(path, next);
+      const next = rewriteMemberAliases(text, path, root, imports);
+      for (const spec of next.unresolved) unresolved.push(`${relative(root, path)}: ${spec}`);
+      if (next.text !== text) writeFileSync(path, next.text);
     }
   };
   for (const source of SOURCES) if (existsSync(join(root, source))) walk(join(root, source));
