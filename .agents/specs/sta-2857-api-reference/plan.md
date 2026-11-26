@@ -37,6 +37,22 @@ after the bump, so the version printed in the index and in each page header stay
 | Licence tier (ADR 0077)               | PASS   | free                                                                |
 | Docs and ADRs                         | PASS   | README and AGENTS.md; follows ADR 0007 and ADR 0514                 |
 
+## Deploy modes
+
+| Mode       | Behaviour                                                        |
+| ---------- | ---------------------------------------------------------------- |
+| SaaS       | the docs site serves the generated pages as static MDX           |
+| On-prem    | same; the pages ship with the docs site, nothing runs at request |
+| Air-gapped | same; the generator reads the local sources and needs no network |
+
+## Correctness properties
+
+- **P-001**: for every package under `packages/<category>/<name>` whose manifest is not `private`, the index lists it and every `code` entry of its `exports` is read from source — Validates: FR-001
+- **P-002**: for every exported name that is not `@internal`, its page prints its declaration without bodies, initializers or private members, with its TSDoc; a name declared by another package is a re-export of it — Validates: FR-002
+- **P-003**: a package with more than 500 names gets one page per entry point besides `.`, and every page links back to the package page — Validates: FR-003
+- **P-004**: `--check` writes nothing and fails exactly when a generated page is missing, differs or is stale — Validates: FR-004
+- **P-005**: `changeset:version` ends with the regeneration, so its output passes `--check` — Validates: FR-005
+
 ## Architecture overview
 
 `listPackages` (manifests) → `readPackageApis` (one `ApiReader` program over every entry file) → `renderApiReference`
