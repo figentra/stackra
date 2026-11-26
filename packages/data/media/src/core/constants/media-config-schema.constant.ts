@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: `MEDIA_CONFIG_SCHEMA`, the zod schema this package ships for `MediaConfig` (exported as `MediaConfig$`): the
- *          client's uploader, how long an upload stays valid, where the HTTP and tus uploaders ask for one, the tus
+ *          client's uploader, how long a signed upload and a resumable (tus) upload stay valid, where the HTTP and tus uploaders ask for one, the tus
  *          server with its chunk size and retry pauses, the tus hook password slot, the in-region OCR service and the
  *          C2PA signing slot.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
- *           full defaults; they equal `MediaOptions`' initializers (tested). The upload lifetime is at most seven days, read in either duration form (stackra-223) and stored canonical,
- *           the SigV4 limit of a signed URL. No `disk` field: media stores on the one `FileSystem` disk that
+ *           full defaults; they equal `MediaOptions`' initializers (tested). Both upload lifetimes are at most seven days, read in either duration form (stackra-223) and stored canonical:
+ *           for a signed upload that is the SigV4 limit of its URL; a tus upload (default a day) keeps the same bound so
+ *           the `uploads/` lifecycle rule can outlast every one. No `disk` field: media stores on the one `FileSystem` disk that
  *           `filesystem.disk` picks (ADR 0465, stackra-226). The C2PA
  *           certificate and key and the tus hook password are `@Secret` names (empty strings until set), never values
  *           in a layer.
@@ -44,6 +45,7 @@ const UPLOAD_LIFETIME = z.string().transform((text, context): Duration => {
 export const MEDIA_CONFIG_SCHEMA = z.object({
   uploader: z.enum(MEDIA_UPLOADERS).default("memory"),
   uploadExpiresIn: UPLOAD_LIFETIME.default(Duration.hours(1)),
+  resumableUploadExpiresIn: UPLOAD_LIFETIME.default(Duration.days(1)),
   uploadEndpoint: z.string().min(1).default("/api/uploads"),
   resumableUploadEndpoint: z.string().min(1).default("/api/uploads/create-resumable"),
   tus: z

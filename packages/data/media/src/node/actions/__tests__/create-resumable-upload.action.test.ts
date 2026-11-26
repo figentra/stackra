@@ -96,7 +96,7 @@ describe("CreateResumableUploadAction", () => {
       "tus-resumable": "1.0.0",
       "upload-metadata": `upload ${btoa(output.upload.id)}`,
     });
-    expect(output.expiresAt).toEqual(new Date("2026-10-24T10:00:00.000Z"));
+    expect(output.expiresAt).toEqual(new Date("2026-10-25T09:00:00.000Z"));
     expect(await recordOf(output)).toMatchObject({
       bucket: "library.videos",
       transfer: "tus",

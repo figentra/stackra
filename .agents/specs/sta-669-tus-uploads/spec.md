@@ -31,6 +31,10 @@ starts over, and a file above what one request carries cannot be uploaded at all
 - `packages/runtime/app/src/server/bases/controller.base.ts` (the raw `Controller` kind gen wires as an endpoint)
 - ADR 0222 decision 2 (tus uploads; services never stream the bytes), ADR 0173 (secrets read blind), ADR 0294
   decisions 16, 25 and 26, ADR 0182 (test tiers)
+- The branch review of 2026-11-26 (two findings: a claim held a large upload in memory and the `s3` move stopped at
+  5 GiB; a long transfer outlived the signed-URL lifetime) for FR-009 to FR-011; Amazon S3's limits (one `CopyObject`
+  up to 5 GiB, `UploadPartCopy` ranges, 10,000 parts) and tusd's `post-finish` hook for FR-009 and FR-011;
+  `packages/data/filesystem/src/node/drivers/s3-file-system.driver.ts` (the move before this change)
 - tusd v2.10.3: the HTTP hook protocol (`pre-create`, `ChangeFileInfo`, `RejectUpload`), its filestore and S3 store
   layouts (`<id>`, `<id>.info`, the `-s3-object-prefix`)
 - FR-001 to FR-008: the PR's diff against `main` and its tests (`media-library.service.test.ts`,
@@ -43,12 +47,16 @@ starts over, and a file above what one request carries cannot be uploaded at all
 - **Services touched**: none
 - **Packages touched**: packages/data/media (`MediaLibrary`, `MediaOptions`, `MEDIA_CONFIG_SCHEMA`, `MEDIA_UPLOADERS`,
   `UploadRejectedError`, the `.` and `./node` barrels; new `TusUploaderDriver`, `CreateResumableUploadAction`,
-  `CreateResumableUploadOutput`, `TusHookController`, `ResumableUpload`, `AdmittedUpload`, `TUS_VERSION`)
-- **Public contract change**: additive. New `MediaLibrary.createResumableUpload` and `admitResumableUpload`; new
+  `CreateResumableUploadOutput`, `TusHookController`, `ResumableUpload`, `AdmittedUpload`, `TUS_VERSION`);
+  packages/data/filesystem (`S3FileSystemDriver.move`: a multipart copy above 5 GiB)
+- **Public contract change**: additive. New `MediaLibrary.createResumableUpload`, `admitResumableUpload` and
+  `finishResumableUpload`; new
   action `media.upload.create_resumable@1` (`POST /uploads/create-resumable`) with permission
   `media.upload.create_resumable` (L2); new raw endpoint `POST /media/tus-hooks`; new `Uploader` driver `tus`; new
-  `MediaConfig` fields `resumableUploadEndpoint`, `tus` and the secret `tusHookSecret` (`MEDIA_TUS_HOOK_SECRET`);
-  `UploadRejectedError.reason` gains `started`. Nothing is removed or renamed; signed uploads behave as before.
+  `MediaConfig` fields `resumableUploadEndpoint`, `resumableUploadExpiresIn`, `tus` and the secret `tusHookSecret`
+  (`MEDIA_TUS_HOOK_SECRET`); `UploadRejectedError.reason` gains `started`; the hook endpoint also takes tusd's
+  `post-finish`. The `s3` disk's `move` now copies an object above 5 GiB part by part (one more HEAD per move). Nothing
+  is removed or renamed; signed uploads behave as before.
 - **Cross-service events**: none
 - **Tenancy and data**: the upload record (`uploads/<id>.json`) now also holds the media type, the size and whether
   tusd started it, for a tus upload only. No tenant vocabulary (R-59): isolation is the unguessable upload id and the
@@ -67,7 +75,8 @@ starts over, and a file above what one request carries cannot be uploaded at all
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none (`useUpload` picks the uploader from configuration)
 - **Docs to update**: `packages/data/media/README.md`, `packages/data/media/AGENTS.md`, the Enforcement section of ADR
-  0222, a minor changeset for `@stackra/media`
+  0222, `packages/data/filesystem/README.md`, a minor changeset for `@stackra/media` and a patch changeset for
+  `@stackra/filesystem`
 - **Lane**: full (new public API, a new endpoint and a new secret)
 - **Change risk**: R1 (additive; an app opts in with `uploader: tus` and a running tusd)
 
@@ -148,13 +157,22 @@ with a type the bucket does not take.
 - **EC-06**: Every other tusd hook type is acknowledged with no change.
 - **EC-07**: A hook body above 64 KiB is refused (413) before it is parsed.
 - **EC-08**: A tus upload larger than its recorded size is deleted at claim and refused.
+- **EC-09**: A transfer that takes longer than `uploadExpiresIn` (pauses, retries, resumes) is still claimable: a tus
+  upload lives `resumableUploadExpiresIn` (a day by default, at most seven).
+- **EC-10**: A transfer that finishes late in its lifetime keeps a full claim window: tusd's `post-finish` makes it
+  claimable for `uploadExpiresIn` from then, never shortening the expiry; a `post-finish` of an unknown, unstarted or
+  expired upload is acknowledged and changes nothing.
+- **EC-11**: A multi-gigabyte upload is never held in the service's memory by a claim: the type check reads 64 bytes
+  from the disk's stream, and the move is the store's own (on `s3`, a multipart copy above the 5 GiB one copy takes).
+  The `encore_bucket` disk has neither, so the README sends large tus uploads to `s3`, `gcs` or `local`.
 
 ## Requirements _(mandatory)_
 
 ### Functional Requirements
 
 - **FR-001**: WHEN `createResumableUpload` is called for a bucket THE `MediaLibrary` SHALL refuse a media type or size
-  the bucket does not take, and otherwise record the bucket, the media type, the size, the expiry and `started: false`
+  the bucket does not take, and otherwise record the bucket, the media type, the size, the expiry
+  (`resumableUploadExpiresIn` from now) and `started: false`
   beside `uploads/<id>` and answer the token, `media.tus.endpoint` and the start headers (`Tus-Resumable`,
   `Upload-Metadata: upload <base64 id>`).
 - **FR-002**: WHEN `admitResumableUpload(id, size)` is called THE `MediaLibrary` SHALL refuse an id that is not a waiting
@@ -165,7 +183,8 @@ with a type the bucket does not take.
   that is not a tusd hook request.
 - **FR-004**: WHEN the hook is `pre-create` THE `TusHookController` SHALL reject concatenated uploads, admit through
   `admitResumableUpload`, answer `ChangeFileInfo` with the admitted id and metadata `{ upload, filetype }` from the
-  record, and map refusals to 404, 409, 410 and 400; every other hook type SHALL be acknowledged with no change.
+  record, and map refusals to 404, 409, 410 and 400; every other hook type but `post-finish` (FR-009) SHALL be
+  acknowledged with no change.
 - **FR-005**: WHEN `uploader` is `tus` THE `TusUploaderDriver` SHALL ask `resumableUploadEndpoint`, start the upload once
   with the given headers and the file's length, and send `PATCH`es of `tus.chunkBytes`.
 - **FR-006**: IF a `PATCH` fails (network, 409, 423, 429, 460 or 5xx) THEN THE `TusUploaderDriver` SHALL pause by the
@@ -176,6 +195,15 @@ with a type the bucket does not take.
   delete tusd's `uploads/<id>.info` with the record.
 - **FR-008**: THE `media.upload.create_resumable@1` action SHALL expose `createResumableUpload` for users and agents on a
   registered bucket, under the permission `media.upload.create_resumable` (L2).
+- **FR-009**: WHEN tusd's `post-finish` hook names a started, unexpired tus upload (metadata `upload`) THE
+  `TusHookController` SHALL call `finishResumableUpload`, which SHALL set its expiry to `uploadExpiresIn` from now unless
+  it is already later; a refusal (unknown, unstarted, expired) SHALL be acknowledged with no change.
+- **FR-010**: WHEN a claim checks a file's bytes THE `MediaLibrary` SHALL read only its first 64 bytes, from
+  `readStream`, and cancel the stream, never `read` the whole file.
+- **FR-011**: WHEN the `s3` disk moves an object above 5 GiB THE `S3FileSystemDriver` SHALL copy it as a multipart
+  upload of equal ranges (`UploadPartCopy`, at most 10,000 parts) carrying its content type, cache, disposition,
+  encoding and language headers and user metadata, each range only while the source keeps the ETag it read, then delete
+  the source; IF the copy fails THEN it SHALL abort the multipart upload and keep the source.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
@@ -191,15 +219,23 @@ with a type the bucket does not take.
   type whatever metadata the client sent.
 - **AC-006**: WHEN a tus upload still short of its size is claimed THE `MediaLibrary` SHALL refuse it as incomplete and
   keep it.
+- **AC-007**: WHEN tusd reports a tus upload finished THE `MediaLibrary` SHALL keep it claimable for `uploadExpiresIn`
+  from then, and a transfer longer than `uploadExpiresIn` SHALL still be claimable.
+- **AC-008**: WHEN a tus upload is claimed THE `MediaLibrary` SHALL read only the first 64 bytes of the file.
+- **AC-009**: WHEN the `s3` disk moves an object above 5 GiB THE `S3FileSystemDriver` SHALL copy it part by part, and
+  abort and keep the source when a part fails.
 
 ## Success Criteria _(mandatory)_
 
-- **SC-001**: `tus-hook.controller.int.test.ts` proves AC-001 to AC-006 against a real tusd v2.10.3, and fails when the
-  offset resume, the short-upload guard, the password check or the metadata replacement is reverted — verified by:
-  integration
+- **SC-001**: `tus-hook.controller.int.test.ts` proves AC-001 to AC-007 against a real tusd v2.10.3, and fails when the
+  offset resume, the short-upload guard, the password check, the metadata replacement or the `post-finish` renewal is
+  reverted — verified by: integration
 - **SC-002**: `media-library.service.test.ts`, `tus-uploader.driver.test.ts`, `tus-hook.controller.test.ts`,
   `create-resumable-upload.action.test.ts` and the schema and index tests prove FR-001 to FR-008 — verified by: unit
 - **SC-003**: the `@stackra/media` tests, typecheck, oxlint, oxfmt and `stackra gen --check` pass — verified by: manual
+- **SC-004**: `media-library.service.test.ts` proves AC-007 and AC-008 (a disk whose `read` throws for the upload),
+  `tus-hook.controller.test.ts` FR-009, and `s3-file-system.driver.test.ts` AC-009, each failing when the change is
+  reverted — verified by: unit
 
 ## Compatibility and migration
 
@@ -207,7 +243,10 @@ with a type the bucket does not take.
   exactly as before (a record without `transfer` is a signed upload).
 - To use tus an app runs tusd v2 against the media store (`-s3-object-prefix uploads/` on S3, R2 or MinIO;
   `-upload-dir <filesystem.root>/uploads` on a local disk), points `-hooks-http` at `/media/tus-hooks` with the
-  password, enables the `pre-create` hook, sets `uploader: tus` and `tus.endpoint`, and stores `MEDIA_TUS_HOOK_SECRET`.
+  password, enables the `pre-create` and `post-finish` hooks, sets `uploader: tus` and `tus.endpoint`, and stores
+  `MEDIA_TUS_HOOK_SECRET`. The `uploads/` lifecycle rule should outlast `resumableUploadExpiresIn` plus
+  `uploadExpiresIn` (two days with the defaults).
+- Every `s3` move now sends one HEAD before the copy.
 
 ## Risks
 
@@ -236,7 +275,12 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-26 · review of the branch (two findings): a claim read the whole staged file for its 64-byte type check and
+  the `s3` move was one `CopyObject` (5 GiB at most), so a multi-gigabyte tus upload could not be claimed; and a tus
+  upload expired `uploadExpiresIn` after creation (the signed-URL lifetime), so a long transfer was refused at claim.
+  Added FR-009 to FR-011, EC-09 to EC-11, AC-007 to AC-009 and SC-004: the head is read from the stream, the `s3` move
+  copies part by part above 5 GiB, a tus upload has its own lifetime (`resumableUploadExpiresIn`), and tusd's
+  `post-finish` renews the claim window.
 
 ## Status history
 

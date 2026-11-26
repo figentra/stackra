@@ -4,8 +4,9 @@
  *          `upload.create_resumable` for an upload, tusd's `pre-create` hook reaches `TusHookController` with the hook
  *          password, which admits it under the server's id and media type (a forged `filetype` is replaced), the
  *          uploader sends the bytes in chunks, resumes from tusd's own offset after a request dropped half-way, and
- *          `MediaLibrary.claim` keeps the upload while it is still short, then places the finished file byte for byte
- *          and drops tusd's `.info` file. tusd refuses a second start of the same upload, an unknown upload and every
+ *          `MediaLibrary.claim` keeps the upload while it is still short; tusd's `post-finish` hook renews the claim
+ *          window from the last byte (`uploadExpiresIn`, longer here than the transfer lifetime), then the claim
+ *          places the finished file byte for byte (its head read from the stream) and drops tusd's `.info` file. tusd refuses a second start of the same upload, an unknown upload and every
  *          start when the hook password is wrong.
  * Boundary: test only. tusd v2 stores into a temporary folder that the local `FileSystem` disk is rooted at (tusd's
  *           filestore writes `uploads/<id>` and `uploads/<id>.info`, the layout its S3 store keeps under the prefix
@@ -24,7 +25,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { buildConfig, MemorySecretStoreDriver } from "@stackra/config";
-import { Clock } from "@stackra/contracts";
+import { Clock, Duration } from "@stackra/contracts";
 import { FilesystemConfig } from "@stackra/filesystem";
 import { LocalFileSystemDriver } from "@stackra/filesystem/node";
 import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
@@ -148,7 +149,7 @@ async function startTusd(
     "-base-path=/files/",
     `-upload-dir=${dir}/uploads`,
     `-hooks-http=http://tusd:${password}@${hookHost}:${port}/media/tus-hooks`,
-    "-hooks-enabled-events=pre-create",
+    "-hooks-enabled-events=pre-create,post-finish",
     "-hooks-http-retry=0",
     "-disable-download",
   ];
@@ -192,6 +193,11 @@ async function infoOf(
   return JSON.parse(await readFile(join(root, "uploads", `${id}.info`), "utf8")) as never;
 }
 
+/** The server's record of the upload `id`. */
+async function recordOf(id: string): Promise<{ expires: string }> {
+  return JSON.parse(await readFile(join(root, "uploads", `${id}.json`), "utf8")) as never;
+}
+
 beforeAll(async () => {
   root = await mkdtemp(join(tmpdir(), "stackra-tus-"));
   await mkdir(join(root, "uploads"));
@@ -210,7 +216,12 @@ beforeAll(async () => {
   );
   const secrets = new MemorySecretStoreDriver().set("MEDIA_TUS_HOOK_SECRET", SECRET);
   const config = buildConfig(MediaConfig, {
-    values: { tus: { endpoint: tusEndpoint, chunkBytes: CHUNK, retryDelaysMs: [0, 0, 0] } },
+    values: {
+      tus: { endpoint: tusEndpoint, chunkBytes: CHUNK, retryDelaysMs: [0, 0, 0] },
+      // a transfer window shorter than the claim window, so the post-finish renewal shows in the record
+      resumableUploadExpiresIn: Duration.minutes(10),
+      uploadExpiresIn: Duration.hours(2),
+    },
     secrets,
   });
   media = new MediaLibrary(disk, config, new WallClock());
@@ -247,6 +258,7 @@ describe("tus uploads through tusd", () => {
     let patches = 0;
     let id = "";
     let claimedEarly: unknown;
+    let expiresMidway = 0;
     vi.stubGlobal("fetch", async (url: string, init: RequestInit = {}): Promise<Response> => {
       const headers = { ...(init.headers as Record<string, string>) };
       if (init.method === "POST" && url === tusEndpoint)
@@ -263,6 +275,7 @@ describe("tus uploads through tusd", () => {
       claimedEarly = await media
         .claim({ id } as Upload<VideosBucket>, VideosBucket)
         .catch((error: unknown) => error);
+      expiresMidway = Date.parse((await recordOf(id)).expires);
       throw new TypeError("network dropped");
     });
     let upload: Upload;
@@ -286,6 +299,14 @@ describe("tus uploads through tusd", () => {
       Size: VIDEO.length,
       MetaData: { upload: upload.id, filetype: "video/mp4" },
     });
+    // Mid-transfer the record expires ten minutes after creation (resumableUploadExpiresIn); tusd's post-finish, sent
+    // after it answers the last PATCH, moves it to two hours after the finish (uploadExpiresIn).
+    expect(expiresMidway).toBeLessThanOrEqual(Date.now() + 10 * 60 * 1000);
+    await expect
+      .poll(async () => Date.parse((await recordOf(upload.id)).expires) - expiresMidway, {
+        timeout: 10_000,
+      })
+      .toBeGreaterThan(60 * 60 * 1000);
 
     const file = await media.claim(upload as Upload<VideosBucket>, VideosBucket);
 

@@ -91,7 +91,9 @@ service: tusd receives them and writes them to the same `FileSystem` store.
 
 1. With `media.uploader: tus`, `useUpload` posts `{ bucket, mediaType, size }` to `media.resumableUploadEndpoint`
    (`media.upload.create_resumable@1`). `MediaLibrary.createResumableUpload` checks the bucket's types and size, mints
-   `upl_…` and records the bucket, the media type, the size, the expiry and `started: false` as `uploads/<id>.json`. It
+   `upl_…` and records the bucket, the media type, the size, the expiry (`media.resumableUploadExpiresIn`, a day by
+   default: the whole transfer, pauses and resumes included, may take that long; it is not the signed-URL lifetime
+   `uploadExpiresIn`) and `started: false` as `uploads/<id>.json`. It
    answers the tus server's creation URL (`media.tus.endpoint`) and the headers to start with (`Tus-Resumable` and
    `Upload-Metadata: upload <base64 id>`). Nothing is signed, so it works on every disk tusd writes to.
 2. The `tus` uploader `POST`s the creation request to tusd. tusd's `pre-create` hook calls `TusHookController`
@@ -104,10 +106,19 @@ service: tusd receives them and writes them to the same `FileSystem` store.
 3. The uploader sends `PATCH`es of `media.tus.chunkBytes`. After a failed request it pauses
    (`media.tus.retryDelaysMs`), asks tusd for its offset (`HEAD`) and goes on from there; progress resets the pauses,
    and it gives up when they run out. It never repeats the creation: the server admits an upload once.
-4. The action claims the token as for any upload. For a tus upload the claim takes the recorded media type (tusd's
+4. When the last byte arrives, tusd's `post-finish` hook calls `TusHookController` again, which calls
+   `MediaLibrary.finishResumableUpload`: the upload stays claimable for at least `media.uploadExpiresIn` from then,
+   however much of its lifetime the transfer used (the expiry is never shortened; an upload already expired, or not a
+   started tus upload, is left as it is).
+5. The action claims the token as for any upload. For a tus upload the claim takes the recorded media type (tusd's
    local store keeps none), refuses as incomplete a file still short of the recorded size and keeps it (tusd's local
    store grows it in place; its S3 store shows the object only once complete), refuses a larger one, checks the bytes
-   against the type, and deletes tusd's `uploads/<id>.info` with the record.
+   against the type, and deletes tusd's `uploads/<id>.info` with the record. The type check reads the first 64 bytes
+   from the disk's `readStream` and cancels it, and the file is moved with the disk's own move, so a multi-gigabyte
+   upload never sits in the service's memory: on `s3` (S3, R2, MinIO) a move above 5 GiB is a multipart copy
+   (`UploadPartCopy`), on `gcs` the store's rewrite, on `local` a rename. The `encore_bucket` disk has no streamed read
+   or server-side move (Encore's bucket API downloads and uploads whole), so there the claim holds the whole file in
+   memory: send large tus uploads to an `s3`, `gcs` or `local` disk.
 
 Run tusd (v2) against the media store with the hook pointed at the service:
 
@@ -115,9 +126,10 @@ Run tusd (v2) against the media store with the hook pointed at the service:
 # S3 / R2 / MinIO: the media bucket, under the uploads/ prefix the claim reads
 tusd -s3-bucket acme-files -s3-object-prefix uploads/ -base-path /files/ \
   -hooks-http "https://tusd:${MEDIA_TUS_HOOK_SECRET}@api.acme.test/media/tus-hooks" \
-  -hooks-enabled-events pre-create -disable-download
+  -hooks-enabled-events pre-create,post-finish -disable-download
 # local disk: the uploads/ folder under filesystem.root
-tusd -upload-dir ./storage/uploads -base-path /files/ -hooks-http ... -hooks-enabled-events pre-create -disable-download
+tusd -upload-dir ./storage/uploads -base-path /files/ -hooks-http ... -hooks-enabled-events pre-create,post-finish \
+  -disable-download
 ```
 
 The hook password is the secret `MEDIA_TUS_HOOK_SECRET`, read blind into `tusHookSecret`; while it is empty every hook
@@ -159,7 +171,8 @@ media stores on the one `FileSystem` disk per region and environment (ADR 0465):
 config:
   media:
     uploader: http # memory | http | tus (an app's setting)
-    uploadExpiresIn: PT1H # at most seven days
+    uploadExpiresIn: PT1H # signed uploads, and the claim window after a tus upload finishes; at most seven days
+    resumableUploadExpiresIn: P1D # a tus upload from creation, the transfer included; at most seven days
     resumableUploadEndpoint: /api/uploads/create-resumable # the tus uploader asks here
     tus: { endpoint: https://uploads.acme.test/files/, chunkBytes: 8388608, retryDelaysMs: [0, 1000, 3000, 5000, 10000] }
     scanner: guard_duty # memory | clamav | guard_duty
@@ -183,9 +196,10 @@ No credential value is configuration. The disks use their SDK's default chain (s
 its private key (PEM) are the secrets `MEDIA_C2PA_SIGNING_CERTIFICATE` and `MEDIA_C2PA_SIGNING_KEY`, read blind from the
 secret store into `c2paSigningCertificate` and `c2paSigningKey`; they are empty until the certificate is issued. The tus
 hook password is the secret `MEDIA_TUS_HOOK_SECRET` (`tusHookSecret`). The bucket's CORS rule must allow `PUT`
-from the app's origins with the `content-type` header. A lifecycle rule should expire `uploads/` after a day, which
-removes uploads nobody claimed and their records (and, for tus, tusd's `.info` and `.part` objects); add one that aborts
-incomplete multipart uploads after a day too, which drops tus uploads nobody finished.
+from the app's origins with the `content-type` header. A lifecycle rule should expire `uploads/` once
+`resumableUploadExpiresIn` plus `uploadExpiresIn` has passed (two days with the defaults), which removes uploads nobody
+claimed and their records (and, for tus, tusd's `.info` and `.part` objects); add one that aborts incomplete multipart
+uploads after the same time, which drops tus uploads nobody finished.
 
 ### Migrating from `MediaDisk` (stackra-226)
 

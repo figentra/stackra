@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `MediaOptions`, the shape of `MediaConfig`: which uploader the client uses, how long an upload stays valid,
+ * Purpose: `MediaOptions`, the shape of `MediaConfig`: which uploader the client uses, how long a signed upload and a
+ *          resumable (tus) upload stay valid,
  *          where the HTTP uploader asks for a signed URL and the tus uploader for a resumable upload, the tus server and
  *          its chunking, the tus hook password slot, the in-region OCR service and the C2PA signing slot.
  * Boundary: a shape class; it registers this package's own schema (`MEDIA_CONFIG_SCHEMA`) for itself when the module
@@ -121,6 +122,13 @@ export class MediaOptions extends Schema {
 
   /** How long a signed upload URL, and the token it was issued with, stay valid; at most seven days. */
   uploadExpiresIn: Duration = Duration.hours(1);
+
+  /**
+   * How long a resumable (tus) upload stays valid from its creation, the whole transfer included (pauses, retries and
+   * resumes); at most seven days. Once the tus server reports it finished, it stays claimable for at least
+   * `uploadExpiresIn` more. Keep the store's `uploads/` lifecycle rule longer than both together.
+   */
+  resumableUploadExpiresIn: Duration = Duration.days(1);
 
   /** Where the `http` uploader asks for a signed URL: the `upload.create` endpoint of the media module. */
   uploadEndpoint = "/api/uploads";

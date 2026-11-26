@@ -22,6 +22,9 @@ export interface ResumableUpload<B extends BucketBase = BucketBase> {
   /** The headers to start the upload with, exactly as given (`tus-resumable`, `upload-metadata`). */
   readonly headers: Readonly<Record<string, string>>;
 
-  /** When the token expires; a claim after it is refused. */
+  /**
+   * When the token expires (`resumableUploadExpiresIn` after creation); a claim after it is refused, unless the tus
+   * server reported the upload finished, which keeps it claimable for `uploadExpiresIn` from its last byte.
+   */
   readonly expiresAt: Date;
 }

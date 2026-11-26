@@ -3,13 +3,18 @@
  * Purpose: `TusHookController`, the raw endpoint tusd's HTTP hooks call (`POST /media/tus-hooks`, tusd
  *          `-hooks-http`): its `pre-create` hook asks `MediaLibrary.admitResumableUpload` whether the upload named in
  *          the creation request may start, and answers tusd with the id and metadata to store it under, or a rejection
- *          with the status the client sees. Every other hook type is acknowledged with no change.
+ *          with the status the client sees; its `post-finish` hook calls `MediaLibrary.finishResumableUpload`, so the
+ *          finished upload stays claimable for `uploadExpiresIn` after its last byte. Every other hook type is
+ *          acknowledged with no change.
  * Boundary: a raw controller is anonymous to the adapter, so the credential is the hook password: HTTP basic auth
  *           whose password must equal `MediaConfig.tusHookSecret` (compared as SHA-256 digests in constant time); an
  *           empty secret refuses every call, so no tus upload starts until it is set. The upload id is the only value
  *           taken from the client's metadata, and only as a lookup key: the stored id and media type come from the
  *           server's record, and tusd's metadata is replaced whole (`upload`, `filetype`), so a client cannot name a
- *           storage path or a type. Concatenated (partial or final) and deferred-length uploads are rejected. A body
+ *           storage path or a type. Concatenated (partial or final) and deferred-length uploads are rejected. A
+ *           `post-finish` names the upload by the `upload` metadata the admission set (tusd's own id on S3 carries a
+ *           multipart suffix); tusd ignores its answer, so one for an upload that is not a started tus upload, or that
+ *           already expired, is acknowledged and changes nothing. A body
  *           over 64 KiB, or one that is not a tusd hook request, is a 400. The refusal body names the code only, never
  *           the file.
  * Runtime: node
@@ -78,7 +83,8 @@ function passwordOf(header: string | null): string | null {
  * Admits tus uploads for tusd.
  *
  * @example
- * // tusd -hooks-http https://tusd:<MEDIA_TUS_HOOK_SECRET>@api.example.com/media/tus-hooks -hooks-enabled-events pre-create
+ * // tusd -hooks-http https://tusd:<MEDIA_TUS_HOOK_SECRET>@api.example.com/media/tus-hooks \
+ * //   -hooks-enabled-events pre-create,post-finish
  * // POST /media/tus-hooks { Type: "pre-create", Event: { Upload: { MetaData: { upload: "upl_…" }, Size: 1024, … } } }
  * // → 200 { ChangeFileInfo: { ID: "upl_…", MetaData: { upload: "upl_…", filetype: "video/mp4" } } }
  */
@@ -119,6 +125,8 @@ export class TusHookController extends Controller({ path: "/media/tus-hooks" }) 
     }
     const hook = HOOK_REQUEST.safeParse(body);
     if (!hook.success) return json(400, { code: "invalid_hook" });
+    if (hook.data.Type === "post-finish")
+      return this.finished(hook.data.Event.Upload.MetaData?.["upload"] ?? "");
     if (hook.data.Type !== "pre-create") return json(200, {});
     const upload = hook.data.Event.Upload;
     if (upload.IsPartial || upload.IsFinal) return reject(400, "upload_rejected");
@@ -141,6 +149,17 @@ export class TusHookController extends Controller({ path: "/media/tus-hooks" }) 
         return reject(error.reason === "started" ? 409 : 400, error.code);
       throw error;
     }
+  }
+
+  /** Renews the claim window of the finished tus upload `id`; tusd ignores the answer, so a refusal changes nothing. */
+  private async finished(id: string): Promise<Response> {
+    try {
+      await this.media.finishResumableUpload(id);
+    } catch (error) {
+      if (!(error instanceof UploadIncompleteError || error instanceof UploadExpiredError))
+        throw error;
+    }
+    return json(200, {});
   }
 
   /** Whether `request` carries the hook password; never while it is unset. */

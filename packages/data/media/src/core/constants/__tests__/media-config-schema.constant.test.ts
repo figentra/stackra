@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MEDIA_CONFIG_SCHEMA` (`MediaConfig$`): full defaults from `{}` with no `disk` (ADR 0465),
- *          only this package's driver names (the tus uploader included), an upload lifetime above zero and at most
- *          seven days (either duration form, stored canonical), the tus server settings, and the OCR and C2PA settings.
+ *          only this package's driver names (the tus uploader included), a signed and a resumable upload lifetime above
+ *          zero and at most seven days (either duration form, stored canonical), the tus server settings, and the OCR
+ *          and C2PA settings.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26).
@@ -17,6 +18,7 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
     expect(MEDIA_CONFIG_SCHEMA.parse({})).toEqual({
       uploader: "memory",
       uploadExpiresIn: "PT1H",
+      resumableUploadExpiresIn: "P1D",
       uploadEndpoint: "/api/uploads",
       resumableUploadEndpoint: "/api/uploads/create-resumable",
       tus: {
@@ -85,6 +87,16 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
     expect(MEDIA_CONFIG_SCHEMA.parse({ uploadExpiresIn: "1h" }).uploadExpiresIn).toBe("PT1H");
     for (const lifetime of ["PT0S", "P8D", "8d", "an hour", 3600])
       expect(MEDIA_CONFIG_SCHEMA.safeParse({ uploadExpiresIn: lifetime }).success).toBe(false);
+  });
+
+  it("takes a resumable upload lifetime of its own, above zero and up to seven days", () => {
+    const parsed = MEDIA_CONFIG_SCHEMA.parse({ resumableUploadExpiresIn: "3d" });
+    expect(parsed.resumableUploadExpiresIn).toBe("P3D");
+    expect(parsed.uploadExpiresIn).toBe("PT1H");
+    for (const lifetime of ["PT0S", "P8D", "a day", 86_400])
+      expect(MEDIA_CONFIG_SCHEMA.safeParse({ resumableUploadExpiresIn: lifetime }).success).toBe(
+        false,
+      );
   });
 
   it("refuses an empty endpoint", () => {

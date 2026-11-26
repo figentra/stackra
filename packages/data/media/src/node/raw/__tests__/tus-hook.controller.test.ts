@@ -4,7 +4,9 @@
  *          the hook password, every call while the password is unset, a method other than POST and a body that is not
  *          a tusd hook request; it admits a `pre-create` of a waiting tus upload once, answering tusd with the stored
  *          id and metadata from the server's record; it rejects a repeated, wrongly sized, deferred-length,
- *          concatenated, unknown or expired upload with the status the client sees; it acknowledges every other hook.
+ *          concatenated, unknown or expired upload with the status the client sees; its `post-finish` keeps the
+ *          finished upload claimable for `uploadExpiresIn`, and one for an unknown, unstarted or expired upload changes
+ *          nothing; it acknowledges every other hook.
  * Boundary: test only; `MediaLibrary` runs over the memory `FileSystem` disk with a hand-moved clock, and requests are
  *           built as tusd v2 sends them.
  * Runtime: node (vitest)
@@ -193,11 +195,54 @@ describe("TusHookController", () => {
   it("rejects an expired upload with 410", async () => {
     const { clock, controller, media } = setup();
     const id = await open(media);
-    clock.at = new Date("2026-10-24T10:00:00.001Z");
+    clock.at = new Date("2026-10-25T09:00:00.001Z");
     const response = await controller.handle(
       hook("pre-create", { Size: 1000, MetaData: { upload: id } }),
     );
     expect(await rejection(response)).toEqual({ status: 410, code: "upload_expired" });
+  });
+
+  it("keeps a finished upload claimable for uploadExpiresIn after its post-finish", async () => {
+    const { clock, controller, disk, media } = setup();
+    const id = await open(media);
+    await controller.handle(hook("pre-create", { Size: 1000, MetaData: { upload: id } }));
+    clock.at = new Date("2026-10-25T08:45:00.000Z");
+    const response = await controller.handle(
+      hook("post-finish", { Size: 1000, MetaData: { upload: id, filetype: "video/mp4" } }),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({});
+    expect(
+      JSON.parse(
+        await disk.read(`uploads/${id}.json`).then((bytes) => new TextDecoder().decode(bytes)),
+      ),
+    ).toMatchObject({
+      expires: "2026-10-25T09:45:00.000Z",
+    });
+  });
+
+  it("acknowledges a post-finish of an unknown, unstarted or expired upload and changes nothing", async () => {
+    const { clock, controller, disk, media } = setup();
+    const unstarted = await open(media);
+    const late = await open(media);
+    await controller.handle(hook("pre-create", { Size: 1000, MetaData: { upload: late } }));
+    const before = await disk.list("uploads/");
+    const records = await Promise.all(before.map(async (path) => disk.read(path)));
+    clock.at = new Date("2026-10-25T09:00:00.001Z");
+    for (const metadata of [
+      {},
+      { upload: "upl_01jb3m0000000000000000000a" },
+      { upload: unstarted },
+      { upload: late },
+    ]) {
+      // oxlint-disable-next-line no-await-in-loop -- each hook is its own call
+      const response = await controller.handle(hook("post-finish", { MetaData: metadata }));
+      expect(response.status).toBe(200);
+      // oxlint-disable-next-line no-await-in-loop -- each hook is its own call
+      expect(await response.json()).toEqual({});
+    }
+    expect(await disk.list("uploads/")).toEqual(before);
+    expect(await Promise.all(before.map(async (path) => disk.read(path)))).toEqual(records);
   });
 
   it("acknowledges every other hook with no change", async () => {

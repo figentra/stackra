@@ -5,9 +5,11 @@
  *          again at claim, a claim moves the file to its bucket path once and drops the record, a disk that cannot sign
  *          refuses, and a foreign, expired, missing, malformed or oversized upload, or one whose bytes are not its
  *          declared type, is refused; `store` writes the server's bytes under the same rules and refuses each break. A
- *          tus upload records its media type and size, is admitted to the tus server once with exactly that size,
- *          is claimed with the recorded type, kept while still short of its size, refused when larger, and its tus
- *          `.info` file is dropped with the record.
+ *          tus upload records its media type and size, lives `resumableUploadExpiresIn` (a transfer longer than
+ *          `uploadExpiresIn` is still claimed), is admitted to the tus server once with exactly that size, stays
+ *          claimable `uploadExpiresIn` after the tus server reports it finished (never shortened), is claimed with the
+ *          recorded type, kept while still short of its size, refused when larger, and its tus `.info` file is dropped
+ *          with the record. A claim reads only the first 64 bytes of the file, from its stream, never the whole file.
  * Boundary: test only; the memory `FileSystem` disk stands in for S3 and receives the bytes as a browser's signed `PUT`
  *           would, and the bytes and `.info` file a tus server (tusd) writes beside the record. A hand-moved clock
  *           drives expiry.
@@ -54,7 +56,7 @@ class InvoicesBucket extends Bucket({
 }) {}
 
 /** A library over a memory disk serving from `https://cdn.test`. */
-function setup(values: { uploadExpiresIn?: Duration } = {}) {
+function setup(values: { uploadExpiresIn?: Duration; resumableUploadExpiresIn?: Duration } = {}) {
   const clock = new TestClock();
   const disk = new MemoryFileSystemDriver(
     buildConfig(FilesystemConfig, { values: { url: "https://cdn.test" } }),
@@ -408,11 +410,11 @@ describe("MediaLibrary.createResumableUpload", () => {
       "tus-resumable": "1.0.0",
       "upload-metadata": `upload ${btoa(id)}`,
     });
-    expect(resumable.expiresAt).toEqual(new Date("2026-10-24T10:00:00.000Z"));
+    expect(resumable.expiresAt).toEqual(new Date("2026-10-25T09:00:00.000Z"));
     const record = await disk.read(`uploads/${id}.json`);
     expect(JSON.parse(new TextDecoder().decode(record))).toEqual({
       bucket: "product_images",
-      expires: "2026-10-24T10:00:00.000Z",
+      expires: "2026-10-25T09:00:00.000Z",
       transfer: "tus",
       mediaType: "image/png",
       size: 8,
@@ -434,6 +436,18 @@ describe("MediaLibrary.createResumableUpload", () => {
       size: 8,
     });
     expect(await unsigned.list("uploads/")).toEqual([`uploads/${resumable.upload.id}.json`]);
+  });
+
+  it("takes its lifetime from resumableUploadExpiresIn, not the signed-URL lifetime", async () => {
+    const { media } = setup({
+      uploadExpiresIn: Duration.minutes(5),
+      resumableUploadExpiresIn: Duration.hours(6),
+    });
+    const resumable = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    expect(resumable.expiresAt).toEqual(new Date("2026-10-24T15:00:00.000Z"));
   });
 
   it("names the configured tus server", async () => {
@@ -530,7 +544,7 @@ describe("MediaLibrary.admitResumableUpload", () => {
       mediaType: MediaType.Png,
       size: 8,
     });
-    clock.at = new Date("2026-10-24T10:00:00.001Z");
+    clock.at = new Date("2026-10-25T09:00:00.001Z");
     await expect(media.admitResumableUpload(upload.id, 8)).rejects.toBeInstanceOf(
       UploadExpiredError,
     );
@@ -551,6 +565,73 @@ describe("MediaLibrary.admitResumableUpload", () => {
   });
 });
 
+/** The expiry recorded for the upload `id`. */
+const expiresOf = async (disk: MemoryFileSystemDriver, id: string): Promise<string> =>
+  JSON.parse(new TextDecoder().decode(await disk.read(`uploads/${id}.json`))).expires;
+
+describe("MediaLibrary.finishResumableUpload", () => {
+  it("keeps an upload that finished late in its lifetime claimable for uploadExpiresIn after its last byte", async () => {
+    const { clock, disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    await media.admitResumableUpload(upload.id, 8);
+    clock.at = new Date("2026-10-25T08:30:00.000Z");
+    await tusWrite(disk, upload.id);
+    await media.finishResumableUpload(upload.id);
+    expect(await expiresOf(disk, upload.id)).toBe("2026-10-25T09:30:00.000Z");
+
+    clock.at = new Date("2026-10-25T09:20:00.000Z");
+    expect((await media.claim(upload, ProductImagesBucket)).size).toBe(8);
+  });
+
+  it("never shortens the expiry of an upload that finished early", async () => {
+    const { clock, disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    await media.admitResumableUpload(upload.id, 8);
+    clock.at = new Date("2026-10-24T09:10:00.000Z");
+    await media.finishResumableUpload(upload.id);
+    expect(await expiresOf(disk, upload.id)).toBe("2026-10-25T09:00:00.000Z");
+  });
+
+  it("refuses an id that is not a tus upload the tus server started", async () => {
+    const { media } = setup();
+    const signed = await media.createUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 4,
+    });
+    const { upload: unstarted } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    for (const id of [
+      "",
+      "../uploads/x",
+      "upl_01jb3m0000000000000000000a",
+      signed.upload.id,
+      unstarted.id,
+    ])
+      // oxlint-disable-next-line no-await-in-loop -- each id is its own refusal
+      await expect(media.finishResumableUpload(id)).rejects.toBeInstanceOf(UploadIncompleteError);
+  });
+
+  it("refuses an upload whose lifetime passed before it finished, and leaves it expired", async () => {
+    const { clock, disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    await media.admitResumableUpload(upload.id, 8);
+    clock.at = new Date("2026-10-25T09:00:00.001Z");
+    await expect(media.finishResumableUpload(upload.id)).rejects.toBeInstanceOf(UploadExpiredError);
+    expect(await expiresOf(disk, upload.id)).toBe("2026-10-25T09:00:00.000Z");
+  });
+});
+
 describe("MediaLibrary.claim of a tus upload", () => {
   it("claims it with the recorded media type and drops the record and the .info file", async () => {
     const { disk, media } = setup();
@@ -567,6 +648,68 @@ describe("MediaLibrary.claim of a tus upload", () => {
     expect(file).toMatchObject({ id: upload.id, path, mediaType: MediaType.Png, size: 8 });
     expect(await disk.list("uploads/")).toEqual([]);
     expect(await disk.stat(path)).toMatchObject({ size: 8 });
+  });
+
+  it("claims a transfer that outlived the signed-URL lifetime (uploadExpiresIn)", async () => {
+    const { clock, disk, media } = setup();
+    const { upload } = await media.createResumableUpload(ProductImagesBucket, {
+      mediaType: MediaType.Png,
+      size: 8,
+    });
+    await media.admitResumableUpload(upload.id, 8);
+    // three hours of pauses and resumes: three times uploadExpiresIn (PT1H)
+    clock.at = new Date("2026-10-24T12:00:00.000Z");
+    await tusWrite(disk, upload.id);
+    expect((await media.claim(upload, ProductImagesBucket)).size).toBe(8);
+  });
+
+  it("reads only the first 64 bytes of the file, from its stream, never the whole file", async () => {
+    const clock = new TestClock();
+    /** A disk that streams in 16-byte chunks, counts what was pulled, and refuses to read an upload whole. */
+    class StreamingDisk extends MemoryFileSystemDriver {
+      pulled = 0;
+
+      cancelled = false;
+
+      override async read(path: string): Promise<Uint8Array> {
+        if (!path.endsWith(".json")) throw new Error(`read the whole of ${path}`);
+        return super.read(path);
+      }
+
+      override async readStream(path: string): Promise<ReadableStream<Uint8Array>> {
+        const bytes = await super.read(path);
+        return new ReadableStream<Uint8Array>(
+          {
+            pull: (controller) => {
+              if (this.pulled >= bytes.byteLength) return controller.close();
+              const chunk = bytes.slice(this.pulled, this.pulled + 16);
+              this.pulled += chunk.byteLength;
+              controller.enqueue(chunk);
+            },
+            cancel: () => {
+              this.cancelled = true;
+            },
+          },
+          { highWaterMark: 0 },
+        );
+      }
+    }
+    const disk = new StreamingDisk(buildConfig(FilesystemConfig), clock);
+    const media = new MediaLibrary(disk, buildConfig(MediaConfig), clock);
+    const { upload } = await media.createResumableUpload(InvoicesBucket, {
+      mediaType: MediaType.Pdf,
+      size: 100,
+    });
+    await media.admitResumableUpload(upload.id, 100);
+    const pdf = new Uint8Array(100);
+    pdf.set(HEADS["application/pdf"] ?? []);
+    await tusWrite(disk, upload.id, pdf);
+
+    const file = await media.claim(upload, InvoicesBucket);
+
+    expect(file).toMatchObject({ mediaType: MediaType.Pdf, size: 100 });
+    expect(disk.pulled).toBe(64);
+    expect(disk.cancelled).toBe(true);
   });
 
   it("keeps an upload still short of its size and claims it once complete", async () => {

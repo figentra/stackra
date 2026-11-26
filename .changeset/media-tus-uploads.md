@@ -17,8 +17,14 @@ after a dropped connection, while its bytes still never pass through a service.
 - `TusUploaderDriver` (`uploader: tus`) sends `PATCH`es of `media.tus.chunkBytes`, and after a failed request pauses
   (`media.tus.retryDelaysMs`), asks tusd for its offset and resumes from there. New settings:
   `resumableUploadEndpoint`, `tus.endpoint`, `tus.chunkBytes`, `tus.retryDelaysMs`.
+- A tus upload lives `media.resumableUploadExpiresIn` (new, a day by default, at most seven), not the signed-URL
+  lifetime `uploadExpiresIn`, so a long transfer is still claimable. tusd's `post-finish` hook
+  (`MediaLibrary.finishResumableUpload`) keeps a finished upload claimable for `uploadExpiresIn` from its last byte;
+  run tusd with `-hooks-enabled-events pre-create,post-finish`.
 - `claim` of a tus upload takes the recorded media type, keeps an upload still short of its size (refused as
   incomplete), refuses a larger one, and deletes tusd's `.info` file with the record. `UploadRejectedError.reason`
   gains `started`.
+- `claim` reads only the first 64 bytes of a file for its type check (from `readStream`), never the whole file, so a
+  multi-gigabyte upload is not held in memory on the `s3`, `gcs` and `local` disks.
 - New dependency: `@stackra/app` (the raw controller kind). New test tier: `test:int` runs a tusd integration test
   (Testcontainers, or the binary `TUSD_BINARY` names).

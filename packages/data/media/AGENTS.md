@@ -38,6 +38,10 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
   server's record (`upload`, `filetype`); never pass a client's metadata, id or type through to tusd.
 - The tus hook password is the `@Secret` `MEDIA_TUS_HOOK_SECRET` (`tusHookSecret`), compared as digests in constant
   time; an empty one refuses every hook call. Never accept a hook call without it.
+- A tus upload lives `resumableUploadExpiresIn`, never the signed-URL lifetime `uploadExpiresIn`, and tusd's
+  `post-finish` (`finishResumableUpload`) only ever lengthens its expiry, to `uploadExpiresIn` after the last byte.
+- A claim never holds a whole upload in memory: the type check reads 64 bytes from `readStream`, and the file moves
+  with the disk's own `move`. Never `read` a staged upload whole.
 - Media stores on the one `FileSystem` disk of `@stackra/filesystem` (`signUpload`, `move`, `stat`, `read`); there is
   no media disk port any more (ADR 0465, stackra-226). Never add a storage port or driver here: extend `FileSystem`.
 - A token carries the upload id only. The bucket key and expiry are written by the server beside the upload

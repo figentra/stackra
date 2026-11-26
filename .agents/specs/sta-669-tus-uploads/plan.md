@@ -16,7 +16,8 @@ a short upload kept, tusd's `.info` dropped.
 ## Technical Context
 
 - **Language**: TypeScript (ESM), Node 24
-- **Members**: `packages/data/media` (`@stackra/media`)
+- **Members**: `packages/data/media` (`@stackra/media`); `packages/data/filesystem` (`@stackra/filesystem`, the `s3`
+  disk's move of objects above 5 GiB)
 - **Testing**: vitest in `src/**/__tests__/` (ADR 0022); `fetch` stubbed for the driver; the memory `FileSystem` disk
   for the library, the action and the controller; the int tier runs tusd (Testcontainers or `TUSD_BINARY`) over a
   local `FileSystem` disk
@@ -58,6 +59,9 @@ a short upload kept, tusd's `.info` dropped.
 - **P-006**: for every created tus upload, its record holds the bucket, media type, size and expiry the creation checked and `started: false` before any byte moves — Validates: FR-001
 - **P-007**: for every file, the uploader's `PATCH`es carry at most `tus.chunkBytes` each, in offset order, and the creation `POST` is sent once — Validates: FR-005
 - **P-008**: for every call of `media.upload.create_resumable@1`, an upload is recorded only into a registered bucket that takes its media type and size — Validates: FR-008
+- **P-009**: for every tus upload tusd reports finished before its expiry, the expiry afterwards is at least `uploadExpiresIn` from the report and never earlier than before — Validates: FR-009
+- **P-010**: for every claim, the bytes read from the staged file are at most 64 plus one stream chunk, whatever its size — Validates: FR-010
+- **P-011**: for every `s3` move of an object of n > 5 GiB bytes, the copied ranges are contiguous, equal but the last, at most 10,000, and cover bytes 0 to n − 1; a failed copy leaves the source and no multipart upload — Validates: FR-011
 
 ## Architecture overview
 
@@ -93,7 +97,7 @@ packages/data/media/
     │   ├── index.ts
     │   ├── constants/{media-config-schema,media-uploaders,tus-version}.constant.ts
     │   ├── drivers/tus-uploader.driver.ts
-    │   ├── errors/upload-rejected.error.ts
+    │   ├── errors/{upload-rejected,upload-expired}.error.ts
     │   ├── schemas/media-options.schema.ts
     │   ├── services/media-library.service.ts
     │   └── types/{admitted-upload,resumable-upload,media-driver-names}.type.ts
@@ -104,8 +108,12 @@ packages/data/media/
         ├── constants/create-resumable-upload-output-schema.constant.ts
         ├── raw/tus-hook.controller.ts
         └── schemas/create-resumable-upload-output.schema.ts
+packages/data/filesystem/
+├── README.md
+└── src/node/drivers/s3-file-system.driver.ts
 apps/docs/src/docs/adr/0222-files-and-media-storage-drivers-uploads-scanning-and-public-assets.mdx
 .changeset/media-tus-uploads.md
+.changeset/filesystem-s3-large-move.md
 ```
 
 - `packages/data/media/src/core/services/media-library.service.ts`
@@ -118,6 +126,8 @@ apps/docs/src/docs/adr/0222-files-and-media-storage-drivers-uploads-scanning-and
 - `packages/data/media/src/core/schemas/media-options.schema.ts`
 - `packages/data/media/src/core/constants/media-config-schema.constant.ts`
 - `packages/data/media/src/node/raw/__tests__/tus-hook.controller.int.test.ts`
+- `packages/data/filesystem/src/node/drivers/s3-file-system.driver.ts`
+- `packages/data/filesystem/src/node/drivers/__tests__/s3-file-system.driver.test.ts`
 
 ## Data models and migrations
 
@@ -176,7 +186,8 @@ Accepted.
 
 ## Docs
 
-`packages/data/media/README.md`, `packages/data/media/AGENTS.md`, ADR 0222 Enforcement, `.changeset/media-tus-uploads.md`.
+`packages/data/media/README.md`, `packages/data/media/AGENTS.md`, ADR 0222 Enforcement, `.changeset/media-tus-uploads.md`,
+`packages/data/filesystem/README.md`, `.changeset/filesystem-s3-large-move.md`.
 
 ## Complexity tracking
 

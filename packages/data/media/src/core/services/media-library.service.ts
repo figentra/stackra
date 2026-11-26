@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: `MediaLibrary`, the platform service of server-side media: issues signed uploads into a bucket
  *          (`createUpload`) and resumable tus uploads (`createResumableUpload`, started by the tus server only after
- *          `admitResumableUpload`), claims a finished upload for a bucket (`claim`), stores bytes the server made
- *          (`store`), and links a private file (`temporaryUrl`).
+ *          `admitResumableUpload`, its claim window renewed by `finishResumableUpload`), claims a finished upload for a
+ *          bucket (`claim`), stores bytes the server made (`store`), and links a private file (`temporaryUrl`).
  * Boundary: a client's bytes never pass through it (ADR 0222 decision 2); only `store` takes bytes, the server's own,
  *           under the same bucket rules a claim applies. The client puts its bytes to `uploads/<id>` on the
  *           `FileSystem` disk through a signed URL (`FileSystem.signUpload`), and the token itself carries only the id.
@@ -20,7 +20,11 @@
  *           hook) and names the id and media type to store it under, and its claim takes the recorded media type
  *           (a tus server on a local disk records none), refuses as incomplete a file still short of the recorded size
  *           (kept, as a local tus directory grows it in place) and as rejected a larger one, then drops the tus
- *           server's `uploads/<id>.info` with the record.
+ *           server's `uploads/<id>.info` with the record. A tus upload lives `resumableUploadExpiresIn` (the transfer
+ *           may take that long), not the signed-URL lifetime, and `finishResumableUpload` (the tus server's post-finish
+ *           hook) keeps it claimable for at least `uploadExpiresIn` after its last byte. A claim reads only the first
+ *           64 bytes of the file, from `readStream`, and moves it with the disk's own move, so a multi-gigabyte upload
+ *           never sits in the service's memory on a disk that streams and moves in the store (s3, gcs, local).
  * Runtime: isomorphic
  * Governing contract: ADR 0222 (decisions 1 to 3); ADR 0294 (decisions 16 and 17); ADR 0263 (classes are the tokens);
  *                     ADR 0465 (one object-storage port).
@@ -109,6 +113,29 @@ async function recordOf(disk: FileSystem, path: string): Promise<UploadRecord | 
   };
 }
 
+/**
+ * The first `HEAD` bytes of the file under `path` (fewer when it is shorter), read from its stream, which is then
+ * cancelled: a multi-gigabyte upload is never read whole for its signature.
+ */
+async function headOf(disk: FileSystem, path: string): Promise<Uint8Array> {
+  const reader = (await disk.readStream(path)).getReader();
+  const head = new Uint8Array(HEAD);
+  let filled = 0;
+  try {
+    while (filled < HEAD) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const taken = value.subarray(0, HEAD - filled);
+      head.set(taken, filled);
+      filled += taken.byteLength;
+    }
+  } finally {
+    // Stops the download (an S3 GET body, a file handle); a stream already done cancels as a no-op.
+    await reader.cancel().catch(() => undefined);
+  }
+  return head.subarray(0, filled);
+}
+
 /** Whether `record` is a tus upload's. */
 const isTus = (record: UploadRecord): record is TusRecord => "transfer" in record;
 
@@ -132,7 +159,7 @@ export class MediaLibrary extends Service {
 
   /**
    * @param disk - the store: the one `FileSystem` disk `filesystem.disk` picks.
-   * @param config - the upload lifetime (`uploadExpiresIn`).
+   * @param config - the upload lifetimes (`uploadExpiresIn`, `resumableUploadExpiresIn`) and the tus server.
    * @param clock - the time source of expiry.
    */
   constructor(disk: FileSystem, config: MediaConfig, clock: Clock) {
@@ -170,8 +197,9 @@ export class MediaLibrary extends Service {
 
   /**
    * A resumable tus upload of one file into `bucket`: records the bucket, the media type, the size and the expiry
-   * beside `uploads/<id>`, and answers the tus server's creation URL with the headers that start the upload. Works on
-   * every disk the tus server writes to (S3, R2, MinIO, GCS, a local directory): nothing is signed.
+   * (`resumableUploadExpiresIn` from now: the transfer may take that long) beside `uploads/<id>`, and answers the tus
+   * server's creation URL with the headers that start the upload. Works on every disk the tus server writes to (S3,
+   * R2, MinIO, GCS, a local directory): nothing is signed.
    *
    * @throws UploadRejectedError when the bucket does not accept `mediaType`, or `size` is not a whole number from 1 up
    *         to the bucket's `maxBytes`.
@@ -183,7 +211,7 @@ export class MediaLibrary extends Service {
   ): Promise<ResumableUpload<B>> {
     const key = this.admissibleKey(bucket, request);
     const id = mintUploadId();
-    const lifetime = this.config.uploadExpiresIn;
+    const lifetime = this.config.resumableUploadExpiresIn;
     const expiresAt = new Date(this.clock.now().getTime() + Duration.toMilliseconds(lifetime));
     const record: TusRecord = {
       bucket: key,
@@ -234,6 +262,30 @@ export class MediaLibrary extends Service {
   }
 
   /**
+   * Keeps the tus upload `id` the tus server just finished claimable for at least `uploadExpiresIn` from now (its
+   * post-finish hook calls it): a transfer that took most of `resumableUploadExpiresIn` still leaves the client a full
+   * claim window. Never shortens the expiry.
+   *
+   * @param id - the upload id the tus server stored it under (tus `MetaData` `upload`, set at admission).
+   * @throws UploadIncompleteError when no tus upload the tus server started waits under `id`.
+   * @throws UploadExpiredError when the upload's lifetime passed before it finished.
+   */
+  async finishResumableUpload(id: string): Promise<void> {
+    if (!Upload.schema.safeParse({ id }).success) throw UploadIncompleteError.create();
+    const recordPath = `${UPLOADS}${id}.json`;
+    const record = await recordOf(this.disk, recordPath);
+    if (record === null || !isTus(record) || !record.started) throw UploadIncompleteError.create();
+    const now = this.clock.now().getTime();
+    const expires = Date.parse(record.expires);
+    // An unreadable expiry is NaN, which fails the comparison: refused as expired.
+    if (!(expires >= now)) throw UploadExpiredError.create();
+    const window = now + Duration.toMilliseconds(this.config.uploadExpiresIn);
+    if (expires >= window) return;
+    const renewed: TusRecord = { ...record, expires: new Date(window).toISOString() };
+    await this.disk.write(recordPath, JSON.stringify(renewed), { contentType: "application/json" });
+  }
+
+  /**
    * Claims a finished upload for `bucket` and returns the stored file.
    *
    * @throws UploadIncompleteError when nothing waits under the token (never uploaded, already claimed, or not a token),
@@ -279,9 +331,7 @@ export class MediaLibrary extends Service {
         reason: mediaType === undefined ? "media_type" : "size",
       });
     }
-    // shortcut: reads the whole staged file (bounded by maxBytes, checked above) for its head; read a range once
-    // FileSystem has one
-    if (!contentMatches((await this.disk.read(staged)).subarray(0, HEAD), mediaType)) {
+    if (!contentMatches(await headOf(this.disk, staged), mediaType)) {
       await this.discard(staged, record, true);
       throw UploadRejectedError.create({ bucket: key, reason: "content" });
     }
