@@ -149,4 +149,8 @@ export const MUST_STAY_JSON: readonly (readonly [RegExp, string])[] = [
     /^tools\/scripts\/__tests__\/__fixtures__\/store\//,
     "recorded App Store Connect, Play and review API payloads, replayed byte-for-byte by store-http.mjs (ADR 0480)",
   ],
+  [
+    /^tools\/release\/registry-actions\.json$/,
+    "release.yml's registry maintenance reads it with JSON.parse in tools/scripts/registry-maintain.mjs, which has no dependencies and runs before any install, so it can read neither YAML nor comments (STA-2863)",
+  ],
 ];

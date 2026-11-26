@@ -409,6 +409,7 @@ test("checkJsonConfigs: a JSONC-capable *.json config is a finding; MUST_STAY_JS
       "tools/lines/fixture/input.json",
       "apps/mobile/capabilities.json",
       "workers/edge/edge.json",
+      "tools/release/registry-actions.json",
       "apps/docs/src/docs.json",
       "docs/content/meta.json",
       "docs/content/guides/advanced/meta.json",

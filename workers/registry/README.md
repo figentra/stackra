@@ -141,6 +141,12 @@ therefore names `"license": "SEE LICENSE IN LICENSE"` and ships a LICENSE file b
 (ECDSA P-256 over `<name>@<version>:<integrity>`); every publish, tag change, deprecation and token exchange is an
 `audit_events` row naming the workflow run.
 
+Deprecations and dist-tag moves come from the same workflow: its `registry_maintenance` dispatch applies the reviewed
+list in `tools/release/registry-actions.json` through `tools/scripts/registry-maintain.mjs` (plan, scan, apply; a tag
+moves only while it still names a listed bad version), after the owner approves `release` (STA-2863, the release
+runbook's "Deprecate a version or move a tag back"). `src/publish/__tests__/registry-maintain.test.ts` runs that script
+against this Worker.
+
 ## Settings
 
 Every limit is a Worker var in `wrangler.jsonc` (`src/settings/read-settings.ts` refuses a missing one):

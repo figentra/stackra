@@ -1,0 +1,36 @@
+{
+  "$comment": "Stackra file contract: Purpose: the reviewed registry actions release.yml's `registry_maintenance` dispatch applies to the Stackra registry: versions to deprecate (the message every install of them shows) and dist-tags to move back off a bad version. `deprecate[]`: packages (`@scope/name` or `@scope/*`, every published name of the scope that has the version), version (exact), message (`\"\"` undeprecates), issue, reason. `distTags[]`: packages, tag, from (the bad versions), to, issue, reason; a tag moves only while it still points at one of `from`, so the next release's `latest` is never moved back. Boundary: data only; `tools/scripts/registry-maintain.mjs` reads it (`plan`, `apply`, `scan`). Runtime: GitHub Actions (release.yml) and node. Governing contract: ADR 0453 decisions 6 and 7; ADR 0177 decision 6; ADR 0468; runbook release (Revert). Owner: release-operations. Secrets: forbidden.",
+  "deprecate": [
+    {
+      "packages": ["@stackra/*"],
+      "version": "0.33.1",
+      "message": "0.33.1 is a partial release: 20 @stackra packages (among them csp, iam, identity, settings and tenancy) were never published at 0.33.1, so many 0.33.1 installs fail with ETARGET. Install 0.33.0 of every @stackra package, or a later release.",
+      "issue": "STA-2863",
+      "reason": "99 of the 119 @stackra packages have 0.33.1 and 50 of those cannot install (a dependency further down has no 0.33.1); the fixed group (ADR 0177) means no complete 0.33.1 set exists, so every 0.33.1 is deprecated."
+    },
+    {
+      "packages": ["@stackra/container", "@stackra/data-maintenance", "@stackra/data-transfer"],
+      "version": "0.28.0",
+      "message": "@stackra/container 0.28.0 cannot build a class that injects Container (UnboundTokenError at boot), which breaks data-maintenance, data-transfer and the outbox maintenance actions. Use 0.29.0 or later; the 0.28.1 named in the changelog was never published.",
+      "issue": "STA-2863",
+      "reason": "STA-2561 (b4b6422): the fix shipped in 0.29.0. Every @stackra package depends on container, so its deprecation warns every 0.28.0 install; the two packages the changelog names carry it directly."
+    },
+    {
+      "packages": ["@stackra/*"],
+      "version": "0.10.0",
+      "message": "0.10.0 is a partial release: most @stackra packages were never published at 0.10.0, so it cannot install. Use 0.11.1 or later.",
+      "issue": "STA-2863",
+      "reason": "Only 41 @stackra packages have 0.10.0 (117 have 0.9.0), and 40 of them name a dependency that has no 0.10.0."
+    }
+  ],
+  "distTags": [
+    {
+      "packages": ["@stackra/*"],
+      "tag": "latest",
+      "from": ["0.33.1"],
+      "to": "0.33.0",
+      "issue": "STA-2863",
+      "reason": "latest names 0.33.1 for 99 packages and 0.33.0 for the 20 that never got 0.33.1, so `pnpm add` of two packages can mix versions or fail; 0.33.0 is the newest complete set. The next release moves latest forward as usual."
+    }
+  ]
+}
