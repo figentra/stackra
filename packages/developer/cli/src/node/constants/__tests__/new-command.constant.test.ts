@@ -5,13 +5,16 @@
  *          `catalog:stackra` versions, `--over` (writes only missing files, diffs authored ones, keeps runway.yaml and
  *          CHANGELOG.md), and the refusals of an unknown kind, a bad name or scope, a missing category or area, and
  *          a folder that exists without `--over`; a template kind (`app:docs`) rendered from tools/scaffold/templates.
- *          A service is complete (root module, its test, no tool config, `checkService` clean), `--data` adds the
+ *          A service is complete (the test of the root module gen writes, no authored root module, no tool config,
+ *          `checkService` clean, `encore.dev` pinned to the workspace's reference or `ENCORE_VERSION`, no
+ *          `"sideEffects": false`), `--data` adds the
  *          example module and `test:int`, `--over` never writes or diffs under `src/`, `--repo` into a folder with no
  *          workspace also writes the workspace root (and into an existing one writes none), the next line is
  *          `pnpm install && stackra gen && stackra test`, and the old `services/service` template and its kind are gone.
  * Boundary: test only; writes a throwaway workspace in the OS temp directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0282 (consequences); ADR 0294 (rule R12); ADR 0349; STA-1210.
+ * Governing contract: ADR 0022 (test placement); ADR 0282 (consequences); ADR 0294 (rule R12); ADR 0349; STA-1210;
+ *                     STA-2794.
  */
 import {
   existsSync,
@@ -28,6 +31,7 @@ import { join } from "node:path";
 import { checkService, type PackageManifest } from "@stackra/repo-checks/node";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
+import { ENCORE_VERSION } from "#node/constants/encore-version.constant";
 import { NEW_COMMAND } from "#node/constants/new-command.constant";
 import { SCAFFOLD_KINDS } from "#node/scaffold/constants/scaffold-kinds.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -118,14 +122,14 @@ describe("NEW_COMMAND", () => {
     expect(existsSync(join(root, "services/orders/runway.yaml"))).toBe(true);
   });
 
-  it("creates a complete service: root module, its test, no tool config, a clean checkService", async () => {
+  it("creates a complete service: the root module's test, no tool config, a clean checkService", async () => {
     const { code, output } = run(["service", "demo"], { area: "app", summary: "Demo." });
     expect(await code).toBe(0);
     const folder = join(root, "services/demo");
     const files = filesUnder(folder);
-    expect(files).toEqual(
-      expect.arrayContaining(["src/demo.module.ts", "src/__tests__/demo.module.test.ts"]),
-    );
+    expect(files).toEqual(expect.arrayContaining(["src/__tests__/demo.module.test.ts"]));
+    // Gen writes the root module (`#stackra/module`): an authored one that states nothing is `empty_module`.
+    expect(files).not.toContain("src/demo.module.ts");
     expect(files.filter((file) => /^(vitest|tsdown)[^/]*config/.test(file))).toEqual([]);
     const pkg = JSON.parse(
       readFileSync(join(folder, "package.json"), "utf8"),
@@ -182,6 +186,8 @@ describe("NEW_COMMAND", () => {
       dependencies: Record<string, string>;
     };
     expect(pkg.dependencies["@stackra/app"]).toBe("catalog:stackra");
+    // A fresh workspace names no Encore version: the CLI's default (ENCORE_VERSION) is pinned literally.
+    expect(pkg.dependencies["encore.dev"]).toBe(ENCORE_VERSION);
     expect(output()).toContain("wrote pnpm-workspace.yaml");
     // A second service finds the root and leaves it alone.
     const before = readFileSync(join(fresh, "pnpm-workspace.yaml"), "utf8");
@@ -210,6 +216,17 @@ describe("NEW_COMMAND", () => {
     expect(Object.keys(pkg.imports)).toEqual(expect.arrayContaining(["#src/*", "#assets/*"]));
     expect(pkg.exports).toEqual({ "./assets/*": "./assets/*" });
     expect(existsSync(join(root, "services/salon/assets/.gitkeep"))).toBe(true);
+  });
+
+  it("pins the workspace's reference encore.dev, the root package.json stackra.encore first (STA-2794)", async () => {
+    writeFileSync(join(root, "package.json"), '{ "stackra": { "encore": "1.60.1" } }\n');
+    expect(await run(["service", "orders"], { area: "app" }).code).toBe(0);
+    const pkg = JSON.parse(readFileSync(join(root, "services/orders/package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+      sideEffects?: unknown;
+    };
+    expect(pkg.dependencies["encore.dev"]).toBe("1.60.1");
+    expect(pkg.sideEffects).toBeUndefined();
   });
 
   it("names a member from --scope", async () => {

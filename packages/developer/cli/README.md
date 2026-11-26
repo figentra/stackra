@@ -243,8 +243,11 @@ existing `runway.yaml` (ports and sizes are authored), and writes nothing under 
 `--data`'s example module are written on create only), so `src/modules/` and an authored root module are never touched.
 
 A service is complete on creation: `stackra new service demo --area app --summary "Demo."`, then `pnpm install`, then
-`stackra gen` and `stackra test` in the member, with no hand edit and no tool config written. It gets the root module
-`src/<name>.module.ts` and one `createTestingModule` test. `--data` adds the database test peers, `@stackra/testing`, an
+`stackra gen` and `stackra test` in the member, with no hand edit and no tool config written. It authors no root module
+(gen writes `#stackra/module`; an empty `src/<name>.module.ts` is refused as `empty_module`) and gets one
+`createTestingModule` test of the generated one. It pins `encore.dev` to the workspace's reference version (root
+`package.json` `stackra.encore`, else the default catalog, else the CLI's own) and never declares `"sideEffects": false`,
+which lets Encore's bundler drop the generated Encore files' `import "./database"` (gen refuses it). `--data` adds the database test peers, `@stackra/testing`, an
 example module (`src/modules/notes/`: model, migration, a PGlite unit test, one `.int.test.ts`) and
 `"test:int": "stackra test --tier int"`; gen writes `.stackra/vitest.int.config.ts` for a member with an int test.
 `--repo <path>` names the workspace for every kind; a service written into a folder with no `pnpm-workspace.yaml` also

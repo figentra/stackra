@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `serviceTemplate`: the file list of a plain service (root module, its `createTestingModule`
- *          test, no tool config, no `test:int`) and of a `--data` one (the example module with model, migration, unit
+ * Purpose: unit tests of `serviceTemplate`: the file list of a plain service (no authored root module, the
+ *          `createTestingModule` test of the one gen writes, no tool config, no `test:int`, `encore.dev` pinned, no
+ *          `"sideEffects": false`) and of a `--data` one (the example module with model, migration, unit
  *          and `.int` tests, the database test peers, `@stackra/testing` and `test:int`), and `--summary` landing in
  *          `stackra.summary` only when given.
  * Boundary: test only; pure.
@@ -35,7 +36,7 @@ const manifest = (data: boolean) =>
   };
 
 describe("serviceTemplate", () => {
-  it("writes the member files, the root module and its test", () => {
+  it("writes the member files and the test of the root module gen writes, and no empty root module", () => {
     expect(paths(false)).toEqual([
       "package.json",
       "tsconfig.json",
@@ -43,18 +44,33 @@ describe("serviceTemplate", () => {
       "stackra.config.ts",
       "runway.yaml",
       "assets/.gitkeep",
-      "src/demo.module.ts",
+      ".gitignore",
       "src/__tests__/demo.module.test.ts",
       "README.md",
       "AGENTS.md",
       "CHANGELOG.md",
     ]);
-    expect(content(false, "src/demo.module.ts")).toContain(
-      "export class DemoModule extends Module({}) {}",
-    );
     const test = content(false, "src/__tests__/demo.module.test.ts");
     expect(test).toContain('from "@stackra/container/testing"');
+    expect(test).toContain('import { DemoModule } from "#stackra/module";');
     expect(test).toContain("await createTestingModule(DemoModule).compile()");
+  });
+
+  it("ignores every line encore run would append to the member .gitignore (STA-2794)", () => {
+    // `encore run` appends each of these that the app root's .gitignore lacks (Encore 1.58.8, daemon updateGitIgnore).
+    const lines = content(false, ".gitignore").split("\n");
+    for (const line of ["encore.gen.go", "encore.gen.cue", "/.encore", "/encore.gen"])
+      expect(lines).toContain(line);
+  });
+
+  it("pins encore.dev literally and never declares sideEffects false (STA-2794)", () => {
+    const pkg = manifest(false) as ReturnType<typeof manifest> & { sideEffects?: unknown };
+    expect(pkg.dependencies["encore.dev"]).toBe("1.58.8");
+    expect(pkg.sideEffects).toBeUndefined();
+    const pinned = serviceTemplate({ ...OPTIONS, encoreVersion: "1.60.0" }).find(
+      (file) => file.path === "package.json",
+    )?.content;
+    expect(JSON.parse(pinned ?? "{}")).toMatchObject({ dependencies: { "encore.dev": "1.60.0" } });
   });
 
   it("writes no tool config and no test:int without --data", () => {
@@ -66,7 +82,6 @@ describe("serviceTemplate", () => {
   it("adds the example module, the test peers and test:int with --data", () => {
     expect(paths(true)).toEqual(
       expect.arrayContaining([
-        "src/demo.module.ts",
         "src/modules/notes/models/note.model.ts",
         "src/modules/notes/database/migrations/0001-create-notes.migration.ts",
         "src/modules/notes/database/migrations/__tests__/0001-create-notes.migration.test.ts",
@@ -87,7 +102,13 @@ describe("serviceTemplate", () => {
       ]),
     );
     expect(Object.keys(pkg.dependencies)).toEqual(
-      expect.arrayContaining(["@stackra/database", "@stackra/model", "@stackra/validation"]),
+      expect.arrayContaining([
+        "@stackra/console",
+        "@stackra/database",
+        "@stackra/model",
+        "@stackra/validation",
+        "zod",
+      ]),
     );
   });
 

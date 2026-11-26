@@ -24,7 +24,8 @@
  *           `encore.app` at the member root from the root runway's `providers.encore.app` (`encore_app_missing` without
  *           it), and any run refuses an `encore.app` at the repository root (`encore_app_stray`, STA-1322).
  *           A service's full run also refuses a job queue its `runway.yaml` leaves out of an environment
- *           (`queue_unprovisioned`, STA-1727).
+ *           (`queue_unprovisioned`, STA-1727), and a package.json `"sideEffects": false` when it writes Encore files
+ *           (`encore_side_effects_dropped`, STA-2794): Encore's bundler would drop their `import "./database"`.
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
  *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
  *           leftover one.
@@ -406,6 +407,23 @@ export async function generate(
           "app.config.ts",
           "an authored app.config.ts sits at the member root, where gen writes the Expo config shim",
           "move its settings into the `expo` section of defineApp and delete the file",
+        ),
+      );
+  }
+  // The generated Encore files import `./database` (and their other peers) for its side effects; a package.json
+  // `"sideEffects": false` lets Encore's bundler drop that import, so the service boots with no database (STA-2794).
+  const encoreFolder = `${encoreServiceFolder(ir.member)}/`;
+  if (files.some((file) => file.path.startsWith(encoreFolder))) {
+    const { sideEffects } = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+      readonly sideEffects?: unknown;
+    };
+    if (sideEffects === false)
+      errors.push(
+        refusal(
+          "encore_side_effects_dropped",
+          "package.json",
+          `package.json declares "sideEffects": false, which lets Encore's bundler drop the side-effect imports of the generated ${encoreFolder} files (import "./database"), so the service boots with "no database url was provided"`,
+          'delete "sideEffects" from package.json: a service is bundled as an app, and the generated Encore files rely on side effects',
         ),
       );
   }

@@ -6,21 +6,28 @@
  *          the `./assets/*` export, `@stackra/app` and `@stackra/container` for the generated server entry and
  *          Encore app, the other `@stackra/*` at `options.stackraVersion`, scripts that call `stackra <task>`),
  *          tsconfig.json (the `service` preset), turbo.jsonc, `stackra.config.ts` with one `defineService({ area })`,
- *          `runway.yaml` (version 3, nothing required yet), `assets/.gitkeep`, README.md, AGENTS.md and CHANGELOG.md,
- *          the root module `src/<name>.module.ts` and its one passing test (`createTestingModule`). With `data`: the
- *          database test peers, `@stackra/testing`, `test:int`, and one example module `src/modules/notes/` (a model,
- *          its migration, a unit test on PGlite and one `.int.test.ts`). No `main.ts`, Encore file or tool config:
- *          gen derives and writes them, the vitest configs (unit and int) included.
+ *          `runway.yaml` (version 3, nothing required yet), `assets/.gitkeep`, a `.gitignore` holding the four lines
+ *          `encore run` would otherwise append (so it never leaves an untracked or changed file), README.md, AGENTS.md
+ *          and CHANGELOG.md, and one passing test of the root module gen writes (`#stackra/module`, booted by
+ *          `createTestingModule`). No authored root module: one that states nothing gen cannot derive is refused
+ *          (`empty_module`, ADR 0305 rule 15). `encore.dev` is a literal version (`options.encoreVersion`, else
+ *          `ENCORE_VERSION`), since gen writes an Encore service declaration for every service, and the package.json
+ *          has no `"sideEffects": false`: the generated Encore files import `./database` for its side effects, which
+ *          that flag lets Encore's bundler drop (STA-2794). With `data`: the database test peers, `@stackra/testing`,
+ *          `@stackra/console` and zod (the console entry and schemas gen writes), `test:int`, and one example module
+ *          `src/modules/notes/` (a model, its migration, a unit test on PGlite and one `.int.test.ts`). No `main.ts`,
+ *          Encore file or tool config: gen derives and writes them, the vitest configs (unit and int) included.
  * Boundary: pure; returns text and writes nothing. The area is the author's choice, passed in, never defaulted.
- *           Every `src/` file is create-only: `NEW_COMMAND` skips them under `--over`, so modules, the root module and
- *           tests are never touched.
+ *           Every `src/` file is create-only: `NEW_COMMAND` skips them under `--over`, so modules, an authored root
+ *           module and tests are never touched.
  * Runtime: node
  * Governing contract: ADR 0294 (rule R12); ADR 0295 (decisions 1, 5 and 9); ADR 0296 (decision 1: runway v3); ADR
  *                     0305 (rule 15); ADR 0091 and 0124 (Encore is generated); ADR 0282 (consequences); ADR 0349
- *                     (decision 2: product package names); STA-1210.
+ *                     (decision 2: product package names); STA-1210; STA-2794.
  */
 import { npmMetadataFor, turboTagsFor } from "@stackra/repo-checks/node";
 
+import { ENCORE_VERSION } from "#node/constants/encore-version.constant";
 import { serviceExampleModule } from "#node/functions/service-example-module.function";
 import type { TemplateFile } from "#node/types/template-file.type";
 import type { TemplateOptions } from "#node/types/template-options.type";
@@ -30,39 +37,26 @@ function aliasOf(folder: string): readonly string[] {
   return [`./${folder}/*`, `./${folder}/*.ts`, `./${folder}/*.tsx`, `./${folder}/*/index.ts`];
 }
 
-/** The root module, `src/<name>.module.ts`: states nothing yet, so gen derives the wiring. */
-function rootModule({ name, pascal, packageName }: TemplateOptions): string {
+/**
+ * The test of the root module: the `<Name>Module` gen writes (`#stackra/module`, since the service authors none)
+ * compiles under `createTestingModule`. `stackra test` runs gen first, so the module is on disk.
+ */
+function rootModuleTest({ pascal, packageName }: TemplateOptions): string {
   return [
     "/**",
     " * Stackra file contract:",
-    ` * Purpose: the root module of ${packageName}. Gen finds it by name, writes the runtime entry that boots it`,
-    " *          (`.stackra/entry/server.ts`) and the wiring of the feature modules under `src/modules/`.",
-    " * Boundary: states nothing gen can derive; no providers, no handlers.",
-    " * Runtime: node",
-    " * Governing contract: ADR 0294 (rule R12, decision 16); ADR 0295 (decision 7); ADR 0305 (rule 15).",
-    " */",
-    'import { Module } from "@stackra/container";',
-    "",
-    `/** The root module of the ${name} service. */`,
-    `export class ${pascal}Module extends Module({}) {}`,
-    "",
-  ].join("\n");
-}
-
-/** The test of the root module: it compiles under `createTestingModule`. */
-function rootModuleTest({ name, pascal, packageName }: TemplateOptions): string {
-  return [
-    "/**",
-    " * Stackra file contract:",
-    ` * Purpose: proves the root module of ${packageName} compiles under \`createTestingModule\`.`,
-    " * Boundary: unit tier; boots the module with the wiring gen registers in `.stackra/vitest.setup.ts`.",
+    ` * Purpose: proves the root module of ${packageName}, which gen writes as \`#stackra/module\`, compiles under`,
+    " *          `createTestingModule`.",
+    " * Boundary: unit tier; boots the module with the wiring gen registers in `.stackra/vitest.setup.ts`. An authored",
+    " *           root module (`src/<name>.module.ts`, for `exports` or `wrap`) replaces the generated one: import it",
+    " *           from `#src/` then.",
     " * Runtime: node (vitest)",
-    " * Governing contract: ADR 0022 (test placement); ADR 0263 (decision 12: testing modules).",
+    " * Governing contract: ADR 0022 (test placement); ADR 0263 (decision 12: testing modules); ADR 0305 (rule 15).",
     " */",
     'import { createTestingModule } from "@stackra/container/testing";',
     'import { describe, expect, it } from "vitest";',
     "",
-    `import { ${pascal}Module } from "#src/${name}.module";`,
+    `import { ${pascal}Module } from "#stackra/module";`,
     "",
     `describe(${pascal}Module, () => {`,
     '  it("compiles", async () => {',
@@ -107,7 +101,8 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
     license: "UNLICENSED",
     ...(inStackra && { author, repository }),
     type: "module",
-    sideEffects: false,
+    // No `"sideEffects": false`: the generated Encore files (`stackra-encore/<member>/*.ts`) import `./database` for
+    // its side effects, which that flag lets Encore's bundler drop (gen refuses it, `encore_side_effects_dropped`).
     imports: {
       "#src/*": aliasOf("src"),
       "#config/*": aliasOf("src/config"),
@@ -125,16 +120,23 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
       clean: "rm -rf dist coverage .turbo .stackra",
     },
     // Gen refuses an undeclared generated dependency: the server entry (`.stackra/entry/server.ts`) imports
-    // `@stackra/app` and the Encore app (`stackra-encore/<member>/http.ts`) imports `@stackra/container`.
+    // `@stackra/app`, the Encore app (`stackra-encore/<member>/http.ts`) imports `@stackra/container`, and the Encore
+    // service declaration (`stackra-encore/<member>/encore.service.ts`) imports `encore.dev`, pinned literally because
+    // Encore rewrites any other spec, `catalog:` included (ADR 0091).
     dependencies: {
       "@stackra/app": stackraVersion,
       "@stackra/container": stackraVersion,
       "@stackra/contracts": stackraVersion,
+      // With `data`: the console entry gen writes for @stackra/database's commands imports `@stackra/console`, and
+      // the schemas it compiles from the example module's shapes import zod (`schema_dependency_missing` without it).
       ...(data && {
+        "@stackra/console": stackraVersion,
         "@stackra/database": stackraVersion,
         "@stackra/model": stackraVersion,
         "@stackra/validation": stackraVersion,
       }),
+      "encore.dev": options.encoreVersion ?? ENCORE_VERSION,
+      ...(data && { zod: "catalog:" }),
     },
     devDependencies: {
       "@stackra/cli": stackraVersion,
@@ -215,7 +217,20 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
       ].join("\n"),
     },
     { path: "assets/.gitkeep", content: "" },
-    { path: `src/${name}.module.ts`, content: rootModule(options) },
+    {
+      // `encore run` appends each of these lines a member's `.gitignore` lacks, writing the file when there is none;
+      // with all four here it leaves the file alone, so `git status` stays clean after `stackra dev` (STA-2794).
+      path: ".gitignore",
+      content: [
+        "# What `encore run` generates in this service (the Encore app root). Encore appends any of these lines that is",
+        "# missing, so all four stay here; the rest of the generated output is ignored by the repository's .gitignore.",
+        "encore.gen.go",
+        "encore.gen.cue",
+        "/.encore",
+        "/encore.gen",
+        "",
+      ].join("\n"),
+    },
     { path: `src/__tests__/${name}.module.test.ts`, content: rootModuleTest(options) },
     ...(data ? serviceExampleModule(options) : []),
     {

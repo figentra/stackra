@@ -586,6 +586,11 @@ has no `queues.<name>` entry for a queue its job actions run on (`default` aside
 on a queue without its visibility timeout and dead-letter queue. A member with no runway file or no environment is not
 deployed, so nothing is refused (STA-1727).
 
+A run that writes the Encore service files (`stackra-encore/<member>/`) refuses `encore_side_effects_dropped` when the
+member's package.json declares `"sideEffects": false`: those files import `./database` for its side effects, and the
+flag lets Encore's bundler drop that import, so the service would boot with "no database url was provided". Delete the
+field; a service is bundled as an app (STA-2794).
+
 For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackra/encore/<member>/cron.ts` holds one
 `CronJob` per action whose `job` has a `cron` (its endpoint calls `SchedulerService.fire(<locked key>)`; ids by
 `cronJobId`, which `encoreCronJobs()` also calls) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`

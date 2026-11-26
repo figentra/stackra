@@ -19,6 +19,7 @@ export const SERVICE_CATALOGS: Readonly<Record<string, Readonly<Record<string, s
     "@testcontainers/postgresql": "12.2.0",
     "@types/node": "26.6.4",
     testcontainers: "12.2.1",
+    zod: "4.6.7",
   },
   build: { tsdown: "0.23.1", typescript: "7.0.2" },
   quality: { oxfmt: "0.71.0", oxlint: "1.86.0", vitest: "5.0.5" },

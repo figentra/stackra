@@ -383,3 +383,45 @@ describe("generate's shipped manifest check (STA-1308)", () => {
     expect(existsSync(join(root, ".stackra"))).toBe(false);
   });
 });
+
+/**
+ * A v3 service in its own fixture workspace (a `pnpm-workspace.yaml` and a root runway naming the Encore app), so gen
+ * writes its Encore files; `sideEffects` is the package.json field, left out when undefined.
+ */
+function encoreService(sideEffects: boolean | undefined): string {
+  const root = writeFixtureMember("ledger", {
+    "stackra.config.ts":
+      'import { ApiArea, defineService } from "@stackra/contracts";\n\nexport default defineService({ area: ApiArea.App });\n',
+  });
+  writeFileSync(join(dirname(root), "pnpm-workspace.yaml"), "packages:\n  - ledger\n");
+  writeFileSync(
+    join(dirname(root), "runway.yaml"),
+    "version: 3\nproviders:\n  encore:\n    app: fixture-app\n",
+  );
+  const path = join(root, "package.json");
+  const pkg = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+  if (sideEffects !== undefined) pkg["sideEffects"] = sideEffects;
+  writeFileSync(path, JSON.stringify(pkg));
+  return root;
+}
+
+describe("generate's Encore side effects (STA-2794)", () => {
+  it('refuses a service whose package.json says "sideEffects": false, and writes nothing', async () => {
+    const root = encoreService(false);
+    const result = await generate(root);
+    expect(result.errors.map((error) => `${error.code} ${error.file}`)).toEqual([
+      "encore_side_effects_dropped package.json",
+    ]);
+    expect(result.errors[0]?.fix).toContain('delete "sideEffects" from package.json');
+    expect(existsSync(join(root, "stackra-encore"))).toBe(false);
+  });
+
+  it("writes the Encore files of a service without the field, or with it true", async () => {
+    for (const sideEffects of [undefined, true]) {
+      const root = encoreService(sideEffects);
+      const result = await generate(root);
+      expect(result.errors).toEqual([]);
+      expect(result.changed.some((path) => path.startsWith("stackra-encore/ledger/"))).toBe(true);
+    }
+  });
+});
