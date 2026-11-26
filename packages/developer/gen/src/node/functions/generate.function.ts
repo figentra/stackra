@@ -27,7 +27,8 @@
  *           (`queue_unprovisioned`, STA-1727).
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
  *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
- *           leftover one.
+ *           leftover one. Beside them it writes `.stackra/migration-safety.json`, the ADR 0159 class of each
+ *           migration (`classifyMigrations`, STA-2866), and refuses a banned statement (`migration_banned`).
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
  *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
@@ -48,6 +49,7 @@ import type { StackraManifest } from "@stackra/contracts";
 
 import { DOCS_CONFIG_FILE } from "#core/constants/docs-config-file.constant";
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
+import { MIGRATION_SAFETY_FILE } from "#core/constants/migration-safety-file.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
@@ -55,6 +57,7 @@ import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
+import { emitMigrationSafety } from "#core/functions/emit-migration-safety.function";
 import { encoreMigrationSql } from "#core/functions/encore-migration-sql.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generateMember } from "#core/functions/generate-member.function";
@@ -163,7 +166,8 @@ const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
 /**
  * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
  * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
- * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed.
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro, and a leftover `.stackra/migration-safety.json`,
+ * which would class migrations that are gone. `--check` reports them as changed.
  */
 function staleMigrations(
   root: string,
@@ -177,8 +181,8 @@ function staleMigrations(
     .filter((name) => name.endsWith(".sql"))
     .map((name) => `${MIGRATIONS_DIR}/${name}`)
     .filter((path) => !kept.has(path));
-  if (compiled && !kept.has(BLUEPRINT_FILE) && existsSync(join(root, BLUEPRINT_FILE)))
-    stale.push(BLUEPRINT_FILE);
+  for (const file of [BLUEPRINT_FILE, MIGRATION_SAFETY_FILE])
+    if (compiled && !kept.has(file) && existsSync(join(root, file))) stale.push(file);
   if (!check) for (const path of stale) rmSync(join(root, path));
   return stale;
 }
@@ -314,7 +318,13 @@ export async function generate(
         })),
         ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
       ]
-    : migrations.files;
+    : [
+        ...migrations.files,
+        // The ADR 0159 class of each migration, which `runway evidence` reads (STA-2866).
+        ...(migrations.safety === undefined || migrations.files.length === 0
+          ? []
+          : [emitMigrationSafety(migrations.safety)]),
+      ];
   // Encore reads migrations only from a local folder, so a
   // service's compiled files are copied under its Encore service too. Encore runs each file in one transaction, so
   // an online step's copy builds in its plain form (ADR 0159, amendment of 2026-11-10).

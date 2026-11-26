@@ -6,24 +6,24 @@ description: "Writes the approvals bot's evidence for one deploy job."
 Writes the approvals bot's evidence for one deploy job.
 
 ```bash
-stackra runway evidence <environment> --target <target> --sha <sha> [--member <member>] [--repo <owner/repo>] [--json]
+stackra runway evidence <environment> --target <target> --sha <sha> [--member <member>] [--repo <owner/repo>] [--previous <file>] [--json]
 ```
 
-| Argument or option | Kind     | Meaning                                                               |
-| ------------------ | -------- | --------------------------------------------------------------------- |
-| `environment`      | argument | The runway environment the job deploys.                               |
-| `--target`         | option   | The destination target (`cloudflare-workers`, `encore-cloud`, `eas`). |
-| `--sha`            | option   | The full commit the job deploys.                                      |
-| `--member`         | option   | The member the job ships; default the whole target.                   |
-| `--repo`           | option   | `owner/repo`; default the root runway's `providers.github`.           |
+| Argument or option | Kind     | Meaning                                                                     |
+| ------------------ | -------- | --------------------------------------------------------------------------- |
+| `environment`      | argument | The runway environment the job deploys.                                     |
+| `--target`         | option   | The destination target (`cloudflare-workers`, `encore-cloud`, `eas`).       |
+| `--sha`            | option   | The full commit the job deploys.                                            |
+| `--member`         | option   | The member the job ships; default the whole target.                         |
+| `--repo`           | option   | `owner/repo`; default the root runway's `providers.github`.                 |
+| `--previous`       | option   | The `runway-migrations` file the previous deploy to this environment wrote. |
 
 ## What it does
 
 Reads the root runway and writes `runway-evidence-<environment>[-<member>].json` in the working folder: the
 `runway.evidence/v1` record the approvals bot reads ([0533](/adr/0533-approvals-bot-deployment-protection)). It holds
-the repo, environment, commit, target and member; `rollout`; and `destructive`, which stays `null` until gen classifies
-migrations. The bot treats any `null` as the owner's to approve, and ignores a file whose commit is not the
-deployment's.
+the repo, environment, commit, target and member; `rollout`; and `destructive` with `destructiveMigrations`. The bot
+treats any `null` as the owner's to approve, and ignores a file whose commit is not the deployment's.
 
 `rollout` is judged per target:
 
@@ -39,17 +39,37 @@ Every Worker steps through `[10, 50, 100]` in production by default; the driver 
 version back on a failure. `rolloutDetail` carries the kind, the steps and the reason for the owner's message; the bot
 decides on `rollout` only. `release.strategy` in the root runway is descriptive and no longer read.
 
+`destructive` is judged per target from gen's ADR 0159 migration classes ([0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules)):
+
+| Target and member                                                                                        | `destructive`                                                                                                         |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| A service target (`encore-cloud`, `aws-ecs`, `compose`, `helm`)                                          | from each shipped service's `.stackra/migration-safety.json`, `services/<member>` or every service without `--member` |
+| A client target (`eas`, `mintlify`, `npm`, `electron-release`)                                           | `false`: it ships no database                                                                                         |
+| A Workers member whose `wrangler.jsonc` has neither `migrations` nor `d1_databases`                      | `false`                                                                                                               |
+| A Workers member with Durable Object migrations or a D1 binding, or no config read; an undeclared target | `null`                                                                                                                |
+
+For a service target, gen classes every migration as `additive`, `online`, `contract` or `banned`; `contract` and
+`banned` are destructive. `destructive` is `true`, with the ids in `destructiveMigrations`, when a destructive migration
+is missing from the `--previous` file's keys. It is `false` when every service's classes match its compiled
+`.stackra/migrations` files and nothing destructive is new, or no service has a destructive migration at all. It is
+`null` when a safety file is missing, unreadable or stale (run `stackra gen`), or when a destructive migration exists
+and no `--previous` file says whether it shipped before.
+
+For a service target whose services are all classified, it also writes `runway-migrations-<environment>[-<member>].json`
+(`runway.migrations/v1`): the environment, the commit and the `<member>:<id>` key of every migration the job ships. The
+deploy workflow keeps it as an artifact and passes it as `--previous` to the next deploy to the same environment.
+
 ## What it prints
 
 The file name and the two answers; with `--json`, the whole record.
 
 ## Exit codes
 
-| Code | Means                                                     |
-| ---- | --------------------------------------------------------- |
-| 0    | Written.                                                  |
-| 1    | A runway file is invalid.                                 |
-| 2    | No `--target`, no full `--sha`, or no repository to name. |
+| Code | Means                                                                                                                          |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 0    | Written.                                                                                                                       |
+| 1    | A runway file is invalid.                                                                                                      |
+| 2    | No `--target`, no full `--sha`, no repository to name, or a `--previous` file that does not parse or is another environment's. |
 
 ## Where it runs
 
@@ -61,6 +81,7 @@ before any of its steps.
 
 ```bash
 stackra runway evidence production --target cloudflare-workers --member docs --sha <sha>
+stackra runway evidence production --target encore-cloud --sha <sha> --previous runway-migrations-production.json
 ```
 
 ## See also

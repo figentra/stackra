@@ -8,10 +8,11 @@
  *          check (`migration_import_forbidden` for a value, a type-only and a dynamic import, before the file is
  *          loaded), and the merged `Blueprint` augmentation of an own macro, through which a TypeScript program accepts
  *          the call and rejects a wrong argument, and `module_key_collision` for an own module with migrations whose
- *          key a made-up declared package's migrations need (STA-2161).
+ *          key a made-up declared package's migrations need (STA-2161), and the ADR 0159 classes it returns with a
+ *          `migration_banned` refusal for a data write (STA-2866).
  * Boundary: test only; writes under the OS temp folder and removes it. No workspace dependency is used.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305.
+ * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305; ADR 0159 decision 3 (STA-2866).
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -54,11 +55,14 @@ const BASE: Readonly<Record<string, string>> = {
     "    blueprint[stem.charAt(0).toLowerCase() + stem.slice(1)] = (...args) => new M().apply(blueprint, ...args);",
     "  }",
     "  const tables = [];",
-    "  new type().up({ create: (table, define) => { tables.push(table); define(blueprint); } });",
-    "  return {",
-    "    after: type.after ?? [],",
-    "    steps: tables.map((table) => ({ sql: ['create table ' + table], transactional: true, inverse: false })),",
-    "  };",
+    "  const raws = [];",
+    "  new type().up({",
+    "    create: (table, define) => { tables.push(table); define(blueprint); },",
+    "    sql: (statement) => { raws.push(statement); },",
+    "  });",
+    "  const steps = tables.map((table) => ({ sql: ['create table ' + table], transactional: true, inverse: false }));",
+    "  if (raws.length > 0) steps.push({ sql: raws, transactional: true, inverse: false });",
+    "  return { after: type.after ?? [], steps };",
     "};",
     "",
   ].join("\n"),
@@ -349,5 +353,41 @@ describe("compileMigrations", () => {
   it("writes no blueprint file when the service has no own macro", async () => {
     const { files } = await compileMigrations(host(), serviceIr(["shop"]));
     expect(files.some((file) => file.path.endsWith("blueprint.ts"))).toBe(false);
+  });
+
+  /** Each migration takes the highest class of its statements; runway reads the document gen writes from it. */
+  it("returns the ADR 0159 class of every migration (STA-2866)", async () => {
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-drop-note.migration.ts":
+        migration("DropNote", 'schema.sql("alter table ai.agents drop column note");'),
+    });
+    const { safety, errors } = await compileMigrations(root, serviceIr(["shop"]));
+    expect(errors).toEqual([]);
+    expect(
+      safety?.migrations.map((row) => [row.id, row.class, row.destructive, row.files]),
+    ).toEqual([
+      ["tenancy.0001_create_tenants", "additive", false, ["0001_tenancy_0001_create_tenants"]],
+      ["ai.0001_create_agents", "additive", false, ["0002_ai_0001_create_agents"]],
+      ["ai.0002_drop_note", "contract", true, ["0003_ai_0002_drop_note"]],
+    ]);
+  });
+
+  /** A data write is a queue job, never a migration: refused, and no file is written. */
+  it("refuses a migration that writes data with migration_banned (STA-2866)", async () => {
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts": migration(
+        "Backfill",
+        'schema.sql("update ai.agents set note = 1");',
+      ),
+    });
+    const { files, errors } = await compileMigrations(root, serviceIr(["shop"]));
+    expect(files).toEqual([]);
+    expect(errors.map((error) => [error.code, error.file, error.subject])).toEqual([
+      [
+        "migration_banned",
+        "@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts",
+        "ai.0002_backfill step 1 statement 1",
+      ],
+    ]);
   });
 });

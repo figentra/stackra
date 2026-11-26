@@ -9,7 +9,9 @@
  *          extends, STA-2006; a compile error from a macro no one supplied names those collected, `macroHint`), orders them across members (`orderMigrations`, `Migration({ after })`
  *          resolved there; `needs`: a module's dependencies and the owners of the macros a migration calls, recorded while
  *          it compiles) and returns the `.stackra/migrations` files (`emitMigrations`), plus, for a service with own
- *          macros, `.stackra/gen/blueprint.ts` (`emitBlueprintMacros`).
+ *          macros, `.stackra/gen/blueprint.ts` (`emitBlueprintMacros`), and the ADR 0159 class of every migration
+ *          (`classifyMigrations`, STA-2866): a banned statement outside a released migration is refused
+ *          (`migration_banned`).
  * Boundary: imports the migration and macro files (Node 24 strips their types; `loadSourceModule` strips those of a
  *           package installed from the registry into `.stackra/cache`) and the member's `@stackra/database`, resolved
  *           from the member root so the migration classes and the compiler share one kind registry. Writes nothing
@@ -34,6 +36,7 @@ import { pascalCase } from "@stackra/support";
 import { isMacroClass } from "#core/functions/is-macro-class.function";
 import { macroHint } from "#core/functions/macro-hint.function";
 import { checkAppendOnly } from "#core/functions/check-append-only.function";
+import { classifyMigrations } from "#core/functions/classify-migrations.function";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
@@ -44,6 +47,7 @@ import { orderMigrations } from "#core/functions/order-migrations.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MemberIR } from "#core/types/member-ir.type";
+import type { MigrationSafety } from "#core/types/migration-safety.type";
 import type { MigrationUnit } from "#core/types/migration-unit.type";
 import type { OwnMacro } from "#core/types/own-macro.type";
 import { dependencyPath } from "#node/functions/dependency-path.function";
@@ -146,7 +150,11 @@ const load = async (path: string): Promise<Record<string, unknown>> =>
 export async function compileMigrations(
   root: string,
   ir: MemberIR,
-): Promise<{ readonly files: readonly GeneratedFile[]; readonly errors: readonly GenError[] }> {
+): Promise<{
+  readonly files: readonly GeneratedFile[];
+  readonly errors: readonly GenError[];
+  readonly safety?: MigrationSafety;
+}> {
   const found: FoundMigration[] = [];
   const macroFiles: { readonly path: string; readonly owner: string }[] = [];
   const ownMacros: OwnMacro[] = [];
@@ -423,7 +431,10 @@ export async function compileMigrations(
   errors.push(...checkAppendOnly(ir, units));
   if (errors.length > 0) return { files: [], errors };
   const { ordered, errors: orderErrors } = orderMigrations(units);
-  return orderErrors.length > 0
-    ? { files: [], errors: orderErrors }
-    : { files: [...emitMigrations(ordered), ...blueprint], errors: [] };
+  if (orderErrors.length > 0) return { files: [], errors: orderErrors };
+  // Each statement's ADR 0159 class; a banned one is refused (STA-2866).
+  const { safety, errors: safetyErrors } = classifyMigrations(ordered);
+  return safetyErrors.length > 0
+    ? { files: [], errors: safetyErrors }
+    : { files: [...emitMigrations(ordered), ...blueprint], errors: [], safety };
 }

@@ -13,7 +13,8 @@
  *          config is `shim_authored`, and the shim gen wrote is not (STA-768); a v2 service (authored `src/main.ts`)
  *          gets no entry, tool config or encore.app and passes, while the same service in the v3 shape is still
  *          `generated_dependency_missing` (STA-344); a `.stackra/gen/blueprint.ts` left after the last own macro is gone
- *          is reported by a check run and deleted by a write run (STA-2062).
+ *          is reported by a check run and deleted by a write run (STA-2062), and so is a
+ *          `.stackra/migration-safety.json` left after the last migration is gone (STA-2866).
  * Boundary: test only; writes the shop fixture under `.cache/` and runs gen on it.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10 and 22); ADR 0295 (decision 5).
@@ -289,6 +290,20 @@ describe("generate's v2 services (authored src/main.ts, until STA-344)", () => {
     expect((await generate(root, { check: true })).changed).toContain(".stackra/gen/blueprint.ts");
     expect(existsSync(stale)).toBe(true);
     expect((await generate(root)).changed).toContain(".stackra/gen/blueprint.ts");
+    expect(existsSync(stale)).toBe(false);
+  });
+
+  /** runway would class migrations that are gone, so a leftover safety file goes with them. */
+  it("reports, then deletes, a migration-safety.json left over after the last migration is gone", async () => {
+    const root = exampleService(true);
+    const stale = join(root, ".stackra/migration-safety.json");
+    mkdirSync(dirname(stale), { recursive: true });
+    writeFileSync(stale, '{"schema":"stackra.migration-safety/v1","migrations":[]}\n');
+    expect((await generate(root, { check: true })).changed).toContain(
+      ".stackra/migration-safety.json",
+    );
+    expect(existsSync(stale)).toBe(true);
+    expect((await generate(root)).changed).toContain(".stackra/migration-safety.json");
     expect(existsSync(stale)).toBe(false);
   });
 
