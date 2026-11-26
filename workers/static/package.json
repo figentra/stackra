@@ -71,6 +71,6 @@
     "runtimes": [
       "node"
     ],
-    "summary": "Change this to publish a new kind of static file or JSON Schema at static.stackra.figentra.com; it has no Worker script, only a build step that lays out the assets."
+    "summary": "Change this to publish a new kind of static file or JSON Schema at static.stackra.figentra.com; its Worker script answers only /-/version (the deploy smoke's proof); a build step lays out the assets."
   }
 }
