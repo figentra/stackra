@@ -67,29 +67,36 @@ across three ADRs. Split out of STA-145 (readiness batch 8, item 8.3, parent STA
 
 - **AC-001**: THE system SHALL compute the earliest sunset of a deprecation as the next minor before 1.0, the next major
   from 1.0, and six months later for a date version (`earliestSunset`).
-- **AC-002**: IF a deprecation's terms are not `{ since, sunset, replacement? }` with since and sunset both versions or
-  both dates THEN THE system SHALL report `deprecation_invalid`; IF the sunset is earlier than the earliest sunset THEN
-  `deprecation_window_short`.
-- **AC-003**: WHEN `@Deprecated` is applied to a class of a deprecatable kind or a field of a shape kind, THE decorator
-  SHALL record its terms, readable through `Deprecated.on` and `Deprecated.members`.
-- **AC-004**: IF `@Deprecated` is called with terms that have a problem, or applied to a method, a class of no kind or a
-  kind outside `DEPRECATABLE_KINDS`, THEN THE decorator SHALL throw a TypeError on import.
-- **AC-005**: WHEN gen reads a member, THE source reader SHALL read `@Deprecated` on a class and a field and a trait's
-  `createTrait` `deprecated` option, and SHALL refuse bad terms with AC-002's codes or `deprecation_not_constant`.
-- **AC-006**: WHEN a member deprecates something, THE manifest SHALL list it under `deprecations` (kind, name, field,
+- **AC-002**: IF a deprecation's terms are malformed THEN THE window check SHALL report `deprecation_invalid`; well
+  formed is since, sunset and an optional replacement, with since and sunset both versions or both dates.
+- **AC-003**: IF a deprecation's sunset is earlier than its earliest sunset THEN THE window check SHALL report
+  `deprecation_window_short` and name the earliest sunset.
+- **AC-004**: WHEN the decorator marks a deprecatable class or a shape field THE decorator SHALL record its terms,
+  readable through `Deprecated.on` and `Deprecated.members`.
+- **AC-005**: IF the decorator is called with terms that have a problem THEN THE decorator SHALL throw a TypeError on
+  import that names the problem's code.
+- **AC-006**: IF the decorator marks a method or a class outside `DEPRECATABLE_KINDS` THEN THE decorator SHALL throw a
+  TypeError on import.
+- **AC-007**: WHEN gen reads a member THE source reader SHALL read `@Deprecated` on a class and a field and a trait's
+  `createTrait` `deprecated` option.
+- **AC-008**: IF gen reads deprecation terms that have a problem or are not constant THEN THE source reader SHALL refuse
+  them with the codes of AC-002 and AC-003 or `deprecation_not_constant`.
+- **AC-009**: WHEN a member deprecates something THE manifest SHALL list it under `deprecations` (kind, name, field,
   module, identity, since, sunset, replacement), carry `deprecated` on the action's or event's entry and
-  `deprecated: true` with `x-stackra-sunset` on the field's JSON Schema; WHEN it deprecates nothing, THE manifest SHALL
-  have no `deprecations` section.
-- **AC-007**: WHEN an action is deprecated, `openapi.json` SHALL mark its operation `deprecated` with
+  `deprecated: true` with `x-stackra-sunset` on the field's JSON Schema.
+- **AC-010**: WHEN a member deprecates nothing THE manifest SHALL have no `deprecations` section.
+- **AC-011**: WHEN an action is deprecated THE OpenAPI projection SHALL mark its operation `deprecated` with
   `x-stackra-sunset` and `x-stackra-replacement`.
-- **AC-008**: WHEN a consumed service deprecates an action or event, THE consumer's generated client SHALL carry a
+- **AC-012**: WHEN a consumed service deprecates an action or event THE consumer's generated client SHALL carry a
   `@deprecated` line on its descriptor, client member and event class.
-- **AC-009**: WHEN a class of a member injects, listens to, extends, names as partner or composes as a trait something
-  deprecated (own, a dependency's, a contracts-only dependency's or a consumed service's), THE full gen pass SHALL warn
-  `deprecated_use` once per thing with the replacement in the fix, unless the class itself is deprecated.
-- **AC-010**: WHEN the member's version reaches the sunset release of its own deprecation, THE full gen pass SHALL warn
-  `deprecation_past_sunset`; a prerelease or a dated sunset SHALL not.
-- **AC-011**: THE docs SHALL have one deprecation policy page that gathers ADR 0131 decision 4, ADR 0136 decision 4 and
+- **AC-013**: WHEN a class of a member uses something deprecated THE full gen pass SHALL warn `deprecated_use` once per
+  thing with the replacement in the fix. A use is an injection, a listened-to event, a base class, a partner or a
+  composed trait, and the deprecated thing is the member's own, a dependency's, a contracts-only dependency's or a
+  consumed service's.
+- **AC-014**: WHILE a class is itself deprecated THE full gen pass SHALL not warn it for what it uses.
+- **AC-015**: WHEN the member's version reaches the sunset release of its own deprecation THE full gen pass SHALL warn
+  `deprecation_past_sunset`, and not for a prerelease of that release or a dated sunset.
+- **AC-016**: THE docs SHALL have one deprecation policy page that gathers ADR 0131 decision 4, ADR 0136 decision 4 and
   ADR 0177 decision 6 and the codes above.
 
 ## Status history

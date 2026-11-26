@@ -49,15 +49,16 @@ reached its own sunset. One docs page states the policy.
 
 ## Correctness properties
 
-- **P-001**: the window formula has one implementation, called by the decorator and by gen — Validates: AC-001, AC-002
+- **P-001**: the window formula has one implementation, called by the decorator and by gen — Validates: AC-001, AC-002,
+  AC-003
 - **P-002**: a decorator never changes behaviour: it records frozen terms and throws only at definition — Validates:
-  AC-003, AC-004
+  AC-004, AC-005, AC-006
 - **P-003**: gen reads exactly what the decorator records, and refuses what the decorator would throw on — Validates:
-  AC-005
-- **P-004**: a member that deprecates nothing gets byte-identical manifests, OpenAPI and clients — Validates: AC-006,
   AC-007, AC-008
+- **P-004**: a member that deprecates nothing gets byte-identical manifests, OpenAPI and clients — Validates: AC-009,
+  AC-010, AC-011, AC-012
 - **P-005**: every warning names the deprecated thing, where it comes from, and the replacement or the removal —
-  Validates: AC-009, AC-010
+  Validates: AC-013, AC-014, AC-015
 
 ## Architecture overview
 
@@ -176,15 +177,15 @@ No data and no runtime path change. The terms are public API names, versions and
 
 ## Testing strategy
 
-- AC-001, AC-002: `earliest-sunset.function.test.ts`, `deprecation-problem.function.test.ts`,
+- AC-001, AC-002, AC-003: `earliest-sunset.function.test.ts`, `deprecation-problem.function.test.ts`,
   `sunset-reached.function.test.ts`.
-- AC-003, AC-004: `deprecated.decorator.test.ts`, `deprecatable-kinds.constant.test.ts`.
-- AC-005: `create-source-reader.function.test.ts` ("createSourceReader on deprecations").
-- AC-006: `deprecations-of.function.test.ts` and `generate.function.test.ts` (the full run writes the section and the
-  schema mark).
-- AC-007: `open-api-of.function.test.ts`. AC-008: `emit-clients.function.test.ts`.
-- AC-009, AC-010: `check-deprecations.function.test.ts` and the `generate` run's warning.
-- AC-011: the docs build and `stackra doc-standard`.
+- AC-004, AC-005, AC-006: `deprecated.decorator.test.ts`, `deprecatable-kinds.constant.test.ts`.
+- AC-007, AC-008: `create-source-reader.function.test.ts` ("createSourceReader on deprecations").
+- AC-009, AC-010: `deprecations-of.function.test.ts` and `generate.function.test.ts` (the full run writes the section
+  and the schema mark).
+- AC-011: `open-api-of.function.test.ts`. AC-012: `emit-clients.function.test.ts`.
+- AC-013, AC-014, AC-015: `check-deprecations.function.test.ts` and the `generate` run's warning.
+- AC-016: the docs build and `stackra doc-standard`.
 - Each behaviour test fails with its change reverted (shown in the PR).
 
 ## Rollout
