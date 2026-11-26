@@ -4,7 +4,7 @@ description: "Changesets, the version-packages pull request, publishing to the S
 icon: "package-check"
 ---
 
-{/* Stackra file contract: Purpose: the package release runbook: changesets, the version pull request, the trusted-publisher publish to the Stackra registry (release.yml calling runway-npm.yml), the prerelease and dry-run dispatches, the one-time owner setup, failures and recovery. Boundary: npm packages only; app store releases are Mobile release, the registry's own deploy is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 6 to 9, 16 and 18); ADR 0013; ADR 0025; ADR 0119; ADR 0174; ADR 0177 (decisions 4 to 7); STA-1575. */}
+{/* Stackra file contract: Purpose: the package release runbook: changesets, the version pull request, the trusted-publisher publish to the Stackra registry (release.yml calling runway-npm.yml), the prerelease and dry-run dispatches, the one-time owner setup, failures and recovery. Boundary: npm packages only; app store releases are Mobile release, the registry's own deploy is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 6 to 9, 16 and 18); ADR 0013; ADR 0025; ADR 0119; ADR 0174; ADR 0177 (decisions 4 to 7); STA-1575; STA-2863 (registry maintenance). */}
 
 <Note>
   Status 2026-10-29: live. `.github/workflows/release.yml` calls Runway's `npm` provider
@@ -13,9 +13,9 @@ icon: "package-check"
   ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)).
   Every package is `"private": false`. `0.1.0` is not released yet; prereleases go out under `next`.
   Not built: the packed-tarball smoke test (`publint`, `attw`, Node, Vite and Metro,
-  [0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 4) and a workflow for
-  deprecations and dist-tag moves. npmjs is not a target: the optional mirror of 0453 decision 16 is
-  off and not built.
+  [0177](/adr/0177-package-distribution-npmjs-and-keygen) decision 4). Deprecations and dist-tag
+  moves go through the `registry_maintenance` dispatch (below, STA-2863). npmjs is not a target: the
+  optional mirror of 0453 decision 16 is off and not built.
 </Note>
 
 ## The rules
@@ -91,10 +91,11 @@ tag change, deprecation and token exchange is an audit row naming the workflow r
 
 Actions → "Release" → Run workflow on `main`:
 
-| Input        | Does                                                                                                                                                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dry_run`    | packs every published package through the `.pnpmfile.mjs` hook and runs `pnpm -r publish --dry-run`; nothing leaves the runner                                                                                                        |
-| `prerelease` | publishes only `packages` (default: the five `*-config` presets) at `<base_version>-<dist_tag>.<run number>` under `dist_tag` (default `next`, never `latest`); the version is set on the runner only, nothing is committed or tagged |
+| Input                  | Does                                                                                                                                                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dry_run`              | packs every published package through the `.pnpmfile.mjs` hook and runs `pnpm -r publish --dry-run`; nothing leaves the runner                                                                                                        |
+| `prerelease`           | publishes only `packages` (default: the five `*-config` presets) at `<base_version>-<dist_tag>.<run number>` under `dist_tag` (default `next`, never `latest`); the version is set on the runner only, nothing is committed or tagged |
+| `registry_maintenance` | `plan`, `scan` or `apply` the reviewed registry actions in `tools/release/registry-actions.json` (next section); neither release job runs on such a dispatch                                                                          |
 
 A prerelease waits for the same approval and publishes through the same OIDC exchange. A re-run skips versions that
 are already there.
@@ -126,14 +127,56 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 | Tagging                          | Published, not tagged      | Re-run the failed job; it tags over an existing release safely                                                                                                                                                                                                                                                 |
 | SBOM job                         | Published, no SBOM         | Re-run the `sbom` job (it also writes `sha256sums.txt`; an integrity mismatch there is an incident, not a re-run)                                                                                                                                                                                              |
 | Wrong bump merged                | Tagged                     | Roll forward: add a changeset and release the correction                                                                                                                                                                                                                                                       |
+| Registry plan: `PROBLEM`         | Nothing written            | Fix `tools/release/registry-actions.json` on `main` (the line names the entry), then dispatch again                                                                                                                                                                                                            |
+| Registry maintenance stopped     | Some actions written       | Read the refusal (it names the route and the registry's error), fix the cause, dispatch `apply` again: what is already in place is skipped                                                                                                                                                                     |
 | Run `pending` with no jobs       | Nothing released           | An older run waiting on the `release` approval holds the `release-<ref>` concurrency group: reject that superseded approval (Review deployments, Reject), never approve it; the pending run then starts by itself. The same holds for every workflow whose job waits on an environment (`apply-observability`) |
+
+## Deprecate a version or move a tag back
+
+A published version is permanent, so a bad one is deprecated (every install of it prints the message) and, when
+`latest` names it, `latest` moves back to the last good version until the fix is released. Both writes need a publish
+token, which the registry gives only to `release.yml` on `main` in the `release` environment (0453 decisions 6 and 7),
+so they run as a dispatch of that workflow, never from a laptop.
+
+1. **Change the list by pull request.** `tools/release/registry-actions.json` holds every action: `deprecate[]`
+   (`packages` as `@scope/name` or `@scope/*`, an exact `version`, the `message` consumers see, `""` to undeprecate,
+   the `issue` and the `reason`) and `distTags[]` (`packages`, `tag`, `from`: the bad versions, `to`, `issue`,
+   `reason`). `@scope/*` covers every published name of the scope that has the version. The script refuses an unknown
+   key, a range instead of an exact version, a message over 500 characters and two entries that disagree.
+2. **Plan.** Run workflow with `registry_maintenance: plan`. The `Registry plan` job reads the live registry with no
+   token and lists, in its summary, every deprecation and tag move an `apply` would write, what is already in place,
+   and any problem (a named version that is not published, a `to` version that is missing). A problem fails the job.
+3. **Apply.** Run workflow with `registry_maintenance: apply`. The same plan runs first; the `Registry maintenance` job
+   then waits for the owner to approve `release` ([0468](/adr/0468-agents-deploy-dev-and-staging-production-waits-on-one-environment-approval)). Read the plan's summary before approving. The job
+   exchanges its ID token for one publish token per package, moves the tags, writes the deprecations, then plans again
+   and fails unless nothing is left. Every write is an `audit_events` row naming the run.
+4. **Check from a consumer.** `pnpm view @stackra/<name>@<version> deprecated --registry https://npm.stackra.figentra.com/`
+   prints the message; `pnpm view @stackra/<name> dist-tags` shows the tag.
+
+A tag moves only while it still points at one of its `from` versions (compare-and-set). Once the next release moves
+`latest` forward, a re-run of the same list leaves it there, so an entry can stay in the file as the record.
+`registry_maintenance: scan` lists every published version whose dependency tree names a `@stackra` version that was
+never published, and fails while one of them is neither deprecated nor in the file: run it after a release that
+stopped half way.
+
+The `@stackra-pro` scope is written only by `stackra-pro`'s own release workflow (its publisher row), so its
+deprecations go in that repository's copy of this list.
+
+### Known-bad versions
+
+The list in `tools/release/registry-actions.json` (STA-2863). The first `apply` waits for the owner's approval.
+
+| Version  | Packages                                         | Why                                                                                                                                                                                                                                | Consumers should take       |
+| -------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `0.33.1` | every `@stackra` package that has it (99)        | A partial release: 20 of the 119 packages (csp, iam, identity, settings, tenancy and others) were never published at 0.33.1, so 50 of the 0.33.1 versions fail with ETARGET. `latest` moves back from 0.33.1 to 0.33.0 for all 99. | 0.33.0, or the next release |
+| `0.28.0` | `container`, `data-maintenance`, `data-transfer` | `Container` could not be injected (`UnboundTokenError` at boot), which breaks data-maintenance, data-transfer and the outbox maintenance actions. The changelog's "take 0.28.1" names a version that was never published.          | 0.29.0 or later             |
+| `0.10.0` | every `@stackra` package that has it (41)        | A partial release: only 41 packages have 0.10.0 and 40 of them name a dependency that has no 0.10.0, so it cannot install.                                                                                                         | 0.11.1 or later             |
 
 ## Revert
 
 - **Before merging:** close the version pull request. The next push recreates it from the remaining changesets.
-- **After publishing:** roll forward with a fixed patch. Deprecating a version or moving `latest` back needs a
-  publish token, which only the release workflow can obtain; no workflow does either yet, so until one exists the
-  patch is the remedy.
+- **After publishing:** deprecate the version and, when `latest` names it, move `latest` back to the last good version
+  (the section above), then roll forward with a fixed patch. The next release moves `latest` forward again.
 - **A bad release record on GitHub:** mark it a prerelease or delete the release page; leave the tag.
 - **The workflow itself:** revert the workflow file on `main`; nothing else depends on it.
 
@@ -147,6 +190,8 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 | Publish only from the release workflow        | registry publisher rows and OIDC claim match | Live                         |
 | Publish checks, signatures, provenance        | `workers/registry`                           | Live                         |
 | `id-token: write` scope of the workflows      | `zizmor` in the Quality Gate                 | Live                         |
+| Deprecations and tag moves only from CI       | `registry_maintenance` dispatch, OIDC        | Live                         |
+| Uninstallable versions deprecated             | `registry_maintenance: scan`                 | Live, on dispatch            |
 | Packed-tarball smoke test                     | release job                                  | Not built                    |
 | Tag ruleset                                   | owner setting                                | Not checked                  |
 

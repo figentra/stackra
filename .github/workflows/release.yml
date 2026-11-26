@@ -15,11 +15,19 @@
 #          commit, no tag, no version PR, nothing pushed. The normal `release` job does not run on that dispatch.
 #          The prerelease job still waits on `release`, because the publisher row names that environment; it moves to an
 #          unprotected environment once the registry has a row for it (ADR 0468, plan).
+#          A third path, workflow_dispatch with `registry_maintenance` (STA-2863): applies the reviewed list in
+#          tools/release/registry-actions.json (deprecate a known-bad version, move a dist-tag back off it) through
+#          tools/scripts/registry-maintain.mjs. `plan` and `scan` are read-only and need no approval; `apply` plans in
+#          `registry-plan`, then waits on the `release` environment (the owner approves, ADR 0468) in
+#          `registry-maintenance`, the only job with the ID token the publisher row accepts for these writes (ADR 0453
+#          decisions 6, 7). A tag moves only while it still points at a listed bad version (compare-and-set), so a
+#          re-run after the next release never moves `latest` back. Neither release job runs on that dispatch.
 # Boundary: the registry URL is set only in this file (the release job's `registry`, the root runway's
 #           `providers.npm.registry`, and the prerelease job's REGISTRY); no member's publishConfig names one. Never
 #           npmjs, never Keygen (ADR 0453).
 # Runtime: GitHub Actions
-# Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group); ADR 0468.
+# Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group; decision 6,
+#                     deprecation); ADR 0468.
 # Owner: release-operations
 # Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
 #          decision A1), passed to the provider until the provider decrypts them from the sops scope
@@ -54,15 +62,23 @@ on:
         description: "Prerelease: the release the prerelease leads to (one fixed version, ADR 0177 PK5)"
         type: string
         default: 0.1.0
+      registry_maintenance:
+        description: >-
+          Registry maintenance only (tools/release/registry-actions.json): plan (read-only), scan (read-only: versions
+          that cannot install) or apply (deprecations and dist-tag moves, after the owner approves `release`)
+        type: choice
+        options: [none, plan, scan, apply]
+        default: none
 
 # One release run per ref and kind at a time: a second run starting before this one finishes
 # would version the same changesets twice. The version PR's squash merge publishes, and only its
 # own run can (the gate below), so it gets its own group: GitHub keeps one pending run per group,
 # and a later push to main cancelled a publish run that was pending in the shared group (0.27.0).
 # A publish run versions nothing, so it never races a `pr` run. workflow_dispatch has no
-# head_commit and stays in `pr`.
+# head_commit and stays in `pr`. A registry maintenance dispatch has its own group: an `apply` waiting for the owner
+# must never hold back, or have cancelled, the release run of a push to main.
 concurrency:
-  group: "release-${{ github.ref }}-${{ startsWith(github.event.head_commit.message, 'chore(release): version packages') && 'publish' || 'pr' }}"
+  group: "release-${{ github.ref }}-${{ (inputs.registry_maintenance != '' && inputs.registry_maintenance != 'none') && 'registry' || (startsWith(github.event.head_commit.message, 'chore(release): version packages') && 'publish' || 'pr') }}"
   cancel-in-progress: false
 
 # ADR 0019 D2: nothing by default; the job grants what the provider's jobs ask for.
@@ -75,7 +91,7 @@ jobs:
   # ever wrong, a publish from `release-pr` fails at the registry, whose publisher row names `release` (fail closed).
   gate:
     name: Release gate
-    if: ${{ !inputs.prerelease }}
+    if: ${{ !inputs.prerelease && (inputs.registry_maintenance == '' || inputs.registry_maintenance == 'none') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -108,8 +124,9 @@ jobs:
   release:
     name: Release
     needs: gate
-    # A prerelease dispatch runs the job below instead; a push has no inputs, so this is true for every push.
-    if: ${{ !inputs.prerelease }}
+    # A prerelease or registry maintenance dispatch runs a job below instead; a push has no inputs, so this is true for
+    # every push.
+    if: ${{ !inputs.prerelease && (inputs.registry_maintenance == '' || inputs.registry_maintenance == 'none') }}
     permissions:
       contents: write
       pull-requests: write
@@ -138,7 +155,7 @@ jobs:
   # registry has a publisher row for an unprotected `prerelease` environment (workers/registry migration, plan).
   prerelease:
     name: Prerelease
-    if: ${{ inputs.prerelease && github.ref == 'refs/heads/main' }}
+    if: ${{ inputs.prerelease && github.ref == 'refs/heads/main' && (inputs.registry_maintenance == '' || inputs.registry_maintenance == 'none') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: release
@@ -262,3 +279,71 @@ jobs:
             unset NODE_AUTH_TOKEN
             echo "::notice title=Published::${name}@${VERSION} (${DIST_TAG})"
           done < <(pnpm -r ls --depth -1 --json | jq -r '.[] | [.name, .path] | @tsv')
+
+  # STA-2863, registry maintenance: what tools/release/registry-actions.json would change, read-only and with no token
+  # (packuments and the catalogue are public). `plan` and `apply` print the plan to the job summary, so the owner sees
+  # exactly what an `apply` will write before approving the `release` environment below; `scan` lists every version
+  # whose dependency tree names a version that was never published, and fails while one is neither deprecated nor in
+  # the file. Node only: the script has no dependencies, so nothing is installed.
+  registry-plan:
+    name: Registry plan
+    if: ${{ inputs.registry_maintenance == 'plan' || inputs.registry_maintenance == 'scan' || inputs.registry_maintenance == 'apply' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # checkout
+    env:
+      COMMAND: ${{ inputs.registry_maintenance == 'scan' && 'scan' || 'plan' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+          sparse-checkout: |
+            tools/release
+            tools/scripts
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node
+
+      - name: Registry ${{ env.COMMAND }}
+        run: node tools/scripts/registry-maintain.mjs "$COMMAND" --registry https://npm.stackra.figentra.com/
+
+  # The writes. Only `apply` from main, after the plan above, and only in `release`: the publisher row names this file,
+  # refs/heads/main and that environment, so its ID token is the only one the registry exchanges for the per-package
+  # publish token that deprecate and dist-tag writes need (ADR 0453 decisions 6, 7), and the owner approves every run
+  # (ADR 0468). The script plans again against the live registry, applies, then plans once more and fails unless
+  # nothing is left: a tag that moved on since the plan (the next release) is left alone, never moved back.
+  registry-maintenance:
+    name: Registry maintenance
+    needs: registry-plan
+    if: ${{ inputs.registry_maintenance == 'apply' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read # checkout
+      id-token: write # the registry's OIDC exchange, one publish token per package
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false # nothing is pushed
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+          sparse-checkout: |
+            tools/release
+            tools/scripts
+
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node
+
+      # Each ID token and publish token is masked (::add-mask::) before anything else prints; none reaches a file.
+      - name: Apply the registry actions
+        run: node tools/scripts/registry-maintain.mjs apply --registry https://npm.stackra.figentra.com/
