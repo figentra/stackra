@@ -50,6 +50,7 @@ import { CreateCommand } from "#node/commands/create.command";
 import { CyclesCommand } from "#node/commands/cycles.command";
 import { DbMigrateCommand } from "#node/commands/db-migrate.command";
 import { DbRollbackCommand } from "#node/commands/db-rollback.command";
+import { DevSecretsInitCommand } from "#node/commands/dev-secrets-init.command";
 import { DocStandardCommand } from "#node/commands/doc-standard.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
 import { DuplicateExportsCommand } from "#node/commands/duplicate-exports.command";
@@ -105,6 +106,7 @@ export const COMMANDS: CliCommands = [
   ),
   DbMigrateCommand,
   DbRollbackCommand,
+  DevSecretsInitCommand,
   DB_SEED_COMMAND,
   DB_DIFF_COMMAND,
   SEED_PACK_COMMAND,

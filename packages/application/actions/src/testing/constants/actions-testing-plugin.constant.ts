@@ -4,8 +4,11 @@
  *          `.withExtensions([...])` to the builder, connects the extension slots to each compiled app (with that
  *          module's inline extensions only) and gives `run(...)` a pipeline over the app whose audit trail records each
  *          call's entry for `RunResult.audit` (forwarding to the app's own trail); it offers the "memory"
- *          `AccessControl` (`MemoryAccessControlDriver`) and "memory" `StepUpCheck` (`MemoryStepUpCheckDriver`, STA-340) a
- *          test picks with `.useDrivers("memory")`.
+ *          `AccessControl` (`MemoryAccessControlDriver`), "memory" `StepUpCheck` (`MemoryStepUpCheckDriver`, STA-340),
+ *          "memory" `RateLimitStore` (`MemoryRateLimitStoreDriver`) and "memory" `JobDispatcher`
+ *          (`MemoryJobDispatcherDriver`, os#256) a test picks with `.useDrivers("memory")`. No `ApprovalGate`: an action
+ *          that declares `approval` fails closed without the gate and its binding store (ADR 0509), so a test that runs
+ *          one binds `MemoryApprovalGateDriver.of(...)` and `MemoryApprovalBindingStoreDriver` itself.
  * Boundary: registers itself when this module loads; `./testing` is loaded only by vitest (gen's vitest config loads
  *           it for every member that depends on @stackra/actions). Imports `.`, `./contracts` and `@stackra/container/testing` only (ADR
  *           0269 decision 3).
@@ -15,11 +18,18 @@
 import { registerTestingPlugin } from "@stackra/container/testing";
 import type { TestingApp, TestingModuleBuilder, TestingPlugin } from "@stackra/container/testing";
 
-import { AccessControl, AuditTrail, StepUpCheck } from "#contracts/index";
-import { ActionPipeline, connectExtensions } from "#core/index";
+import {
+  AccessControl,
+  AuditTrail,
+  JobDispatcher,
+  RateLimitStore,
+  StepUpCheck,
+} from "#contracts/index";
+import { ActionPipeline, connectExtensions, MemoryRateLimitStoreDriver } from "#core/index";
 import type { InlineExtension, Resolver } from "#core/index";
 import { CURRENT_PIPELINE } from "#testing/constants/current-pipeline.constant";
 import { MemoryAccessControlDriver } from "#testing/drivers/memory-access-control.driver";
+import { MemoryJobDispatcherDriver } from "#testing/drivers/memory-job-dispatcher.driver";
 import { MemoryStepUpCheckDriver } from "#testing/drivers/memory-step-up-check.driver";
 import { RecordingAuditTrailDriver } from "#testing/drivers/recording-audit-trail.driver";
 
@@ -49,6 +59,17 @@ export const ACTIONS_TESTING_PLUGIN: TestingPlugin = {
       port: StepUpCheck,
       key: "actions.StepUpCheck",
       candidates: { memory: () => Promise.resolve(MemoryStepUpCheckDriver) },
+    },
+    // A `rateLimit` action and a queued call fail closed with no driver bound; a memory test gets in-process ones (os#256).
+    {
+      port: RateLimitStore,
+      key: "actions.RateLimitStore",
+      candidates: { memory: () => Promise.resolve(MemoryRateLimitStoreDriver) },
+    },
+    {
+      port: JobDispatcher,
+      key: "actions.JobDispatcher",
+      candidates: { memory: () => Promise.resolve(MemoryJobDispatcherDriver) },
     },
   ],
   builder: {

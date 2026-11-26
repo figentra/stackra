@@ -58,16 +58,38 @@ describe("emitToolConfigs", () => {
   });
   const content = (path: string): string => files.find((file) => file.path === path)?.content ?? "";
 
-  it("writes tsdown, vitest and the setup", () => {
+  it("writes tsdown, vitest, the setup and a service's typecheck tsconfig", () => {
     expect(files.map((file) => file.path)).toEqual([
       ".stackra/tsdown.config.ts",
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
+      ".stackra/tsconfig.typecheck.json",
       "vitest.config.ts",
     ]);
     expect(content(".stackra/tsdown.config.ts")).toContain(
       'const config: ReturnType<typeof library> = library({\n  "server": ".stackra/entry/server.ts",\n});\n\nexport default config;',
     );
+  });
+
+  it("types a service's program without the paths that exist for Encore, and a package's not at all", () => {
+    const typecheck = JSON.parse(content(".stackra/tsconfig.typecheck.json")) as Record<
+      string,
+      unknown
+    >;
+    expect(typecheck).toMatchObject({
+      extends: "../tsconfig.json",
+      // The preset's files from `.stackra/`, never a wildcard: tsc's `**` skips `.stackra/gen`.
+      include: [
+        "../src",
+        "../stackra.config.ts",
+        "../.stackra/gen",
+        "../.stackra/entry",
+        "../.stackra/*.config.ts",
+      ],
+      compilerOptions: { paths: {} },
+    });
+    const pkg = emitToolConfigs(LOYALTY_KIT_IR, { entries: [], registrations: false });
+    expect(pkg.map((file) => file.path)).not.toContain(".stackra/tsconfig.typecheck.json");
   });
 
   it("gives a package, not a service, the root tsdown shim", () => {
@@ -253,6 +275,7 @@ describe("emitToolConfigs", () => {
     expect(bare.map((file) => file.path)).toEqual([
       ".stackra/vitest.config.ts",
       ".stackra/vitest.setup.ts",
+      ".stackra/tsconfig.typecheck.json",
       "vitest.config.ts",
     ]);
     expect(bare[1]?.content).not.toContain('import "#stackra/registrations";');

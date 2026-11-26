@@ -94,6 +94,11 @@ export class IdentityConfig extends BaseIdentityConfig {
 }
 ```
 
+`IdentityConfig.sessionStore` (`memory` by default) and `IdentityConfig.approvalChallenges` (`memory` by default) pick the
+`SessionStore` and `AppApprovalChallenges` drivers where gen gives none, so a service boots with no identity config; a
+service's own session store is this field, while an app takes its flow's driver (`bff`, `pkce`) through gen. A product
+that ships its own challenge driver selects it by name in `approvalChallenges` in production.
+
 The flow per target picks the `SessionStore` driver gen wires for that target. A browser holds no client credential;
 a device is a public client whose `issuer` and `clientId` are public values that runway's `config.identity` layer sets
 per environment. No secret is ever in this configuration.

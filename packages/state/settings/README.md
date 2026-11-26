@@ -157,6 +157,14 @@ pack with one revision per group. `SettingsPromotableDriver` is settings' `Promo
 `diff(live, snapshot)` (with live's content hash) and `apply(live, diff, approver)`, which refuses
 `promotion_base_stale` when live moved since the review.
 
+## Choosing the drivers
+
+`SettingsConfig` (key `settings`, exported with `SettingsConfig$` and `SettingsConfigOptions` from `.`) picks them:
+`store` is the `SettingValueStore` driver (`memory` or `postgres`) and `floors` the `SettingFloorSource` driver
+(`market_pack`, `memory` or `registered_floor_guard`). Both are `memory` unless config says otherwise, so a service
+boots with no settings config; production sets `store: postgres` and `floors: registered_floor_guard` in its runway
+values.
+
 ## The stored values
 
 `settings.stored_settings` holds one row per group and holder: `group_key`, a node (`scope_id`, `scope_path` on

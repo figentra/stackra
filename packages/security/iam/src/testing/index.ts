@@ -9,3 +9,4 @@
  */
 export { actors } from "#testing/constants/actors.constant";
 export { IAM_TESTING_PLUGIN } from "#testing/constants/iam-testing-plugin.constant";
+export { TEST_SCOPE_ID } from "#testing/constants/test-scope-id.constant";

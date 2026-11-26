@@ -14,6 +14,12 @@ import { CatalogueModule } from "#stackra/module";
 import { EdgeNonceStore, EdgeSigningKeys } from "@stackra/app/contracts";
 import { CorsConfig, CsrfConfig, CsrfGuard, EdgeConfig, EdgeHeaderGuard, HttpConfig, OriginGuard } from "@stackra/app/server";
 import type { Wiring } from "@stackra/container";
+import { Clock } from "@stackra/contracts";
+import { Database, DatabaseConfig } from "@stackra/database";
+import { DatabaseHealthIndicatorDriver } from "@stackra/database/node";
+import { EventBus } from "@stackra/events";
+import { InboxDriver } from "@stackra/outbox/contracts";
+import { InboxService } from "@stackra/outbox/node";
 import { QueueConfig, QueueHealthIndicatorDriver } from "@stackra/queue";
 import { QueueDriver } from "@stackra/queue/contracts";
 
@@ -31,16 +37,28 @@ export const wiring = {
     { module: "catalogue", kind: "service", provide: EdgeHeaderGuard, deps: [EdgeSigningKeys, EdgeNonceStore] },
     { module: "catalogue", kind: "service", provide: OriginGuard, deps: [CorsConfig, CsrfConfig] },
     { module: "catalogue", kind: "service", provide: CsrfGuard, deps: [CsrfConfig] },
+    { module: "catalogue", kind: "service", provide: DatabaseHealthIndicatorDriver, deps: [Database, DatabaseConfig] },
     { module: "catalogue", kind: "service", provide: QueueHealthIndicatorDriver, deps: [QueueDriver, QueueConfig] },
+    { module: "catalogue", kind: "service", provide: InboxService, deps: [InboxDriver, EventBus, Database, Clock] },
   ],
   config: [
     { key: "app.edge", provide: EdgeConfig },
     { key: "app.cors", provide: CorsConfig },
     { key: "app.csrf", provide: CsrfConfig },
     { key: "app.http", provide: HttpConfig },
+    { key: "database", provide: DatabaseConfig },
     { key: "queue", provide: QueueConfig },
   ],
   drivers: [
+    {
+      port: InboxDriver,
+      key: "outbox.InboxDriver",
+      candidates: {
+        "memory": () => import("@stackra/outbox").then((m) => m.MemoryInboxDriver),
+        "postgres": () => import("@stackra/outbox/node").then((m) => m.PostgresInboxDriver),
+      },
+      deps: { "postgres": [Database] },
+    },
   ],
   replaces: [
   ],

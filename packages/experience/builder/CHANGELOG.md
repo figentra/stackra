@@ -1,5 +1,36 @@
 # @stackra/builder
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/rules@0.33.1
+  - @stackra/collaboration@0.33.1
+  - @stackra/workflow@0.33.1
+  - @stackra/experience@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [628b60d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [44ca288]
+  - @stackra/contracts@0.33.0
+  - @stackra/rules@0.33.0
+  - @stackra/collaboration@0.33.0
+  - @stackra/workflow@0.33.0
+  - @stackra/experience@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
 ## 0.32.0
 
 ### Patch Changes

@@ -97,6 +97,36 @@ describe("deriveEndpoint", () => {
     ).toBeDefined();
   });
 
+  it("routes an API-key caller, derived or written, and still none for a service alone", () => {
+    expect(
+      deriveEndpoint({
+        key: "usage_event.record_batch",
+        kind: "action",
+        inputFields: [],
+        actors: ["api_client", "service"],
+        area: "public",
+      }),
+    ).toEqual({ method: "POST", path: "/public/usage-events/record-batch", derived: true });
+    expect(
+      deriveEndpoint({
+        key: "usage_event.record_batch",
+        kind: "action",
+        inputFields: [],
+        actors: ["api_client"],
+        area: "public",
+        endpoint: { method: "post", path: "/public/usage" },
+      }),
+    ).toEqual({ method: "POST", path: "/public/usage", derived: false });
+    expect(
+      deriveEndpoint({
+        key: "usage_event.record_batch",
+        kind: "action",
+        inputFields: [],
+        actors: ["service"],
+      }),
+    ).toBeUndefined();
+  });
+
   it("routes an anonymous-only call, which the emitter answers with auth: false", () => {
     expect(
       deriveEndpoint({

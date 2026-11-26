@@ -8,10 +8,12 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 export { AwsSecretsManagerConfig } from "#config/aws-secrets-manager.config";
+export { SecretsConfig } from "#config/secrets.config";
 export { SignerConfig } from "#config/signer.config";
 export { Config } from "#core/bases/config.base";
 export { AWS_SECRETS_MANAGER_CONFIG_SCHEMA as AwsSecretsManagerConfig$ } from "#core/constants/aws-secrets-manager-config-schema.constant";
 export { env } from "#core/constants/env.constant";
+export { SECRETS_CONFIG_SCHEMA as SecretsConfig$ } from "#core/constants/secrets-config-schema.constant";
 export { SIGNER_CONFIG_SCHEMA as SignerConfig$ } from "#core/constants/signer-config-schema.constant";
 export { Secret } from "#core/decorators/secret.decorator";
 export { EphemeralSignerDriver } from "#core/drivers/ephemeral-signer.driver";
@@ -22,6 +24,7 @@ export { buildConfig } from "#core/functions/build-config.function";
 export { configKey } from "#core/functions/config-key.function";
 export { hydrateEnv } from "#core/functions/hydrate-env.function";
 export { AwsSecretsManagerOptions } from "#core/schemas/aws-secrets-manager-options.schema";
+export { SecretsOptions } from "#core/schemas/secrets-options.schema";
 export { SignerOptions } from "#core/schemas/signer-options.schema";
 export type { BuildFacts } from "#core/types/build-facts.type";
 export type { ConfigClass } from "#core/types/config-class.type";

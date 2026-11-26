@@ -8,7 +8,7 @@
  *          resolver (`connectVisibilityFilter`, so reads AND the bound `VisibilityFilter`'s conditions, writes stamp
  *          the call's actor and the call's time zone is read; ADR 0333 decision 4, STA-2044),
  *          `PostgresDatabaseDriver.connect` with `databaseUrl()`, the url the service's Encore
- *          `database` provides (`emitEncoreDatabase`; boot never imports `.stackra/encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
+ *          `database` provides (`emitEncoreDatabase`; boot never imports `stackra-encore`, STA-1652), the read replicas of `DATABASE_REPLICA_URLS` (comma-separated, none when unset),
  *          the bound `DatabaseConfig`'s session `timeouts` and `pool` (its `max` replaced by `DATABASE_POOL_MAX`, the
  *          instance's share of the runway `poolBudget`, ADR 0473) and the subscribers: the legal-hold one, the
  *          `StampSubscriber`, the `AppendOnlySubscriber` (stackra-256), the trait subscribers of `traitSubscribers`, the `EncryptedFieldsSubscriber` over the bound `FieldCipher` and, when bound, the `KeyProvider` its blind indexes need (when a model, own or a declared package's, has
@@ -43,6 +43,7 @@
 import type { StackraManifest } from "@stackra/contracts";
 
 import { generatedHeader } from "#core/functions/generated-header.function";
+import { hasEncryptedFields } from "#core/functions/has-encrypted-fields.function";
 import { inboxProducersOf } from "#core/functions/inbox-producers-of.function";
 import { traitSubscribers } from "#core/functions/trait-subscribers.function";
 import { usesDatabase } from "#core/functions/uses-database.function";
@@ -119,15 +120,7 @@ export function emitBoot(ir: MemberIR, built?: StackraManifest): string | undefi
     ir.dependencies.some((dependency) => dependency.package === name);
   const database = usesDatabase(ir);
   // A model with `HasEncryptedFields` (own or a declared package's) is sealed by the subscriber, never written in clear.
-  const encrypted =
-    ir.classes.some(
-      (declared) =>
-        declared.kind === "model" &&
-        declared.traits.some((trait) => trait.name === "HasEncryptedFields"),
-    ) ||
-    ir.dependencies.some(({ manifest }) =>
-      (manifest.models ?? []).some((model) => model.traits.includes("HasEncryptedFields")),
-    );
+  const encrypted = hasEncryptedFields(ir);
   // Trait subscribers (`TreeSubscriber`, ...) run before the encrypted fields are sealed.
   const traits = traitSubscribers(ir);
   const outbox = uses("@stackra/outbox");

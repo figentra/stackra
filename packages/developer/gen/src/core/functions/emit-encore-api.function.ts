@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreApi`, a service's Encore endpoints (`.stackra/encore/<member>/api.ts`): one `api.raw()` per own
+ * Purpose: `emitEncoreApi`, a service's Encore endpoints (`stackra-encore/<member>/api.ts`): one `api.raw()` per own
  *          action or query whose manifest entry has an endpoint (that entry's method and path) and one per own
  *          controller (any method, its `path`, a trailing `/*` as Encore's `/*rest`), each `expose: true` and
  *          `auth: false` to Encore, each calling `answerCall` of `./http`. That helper reads the body once under the
@@ -34,6 +34,7 @@ import { camelCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { ownClass } from "#core/functions/own-class.function";
@@ -54,7 +55,7 @@ const RESERVED = ["ActionPipeline", "answerCall", "api", "app", "requestCallOpti
  * @param ir - the member read by discovery.
  * @param manifest - the manifest built from `ir`, whose entries carry the derived endpoints.
  * @example
- * emitEncoreApi(ir, manifest)?.path; // ".stackra/encore/shop/api.ts"
+ * emitEncoreApi(ir, manifest)?.path; // "stackra-encore/shop/api.ts"
  */
 export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): GeneratedFile | undefined {
   if (ir.layout !== "service") return undefined;
@@ -189,7 +190,7 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
     runtime: "node",
   });
   return {
-    path: `.stackra/encore/${ir.member}/api.ts`,
+    path: `${encoreServiceFolder(ir.member)}/api.ts`,
     content: [
       header,
       ...encoreDatabaseImport(ir),
