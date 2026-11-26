@@ -6,7 +6,8 @@
  *          `timeouts` every runtime session starts with, the `pool` of one instance (ADR 0473), the
  *          `readYourWrites` window a replica query stays on the primary after its caller's write (STA-1504), and the
  *          `region` key of the deployment the database serves (stackra-310), and the `queries` guard: the slow-statement
- *          threshold, the repeat limit and the strict switch (stackra-282).
+ *          threshold, the repeat limit and the strict switch (stackra-282), and `replicaReads`: the default replica lag,
+ *          the lag reading's reuse and where queries read by configuration (STA-1464).
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults and a host's generated `DatabaseConfig$` can `.extend` it. The defaults equal
  *           `DatabaseConfigOptions`' initializers (tested). No credential: the connection URL is the process's
@@ -23,6 +24,7 @@ import { DATABASE_DRIVERS } from "#core/constants/database-drivers.constant";
 import { DATABASE_POOL_SCHEMA } from "#core/constants/database-pool-schema.constant";
 import { HEALTH_CHECK_SCHEMA } from "#core/constants/health-check-schema.constant";
 import { QUERY_GUARD_SCHEMA } from "#core/constants/query-guard-schema.constant";
+import { REPLICA_READS_SCHEMA } from "#core/constants/replica-reads-schema.constant";
 import { SESSION_TIMEOUTS_SCHEMA } from "#core/constants/session-timeouts-schema.constant";
 
 /** The shipped `DatabaseConfig$`. */
@@ -37,4 +39,5 @@ export const DATABASE_CONFIG_SCHEMA = z.object({
     .regex(/^([a-z][a-z0-9-]*)?$/)
     .default(""),
   queries: QUERY_GUARD_SCHEMA,
+  replicaReads: REPLICA_READS_SCHEMA,
 });

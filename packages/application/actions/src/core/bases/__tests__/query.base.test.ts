@@ -3,7 +3,7 @@
  * Purpose: unit and type tests of `Query`: the called form records the `query` kind with `tool` on by default, keeps
  *          constructor dependencies, takes a cache profile and a `GET` override, and refuses a non-GET endpoint, a bad
  *          cache duration, a `per` outside `CacheScope` or a non-class in `invalidateOn`; records a replica and refuses a malformed one; records `reads` and refuses a value
- *          other than primary or replica; records `analytics` (true or an AnalyticsEvent) and refuses another class; a bare
+ *          other than primary or replica; records `maxLag` as a canonical duration and refuses another value; records `analytics` (true or an AnalyticsEvent) and refuses another class; a bare
  *          `extends Query` fails to compile.
  * Boundary: test only; the options are the template's KPI and storefront queries.
  * Runtime: node (vitest)
@@ -115,6 +115,18 @@ describe("Query", () => {
     expect(() => replicated({ ...replica, window: "a month" })).toThrow(RangeError);
     expect(() => replicated({ ...replica, limit: 0 })).toThrow(RangeError);
     expect(() => replicated({ ...replica, scope: "legal_entity_id" })).toThrow(TypeError);
+  });
+
+  it("records maxLag as a canonical duration and refuses one that is not a duration (STA-1464)", () => {
+    expect(kindOf(Query({ ...base, reads: "replica", maxLag: "2s" }))?.options).toMatchObject({
+      reads: "replica",
+      maxLag: "PT2S",
+    });
+    expect(kindOf(Query({ ...base, maxLag: "PT0.5S" }))?.options).toMatchObject({
+      maxLag: "PT0.5S",
+    });
+    expect(kindOf(Query(base))?.options).not.toHaveProperty("maxLag");
+    expect(() => Query({ ...base, reads: "replica", maxLag: "soon" })).toThrow(/maxLag/);
   });
 
   it("records reads and refuses another value (STA-1504)", () => {

@@ -110,6 +110,8 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
 - `reads: "replica"` routes only a query's `handle` (inside the cache step) through `ReplicaReads`; an action never
   reads a replica. The window opens after the unit of work committed (never for a refusal or a replay), keyed by
   (scope, actor); `lastWriteAt` is caller-sent and may only keep reads on the primary, never move them off it.
+  Where a query reads is `ReplicaReads.reads(query)` (configuration over the declaration, STA-1464); the pipeline asks
+  only for a query, and the replica visit carries `maxLag` and the last write so the driver can still pick the primary.
 - `QueryBudget` wraps only `handle` (inside the replica routing), never the steps around it; a driver may warn or, in
   strict mode, fail after `handle`, so the unit of work rolls back. `ctx.memo` answers live in the call's state only;
   never move them to a module or instance field, which would share answers across callers and scopes.

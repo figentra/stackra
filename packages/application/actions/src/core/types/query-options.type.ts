@@ -3,13 +3,14 @@
  * Purpose: `QueryOptions`, what `Query({...})` takes: the written key, the actors, the permission when the stem
  *          differs, the API area, interceptors, the surfaces (`endpoint`, `tool`, `intent`), the `cache` profile and the
  *          offline `replica`, and `reads`: whether `handle` reads a database replica (with the caller's read-your-writes
- *          window kept by `ReplicaReads`), and the analytics event each call writes (`analytics`), and the most statements a
- *          call may run (`queryBudget`).
+ *          window kept by `ReplicaReads`) and the most replica lag it tolerates (`maxLag`), and the analytics event each call
+ *          writes (`analytics`), and the most statements a call may run (`queryBudget`).
  * Boundary: a type only. A query changes no state, so it takes no preconditions, idempotency, job or offline option;
  *           `tool` is on by default (queries are MCP tools under the caller's permissions).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 16, 20 and 21); ADR 0305 (rules 28 and 31); ADR 0155 (queries are MCP tools);
- *                     ADR 0338 (decision 3: replicas); ADR 0057 (decision 6: read replica), STA-1504 (`reads`).
+ *                     ADR 0338 (decision 3: replicas); ADR 0057 (decision 6: read replica), STA-1504 (`reads`), STA-1464
+ *                     (`maxLag`, the lag guard).
  */
 import type { AnyClass } from "@stackra/container";
 import type { ActorKind, ApiArea } from "@stackra/contracts";
@@ -73,6 +74,13 @@ export interface QueryOptions {
    * offline `replica` above.
    */
   readonly reads?: "primary" | "replica";
+
+  /**
+   * The most replica lag the query tolerates whenever it reads a replica (by its `reads`, or because configuration moves
+   * it there), as a duration (`"2s"`): a replica further behind the primary is not used for it, and the call reads the
+   * primary. The `ReplicaReads` driver's default when absent (`DatabaseConfig.replicaReads.maxLag`).
+   */
+  readonly maxLag?: string;
 
   /**
    * The most database statements one call's `handle` may run (`QueryBudget` counts them): above it the call is

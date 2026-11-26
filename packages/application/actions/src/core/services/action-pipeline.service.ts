@@ -15,8 +15,9 @@
  *          the request origin (`ctx.origin`, also on the descriptor, so the audit entry carries it) and an action's
  *          integration event without a model (`ctx.publish`, through the outbox in its unit of work; ADR 0456), and
  *          the visitor's consent (`ctx.consent()`: the call's signed snapshot verified once through `ConsentCheck`;
- *          ADR 0472), and a `reads: "replica"` query's `handle` on a replica outside the caller's read-your-writes
- *          window (`ReplicaReads`, opened by each committed action), and a call's `analytics` event
+ *          ADR 0472), and a query's `handle` on a replica when `ReplicaReads` says it reads one (its `reads`, or the
+ *          configured override for its key or area), outside the caller's read-your-writes window (opened by each
+ *          committed action) and within its `maxLag` (the driver's lag guard), and a call's `analytics` event
  *          (`analytics.tracked`, through the outbox when its consent grants `analytics`). Every call and proposal runs in one `Tracer` span when a tracer is bound, named
  *          `<kind> <key>` and carrying the ADR 0147 attribute names (ids and codes only, never input or output). `handle` runs inside
  *          `QueryBudget` when one is bound (the call's statements counted against its `queryBudget`), and `ctx.memo`
@@ -68,7 +69,8 @@
  *                     refusal's back-off details, the `rate_limited` usage event); ADR 0305 (rule 31, as amended
  *                     2026-10-28: the query cache step, STA-1445); ADR 0472 (decision 3: `ctx.consent`, no new step,
  *                     never a refusal by itself); ADR 0147 (decision 3: the span attributes, no values) and ADR 0184
- *                     (decision 1: OpenTelemetry), STA-1513; ADR 0057 (decision 6: read replica), STA-1504; ADR 0216
+ *                     (decision 1: OpenTelemetry), STA-1513; ADR 0057 (decision 6: read replica), STA-1504 and STA-1464
+ *                     (the declaration by configuration, `maxLag`); ADR 0216
  *                     (decision 1: analytics is its own stream), STA-1512; data-layer gaps scale-performance 8 and
  *                     caching 13 (STA-1400: `QueryBudget` around `handle`, `ctx.memo`).
  */
@@ -148,6 +150,7 @@ import type { CallConsent } from "#contracts/types/call-consent.type";
 import type { CallDescriptor } from "#contracts/types/call-descriptor.type";
 import type { CallPublic } from "#contracts/types/call-public.type";
 import type { RateLimitBucket } from "#contracts/types/rate-limit-bucket.type";
+import type { ReplicaQuery } from "#contracts/types/replica-query.type";
 import type { ReplicaRow } from "#contracts/types/replica-row.type";
 import type { Action } from "#core/bases/action.base";
 import type { ApprovalCondition } from "#core/bases/approval-condition.base";
@@ -234,6 +237,7 @@ interface Recorded {
   readonly timeout?: Duration;
   readonly cache?: QueryCache;
   readonly reads?: "primary" | "replica";
+  readonly maxLag?: Duration;
   readonly analytics?: CallAnalytics;
   readonly queryBudget?: number;
   readonly credentials?: "ignore";
@@ -1199,18 +1203,32 @@ export class ActionPipeline {
   }
 
   /**
-   * Runs a `reads: "replica"` query's `handle` on a replica through `ReplicaReads`, unless the caller's read-your-writes
-   * window is open (its own write, here or carried as `lastWriteAt`); every other call, and every call with no
-   * `ReplicaReads` bound, runs as it is (on the primary).
+   * Runs a query's `handle` on a replica through `ReplicaReads` when the port says it reads one (`reads`: its own
+   * `reads` declaration unless configuration moves it per key or per area), unless the caller's read-your-writes window
+   * is open (its own write, here or carried as `lastWriteAt`); the replica visit carries the query's `maxLag` and the
+   * caller's last write, so the driver can still send it to the primary (the lag guard). An action, every other query
+   * and every call with no `ReplicaReads` bound runs as it is (on the primary).
    */
   private async routed(call: Call, handle: () => Promise<unknown>): Promise<unknown> {
-    const reads = call.options.reads === "replica" ? this.optional(ReplicaReads) : undefined;
-    if (
-      reads === undefined ||
-      (await reads.pinned(this.writerOf(call.descriptor), call.at, call.request.lastWriteAt))
-    )
-      return handle();
-    return reads.onReplica(handle);
+    const reads = call.kind === "query" ? this.optional(ReplicaReads) : undefined;
+    if (reads === undefined) return handle();
+    const { reads: declared = "primary", maxLag } = call.options;
+    const query: ReplicaQuery = {
+      key: call.descriptor.key,
+      area: call.descriptor.area,
+      declared,
+      ...(maxLag === undefined ? {} : { maxLag }),
+    };
+    if (reads.reads(query) !== "replica") return handle();
+    const writer = this.writerOf(call.descriptor);
+    const { lastWriteAt } = call.request;
+    if (await reads.pinned(writer, call.at, lastWriteAt)) return handle();
+    return reads.onReplica(handle, {
+      ...query,
+      writer,
+      at: call.at,
+      ...(lastWriteAt === undefined ? {} : { lastWriteAt }),
+    });
   }
 
   /**
