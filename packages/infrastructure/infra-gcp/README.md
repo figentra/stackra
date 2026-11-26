@@ -187,8 +187,13 @@ deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self
 - Re-link a project's billing after the spend stop detached it, once the cause is fixed.
 - Create the HMAC key the `s3` disk signs with for the infra service account, and store it in the secret store.
 - Subscribe the budget topic (`budgetTopic`) to the alerting channel.
-- Enable the Secret Manager API where a service names a Postgres extension (the Cloud Run API is above), and keep the
-  server's admin password in the vault for the deploy job to pass as `adminPassword`.
+- Enable the Secret Manager API where a service names a Postgres extension (the Cloud Run API is above), plus the
+  Compute Engine API when that server has a private IP (the job's direct VPC egress), and keep the server's admin
+  password in the vault for the deploy job to pass as `adminPassword`. The infra service account already holds
+  `roles/secretmanager.admin` (`DEPLOY_ROLES`) to create the secret, its version and the reader's grant; direct VPC
+  egress asks no compute role of it, since the Cloud Run service agent (`roles/run.serviceAgent`, granted by GCP in the
+  same project) uses the subnet. A Shared VPC subnet in another project needs `roles/compute.networkUser` for that
+  agent on the host project, which its owner grants.
 - Run `create extension pgaudit` in each database once the flag is on, and set `pgaudit.log = 'write'` on the roles
   people sign in with (`alter role ... set pgaudit.log`), so their writes are audited and the app's are not.
 - Enable the Memorystore and Network Connectivity APIs where a Valkey cache is declared, and grant each service's
