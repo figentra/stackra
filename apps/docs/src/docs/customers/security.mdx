@@ -116,11 +116,12 @@ What every package version has, from the release workflow and the registry
 | SBOM                     | a CycloneDX SBOM per release, signed keylessly with cosign and attached to the GitHub release                                                   |
 | No upstream proxy        | the registry never fetches from npmjs, so nobody can inject a package by name                                                                   |
 
-Verify the SBOM signature of a release:
+Verify the SBOM signature of a release (the repository moved from `figentra/stackra` to `stackra-inc/stackra` on
+2026-11-26, so a release signed before the move names the old path; the pattern accepts both):
 
 ```bash
 cosign verify-blob --bundle sbom.cdx.json.sigstore.json \
-  --certificate-identity-regexp '^https://github.com/figentra/stackra/' \
+  --certificate-identity-regexp '^https://github.com/(figentra|stackra-inc)/stackra/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com sbom.cdx.json
 ```
 
