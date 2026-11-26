@@ -28,6 +28,8 @@ export { FeatureSection } from "#react/feature-section/feature-section";
 export type { FeatureSectionProps } from "#react/feature-section/feature-section.props";
 export { HeroMachine } from "#react/hero-machine/hero-machine";
 export type { HeroMachineProps } from "#react/hero-machine/hero-machine.props";
+export { LeadForm } from "#react/lead-form/lead-form";
+export type { LeadFormProps } from "#react/lead-form/lead-form.props";
 export { MonoDisplay } from "#react/mono-display/mono-display";
 export type { MonoDisplayProps } from "#react/mono-display/mono-display.props";
 export { PageDock } from "#react/page-dock/page-dock";

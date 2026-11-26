@@ -19,6 +19,7 @@ export { CapabilityMatrixBlock } from "#core/blocks/capability-matrix/capability
 export { ChapterTitleBlock } from "#core/blocks/chapter-title/chapter-title.block";
 export { CtaRowBlock } from "#core/blocks/cta-row/cta-row.block";
 export { HeroMachineBlock } from "#core/blocks/hero-machine/hero-machine.block";
+export { LeadFormBlock } from "#core/blocks/lead-form/lead-form.block";
 export { MonoDisplayBlock } from "#core/blocks/mono-display/mono-display.block";
 export { PageDockBlock } from "#core/blocks/page-dock/page-dock.block";
 export { ProductCardsBlock } from "#core/blocks/product-cards/product-cards.block";
@@ -30,7 +31,9 @@ export { StepSwitcherBlock } from "#core/blocks/step-switcher/step-switcher.bloc
 export { SurfacesBlock } from "#core/blocks/surfaces/surfaces.block";
 export { TerminalStageBlock } from "#core/blocks/terminal-stage/terminal-stage.block";
 export { BlockCategory } from "#core/enums/block-category.enum";
+export { LEAD_FORM_ACTION } from "#core/constants/lead-form-action.constant";
 export { CapabilityState } from "#core/enums/capability-state.enum";
+export { LeadFieldType } from "#core/enums/lead-field-type.enum";
 export { InvalidDocumentError } from "#core/errors/invalid-document.error";
 export { UnknownBlockError } from "#core/errors/unknown-block.error";
 export { blockKinds } from "#core/functions/block-kinds.function";
@@ -49,6 +52,9 @@ export type { BlockProps } from "#core/types/block-props.type";
 export type { CapabilityColumn } from "#core/types/capability-column.type";
 export type { CapabilityRow } from "#core/types/capability-row.type";
 export type { CapabilityStateLabels } from "#core/types/capability-state-labels.type";
+export type { LeadConsent } from "#core/types/lead-consent.type";
+export type { LeadField } from "#core/types/lead-field.type";
+export type { LeadSubmission } from "#core/types/lead-submission.type";
 export type { ResolvedNode } from "#core/types/resolved-node.type";
 export type { SiteThemeChange } from "#core/types/site-theme-change.type";
 export type { SiteThemeDiff } from "#core/types/site-theme-diff.type";
