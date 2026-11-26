@@ -184,7 +184,7 @@ extensions; the script against a real Postgres.
   prove FR-006 to FR-010, EC-03 and EC-06 under Pulumi mocks; removing `roles/secretmanager.admin` fails both role
   cases — verified by: unit
 - **SC-004**: a revert of the source fails 12 of the new tests — verified by: manual
-- **SC-005**: the script ran twice against a real Postgres 18 (PostGIS + pgvector) in `stackra-demo`, creating all
+- **SC-005**: the script ran twice against a real Postgres 18 (PostGIS + pgvector) in a disposable build container, creating all
   eight extensions in every database; a later database inherited them from `template1`; a login without CONNECT on one
   database stopped the run with exit 2 — verified by: integration
 
@@ -229,4 +229,5 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-2092 spec, batch 21) · written after the fact from the diff of PR #1143
 - 2026-11-26 · Draft → Clarified · Claude (STA-2092 spec, batch 21) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-2092 spec, batch 21) · plan.md
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 · Planned → Tasked · Claude (STA-2092 spec, batch 21) · tasks.md; the tasks marked done are already on the branch (PR); Implementing waits for the approver's Planned approval (ADR 0502)

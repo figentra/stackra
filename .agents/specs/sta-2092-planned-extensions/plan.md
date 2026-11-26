@@ -19,7 +19,7 @@ role the block needs.
 - **Language**: TypeScript (ESM), Node 24; Pulumi (`@pulumi/aws`, `@pulumi/gcp`)
 - **Members**: `packages/developer/runway`, `packages/infrastructure/infra-aws-runtime`,
   `packages/infrastructure/infra-gcp`
-- **Testing**: vitest in `src/**/__tests__/` (ADR 0022), Pulumi mocks; a real Postgres 18 in `stackra-demo` for the
+- **Testing**: vitest in `src/**/__tests__/` (ADR 0022), Pulumi mocks; a real Postgres 18 in a disposable build container for the
   script
 - **Storage**: none new (Secret Manager holds the GCP copy of the admin password)
 - **Runtime target**: node (deploy time)
@@ -166,7 +166,7 @@ has no ingress and egress only to Postgres and HTTPS. No password reaches a defi
 
 - AC-001: `aws-databases.function.test.ts` (admin login, once per revision, own group), `aws-workloads.function.test.ts`
   (migration and service after the run), `gcp-runtime.function.test.ts` (private IP and connector paths),
-  `create-extensions-script.function.test.ts`, and the Postgres 18 run in `stackra-demo`.
+  `create-extensions-script.function.test.ts`, and the Postgres 18 run in a disposable build container.
 - AC-002: `workload-migration-provider.constant.test.ts` ("…whose failure says no migration ran"), the script's exit 2
   without CONNECT.
 - AC-003: `aws-databases.function.test.ts` ("…the password read from the proxy's secret"), `gcp-runtime.function.test.ts`.
