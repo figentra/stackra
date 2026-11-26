@@ -30,6 +30,9 @@ shape (ADR 0294, 0305). Entries `.` and `./contracts` (the `RateSource` port).
   rate-source key and the metal-rate feed are market-pack data; this package holds the arithmetic only.
 - A rate is a decimal string end to end (`RateSnapshot.rate`) and every product goes through `decimalProduct` and
   `Money#times(string)`, so no float touches a price.
+- `money-properties.value.test.ts` holds the property tests (fast-check, ADR 0220 enforcement): a new rounding mode
+  or operation gets a property against the floor-and-ceiling model there, and a counterexample it finds stays as an
+  example test in `money.value.test.ts`.
 - `minor` is always a safe integer. Every new operation computes in BigInt and passes the result through the
   safe-integer check; nothing rounds silently, and a rounding mode is chosen once per operation.
 - `Money` is an ORM embeddable: no `#private` fields, no frozen instances, no state beyond `minor` and `currency`
