@@ -8,12 +8,13 @@
  *          refuses, and `@Renamed` accepted by the lock. A generated search query gets its manifest entry (with the
  *          package input and output schemas), endpoint, tool and wiring binding like an authored query, and no
  *          empty `X$` in the schemas file (STA-1459). Every full run ends with the member graph (ADR 0452). A warning
- *          never stops writing and comes back in `warnings`, beside a refusal too (STA-340).
+ *          never stops writing and comes back in `warnings`, beside a refusal too (STA-340). The committed manifest's
+ *          migration lock is carried into the manifest it writes, in the manifest-only pass too (STA-2160).
  * Boundary: test only; runs on the IR fixtures.
  * The root `vitest.config.ts` shim is listed with the tool configs (STA-1296).
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decision 7);
- *                     STA-1365 (no wiring and no container import for a member off `@stackra/container`).
+ *                     STA-1365 (no wiring and no container import for a member off `@stackra/container`); STA-2160.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -295,5 +296,21 @@ describe("generateMember", () => {
     const { files, errors } = generateMember(packageWithModels("loyalty_kit", "rewards"));
     expect(files).toEqual([]);
     expect(errors.map((error) => error.code)).toEqual(["package_entities_modules"]);
+  });
+});
+
+describe("generateMember and the migration lock (STA-2160)", () => {
+  it("carries the committed manifest's lock into the manifest it writes, also in the manifest-only pass", () => {
+    const first = generateMember(BILLING_IR);
+    expect(first.errors).toEqual([]);
+    expect(first.manifest).not.toHaveProperty("migrations");
+    const migrations = [{ id: "billing.0001_create_invoices", sha256: "1".repeat(64) }];
+    const previous = { ...first.manifest, migrations };
+    expect(generateMember(BILLING_IR, previous).manifest["migrations"]).toEqual(migrations);
+    const manifests = generateMember(BILLING_IR, previous, { pass: "manifests" });
+    expect(manifests.errors).toEqual([]);
+    expect(manifests.manifest["migrations"]).toEqual(migrations);
+    const written = manifests.files.find((file) => file.path === "stackra.manifest.json");
+    expect(JSON.parse(written?.content ?? "{}")).toHaveProperty("migrations", migrations);
   });
 });

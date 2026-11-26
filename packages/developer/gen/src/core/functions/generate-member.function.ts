@@ -41,7 +41,10 @@
  *           `warnings` beside the files (STA-340). An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
  *           are added by their owning targets. Every JSON file is written in the repository formatter's shape
- *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`.
+ *           (`formatJson`, stackra-247), so the committed manifest and openapi.json pass `oxfmt --check`. The
+ *           committed manifest's `migrations` section (the migration lock) is carried into the new one unchanged: only
+ *           the migration target of `generate` rewrites it, so a manifest-only write never unlocks a migration
+ *           (STA-2160).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 10, 22 and 26); ADR 0295 (decisions 5 and 7); ADR 0305 (rules 15, 16 and
  *                     36); ADR 0097 (decision 3); registry v3.1 section 5 (gen-core items 2 to 6 and gap G1); ADR 0148
@@ -164,7 +167,13 @@ export function generateMember(
       ...searchQueriesOf(authored).map((pair) => pair.query),
     ],
   };
-  const { manifest, errors } = buildManifest(ir);
+  const built = buildManifest(ir);
+  const errors = built.errors;
+  // The migration lock is the migration target's: carried forward here, rewritten by `generate` (STA-2160).
+  const manifest: StackraManifest =
+    previous?.["migrations"] === undefined
+      ? built.manifest
+      : { ...built.manifest, migrations: previous["migrations"] };
   const all: GenError[] = [...ir.errors, ...errors];
   if (previous !== undefined) {
     const renames = new Map(
