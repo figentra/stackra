@@ -16,13 +16,18 @@
  *           and a Fumadocs site with no installed dependencies with the one command to run first (STA-2026, FR-008).
  * Runtime: node
  * Governing contract: ADR 0295 (decisions 2 and 5: targets pick the outputs; tool configs live in `.stackra/`); ADR
- *                     0091 and 0124 (Encore is generated into `.stackra/encore`); ADR 0182 (test tiers); ADR 0284
+ *                     0091 and 0124 (Encore is generated into `stackra-encore`); ADR 0182 (test tiers); ADR 0284
  *                     (workers on Wrangler).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { DOCS_CONFIG_FILE, DOCS_SITE_DIR } from "@stackra/gen";
+import {
+  DOCS_CONFIG_FILE,
+  DOCS_SITE_DIR,
+  ENCORE_SERVICES_DIR,
+  TYPECHECK_TSCONFIG,
+} from "@stackra/gen";
 import { parse } from "yaml";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -120,6 +125,10 @@ export function resolveTool(
       return at("oxlint", ["."]);
     }
     case "typecheck": {
+      // A service's paths exist for Encore; tsc would apply them to every package it compiles, so gen's config drops
+      // them and each package's `#` imports resolve through its own package.json (STA-2681).
+      if (layout === "service" && existsSync(join(root, TYPECHECK_TSCONFIG)))
+        return at("tsc", ["--noEmit", "-p", TYPECHECK_TSCONFIG]);
       return at("tsc", ["--noEmit"]);
     }
     case "test": {
@@ -137,7 +146,15 @@ export function resolveTool(
               "gen wrote no .stackra/vitest.int.config.ts, so the member has no `.int.test.ts`",
             );
       }
-      if (layout !== "app") return refuse("e2e tests run in an app");
+      if (layout === "package") {
+        // Gen writes this config for a package that has a `<name>.e2e.page.tsx`; nobody authors one.
+        return existsSync(join(root, ".stackra", "playwright.e2e.config.ts"))
+          ? at("playwright", ["test", ...config("playwright.e2e.config.ts")])
+          : refuse(
+              "gen wrote no .stackra/playwright.e2e.config.ts: add a src/**/__tests__/<name>.e2e.page.tsx",
+            );
+      }
+      if (layout !== "app") return refuse("e2e tests run in an app or a package");
       if (native) return at("maestro", ["test", ".stackra/maestro"]);
       if (web || targets.includes("desktop")) {
         return at("playwright", ["test", ...config("playwright.config.ts")]);
@@ -147,10 +164,10 @@ export function resolveTool(
     case "dev": {
       if (layout === "worker") return at("wrangler", ["dev", ...config("wrangler.jsonc")]);
       if (layout === "service") {
-        const encore = join(root, ".stackra", "encore");
-        if (!existsSync(encore))
-          return refuse("gen has not written the Encore app (.stackra/encore)");
-        return at("encore", ["run"], encore);
+        // `encore run` in the member root, where encore.app is; it discovers the services gen wrote beside it.
+        if (!existsSync(join(root, ENCORE_SERVICES_DIR)))
+          return refuse(`gen has not written the Encore services (${ENCORE_SERVICES_DIR})`);
+        return at("encore", ["run"]);
       }
       if (layout !== "app") return refuse(`a ${layout} has nothing to serve`);
       if (web) return at("vite", [...config("vite.config.ts")]);

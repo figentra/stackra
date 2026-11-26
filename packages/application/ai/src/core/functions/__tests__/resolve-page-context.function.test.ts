@@ -16,7 +16,7 @@ import type { PageContextSources } from "#core/types/page-context-sources.type";
 
 const A = "ord_01h2j3k4l5m6n7p8q9r0s1t2v3";
 const B = "ord_01h2j3k4l5m6n7p8q9r0s1t2v4";
-const SECRET = "ord_01h2j3k4l5m6n7p8q9r0s1t2v5";
+const FORBIDDEN = "ord_01h2j3k4l5m6n7p8q9r0s1t2v5";
 const NO_FACTS = "tkt_01h2j3k4l5m6n7p8q9r0s1t2v6";
 
 const context = (extra: Partial<PageContext> = {}): PageContext =>
@@ -26,7 +26,7 @@ const sources = (budgetTokens = 1000): PageContextSources => ({
   allowList: { order: ["status"] },
   budgetTokens,
   provide: async (id) => {
-    if (id === SECRET) throw ForbiddenError.create();
+    if (id === FORBIDDEN) throw ForbiddenError.create();
     if (id === NO_FACTS) return undefined;
     return {
       dataClass: "order",
@@ -46,7 +46,7 @@ describe(resolvePageContext, () => {
 
   it("drops the ids the caller cannot read or no Facts class serves", async () => {
     const seen = await resolvePageContext(
-      context({ selection: { ids: [A, SECRET, NO_FACTS, B], count: 4 } as never }),
+      context({ selection: { ids: [A, FORBIDDEN, NO_FACTS, B], count: 4 } as never }),
       sources(),
     );
     expect(seen.records.map((record) => record.id)).toEqual([A, B]);

@@ -14,6 +14,7 @@ import type { SchemePoster } from "#core/types/scheme-poster.type";
 
 /** A dither band. */
 export interface DitherBand {
+  /** The posters shown until the canvas draws. */
   readonly poster: SchemePoster;
 
   /** The brand pattern; `strata` when absent. */

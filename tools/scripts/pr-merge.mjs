@@ -4,33 +4,26 @@
  * Purpose: `pnpm pr:merge [-R owner/repo] <n>` (`-R figentra/os` for the OS repo) — the only way an agent merges (owner decision A1, ADR 0119). As
  *   `stackra-bot`, never `--admin`, it enqueues PR <n> in the base branch's merge queue (GraphQL `enqueuePullRequest`
  *   with `expectedHeadOid`, ADR 0166 CI3) or, when the repo has no queue (template, os), merges it with
- *   `--squash --delete-branch --match-head-commit <head>`; only when:
- *   1. the newest "Quality Gate" check run on the head SHA concluded `success`;
- *   2. the PR is open and not a draft;
- *   3. the AI review passed (ADR 0230): either the reviewer app passed the head on this base, or the owner approved.
- *      - Reviewer: a PR comment whose author is the App itself (`user.type` Bot and `performed_via_github_app.slug`
- *        `stackra-reviewer`, never a login string), unedited, first line `AI-REVIEW: PASS <40-hex sha> base=<base
- *        ref> [patch=<patch id>]`. The sha is the head, or an earlier head whose diff against the base has the same
- *        `git patch-id --verbatim` as the head's (ADR 0285: a clean rebase or update-branch keeps the verdict; any diff
- *        change, whitespace included, voids it). The patch id is recomputed from the sha; an unedited verdict's `patch=`
- *        is used only when that sha can no longer be read. A FAIL is read loosely: any first line starting `AI-REVIEW: FAIL` counts (short SHA, no SHA or trailing
- *        text), unless it names a 7+ hex SHA that is neither a prefix of the head nor of a same-patch earlier head. A FAIL for the head SHA is sticky: any counted FAIL beats every PASS, whatever its order. An edit to
- *        any reviewer comment voids every reviewer verdict posted before it. Never counted when the reviewer is the
- *        PR author or the head commit's author or committer.
- *      - Owner: an APPROVED pull request review by the owner user (`figentra-usr`) on the head SHA whose body ends
- *        with the token `owner-approval`. A comment never counts for the owner.
- *   4. a PR labelled `design` or `risk:R3` also has an owner APPROVED review on the head SHA, or `owner-approved`
- *      put there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is
- *      the owner user, never a bot (ADR 0293). The events are read only then; an API error refuses the merge.
+ *   `--squash --delete-branch --match-head-commit <head>`. The gate and the ruleset are the merge condition since
+ *   ADR 0523 (decision 3): it merges only when
+ *   1. the PR is open and not a draft;
+ *   2. the newest "Quality Gate" check run on the head SHA concluded `success`;
+ *   3. the ruleset lets it merge: the base has a merge queue (the queue applies the ruleset), or `mergeStateStatus`
+ *      is CLEAN, HAS_HOOKS or UNSTABLE (only a non-required check is not green; the gate is condition 2, so a red
+ *      non-required check is reported, not blocking);
+ *   4. the PR carries no `hold` label (any case).
+ *   A PR labelled `design` or `risk:R3` also needs an owner APPROVED review on the head SHA, or `owner-approved` put
+ *   there by the owner: the latest `labeled` / `unlabeled` issue event for it is a `labeled` whose actor is the owner
+ *   user, never a bot (ADR 0119 decision 2 as amended 2026-10-28, ADR 0293). The events are read only then; an API
+ *   error refuses the merge. The AI-REVIEW verdict is no longer a condition: the stackra-reviewer App is retired and
+ *   AI review is advisory (ADR 0523 decision 6).
  *   With a merge queue it enqueues only while `enqueueReady` holds (owner order OP7): bot-token.mjs keeps a 30 s
  *   connect timeout and retries (STA-302).
  * Boundary: reads the PR, its checks and reviews through gh, then merges or enqueues it; changes nothing else.
  * Runtime: node
- * Governing contract: ADR 0119 (merge policy and release authority); ADR 0230 (reviewer identity); ADR 0285.
+ * Governing contract: ADR 0119 (merge policy and release authority, amended 2026-11-10); ADR 0523 (decisions 3 and 6).
  * Network: gh reads retry on transient errors (bot-token.mjs); the merge or enqueue runs again after a transient
  *   failure only when a re-read shows the PR neither merged nor queued.
- * Convention: the reviewer posts `AI-REVIEW: PASS <full head sha> base=<base ref> patch=<patch id>` (or `FAIL <sha>`) as a new
- *   comment through `pnpm bot:review -- pr comment <n> --body-file <f>`, and never edits a verdict.
  * Exit: 0 merged or queued, 1 refused (reasons on stderr), 2 usage.
  * Secrets: the bot token stays in the gh child's environment.
  */
@@ -39,57 +32,11 @@ import { fileURLToPath } from "node:url";
 import * as botNetwork from "./bot-token.mjs";
 
 export const OWNER = "figentra-usr";
-export const REVIEWER = "stackra-reviewer";
 const GATED_LABELS = ["design", "risk:R3"];
-const VERDICT_LINE =
-  /^AI-REVIEW:\s*(PASS|FAIL)\s+([0-9a-f]{40})(?:\s+base=(\S+))?(?:\s+patch=([0-9a-f]{40}))?\s*$/i;
-const OWNER_TOKEN = /(?:^|\s)owner-approval\s*$/;
-// N1 (#48): a FAIL is read loosely so a sloppy FAIL still blocks; only a hex token of 7+ that is not a prefix of the
-// head marks it as a FAIL for an older commit, which a new commit clears.
-// Markdown and wording around it do not matter: `**AI-REVIEW: FAIL**`, `AI-REVIEW: FAILED`, `> AI-REVIEW - fail`.
-const LOOSE_FAIL = /^\W*AI-REVIEW\W*FAIL(?:ED)?\b\W*(\w*)/i;
-const HEX_TOKEN = /^[0-9a-f]{7,40}$/i;
-const failForHead = (token, sha, same) => {
-  const t = token.toLowerCase();
-  return !HEX_TOKEN.test(t) || sha.startsWith(t) || [...same].some((s) => s.startsWith(t));
-};
-
-/**
- * The `git patch-id --verbatim` of a unified diff, or null for an empty diff. Verbatim, not `--stable`: `--stable`
- * ignores whitespace, so a PASS would survive a re-indented YAML key or a split shell argument (ADR 0285).
- */
-export function patchId(diff) {
-  const r = spawnSync("git", ["patch-id", "--verbatim"], { input: diff, encoding: "utf8" });
-  if (r.status !== 0) throw new Error(`git patch-id failed: ${r.stderr.trim()}`);
-  return r.stdout.split(" ")[0] || null;
-}
-
-/**
- * The earlier head SHAs (full, or the 7+ hex a loose FAIL names) in reviewer-app verdicts whose diff has the head's
- * patch id. `patchOf(sha)` returns a commit's patch id against the base, or null when it cannot (the commit is gone);
- * only then is a `patch=` claim used, and only when every unedited verdict naming that SHA claims the same id.
- */
-export function samePatchShas(pr, comments, patchOf) {
-  const sha = pr.headRefOid;
-  const claims = new Map();
-  for (const c of comments.filter(byReviewerApp)) {
-    const line = (c.body ?? "").trim().split("\n")[0].trim();
-    const match = VERDICT_LINE.exec(line);
-    const old = (match?.[2] ?? LOOSE_FAIL.exec(line)?.[1] ?? "").toLowerCase();
-    if (!HEX_TOKEN.test(old) || sha.startsWith(old)) continue;
-    const claim = c.updated_at === c.created_at ? match?.[4]?.toLowerCase() : undefined;
-    claims.set(old, [...(claims.get(old) ?? []), claim].filter(Boolean));
-  }
-  const same = new Set();
-  if (!claims.size) return same;
-  const head = patchOf(sha);
-  if (!head) return same;
-  for (const [old, ids] of claims) {
-    const claimed = new Set(ids).size === 1 ? ids[0] : null;
-    if ((patchOf(old) ?? claimed) === head) same.add(old);
-  }
-  return same;
-}
+/** The label that stops a merge (ADR 0523 decision 3: the merger honours a HOLD label). */
+export const HOLD_LABEL = "hold";
+/** The merge states in which the ruleset lets a PR without a merge queue merge. */
+export const MERGEABLE_STATES = ["CLEAN", "HAS_HOOKS", "UNSTABLE"];
 
 /**
  * OP7: the enqueue path is open only while the bot's network layer has a 30 s connect timeout and retries (STA-302),
@@ -97,17 +44,6 @@ export function samePatchShas(pr, comments, patchOf) {
  */
 export const enqueueReady = (network) =>
   network.CONNECT_TIMEOUT_MS >= 30_000 && network.RETRY_ATTEMPTS >= 2;
-
-/** One login form for users and apps: `app/stackra-bot`, `stackra-bot[bot]` and `stackra-bot` are the same actor. */
-export const actor = (login = "") =>
-  login
-    .replace(/^app\//, "")
-    .replace(/\[bot\]$/, "")
-    .toLowerCase();
-
-/** A REST issue comment written by the reviewer App itself, not by an account that only shares its name. */
-export const byReviewerApp = (c) =>
-  c.user?.type === "Bot" && c.performed_via_github_app?.slug === REVIEWER;
 
 /** The label that stands for the owner's yes on a gated PR; only the owner adds it (ADR 0230 rule 4). */
 export const OWNER_LABEL = "owner-approved";
@@ -130,66 +66,21 @@ export function ownerLabelled(events) {
   );
 }
 
-/** A REST pull request review approving `sha` by the owner user with the `owner-approval` token. */
-export const ownerApproves = (r, sha) =>
-  r.user?.type === "User" &&
-  r.user.login === OWNER &&
-  r.state === "APPROVED" &&
-  r.commit_id === sha &&
-  OWNER_TOKEN.test((r.body ?? "").trim());
+/** Why the ruleset does not let a PR in a given merge state merge yet. */
+const STATE_HINTS = {
+  BEHIND: "the branch is behind its base: merge the base in",
+  BLOCKED: "a required check or rule is not satisfied",
+  DIRTY: "it has merge conflicts",
+  DRAFT: "it is a draft",
+  UNKNOWN: "GitHub is still computing it: run pr:merge again",
+};
 
 /**
- * The counted AI-REVIEW verdict for `pr` (REST issue `comments` and pull `reviews`), and why other verdicts were
- * ignored. `authors` holds the PR author and the head commit's author and committer: none may review their change.
- * `same` holds earlier head SHAs with the head's patch id (`samePatchShas`); their verdicts count as the head's.
+ * Reasons the PR may not merge; empty means merge. `pr` carries `mergeStateStatus`; `checkRuns` are the head SHA's
+ * "Quality Gate" runs; `queue` says the base branch has a merge queue; `reviews` are the REST pull reviews and
+ * `events` the REST issue events (`ownerLabelled`), empty when not read.
  */
-export function aiReview(pr, comments, reviews, authors = [], same = new Set()) {
-  const sha = pr.headRefOid;
-  const self = new Set(authors.filter(Boolean).map(actor));
-  const ignored = [];
-  const edits = comments
-    .filter((c) => byReviewerApp(c) && c.updated_at !== c.created_at)
-    .map((c) => c.updated_at)
-    .toSorted();
-  const voidBefore = edits.at(-1) ?? "";
-  const verdicts = new Set();
-  for (const c of comments) {
-    const line = (c.body ?? "").trim().split("\n")[0].trim();
-    const match = VERDICT_LINE.exec(line);
-    const loose = match ? null : LOOSE_FAIL.exec(line);
-    const named = match?.[2].toLowerCase();
-    if (match ? named !== sha && !same.has(named) : !loose || !failForHead(loose[1], sha, same))
-      continue;
-    const who = c.user?.login ?? "unknown";
-    const [, kind, , base] = match ?? [line, "FAIL"];
-    if (!byReviewerApp(c)) ignored.push(`${who} is not the ${REVIEWER} app`);
-    else if (self.has(actor(who))) ignored.push(`${who} authored this change and cannot review it`);
-    else if (c.updated_at !== c.created_at) ignored.push(`a verdict by ${who} was edited`);
-    else if (c.created_at < voidBefore)
-      ignored.push(`a ${REVIEWER} comment was edited after this verdict; post a new one`);
-    else if (kind.toUpperCase() === "PASS" && base !== pr.baseRefName)
-      ignored.push(`a PASS names base ${base ?? "none"}, the PR targets ${pr.baseRefName}`);
-    else verdicts.add(kind.toUpperCase());
-  }
-  const owner = !self.has(OWNER) && reviews.some((r) => ownerApproves(r, sha));
-  const verdict = verdicts.has("FAIL") ? "FAIL" : verdicts.has("PASS") || owner ? "PASS" : null;
-  return { verdict, ignored };
-}
-
-/**
- * Reasons the PR may not merge; empty means merge. `checkRuns` are the head SHA's "Quality Gate" runs; `comments`
- * and `reviews` are the REST issue comments and pull reviews; `same` is `samePatchShas`; `events` are the REST
- * issue events (`ownerLabelled`), empty when not read.
- */
-export function blockers(
-  pr,
-  checkRuns,
-  headCommit = {},
-  comments = [],
-  reviews = [],
-  same = undefined,
-  events = [],
-) {
+export function blockers(pr, checkRuns, { queue = false, reviews = [], events = [] } = {}) {
   const reasons = [];
   const sha = pr.headRefOid;
   if (pr.state !== "OPEN") reasons.push(`PR is ${pr.state}`);
@@ -200,14 +91,16 @@ export function blockers(
   else if (gate.conclusion !== "success")
     reasons.push(`Quality Gate on ${sha} is ${gate.conclusion ?? gate.status}`);
 
-  const authors = [pr.author?.login, headCommit.author?.login, headCommit.committer?.login];
-  const { verdict, ignored } = aiReview(pr, comments, reviews, authors, same);
-  if (verdict !== "PASS")
+  const state = pr.mergeStateStatus ?? "UNKNOWN";
+  if (!queue && !MERGEABLE_STATES.includes(state))
     reasons.push(
-      `no AI review PASS for ${sha} (counted verdict: ${verdict ?? "none"}) — the reviewer posts "AI-REVIEW: PASS ${sha} base=${pr.baseRefName}" with \`pnpm bot:review\`${ignored.length ? `; ignored: ${[...new Set(ignored)].join("; ")}` : ""}`,
+      `the ruleset does not let it merge: mergeStateStatus is ${state}${STATE_HINTS[state] ? ` (${STATE_HINTS[state]})` : ""}`,
     );
 
   const labels = new Set(pr.labels.map((l) => l.name));
+  if ([...labels].some((l) => l.toLowerCase() === HOLD_LABEL))
+    reasons.push(`labelled ${HOLD_LABEL}: take the label off to merge`);
+
   const gated = GATED_LABELS.filter((l) => labels.has(l));
   const ownerApproved =
     (labels.has(OWNER_LABEL) && ownerLabelled(events)) ||
@@ -241,7 +134,6 @@ export function parseArgs(argv) {
 
 /** gh's stdout. Only a call marked `idempotent` (a read) is retried on a transient error; a write runs once. */
 export function gh(args, token, idempotent = false) {
-  // 256 MiB: a compare diff with lockfile churn passes 1 MiB, and a cut-off diff would void rebase survival.
   const options = {
     encoding: "utf8",
     env: { ...process.env, GH_TOKEN: token },
@@ -279,7 +171,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const R = repo.startsWith("{") ? [] : ["-R", repo];
   try {
     const token = await botNetwork.mintToken();
-    const fields = "number,state,isDraft,headRefOid,baseRefName,labels,author";
+    const fields = "number,state,isDraft,headRefOid,baseRefName,labels,mergeStateStatus";
     const pr = JSON.parse(gh(["pr", "view", n, ...R, "--json", fields], token, true));
     const runs = JSON.parse(
       gh(
@@ -288,51 +180,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         true,
       ),
     ).check_runs;
-    // The head commit's GitHub author and committer (null when the email maps to no account).
-    const headCommit = JSON.parse(
-      gh(
-        ["api", `repos/${repo}/commits/${pr.headRefOid}`, "--jq", "{author,committer}"],
-        token,
-        true,
-      ),
-    );
-    // REST, not `gh pr view`: only REST carries user.type, performed_via_github_app and updated_at.
-    const comments = list(`repos/${repo}/issues/${n}/comments?per_page=100`, token);
-    const reviews = list(`repos/${repo}/pulls/${n}/reviews?per_page=100`, token);
-    // A commit's PR diff is its diff from the merge base with the base branch, as the compare API gives it.
-    const patchOf = (commit) => {
-      try {
-        const diff = gh(
-          [
-            "api",
-            "-H",
-            "Accept: application/vnd.github.diff",
-            `repos/${repo}/compare/${pr.baseRefName}...${commit}`,
-          ],
-          token,
-          true,
-        );
-        return patchId(diff);
-      } catch (error) {
-        // Fails closed: verdicts for an earlier head do not carry over, so the PR needs a fresh review.
-        process.stderr.write(`pr-merge: no patch id for ${commit} (${error.message})\n`);
-        return null;
-      }
-    };
-    const same = samePatchShas(pr, comments, patchOf);
-    // Who added owner-approved: read only when it decides the merge; `list` throws (refuse) on an API error.
-    const labels = new Set(pr.labels.map((l) => l.name));
-    const events =
-      labels.has(OWNER_LABEL) && GATED_LABELS.some((l) => labels.has(l))
-        ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
-        : [];
-    const reasons = blockers(pr, runs, headCommit, comments, reviews, same, events);
-    if (reasons.length) {
-      process.stderr.write(
-        `pr-merge: not merging #${n}:\n${reasons.map((r) => `  - ${r}`).join("\n")}\n`,
-      );
-      process.exit(1);
-    }
     const [owner, name] = repo.startsWith("{") ? ["{owner}", "{repo}"] : repo.split("/");
     // -F (typed) fills gh's {owner}/{repo} placeholders and makes n an Int.
     const where = ["-F", `o=${owner}`, "-F", `r=${name}`, "-F", `n=${n}`];
@@ -342,6 +189,26 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       [...where, "-f", `b=${pr.baseRefName}`],
       token,
     );
+    // The owner's review and label events decide only a design or risk:R3 PR; `list` throws (refuse) on an API error.
+    const labels = new Set(pr.labels.map((l) => l.name));
+    const gated = GATED_LABELS.some((l) => labels.has(l));
+    const reviews = gated ? list(`repos/${repo}/pulls/${n}/reviews?per_page=100`, token) : [];
+    const events =
+      gated && labels.has(OWNER_LABEL)
+        ? list(`repos/${repo}/issues/${n}/events?per_page=100`, token)
+        : [];
+    const reasons = blockers(pr, runs, { queue: Boolean(repository.mergeQueue), reviews, events });
+    if (reasons.length) {
+      process.stderr.write(
+        `pr-merge: not merging #${n}:\n${reasons.map((r) => `  - ${r}`).join("\n")}\n`,
+      );
+      process.exit(1);
+    }
+    // The gate is condition 2; a red non-required check is reported, not blocking.
+    if (pr.mergeStateStatus === "UNSTABLE")
+      process.stdout.write(
+        `pr-merge: a non-required check on ${pr.headRefOid} is not green (mergeStateStatus UNSTABLE); reported, not blocking\n`,
+      );
     if (repository.mergeQueue && !enqueueReady(botNetwork)) {
       throw new Error(
         `${pr.baseRefName} has a merge queue, but enqueueing needs CONNECT_TIMEOUT_MS >= 30000 and ` +

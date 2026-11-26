@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: unit tests of `runtimePlan` over the runway's `resources` and `workloads` (ADR 0493): a Postgres resource
  *          plans the size's class per environment (small, the smallest Graviton single-AZ, where unsized) with its
- *          consumers; queue, topic, cache and bucket resources plan like member ones; a workload plans its task size,
+ *          consumers; a Postgres resource carries the approved extensions its member consumers name for that
+ *          environment, once and sorted, and preloads pg_stat_statements; queue, topic, cache and bucket resources plan
+ *          like member ones; a workload plans its task size,
  *          count and exposure; a member using an unknown resource is refused; the monthly estimate is itemised, a dev
  *          plan over its default $150 cap is refused naming the items, and production with no cap only carries the
  *          estimate.
  * Boundary: test only; parsed runway objects in, plain data out.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 1 to 3); spec sta-1640.
+ * Governing contract: ADR 0022 (test placement); ADR 0493 (decisions 1 to 3); spec sta-1640; ADR 0160 (note of
+ *                     2026-11-03).
  */
 import { describe, expect, it } from "@stackra/testing";
 import { parseRunway, RunwayInvalidError } from "@stackra/runway";
@@ -48,6 +51,15 @@ function rootWith(extra: Record<string, unknown> = {}) {
 
 const IDENTITY = parseRunway("service", { version: 3, uses: ["main-db"], environments: {} });
 
+/** A member using main-db whose staging database names `extensions`. */
+function member(extensions: string[]) {
+  return parseRunway("service", {
+    version: 3,
+    uses: ["main-db"],
+    environments: { staging: { database: { extensions } } },
+  });
+}
+
 describe("runtimePlan resources and workloads", () => {
   // @covers sta-1640:FR-005
   // @covers sta-1640:FR-007
@@ -67,10 +79,28 @@ describe("runtimePlan resources and workloads", () => {
         storageGb: 20,
         backupDays: 14,
         consumers: ["identity", "zitadel"],
+        extensions: [],
+        preloadLibraries: [],
         tags: { env: "dev", service: "main-db" },
       },
     ]);
     expect(production.databases[0]).toMatchObject({ instanceClass: "db.r7g.large", multiAz: true });
+  });
+
+  it("carries the extensions the member consumers name, once and sorted, and preloads what needs it", () => {
+    const services = {
+      identity: member(["pg_trgm", "pg_stat_statements"]),
+      search: member(["vector", "pg_trgm"]),
+    };
+
+    expect(runtimePlan(rootWith(), services, "staging").databases[0]).toMatchObject({
+      extensions: ["pg_stat_statements", "pg_trgm", "vector"],
+      preloadLibraries: ["pg_stat_statements"],
+    });
+    expect(runtimePlan(rootWith(), services, "dev").databases[0]).toMatchObject({
+      extensions: [],
+      preloadLibraries: [],
+    });
   });
 
   // @covers sta-1640:FR-001

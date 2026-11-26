@@ -19,7 +19,7 @@ rules from `AGENTS.md` and the skills from `.agents/skills` directly.
   ADR 0066); every other bot wrapper, Infisical and network git are the lead's.
 - The tiers live in `.agents/hooks/_rules.mjs` (shared with Claude's hooks) and again in `opencode.jsonc`, whose
   permission list is order-sensitive (the last match wins). Change a rule in both, with its test.
-- `pnpm agents:check` fails on drift between `.agents/` and this folder.
+- `fflow gate ci` (in `pnpm validate`) fails on drift between `.agents/` and this folder.
 
 Docs: [concurrent sessions](../apps/docs/src/docs/agents/concurrent-sessions.mdx),
 [ADR 0016](../apps/docs/src/docs/adr/0016-agents-source-of-truth.mdx).

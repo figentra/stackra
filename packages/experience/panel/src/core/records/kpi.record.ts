@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `KpiRecord`, one KPI under construction: the runtime side of `KpiBuilder`.
+ * Purpose: `KpiRecord<O>`, one KPI under construction: the runtime side of `KpiBuilder<O>`.
  * Boundary: internal: the runtime side of the public builder type; no entry exports it.
  * Runtime: isomorphic
  * Governing contract: ADR 0307 (rule 15).
@@ -13,6 +13,7 @@ import { DraftRecord } from "#core/records/draft.record";
 import type { DrillNode } from "#core/types/drill-node.type";
 import type { KpiBuilder } from "#core/types/kpi-builder.type";
 import type { KpiNode } from "#core/types/kpi-node.type";
+import type { NotePath } from "#core/types/note-path.type";
 import type { ToneRule } from "#core/types/tone-rule.type";
 import type { ToneRules } from "#core/types/tone-rules.type";
 
@@ -22,10 +23,14 @@ interface KpiFlags {
   readonly tones?: readonly ToneRule[];
   readonly drill?: DrillNode;
   readonly lowerIsBetter?: boolean;
+  readonly note?: string;
 }
 
 /** Records the flags of one KPI before it builds. */
-export class KpiRecord extends DraftRecord<KpiFlags, KpiNode> implements KpiBuilder {
+export class KpiRecord<O = unknown>
+  extends DraftRecord<KpiFlags, KpiNode>
+  implements KpiBuilder<O>
+{
   /**
    * @param path - the output key typed as a metric class.
    */
@@ -51,5 +56,10 @@ export class KpiRecord extends DraftRecord<KpiFlags, KpiNode> implements KpiBuil
   /** A falling value is good. */
   lowerIsBetter(): this {
     return this.set({ lowerIsBetter: true });
+  }
+
+  /** Sets the output field the note line under the value reads. */
+  note(path: NotePath<O>): this {
+    return this.set({ note: path });
   }
 }

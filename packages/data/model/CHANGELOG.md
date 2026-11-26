@@ -1,5 +1,67 @@
 # @stackra/model
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 246594d: Core re-paths a moved scope subtree's rows for every service. A model opts in with the new `MovesWithScope` trait (@stackra/model); `repathAllRecords(from, to)` (@stackra/database) runs `CrudService.repath` on every registered model with the trait, in the caller's transaction; and `RepathOnScopeMovedListener` (@stackra/scope/node), a queued listener with back-off, runs it on every `scope.node.moved.v1`, so a service writes no re-path listener of its own. A model without the trait is never touched; a `jsonb` scope keeps its owner's own listener.
+
+### Patch Changes
+
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/money@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/money@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/money@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/money@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

@@ -16,6 +16,8 @@ describe("MARKET_PACKS_CONFIG_SCHEMA", () => {
       source: "store",
       packHashes: [],
       trustedKeys: {},
+      environment: "dev",
+      allowBundledInProduction: false,
     });
   });
 
@@ -26,5 +28,14 @@ describe("MARKET_PACKS_CONFIG_SCHEMA", () => {
     expect(MARKET_PACKS_CONFIG_SCHEMA.parse({ packHashes: ["a".repeat(64)] }).packHashes).toEqual([
       "a".repeat(64),
     ]);
+  });
+
+  /** A misspelt production ("prod") must fail at boot, never run as not-production. */
+  it("refuses an unknown environment", () => {
+    expect(MARKET_PACKS_CONFIG_SCHEMA.parse({ environment: "production" }).environment).toBe(
+      "production",
+    );
+    for (const environment of ["prod", "Production", "prd", ""])
+      expect(() => MARKET_PACKS_CONFIG_SCHEMA.parse({ environment })).toThrow();
   });
 });

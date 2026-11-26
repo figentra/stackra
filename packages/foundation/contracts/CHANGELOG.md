@@ -1,5 +1,66 @@
 # @stackra/contracts
 
+## 0.33.1
+
+### Patch Changes
+
+- bf2c6ea: A product can ship its own `KeyProvider` driver. `@stackra/tenancy` declared a closed `DriverRegistry` entry for the
+  port (`"ephemeral" | "kms"`), so a member's generated wiring that also names a product's driver failed with TS2717,
+  and the shipped `TenantKeysConfig$` refused the name at config parse.
+  
+  - The `KeyProvider` port has no `~key` brand, and tenancy declares no registry entry for it: the member's generated
+    wiring declares the names it has, as for identity's `AppApprovalChallenges`.
+  - `TenantKeysConfig$.driver` takes any non-empty driver name (default `ephemeral`); the container refuses a name no
+    driver has when it resolves the port.
+
+## 0.33.0
+
+### Minor Changes
+
+- 93d63bb: Tenancy ships the per-tenant `KeyProvider` (ADR 0188 decision 2, amendment 2026-11-09). `TenantKeysConfig` (`tenancy.tenant_keys`) picks the driver: `ephemeral` (the default, random keys per tenant in memory, for dev and tests) or `kms`, which keeps each tenant's data keys wrapped by a regional AWS KMS key under the encryption context of tenant and key id, mints `k1` on a tenant's first seal, rotates to `k<n+1>` and never retires an old key, so data sealed earlier still opens. The wrapped keys live behind the new `TenantDataKeyStore` port: `memory`, or `postgres` in the append-only, tenant-owned `tenancy.tenant_data_keys` (row-level security on `tenant_id`), and each mint records `TenantDataKeyMinted`. Both drivers refuse a platform call: a tenant data key needs `withTenant`. Unwrapped keys are cached per tenant (`cacheSeconds`, `cacheTenants`). Contracts gives `KeyProvider` its driver key and exports `kmsKeyContext`.
+
+### Patch Changes
+
+- 93d63bb: `SignerConfig` has a `driver` field that picks the `Signer` driver: `ephemeral` by default, or `kms`. Before, no config field selected one, so a member that injected `Signer` (os audit) failed to boot with `UnresolvedPortError: ... its drivers are ephemeral, kms, and no config field selects one`, in production too.
+  
+  Production sets `driver: kms` with `kmsKeyId` in its runway values. `Signer` also declares its type-only port key (`contracts.Signer`), so `DriverName<Signer>` narrows to these two names.
+  
+  `SecretsConfig` is new: keyed `secrets` in this package, and exported with `SecretsConfig$` and `SecretsOptions`. Its `store` field picks the `SecretStore` driver: `memory` by default, or `aws_secrets_manager`. Nothing selected one before, and no runway environment sets one today, so `memory` keeps today's boots. A deployment that reads AWS Secrets Manager sets `store: aws_secrets_manager` in its runway values.
+
+## 0.32.0
+
+No changes in this release.
+
+## 0.31.0
+
+No changes in this release.
+
+## 0.30.0
+
+### Minor Changes
+
+- 17fafdd: A ninth actor kind, `ActorKind.ApiClient` (`api_client`): a tenant's server calling with an API key. An action or query
+  declares `public: true` or `public: { scopes, publishable }` to answer one; every other operation refuses it, and so
+  does a call without a key. `CallOptions.credential` carries the verified key (id, scopes, publishable, version pin) onto
+  the descriptor with `descriptor.public` (the required scopes and whether only exact keys count: L3 and above, approval
+  or step-up). iam's `AccessControl` checks an `api_client` call's scopes (`keyCovers`: exact keys, or selectors below
+  L3); a publishable key calls a public write only when it opts in.
+- 4ce80a2: An anonymous call acts in the tenant the edge Worker signed (`EdgeHeader.Scope`, ADR 0437): `EdgeHeaderGuard` records
+  the scope once the signature and the request id verify, and `serveGuardedCall` gives it to the anonymous actor as its
+  `scopeId`, its visitor id kept. A credential's tenant wins; a token or an API key whose tenant differs from the signed
+  one is refused with the generic 403; no signed scope means no tenant. A signed scope that is not an `scp_` public id
+  is refused (fail closed). `@stackra/contracts` adds `isPublicId(value, prefix)`, a type guard for a string in public id
+  form.
+- 8c17109: Two new ports, `IdempotencyRetentionSource` (how long an Idempotency-Key is kept) and `VersionSupportSource` (how many
+  months an API version stays supported), so an operator's settings can set both without `@stackra/actions` or
+  `@stackra/versioning` depending on `@stackra/settings`.
+- ef49e63: The rate-limit step can read a scope's limits from settings, so an operator lowers them without a deploy. When a
+  `RateLimitCapSource` (new port in `@stackra/contracts`) is bound, each area bucket number and each default action
+  bucket is the lower of its own and the scope's cap; a cap never raises a limit, and a failed read fails the call.
+  `@stackra/settings` ships the driver, `SettingsRateLimitCapSourceDriver`, over the new `RateLimitSettings` group
+  (`rate_limit.<area>PerMinute`, `<area>Burst`, `actionPerScope`, `actionPerAddress`; `null` caps nothing). With no
+  source bound, nothing changes.
+
 ## 0.29.0
 
 No changes in this release.

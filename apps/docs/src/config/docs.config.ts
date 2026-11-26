@@ -30,6 +30,16 @@ export class StackraDocsConfig extends DocsConfig {
   /** The favicon, a path under src/assets. */
   override readonly favicon = "favicon.svg";
 
+  /**
+   * The site's languages: English is the source; an Arabic page sits beside its English page as `<page>.ar.mdx` and
+   * is served under `/ar/` (STA-2676). Every Arabic page is a native draft for Qossai's review; a page without one
+   * falls back to English.
+   */
+  override readonly locales = [
+    { code: "en", label: "English", default: true },
+    { code: "ar", label: "العربية", dir: "rtl" as const },
+  ];
+
   /** The tabs and their page groups; a page is its path under src/docs without the extension. */
   override readonly navigation = [
     {
@@ -38,6 +48,21 @@ export class StackraDocsConfig extends DocsConfig {
       icon: "book-open",
       groups: [
         { group: "Get started", pages: ["index", "roadmap", "quickstart", "development"] },
+        {
+          // The framework in eight pages (STA-2676): the model, actions, clients and tools, the design system,
+          // experience documents, Runway, the CLI and where the API reference comes from.
+          group: "The framework",
+          pages: [
+            "programming-model",
+            "actions",
+            "clients-and-tools",
+            "design-system",
+            "experience",
+            "runway",
+            "cli",
+            "api",
+          ],
+        },
         {
           group: "Monorepo",
           pages: [

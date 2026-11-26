@@ -37,6 +37,8 @@ const PLAN: RuntimePlan = {
       storageGb: 20,
       backupDays: 14,
       consumers: ["commerce"],
+      extensions: [],
+      preloadLibraries: [],
       tags,
     },
   ],

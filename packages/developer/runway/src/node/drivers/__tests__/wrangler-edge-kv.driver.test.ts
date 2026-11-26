@@ -49,6 +49,12 @@ describe("WranglerEdgeKvDriver", () => {
     ]);
   });
 
+  it("expires a row after the given seconds", async () => {
+    const { kv, calls } = driver();
+    await kv.put("host:mezzora-pr-1.figentra.cloud", "{}", 604_800);
+    expect(calls[0]?.[1]).toContain("--ttl=604800");
+  });
+
   it("deletes a row with wrangler in the namespace", async () => {
     const { kv, calls } = driver();
     await kv.delete("canary:mezzora:console");
@@ -66,6 +72,38 @@ describe("WranglerEdgeKvDriver", () => {
         {},
       ],
     ]);
+  });
+
+  it("reads a row as text with wrangler in the namespace", async () => {
+    const { kv, calls } = driver();
+    kv.run = async (command, args, options) => {
+      calls.push([command, args, options]);
+      return '{"product":"mezzora"}';
+    };
+    await expect(kv.read("host:mezzora-pr-1.figentra.cloud")).resolves.toBe(
+      '{"product":"mezzora"}',
+    );
+    expect(calls[0]?.[1]).toEqual([
+      "kv",
+      "key",
+      "get",
+      "host:mezzora-pr-1.figentra.cloud",
+      `--namespace-id=${NAMESPACE}`,
+      "--text",
+      "--remote",
+    ]);
+  });
+
+  it("reads a missing row as null, and throws any other failure", async () => {
+    const { kv } = driver();
+    kv.run = async () => {
+      throw new Error("wrangler kv failed: Failed to fetch https://api/values/x - 404: Not Found");
+    };
+    await expect(kv.read("host:x")).resolves.toBeNull();
+    kv.run = async () => {
+      throw new Error("wrangler kv failed: Failed to fetch https://api/values/x - 403: Forbidden");
+    };
+    await expect(kv.read("host:x")).rejects.toThrow("403");
   });
 
   it("refuses an unset namespace", () => {

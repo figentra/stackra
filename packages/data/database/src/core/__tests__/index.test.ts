@@ -246,6 +246,7 @@ describe("@stackra/database", () => {
       "registerModelPartners",
       "registerSequences",
       "registerTimeSeries",
+      "repathAllRecords",
       "repositoryOf",
       "rollUpAllTimeSeries",
       "rollUpTimeSeries",

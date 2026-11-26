@@ -1,5 +1,72 @@
 # @stackra/config
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Patch Changes
+
+- 82c2718: Loading `@stackra/config/node` no longer needs `@aws-sdk/client-secrets-manager` installed. The AWS Secrets Manager store now imports the SDK, an optional peer, on its first `load()`, as the KMS client already did with `@aws-sdk/client-kms`.
+  
+  Before this, a service whose tests loaded config's node entry failed at import unless it installed the peer (BILLING-A's usage service: 20 test files).
+- 93d63bb: `SignerConfig` has a `driver` field that picks the `Signer` driver: `ephemeral` by default, or `kms`. Before, no config field selected one, so a member that injected `Signer` (os audit) failed to boot with `UnresolvedPortError: ... its drivers are ephemeral, kms, and no config field selects one`, in production too.
+  
+  Production sets `driver: kms` with `kmsKeyId` in its runway values. `Signer` also declares its type-only port key (`contracts.Signer`), so `DriverName<Signer>` narrows to these two names.
+  
+  `SecretsConfig` is new: keyed `secrets` in this package, and exported with `SecretsConfig$` and `SecretsOptions`. Its `store` field picks the `SecretStore` driver: `memory` by default, or `aws_secrets_manager`. Nothing selected one before, and no runway environment sets one today, so `memory` keeps today's boots. A deployment that reads AWS Secrets Manager sets `store: aws_secrets_manager` in its runway values.
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/contracts@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Minor Changes
+
+- 9ddce28: A service that injects @stackra/contracts' `Signer` can now pass gen. Before this, it failed with `port_unbound`, because no manifest listed a driver for the port. @stackra/config adds two `Driver(Signer)` drivers, configured by `SignerConfig` (`config.signer`: `keyId`, `kmsKeyId`, `region`):
+  
+  - `KmsSignerDriver` (`kms`) signs inside AWS KMS through the new `KmsClient` port in `./contracts`. Its default driver, `aws-sdk` (`AwsSdkKmsClientDriver` in `./node`), builds `new KMS({ region })` from `@aws-sdk/client-kms`, an optional peer, on first use; a host may bind its own.
+  - `EphemeralSignerDriver` (`ephemeral`) uses a key pair made in process, for tests and local development.
+  
+  @stackra/contracts' `AwsKmsSignerDriver` and `MemorySignerDriver` are unchanged for code that builds a signer by hand.
+  
+  Bump step for a service that injects `Signer`: bind `kms` in production, set `config.signer.kmsKeyId` (and `region`) in runway, and add `@aws-sdk/client-kms` to its dependencies.
+
+### Patch Changes
+
+- @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/contracts@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/validation@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

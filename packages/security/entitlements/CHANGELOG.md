@@ -1,5 +1,98 @@
 # @stackra/entitlements
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/locking@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 4937622: Three kit blocks (ADR 0504). `@stackra/scope/react` adds `ScopePicker`: the host's scopes as a tree nested by path,
+  or a search field above `searchThreshold` scopes (8 by default); choosing one sets the active scope that `useScope`
+  reads. `@stackra/entitlements` gains a `./react` entry with `EntitlementGate`, which shows its children only while the
+  plan grants an entitlement (asked through the container's `EntitlementSource`), its `fallback` otherwise, and nothing
+  while the answer is pending. `@stackra/i18n/react` adds a headless `LocaleSwitcher` that binds @stackra/ui's
+  `LocaleSwitcher` props to the nearest `I18nProvider`, remembers the choice and switches through `setLocale` or the
+  host's `onChange`. Every word comes from the host.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/locking@0.33.0
+  - @stackra/container@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/locking@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/locking@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+
+## 0.30.0
+
+### Patch Changes
+
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [15dba8d]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/locking@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

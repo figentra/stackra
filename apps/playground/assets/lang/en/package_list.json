@@ -1,0 +1,10 @@
+{
+  "label": "Stackra packages",
+  "actions": "Actions and queries, each an endpoint, a tool or a job",
+  "money": "Amounts in integer minor units with their currency",
+  "events": "Domain, integration, webhook and analytics events",
+  "panel": "Resources, widgets and dashboards for the console",
+  "notifications": "Messages to people by mail, push and in-app",
+  "integrations": "Providers, stored connections and inbound webhooks",
+  "ui": "Components for web and native on one theme"
+}

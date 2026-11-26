@@ -1,5 +1,148 @@
 # @stackra/iam
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+- Updated dependencies [e885a38]
+  - @stackra/database@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/rules@0.33.1
+  - @stackra/scope@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/testing@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 93d63bb: `actors.customer()` and `actors.staff()` from `@stackra/iam/testing` now act in a test tenant by default: the new export `TEST_SCOPE_ID`, a fixed `scp_` id. A call through the pipeline then has a tenant and can write a tenant-owned row. Before, a test actor carried no scope, and `BelongsToTenant` writes failed with "Value for <Model>.tenantId is required" (about 23 os services).
+  
+  **Check your tests on this bump.** A test that relied on a user actor having no scope now runs inside `TEST_SCOPE_ID`. That includes a root or platform call, a check that a scopeless caller is refused, and an assertion on `actor` that has no `scopeId`. Such a test can flip. Pass `{ scopeId: null }` to keep the old behaviour, or name the scope the test expects.
+  
+  To use another tenant, pass `actors.staff(id, { scopeId })`. For a platform call at the root, pass `{ scopeId: null }`. Service, job, system and anonymous actors still carry no scope; a service claims a tenant through `onBehalfOf`.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [4937622]
+- Updated dependencies [93d63bb]
+- Updated dependencies [628b60d]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [22493bf]
+  - @stackra/actions@0.33.0
+  - @stackra/scope@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/rules@0.33.0
+  - @stackra/testing@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/database@0.33.0
+  - @stackra/ui@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [2c6be3c]
+- Updated dependencies [54db249]
+  - @stackra/scope@0.32.0
+  - @stackra/ui@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/database@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/rules@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+- Updated dependencies [7179d1a]
+  - @stackra/actions@0.31.0
+  - @stackra/database@0.31.0
+  - @stackra/ui@0.31.0
+  - @stackra/rules@0.31.0
+  - @stackra/scope@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 17fafdd: A ninth actor kind, `ActorKind.ApiClient` (`api_client`): a tenant's server calling with an API key. An action or query
+  declares `public: true` or `public: { scopes, publishable }` to answer one; every other operation refuses it, and so
+  does a call without a key. `CallOptions.credential` carries the verified key (id, scopes, publishable, version pin) onto
+  the descriptor with `descriptor.public` (the required scopes and whether only exact keys count: L3 and above, approval
+  or step-up). iam's `AccessControl` checks an `api_client` call's scopes (`keyCovers`: exact keys, or selectors below
+  L3); a publishable key calls a public write only when it opts in.
+- a426842: A tenant's deny rules bind an API key's caller: `PolicyDecisionPointService.denied` checks the deny rules of a
+  principal's own snapshot (breakable ones too), and `IamAccessControlDriver` runs it for an `api_client` call after its
+  scopes pass, in `require` and against the record in `authorize`. A key principal with no published snapshot is refused.
+
+### Patch Changes
+
+- f6a087c: A record policy's method is found by the name of the `Permission` static behind the call's permission
+  (`static readonly confirmByCode` → `confirmByCode()`), so a multi-word verb's method runs. `registerPermissions`
+  records each key's static name in `PERMISSION_MEMBERS`. For one release the old lookup by the key's last segment
+  (`confirm_by_code`) is still tried when the policy has no method of the static's name.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [85cd1b5]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [d8d78f0]
+- Updated dependencies [7b5a381]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [15dba8d]
+- Updated dependencies [d3c8b27]
+- Updated dependencies [d3c8b27]
+  - @stackra/actions@0.30.0
+  - @stackra/ui@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/database@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/rules@0.30.0
+  - @stackra/scope@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/testing@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

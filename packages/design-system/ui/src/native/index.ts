@@ -292,6 +292,8 @@ export { Scheduler } from "#native/scheduler/scheduler";
 export type { SchedulerProps } from "#native/scheduler/scheduler.props";
 export type { SchedulerEvent } from "#contracts/types/scheduler-event.type";
 export type { SchedulerView } from "#contracts/enums/scheduler-view.enum";
+export { SchedulingBoard } from "#native/scheduling-board/scheduling-board";
+export type { SchedulingBoardProps } from "#native/scheduling-board/scheduling-board.props";
 export { TaskTray } from "#native/task-tray/task-tray";
 export type { TaskTrayProps } from "#native/task-tray/task-tray.props";
 export { Tooltip } from "#native/tooltip/tooltip";

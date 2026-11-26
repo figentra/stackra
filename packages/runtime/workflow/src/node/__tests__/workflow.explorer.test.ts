@@ -5,7 +5,8 @@
  *          origin naming no scope), and refuses a `startOn` workflow when no event bus is bound; it leaves another
  *          engine alone. It subscribes each trigger block: an occurrence is held for waiting runs under the block's
  *          correlation and starts each published automation as its principal, keyed by automation and occurrence, with
- *          its event chain, and starts none the chain stops; a coded step waiting for an event no trigger block
+ *          its event chain, and starts none the chain stops; with a queue bound it pushes the queued start in the
+ *          delivery's scope instead and starts nothing in process; a coded step waiting for an event no trigger block
  *          correlates fails boot. With `ServiceAckService` bound, each `ServiceAcked` is recorded and the ack that
  *          completes a set holds `AllServicesAcked` for its subject with what each service kept.
  * Boundary: test only; a stand-in container lists fixed instances and binds a recording bus; the engine runs on the
@@ -20,6 +21,7 @@ import type { Clock } from "@stackra/contracts";
 import { DomainEvent, EventBus } from "@stackra/events";
 import type { Listener, ListenerContext } from "@stackra/events";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
+import { QueueService } from "@stackra/queue";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -32,7 +34,9 @@ import {
   ServiceAcked,
   Step,
   Workflow,
+  WorkflowJournal,
 } from "#core/index";
+import { StartTriggeredAutomationsAction } from "#node/actions/start-triggered-automations.action";
 import { AutomationService } from "#node/services/automation.service";
 import { ServiceAckService } from "#node/services/service-ack.service";
 import { WorkflowExplorer } from "#node/workflow.explorer";
@@ -216,6 +220,68 @@ describe("WorkflowExplorer trigger blocks", () => {
         automation: "wfa_1",
       },
     );
+  });
+
+  it("pushes the queued start in the delivery's scope when a queue is bound, and starts nothing in process", async () => {
+    const subscriptions: [AnyClass, Listener][] = [];
+    const bus = {
+      subscribe: (type: AnyClass, listener: Listener) => subscriptions.push([type, listener]),
+      dispatch: () => undefined,
+      drain: () => Promise.resolve(),
+    };
+    const automations = { triggered: vi.fn(async () => []) };
+    const pushed: unknown[][] = [];
+    const queue = Object.assign(Object.create(QueueService.prototype) as object, {
+      push: async (...args: unknown[]) => {
+        pushed.push(args);
+        return "job_1";
+      },
+    });
+    const scope = { id: "scp_01j9z3k4m5n6p7q8r9s0t1v2w3", path: "platform.acme" };
+    const journal = Object.assign(Object.create(WorkflowJournal.prototype) as object, {
+      currentScope: async () => scope,
+    });
+    const bound = new Map<AnyClass, object>([
+      [EventBus, bus],
+      [AutomationService, automations],
+      [QueueService, queue],
+      [WorkflowJournal, journal],
+    ]);
+    const container = {
+      instances: () => [],
+      has: (token: AnyClass) => bound.has(token),
+      get: (token: AnyClass) => bound.get(token),
+    } as unknown as Container;
+    const runner = engine();
+    vi.spyOn(runner, "hold").mockResolvedValue(undefined);
+    const start = vi.spyOn(runner, "startDocument").mockResolvedValue(undefined);
+    new WorkflowExplorer(container, runner).onApplicationBootstrap();
+
+    const [, listener] = subscriptions.find(([candidate]) => candidate === OrderPaid) ?? [];
+    const ctx = {
+      eventId: "evt_3",
+      correlationId: "cor_1",
+      occurredAt: NOON,
+      now: () => NOON,
+    } as ListenerContext;
+    await (
+      listener as unknown as { handle: (e: object, c: ListenerContext) => Promise<void> }
+    ).handle(Object.assign(new OrderPaid(), { orderId: "ord_1" }), ctx);
+
+    expect(pushed).toEqual([
+      [
+        StartTriggeredAutomationsAction,
+        {
+          block: "orders.order_paid",
+          eventId: "evt_3",
+          correlationId: "cor_1",
+          occurrence: expect.objectContaining({ orderId: "ord_1" }),
+        },
+        { origin: expect.objectContaining({ kind: "system" }), scope },
+      ],
+    ]);
+    expect(automations.triggered).not.toHaveBeenCalled();
+    expect(start).not.toHaveBeenCalled();
   });
 
   it("starts no automation the event chain stops", async () => {

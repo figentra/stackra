@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); ADR 0260 (client ports); the STA-347 stand-in barrel decision.
  */
 export { TenantMembers } from "#contracts/ports/tenant-members.port";
+export { TenantDataKeyStore } from "#contracts/ports/tenant-data-key-store.port";
 export { TenantProfile } from "#contracts/ports/tenant-profile.port";
 export type { TenantInvitation } from "#contracts/types/tenant-invitation.type";
 export type { TenantMember } from "#contracts/types/tenant-member.type";

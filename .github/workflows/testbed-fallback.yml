@@ -37,7 +37,7 @@ jobs:
       id-token: write # GitHub OIDC for the sops decrypt of the licence and turbo tokens only (ADR 0525)
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
           submodules: false
@@ -51,29 +51,54 @@ jobs:
 
       - name: Uniwind Pro token (sops)
         if: inputs.preset == 'e2e'
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build
           names: UNIWIND_AUTH_TOKEN
 
       - name: Turborepo remote cache (sops)
-        uses: ./.github/actions/secrets-decrypt
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build/turbo
 
       # Uniwind Pro's CI licence has a monthly download quota: its postinstall reuses a tarball from UNIWIND_CACHE_DIR
       # after checking it against the checksum Uniwind publishes, so a restored entry can never be a changed build.
-      - name: Uniwind Pro download cache
+      # As ci.yml's mobile job: two peer variants run the postinstall, one at a time so the second reads the cache, and
+      # the cache is saved right after the install.
+      - name: Uniwind Pro cache directory
         if: inputs.preset == 'e2e'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        run: echo "UNIWIND_CACHE_DIR=$HOME/.uniwind/cache/pro" >> "$GITHUB_ENV"
+
+      - name: Uniwind Pro download cache (restore)
+        id: uniwind-cache
+        if: inputs.preset == 'e2e'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.uniwind/cache/pro
-          key: uniwind-pro-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
-          restore-keys: uniwind-pro-${{ runner.os }}-
+          key: uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
+          restore-keys: uniwind-pro-1-${{ runner.os }}-
 
       - name: Install dependencies
         if: inputs.preset == 'e2e'
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --child-concurrency=1
+
+      # A failed or limited download leaves the directory without a package: saving it would store an empty entry
+      # that every later run restores as a hit, never saving the real download (seen in #926's first run).
+      - name: Uniwind Pro download cache (filled?)
+        id: uniwind-filled
+        if: ${{ !cancelled() && inputs.preset == 'e2e' }}
+        run: |
+          if find "$UNIWIND_CACHE_DIR" -type f ! -name '*.sha256' -size +100k 2>/dev/null | grep -q .; then
+            echo "filled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Uniwind Pro download cache (save)
+        if: ${{ !cancelled() && inputs.preset == 'e2e' && steps.uniwind-cache.outputs.cache-hit != 'true' && steps.uniwind-filled.outputs.filled == 'true' }}
+        continue-on-error: true # another run may have saved the same key first
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.uniwind/cache/pro
+          key: uniwind-pro-1-${{ runner.os }}-${{ hashFiles('pnpm-workspace.yaml') }}
 
       - name: Install dependencies (without the Uniwind Pro apps)
         if: inputs.preset != 'e2e'

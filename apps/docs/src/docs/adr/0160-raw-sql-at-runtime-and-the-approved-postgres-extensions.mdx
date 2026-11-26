@@ -1,7 +1,25 @@
 ---
 title: "0160 — Raw SQL at runtime and the approved Postgres extensions"
-description: "Accepted, amended by 0314, 0334 and a 2026-10-29 note (pg_stat_statements) · 2026-10-20"
+description: "Accepted, amended by 0314, 0334 and notes of 2026-10-29 (pg_stat_statements) and 2026-11-03 (btree_gist, provisioning) · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-11-03 (STA-1402, stackra-283): `btree_gist` is approved, so decision 2 lists eight
+  extensions: pgvector, pg_trgm, ltree, citext, pgcrypto, PostGIS, pg_stat_statements and btree_gist.
+  pg_cron stays rejected, and TimescaleDB stays out. The one machine-readable list is runway's
+  `PostgresExtension` enum (`APPROVED_POSTGRES_EXTENSIONS` in `@stackra/runway`), the `z.enum` of a
+  service runway's `environments.<env>.database.extensions`, carried as an `enum` in the shipped
+  service schema; `@stackra/database`'s `Extension` repeats it for `schema.createExtension`. The
+  infrastructure pre-creates the extensions a server's services name and preloads those that need it
+  (`shared_preload_libraries`: pg_stat_statements), reading them from the service runways. Gen's
+  manifest `RequiredExtensions` must be a subset of the list; gen's check is its own work, not yet
+  built. Built today: the runway enum and schema, and the AWS runtime plan, which carries each Postgres
+  server's extensions and declares a parameter group for the preload. Cloud SQL offers no
+  `shared_preload_libraries` flag and documents pg_stat_statements as ready for `create extension`
+  (not verified on a live server), so the GCP runtime sets nothing. Running `create extension`
+  before the migrations is not built yet; until it is, a migration's `schema.createExtension` creates
+  them with the admin login. Decision 2 stands otherwise.
+</Note>
 
 <Note>
   Amended 2026-10-29 (STA-1400, stackra-282; owner answer 7 of the data-layer gap analysis):
@@ -50,6 +68,9 @@ description: "Accepted, amended by 0314, 0334 and a 2026-10-29 note (pg_stat_sta
 ## Enforcement
 
 planned — the validator rejects `raw(` outside a module service method, and rejects a raw query with no `// raw-sql:` reason.
+
+`parseRunway` refuses a service runway extension outside `PostgresExtension` (note of 2026-11-03), and
+`schema.createExtension` refuses a name outside `Extension`.
 
 ## Alternatives
 

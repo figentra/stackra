@@ -93,11 +93,14 @@ host: a part's lines arrive computed, and a split by amount must be turned into 
 
 Drivers ask `FiscalSigner` for a format. For ZATCA's enveloped XAdES the host need not build the envelope: bind
 `XadesEnvelopeSignerDriver` over a `FiscalSigningKey` (the unit's private key signs bytes; its certificate's public
-facts are read) and the package writes `ext:UBLExtensions` and `cac:Signature`. It makes `xades` only; CAdES (ETA) and
-other formats stay with a host signer.
+facts are read) and the package writes `ext:UBLExtensions` and `cac:Signature`. For ETA's detached CAdES-BES, bind
+`CadesSignerDriver` over the same port: it writes the CMS `SignedData` (content type, message digest, `ESSCertIDv2`
+and the signing time as signed attributes, the certificate inside) and has the key sign the attributes, RSA or EC as
+the certificate says. Each makes its own format only; other formats stay with a host signer.
 
 ```ts
 const zatca = new ZatcaDriver(new XadesEnvelopeSignerDriver(hostKey), transport);
+const eta = new EtaDriver(new CadesSignerDriver(hostKey), transport); // hostKey: a token, an HSM or an e-seal provider
 ```
 
 ## Hybrid PDF

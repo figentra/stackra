@@ -19,7 +19,7 @@ export interface RuledBandProps {
   readonly id?: string | undefined;
   /** The section's spoken name; given, the band is a named region. */
   readonly label?: string | undefined;
-  /** The block. */
+  /** The block the band holds. */
   readonly children: ReactNode;
   /** Styles the band; given, it replaces the landing's band padding (the hero's rhythm). */
   readonly className?: string | undefined;

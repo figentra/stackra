@@ -1,9 +1,20 @@
 ---
 title: "0119 — Merge policy: Quality Gate is the only required check; Claude merges only through pnpm pr:merge"
-description: "Accepted, amended by 0285 and 0468 · 2026-10-19 · amended 2026-10-28"
+description: "Accepted, amended by 0285, 0468 and 0523 · 2026-10-19 · amended 2026-10-28 and 2026-11-10"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0119, the merge policy and release authority. Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468. */}
+{/* Stackra file contract. Purpose: ADR 0119, the merge policy and release authority. Boundary: decision text; the 2026-10-28 note records the deploy model of ADR 0468 (stackra-244, STA-1395); the 2026-11-10 note records ADR 0523's merge condition (STA-2682). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0468; ADR 0523. */}
+
+<Note>
+  Amended 2026-11-10 (STA-2682) by [0523](/adr/0523-humans-approve-policy-not-instances) decisions 3
+  and 6, owner's yes of that date: the gate and the ruleset are the merge condition since ADR 0523.
+  In decision 2, `pnpm pr:merge` no longer asks for an AI review verdict (the stackra-reviewer App
+  is retired and AI review is advisory, so the 0285 note no longer applies to merging). It merges
+  when the pull request is open and not a draft, the newest Quality Gate run on the head is green,
+  the ruleset lets it merge (a merge queue, or a merge state of CLEAN, HAS_HOOKS or UNSTABLE) and it
+  carries no `hold` label. The owner's approval of design and R3 pull requests stays. A1 (Quality
+  Gate the only required check, no admin bypass) stands, and `--admin` is never used.
+</Note>
 
 <Note>
   Amended 2026-10-28 (STA-1395) by

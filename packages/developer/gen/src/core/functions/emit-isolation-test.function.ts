@@ -8,8 +8,8 @@
  *          platform table joins the platform list; a reviewed table must still enable and force row-level security
  *          and hold every policy it names): every other table holds the
  *          owner column under forced row-level security with its one permissive policy, the service role does not
- *          bypass it, and the two-owner probe sees and moves nothing. It prints each warning the audit returns (an
- *          unlisted table without `tenant_id`, until 0.20) and passes with only warnings.
+ *          bypass it, and the two-owner probe sees and moves nothing. An unlisted table without `tenant_id` is a gap
+ *          (the audit's default since the tenancy contract step), so the test fails on it.
  * Boundary: pure. Written only for a service that runs `@stackra/database`, `@stackra/tenancy` and `@stackra/testing`
  *           and has an owned model of its own or hosts a package that has one (its manifest's `models`). It lives in
  *           `.stackra/` as all generated output does, so the integration task must include `.stackra/tests/**` to run

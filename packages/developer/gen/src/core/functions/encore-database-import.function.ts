@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `encoreDatabaseImport`, the side-effect import of the service's Encore database
- *          (`import "./database";`) that a generated `.stackra/encore/<member>/*.ts` file puts first, ahead of the
+ *          (`import "./database";`) that a generated `stackra-encore/<member>/*.ts` file puts first, ahead of the
  *          server app, so `provideDatabaseUrl` has run before `#stackra/boot` connects (STA-1652).
  * Boundary: pure; empty when the service has no database (`usesDatabase`), since `emitEncoreDatabase` then writes no
  *           `database.ts`.

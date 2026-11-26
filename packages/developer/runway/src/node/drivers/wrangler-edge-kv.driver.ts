@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `WranglerEdgeKvDriver`, the `wrangler` driver of the `EdgeKvWriter` port: writes and removes rows of the
- *          edge KV copy with `wrangler kv key put|delete --remote` in the configured namespace. Runway writes the
+ *          edge KV copy with `wrangler kv key put|get|delete --remote` in the configured namespace. Runway writes the
  *          platform `host:`, `wellknown:`, `release:`, `canary:` and `shell:` rows with it until the OS edge
  *          projector exists (app-shells 16.10).
  * Boundary: runs `wrangler` only, through the given `CommandRunner`; the account and token are wrangler's own login
@@ -18,6 +18,9 @@ import { EDGE_PUBLISH_SETTINGS } from "#node/constants/edge-publish-settings.con
 import type { EdgeKvConfig } from "#node/config/edge-kv.config";
 import { runProgram } from "#node/functions/run-program.function";
 import type { CommandRunner } from "#node/types/command-runner.type";
+
+/** How wrangler reports a missing key: the KV API's 404, in the failed fetch it throws. */
+const NOT_FOUND = / - 404: Not Found/;
 
 /**
  * Writes the edge KV copy through wrangler.
@@ -46,13 +49,36 @@ export class WranglerEdgeKvDriver extends Driver(EdgeKvWriter) {
     this.namespace = `--namespace-id=${config.namespaceId}`;
   }
 
-  /** Stores `value` under `key`. */
-  override async put(key: string, value: string): Promise<void> {
+  /** Stores `value` under `key`; with `ttlSeconds` Workers KV expires it (wrangler's `--ttl`). */
+  override async put(key: string, value: string, ttlSeconds?: number): Promise<void> {
     await this.run(
       EDGE_PUBLISH_SETTINGS.wrangler,
-      ["kv", "key", "put", key, value, this.namespace, "--remote"],
+      [
+        "kv",
+        "key",
+        "put",
+        key,
+        value,
+        this.namespace,
+        ...(ttlSeconds === undefined ? [] : [`--ttl=${ttlSeconds}`]),
+        "--remote",
+      ],
       this.env === undefined ? {} : { env: this.env },
     );
+  }
+
+  /** The row under `key`, or `null` when wrangler answers the API's 404 (no such key); any other failure throws. */
+  override async read(key: string): Promise<string | null> {
+    try {
+      return await this.run(
+        EDGE_PUBLISH_SETTINGS.wrangler,
+        ["kv", "key", "get", key, this.namespace, "--text", "--remote"],
+        this.env === undefined ? {} : { env: this.env },
+      );
+    } catch (error) {
+      if (NOT_FOUND.test(String((error as Error).message))) return null;
+      throw error;
+    }
   }
 
   /** Removes the row under `key`. */

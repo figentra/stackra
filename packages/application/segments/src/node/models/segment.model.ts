@@ -13,7 +13,7 @@
  */
 import type { PublicId } from "@stackra/contracts";
 import type { OptionalProps } from "@stackra/database";
-import { HasPublicId, Model, Timestamps } from "@stackra/model";
+import { HasPublicId, Model, MovesWithScope, Timestamps } from "@stackra/model";
 import { BelongsToTenant } from "@stackra/tenancy/node";
 import { Int } from "@stackra/validation";
 
@@ -21,7 +21,12 @@ import type { SegmentKind } from "#contracts/index";
 
 /** A segment. Traits add `id` and the timestamps; the indexes are the migration's. */
 // oxlint-disable-next-line typescript/no-unsafe-declaration-merging -- reason: merged with the [OptionalProps] augmentation below
-export class Segment extends Model.with(HasPublicId("seg"), BelongsToTenant, Timestamps) {
+export class Segment extends Model.with(
+  HasPublicId("seg"),
+  BelongsToTenant,
+  Timestamps,
+  MovesWithScope,
+) {
   /** The rule set revision the membership was last fully computed from; null before the first computation. */
   @Int
   revision!: number | null;

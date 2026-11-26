@@ -1,9 +1,15 @@
 ---
 title: "0514 — Self-hosted open-source docs: Fumadocs on a Cloudflare Worker replaces Mintlify"
-description: "Accepted, amended by 0521 · 2026-11-02"
+description: "Accepted, amended by 0521 · 2026-11-02; amended 2026-11-09"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0514, the owner's decision that every Figentra docs site is self-hosted Fumadocs on a Cloudflare Worker with static assets, deployed through Runway; each repository writes its docs in `docs/`, each product release publishes a `@figentra/<product>-docs` package, the API reference comes from the ADR 0511 contract packages, and the docs.figentra.com hub depends on every docs package. Boundary: decision text only; the hub, the Runway provider and the per-repository migrations are built by their own issues. Runtime: documentation. Governing contract: ADR template; ADR 0002, 0039, 0165, 0284, 0289, 0299, 0453, 0468, 0511. */}
+
+<Note>
+  Amended 2026-11-09: the move to `docs/` runs in two steps (the docs app moves as it is, then
+  converts), and a docs member's settings become `docs.yaml` and its navigation Fumadocs `meta.json`
+  (see the amendment below).
+</Note>
 
 <Note>
   Extended 2026-11-02 (STA-2024) by [0521](/adr/0521-design-system-docs-on-fumadocs-ai-first) for
@@ -94,6 +100,46 @@ product docs package; the Runway Cloudflare Workers provider (STA-1921, stackra#
 release's bump pull request; one migration pull request per repository under STA-1920 that adds `docs/`, adds the docs package to
 the Release, moves the Mintlify content and removes Mintlify and its checks; a `FORBIDDEN_DEPENDENCIES` row for `mint`
 and `mintlify` in `@stackra/repo-checks` once the last repository has moved. Until then nothing checks this rule.
+
+## Amendment of 2026-11-09: the move in two steps, and a docs member's settings are data
+
+Decision 10 left two things open. A docs member holds no TypeScript, yet each site's settings and navigation sit in a
+`DocsConfig` class (`src/config/docs.config.ts`). And the hub that would serve a content-only package does not exist yet,
+so a product that moved straight to decision 10's shape would lose its site. This amendment settles both and changes
+nothing else.
+
+1. **Step one: the folder moves as it is.** Each repository moves its docs app from `apps/docs` to the root `docs/`
+   with `git mv`, so the history follows, and a product deletes `apps/`. The member stays a gen docs app for now (its
+   `stackra.config.ts`, `DocsConfig`, `wrangler.jsonc` and member `runway.yaml` move with it), so its site keeps
+   deploying. Every path that names the old place moves in the same pull request: the workspace and turbo globs,
+   `.gitignore`, knip, CODEOWNERS, the root runway's docs destination, the docs deploy workflow and the links. A
+   product's step one rides in its Flow preset pull request. Core goes last, because `stackra adr reserve`, the ADR
+   links and `numbers.yaml` move with its pages.
+2. **Step two: the settings become `docs/docs.yaml`.** Every `DocsConfig` field except `navigation` becomes a key of
+   one `docs.yaml` at the member root: `name`, `description`, `colors`, `logo`, `favicon`, `navbar`, `footer`,
+   `apiReference`, `locales`, `redirects` and `raw`. `theme` goes, as it only meant Mintlify. The file is repo-owned
+   config, so it is YAML, with a JSON Schema from `@stackra/gen`. It ships inside the docs package, so the hub reads a
+   product's name, colours and logo from the released package, as it reads its pages. The settings do not go into the
+   root runway: runway says where a member runs, and the hub never sees a repository's runway.
+3. **Navigation is Fumadocs' own `meta.json`.** Each folder under `content/` may carry a `meta.json` in Fumadocs'
+   format (`title`, `icon`, `pages`, and `root: true` for a tab). A folder without one lists its pages in Fumadocs'
+   default order. Gen reads these files and builds the site from them; the old check of a navigation list against the
+   pages goes. `meta.json` is strict JSON read by that fixed name, so it is a `MUST_STAY_JSON` row.
+4. **The step-two member.** `docs/` holds `content/` (pages, `meta.json` files and the assets the pages use),
+   `docs.yaml`, and the member files `package.json` (`"stackra": { "kind": "docs" }`), README, AGENTS and CHANGELOG.
+   A repository that still serves its own site (Stackra core, Flow, and each product until the hub serves it) keeps
+   a member `runway.yaml` for the dev port and the production domain. There is no `stackra.config.ts`, no
+   `tsconfig.json`, no tier tag and no hand-written `wrangler.jsonc`: gen writes the site and its Worker config into
+   the member's `.stackra/` (ADR 0295). The package publishes only `content/` and `docs.yaml`.
+5. **Order.** Gen's reader for a `docs` member lands and is released in core first, while it still builds today's
+   `DocsConfig` apps. Each repository then converts its `docs/` in one pull request. The `DocsConfig` reader goes
+   once no repository uses it.
+
+Enforcement: step one is checked already. The `layout` rule of `stackra validate --repository`
+(`checkRepositoryLayout`, ADR 0526 decision 3, stackra#583) requires a root `docs` and refuses an `apps/` that package.json
+`stackra.layout.allow` does not declare, and no product declares one. Planned: gen's `docs` member reader, the
+`docs.yaml` schema and the `meta.json` `MUST_STAY_JSON` row, in one core pull request; and a repo-checks rule that a
+product's `docs/` is kind `docs`, once every product has converted.
 
 ## Supersedes and sources
 

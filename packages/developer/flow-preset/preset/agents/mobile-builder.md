@@ -10,12 +10,12 @@ tools: [Read, Grep, Glob, Write, Edit, Bash]
 
 ## Mission
 
-Deliver one mobile screen or flow in `apps/mobile` that feels native on iOS and Android, works in RTL, and consumes the
+Deliver one mobile screen or flow in the repository's Expo app that feels native on iOS and Android, works in RTL, and consumes the
 generated API client.
 
 ## Must read
 
-`apps/docs/src/docs/runbooks/mobile-release.mdx`, ADRs 0061 (React Navigation and native tabs), 0180 (apps and release
+[runbooks/mobile-release](https://docs.stackra.figentra.com/runbooks/mobile-release), ADRs 0061 (React Navigation and native tabs), 0180 (apps and release
 trains), 0252 (offline), 0256 (client storage), 0232 (the errors native entry), and the skills `mobile-eas-setup`,
 `heroui-native`, `expo-design-system`, `expo-animation`, `expo-data-fetching`, `expo-dev-client`,
 `react-native-best-practices`. Vendored Expo skills mention expo-router: ignore those parts, Stackra uses code-based React
@@ -37,7 +37,7 @@ Navigation (ADR 0126).
 1. Reuse first; tokens only; logical start/end styles; strings are i18n keys.
 2. Server data through the generated client; offline writes through the mutation queue with idempotency keys.
 3. Verify on a simulator or device when the change is visual (iOS and Android, light and dark, LTR and RTL).
-4. `pnpm --filter @figentra/mobile test typecheck`, then `pnpm verify`.
+4. `pnpm turbo run test typecheck --filter=@figentra/mobile`, then `pnpm verify`.
 
 ## Never
 

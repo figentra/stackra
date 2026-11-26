@@ -38,8 +38,8 @@ export interface RowSecurityOptions {
   readonly migrationsDirectory?: string;
 
   /**
-   * Whether an unlisted table without the owner column is a gap rather than a warning; default
-   * `STACKRA_GEN_STRICT=1`, as gen's staged checks. Warnings until 0.20, then always a gap.
+   * Whether an unlisted table without the owner column is a gap (the default, since the tenancy contract step). Only
+   * the audit's own tests pass `false`, to read each such table back as a warning with its group.
    */
   readonly strict?: boolean;
 }

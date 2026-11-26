@@ -1,5 +1,121 @@
 # @stackra/infra-aws-runtime
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+  - @stackra/runway@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/infra-tools@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/validation@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 0f7448f: A root runway can declare one `gotenberg` resource, the PDF engine `@stackra/documents` renders through. Runway runs it
+  as an internal Fargate workload:
+  
+  - the Chromium image pinned by digest and pulled through the ECR pull-through registry named in
+    `shared.network.registry`;
+  - basic auth on, no URL fetching;
+  - its own 443-only egress group;
+  - FARGATE_SPOT outside production.
+  
+  `ensureGotenbergCredentials` writes the password once and hands every consumer `DOCUMENTS_GOTENBERG_URL` and
+  `DOCUMENTS_GOTENBERG_AUTHORIZATION`.
+
+### Patch Changes
+
+- b33fb9d: A public workload's load balancer keeps a quiet connection for 180 s instead of the ALB default of 60, so an AI answer
+  streamed as server-sent events (60 to 120 s, a ping every 15 s) is not cut mid-stream.
+- 5ca7ec9: The runtime stack reads the VPC from the root runway's `environments.<env>.shared.network.vpcId` (an id or a
+  `ref:<path>`, resolved from the stack config) and passes it to `awsRuntime`. Before, `awsRuntimeStack` passed no VPC,
+  so every plan with a workload or a database failed with "Name the VPC (network.vpcId)". `runtimeNetwork` reports a
+  `vpcId` that is not one id or `ref:`.
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [0f7448f]
+- Updated dependencies [c7144a0]
+- Updated dependencies [93d63bb]
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/runway@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/validation@0.33.0
+  - @stackra/infra-tools@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/runway@0.32.0
+  - @stackra/infra-tools@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 670f75c: A workload can name `migrate: { command, timeoutMinutes? }`: a one-off task with the workload's image, env, secrets
+  and resources that runs once per new revision before the service rolls, and stops the apply when it fails or times
+  out (15 minutes by default). On AWS it is a second Fargate task definition run by a Pulumi dynamic resource through
+  `@aws-sdk/client-ecs`, which the stacks repository must list beside `@pulumi/aws`.
+
+### Patch Changes
+
+- Updated dependencies [5585893]
+- Updated dependencies [ebfd942]
+- Updated dependencies [670f75c]
+  - @stackra/runway@0.31.0
+  - @stackra/infra-tools@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/validation@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- a3a3190: A service runway's `environments.<env>.database.extensions` now takes only the Postgres extensions ADR 0160 approves:
+  vector, pg_trgm, ltree, citext, pgcrypto, postgis, pg_stat_statements and btree_gist. `@stackra/runway` exports them
+  as the `PostgresExtension` enum and the frozen `APPROVED_POSTGRES_EXTENSIONS` list, and the shipped
+  `schema/service.json` carries them as an `enum` on `extensions.items`. Any other name is refused with its path.
+  
+  The AWS runtime plan carries each Postgres server's extensions (`DatabasePlan.extensions`, the names its member
+  consumers list, once and sorted) and those it preloads (`preloadLibraries`). A server that preloads one gets its own
+  parameter group (a cluster parameter group on Aurora) setting `shared_preload_libraries`, applied at the next reboot.
+  
+  `@stackra/database`'s `Extension` adds `BtreeGist`, so a migration may run `schema.createExtension(Extension.BtreeGist)`.
+- f4df473: A worker workload needs no port: `port` and `health` are optional unless the workload is `public`, and an internal
+  worker may name `healthCommand`, which becomes its Fargate container's health check (no port mapping is declared).
+
+### Patch Changes
+
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [8c17109]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+- Updated dependencies [a3a3190]
+- Updated dependencies [0765ecc]
+- Updated dependencies [f4df473]
+  - @stackra/contracts@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/runway@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/infra-tools@0.30.0
+
 ## 0.29.0
 
 ### Patch Changes

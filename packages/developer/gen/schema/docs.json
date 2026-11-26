@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://static.stackra.figentra.com/schemas/docs.json",
+  "$comment": "Stackra file contract: Purpose: the shape of a docs member's docs.yaml, its site settings. Boundary: shape only; the navigation is content/**/meta.json and a docs member is always a Fumadocs site, so neither navigation nor theme is a key; `stackra gen` (readDocsYaml in @stackra/gen) checks the same shape. Shipped as @stackra/gen/schema/docs.json, a byte copy. Runtime: node (editors and validators). Governing contract: ADR 0514 (amendment of 2026-11-09: the docs member).",
+  "title": "docs.yaml (docs member)",
+  "description": "The site settings of a docs member (a workspace member whose package.json has \"stackra\": { \"kind\": \"docs\" }): every DocsConfig field but navigation and theme. Pages, assets and snippets live under content/, and each folder's navigation in its content/**/meta.json. `stackra gen` writes the Fumadocs site into .stackra/site/.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "colors"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional pointer to this schema. Editors use the `# yaml-language-server: $schema=` comment instead.",
+      "examples": ["@stackra/gen/schema/docs.json"]
+    },
+    "name": {
+      "type": "string",
+      "description": "The site name; also the title of the first tab when content/meta.json has no title.",
+      "examples": ["Stackra"]
+    },
+    "description": {
+      "type": "string",
+      "description": "One sentence for search engines and the site header."
+    },
+    "colors": {
+      "type": "object",
+      "description": "The brand colours.",
+      "additionalProperties": false,
+      "required": ["primary"],
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "The primary colour.",
+          "examples": ["#0B0D0F"]
+        },
+        "light": { "type": "string", "description": "The primary colour in dark mode." },
+        "dark": { "type": "string", "description": "A darker shade of the primary colour." }
+      }
+    },
+    "logo": {
+      "type": "object",
+      "description": "The logo for light and dark mode, as paths under content/assets.",
+      "additionalProperties": false,
+      "required": ["light", "dark"],
+      "properties": {
+        "light": { "type": "string", "examples": ["logo/light.svg"] },
+        "dark": { "type": "string", "examples": ["logo/dark.svg"] },
+        "href": {
+          "type": "string",
+          "description": "Where the logo links; the site root when absent."
+        }
+      }
+    },
+    "favicon": {
+      "type": "string",
+      "description": "The favicon, a path under content/assets.",
+      "examples": ["favicon.svg"]
+    },
+    "navbar": {
+      "type": "object",
+      "description": "The navbar links and its one primary button.",
+      "additionalProperties": false,
+      "properties": {
+        "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
+        "primary": { "$ref": "#/$defs/link" }
+      }
+    },
+    "footer": {
+      "type": "object",
+      "description": "The footer: social profile URLs by network, and link columns.",
+      "additionalProperties": false,
+      "properties": {
+        "socials": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["header", "items"],
+            "properties": {
+              "header": { "type": "string" },
+              "items": { "type": "array", "items": { "$ref": "#/$defs/link" } }
+            }
+          }
+        }
+      }
+    },
+    "apiReference": {
+      "type": "array",
+      "description": "The service keys whose API reference the site carries, from each service's committed stackra.manifest.json.",
+      "items": { "type": "string" }
+    },
+    "locales": {
+      "type": "array",
+      "description": "The site's languages, the default first. A page of another locale sits beside its default page as <page>.<code>.mdx and is served under /<code>/.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "label"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Lower case, with an optional upper-case region.",
+            "examples": ["en", "ar-SA"]
+          },
+          "label": {
+            "type": "string",
+            "description": "The name in the language switch, in that language."
+          },
+          "dir": { "enum": ["ltr", "rtl"], "description": "The text direction; ltr when absent." },
+          "default": {
+            "type": "boolean",
+            "description": "The locale whose pages are the source pages."
+          },
+          "labels": {
+            "type": "object",
+            "description": "Tab and group names in this language, by their default-locale name.",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "redirects": {
+      "type": "array",
+      "description": "Paths that moved: each from answers with a permanent redirect to to, a page path or an absolute URL.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" }
+        }
+      }
+    },
+    "raw": {
+      "type": "object",
+      "description": "Fumadocs layout options gen does not own, passed through as they are; nav, links, tree and children are refused."
+    }
+  },
+  "$defs": {
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "href"],
+      "properties": {
+        "label": { "type": "string", "description": "The text shown." },
+        "href": {
+          "type": "string",
+          "description": "An absolute URL, or a site path such as /quickstart."
+        }
+      }
+    }
+  }
+}

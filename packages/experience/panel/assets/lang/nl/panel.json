@@ -5,6 +5,7 @@
     "retry": "Opnieuw proberen",
     "range": "Periode",
     "change": "{change} t.o.v. vorige periode",
+    "change_points": "{change} procentpunt t.o.v. vorige periode",
     "target": "Doel {target}",
     "not_rendered": "Deze tegel kan hier niet worden getoond."
   },
@@ -86,6 +87,16 @@
     "empty": "Geen resultaten.",
     "loading": "Zoeken in {source}",
     "failed": "{source} kon niet worden doorzocht."
+  },
+  "chat_form": {
+    "send": "Versturen",
+    "sent": "Verstuurd",
+    "loading": "Formulier laden",
+    "unavailable": "Dit formulier kan hier niet worden getoond.",
+    "upload": "Kies een bestand",
+    "uploading": "{name} uploaden",
+    "upload_failed": "{name} kon niet worden geüpload.",
+    "no_upload": "Hier kunnen geen bestanden worden toegevoegd."
   },
   "checklist": {
     "title": "Aan de slag",
@@ -191,6 +202,9 @@
       "create": "Nieuw aanmaken",
       "update": "Bestaande bijwerken",
       "upsert": "Aanmaken of bijwerken"
+    },
+    "metric_format": {
+      "percent": "Percentage"
     },
     "place": {
       "band": "KPI-balk",

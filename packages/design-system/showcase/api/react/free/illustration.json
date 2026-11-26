@@ -1,0 +1,51 @@
+{
+  "generatedFrom": {
+    "hash": "dc2b9c355a64497b",
+    "propsFiles": ["ui/src/react/illustration/illustration.props.ts"]
+  },
+  "importLine": "import { Illustration } from \"@stackra/ui/react\";",
+  "key": "free/illustration",
+  "parts": [
+    {
+      "name": "Illustration",
+      "props": [
+        {
+          "description": "The drawing's base URL, without the tone and extension, such as `art/engine` for `art/engine.ground.svg`.",
+          "name": "src",
+          "required": true,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "The drawing's viewBox width, for its aspect ratio and its smallest width.",
+          "name": "width",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The drawing's viewBox height, for its aspect ratio.",
+          "name": "height",
+          "required": true,
+          "source": "stackra",
+          "type": "number"
+        },
+        {
+          "description": "The drawing's spoken description; without it the drawing is decoration, hidden from assistive tech.",
+          "name": "alt",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        },
+        {
+          "description": "Styles the drawing, such as its width.",
+          "name": "className",
+          "required": false,
+          "source": "stackra",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "platform": "react"
+}

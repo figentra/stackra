@@ -4,7 +4,7 @@
  *          object, the `Controller` kind for raw HTTP, the `RequestGuard` extension point, and the signed edge-header
  *          guard with its `EdgeConfig`, memory and `env` drivers and refusal, the origin and CSRF guards with their
  *          configuration and refusals, the JWKS bearer-token guard with its configuration, key drivers, refusal and the request's
- *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check) with its call types,
+ *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check, API keys included) with its call types,
  *          `ServiceClientSessionDriver` (a service call's own token and the user's token it forwards),
  *          `corsHeaders`, `serveGuardedCall` (the one path of every generated HTTP adapter) with `HttpConfig`, and `apiCacheControl`, the rule 22 `private, no-store` header), until
  *          `stackra gen` writes the entry barrels (STA-339).
@@ -47,6 +47,7 @@ export type { CallAuthData } from "#server/types/call-auth-data.type";
 export type { CallCredentials } from "#server/types/call-credentials.type";
 export type { ControllerClass } from "#server/types/controller-class.type";
 export type { GuardedCallOptions } from "#server/types/guarded-call-options.type";
+export type { KeyCallOptions } from "#server/types/key-call-options.type";
 export type { VisitorIdentity } from "#server/types/visitor-identity.type";
 export type { ControllerOptions } from "#server/types/controller-options.type";
 export type { ProbeAnswer } from "#server/types/probe-answer.type";

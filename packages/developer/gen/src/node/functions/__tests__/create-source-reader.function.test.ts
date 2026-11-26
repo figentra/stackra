@@ -11,7 +11,8 @@
  *          their types, STA-2215; `[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
  *          getters) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
  *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218);
- *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338); a
+ *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338), and a
+ *          stream action's `Promise<ReadableStream<T>>` as `stream` (G1b); a
  *          listener's `handle` parameter reads as its event class (its own, or a `#stackra/clients/*` one by its import),
  *          `EventEnvelope` as a relay, and anything else as `listener_handle_signature` (ADR 0260 decision 4); a
  *          trailing `tool: false, // reason:` comment; and the OS gen pass forms (STA-1283): a bare or prefix-union
@@ -124,6 +125,22 @@ const SOURCES: Readonly<Record<string, string>> = {
     'export class TypedReplicaQuery extends Query({ key: "order.typed_replica" }) {',
     "  async handle(): Promise<ReplicaPage<string>> {",
     '    return { rows: [], removed: [], cursor: "0", asOf: new Date(), full: true };',
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
+  "src/node/actions/stream-turn.action.ts": [
+    'import { Action, Idempotency } from "@stackra/actions";',
+    'import { ActorKind } from "@stackra/contracts";',
+    "export class StreamTurnAction extends Action({",
+    '  key: "turn.stream",',
+    "  actors: [ActorKind.User],",
+    "  stream: true,",
+    "  tool: false,",
+    "  idempotency: Idempotency.Never,",
+    "}) {",
+    "  async handle(): Promise<ReadableStream<{ readonly type: string }>> {",
+    "    return new ReadableStream();",
     "  }",
     "}",
     "",
@@ -280,6 +297,13 @@ describe("createSourceReader", async () => {
     });
   });
 
+  it("reads a ReadableStream output as a stream action's (G1b)", () => {
+    expect(codes).not.toContain("action_handle_signature StreamTurnAction");
+    expect(declared.find((item) => item.name === "StreamTurnAction")?.handle).toEqual({
+      stream: true,
+    });
+  });
+
   it("takes a generated client as its class token before its file exists", () => {
     expect(codes).not.toContain("token_not_a_class CatalogueReaderService.constructor");
     expect(declared.find((item) => item.name === "CatalogueReaderService")?.deps).toEqual([
@@ -422,6 +446,17 @@ const MODEL_SOURCES: Readonly<Record<string, string>> = {
     'export class Customer extends Model.with(HasPublicId("cus")) {}',
     "",
   ].join("\n"),
+  // Gen's own last output: its augmentation is not the member's, so `Customer` keeps its keys (STA-2688).
+  "src/node/entities.gen.ts": [
+    'import type { OptionalProps } from "@stackra/model";',
+    "",
+    'declare module "./models/customer.model" {',
+    "  interface Customer {",
+    '    [OptionalProps]?: "id";',
+    "  }",
+    "}",
+    "",
+  ].join("\n"),
   "src/node/models/receipt.model.ts": [
     'import { HasPublicId, Model, OptionalProps, Timestamps } from "@stackra/model";',
     "",
@@ -478,6 +513,10 @@ describe("createSourceReader on models", async () => {
 
   it("leaves the keys out when the model writes its own [OptionalProps], which a generated one would redeclare (STA-1750)", () => {
     expect(entity("Receipt")?.optional).toEqual([]);
+  });
+
+  it("keeps the keys when the [OptionalProps] is gen's own, in the entities file it wrote last run (STA-2688)", () => {
+    expect(entity("Customer")?.optional).toEqual(["id"]);
   });
 
   it("reads a one-to-many with its inverse and options", () => {
@@ -977,6 +1016,92 @@ describe("createSourceReader on a driver over another package's base", async () 
       kind: "driver",
       partner: { name: "Printer", from: "@stackra/printer-fixture/contracts" },
     });
+  });
+});
+
+/**
+ * SHIP's webhook events typed by a hosted connector's integration, `import type`d from its `/node` entry, whose types
+ * the checker cannot resolve here (no such package is installed): the regression of `integration: Importedunknown3`.
+ */
+const HOSTED_WEBHOOK_SOURCES: Readonly<Record<string, string>> = {
+  "src/core/events/quiqup-order-updated.event.ts": [
+    'import type { QuiqupIntegration } from "@figentra/ship-connector-quiqup/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class QuiqupOrderUpdated extends WebhookEvent<QuiqupIntegration>({ type: "order" }) {}',
+    "",
+  ].join("\n"),
+  "src/core/events/bosta-delivery-updated.event.ts": [
+    'import type { BostaIntegration as Bosta } from "@figentra/ship-connector-bosta/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class BostaDeliveryUpdated extends WebhookEvent<Bosta>({ type: "delivery" }) {}',
+    "",
+  ].join("\n"),
+  // installed, but its `/node` types are not built: the import resolves to a module the checker cannot read
+  "node_modules/@figentra/ship-connector-oto/package.json": JSON.stringify({
+    name: "@figentra/ship-connector-oto",
+    type: "module",
+    exports: { "./node": { types: "./dist/node.d.mts", default: "./dist/node.mjs" } },
+  }),
+  "src/core/events/oto-shipment-updated.event.ts": [
+    'import type { OtoIntegration } from "@figentra/ship-connector-oto/node";',
+    'import { WebhookEvent } from "@stackra/events";',
+    "",
+    'export class OtoShipmentUpdated extends WebhookEvent<OtoIntegration>({ type: "shipment" }) {}',
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on a webhook event typed by a hosted package's integration", async () => {
+  const root = writeFixtureMember("hosted-webhook-events", HOSTED_WEBHOOK_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  // The fixture member's `@stackra/events` stand-in must declare `WebhookEvent`, or no event here is read at all.
+  it("reads every fixture event, so a stand-in without WebhookEvent fails here first", () => {
+    expect(
+      classes
+        .filter((candidate) => candidate.kind === "webhook_event")
+        .map((candidate) => candidate.name)
+        .toSorted(),
+    ).toEqual(["BostaDeliveryUpdated", "OtoShipmentUpdated", "QuiqupOrderUpdated"]);
+  });
+
+  it("names the integration as imported, never `unknown`, from the package's entry", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "QuiqupOrderUpdated")?.partner,
+    ).toMatchObject({ name: "QuiqupIntegration", from: "@figentra/ship-connector-quiqup/node" });
+  });
+
+  it("names an aliased import by the name the package exports", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "BostaDeliveryUpdated")?.partner,
+    ).toMatchObject({ name: "BostaIntegration", from: "@figentra/ship-connector-bosta/node" });
+  });
+
+  it("names the integration of an installed package whose types are not built", () => {
+    expect(
+      classes.find((candidate) => candidate.name === "OtoShipmentUpdated")?.partner,
+    ).toMatchObject({ name: "OtoIntegration", from: "@figentra/ship-connector-oto/node" });
+  });
+
+  it("reads each event as a webhook event", () => {
+    expect(
+      classes.map((candidate) => [candidate.name, candidate.kind, candidate.partner?.name]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["QuiqupOrderUpdated", "webhook_event", "QuiqupIntegration"],
+        ["BostaDeliveryUpdated", "webhook_event", "BostaIntegration"],
+        ["OtoShipmentUpdated", "webhook_event", "OtoIntegration"],
+      ]),
+    );
+  });
+
+  it("refuses no partner it could name", () => {
+    expect(reader.errors.map((error) => error.code)).not.toContain("partner_unresolved");
   });
 });
 

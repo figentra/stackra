@@ -31,6 +31,7 @@ import { FiscalChainConflictError } from "#core/errors/fiscal-chain-conflict.err
 import { FiscalDriverMissingError } from "#core/errors/fiscal-driver-missing.error";
 import { FiscalOptionsInvalidError } from "#core/errors/fiscal-options-invalid.error";
 import { checkDocuments } from "#core/functions/check-documents.function";
+import { optionsOf } from "#core/functions/options-of.function";
 
 /** Milliseconds in an hour. */
 const HOUR = 3_600_000;
@@ -107,7 +108,7 @@ export abstract class FiscalService extends Service {
     const now = this.clock.now();
     const sealed = await driver.seal(document, {
       unitId: target.unitId,
-      options: mandate.options,
+      options: optionsOf(mandate, target),
       previous,
       sequence,
       now,
@@ -157,7 +158,7 @@ export abstract class FiscalService extends Service {
       try {
         outcome = await driver.submit(record, {
           unitId: target.unitId,
-          options: mandate?.options ?? {},
+          options: optionsOf(mandate, target),
         });
       } catch (error) {
         if (error instanceof FiscalAuthorityUnavailableError) break;
@@ -199,7 +200,7 @@ export abstract class FiscalService extends Service {
       try {
         outcome = await driver.poll(record, {
           unitId: target.unitId,
-          options: mandate?.options ?? {},
+          options: optionsOf(mandate, target),
         });
       } catch (error) {
         if (error instanceof FiscalAuthorityUnavailableError) break;
@@ -279,7 +280,10 @@ export abstract class FiscalService extends Service {
     const records = (await this.journal.range(target.unitId, from, to)).filter(
       (record) => record.driver === driver.key,
     );
-    return driver.exportJournal(records, { unitId: target.unitId, options: mandate.options });
+    return driver.exportJournal(records, {
+      unitId: target.unitId,
+      options: optionsOf(mandate, target),
+    });
   }
 
   /** The pack's mandate for the target's channel on a date. */

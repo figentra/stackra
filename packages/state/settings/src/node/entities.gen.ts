@@ -54,9 +54,9 @@ export const StoredSettingSchema = new EntitySchema<StoredSetting>({
     userId: { type: "string", nullable: true },
     locked: { type: "json" },
     id: { type: "string", primary: true },
-    tenantId: { type: "string", nullable: true },
     createdAt: { type: "datetime" },
     updatedAt: { type: "datetime", onUpdate: () => new Date() },
+    tenantId: { type: "string", nullable: true },
   },
 });
 

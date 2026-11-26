@@ -14,14 +14,7 @@
       "minHeight": 640
     }
   ],
-  "related": [
-    "free/blueprint-section",
-    "free/schematic",
-    "free/surfaces",
-    "free/dither-art",
-    "free/cta-row",
-    "free/illustration"
-  ],
+  "related": ["free/blueprint-section", "free/schematic", "free/cta-row"],
   "tokens": ["color.core", "color.accent", "color.background"],
   "keywords": ["hero", "landing", "blueprint", "schematic", "marketing", "headline", "kit"],
   "status": "new"

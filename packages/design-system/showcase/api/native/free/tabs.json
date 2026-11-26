@@ -1,6 +1,6 @@
 {
   "generatedFrom": {
-    "hash": "35af1c611041b5cf",
+    "hash": "c97ec9b8420bdecb",
     "heroDoc": "vendor/heroui/native/tabs.json",
     "propsFiles": ["ui/src/native/tabs/tabs.props.ts"]
   },
@@ -45,11 +45,11 @@
         },
         {
           "default": "primary",
-          "description": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one. Defaults to `primary`.",
+          "description": "The emphasis of the selected tab: `primary` is a raised pill, `secondary` a flat one, and `steps` plain words\njoined by arrows with the selected step in the accent (a marketing switcher, such as Action → Endpoint → Client;\nnative draws it as `secondary`). Defaults to `primary`.",
           "name": "variant",
           "required": false,
           "source": "stackra",
-          "type": "\"secondary\" | \"primary\""
+          "type": "\"secondary\" | \"primary\" | \"steps\""
         },
         {
           "description": "True to show every tab but refuse selecting any of them.",

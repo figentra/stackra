@@ -8,7 +8,7 @@
  * Boundary: holds no state. A tree a test seeds (`fakeScopeTree`, `.override(ScopeTree, ...)`) keeps its own list. An
  *           app that binds no `ScopeNodeService` keeps the empty memory tree. The node entry is imported on the first
  *           read, so an app that never reads the tree never loads it.
- * Runtime: isomorphic (the node entry loads on the first read)
+ * Runtime: isomorphic
  * Governing contract: ADR 0327 (decisions 1 and 3); ADR 0269 (decision 3); ADR 0263 (decision 12: the testing module).
  */
 import { registerTestingPlugin } from "@stackra/container/testing";

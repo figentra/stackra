@@ -1,0 +1,21 @@
+{
+  "slug": "notification-preferences",
+  "tier": "free",
+  "category": "blocks",
+  "platforms": ["react"],
+  "packageName": "@stackra/notifications",
+  "exportName": "NotificationPreferences",
+  "parts": ["NotificationPreferences"],
+  "hero": {},
+  "examples": [
+    {
+      "id": "basics",
+      "card": true,
+      "minHeight": 560
+    }
+  ],
+  "related": ["free/setting-row", "free/switch", "free/form-section"],
+  "tokens": ["color.surface", "color.accent"],
+  "keywords": ["notifications", "preferences", "settings", "email", "push", "subscribe", "kit"],
+  "status": "new"
+}

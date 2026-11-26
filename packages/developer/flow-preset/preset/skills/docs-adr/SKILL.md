@@ -17,6 +17,6 @@ The format is `apps/docs/src/docs/adr/template.mdx`; this skill only restates it
    `Superseded by NNNN · <date>` and it gains a `<Note>` pointing forward. A partial change (one row, one decision) adds an
    "Amended by" `<Note>` and keeps the description. An Accepted ADR's body is edited only for typos and its Enforcement line.
 5. Projection: if the decision changes a law, update the constitution page and its History in the same commit; if it changes
-   a rule, update the matching `.agents/rules/*.md` and run `pnpm agents:sync`. If enforceable, add the check.
+   a rule, update the matching `.agents/rules/*.md` and run `fflow sync`. If enforceable, add the check.
 6. Add the row to `apps/docs/src/docs/adr/index.mdx` (the `{ folder: "adr" }` entry in `apps/docs/src/config/docs.config.ts` lists the page), then
    run `pnpm verify` (gen assembles the site, then `mint validate` and `mint broken-links`).

@@ -1,5 +1,167 @@
 # @stackra/database
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- e885a38: A service no longer refuses to boot with "its drivers are X, Y, and no config field selects one" for six ports: each now has a config field that picks its driver, with a default. `DatabaseConfig.driver` selects `Database` (`postgres`; `memory` stays the testing driver a test picks with `useDrivers`). The new `SettingsConfig` (key `settings`) holds `store` for `SettingValueStore` and `floors` for `SettingFloorSource`, both `memory`. The new `StorageConfig` (key `storage`) holds `driver` for `Storage` (`memory`; an app still gets `web` or `native` from gen's per-runtime defaults, which come first). `IdentityConfig` gains `sessionStore` for `SessionStore` and `approvalChallenges` for `AppApprovalChallenges`, both `memory`. The ports `Database`, `Storage` and `AppApprovalChallenges` declare their keys, so `DriverName<…>` narrows to their drivers. Production sets `settings.store`, `settings.floors`, `storage.driver` and `identity.approval_challenges` in config to choose its own drivers.
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/actions@0.33.1
+  - @stackra/model@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/cache@0.33.1
+  - @stackra/testing@0.33.1
+
+## 0.33.0
+
+### Minor Changes
+
+- 246594d: Core re-paths a moved scope subtree's rows for every service. A model opts in with the new `MovesWithScope` trait (@stackra/model); `repathAllRecords(from, to)` (@stackra/database) runs `CrudService.repath` on every registered model with the trait, in the caller's transaction; and `RepathOnScopeMovedListener` (@stackra/scope/node), a queued listener with back-off, runs it on every `scope.node.moved.v1`, so a service writes no re-path listener of its own. A model without the trait is never touched; a `jsonb` scope keeps its owner's own listener.
+
+### Patch Changes
+
+- Updated dependencies [54aa1e7]
+- Updated dependencies [82c2718]
+- Updated dependencies [93d63bb]
+- Updated dependencies [ad4e5bf]
+- Updated dependencies [41a5ff0]
+- Updated dependencies [246594d]
+- Updated dependencies [93d63bb]
+- Updated dependencies [93d63bb]
+  - @stackra/actions@0.33.0
+  - @stackra/config@0.33.0
+  - @stackra/contracts@0.33.0
+  - @stackra/testing@0.33.0
+  - @stackra/model@0.33.0
+  - @stackra/errors@0.33.0
+  - @stackra/cache@0.33.0
+  - @stackra/console@0.33.0
+  - @stackra/container@0.33.0
+  - @stackra/events@0.33.0
+  - @stackra/validation@0.33.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [9ddce28]
+  - @stackra/config@0.32.0
+  - @stackra/actions@0.32.0
+  - @stackra/errors@0.32.0
+  - @stackra/cache@0.32.0
+  - @stackra/model@0.32.0
+  - @stackra/console@0.32.0
+  - @stackra/testing@0.32.0
+  - @stackra/container@0.32.0
+  - @stackra/contracts@0.32.0
+  - @stackra/events@0.32.0
+  - @stackra/validation@0.32.0
+
+## 0.31.0
+
+### Minor Changes
+
+- 6473cf1: A detached call (`ctx.detach()`) now works with the database. `detached.run` enters every wrapper registered in the new `DETACHED_RUNS` (`@stackra/actions/contracts`), and the database registers one when a driver connects: the loop's work runs on a fresh fork, outside the call's committed transaction (which MikroORM otherwise keeps in the context of a continuation started inside it), and `Database.detached()` answers the call's step, per database instance. Inside a detached call, every `CrudService` operation that runs outside a transaction runs as its own step: a short transaction with the call's isolation (`each`, `chunk` and `metrics` excepted). Outside a detached call nothing changes.
+
+### Patch Changes
+
+- Updated dependencies [298af71]
+- Updated dependencies [6473cf1]
+  - @stackra/actions@0.31.0
+  - @stackra/model@0.31.0
+  - @stackra/console@0.31.0
+  - @stackra/testing@0.31.0
+  - @stackra/config@0.31.0
+  - @stackra/container@0.31.0
+  - @stackra/contracts@0.31.0
+  - @stackra/errors@0.31.0
+  - @stackra/events@0.31.0
+  - @stackra/validation@0.31.0
+  - @stackra/cache@0.31.0
+
+## 0.30.0
+
+### Minor Changes
+
+- 0394e56: The Postgres idempotency store keeps a refusal: migration `0008_add_idempotency_refusal` adds a nullable `refusal` jsonb column to `database.idempotency_keys`, and `completeRefused` upserts it outside the refused call's rolled-back transaction.
+- d8d78f0: `DatabaseConfig.health.rowSecurity` (off by default): `/readyz`'s `database` probe also reads the connected role and is
+  `down`, whatever `critical` says, when that role can bypass row-level security. That covers a superuser, BYPASSRLS
+  (its own or through a role it belongs to), the owner of a table with row security (which could turn FORCE off), a
+  member of `stackra_system_access`, or a role with CREATEROLE or CREATEDB: the runtime role of the runtime-role design
+  holds none of these.
+  Runway turns it on for deployed environments, so a deploy whose runtime role could bypass `FORCE ROW LEVEL SECURITY`
+  never goes ready (tenancy audit gap J).
+  
+  Turn it on only once the service connects as its own runtime role: today a service on Encore connects as the role that
+  runs its migrations and owns its tables, so the probe is rightly `down` there until that role exists.
+  
+  A host that overrides `health` whole (`override health = { timeout, critical }`) now also states `rowSecurity`.
+- 15dba8d: The tenancy contract step's two checks are now errors (ADR 0239):
+  
+  - `assertRowSecurity`: a table without the owner column that no platform list names is a gap, by default. It no longer
+    reads `STACKRA_GEN_STRICT`; only the audit's own tests pass `strict: false` to read such tables back as warnings with
+    their group. A service's generated isolation test therefore fails on one.
+  - gen's `model_tenancy_missing` (and `model_tenancy_migration_missing`) are errors for a package's models, as they
+    already were for a service running `@stackra/tenancy`.
+  
+  Before taking this version, a product must have zero such tables and models: list a table that holds no tenant data
+  with `t.platformTable(reason)` (or `t.reviewedPolicy(reason, policies)`), give a tenant table its owner column, and
+  mark each model `BelongsToTenant`, `BelongsToTenantOrPlatform` or `Model.global`. Core itself has none.
+
+### Patch Changes
+
+- 7b5a381: `t.change().type()` writes `-- squawk-ignore changing-column-type`, with its reason, when the change only widens a `varchar` or turns one into `text` with no custom conversion: Postgres changes only the catalog. Narrowing and every other type change stay flagged.
+- a3a3190: A service runway's `environments.<env>.database.extensions` now takes only the Postgres extensions ADR 0160 approves:
+  vector, pg_trgm, ltree, citext, pgcrypto, postgis, pg_stat_statements and btree_gist. `@stackra/runway` exports them
+  as the `PostgresExtension` enum and the frozen `APPROVED_POSTGRES_EXTENSIONS` list, and the shipped
+  `schema/service.json` carries them as an `enum` on `extensions.items`. Any other name is refused with its path.
+  
+  The AWS runtime plan carries each Postgres server's extensions (`DatabasePlan.extensions`, the names its member
+  consumers list, once and sorted) and those it preloads (`preloadLibraries`). A server that preloads one gets its own
+  parameter group (a cluster parameter group on Aurora) setting `shared_preload_libraries`, applied at the next reboot.
+  
+  `@stackra/database`'s `Extension` adds `BtreeGist`, so a migration may run `schema.createExtension(Extension.BtreeGist)`.
+- Updated dependencies [418e195]
+- Updated dependencies [6005425]
+- Updated dependencies [0394e56]
+- Updated dependencies [96b5241]
+- Updated dependencies [17fafdd]
+- Updated dependencies [4ce80a2]
+- Updated dependencies [0394e56]
+- Updated dependencies [8c17109]
+- Updated dependencies [8c17109]
+- Updated dependencies [82dccb3]
+- Updated dependencies [f6a087c]
+- Updated dependencies [ef49e63]
+  - @stackra/actions@0.30.0
+  - @stackra/contracts@0.30.0
+  - @stackra/errors@0.30.0
+  - @stackra/container@0.30.0
+  - @stackra/model@0.30.0
+  - @stackra/console@0.30.0
+  - @stackra/config@0.30.0
+  - @stackra/events@0.30.0
+  - @stackra/validation@0.30.0
+  - @stackra/cache@0.30.0
+  - @stackra/testing@0.30.0
+
 ## 0.29.0
 
 ### Minor Changes

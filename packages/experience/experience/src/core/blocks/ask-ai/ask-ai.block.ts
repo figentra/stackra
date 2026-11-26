@@ -18,10 +18,13 @@ export class AskAiBlock extends Block({
   category: BlockCategory.Marketing,
   icon: LANDING_BLOCK_ICONS.askAi,
 }) {
+  /** The field's label. */
   label!: LocalizedText;
 
+  /** The docs the question is asked of. */
   docsUrl!: string;
 
+  /** The words in the empty field. */
   placeholder?: LocalizedText;
 
   /** True (the component's default) until the AI gateway is live. */

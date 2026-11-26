@@ -10,12 +10,12 @@ import type { LocalizedText } from "@stackra/contracts";
 
 /** One word per state. */
 export interface CapabilityStateLabels<Text = LocalizedText> {
-  /** Offered ("Yes"). */
+  /** The label of an offered capability ("Yes"). */
   readonly yes: Text;
 
-  /** Not offered ("No"). */
+  /** The label of a capability not offered ("No"). */
   readonly no: Text;
 
-  /** Planned ("Coming"). */
+  /** The label of a planned capability ("Coming"). */
   readonly coming: Text;
 }

@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: `emitEncoreApi`, a service's Encore endpoints (`.stackra/encore/<member>/api.ts`): one `api.raw()` per own
+ * Purpose: `emitEncoreApi`, a service's Encore endpoints (`stackra-encore/<member>/api.ts`): one `api.raw()` per own
  *          action or query whose manifest entry has an endpoint (that entry's method and path) and one per own
  *          controller (any method, its `path`, a trailing `/*` as Encore's `/*rest`), each `expose: true` and
  *          `auth: false` to Encore, each calling `answerCall` of `./http`. That helper reads the body once under the
  *          cap, runs the request guards over its exact bytes, authenticates, then runs the call as `new
- *          ActionPipeline(container).execute(<class>, input, { actor, ...requestCallOptions(request) })` (an action or query) or `container.get(<class>)
+ *          ActionPipeline(container).execute(<class>, input, { actor, ...requestCallOptions(request), ...call })` (an
+ *          action or query; `call` is an API key's credential, origin and sandbox) or `container.get(<class>)
  *          .handle(request)` (a controller). The endpoint is named by the camel-cased key and its version (`shop.order
  *          .cancel@1` is `shopOrderCancelV1`), a controller by its class name. A hosted package's actions, queries and
  *          controllers get the same adapters, imported from the entry its manifest's `services` names, when the host
@@ -33,6 +34,7 @@ import { camelCase } from "@stackra/support";
 
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { importLines } from "#core/functions/import-lines.function";
 import { ownClass } from "#core/functions/own-class.function";
@@ -53,7 +55,7 @@ const RESERVED = ["ActionPipeline", "answerCall", "api", "app", "requestCallOpti
  * @param ir - the member read by discovery.
  * @param manifest - the manifest built from `ir`, whose entries carry the derived endpoints.
  * @example
- * emitEncoreApi(ir, manifest)?.path; // ".stackra/encore/shop/api.ts"
+ * emitEncoreApi(ir, manifest)?.path; // "stackra-encore/shop/api.ts"
  */
 export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): GeneratedFile | undefined {
   if (ir.layout !== "service") return undefined;
@@ -130,8 +132,8 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
       `      anonymous: ${entry["anonymous"] === true},`,
       `      action: ${type},`,
       ...input,
-      "      execute: (container, input, actor, request) =>",
-      `        new ActionPipeline(container).execute(${type}, input as never, { actor, ...requestCallOptions(request) }),`,
+      "      execute: (container, input, actor, request, call) =>",
+      `        new ActionPipeline(container).execute(${type}, input as never, { actor, ...requestCallOptions(request), ...call }),`,
       "    }),",
       ");",
       "",
@@ -188,7 +190,7 @@ export function emitEncoreApi(ir: MemberIR, manifest: StackraManifest): Generate
     runtime: "node",
   });
   return {
-    path: `.stackra/encore/${ir.member}/api.ts`,
+    path: `${encoreServiceFolder(ir.member)}/api.ts`,
     content: [
       header,
       ...encoreDatabaseImport(ir),
