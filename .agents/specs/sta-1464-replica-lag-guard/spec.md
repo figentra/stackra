@@ -69,14 +69,21 @@ freshness?)` with `ReplicaFreshness`; `DatabaseConfig.replicaReads` (`ReplicaRea
   `replicaReads.areas[area]`, else its declaration.
 - **AC-005**: THE `DatabaseReplicaReadsDriver` SHALL demand the visit's `maxLag`, else `replicaReads.maxLag`, and the
   latest of the writer's remembered and carried write as `after`.
-- **AC-006**: WHEN `Database.onReplica` is given a freshness and the replica it is about to use lags more than `maxLag`,
-  or has not replayed through `after`, THE work SHALL run on the primary; a caught-up replica SHALL serve it; without a
-  freshness the replica SHALL be read unmeasured.
+- **AC-006**: WHEN `Database.onReplica` demands a `maxLag` its replica lags past THE `PostgresDatabaseDriver` SHALL run
+  the work on the primary.
+- **AC-014**: WHEN `Database.onReplica` demands an `after` its replica has yet to replay THE driver SHALL run the work
+  on the primary.
+- **AC-010**: WHEN `Database.onReplica` demands a freshness its replica meets THE `PostgresDatabaseDriver` SHALL run the
+  work on that replica.
+- **AC-011**: WHEN `Database.onReplica` is given no freshness THE `PostgresDatabaseDriver` SHALL run the work on a
+  replica without measuring it.
 - **AC-007**: THE lag reading SHALL be reused for `replicaProbe` and taken again once when it fails only because it aged.
 - **AC-008**: THE `DatabaseConfig.replicaReads` defaults SHALL be a 5-second `maxLag`, a 1-second `probeEvery` and no
   overrides, and an unknown area or place SHALL be a config issue.
-- **AC-009**: gen SHALL record a query's `maxLag` in the manifest, reach `ReplicaReads` for a service that declares
-  `@stackra/database` and has a query, and pass `replicaReads.probeEvery` to `connect` as `replicaProbe`.
+- **AC-009**: WHEN gen writes a manifest entry for a query that declares `maxLag` THE entry SHALL record it.
+- **AC-012**: WHEN a service declares `@stackra/database` and has a query THE generated wiring SHALL reach
+  `ReplicaReads`.
+- **AC-013**: THE generated boot SHALL pass `DatabaseConfig.replicaReads.probeEvery` to `connect` as `replicaProbe`.
 
 ## Status history
 

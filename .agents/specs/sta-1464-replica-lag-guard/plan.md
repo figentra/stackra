@@ -55,11 +55,11 @@ running the work on the primary when that replica is not fresh enough.
 - **P-005**: the demanded freshness is the visit's `maxLag` or the configured one, `after` the latest write —
   Validates: AC-005
 - **P-006**: a paused standby behind a write is skipped by a guarded read and served to an unguarded one; it serves
-  again once caught up — Validates: AC-006
+  again once caught up — Validates: AC-006, AC-010, AC-011, AC-014
 - **P-007**: `replicaIsFresh` and `replicaPositionOf` judge positions exactly at their bounds — Validates: AC-006,
   AC-007
 - **P-008**: the schema defaults equal the options class and refuse bad values — Validates: AC-008
-- **P-009**: gen's port reach, manifest and boot line — Validates: AC-009
+- **P-009**: gen's port reach, manifest and boot line — Validates: AC-009, AC-012, AC-013
 
 ## Architecture overview
 
@@ -81,13 +81,57 @@ reused for `replicaProbe`), `replicaIsFresh`, then the replica's read-only trans
 ## Files and folders
 
 ```text
-packages/application/actions/src/contracts/{index.ts,ports/replica-reads.port.ts,types/replica-query.type.ts,types/replica-visit.type.ts}
-packages/application/actions/src/core/{bases/query.base.ts,types/query-options.type.ts,services/action-pipeline.service.ts}
-packages/data/database/src/core/{constants,functions,types,ports,schemas}/… (replica-*)
-packages/data/database/src/node/drivers/{postgres-database,database-replica-reads}.driver.ts
-packages/data/database/src/node/drivers/__tests__/postgres-replica-lag.int.test.ts
-packages/developer/gen/src/core/functions/{replica-reads-ports,build-manifest,emit-boot}.function.ts
-packages/developer/gen/__golden__/*/expected/services/*/.stackra/gen/boot.ts.golden
+packages/application/actions/
+  AGENTS.md
+  README.md
+  src/contracts/index.ts
+  src/contracts/ports/replica-reads.port.ts
+  src/contracts/types/replica-query.type.ts
+  src/contracts/types/replica-visit.type.ts
+  src/core/bases/query.base.ts
+  src/core/bases/__tests__/query.base.test.ts
+  src/core/types/query-options.type.ts
+  src/core/services/action-pipeline.service.ts
+  src/core/services/__tests__/action-pipeline.service.test.ts
+packages/data/database/
+  AGENTS.md
+  README.md
+  src/core/index.ts
+  src/core/constants/database-config-schema.constant.ts
+  src/core/constants/replica-position-sql.constant.ts
+  src/core/constants/replica-reads-schema.constant.ts
+  src/core/functions/replica-is-fresh.function.ts
+  src/core/functions/replica-position-of.function.ts
+  src/core/functions/__tests__/replica-is-fresh.function.test.ts
+  src/core/functions/__tests__/replica-position-of.function.test.ts
+  src/core/ports/database.port.ts
+  src/core/schemas/database-config-options.schema.ts
+  src/core/schemas/__tests__/database-config-options.schema.test.ts
+  src/core/types/database-options.type.ts
+  src/core/types/replica-freshness.type.ts
+  src/core/types/replica-position.type.ts
+  src/core/types/replica-reads-settings.type.ts
+  src/node/drivers/postgres-database.driver.ts
+  src/node/drivers/database-replica-reads.driver.ts
+  src/node/drivers/__tests__/database-replica-reads.driver.test.ts
+  src/node/drivers/__tests__/postgres-replica-lag.int.test.ts
+packages/developer/gen/
+  README.md
+  src/core/functions/build-manifest.function.ts
+  src/core/functions/emit-boot.function.ts
+  src/core/functions/replica-reads-ports.function.ts
+  src/core/functions/__tests__/emit-boot.function.test.ts
+  src/core/functions/__tests__/replica-reads-ports.function.test.ts
+  __golden__/anonymous-route/expected/services/shop/.stackra/gen/boot.ts.golden
+  __golden__/contracts-only-host/expected/services/shop/.stackra/gen/boot.ts.golden
+  __golden__/contracts-pipeline-port/expected/services/shop/.stackra/gen/boot.ts.golden
+  __golden__/contracts-port-host/expected/services/shop/.stackra/gen/boot.ts.golden
+  __golden__/cross-app-consumer/expected/services/catalogue/.stackra/gen/boot.ts.golden
+  __golden__/cross-app-consumer/expected/services/channels/.stackra/gen/boot.ts.golden
+  __golden__/cross-app-producer/expected/services/shop/.stackra/gen/boot.ts.golden
+  __golden__/member-module-alias/expected/services/payments/.stackra/gen/boot.ts.golden
+  __golden__/pipeline-ports/expected/services/shop/.stackra/gen/boot.ts.golden
+  __golden__/service/expected/services/shop/.stackra/gen/boot.ts.golden
 .changeset/replica-reads-lag-guard.md
 ```
 
@@ -115,10 +159,10 @@ The replica path still replays the running `app.*` settings; the primary path ru
 - AC-001: `query.base.test.ts`.
 - AC-002, AC-003: `action-pipeline.service.test.ts` (STA-1464 block).
 - AC-004, AC-005: `database-replica-reads.driver.test.ts`.
-- AC-006, AC-007: `postgres-replica-lag.int.test.ts` on a real standby (replay paused and resumed), and the pure
+- AC-006, AC-007, AC-010, AC-011, AC-014: `postgres-replica-lag.int.test.ts` on a real standby (replay paused and resumed), and the pure
   function tests.
 - AC-008: `database-config-options.schema.test.ts`.
-- AC-009: `replica-reads-ports.function.test.ts`, `emit-boot.function.test.ts`, the golden files.
+- AC-009, AC-012, AC-013: `replica-reads-ports.function.test.ts`, `emit-boot.function.test.ts`, the golden files.
 
 ## Rollout
 
