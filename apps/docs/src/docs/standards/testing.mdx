@@ -77,13 +77,40 @@ An app's e2e suite is a set of journeys run across axes, not a single configurat
 - Mobile journeys run against a simulator or device (Maestro or an equivalent); VoiceOver and split-screen checks stay manual and are listed in a checklist, not claimed as covered.
 - Failures found by the suite in app code are reported to the app's owner, with the failing step; a spec does not paper over them with workarounds without saying so.
 
+## Tests that do not always run
+
+A test that stops running unseen is a test that stopped proving anything. Every `skip`, `todo`, `fixme`, `fails`, `skipIf` and `runIf` marker (also `xit`, `xdescribe`, `it.concurrent.skip`, `it.skip.each`, and node:test's `{ skip }` and `{ todo }` options) is listed in `tools/scripts/test-markers.yaml`, keyed by its test file and the title its call names ([ADR 0182](/adr/0182-testing-strategy-v2-tiers-coverage-infrastructure-and-policies), decision 4).
+
+- **Environment gate** (`skipIf` / `runIf`): listed under `gates` with the reason it only runs where it does, for example "integration tier; runs where `TESTBED_POSTGRES_HOST` names a Postgres". A plain `skip` is never a gate.
+- **Quarantine**: a flaky or broken test is marked (`it.skip`, or `it.fails` for a known bug) and listed under `quarantine` with its Linear `issue`, its `reason` and an `until` date at most 30 days out. On that day the gate fails: fix the test and remove the marker, or renew the date under the issue with what was learned. A flaky test is never deleted or retried until green.
+- A committed `.only` always fails, as does a listed entry that no marker matches any more.
+
+```yaml
+quarantine:
+  packages/runtime/queue/src/node/__tests__/lease.test.ts:
+    releases a lease at its deadline:
+      issue: STA-1234
+      reason: races the fake clock on a loaded box
+      until: 2026-12-20
+```
+
+## Shared-box rules
+
+Build boxes and CI runners run many suites at once on one machine, so a test takes nothing another run can hold:
+
+- **Ports**: listen on port 0 and read the port the operating system gave (`server.address().port`). Never bind a literal port or declare a fixed `*_PORT` constant.
+- **Files**: write into a private folder from `mkdtemp(join(tmpdir(), "<name>-"))`, never a fixed `/tmp/<name>` path, a fixed name under `tmpdir()`, or the real home folder. Code that takes a host-wide resource (a deploy lock, a cache folder) is given a stand-in folder or a mocked lock by the test.
+- A line that must break a rule on purpose (a port that is data and never bound) carries `// shared-box: <reason>` on the line or the line above.
+
 ## What enforces this
 
-| Rule                                                      | Check                                                                                                                                | Status |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| Empty suite fails                                         | vitest presets (`passWithNoTests: false`)                                                                                            | Yes    |
-| Coverage floor on packages                                | `withCoverage` in `pnpm test:coverage`                                                                                               | Yes    |
-| Script tests and the scaffold render every template kind  | `node --test tools/scripts/__tests__/*.test.mjs` in `pnpm validate`                                                                  | Yes    |
-| Every test file sits directly in `__tests__/`; no `.spec` | `checkTestPlacement` in `@stackra/repo-checks` (`stackra validate --repository`) ([ADR 0022](/adr/0022-tests-live-in-tests-folders)) | Yes    |
-| Template output is validated, not only rendered           | planned: scaffold test also runs the validator on each kind                                                                          | No     |
-| E2E matrix and screenshot baselines                       | planned: per-app Playwright config when the first flow lands                                                                         | No     |
+| Rule                                                                   | Check                                                                                                                                | Status |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| Empty suite fails                                                      | vitest presets (`passWithNoTests: false`)                                                                                            | Yes    |
+| Coverage floor on packages                                             | `withCoverage` in `pnpm test:coverage`                                                                                               | Yes    |
+| Script tests and the scaffold render every template kind               | `node --test tools/scripts/__tests__/*.test.mjs` in `pnpm validate`                                                                  | Yes    |
+| Every test file sits directly in `__tests__/`; no `.spec`              | `checkTestPlacement` in `@stackra/repo-checks` (`stackra validate --repository`) ([ADR 0022](/adr/0022-tests-live-in-tests-folders)) | Yes    |
+| Every test marker is a listed gate or a quarantine in date; no `.only` | `testMarkerFindings` (`stackra validate --repository`, list `tools/scripts/test-markers.yaml`)                                       | Yes    |
+| Tests take free ports and private temp folders                         | `sharedBoxFindings` (`stackra validate --repository`)                                                                                | Yes    |
+| Template output is validated, not only rendered                        | planned: scaffold test also runs the validator on each kind                                                                          | No     |
+| E2E matrix and screenshot baselines                                    | planned: per-app Playwright config when the first flow lands                                                                         | No     |

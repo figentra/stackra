@@ -8,11 +8,12 @@
  *          ADR 0239 amendment) and the
  *          architecture map drift, the Python placement (ADR 0492 decision 7), the package entity lists (STA-1793), the lang
  *          catalogue exports (STA-1798), the launch files' drift from the runways (STA-2081) and the
- *          session settings (ADR 0495 decision 3, STA-1699). `--repository` prints the findings as `<dir>: <finding>` and a count and exits 1,
+ *          session settings (ADR 0495 decision 3, STA-1699), the test markers against the flaky-test quarantine list and
+ *          the shared-box test rules (ADR 0182 decision 4, STA-2842). `--repository` prints the findings as `<dir>: <finding>` and a count and exits 1,
  *          or prints nothing.
  * Boundary: reads the checkout and runs `pnpm -r list`; notices (an unbuilt runway package) go to `io.err`.
  * Runtime: node
- * Governing contract: ADR 0129; ADR 0492 (decision 7); ADR 0495 (decision 3); ADR 0022; ADR 0282 (decision 3); STA-1373; STA-1544; stackra-224; stackra-229.
+ * Governing contract: ADR 0129; ADR 0492 (decision 7); ADR 0495 (decision 3); ADR 0022; ADR 0282 (decision 3); ADR 0182 (decision 4); STA-1373; STA-1544; stackra-224; stackra-229.
  */
 import {
   catalogueFindings,
@@ -35,6 +36,10 @@ import { packageEntitiesFindings } from "#node/package-entities/functions/packag
 import { pythonPlacementFindings } from "#node/python-placement/functions/python-placement-findings.function";
 import { rowSecurityDeclarationFindings } from "#node/row-security-declarations/functions/row-security-declaration-findings.function";
 import { sessionSettingFindings } from "#node/session-settings/functions/session-setting-findings.function";
+import { sharedBoxFindings } from "#node/test-markers/functions/shared-box-findings.function";
+import { testFiles } from "#node/test-markers/functions/test-files.function";
+import { testMarkerFindings } from "#node/test-markers/functions/test-marker-findings.function";
+import { testMarkers } from "#node/test-markers/functions/test-markers.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 
 /** The check phases `validate` runs without `--repository`. */
@@ -54,6 +59,7 @@ export const VALIDATE_COMMAND: CliCommand = {
     const { cwd, io } = context;
     const root = workspaceRoot(cwd);
     const repo = readRepoContext(root);
+    const tests = testFiles(root);
     const findings = [
       ...configFindings(repo),
       ...layoutFindings(repo),
@@ -73,6 +79,8 @@ export const VALIDATE_COMMAND: CliCommand = {
       ...langAssetsFindings(root),
       ...launchConfigFindings(root),
       ...sessionSettingFindings(root),
+      ...testMarkerFindings(root, new Date(), testMarkers(root, tests)),
+      ...sharedBoxFindings(root, tests),
     ];
     for (const { dir, text } of findings) io.err(`${dir || "."}: ${text}\n`);
     if (findings.length > 0) {

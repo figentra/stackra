@@ -4,7 +4,7 @@
   "preset": {
     "name": "./packages/developer/flow-preset/preset",
     "version": "0.11.0",
-    "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
+    "digest": "sha256:0d321cb215e1640677f4bd2b73628f92458673a9737cc5e7cd9dd35fc5b9ee76"
   },
   "profile": "framework",
   "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
@@ -47,7 +47,7 @@
     ".agents/agents/security-tenancy-reviewer.md": "sha256:b61224da255377f46f9f127576a58ecd1f47ca900894dde12ec0dd57182ed954",
     ".agents/agents/service-builder.md": "sha256:80d7f92bf1c01c655ad2b8615b453e6b51092dd43fae4f1ced3e4fd86e082ddf",
     ".agents/agents/spec-writer.md": "sha256:52b5b83e65592757228fba7be313b39539313a9b53c8659fd5a4a2f594164b08",
-    ".agents/agents/test-engineer.md": "sha256:f51bb4c5f59068d467b3170a953b6164b30e0705fcd03eed7f61d80be8b6e310",
+    ".agents/agents/test-engineer.md": "sha256:f6468aaadeb6f37ba26b207365b0c096112c38f86aa574358f900090ad7a295c",
     ".agents/agents/vault-keeper.md": "sha256:10bf127b20cf18560e1b1bc6b025f7541182c5fc20be69b6eedea9c445c286e5",
     ".agents/rules/ai-tools.md": "sha256:ce5ae9a1bff725030c312ec512703ac1913d8145a6d0df7f4a77615418915137",
     ".agents/rules/concurrent-sessions.md": "sha256:811ccffcdc262b3c8696965e787a5012dee6a8f1f0b7fecb51ae28a5ed737e71",

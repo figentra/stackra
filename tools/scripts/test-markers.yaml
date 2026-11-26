@@ -1,0 +1,56 @@
+# Stackra file contract:
+# Purpose: the reviewed list of every test that does not always run (ADR 0182 decision 4, the flaky-test quarantine;
+#          STA-2842). `stackra validate --repository` reads every `skip`, `todo`, `fixme`, `fails`, `skipIf` and
+#          `runIf` marker in the test files and fails on one that is not listed here, so a test that stops running
+#          shows in this file's diff and is reviewed. A committed `only` is always a finding.
+#          `gates`: an environment gate (`skipIf` / `runIf`), keyed `<test file>` then the title its call names, with
+#          the reason it only runs where it does.
+#          `quarantine`: a test taken out because it is flaky or broken (any marker), keyed the same way, with its
+#          Linear `issue`, its `reason` and an `until` date (YYYY-MM-DD) at most 30 days out. A quarantine past its
+#          `until` fails the gate: fix the test and remove the marker, or renew the date under the issue. An entry no
+#          marker matches any more is a finding too.
+# Owner: release-operations · Secrets: forbidden
+gates:
+  packages/commerce/fiscal/src/testing/__tests__/certification.int.test.ts:
+    fiscal certification against authority sandboxes: runs only where an authority's sandbox credentials are configured
+  packages/data/search/src/node/__tests__/search-index-isolation.int.test.ts:
+    search index registry row security on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/data/search/src/node/database/migrations/__tests__/0010-contract-search-index-tenancy.migration.int.test.ts:
+    ContractSearchIndexTenancyMigration on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/developer/cli/src/node/functions/__tests__/run-process.function.test.ts:
+    stops a process still running at its deadline and resolves 124: uses POSIX shell signals; skipped on Windows
+    keeps the exit code of a process that ends before its deadline: uses a POSIX shell; skipped on Windows
+    finds a tool in a node_modules/.bin above the directory: writes a POSIX executable script; skipped on Windows
+  packages/developer/gen/src/metro-transformer/functions/__tests__/upstream-transformer.function.test.ts:
+    refuses an app without a Babel transformer: needs a machine where no root resolves a Metro Babel transformer (ci-box installs one globally)
+  packages/runtime/outbox/src/node/__tests__/cross-app-relay.int.test.ts:
+    cross-app relay end to end: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/runtime/outbox/src/node/__tests__/outbox-isolation.int.test.ts:
+    outbox row security on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/runtime/outbox/src/node/database/migrations/__tests__/0006-contract-outbox-tenancy.migration.int.test.ts:
+    ContractOutboxTenancyMigration on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/runtime/queue/src/node/__tests__/queue-isolation.int.test.ts:
+    queue row security on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/runtime/queue/src/node/database/migrations/__tests__/0003-contract-queue-tenancy.migration.int.test.ts:
+    ContractQueueTenancyMigration on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/runtime/scheduler/src/node/__tests__/scheduler-isolation.int.test.ts:
+    scheduler row security and the tick on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/runtime/scheduler/src/node/database/migrations/__tests__/0002-contract-scheduler-tenancy.migration.int.test.ts:
+    ContractSchedulerTenancyMigration on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/runtime/workflow/src/node/__tests__/journal-isolation.int.test.ts:
+    workflow journal row security on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/runtime/workflow/src/node/database/migrations/__tests__/0012-contract-journal-tenancy.migration.int.test.ts:
+    ContractJournalTenancyMigration on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/security/privacy/src/node/__tests__/privacy-isolation.int.test.ts:
+    privacy row security on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/security/privacy/src/node/database/migrations/__tests__/0003-contract-privacy-tenancy.migration.int.test.ts:
+    ContractPrivacyTenancyMigration on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/state/settings/src/node/__tests__/settings-isolation.int.test.ts:
+    settings row security on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/state/settings/src/node/__tests__/settings-runner-isolation.int.test.ts:
+    settings runner row security on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  packages/state/settings/src/node/database/migrations/__tests__/0004-contract-settings-tenancy.migration.int.test.ts:
+    ContractSettingsTenancyMigration on Postgres: integration tier; runs where TESTBED_POSTGRES_HOST names a Postgres
+  tools/scripts/__tests__/guard-port.test.mjs:
+    "guard-port: a Stackra checkout's git writes are denied": runs only on a machine with the Stackra checkout the guard protects
+quarantine: {}
