@@ -1,0 +1,142 @@
+---
+title: "Disaster recovery"
+description: "How production comes back after a loss: the 15 minute and 4 hour objectives, the rules every recovery follows, the first move for each kind of loss, the restore procedure with its erasure replay and reconciliation, and restoring one tenant."
+icon: "life-buoy"
+---
+
+<Note>
+  Status: the procedure holds from the first production database. Today the live production pieces
+  are the Cloudflare Workers (the registry, static and turbo-cache hosts); no service database runs
+  in production yet ([Deploys](/runbooks/deploys)). The [restore drill](/runbooks/restore-drill)
+  proves this page each quarter. Account ids, hosts and the names of backup vaults belong in the
+  environment's private runbook, not here ([ADR
+  0185](/adr/0185-incident-response-on-call-status-page-and-support-tiers) decision 4).
+</Note>
+
+A disaster is a loss that the running system cannot heal by itself: data deleted or corrupted, a database, a zone or an
+account gone, keys lost. Recovery is always a SEV1 ([Incident response](/runbooks/incident-response)), run by the
+incident commander, with the owner as the operator.
+
+## The objectives
+
+From [ADR 0186](/adr/0186-backups-and-disaster-recovery), read per region:
+
+| Objective                   | Value      | Comes from                                                |
+| --------------------------- | ---------- | --------------------------------------------------------- |
+| Recovery point (data lost)  | 15 minutes | Point-in-time recovery, kept 14 days                      |
+| Recovery time (back online) | 4 hours    | The restore procedure below, timed by the quarterly drill |
+| Snapshots                   | 35 days    | Daily snapshots copied to a separate backup account       |
+| Object storage              | versioned  | S3 versioning and replication to a second account or zone |
+
+The settings are in each environment's `shared.database.backups` of the root `runway.yaml`, and the infra packages
+refuse a value past the ceiling ([Backups and the quarterly restore drill](/runbooks/restore-drill)).
+
+## The rules
+
+1. **Declare first.** Open the SEV1 and freeze deploys: no `runway promote` while a recovery runs, except the
+   recovery's own redeploy.
+2. **Never restore over the source.** Restore into a new server, check it, then switch to it. The damaged server is
+   kept untouched as evidence until the postmortem closes.
+3. **Stay in the jurisdiction.** Backups, snapshots and replicas stay in the tenant's jurisdiction and a recovery never
+   moves data across one ([ADR 0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+   decision 6, [ADR 0402](/adr/0402-infra-backups-in-jurisdiction-static-egress-status-page-runtime-stack-health-and-storefront-edge)
+   decision 1).
+4. **The stack is never active-active** (ADR 0186 decision 6). There is no standby to fail over to; recovery is a
+   restore.
+5. **The owner runs every restore and every production redeploy.** Agents prepare the commands, check the result and
+   keep the timeline.
+6. **Write the times down.** The declaration, the restore point, when the restored server answered and when traffic
+   moved. They are the evidence that the objectives hold.
+
+## What was lost, and the first move
+
+| Loss                                                        | First move                                                                                                                                               |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rows deleted or corrupted by a bug, a migration or a person | Roll back the release if it is still writing bad data, then restore a point-in-time copy from just before the damage and copy the good rows back (below) |
+| A database server or its zone                               | Let the managed failover finish if the database has one; otherwise restore the latest point-in-time copy into a new server and switch to it              |
+| The production account (compromised, closed or locked)      | Restore the newest snapshot from the backup account into a new account and stack of the same jurisdiction, then redeploy the last good release into it   |
+| Files in object storage deleted or overwritten              | Restore the previous object versions (remove the delete markers, or copy the earlier version back); use the replica if the bucket itself is gone         |
+| One tenant's data, while every other tenant is fine         | [Restore one tenant](#restore-one-tenant)                                                                                                                |
+| A whole region                                              | [A whole region](#a-whole-region)                                                                                                                        |
+| An encryption key disabled or scheduled for deletion        | Re-enable it or cancel the deletion at once: AWS KMS waits 7 to 30 days before it deletes a key, and without it every backup the key wraps is unreadable |
+| A Worker (registry, static, turbo cache) deleted or broken  | Redeploy the last good commit through its deploy workflow ([Deploys](/runbooks/deploys), [Monitoring](/runbooks/monitoring))                             |
+| GitHub or CI unavailable                                    | Every clone holds the full history; gate locally while CI is down ([CI: When CI is down](/runbooks/ci#when-ci-is-down))                                  |
+
+## The restore procedure
+
+<Steps>
+  <Step title="Declare and freeze">
+    Open the SEV1 and write the time. Stop writers that would make it worse: roll back a bad release
+    or switch off the job that is damaging data.
+  </Step>
+  <Step title="Choose the restore point">
+    The last moment the data was good, inside the 14-day window. For bad data, find the first bad
+    write in the audit log or the deploy record and go one minute before it. For a lost server, the
+    latest point available.
+  </Step>
+  <Step title="Restore into a new server">
+    AWS: restore the point-in-time recovery point with AWS Backup (or a snapshot from the backup
+    account) into a new instance. Google Cloud: a point-in-time clone of the Cloud SQL instance. The
+    new server sits in the same jurisdiction and takes the same parameter and network settings.
+  </Step>
+  <Step title="Check it">
+    Connect with a read-only role. The migrations table is current for the release you will run, a
+    known tenant's rows are present, and the newest row is no later than the restore point.
+  </Step>
+  <Step title="Replay erasures and deletions">
+    A restore brings back what was erased after the restore point. Before any traffic reaches the
+    server, run again every person erasure and tenant deletion completed after the restore point;
+    the compliance service's receipts list them ([ADR
+    0189](/adr/0189-privacy-operations-and-data-retention) decision 2, [ADR
+    0188](/adr/0188-operator-access-and-the-encryption-key-hierarchy) decision 2).
+  </Step>
+  <Step title="Switch over">
+    Point the environment's database reference at the new server and redeploy the release that is
+    running ([Deploys](/runbooks/deploys)): the code does not change, only where it connects. For a
+    partial restore, copy the good rows into the live server instead, in one transaction per tenant.
+  </Step>
+  <Step title="Reconcile what left">
+    Work out what happened between the restore point and the switch: outbox events already relayed
+    to other services, webhooks delivered, payments and messages at providers. A provider's record
+    of money wins over ours. Replay or correct each one and list them on the issue.
+  </Step>
+  <Step title="Watch and record">
+    Keep the monitors and Sentry in view for an hour. Write the recovery point actually achieved
+    (restore point to start of damage) and the recovery time (declaration to service back) on the
+    issue, then write the [postmortem](/runbooks/postmortem). Delete the old server only when the
+    postmortem closes.
+  </Step>
+</Steps>
+
+## Restore one tenant
+
+When one tenant's data is damaged and the others are not, the pooled database is not rolled back
+([ADR 0353](/adr/0353-data-residency-a-region-fixed-at-sign-up-a-login-directory-that-only-routes-and-copies-within-a-jurisdiction)
+decision 8, which answers ADR 0186 open question 1):
+
+1. Restore a point-in-time copy into an isolated server that no application connects to.
+2. Export that tenant's rows and files from it, by tenant id, with `@stackra/data-transfer`.
+3. Show the owner and the tenant what will change; import only after both agree.
+4. Import into the live database inside the tenant's region, replay the tenant's erasures as above, and delete the
+   isolated copy.
+
+Which plans include this as a support operation is the product's choice, not this page's.
+
+## A whole region
+
+The objectives hold for the loss of a zone, an account or a database inside a region. After the loss of a whole region
+the service comes back in that region when the region returns, unless the deployment's SLA names a standby in a second
+region of the same jurisdiction (ADR 0186, Note of 2026-10-25). Data never moves to another jurisdiction to bring a
+service back sooner. Whether a region gets such a standby is open for the owner (ADR 0186 open question 2).
+
+## Checks that back this page
+
+| Rule                                                             | Check                                                         | State  |
+| ---------------------------------------------------------------- | ------------------------------------------------------------- | ------ |
+| Backup settings within the ceilings                              | `awsBaselineConfig`, `gcpRuntimeConfig`                       | Built  |
+| Backups and replicas stay in the jurisdiction                    | `awsBaselineConfig` (ADR 0402 decision 1)                     | Built  |
+| The objectives are met                                           | The quarterly [restore drill](/runbooks/restore-drill) record | Manual |
+| This page states the objectives and holds no environment details | `apps/docs/scripts/runbooks` tests (STA-27)                   | Live   |
+
+See also [Incident response](/runbooks/incident-response), [Backups and the quarterly restore drill](/runbooks/restore-drill)
+and [Deploys](/runbooks/deploys).

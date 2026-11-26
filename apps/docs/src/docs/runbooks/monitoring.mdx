@@ -81,6 +81,9 @@ Agents never run `pulumi up`; the owner's approval of the environment is the yes
 
 ## When a monitor fires
 
+The person on call answers it ([On-call](/runbooks/on-call)); a real outage is run as an incident
+([Incident response](/runbooks/incident-response)).
+
 1. Open the incident in Better Stack and check the Worker's Logs in Cloudflare for the same minutes.
 2. A registry outage: check the last `deploy-registry.yml` run and `GET /-/npm/v1/keys`; roll back by redeploying the
    last good commit ([Deploys](/runbooks/deploys)).

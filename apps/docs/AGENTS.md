@@ -49,6 +49,15 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
   (`src/node/architecture-map/functions/__tests__/architecture-map.test.ts`, vitest, run by its `test` task).
 - The map draws; it never decides. A rule goes in validate, oxlint, turbo boundaries or gen, not in the generator.
 
+## Runbook checks (`scripts/runbooks/`)
+
+- Runbooks are public: generic steps only (ADR 0185 decision 4). An account id, a host address, a phone number, an
+  e-mail address, a rota or a person's name goes in the environment's private runbook in the stacks repository.
+  `find-environment-details.ts` (pure) finds the first four; `__tests__/runbooks.test.ts` runs it over every page in
+  `src/docs/runbooks/`. Never add a page to `KNOWN_ENVIRONMENT_SPECIFIC` to get past it; that list only shrinks.
+- The incident response, on-call, postmortem and disaster-recovery runbooks must state the numbers of ADRs 0170, 0185
+  and 0186 (`OPERATIONS_RUNBOOKS` in the test). When an ADR changes a number, change the page and the test together.
+
 ## Rules that fail the build
 
 - gen's refusals (`docs_source_misplaced`, `docs_page_unlisted`, `docs_page_missing`, `docs_asset_unreferenced`, …);
