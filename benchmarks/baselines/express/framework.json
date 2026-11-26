@@ -1,0 +1,7 @@
+{
+  "name": "express",
+  "version": "5.3.0",
+  "summary": "the start of the Express docs (npm init, npm install express, the hello-world shape: app.js, a router, express.json), express pinned exactly",
+  "create": ["node", "create.mjs"],
+  "start": ["node", "server.js"]
+}
