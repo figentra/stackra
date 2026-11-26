@@ -45,6 +45,8 @@ peers, each loaded only by the entry that needs it.
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
 | `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                             |
 | `MemoryEdgeNonceStoreDriver`                 | `./server`  | the `memory` `EdgeNonceStore` driver (tests, a single instance)                       |
+| `SecretsEdgeSigningKeysDriver`               | `./server`  | the `secrets` `EdgeSigningKeys` driver (the secret store, read on every check)        |
+| `CacheEdgeNonceStoreDriver`                  | `./server`  | the `cache` `EdgeNonceStore` driver (every instance, over `Cache.add`)                |
 | `OriginGuard`                                | `./server`  | the second server check: a state-changing request only from an allowed origin         |
 | `CsrfGuard`                                  | `./server`  | the third server check: the CSRF header on a cookie-authenticated state change        |
 | `BearerTokenGuard`                           | `./server`  | authentication without the edge: a JWKS-verified `Authorization: Bearer` JWT          |
@@ -175,11 +177,23 @@ edge header (an identity header, the signature, the request id or the timestamp)
 request with none is not edge traffic (a service call, a cross-app delivery, a webhook), so it goes on to
 authentication or its endpoint's own signature check. Gen binds the guard in every service.
 
-The key provider and the nonce store are ports chosen by `EdgeConfig` (`app.edge`): `keys` is `memory` (tests, local
-runs; empty, so every signed request is refused) or `env`, which reads the secret `STACKRA_EDGE_SIGNING_KEYS` (the
-edge Worker's signing keys, newest first, comma-separated). `nonces` is `memory` only for now, so a replay is refused
-per instance; a shared store over `Cache.add` follows before any edge goes live. `maxAge` is a getter a host
-overrides in `src/overrides/app/` (ADR 0306).
+The key provider and the nonce store are ports chosen by `EdgeConfig` (`app.edge`). `keys` is `memory` (tests, local
+runs; empty, so every signed request is refused), `env`, which reads the secret `STACKRA_EDGE_SIGNING_KEYS` once at
+boot (the edge Worker's signing keys, newest first, comma-separated), or `secrets`, which reads the same secret (or the
+one `signingKeysSecret` names) from the bound `SecretStore` on every check, so a rotation the store reloads is
+accepted without a restart. `nonces` is `memory` (one instance: a replay is refused only where it was first seen) or
+`cache`, which claims each request id with `Cache.add`, the cache's atomic set-if-absent, so every instance that
+shares a `valkey` or `postgres` cache refuses a replay. A region with more than one API instance sets `nonces: cache`
+and a shared cache driver before its edge goes live:
+
+```yaml
+# runway.yaml (production)
+config:
+  app: { edge: { keys: secrets, nonces: cache } }
+  cache: { driver: valkey }
+```
+
+`maxAge` is a getter a host overrides in `src/overrides/app/` (ADR 0306).
 
 ### Bearer tokens (JWKS)
 

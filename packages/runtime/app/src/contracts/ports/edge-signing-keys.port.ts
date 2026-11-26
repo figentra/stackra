@@ -4,8 +4,8 @@
  *          first. Two are active during a rotation (the Worker signs with the newer, the API accepts both, the older
  *          is retired on the next rotation), so the secret rotates without a cut-over.
  * Boundary: an abstract class that is its own token, keyed `app.EdgeSigningKeys`. Which provider answers is
- *           configuration: the shipped `memory` driver for tests and local runs, a host's secret-store driver bound by
- *           wiring or an override in production. Secrets are never logged or returned past the guard.
+ *           configuration: the shipped `memory` driver for tests and local runs, `env` (the secret resolved at boot) or
+ *           `secrets` (the bound `SecretStore`, read on every check) in production. Secrets are never logged or returned past the guard.
  * Runtime: isomorphic
  * Governing contract: ADR 0437 (decision 4: two signing keys); ADR 0294 (decisions 4 and 16); ADR 0263.
  */
