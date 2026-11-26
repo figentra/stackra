@@ -86,24 +86,45 @@ time, lag) and k6's thresholds, then `writeLoadReport` keeps the numbers.
 ## Files and folders
 
 ```text
-packages/developer/testing/src/node/**            (new entry, with __tests__)
-packages/developer/testing/{package.json,tsdown.config.ts,README.md,AGENTS.md}
+packages/developer/testing/src/node/            (new entry, with __tests__)
+packages/developer/testing/package.json
+packages/developer/testing/tsdown.config.ts
 packages/developer/testing/src/__tests__/package-boundary.test.ts
-packages/tooling/vitest/src/{load.ts,functions/load-tier.function.ts,constants/load-tests.constant.ts,constants/load-test-timeout.constant.ts}
+packages/tooling/vitest/src/load.ts
+packages/tooling/vitest/src/functions/load-tier.function.ts
+packages/tooling/vitest/src/constants/load-tests.constant.ts
+packages/tooling/vitest/src/constants/load-test-timeout.constant.ts
 packages/tooling/vitest/src/__tests__/load-tier.test.ts
-packages/tooling/vitest/{package.json,README.md}
-packages/developer/gen/src/core/functions/emit-load-tier-config.function.ts (+ test)
-packages/developer/gen/src/node/functions/has-load-tests.function.ts (+ test)
-packages/developer/gen/src/node/functions/generate.function.ts (+ test)
-packages/developer/cli/src/node/{constants/commands.constant.ts,errors/cli-usage.error.ts,functions/resolve-tool.function.ts,functions/tool-command.function.ts} (+ tests)
+packages/tooling/vitest/package.json
+packages/developer/gen/src/core/functions/emit-load-tier-config.function.ts
+packages/developer/gen/src/node/functions/has-load-tests.function.ts
+packages/developer/gen/src/node/functions/generate.function.ts
+packages/developer/cli/src/node/functions/resolve-tool.function.ts
+packages/developer/cli/src/node/functions/tool-command.function.ts
+packages/developer/cli/src/node/constants/commands.constant.ts
+packages/developer/cli/src/node/errors/cli-usage.error.ts
+turbo.jsonc
+package.json
 packages/application/actions/src/core/services/__tests__/action-pipeline.load.test.ts
 packages/runtime/queue/src/node/services/__tests__/queue-worker.load.test.ts
 packages/runtime/outbox/src/node/services/__tests__/outbox-relay.load.test.ts
-packages/{application/actions,runtime/queue,runtime/outbox}/package.json
-.github/workflows/load.yml, .github/workflows/README.md
-turbo.jsonc, package.json
-apps/docs/src/docs/runbooks/capacity.mdx, apps/docs/src/docs/runbooks/test-infrastructure.mdx, apps/docs/src/config/docs.config.ts
+packages/application/actions/package.json
+packages/runtime/queue/package.json
+packages/runtime/outbox/package.json
+.github/workflows/load.yml
+.github/workflows/README.md
+apps/docs/src/docs/runbooks/capacity.mdx
+apps/docs/src/docs/runbooks/test-infrastructure.mdx
+apps/docs/src/config/docs.config.ts
+packages/developer/testing/README.md
+packages/developer/testing/AGENTS.md
+packages/tooling/vitest/README.md
 .changeset/k6-load-tier.md
+packages/developer/gen/src/core/functions/__tests__/emit-load-tier-config.function.test.ts
+packages/developer/gen/src/node/functions/__tests__/has-load-tests.function.test.ts
+packages/developer/gen/src/node/functions/__tests__/generate.function.test.ts
+packages/developer/cli/src/node/functions/__tests__/resolve-tool.function.test.ts
+packages/developer/cli/src/node/functions/__tests__/tool-command.function.test.ts
 ```
 
 ## Data models and migrations

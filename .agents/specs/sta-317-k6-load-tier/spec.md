@@ -86,8 +86,8 @@ measured it.
 - **AC-009**: WHILE k6 queues jobs in two tenants on Postgres THE queue soak SHALL check every job ran exactly once, none
   is left on the queue, the backlog drains within 60 s of the load stopping and the queue-to-run lag stays under 5 s at
   p95; and a backlog test SHALL measure the drain rate of one instance's workers.
-- **AC-010**: WHILE k6 writes event messages in two tenants on Postgres with two relays sharing one lock THE outbox soak
-  SHALL check every message was published exactly once, none is left in the outbox, and the write-to-publish lag stays
+- **AC-010**: WHILE two relays on one lock deliver event messages THE outbox soak SHALL check every message k6 wrote
+  in two tenants on Postgres was published exactly once, none is left in the outbox, and the write-to-publish lag stays
   under ADR 0221's 5 s at p95; and a backlog test SHALL measure the drain rate of the one relay a service runs.
 - **AC-011**: THE `load.yml` workflow SHALL run the load tier weekly and on demand (duration and rate as inputs passed as
   environment values), with k6 pinned and a throwaway Postgres, and SHALL upload the reports; it SHALL hold no secret.
