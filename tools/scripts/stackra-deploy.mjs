@@ -35,31 +35,52 @@
  *   exact SHA; while STACKRA_DEPLOY_ACCEPT_BOX_GREEN is on (until verify is live) a box-green record at that SHA stands
  *   in. The timer (`once`) deploys main's head: Encore whenever it moved, a Worker only when a file of its runway unit
  *   or its workspace closure (pnpm-lock importers, `link:` deps) changed since its last recorded deploy.
- *   Verbs: preflight [encore|workers] | once [--dry-run] | status | workers run --worker <docs|edge> --sha <sha>
- *          [--dry-run] | encore run --sha <sha> [--dry-run] | encore audit | approve --worker <w> --sha <sha>
- *          --version <id>
+ *   The timer never repeats a failed SHA: once an attempt at main's head ends in failure, needs-owner or refused, that
+ *   target is held at that SHA (one `held` ledger line) until main's head moves or a person runs it by hand.
+ *   The service's own code is pinned: `service update` (the unit's ExecStartPre) moves the service clone only to a main
+ *   SHA that passed the same verify gate, as a fast-forward, and every deploy's preflight refuses a clone that is not
+ *   at its pinned commit or whose code another user could change.
+ *   Verbs: preflight [encore|workers] | once [encore|workers] [--dry-run] | status | service update
+ *          | workers run --worker <docs|edge> --sha <sha> [--dry-run] | encore run --sha <sha> [--dry-run]
+ *          | encore audit | approve --worker <w> --sha <sha> --version <id>
  * Boundary: runs git, sudo (install and build as the build user), node (wrangler from the deployed tree, and a child
  *   that loads the tree's @stackra/runway to render the config) and flock; calls the GitHub REST API (check runs and
- *   deployments), the Encore Cloud API and the Workers' own URLs. Never writes a secret into argv, a child's
+ *   deployments), the Encore Cloud API, Infisical (when STACKRA_DEPLOY_SECRETS=infisical) and the Workers' own URLs,
+ *   each at an origin fixed in code. Never writes a secret into argv, a child's
  *   environment beyond wrangler's, a log, the ledger or a file other than wrangler's private run folder.
- * Runbook (box 1), what Lukas sets up:
- *   - Users: `stackra-deploy` (the deploy user: no login shell, never `build`, `stackra-verify` or `stackra-verifyd`),
+ * Runbook (box 1), what Lukas sets up. The two paths never share a user (the credential split, enforced by preflight):
+ *   the Workers path runs wrangler and runway from a tree the build user wrote, so it holds only the Cloudflare token;
+ *   the Encore path runs no tree code and alone holds the production-capable Encore credential.
+ *   - Users: `stackra-deploy` (the Workers path: no login shell, never `build`, `stackra-verify` or `stackra-verifyd`),
+ *     `stackra-deploy-encore` (the Encore path and its audit: no login shell, no sudo at all),
  *     `stackra-deploy-build` (installs and builds the SHA's tree; holds no secret) and `stackra-deploy-approver`
- *     (only when a Worker is set to approve). sudoers: `stackra-deploy ALL=(stackra-deploy-build) NOPASSWD: /usr/bin/env`.
- *   - Folders: STACKRA_DEPLOY_HOME=/work/stackra/deploy, 0700 stackra-deploy (ledger/, locks/, state/, run/);
- *     STACKRA_DEPLOY_MIRROR=/work/stackra/deploy-mirror.git, 0755 stackra-deploy (main and tags only, nothing secret;
- *     the build user clones from it); STACKRA_DEPLOY_WORK=/work/stackra/deploy-work, 0755 stackra-deploy-build;
- *     /etc/stackra-deploy 0750 root:stackra-deploy holding the secret files, each 0400 stackra-deploy;
+ *     (only when a Worker is set to approve). sudoers: `stackra-deploy ALL=(stackra-deploy-build) NOPASSWD: /usr/bin/env`
+ *     and nothing for stackra-deploy-encore.
+ *   - Folders, Workers path: STACKRA_DEPLOY_HOME=/work/stackra/deploy, 0700 stackra-deploy (ledger/, locks/, state/,
+ *     run/); STACKRA_DEPLOY_MIRROR=/work/stackra/deploy-mirror.git, 0755 stackra-deploy (main and tags only, nothing
+ *     secret; the build user clones from it); STACKRA_DEPLOY_WORK=/work/stackra/deploy-work, 0755 stackra-deploy-build;
+ *     /etc/stackra-deploy 0750 root:stackra-deploy holding its secret files, each 0400 stackra-deploy;
  *     STACKRA_DEPLOY_BOX_GREEN_DIR (records owned by STACKRA_DEPLOY_BOX_GREEN_OWNER, the user that runs the box trains)
  *     and STACKRA_DEPLOY_APPROVALS (0755 stackra-deploy-approver).
- *   - The service clone /work/stackra/deploy-service (main, `pnpm install --frozen-lockfile --ignore-scripts --filter .`
- *     for `yaml`), owned by stackra-deploy.
- *   - systemd: `stackra-deploy.service` (Type=oneshot, User=stackra-deploy, WorkingDirectory=the service clone,
- *     ExecStartPre=/usr/bin/git pull --ff-only origin main, ExecStart=/usr/local/bin/node
- *     tools/scripts/stackra-deploy.mjs once, EnvironmentFile=/etc/stackra-deploy/settings.env, Nice=10) with
- *     `stackra-deploy.timer` (OnUnitActiveSec=5min); `stackra-deploy-audit.service` (ExecStart=… encore audit) with
- *     `stackra-deploy-audit.timer` (OnCalendar=daily) and OnFailure= to the box's alert unit, so a non-zero audit
- *     reaches a person.
+ *   - Folders, Encore path: STACKRA_DEPLOY_HOME=/work/stackra/deploy-encore, 0700 stackra-deploy-encore, with its own
+ *     STACKRA_DEPLOY_MIRROR=/work/stackra/deploy-encore/mirror.git; /etc/stackra-deploy-encore (ENCORE_SECRET_DIR) 0700
+ *     stackra-deploy-encore holding its one credential file, 0400. The Workers path refuses to run while it can reach
+ *     that folder or names an Encore setting; the Encore path refuses any Workers setting, a credential outside that
+ *     folder, or a user that can act as the build user.
+ *   - Two service clones, one per path user, each owned by it and writable by it only: /work/stackra/deploy-service
+ *     (stackra-deploy) and /work/stackra/deploy-encore/service (stackra-deploy-encore), each `git clone` of main, then
+ *     `pnpm install --frozen-lockfile --ignore-scripts --filter .` (for `yaml`) and `node tools/scripts/stackra-deploy.mjs
+ *     service update` as that user (it verifies the commit and detaches HEAD there: the first pin). A change to the
+ *     service's own dependencies needs that install again, by hand.
+ *   - systemd, Workers: `stackra-deploy.service` (Type=oneshot, User=stackra-deploy, WorkingDirectory=its service
+ *     clone, ExecStartPre=/usr/local/bin/node tools/scripts/stackra-deploy.mjs service update, ExecStart=/usr/local/bin/node
+ *     tools/scripts/stackra-deploy.mjs once workers, EnvironmentFile=/etc/stackra-deploy/settings.env, Nice=10) with
+ *     `stackra-deploy.timer` (OnUnitActiveSec=5min). Never `git pull` in a unit: that would run unverified main.
+ *   - systemd, Encore: `stackra-deploy-encore.service` (the same with User=stackra-deploy-encore, its own clone,
+ *     ExecStart=… once encore, EnvironmentFile=/etc/stackra-deploy-encore/settings.env) with its 5-minute timer;
+ *     `stackra-deploy-audit.service` (User=stackra-deploy-encore, ExecStart=… encore audit) with
+ *     `stackra-deploy-audit.timer` (OnCalendar=hourly while the Encore path is on, else daily) and OnFailure= to the
+ *     box's alert unit, so a non-zero audit reaches a person.
  *   - Settings (none secret): STACKRA_DEPLOY_WORKERS and STACKRA_DEPLOY_ENCORE (the switches: exactly `on`, else off;
  *     a typo is a preflight problem), STACKRA_DEPLOY_ACCEPT_BOX_GREEN (`on` until stackra/verify is live, then `off`),
  *     STACKRA_DEPLOY_PROMOTION (`docs=auto,edge=auto` by default), STACKRA_DEPLOY_STEPS (10,50,100),
@@ -68,6 +89,14 @@
  *     STACKRA_DEPLOY_APPROVER, STACKRA_DEPLOY_BOX_GREEN_OWNER, STACKRA_DEPLOY_WORKER_VARS_FILE (ids and vars a member
  *     declares, as JSON; none today), STACKRA_DEPLOY_ENCORE_URL (the staging origin), STACKRA_DEPLOY_ENCORE_CI_ACTORS
  *     (the CI OAuth client ids that may deploy Encore production) and the file settings below.
+ *   Secrets (an owner decision, STACKRA_DEPLOY_SECRETS): `infisical` fetches each value at run time into memory with the
+ *   path user's own Infisical machine identity (Universal Auth; STACKRA_DEPLOY_INFISICAL_IDENTITY_FILE holds only that
+ *   identity's client, 0400; STACKRA_DEPLOY_INFISICAL_URL one of INFISICAL_ORIGINS, _PROJECT, _ENV, _PATH, and
+ *   STACKRA_DEPLOY_INFISICAL_GITHUB=on for the optional GitHub token). One identity per path user, each allowed to read
+ *   only its own folder: the Workers identity /ci/deploy/box1-stackra/workers (STACKRA_DEPLOY_CLOUDFLARE_TOKEN,
+ *   STACKRA_DEPLOY_GITHUB_TOKEN), the Encore identity /ci/deploy/box1-stackra/encore (STACKRA_DEPLOY_ENCORE_CLIENT,
+ *   STACKRA_DEPLOY_GITHUB_TOKEN); the Encore identity's file lives in ENCORE_SECRET_DIR. No person copies a value.
+ *   `files` (the default and the fallback) reads 0400 files, as below.
  *   What the owner creates and places (never pasted into a chat, a command or a file in a repository): through
  *   ~/Secrets-inbox into figentra/secrets, in the new scope ci/deploy/box1-stackra (never the shared ci/deploy or
  *   ci/production), from where Lukas installs each value as a 0400 file:
@@ -75,8 +104,8 @@
  *     Scripts Edit (and D1 Edit only once a Stackra-account member declares a D1 database; none does), Client IP
  *     Address Filtering set to box 1's egress address, and an expiry. Blast radius: Stackra's own Workers in that
  *     account (docs, edge); the shared services in the main account are out of its reach.
- *   - STACKRA_DEPLOY_ENCORE_CLIENT_FILE: an Encore OAuth client of app stackra-nzk2 with the Deployer role, for this box
- *     only, as JSON {"client_id","client_secret"}. The role is not environment-scoped: staging-only is this code's
+ *   - STACKRA_DEPLOY_ENCORE_CLIENT_FILE (in ENCORE_SECRET_DIR, owned by stackra-deploy-encore): an Encore OAuth client
+ *     of app stackra-nzk2 with the Deployer role, for this box only, as JSON {"client_id","client_secret"}. The role is not environment-scoped: staging-only is this code's
  *     rule (tested), and the owner revokes the client to stop it at once.
  *   - STACKRA_DEPLOY_GITHUB_TOKEN_FILE (optional): a read-only token for check runs and deployments.
  *   Go-live list (each verified on the first watched deploy and recorded in the ledger by Lukas before the switch):
@@ -96,14 +125,21 @@
  *        `x-stackra-version`), their wrangler.jsonc names the Stackra account, and runway.yaml's members name hosts on
  *        Stackra's domain.
  *     8. Wrangler runs from the deploy user's run folder with a config pointing into the build user's tree.
+ *     9. The split holds: `preflight workers` as stackra-deploy and `preflight encore` as stackra-deploy-encore both
+ *        pass, and `sudo -u stackra-deploy ls /etc/stackra-deploy-encore` is refused.
+ *    10. Each service clone sits at the commit `service update` pinned (`status` shows the `service` line).
+ *    11. The owner's own changes: CODEOWNERS (owner only) for tools/scripts/stackra-deploy.mjs, worker-smoke.mjs and
+ *        d1-migration-gate.mjs through the owner-only list; the secrets model chosen (STACKRA_DEPLOY_SECRETS) and, for
+ *        `infisical`, one machine identity per path user scoped to its own folder; the owner's go for each switch.
  *   Switch on: set the switch to `on` in settings.env after the go-live list is recorded; switch off: set it to `off`
  *   (the next run refuses) or stop the timer; the owner revokes the Encore client or the Cloudflare token to cut it off
  *   from outside. A run in flight finishes or rolls back; nothing restarts it.
  * Runtime: node 24 on Linux with git, flock and sudo.
  * Governing contract: ADR 0536 (box deploys); ADR 0468 (amended by 0536); ADR 0170; ADR 0352; ADR 0440; ADR 0519;
  *   ADR 0525 (secrets); STA-2783; STA-2784; STA-2786.
- * Secrets: each read from its 0400 file of the deploy user at the moment it is needed: the Encore client secret goes
- *   only in the token request's body; the Cloudflare token only into wrangler's environment (CLOUDFLARE_API_TOKEN);
+ * Secrets: each read at the moment it is needed, from its 0400 file of the path user or fetched from Infisical into
+ *   memory (the identity's client only in the sign-in body, its access token only in Infisical requests' headers):
+ *   the Encore client secret goes only in the token request's body; the Cloudflare token only into wrangler's environment (CLOUDFLARE_API_TOKEN);
  *   the GitHub token only into GitHub requests' headers. The build user's environment is PATH, HOME and CI only. Every
  *   output path is scrubbed of the values read.
  * Exit: 0 done (deployed, skipped, waiting for approval, dry run, a clean audit), 1 refused, failed, needs the owner
@@ -111,7 +147,9 @@
  */
 import { spawn, spawnSync } from "node:child_process";
 import {
+  accessSync,
   appendFileSync,
+  constants as fsConstants,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -124,7 +162,11 @@ import { hostname, userInfo } from "node:os";
 import { dirname, isAbsolute, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseAllDocuments, parse as parseYaml } from "yaml";
-import { migrationVerdict, pendingMigrations } from "./d1-migration-gate.mjs";
+import {
+  migrationVerdict,
+  pendingMigrations,
+  REGISTRY_TRUST_TABLES,
+} from "./d1-migration-gate.mjs";
 import { redirectsOf, smokeWorker } from "./worker-smoke.mjs";
 
 // ---- constants --------------------------------------------------------------------------------------------------
@@ -166,6 +208,66 @@ export const FORBIDDEN_USERS = Object.freeze([
   "stackra-verify",
   "stackra-verifyd",
 ]);
+/** The build user's name the runbook gives; the Encore path's user must not be able to act as it. */
+export const DEFAULT_BUILD_USER = "stackra-deploy-build";
+/**
+ * The folder that alone holds the Encore path's credential (its OAuth client file, or its Infisical identity file),
+ * readable by the Encore path's own user only. The Workers path refuses to run while it can reach this folder: the
+ * Workers path runs wrangler and runway from a tree the build user wrote, so it must never be able to read a
+ * production-capable Encore credential.
+ */
+export const ENCORE_SECRET_DIR = "/etc/stackra-deploy-encore";
+/** The API origins the box talks to; fixed in code, so a changed setting cannot send a credential elsewhere. */
+export const GITHUB_API = "https://api.github.com";
+export const ENCORE_API = "https://api.encore.dev";
+/** The Infisical origins a machine identity may sign in to (Infisical Cloud); a self-hosted one is a code change. */
+export const INFISICAL_ORIGINS = Object.freeze([
+  "https://eu.infisical.com",
+  "https://us.infisical.com",
+  "https://app.infisical.com",
+]);
+/**
+ * The secrets the service reads, by key: the file setting that names its 0400 file (`STACKRA_DEPLOY_SECRETS=files`)
+ * and the Infisical secret name the deploy user's machine identity reads (`STACKRA_DEPLOY_SECRETS=infisical`).
+ */
+export const SECRET_KEYS = Object.freeze({
+  cloudflare: {
+    label: "the Cloudflare token",
+    fileSetting: "STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE",
+    file: "cloudflareTokenFile",
+    name: "STACKRA_DEPLOY_CLOUDFLARE_TOKEN",
+  },
+  encore: {
+    label: "the Encore OAuth client",
+    fileSetting: "STACKRA_DEPLOY_ENCORE_CLIENT_FILE",
+    file: "encoreClientFile",
+    name: "STACKRA_DEPLOY_ENCORE_CLIENT",
+  },
+  github: {
+    label: "the GitHub token",
+    fileSetting: "STACKRA_DEPLOY_GITHUB_TOKEN_FILE",
+    file: "githubTokenFile",
+    name: "STACKRA_DEPLOY_GITHUB_TOKEN",
+  },
+});
+/**
+ * The service's own code: these paths of the service clone must be its user's (or root's) and writable by their owner
+ * only, so neither the build user nor the other deploy path can change what runs holding a credential.
+ */
+export const SERVICE_PATHS = Object.freeze([
+  { path: ".", dir: true },
+  { path: "tools", dir: true },
+  { path: "tools/scripts", dir: true },
+  { path: "tools/scripts/stackra-deploy.mjs" },
+  { path: "tools/scripts/d1-migration-gate.mjs" },
+  { path: "tools/scripts/worker-smoke.mjs" },
+  { path: "node_modules", dir: true },
+]);
+/**
+ * The results of an attempt the timer does not repeat at the same SHA: it holds that SHA (one `held` ledger line)
+ * until main's head moves or a person runs the target by hand.
+ */
+export const HELD_RESULTS = Object.freeze(["failure", "needs-owner", "refused"]);
 export const LOCK_HELD_EXIT = 75;
 export const LEDGER_SCHEMA = "stackra.deploy/1";
 export const BOX_GREEN_SCHEMA = "stackra.box-green/1";
@@ -242,9 +344,12 @@ export function parseArgs(argv) {
     if (args.shift() !== "run") return null;
     out.target = verb;
     out.verb = "run";
-  } else if (verb === "preflight") {
+  } else if (verb === "service") {
+    if (args.shift() !== "update" || args.length > 0) return null;
+    out.verb = "service-update";
+  } else if (verb === "preflight" || verb === "once") {
     if (args[0] === "workers" || args[0] === "encore") out.target = args.shift();
-  } else if (!["once", "status", "approve"].includes(verb)) return null;
+  } else if (!["status", "approve"].includes(verb)) return null;
   for (let i = 0; i < args.length; i += 1) {
     const a = args[i];
     if (a === "--sha") out.sha = args[(i += 1)] ?? "";
@@ -300,6 +405,17 @@ export function parseSteps(value) {
   return ascending && numbers.at(-1) === 100 ? numbers : null;
 }
 
+/** Where secret values come from: `files` (the default, 0400 files) or `infisical`; anything else is `invalid`. */
+export const secretsModeOf = (value) =>
+  value === undefined || value === "" || value === "files"
+    ? "files"
+    : value === "infisical"
+      ? "infisical"
+      : "invalid";
+
+/** The service clone this script runs from (two folders above tools/scripts). */
+const OWN_CLONE = fileURLToPath(new URL("../../", import.meta.url)).replace(/\/$/, "");
+
 /** A setting in seconds, as milliseconds. */
 const seconds = (value, fallback) => (value === undefined ? fallback : Number(value)) * 1000;
 
@@ -334,11 +450,23 @@ export function settings(env = process.env) {
     varsFile: env.STACKRA_DEPLOY_WORKER_VARS_FILE || null,
     stackraDomain: env.STACKRA_DEPLOY_STACKRA_DOMAIN || null,
     githubTokenFile: env.STACKRA_DEPLOY_GITHUB_TOKEN_FILE || null,
-    githubApi: env.STACKRA_DEPLOY_GITHUB_API || "https://api.github.com",
+    // Fixed origins: no setting can point a credential at another host.
+    githubApi: GITHUB_API,
     encoreClientFile: env.STACKRA_DEPLOY_ENCORE_CLIENT_FILE || null,
+    encoreSecretDir: env.STACKRA_DEPLOY_ENCORE_SECRET_DIR || ENCORE_SECRET_DIR,
     encoreApp: env.STACKRA_DEPLOY_ENCORE_APP || ENCORE_APP,
     encoreEnv: env.STACKRA_DEPLOY_ENCORE_ENV || ENCORE_ENV,
-    encoreApi: env.STACKRA_DEPLOY_ENCORE_API || "https://api.encore.dev",
+    encoreApi: ENCORE_API,
+    secrets: secretsModeOf(env.STACKRA_DEPLOY_SECRETS),
+    infisical: {
+      url: env.STACKRA_DEPLOY_INFISICAL_URL || INFISICAL_ORIGINS[0],
+      identityFile: env.STACKRA_DEPLOY_INFISICAL_IDENTITY_FILE || null,
+      project: env.STACKRA_DEPLOY_INFISICAL_PROJECT || null,
+      environment: env.STACKRA_DEPLOY_INFISICAL_ENV || "prod",
+      path: env.STACKRA_DEPLOY_INFISICAL_PATH || null,
+      github: switchOf(env.STACKRA_DEPLOY_INFISICAL_GITHUB) === "on",
+    },
+    serviceDir: env.STACKRA_DEPLOY_SERVICE_DIR || OWN_CLONE,
     encoreUrl: env.STACKRA_DEPLOY_ENCORE_URL || null,
     encoreCiActors: (env.STACKRA_DEPLOY_ENCORE_CI_ACTORS ?? "")
       .split(",")
@@ -393,6 +521,118 @@ export function readSecret(io, label, path) {
   return value;
 }
 
+// ---- secrets: files, or Infisical at run time ----------------------------------------------------------------
+
+/** Whether `path` lies inside the folder `dir` (or is it). */
+const inside = (path, dir) => Boolean(path) && (path === dir || path.startsWith(`${dir}/`));
+
+/** Whether the service uses `key` at all: the GitHub token is optional, the others are required by their path. */
+export const usesSecret = (s, key) =>
+  key !== "github" || (s.secrets === "infisical" ? s.infisical.github : Boolean(s.githubTokenFile));
+
+/**
+ * Why the settings of the Infisical path are unusable; empty when they are. The machine identity's own client
+ * (`{"client_id","client_secret"}`, Universal Auth) is the one file left, 0400 and the deploy user's; every other
+ * value is fetched into memory just before use.
+ */
+export function infisicalProblems(s, io) {
+  const problems = [];
+  const i = s.infisical;
+  if (!INFISICAL_ORIGINS.includes(i.url))
+    problems.push(`STACKRA_DEPLOY_INFISICAL_URL must be one of ${INFISICAL_ORIGINS.join(", ")}`);
+  const identity = secretFileProblem(io, "STACKRA_DEPLOY_INFISICAL_IDENTITY_FILE", i.identityFile);
+  if (identity) problems.push(identity);
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(i.project ?? ""))
+    problems.push("STACKRA_DEPLOY_INFISICAL_PROJECT must name the Infisical project id");
+  if (!/^[a-z0-9-]{1,64}$/.test(i.environment))
+    problems.push("STACKRA_DEPLOY_INFISICAL_ENV must be an environment slug");
+  if (!/^\/[A-Za-z0-9_\-/]*$/.test(i.path ?? "") || (i.path ?? "").includes("//"))
+    problems.push(
+      "STACKRA_DEPLOY_INFISICAL_PATH must be the secret folder, /ci/deploy/box1-stackra/<path>",
+    );
+  for (const key of Object.values(SECRET_KEYS))
+    if (s[key.file])
+      problems.push(
+        `${key.fileSetting} is set: with STACKRA_DEPLOY_SECRETS=infisical no value is a file`,
+      );
+  return problems;
+}
+
+/** Why the secret `key` cannot be read; null when it can (a dry run of the checks: nothing is fetched). */
+export function secretProblem(s, io, key) {
+  const k = SECRET_KEYS[key];
+  if (s.secrets === "invalid") return 'STACKRA_DEPLOY_SECRETS must be "files" or "infisical"';
+  if (s.secrets === "infisical") return infisicalProblems(s, io).join("; ") || null;
+  return secretFileProblem(io, k.fileSetting, s[k.file]);
+}
+
+/** Infisical access tokens, one per host io (a run), each refreshed a minute before it expires. */
+const INFISICAL_SESSIONS = new WeakMap();
+
+/** An Infisical access token for the deploy user's machine identity (Universal Auth), registered for scrubbing. */
+async function infisicalToken(s, io) {
+  const held = INFISICAL_SESSIONS.get(io);
+  if (held && io.now() < held.expires - 60_000) return held.token;
+  const problems = infisicalProblems(s, io);
+  if (problems.length > 0) throw new Error(problems.join("; "));
+  let identity;
+  try {
+    identity = JSON.parse(readSecret(io, "the Infisical identity", s.infisical.identityFile));
+  } catch (error) {
+    throw new Error(`the Infisical identity file is unusable: ${scrub(error.message)}`, {
+      cause: error,
+    });
+  }
+  if (typeof identity?.client_id !== "string" || typeof identity?.client_secret !== "string")
+    throw new Error("the Infisical identity file must hold client_id and client_secret");
+  registerSecret(identity.client_secret);
+  const answer = await io.fetch(`${s.infisical.url}/api/v1/auth/universal-auth/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ clientId: identity.client_id, clientSecret: identity.client_secret }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!answer.ok) throw new Error(`Infisical answered ${answer.status} to the identity's sign-in`);
+  const doc = await answer.json();
+  if (typeof doc.accessToken !== "string")
+    throw new Error("Infisical's sign-in has no accessToken");
+  registerSecret(doc.accessToken);
+  INFISICAL_SESSIONS.set(io, {
+    token: doc.accessToken,
+    expires: io.now() + Number(doc.expiresIn ?? 600) * 1000,
+  });
+  return doc.accessToken;
+}
+
+/**
+ * The value of the secret `key`, read at the moment it is needed and registered for scrubbing: from its 0400 file
+ * (`STACKRA_DEPLOY_SECRETS=files`, the fallback) or fetched from Infisical into memory by the deploy user's own
+ * machine identity (`infisical`). Neither path writes it anywhere.
+ */
+export async function secretValue(s, io, key) {
+  const k = SECRET_KEYS[key];
+  if (s.secrets === "files") return readSecret(io, k.label, s[k.file]);
+  if (s.secrets !== "infisical")
+    throw new Error('STACKRA_DEPLOY_SECRETS must be "files" or "infisical"');
+  const token = await infisicalToken(s, io);
+  const query = new URLSearchParams({
+    projectId: s.infisical.project,
+    environment: s.infisical.environment,
+    secretPath: s.infisical.path,
+    expandSecretReferences: "false",
+    includeImports: "false",
+  });
+  const answer = await io.fetch(
+    `${s.infisical.url}/api/v4/secrets/${encodeURIComponent(k.name)}?${query}`,
+    { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(30_000) },
+  );
+  if (!answer.ok) throw new Error(`Infisical answered ${answer.status} for ${k.name}`);
+  const value = String((await answer.json())?.secret?.secretValue ?? "").trim();
+  if (value === "") throw new Error(`Infisical holds no value for ${k.name}`);
+  registerSecret(value);
+  return value;
+}
+
 /** Why a trusted, non-secret file may not be used: regular, owned by `uids`, writable by its owner only. */
 export function trustedFileProblem(io, label, path, uids) {
   const facts = fileFacts(io, path);
@@ -401,6 +641,44 @@ export function trustedFileProblem(io, label, path, uids) {
   if (!uids.includes(facts.uid)) return `${label} (${path}) has an untrusted owner`;
   if ((facts.mode & 0o022) !== 0) return `${label} (${path}) is writable by its group or others`;
   return null;
+}
+
+/**
+ * Why the service's own code may not run holding a credential: each of SERVICE_PATHS in the service clone must be the
+ * deploy user's (or root's), not a symbolic link, and writable by its owner only; the clone must sit at a commit
+ * (a detached HEAD) that `service update` pinned after its verify gate.
+ */
+export function serviceCodeProblems(s, io) {
+  const problems = [];
+  for (const { path, dir } of SERVICE_PATHS) {
+    const full = path === "." ? s.serviceDir : join(s.serviceDir, path);
+    const facts = fileFacts(io, full);
+    if (!facts) problems.push(`the service code ${full} does not exist`);
+    else if (facts.symlink || (dir ? !facts.dir : !facts.file))
+      problems.push(`the service code ${full} is not a plain ${dir ? "folder" : "file"}`);
+    else if (facts.uid !== io.uid && facts.uid !== 0)
+      problems.push(
+        `the service code ${full} is not the deploy user's: another user could change it`,
+      );
+    else if ((facts.mode & 0o022) !== 0)
+      problems.push(`the service code ${full} is writable by its group or others`);
+  }
+  let head = null;
+  try {
+    head = io.readFile(join(s.serviceDir, ".git", "HEAD")).trim();
+  } catch {
+    // reported below
+  }
+  const pin = readState(s, io, "service");
+  if (!SHA.test(head ?? ""))
+    problems.push(
+      "the service clone is not pinned to a commit: run `service update` (it detaches HEAD)",
+    );
+  else if (pin?.sha !== head)
+    problems.push(
+      `the service runs at ${head}, which no \`service update\` pinned after its verify gate`,
+    );
+  return problems;
 }
 
 /** The binding ids and vars from STACKRA_DEPLOY_WORKER_VARS_FILE: `{ NAME: "value" }`, strings only. */
@@ -425,6 +703,54 @@ export function readVars(io, s) {
 // ---- preflight --------------------------------------------------------------------------------------------------
 
 /**
+ * The credential split, Encore side: the Encore path runs as its own user (stackra-deploy-encore), which runs no tree
+ * code, holds no Workers setting and cannot act as the build user; its credential (the OAuth client file, or its
+ * Infisical identity) lives only in the Encore secret folder.
+ */
+export function encoreSplitProblems(s, io) {
+  const problems = [];
+  const credential = s.secrets === "infisical" ? s.infisical.identityFile : s.encoreClientFile;
+  const setting =
+    s.secrets === "infisical"
+      ? "STACKRA_DEPLOY_INFISICAL_IDENTITY_FILE"
+      : "STACKRA_DEPLOY_ENCORE_CLIENT_FILE";
+  if (!inside(credential, s.encoreSecretDir) || credential === s.encoreSecretDir)
+    problems.push(
+      `${setting} must be a file in ${s.encoreSecretDir}, the Encore path's own folder`,
+    );
+  if (s.cloudflareTokenFile || s.buildAs || s.workers === "on")
+    problems.push(
+      "the Encore path runs as its own user, with no Workers setting (STACKRA_DEPLOY_WORKERS, " +
+        "STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE, STACKRA_DEPLOY_BUILD_AS)",
+    );
+  if (io.canSudo(DEFAULT_BUILD_USER))
+    problems.push(
+      `the Encore path's user can act as ${DEFAULT_BUILD_USER}: it must run no tree code`,
+    );
+  return problems;
+}
+
+/**
+ * The credential split, Workers side: the Workers path runs wrangler and runway from a tree the build user wrote, so
+ * it must not be able to reach the Encore path's credential at all, nor name it.
+ */
+export function workersSplitProblems(s, io) {
+  const problems = [];
+  if (s.encoreClientFile || s.encore === "on")
+    problems.push(
+      "the Workers path holds no Encore setting (STACKRA_DEPLOY_ENCORE, STACKRA_DEPLOY_ENCORE_CLIENT_FILE): " +
+        "Encore runs as its own user",
+    );
+  if (io.canAccess(s.encoreSecretDir))
+    problems.push(
+      `the Workers path's user can reach ${s.encoreSecretDir}: the Encore credential must be out of its reach`,
+    );
+  if (s.secrets === "infisical" && inside(s.infisical.identityFile, s.encoreSecretDir))
+    problems.push("the Workers path's Infisical identity must not be the Encore path's");
+  return problems;
+}
+
+/**
  * Why this host may not run `target` (`workers` or `encore`); empty when it may. `dryRun` lets a path that is
  * switched off plan, never deploy.
  */
@@ -447,9 +773,10 @@ export function preflightProblems(s, io, target, { dryRun = false } = {}) {
     else if (s.boxGreenOwner === io.user || io.uidOf(s.boxGreenOwner) === io.uid)
       problems.push("box-green records must not be writable by the deploy user itself");
   }
-  if (!s.githubTokenFile) {
+  if (s.secrets === "invalid")
+    problems.push('STACKRA_DEPLOY_SECRETS must be "files" or "infisical"');
+  else if (s.secrets === "files" && s.githubTokenFile) {
     // Optional: the public API answers without a token, at a lower rate.
-  } else {
     const problem = secretFileProblem(io, "STACKRA_DEPLOY_GITHUB_TOKEN_FILE", s.githubTokenFile);
     if (problem) problems.push(problem);
   }
@@ -457,7 +784,7 @@ export function preflightProblems(s, io, target, { dryRun = false } = {}) {
   if (!home) problems.push(`STACKRA_DEPLOY_HOME (${s.home}) does not exist`);
   else if (home.uid !== io.uid || (home.mode & 0o077) !== 0)
     problems.push(`STACKRA_DEPLOY_HOME (${s.home}) must be 0700 and the deploy user's`);
-  if (s.mirror === s.home || s.mirror.startsWith(`${s.home}/`))
+  if (target !== "encore" && (s.mirror === s.home || s.mirror.startsWith(`${s.home}/`)))
     problems.push(
       "STACKRA_DEPLOY_MIRROR must be outside STACKRA_DEPLOY_HOME: the build user clones from it",
     );
@@ -472,20 +799,18 @@ export function preflightProblems(s, io, target, { dryRun = false } = {}) {
     }
     // A dry run reads no secret and builds nothing: the switch, the user and the home are enough.
     if (dryRun) return problems;
-    const problem = secretFileProblem(io, "STACKRA_DEPLOY_ENCORE_CLIENT_FILE", s.encoreClientFile);
+    problems.push(...serviceCodeProblems(s, io), ...encoreSplitProblems(s, io));
+    const problem = secretProblem(s, io, "encore");
     if (problem) problems.push(problem);
     if (!/^https:\/\/[^/\s]+$/.test(s.encoreUrl ?? ""))
       problems.push("STACKRA_DEPLOY_ENCORE_URL must be the staging origin, https://<host>");
-    if (!/^https:\/\/[^/\s]+$/.test(s.encoreApi))
-      problems.push("STACKRA_DEPLOY_ENCORE_API must be an https origin");
     return problems;
   }
   if (dryRun) return problems;
 
-  for (const [label, path] of [["STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE", s.cloudflareTokenFile]]) {
-    const problem = secretFileProblem(io, label, path);
-    if (problem) problems.push(problem);
-  }
+  problems.push(...serviceCodeProblems(s, io), ...workersSplitProblems(s, io));
+  const problem = secretProblem(s, io, "cloudflare");
+  if (problem) problems.push(problem);
   if (s.cloudflareAccountId !== STACKRA_ACCOUNT_ID)
     problems.push(
       s.cloudflareAccountId === MAIN_ACCOUNT_ID
@@ -726,8 +1051,8 @@ export async function verifyGate(s, io, sha) {
   let reason;
   try {
     const headers = { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28" };
-    if (s.githubTokenFile)
-      headers.authorization = `Bearer ${readSecret(io, "the GitHub token", s.githubTokenFile)}`;
+    if (usesSecret(s, "github"))
+      headers.authorization = `Bearer ${await secretValue(s, io, "github")}`;
     const url = `${s.githubApi}/repos/${s.repo}/commits/${sha}/check-runs?check_name=${encodeURIComponent(VERIFY_CHECK)}&per_page=100`;
     const answer = await io.fetch(url, { headers, signal: AbortSignal.timeout(30_000) });
     if (!answer.ok) reason = `GitHub answered ${answer.status} for the check runs`;
@@ -1192,6 +1517,8 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
 
   const run = join(s.home, "run", `${worker}-${sha.slice(0, 12)}-${started}`);
   const tree = join(s.work, `${worker}-${sha.slice(0, 12)}-${started}`);
+  // Read once, after every gate and the build; the catch path's rollback reuses it rather than reading it again.
+  let token;
   io.mkdir(run);
   try {
     // ---- the tree, as the build user (no secret on its side) ----
@@ -1265,7 +1592,7 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
     io.write(configFile, JSON.stringify(config, null, 2));
     entry.worker = config.name;
 
-    const token = readSecret(io, "the Cloudflare token", s.cloudflareTokenFile);
+    token = await secretValue(s, io, "cloudflare");
     const wrangler = async (id, args) => {
       const answer = await io.run(
         process.execPath,
@@ -1411,8 +1738,10 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
         const pending = pendingMigrations(listed);
         const dbConfig = (config.d1_databases ?? []).find((d) => d.database_name === database);
         const dir = dbConfig?.migrations_dir ?? join(memberDir, "migrations");
+        // An insert into a table that grants rights is a trust change, not data: it waits for the owner (gate 3).
         const verdict = migrationVerdict(
           pending.map((file) => ({ file, sql: io.readFile(join(dir, file)) })),
+          { ownerTables: [...REGISTRY_TRUST_TABLES] },
         );
         entry.migrations.push({ database, ...verdict });
         if (!verdict.additive)
@@ -1524,29 +1853,33 @@ export async function deployWorker(s, io, { worker, sha, trigger, dryRun = false
     return finish("success", { newVersion });
   } catch (error) {
     const reason = scrub(error.message);
-    if (entry.newVersion && entry.oldVersion) {
-      // A failure after the version joined the deployment: production goes back to the old version.
-      const back = await io
-        .run(
-          process.execPath,
-          [
-            join(tree, member.path, "node_modules", "wrangler", "bin", "wrangler.js"),
-            "versions",
-            "deploy",
-            `${entry.oldVersion}@100`,
-            "--message",
-            `rollback from ${sha}`,
-            "--yes",
-            "--config",
-            join(run, "wrangler.json"),
-          ],
-          {
-            cwd: run,
-            env: wranglerEnv(s, run, readSecret(io, "the Cloudflare token", s.cloudflareTokenFile)),
-          },
+    if (entry.newVersion && entry.oldVersion && token !== undefined) {
+      // A failure after the version joined the deployment: production goes back to the old version. The rollback
+      // never throws past here, so the attempt always ends in its ledger line.
+      const back = await Promise.resolve()
+        .then(() =>
+          io.run(
+            process.execPath,
+            [
+              join(tree, member.path, "node_modules", "wrangler", "bin", "wrangler.js"),
+              "versions",
+              "deploy",
+              `${entry.oldVersion}@100`,
+              "--message",
+              `rollback from ${sha}`,
+              "--yes",
+              "--config",
+              join(run, "wrangler.json"),
+            ],
+            { cwd: run, env: wranglerEnv(s, run, token) },
+          ),
         )
         .catch(() => ({ code: 1 }));
-      writeState(s, io, target, null);
+      try {
+        writeState(s, io, target, null);
+      } catch {
+        // The ledger line below still records the attempt.
+      }
       return finish("failure", { reason, rolledBack: back.code === 0 });
     }
     return finish("failure", { reason, step: error.step ?? null });
@@ -1588,7 +1921,7 @@ export function encoreClient(s, io, calls = []) {
     if (method !== "GET") assertEncoreDeployEnv(env);
     else if (env !== null && env !== ENCORE_AUDIT_ENV) assertEncoreDeployEnv(env);
     if (token === null || io.now() > expires - 5 * 60_000) {
-      const client = JSON.parse(readSecret(io, "the Encore OAuth client", s.encoreClientFile));
+      const client = JSON.parse(await secretValue(s, io, "encore"));
       if (typeof client.client_id !== "string" || typeof client.client_secret !== "string")
         throw new Error("the Encore OAuth client file must hold client_id and client_secret");
       registerSecret(client.client_secret);
@@ -1760,6 +2093,12 @@ export async function deployEncore(
         rolledBack: false,
       });
     const back = await client.trigger(ENCORE_ENV, previous.sha);
+    if (typeof back.id !== "string" || !/^roll_\w+$/.test(back.id))
+      return finish("failure", {
+        reason: `${failure}; Encore's rollback answer has no rollout id`,
+        rolledBack: false,
+        rollback: { sha: previous.sha, rollout: null, ready: false },
+      });
     const backFollowed = await followRollout(s, io, client, back.id);
     const backReady =
       backFollowed.conclusion === "success" ? await readyz(s, io) : backFollowed.conclusion;
@@ -1809,8 +2148,8 @@ export function rolloutProblems(rollout, { ciActors, boxActor, deployedByCi }) {
 /** Whether GitHub records a successful deployment of `sha` to `production` (public reads; the token is optional). */
 export async function deployedToProduction(s, io, sha) {
   const headers = { accept: "application/vnd.github+json", "x-github-api-version": "2022-11-28" };
-  if (s.githubTokenFile)
-    headers.authorization = `Bearer ${readSecret(io, "the GitHub token", s.githubTokenFile)}`;
+  if (usesSecret(s, "github"))
+    headers.authorization = `Bearer ${await secretValue(s, io, "github")}`;
   const base = `${s.githubApi}/repos/${s.repo}/deployments`;
   const list = await io.fetch(`${base}?sha=${sha}&environment=production&per_page=20`, {
     headers,
@@ -1850,11 +2189,9 @@ export async function auditEncore(s, io) {
   };
   try {
     assertEncoreTarget(s.encoreApp, s.encoreEnv);
-    const problem = secretFileProblem(io, "STACKRA_DEPLOY_ENCORE_CLIENT_FILE", s.encoreClientFile);
+    const problem = secretProblem(s, io, "encore");
     if (problem) return finish("error", { reason: problem });
-    const boxActor = JSON.parse(
-      readSecret(io, "the Encore OAuth client", s.encoreClientFile),
-    ).client_id;
+    const boxActor = JSON.parse(await secretValue(s, io, "encore")).client_id;
     const answer = await encoreClient(s, io, entry.apiCalls).list(ENCORE_AUDIT_ENV);
     const rollouts = Array.isArray(answer) ? answer : (answer.rollouts ?? answer.items ?? null);
     if (!Array.isArray(rollouts))
@@ -1890,15 +2227,48 @@ export async function auditEncore(s, io) {
 // ---- the timer pass ---------------------------------------------------------------------------------------------
 
 /**
- * One pass for the timer: for each switched-on path, what to deploy at main's head. Returns `[{ target, args }]`,
- * each run then under its own lock. A Worker needs a recorded deploy first (the first one is by hand), a change in
- * its closure since that deploy, and a green verify at the head; a Worker waiting for approval of the head is run
- * again so its approval is picked up.
+ * The attempt that holds `target` at `sha`: the newest real (not dry-run) ledger line of that target at that SHA, when
+ * it ended in failure, needs-owner or refused. The timer never repeats such an SHA; a new head of main or a run by hand
+ * (which writes a newer line) clears it.
  */
-export async function plannedRuns(s, io, { dryRun = false } = {}) {
+export function heldAttempt(entries, target, sha) {
+  const last = entries.findLast(
+    (e) => e.target === target && e.sha === sha && !e.dryRun && e.result !== "held",
+  );
+  return last && HELD_RESULTS.includes(last.result) ? last : undefined;
+}
+
+/**
+ * Whether the timer holds `target` at `sha`; the first pass that holds it writes one `held` ledger line and one log
+ * line, later passes stay quiet (a dry run writes nothing).
+ */
+function timerHolds(s, io, entries, target, sha, dryRun) {
+  const attempt = heldAttempt(entries, target, sha);
+  if (!attempt) return false;
+  const since = entries.lastIndexOf(attempt);
+  const noted = entries
+    .slice(since + 1)
+    .some((e) => e.target === target && e.sha === sha && e.result === "held");
+  if (!noted) {
+    const reason = `the timer holds ${sha} after its ${attempt.result} at ${attempt.at ?? "an earlier pass"}; a new head of main or a run by hand clears it`;
+    io.log(`${target}: ${reason}`);
+    if (!dryRun)
+      appendLedger(s, io, { target, sha, result: "held", heldFor: attempt.result, reason });
+  }
+  return true;
+}
+
+/**
+ * One pass for the timer: for each switched-on path (or only `target`), what to deploy at main's head. Returns
+ * `[{ target, args }]`, each run then under its own lock. A Worker needs a recorded deploy first (the first one is by
+ * hand), a change in its closure since that deploy, and a green verify at the head; a Worker waiting for approval of
+ * the head is run again so its approval is picked up. A head whose last attempt failed, needed the owner or was
+ * refused is held, never retried every pass.
+ */
+export async function plannedRuns(s, io, { dryRun = false, target: only } = {}) {
   const runs = [];
-  const wantWorkers = s.workers === "on" || dryRun;
-  const wantEncore = s.encore === "on" || dryRun;
+  const wantWorkers = only !== "encore" && (s.workers === "on" || dryRun);
+  const wantEncore = only !== "workers" && (s.encore === "on" || dryRun);
   if (!wantWorkers && !wantEncore) {
     io.log("both deploy paths are off (STACKRA_DEPLOY_WORKERS, STACKRA_DEPLOY_ENCORE)");
     return runs;
@@ -1913,7 +2283,11 @@ export async function plannedRuns(s, io, { dryRun = false } = {}) {
     const good = lastGood(entries, `encore:${ENCORE_ENV}`);
     if (!good)
       io.log("encore: no recorded deploy yet; the first is run by hand (encore run --sha <sha>)");
-    else if (good.sha !== head && (await green()))
+    else if (
+      good.sha !== head &&
+      !timerHolds(s, io, entries, `encore:${ENCORE_ENV}`, head, dryRun) &&
+      (await green())
+    )
       runs.push({
         target: `encore-${ENCORE_ENV}`,
         args: ["encore", "run", "--sha", head, "--trigger", "timer", ...flags],
@@ -1955,6 +2329,7 @@ export async function plannedRuns(s, io, { dryRun = false } = {}) {
       continue;
     }
     if (good.sha === head) continue;
+    if (timerHolds(s, io, entries, target, head, dryRun)) continue;
     const diff = await git(s, io, ["diff", "--name-only", good.sha, head]);
     if (diff.code !== 0) {
       io.log(`${worker}: cannot diff ${good.sha}..${head}`);
@@ -1984,6 +2359,101 @@ export async function plannedRuns(s, io, { dryRun = false } = {}) {
     });
   }
   return runs;
+}
+
+// ---- the service's own code: pinned to a verified SHA ----------------------------------------------------------
+
+/** Runs git against the service clone (the code this script runs from). */
+const serviceGit = (s, io, args) =>
+  io.run("git", ["-C", s.serviceDir, ...args], {
+    env: { PATH: s.path, GIT_TERMINAL_PROMPT: "0" },
+  });
+
+/**
+ * `service update` (the service unit's ExecStartPre, in place of `git pull`): moves the service clone to main's head
+ * only when that head passed the same verify gate a deploy needs and is a fast-forward of the pinned commit, and
+ * records the pin (state/service.json and a ledger line). Until then the clone stays at the last pinned commit. Every
+ * deploy's preflight refuses a clone that is not at its pinned commit, so code that reached main without a green
+ * verify never runs holding a credential. Exit 0 when the clone sits at a pinned commit, else 1 (the unit then stops
+ * before the deploy runs).
+ */
+export async function serviceUpdate(s, io) {
+  const target = "service";
+  const record = (result, extra) => {
+    appendLedger(s, io, { target, ...extra, result });
+    io.log(`service ${extra.sha ?? ""} ${result}${extra.reason ? `: ${extra.reason}` : ""}`);
+  };
+  const pinned = readState(s, io, target);
+  const current = (await serviceGit(s, io, ["rev-parse", "HEAD"])).stdout.trim();
+  if (!SHA.test(current)) {
+    record("refused", { reason: "the service clone has no HEAD commit" });
+    return { code: 1, result: "refused" };
+  }
+  const dirty = await serviceGit(s, io, ["status", "--porcelain", "--untracked-files=no"]);
+  if (dirty.code !== 0 || dirty.stdout.trim() !== "") {
+    record("refused", { sha: current, reason: "the service clone has local changes" });
+    return { code: 1, result: "refused" };
+  }
+  const fetched = await serviceGit(s, io, [
+    "fetch",
+    "--quiet",
+    "--no-write-fetch-head",
+    s.remote,
+    "+refs/heads/main:refs/remotes/origin/main",
+  ]);
+  const head = (await serviceGit(s, io, ["rev-parse", "refs/remotes/origin/main"])).stdout.trim();
+  const atPin = pinned?.sha === current;
+  if (fetched.code !== 0 || !SHA.test(head)) {
+    record(atPin ? "kept" : "refused", {
+      sha: current,
+      reason: `main could not be fetched: ${tail(fetched.stderr)}`,
+    });
+    return { code: atPin ? 0 : 1, result: atPin ? "kept" : "refused" };
+  }
+  if (atPin && head === current) return { code: 0, result: "current" };
+  // The commit to pin: main's head when it moves forward, else the clone's own commit (the first pin).
+  const candidate = head;
+  if (candidate !== current) {
+    const forward = await serviceGit(s, io, ["merge-base", "--is-ancestor", current, candidate]);
+    if (forward.code !== 0) {
+      record(atPin ? "kept" : "refused", {
+        sha: candidate,
+        from: current,
+        reason: `${candidate} is not a fast-forward of ${current}`,
+      });
+      return { code: atPin ? 0 : 1, result: atPin ? "kept" : "refused" };
+    }
+  }
+  const gate = await verifyGate(s, io, candidate);
+  if (!gate.ok) {
+    // Logged once per SHA: the timer runs this every pass.
+    const entries = readLedger(s, io);
+    const noted = entries.some(
+      (e) => e.target === target && e.sha === candidate && e.result === "held",
+    );
+    if (!noted) record("held", { sha: candidate, from: current, reason: gate.reason });
+    return { code: atPin ? 0 : 1, result: atPin ? "kept" : "held" };
+  }
+  const moved = await serviceGit(s, io, [
+    "-c",
+    "advice.detachedHead=false",
+    "checkout",
+    "--quiet",
+    "--detach",
+    candidate,
+  ]);
+  if (moved.code !== 0) {
+    record("failure", { sha: candidate, from: current, reason: tail(moved.stderr) });
+    return { code: atPin ? 0 : 1, result: "failure" };
+  }
+  writeState(s, io, target, {
+    sha: candidate,
+    from: current,
+    verify: gate.via,
+    at: new Date(io.now()).toISOString(),
+  });
+  record("pinned", { sha: candidate, from: current, verify: { via: gate.via ?? null } });
+  return { code: 0, result: "pinned" };
 }
 
 // ---- the real host ----------------------------------------------------------------------------------------------
@@ -2042,7 +2512,23 @@ export function hostIo(s) {
     },
     lstat: (path) => {
       const st = lstatSync(path);
-      return { uid: st.uid, mode: st.mode, file: st.isFile(), symlink: st.isSymbolicLink() };
+      return {
+        uid: st.uid,
+        mode: st.mode,
+        file: st.isFile(),
+        dir: st.isDirectory(),
+        symlink: st.isSymbolicLink(),
+      };
+    },
+    canAccess: (path) => {
+      for (const mode of [fsConstants.R_OK, fsConstants.X_OK])
+        try {
+          accessSync(path, mode);
+          return true;
+        } catch {
+          // not with this mode
+        }
+      return false;
     },
     uidOf: (name) => {
       if (!USER_NAME.test(name)) return null;
@@ -2080,7 +2566,8 @@ function runLocked(s, lockTarget, args) {
 }
 
 const USAGE =
-  "usage: stackra-deploy.mjs preflight [workers|encore] | once [--dry-run] | status\n" +
+  "usage: stackra-deploy.mjs preflight [workers|encore] | once [workers|encore] [--dry-run] | status\n" +
+  "       | service update\n" +
   "       | workers run --worker <docs|edge> --sha <sha> [--dry-run] | encore audit\n" +
   "       | encore run --sha <sha> [--dry-run] | approve --worker <w> --sha <sha> --version <id>";
 
@@ -2128,6 +2615,11 @@ async function main(argv) {
   if (options.verb === "approve") {
     io.log(`approval written: ${writeApproval(s, io, options)}`);
     return 0;
+  }
+  if (options.verb === "service-update") {
+    const lock = lockPath(s, "service");
+    if (process.env.STACKRA_DEPLOY_LOCK !== lock) return runLocked(s, "service", argv);
+    return (await serviceUpdate(s, io)).code;
   }
   if (options.verb === "once") {
     let code = 0;

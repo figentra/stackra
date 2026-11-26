@@ -17,7 +17,7 @@
  */
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
 import {
@@ -27,8 +27,11 @@ import {
   clearSecrets,
   deployEncore,
   deployWorker,
+  ENCORE_API,
   encoreClient,
   foreignHosts,
+  GITHUB_API,
+  heldAttempt,
   lockImporters,
   lockedArgv,
   newestVerifyRun,
@@ -41,6 +44,7 @@ import {
   PROVIDER_WORKFLOW,
   readLedger,
   RUNWAY_DRIVER,
+  serviceUpdate,
   settings,
   stripJsonc,
   swapIds,
@@ -59,6 +63,9 @@ const {
   DOCS_HOST,
   ENCORE_SECRET,
   ENCORE_TOKEN,
+  INFISICAL_SECRET,
+  INFISICAL_TOKEN,
+  PIN,
   host: fakeHost,
   MAIN_ACCOUNT,
   NEW,
@@ -69,10 +76,13 @@ const {
   verifyRun,
 } = fakeDeployHost;
 
-const SECRETS = [CF_TOKEN, ENCORE_SECRET, ENCORE_TOKEN];
+const SECRETS = [CF_TOKEN, ENCORE_SECRET, ENCORE_TOKEN, INFISICAL_SECRET, INFISICAL_TOKEN];
 const repoFile = (path) => readFileSync(join(REPO_ROOT, path), "utf8");
 
 beforeEach(() => clearSecrets());
+
+/** A fake box as the Encore path's own user (stackra-deploy-encore). */
+const encoreHost = (options = {}) => fakeHost({ as: "encore", ...options });
 
 const deployDocs = async (host, extra = {}) =>
   deployWorker(settings(host.env), host.io, {
@@ -145,6 +155,12 @@ test("arguments: the verbs, a full SHA, a known Worker", () => {
   );
   assert.equal(parseArgs(["deploy"]), null);
   assert.equal(parseArgs(["once", "--sha", SHA]), null);
+  // Each path user runs its own timer pass, and the service unit pins its code first.
+  assert.equal(parseArgs(["once", "encore"]).target, "encore");
+  assert.equal(parseArgs(["once", "workers", "--dry-run"]).dryRun, true);
+  assert.equal(parseArgs(["service", "update"]).verb, "service-update");
+  assert.equal(parseArgs(["service", "update", "--sha", SHA]), null);
+  assert.equal(parseArgs(["service", "pull"]), null);
 });
 
 test("switches: only exactly on is on; promotion defaults to auto; steps are CI's 10, 50, 100", () => {
@@ -184,7 +200,7 @@ test("built OFF: a switch that is not on refuses, and a typo is a problem of its
     preflightProblems(settings(typo.env), typo.io, "workers").join(";"),
     /exactly "on" or "off"/,
   );
-  const encoreOff = fakeHost({ env: { STACKRA_DEPLOY_ENCORE: "off" } });
+  const encoreOff = encoreHost({ env: { STACKRA_DEPLOY_ENCORE: "off" } });
   assert.equal(
     (await deployEncore(settings(encoreOff.env), encoreOff.io, { sha: SHA, trigger: "manual" }))
       .code,
@@ -210,7 +226,8 @@ test("preflight: the deploy user, the secret files' modes, the build user", () =
   const host = fakeHost();
   const s = settings(host.env);
   assert.deepEqual(preflightProblems(s, host.io, "workers"), []);
-  assert.deepEqual(preflightProblems(s, host.io, "encore"), []);
+  const encore = encoreHost();
+  assert.deepEqual(preflightProblems(settings(encore.env), encore.io, "encore"), []);
   const asBuild = { ...host.io, user: "build" };
   assert.match(preflightProblems(s, asBuild, "workers").join(";"), /never build/);
   const loose = { ...host.io, lstat: (p) => ({ ...host.io.lstat(p), mode: 0o440 }) };
@@ -218,8 +235,11 @@ test("preflight: the deploy user, the secret files' modes, the build user", () =
     preflightProblems(s, loose, "workers").join(";"),
     /CLOUDFLARE_TOKEN_FILE .* must be mode 0400/,
   );
-  const foreign = { ...host.io, lstat: (p) => ({ ...host.io.lstat(p), uid: 1 }) };
-  assert.match(preflightProblems(s, foreign, "encore").join(";"), /not owned by the deploy user/);
+  const foreign = { ...encore.io, lstat: (p) => ({ ...encore.io.lstat(p), uid: 1 }) };
+  assert.match(
+    preflightProblems(settings(encore.env), foreign, "encore").join(";"),
+    /not owned by the deploy user/,
+  );
   assert.match(
     preflightProblems(
       settings({ ...host.env, STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID: MAIN_ACCOUNT }),
@@ -343,7 +363,7 @@ test("Encore production (or any app or environment but stackra-nzk2 staging) is 
   assert.throws(() => assertEncoreTarget("stackra-nzk2", "production"), /never "production"/);
   assert.throws(() => assertEncoreTarget("other-app", "staging"), /never "other-app"/);
   assert.doesNotThrow(() => assertEncoreTarget("stackra-nzk2", "staging"));
-  const host = fakeHost();
+  const host = encoreHost();
   await assert.rejects(
     deployEncore(settings(host.env), host.io, {
       sha: SHA,
@@ -352,7 +372,7 @@ test("Encore production (or any app or environment but stackra-nzk2 staging) is 
     }),
     /never "production"/,
   );
-  const configured = fakeHost({ env: { STACKRA_DEPLOY_ENCORE_ENV: "production" } });
+  const configured = encoreHost({ env: { STACKRA_DEPLOY_ENCORE_ENV: "production" } });
   await assert.rejects(
     deployEncore(settings(configured.env), configured.io, { sha: SHA, trigger: "manual" }),
     /never "production"/,
@@ -365,7 +385,7 @@ test("Encore production (or any app or environment but stackra-nzk2 staging) is 
 });
 
 test("Encore staging: a rollout of the exact SHA, then /readyz 200, recorded with the rollout id", async () => {
-  const host = fakeHost();
+  const host = encoreHost();
   const result = await deployEncore(settings(host.env), host.io, { sha: SHA, trigger: "manual" });
   assert.equal(result.code, 0);
   assert.deepEqual(host.encore.rollouts, [
@@ -390,7 +410,7 @@ test("Encore staging: a rollout of the exact SHA, then /readyz 200, recorded wit
 });
 
 test("Encore staging: a /readyz that is not 200 fails and rolls back to the last good SHA", async () => {
-  const host = fakeHost({ encore: { readyFor: (sha) => (sha === SHA ? 503 : 200) } });
+  const host = encoreHost({ encore: { readyFor: (sha) => (sha === SHA ? 503 : 200) } });
   const s = settings(host.env);
   mkdirSync(join(s.home, "ledger"), { recursive: true });
   writeFileSync(
@@ -412,7 +432,7 @@ test("Encore staging: a /readyz that is not 200 fails and rolls back to the last
 });
 
 test("Encore staging: proposed infrastructure changes stop for the owner", async () => {
-  const host = fakeHost({ encore: { endFor: () => "proposed" } });
+  const host = encoreHost({ encore: { endFor: () => "proposed" } });
   const result = await deployEncore(settings(host.env), host.io, { sha: SHA, trigger: "manual" });
   assert.equal(result.code, 1);
   assert.equal(lastLedger(host).result, "needs-owner");
@@ -978,7 +998,7 @@ test("the lockfile's workspace importers come from pnpm 12's second document", (
 // ---- Encore: the environment allowlist and the daily audit ----
 
 test("Encore: a deploy to any environment but staging is refused before any API call, the token mint included", async () => {
-  const host = fakeHost();
+  const host = encoreHost();
   const s = settings(host.env);
   const calls = [];
   const client = encoreClient(s, host.io, calls);
@@ -990,7 +1010,7 @@ test("Encore: a deploy to any environment but staging is refused before any API 
 });
 
 test("Encore: the ledger records every API call with its environment", async () => {
-  const host = fakeHost();
+  const host = encoreHost();
   await deployEncore(settings(host.env), host.io, { sha: SHA, trigger: "manual" });
   const calls = lastLedger(host).apiCalls;
   assert.deepEqual(
@@ -1016,7 +1036,7 @@ const rollout = (over) => ({
 test("the daily audit: production rollouts must be from CI, else an alert and exit 1", async () => {
   const env = { STACKRA_DEPLOY_ENCORE_CI_ACTORS: "ci-client" };
   const audit = async (production, deployments = [SHA]) => {
-    const host = fakeHost({ env, deployments, encore: { production } });
+    const host = encoreHost({ env, deployments, encore: { production } });
     const result = await auditEncore(settings(host.env), host.io);
     return { result, line: lastLedger(host), host };
   };
@@ -1048,9 +1068,344 @@ test("the daily audit: production rollouts must be from CI, else an alert and ex
     0,
   );
   // A list that cannot be read is never clean.
-  const broken = fakeHost({ env, encore: { production: "not a list" } });
+  const broken = encoreHost({ env, encore: { production: "not a list" } });
   assert.deepEqual(await auditEncore(settings(broken.env), broken.io), {
     code: 1,
     result: "error",
   });
+});
+
+// ---- the D1 gate's trust tables ----
+
+test("an insert into a table that grants rights stops for the owner: nothing applied, nothing uploaded", async () => {
+  const host = fakeHost({
+    d1: true,
+    pending: ["0019_publisher.sql"],
+    migrations: { "0019_publisher.sql": "INSERT INTO publishers (id, name) VALUES ('p1', 'x');" },
+  });
+  const result = await deployDocs(host);
+  assert.equal(result.code, 1);
+  const line = lastLedger(host);
+  assert.equal(line.result, "needs-owner");
+  assert.match(line.reason, /0019_publisher.sql INSERT INTO publishers/);
+  assert.deepEqual(host.wrangler.applied, []);
+  assert.equal(host.wrangler.uploads, 0);
+  assert.deepEqual(host.wrangler.deploys, []);
+});
+
+// ---- the timer holds a failed SHA ----
+
+/** Appends ledger lines as earlier runs would have written them. */
+const seedLedger = (host, ...lines) => {
+  const s = settings(host.env);
+  mkdirSync(join(s.home, "ledger"), { recursive: true });
+  writeFileSync(
+    join(s.home, "ledger", "deploys.jsonl"),
+    lines.map((l) => `${JSON.stringify({ schema: "stackra.deploy/1", ...l })}\n`).join(""),
+    { flag: "a" },
+  );
+};
+
+test("the timer holds a Worker's head after a failed attempt: no run every pass, one held line, a new head clears it", async () => {
+  const options = { head: SHA, changed: ["apps/docs/src/docs/index.mdx"] };
+  const host = fakeHost(options);
+  const s = settings(host.env);
+  seedLedger(host, { target: "worker:docs", sha: OLD_SHA, result: "success" });
+  assert.equal((await plannedRuns(s, host.io)).length, 1, "a touched head runs");
+  for (const result of ["failure", "needs-owner", "refused"]) {
+    const h = fakeHost(options);
+    seedLedger(
+      h,
+      { target: "worker:docs", sha: OLD_SHA, result: "success" },
+      { target: "worker:docs", sha: SHA, result, at: "2026-11-25T07:30:00Z" },
+    );
+    const sh = settings(h.env);
+    assert.deepEqual(await plannedRuns(sh, h.io), [], result);
+    assert.deepEqual(await plannedRuns(sh, h.io), [], `${result}, second pass`);
+    const held = readLedger(sh, h.io).filter((e) => e.result === "held");
+    assert.equal(held.length, 1, "held is written once");
+    assert.equal(held[0].heldFor, result);
+    assert.equal(held[0].sha, SHA);
+    assert.equal(h.logs.filter((l) => l.includes("holds")).length, 1, "and logged once");
+  }
+  // A dry-run attempt never holds, and a dry-run pass writes nothing.
+  const dry = fakeHost(options);
+  seedLedger(
+    dry,
+    { target: "worker:docs", sha: OLD_SHA, result: "success" },
+    { target: "worker:docs", sha: SHA, result: "failure" },
+  );
+  const sDry = settings(dry.env);
+  assert.deepEqual(await plannedRuns(sDry, dry.io, { dryRun: true }), []);
+  assert.equal(readLedger(sDry, dry.io).filter((e) => e.result === "held").length, 0);
+  assert.equal(
+    heldAttempt(
+      [{ target: "worker:docs", sha: SHA, result: "failure", dryRun: true }],
+      "worker:docs",
+      SHA,
+    ),
+    undefined,
+  );
+  // A newer head is tried again.
+  const next = "e".repeat(40);
+  options.head = next;
+  options.checkRuns = [verifyRun(next, "success")];
+  const moved = fakeHost(options);
+  seedLedger(
+    moved,
+    { target: "worker:docs", sha: OLD_SHA, result: "success" },
+    { target: "worker:docs", sha: SHA, result: "failure" },
+  );
+  assert.deepEqual(await plannedRuns(settings(moved.env), moved.io), [
+    {
+      target: "worker-docs",
+      args: ["workers", "run", "--worker", "docs", "--sha", next, "--trigger", "timer"],
+    },
+  ]);
+  // A run by hand is never held, and its newer line is what the timer reads next.
+  assert.equal(
+    heldAttempt(
+      [
+        { target: "worker:docs", sha: SHA, result: "failure" },
+        { target: "worker:docs", sha: SHA, result: "held" },
+        { target: "worker:docs", sha: SHA, result: "success" },
+      ],
+      "worker:docs",
+      SHA,
+    ),
+    undefined,
+  );
+});
+
+test("the timer holds Encore staging's head after a failed rollout, and plans only its own path", async () => {
+  const host = encoreHost({ head: SHA });
+  const s = settings(host.env);
+  seedLedger(host, { target: "encore:staging", sha: OLD_SHA, result: "success" });
+  assert.deepEqual(await plannedRuns(s, host.io, { target: "encore" }), [
+    {
+      target: "encore-staging",
+      args: ["encore", "run", "--sha", SHA, "--trigger", "timer"],
+    },
+  ]);
+  assert.deepEqual(await plannedRuns(s, host.io, { target: "workers" }), []);
+  seedLedger(host, { target: "encore:staging", sha: SHA, result: "failure" });
+  assert.deepEqual(await plannedRuns(s, host.io, { target: "encore" }), []);
+  assert.deepEqual(await plannedRuns(s, host.io, { target: "encore" }), []);
+  assert.equal(readLedger(s, host.io).filter((e) => e.result === "held").length, 1);
+  assert.equal(host.encore.rollouts.length, 0);
+});
+
+// ---- the service's own code: pinned to a verified SHA ----
+
+test("service update pins main's head only after its verify gate, as a fast-forward, and preflight needs the pin", async () => {
+  // A green head: the clone moves to it, detached, and the pin is recorded.
+  const green = fakeHost({ serviceOrigin: SHA });
+  const s = settings(green.env);
+  assert.deepEqual(await serviceUpdate(s, green.io), { code: 0, result: "pinned" });
+  assert.deepEqual(green.serviceGit.checkouts, [SHA]);
+  assert.equal(lastLedger(green).target, "service");
+  assert.equal(lastLedger(green).result, "pinned");
+  assert.equal(lastLedger(green).from, PIN);
+  assert.deepEqual(preflightProblems(s, green.io, "workers"), []);
+  assert.deepEqual(await serviceUpdate(s, green.io), { code: 0, result: "current" });
+
+  // A red head: the clone stays at its pin (exit 0, the deploy runs the verified code), held once.
+  const red = fakeHost({ serviceOrigin: "c".repeat(40) });
+  const sRed = settings(red.env);
+  assert.deepEqual(await serviceUpdate(sRed, red.io), { code: 0, result: "kept" });
+  assert.deepEqual(await serviceUpdate(sRed, red.io), { code: 0, result: "kept" });
+  assert.deepEqual(red.serviceGit.checkouts, []);
+  assert.equal(readLedger(sRed, red.io).filter((e) => e.result === "held").length, 1);
+  assert.deepEqual(preflightProblems(sRed, red.io, "workers"), []);
+
+  // Not a fast-forward of the pin: kept.
+  const rewritten = fakeHost({ serviceOrigin: SHA, serviceFastForward: false });
+  assert.deepEqual(await serviceUpdate(settings(rewritten.env), rewritten.io), {
+    code: 0,
+    result: "kept",
+  });
+  assert.deepEqual(rewritten.serviceGit.checkouts, []);
+
+  // Local changes in the clone: refused, exit 1.
+  const dirty = fakeHost({ serviceOrigin: SHA, serviceDirty: true });
+  assert.deepEqual(await serviceUpdate(settings(dirty.env), dirty.io), {
+    code: 1,
+    result: "refused",
+  });
+
+  // Never pinned: preflight refuses, and an unverified head is not pinned (exit 1, the unit stops).
+  const fresh = fakeHost({ servicePinned: false });
+  const sFresh = settings(fresh.env);
+  assert.match(
+    preflightProblems(sFresh, fresh.io, "workers").join(";"),
+    /which no `service update` pinned/,
+  );
+  assert.deepEqual(await serviceUpdate(sFresh, fresh.io), { code: 1, result: "held" });
+  const result = await deployDocs(fresh);
+  assert.equal(result.code, 1);
+  assert.match(lastLedger(fresh).reason, /no `service update` pinned/);
+  assert.equal(fresh.wrangler.uploads, 0);
+});
+
+test("preflight refuses service code another user could change", () => {
+  const host = fakeHost();
+  const s = settings(host.env);
+  chmodSync(join(host.service, "tools", "scripts"), 0o777);
+  assert.match(
+    preflightProblems(s, host.io, "workers").join(";"),
+    /tools\/scripts is writable by its group or others/,
+  );
+  chmodSync(join(host.service, "tools", "scripts"), 0o755);
+  const built = {
+    ...host.io,
+    lstat: (p) => ({
+      ...host.io.lstat(p),
+      uid: p.endsWith("stackra-deploy.mjs") ? 4444 : host.io.lstat(p).uid,
+    }),
+  };
+  assert.match(
+    preflightProblems(s, built, "workers").join(";"),
+    /stackra-deploy.mjs is not the deploy user's/,
+  );
+  writeFileSync(join(host.service, ".git", "HEAD"), "ref: refs/heads/main\n");
+  assert.match(preflightProblems(s, host.io, "workers").join(";"), /not pinned to a commit/);
+});
+
+// ---- the credential split ----
+
+test("the split: the Workers user cannot reach or name the Encore credential; the Encore user runs no tree code", () => {
+  const workers = fakeHost();
+  const sw = settings(workers.env);
+  assert.deepEqual(preflightProblems(sw, workers.io, "workers"), []);
+  assert.match(
+    preflightProblems(
+      settings({ ...workers.env, STACKRA_DEPLOY_ENCORE_CLIENT_FILE: workers.files.encore }),
+      workers.io,
+      "workers",
+    ).join(";"),
+    /holds no Encore setting/,
+  );
+  assert.match(
+    preflightProblems(
+      settings({ ...workers.env, STACKRA_DEPLOY_ENCORE: "on" }),
+      workers.io,
+      "workers",
+    ).join(";"),
+    /holds no Encore setting/,
+  );
+  assert.match(
+    preflightProblems(sw, { ...workers.io, canAccess: () => true }, "workers").join(";"),
+    /can reach .*etc-encore: the Encore credential must be out of its reach/,
+  );
+
+  const encore = encoreHost();
+  const se = settings(encore.env);
+  assert.deepEqual(preflightProblems(se, encore.io, "encore"), []);
+  assert.match(
+    preflightProblems(
+      settings({ ...encore.env, STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE: encore.files.cloudflare }),
+      encore.io,
+      "encore",
+    ).join(";"),
+    /no Workers setting/,
+  );
+  assert.match(
+    preflightProblems(
+      settings({ ...encore.env, STACKRA_DEPLOY_BUILD_AS: "stackra-deploy-build" }),
+      encore.io,
+      "encore",
+    ).join(";"),
+    /no Workers setting/,
+  );
+  assert.match(
+    preflightProblems(se, { ...encore.io, canSudo: () => true }, "encore").join(";"),
+    /can act as stackra-deploy-build: it must run no tree code/,
+  );
+  assert.match(
+    preflightProblems(
+      settings({ ...encore.env, STACKRA_DEPLOY_ENCORE_CLIENT_FILE: encore.files.cloudflare }),
+      encore.io,
+      "encore",
+    ).join(";"),
+    /STACKRA_DEPLOY_ENCORE_CLIENT_FILE must be a file in .*etc-encore/,
+  );
+});
+
+test("the API origins are fixed in code: no setting points a credential at another host", () => {
+  const s = settings({
+    STACKRA_DEPLOY_ENCORE_API: "https://collector.example",
+    STACKRA_DEPLOY_GITHUB_API: "https://collector.example",
+  });
+  assert.equal(s.encoreApi, ENCORE_API);
+  assert.equal(s.githubApi, GITHUB_API);
+});
+
+// ---- secrets from Infisical at run time ----
+
+test("Infisical: the Workers path fetches the Cloudflare token into memory with its own identity, nothing leaks", async () => {
+  const host = fakeHost({ secrets: "infisical" });
+  const s = settings(host.env);
+  assert.deepEqual(preflightProblems(s, host.io, "workers"), []);
+  const result = await deployDocs(host);
+  assert.equal(result.code, 0);
+  assert.equal(lastLedger(host).result, "success");
+  assert.equal(call0Env(host).CLOUDFLARE_API_TOKEN, CF_TOKEN);
+  assert.deepEqual(host.vault.reads, [
+    { name: "STACKRA_DEPLOY_CLOUDFLARE_TOKEN", path: "/ci/deploy/box1-stackra/workers" },
+  ]);
+  assert.equal(host.vault.logins, 1);
+  const login = host.fetches.find((f) => f.url.endsWith("/universal-auth/login"));
+  assert.ok(!login.url.includes(INFISICAL_SECRET));
+  assert.ok(
+    String(login.body).includes(INFISICAL_SECRET),
+    "the identity's secret goes in the body only",
+  );
+  const read = host.fetches.find((f) => f.url.includes("/api/v4/secrets/"));
+  assert.equal(read.headers.authorization, `Bearer ${INFISICAL_TOKEN}`);
+  assertNoLeak(host);
+});
+
+test("Infisical: the Encore path reads its client from its own folder only, and a wrong folder fails before any rollout", async () => {
+  const host = encoreHost({ secrets: "infisical" });
+  assert.deepEqual(preflightProblems(settings(host.env), host.io, "encore"), []);
+  const result = await deployEncore(settings(host.env), host.io, { sha: SHA, trigger: "manual" });
+  assert.equal(result.code, 0);
+  assert.deepEqual(host.vault.reads, [
+    { name: "STACKRA_DEPLOY_ENCORE_CLIENT", path: "/ci/deploy/box1-stackra/encore" },
+  ]);
+  assertNoLeak(host);
+
+  const wrong = encoreHost({
+    secrets: "infisical",
+    env: { STACKRA_DEPLOY_INFISICAL_PATH: "/ci/deploy/box1-stackra/workers" },
+  });
+  const failed = await deployEncore(settings(wrong.env), wrong.io, { sha: SHA, trigger: "manual" });
+  assert.equal(failed.code, 1);
+  assert.match(lastLedger(wrong).reason, /Infisical answered 404 for STACKRA_DEPLOY_ENCORE_CLIENT/);
+  assert.equal(wrong.encore.rollouts.length, 0);
+});
+
+test("Infisical: preflight refuses an unknown origin, a secret file beside it, and an unknown mode", () => {
+  const host = fakeHost({ secrets: "infisical" });
+  const problems = (env) =>
+    preflightProblems(settings({ ...host.env, ...env }), host.io, "workers").join(";");
+  assert.match(
+    problems({ STACKRA_DEPLOY_INFISICAL_URL: "https://vault.example" }),
+    /STACKRA_DEPLOY_INFISICAL_URL must be one of/,
+  );
+  assert.match(
+    problems({ STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE: host.files.cloudflare }),
+    /CLOUDFLARE_TOKEN_FILE is set: with STACKRA_DEPLOY_SECRETS=infisical no value is a file/,
+  );
+  assert.match(problems({ STACKRA_DEPLOY_INFISICAL_PATH: "ci" }), /STACKRA_DEPLOY_INFISICAL_PATH/);
+  assert.match(problems({ STACKRA_DEPLOY_SECRETS: "vault" }), /must be "files" or "infisical"/);
+  const encore = encoreHost({ secrets: "infisical" });
+  assert.match(
+    preflightProblems(
+      settings({ ...encore.env, STACKRA_DEPLOY_INFISICAL_IDENTITY_FILE: host.files.infisical }),
+      encore.io,
+      "encore",
+    ).join(";"),
+    /STACKRA_DEPLOY_INFISICAL_IDENTITY_FILE must be a file in/,
+  );
 });

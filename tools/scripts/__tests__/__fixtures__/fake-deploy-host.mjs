@@ -6,8 +6,11 @@
  *          and wrangler (a deployment state machine: status, versions view and upload, versions deploy, d1
  *          migrations list and apply), and whose `fetch` answers GitHub's check runs and deployments, the Encore
  *          Cloud API (with a production rollout list for the audit) and a fake docs Worker that names the version
- *          answering (or ignores the override, the false pass). Every argv, environment, log line and request is recorded so a test
- *          can prove no secret went where it must not.
+ *          answering (or ignores the override, the false pass), and Infisical (a machine identity's sign-in and the
+ *          secrets of its one folder). `as` picks the path user: `workers` (stackra-deploy: the Cloudflare token, sudo
+ *          to the build user, no reach into the Encore folder) or `encore` (stackra-deploy-encore: the Encore client in
+ *          its own folder, no sudo). A service clone pinned at PIN is laid out, its git answered. Every argv,
+ *          environment, log line and request is recorded so a test can prove no secret went where it must not.
  * Boundary: test fixture; files only under its own temporary folder; no network, no real git, sudo or wrangler.
  * Runtime: node
  * Governing contract: ADR 0022; ADR 0536.
@@ -41,6 +44,21 @@ const DOCS_HOST = `docs.${DOMAIN}`;
 const CF_TOKEN = "cf-token-value-that-must-never-leak-0123456789";
 const ENCORE_SECRET = "encore-client-secret-that-must-never-leak-0123";
 const ENCORE_TOKEN = "encore-access-token-that-must-never-leak-4567";
+const INFISICAL_SECRET = "infisical-identity-secret-that-must-never-leak-89";
+const INFISICAL_TOKEN = "infisical-access-token-that-must-never-leak-0123";
+const INFISICAL_PROJECT = "ci-deploy-project";
+const INFISICAL_PATHS = {
+  workers: "/ci/deploy/box1-stackra/workers",
+  encore: "/ci/deploy/box1-stackra/encore",
+};
+/** The commit the fake service clone is pinned at. */
+const PIN = "d".repeat(40);
+/** The service clone's own paths (SERVICE_PATHS of stackra-deploy.mjs). */
+const SERVICE_FILES = [
+  "tools/scripts/stackra-deploy.mjs",
+  "tools/scripts/d1-migration-gate.mjs",
+  "tools/scripts/worker-smoke.mjs",
+];
 const D1_ID = "12345678-1234-1234-1234-123456789abc";
 const TRAINER_UID = 4242;
 const APPROVER_UID = 4343;
@@ -150,63 +168,122 @@ function layTree(tree, migrations, options) {
   for (const [file, sql] of Object.entries(migrations)) put(`apps/docs/migrations/${file}`, sql);
 }
 
+/** Writes a fake secret file, 0400. */
+const secret = (folder, name, value) => {
+  const path = join(folder, name);
+  writeFileSync(path, `${value}\n`, { mode: 0o400 });
+  return path;
+};
+
 /**
  * A fake host. `options`: `onMain` (false: the SHA is not on main), `checkRuns` (GitHub's answer), `deployments` (its
  * production deployments of a SHA, all with a success status), `pending`, `migrations` and `d1` (D1), `account` (the
  * account docs' wrangler.jsonc names; null for none), `foreignHost`, `docsBreaks` (a function of the version a request
  * reaches and the deployment, giving a Set), `ignoreOverride` (a function of the deployment: the false pass),
  * `oldMessage`, `deployFails` (a percent whose `versions deploy` fails), `encore` (the Encore fake's script:
- * `endFor`, `readyFor`, `production` rollouts for the audit).
+ * `endFor`, `readyFor`, `production` rollouts for the audit), `as` (`workers` or `encore`: the path user), `secrets`
+ * (`infisical`: values come from the Infisical fake, no secret file is named), `serviceOrigin` (main's head as the
+ * service clone fetches it), `servicePinned` (false: no pin recorded), `serviceDirty`, `serviceFastForward`.
  */
 function fakeHost(options = {}) {
+  const as = options.as ?? "workers";
   const dir = mkdtempSync(join(tmpdir(), "stackra-deploy-test-"));
   const home = join(dir, "home");
   const work = join(dir, "work");
   const approvals = join(dir, "approvals");
   const boxGreen = join(dir, "box-green");
   const etc = join(dir, "etc");
-  for (const d of [home, work, approvals, boxGreen, etc])
+  const encoreEtc = join(dir, "etc-encore");
+  const service = join(dir, "service");
+  for (const d of [home, work, approvals, boxGreen, etc, encoreEtc])
     mkdirSync(d, { recursive: true, mode: 0o700 });
   chmodSync(home, 0o700);
-  const secret = (name, value) => {
-    const path = join(etc, name);
-    writeFileSync(path, `${value}\n`, { mode: 0o400 });
-    return path;
-  };
+
   const files = {
-    cloudflare: secret("cloudflare.token", CF_TOKEN),
+    cloudflare: secret(etc, "cloudflare.token", CF_TOKEN),
     encore: secret(
+      encoreEtc,
       "encore.json",
       JSON.stringify({ client_id: "client-1", client_secret: ENCORE_SECRET }),
+    ),
+    infisical: secret(
+      as === "encore" ? encoreEtc : etc,
+      "infisical-identity.json",
+      JSON.stringify({ client_id: `identity-${as}`, client_secret: INFISICAL_SECRET }),
     ),
   };
   const vars = join(etc, "vars.json");
   writeFileSync(vars, JSON.stringify(options.d1 ? { DOCS_D1_DATABASE_ID: D1_ID } : {}), {
     mode: 0o600,
   });
-  const env = {
+
+  // The service clone: its own code, the deploy user's and writable by it only, pinned at PIN.
+  for (const folder of ["tools/scripts", "node_modules", ".git"])
+    mkdirSync(join(service, folder), { recursive: true, mode: 0o755 });
+  for (const folder of [".", "tools", "tools/scripts", "node_modules"])
+    chmodSync(join(service, folder), 0o755);
+  for (const file of SERVICE_FILES)
+    writeFileSync(join(service, file), "// code\n", { mode: 0o644 });
+  const serviceGit = {
+    current: PIN,
+    origin: options.serviceOrigin ?? PIN,
+    dirty: options.serviceDirty ?? false,
+    fastForward: options.serviceFastForward ?? true,
+    checkouts: [],
+  };
+  writeFileSync(join(service, ".git", "HEAD"), `${PIN}\n`);
+  if (options.servicePinned !== false) {
+    mkdirSync(join(home, "state"), { recursive: true, mode: 0o700 });
+    writeFileSync(join(home, "state", "service.json"), JSON.stringify({ sha: PIN }));
+  }
+
+  const common = {
     STACKRA_DEPLOY_HOME: home,
-    STACKRA_DEPLOY_MIRROR: join(dir, "mirror.git"),
-    STACKRA_DEPLOY_WORK: work,
-    STACKRA_DEPLOY_APPROVALS: approvals,
-    STACKRA_DEPLOY_BOX_GREEN_DIR: boxGreen,
     STACKRA_DEPLOY_BOX: "box-test",
-    STACKRA_DEPLOY_WORKERS: "on",
-    STACKRA_DEPLOY_ENCORE: "on",
-    STACKRA_DEPLOY_BUILD_AS: "stackra-deploy-build",
-    STACKRA_DEPLOY_BUILD_HOME: "/home/stackra-deploy-build",
-    STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE: files.cloudflare,
-    STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID: ACCOUNT,
-    STACKRA_DEPLOY_STACKRA_DOMAIN: DOMAIN,
-    STACKRA_DEPLOY_WORKER_VARS_FILE: vars,
-    STACKRA_DEPLOY_ENCORE_CLIENT_FILE: files.encore,
-    STACKRA_DEPLOY_ENCORE_URL: "https://staging.stackra.test",
     STACKRA_DEPLOY_HOLD_SECONDS: "0",
     STACKRA_DEPLOY_PROPAGATION_SECONDS: "0",
     STACKRA_DEPLOY_POLL_SECONDS: "0",
     STACKRA_DEPLOY_READY_SECONDS: "0",
+    STACKRA_DEPLOY_BOX_GREEN_DIR: boxGreen,
     STACKRA_DEPLOY_BOX_GREEN_OWNER: "trainer",
-    STACKRA_DEPLOY_APPROVER: "approver",
+    STACKRA_DEPLOY_ENCORE_SECRET_DIR: encoreEtc,
+    STACKRA_DEPLOY_SERVICE_DIR: service,
+  };
+  const infisical = options.secrets === "infisical";
+  const paths = {
+    workers: {
+      STACKRA_DEPLOY_MIRROR: join(dir, "mirror.git"),
+      STACKRA_DEPLOY_WORK: work,
+      STACKRA_DEPLOY_APPROVALS: approvals,
+      STACKRA_DEPLOY_WORKERS: "on",
+      STACKRA_DEPLOY_BUILD_AS: "stackra-deploy-build",
+      STACKRA_DEPLOY_BUILD_HOME: "/home/stackra-deploy-build",
+      ...(infisical ? {} : { STACKRA_DEPLOY_CLOUDFLARE_TOKEN_FILE: files.cloudflare }),
+      STACKRA_DEPLOY_CLOUDFLARE_ACCOUNT_ID: ACCOUNT,
+      STACKRA_DEPLOY_STACKRA_DOMAIN: DOMAIN,
+      STACKRA_DEPLOY_WORKER_VARS_FILE: vars,
+      STACKRA_DEPLOY_APPROVER: "approver",
+    },
+    encore: {
+      STACKRA_DEPLOY_MIRROR: join(home, "mirror.git"),
+      STACKRA_DEPLOY_ENCORE: "on",
+      ...(infisical ? {} : { STACKRA_DEPLOY_ENCORE_CLIENT_FILE: files.encore }),
+      STACKRA_DEPLOY_ENCORE_URL: "https://staging.stackra.test",
+    },
+  };
+  const env = {
+    ...common,
+    ...paths[as],
+    ...(infisical
+      ? {
+          STACKRA_DEPLOY_SECRETS: "infisical",
+          STACKRA_DEPLOY_INFISICAL_URL: "https://eu.infisical.com",
+          STACKRA_DEPLOY_INFISICAL_IDENTITY_FILE: files.infisical,
+          STACKRA_DEPLOY_INFISICAL_PROJECT: INFISICAL_PROJECT,
+          STACKRA_DEPLOY_INFISICAL_ENV: "prod",
+          STACKRA_DEPLOY_INFISICAL_PATH: INFISICAL_PATHS[as],
+        }
+      : {}),
     ...options.env,
   };
 
@@ -279,6 +356,21 @@ function fakeHost(options = {}) {
       cwd: opts.cwd,
       input: opts.input,
     });
+    if (command === "git" && args[1] === service) {
+      const a = args.slice(2);
+      if (a[0] === "rev-parse")
+        return answer(0, `${a[1] === "HEAD" ? serviceGit.current : serviceGit.origin}\n`);
+      if (a[0] === "status") return answer(0, serviceGit.dirty ? " M tools/scripts/x.mjs\n" : "");
+      if (a[0] === "fetch") return answer(0);
+      if (a[0] === "merge-base") return answer(serviceGit.fastForward ? 0 : 1);
+      if (a.includes("checkout")) {
+        serviceGit.current = a.at(-1);
+        serviceGit.checkouts.push(a.at(-1));
+        writeFileSync(join(service, ".git", "HEAD"), `${a.at(-1)}\n`);
+        return answer(0);
+      }
+      return answer(1, "", `unknown service git ${a.join(" ")}`);
+    }
     if (command === "git") {
       const a = args.slice(2);
       if (a[0] === "init" || a[0] === "fetch") return answer(0);
@@ -321,6 +413,7 @@ function fakeHost(options = {}) {
   };
 
   const encore = { rollouts: [], tokens: 0, script: options.encore ?? {} };
+  const vault = { logins: 0, reads: [] };
   const fetch = async (url, init = {}) => {
     const { host, pathname } = new URL(url);
     const headers = init.headers ?? {};
@@ -333,6 +426,7 @@ function fakeHost(options = {}) {
       return Response.json((options.deployments ?? []).includes(sha) ? [{ id: 7 }] : []);
     }
     if (host === "api.encore.dev") return encoreAnswer(encore, pathname, init);
+    if (host === "eu.infisical.com") return infisicalAnswer(vault, new URL(url), init);
     if (host === "staging.stackra.test") {
       const sha = encore.live;
       const ready = (encore.script.readyFor ?? (() => 200))(sha);
@@ -354,7 +448,7 @@ function fakeHost(options = {}) {
   };
 
   const io = {
-    user: "stackra-deploy",
+    user: as === "encore" ? "stackra-deploy-encore" : "stackra-deploy",
     uid,
     sudoUser: null,
     now: () => clock,
@@ -390,12 +484,21 @@ function fakeHost(options = {}) {
         : path.startsWith(approvals)
           ? APPROVER_UID
           : st.uid;
-      return { uid: owner, mode: st.mode, file: st.isFile(), symlink: st.isSymbolicLink() };
+      return {
+        uid: owner,
+        mode: st.mode,
+        file: st.isFile(),
+        dir: st.isDirectory(),
+        symlink: st.isSymbolicLink(),
+      };
     },
     uidOf: (name) =>
       ({ trainer: TRAINER_UID, approver: APPROVER_UID, "stackra-deploy": uid })[name] ?? null,
     which: () => "/usr/bin/tool",
-    canSudo: () => true,
+    // The Workers user may act as the build user and cannot reach the Encore folder; the Encore user is the reverse.
+    canSudo: () => as === "workers",
+    canAccess: (path) =>
+      as === "encore" || !(path === encoreEtc || path.startsWith(`${encoreEtc}/`)),
     log: (line) => logs.push(line),
   };
   return {
@@ -411,8 +514,45 @@ function fakeHost(options = {}) {
     fetches,
     wrangler,
     encore,
+    vault,
     files,
+    service,
+    serviceGit,
+    encoreEtc,
   };
+}
+
+/**
+ * The Infisical fake: Universal Auth sign-in with the identity's client, then reads of one secret at a time; each
+ * identity's folder holds only its own path's secrets.
+ */
+async function infisicalAnswer(vault, url, init) {
+  if (url.pathname === "/api/v1/auth/universal-auth/login" && init.method === "POST") {
+    vault.logins += 1;
+    const body = JSON.parse(init.body);
+    if (body.clientSecret !== INFISICAL_SECRET)
+      return Response.json({ message: "bad" }, { status: 401 });
+    return Response.json({ accessToken: INFISICAL_TOKEN, expiresIn: 600, tokenType: "Bearer" });
+  }
+  if ((init.headers?.authorization ?? "") !== `Bearer ${INFISICAL_TOKEN}`)
+    return Response.json({ message: "unauthenticated" }, { status: 401 });
+  const read = /^\/api\/v4\/secrets\/([A-Z_]+)$/.exec(url.pathname);
+  const q = url.searchParams;
+  if (!read || q.get("projectId") !== INFISICAL_PROJECT || q.get("environment") !== "prod")
+    return Response.json({ message: "not found" }, { status: 404 });
+  const folders = {
+    [INFISICAL_PATHS.workers]: { STACKRA_DEPLOY_CLOUDFLARE_TOKEN: CF_TOKEN },
+    [INFISICAL_PATHS.encore]: {
+      STACKRA_DEPLOY_ENCORE_CLIENT: JSON.stringify({
+        client_id: "client-1",
+        client_secret: ENCORE_SECRET,
+      }),
+    },
+  };
+  const value = folders[q.get("secretPath")]?.[read[1]];
+  vault.reads.push({ name: read[1], path: q.get("secretPath") });
+  if (value === undefined) return Response.json({ message: "not found" }, { status: 404 });
+  return Response.json({ secret: { secretKey: read[1], secretValue: value } });
 }
 
 /** A completed stackra/verify check run of the verify App. */
@@ -479,6 +619,9 @@ export const fakeDeployHost = Object.freeze({
   CF_TOKEN,
   ENCORE_SECRET,
   ENCORE_TOKEN,
+  INFISICAL_SECRET,
+  INFISICAL_TOKEN,
+  PIN,
   D1_ID,
   host: fakeHost,
   verifyRun,
