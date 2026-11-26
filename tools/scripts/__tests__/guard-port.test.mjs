@@ -20,7 +20,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { portFiles } from "../guard-port.mjs";
@@ -32,7 +32,9 @@ const read = (f) => readFileSync(join(HOOKS, f), "utf8");
 
 // A temporary repository: main, and the session's own worktree `a` on feature/x (the cwd), whose last commit adds
 // the guard (main lacks it); a folder holding a .claude, two patches, a link to the settings and an Encore remote.
-const root = mkdtempSync(join(tmpdir(), "guard-port-"));
+// Under /tmp, not `os.tmpdir()`: the guard takes only /tmp and /var/folders for a temporary folder (its `TEMP`), where a
+// copy of config is no guard, so a TMPDIR elsewhere would turn the "copy to a scratch folder is allowed" cases into denials.
+const root = mkdtempSync("/tmp/guard-port-");
 after(() => rmSync(root, { recursive: true, force: true }));
 const main = join(root, "repo");
 const wt = join(main, ".claude", "worktrees", "a");
