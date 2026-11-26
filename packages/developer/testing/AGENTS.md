@@ -19,6 +19,9 @@ The generic test kit. Member at `packages/developer/testing` (`tier:lib`), in th
 - `./e2e` runs in the Playwright runner only; its unit tests cover the pure parts (`e2ePreset` with
   `@playwright/test` mocked, endpoint matching, the axe gate) and never load Playwright under vitest.
 - Domain helpers never come here: they go in the owning package's `./testing` entry (ADR 0269 decision 3).
+- The fault-injection kit (`injectFaults`, `postgresFault`, `InjectedFaultError`; ADR 0182 decision 4) stays generic:
+  its default error is a plain `Error`, never a refusal, and `postgresFault` builds SQL only (it imports no database
+  driver). A domain refusal comes from the test through a rule's `error`.
 - Re-export vitest's objects except `vi`; never wrap or copy them, so `expect.extend` acts on the consumer's instance.
   `vi` is imported from `vitest` directly: vitest hoists `vi.mock` only for that import (ADR 0269 decision 4, note of
   2026-10-24), and a re-export would offer an un-hoisted path.

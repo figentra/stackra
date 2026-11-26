@@ -45,6 +45,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   unclaimed. Never mint a second id for another version, and never convert a payload by hand here.
 - A driver stores and lists; it never delivers, computes a backoff or reads a clock. The relay passes `now` and the
   retry time.
+- Delivery is at least once and the inbox deduplicates by id; `outbox-relay.service.fault.test.ts` and
+  `outbox-relay.service.fault.int.test.ts` inject transport and database faults into the relay to prove nothing is
+  lost, dead-lettered or run twice (ADR 0182 decision 4, STA-2841). A change to the relay's delivery or recording
+  adds its case there.
 - `holding(value)` and `rewrite(id, data)` exist for erasure only (`redactSubjectMessages`, called by
   @stackra/privacy's saga): `holding` matches a string value at any payload depth, never a key; `rewrite` replaces
   the payload and keeps the delivery state. Never import @stackra/privacy here (privacy depends on outbox).

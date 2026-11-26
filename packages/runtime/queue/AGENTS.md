@@ -51,6 +51,12 @@ Member at `packages/runtime/queue` (`tier:lib`), in the programming model v3.1 s
   (the job as it is, already reserved). The `broker` driver holds a claimed job in memory only until the worker records
   its outcome in the same call, so `retry`, `deadLetter` and `remove` must follow its `claim` in one process.
 - The worker runs every attempt through `ActionPipeline`; never call `handle` directly and never add a pipeline step.
+- Recording an outcome is the store's work, never the attempt's: a store that fails to remove, retry, release or
+  dead-letter a job fails the drain (or the delivery), and the job runs again once its lease lapses, replaying its
+  result under the same Idempotency-Key. Never route a store error into the job's retry or dead letter: that
+  dead-letters and compensates (`onDeadLetter`) work that succeeded. `queue-worker.service.fault.test.ts` and
+  `queue-worker.service.fault.int.test.ts` prove it (ADR 0182 decision 4, STA-2841); a change to an at-least-once path
+  adds its case there.
   The job actor is `job` when the action lists `ActorKind.Job`, else `system`; a queued call of an action without a
   `job` option runs as its caller.
 - A job key is the registered locked key (`registerJobs`, from gen's entry), else the written key; a worker that meets

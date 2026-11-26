@@ -16,12 +16,15 @@ import { vi } from "vitest";
 | `vi`                                                                                                                     | not re-exported: import it from `vitest`, the only import vitest hoists `vi.mock` for (ADR 0269 decision 4, note of 2026-10-24)                                    |
 | `freezeClock(iso)`                                                                                                       | pins `Date.now()` and `new Date()` to `iso` until the test finishes; timers stay real; returns a restore                                                           |
 | `freezeIds()`                                                                                                            | replaces `crypto.getRandomValues` with a seeded stream until the test finishes, so ids repeat; returns a restore                                                   |
+| `injectFaults(target, rules)` | wraps a driver, client or fake so the calls the rules name fail `before` the target acts or `after` it (answer lost); records every call; `heal()` ends the faults (ADR 0182 d4) |
+| `postgresFault(options)` | the SQL of a row trigger that fails the chosen writes of one table (after `skip`, the next `times`, with a SQLSTATE): a database fault for an `.int` test |
+| `InjectedFaultError` | the default error of an injected fault: a plain `Error` naming the method, the call and the timing |
 | `Fake`, `Fake.of(Port)`                                                                                                  | the base of every `*.fake.ts`: `record(name, value)`, `calls(name)`; unimplemented port methods are `vi.fn()` spies                                                |
 | `createMatcher(name, fn)`                                                                                                | registers an `expect` matcher on import and returns it; type it by augmenting `Matchers`                                                                           |
 | `factory<T>(defaults)`                                                                                                   | plain test data for `*.fixture.ts`: `build(overrides)` at index 0, `buildMany(n, overrides)` at `0..n-1`                                                           |
 | `testScopeRef(label?, { under })`                                                                                        | a test tenant's scope reference `{ id, path }`: path `platform.<label>` (or under `under`), id hashed from it as `scopeRefOf` does; no label is a new `tenant_<n>` |
 | `testScopeId(label?, { under })`                                                                                         | that tenant's id (`testScopeRef(label).id`): a tenant id is its scope node's `scp_` id (ADR 0327 d8)                                                               |
-| types `Matchers`, `FakeConstructor`, `FakeRecorder`, `FactoryDefaults`, `FixtureBuilder`, `TestScopeRef`                 | the shapes behind the helpers above                                                                                                                                |
+| types `Matchers`, `FakeConstructor`, `FakeRecorder`, `FactoryDefaults`, `FixtureBuilder`, `TestScopeRef`, `FaultRule`, `FaultCall`, `FaultTiming`, `FaultInjection`, `PostgresFault`, `PostgresFaultOptions`, `PostgresWrite`                 | the shapes behind the helpers above                                                                                                                                |
 
 `.` is generic: it has no workspace dependency and no domain type. Domain helpers (`createTestingModule`, `run`,
 actors, `toRefuseWith`, …) live in the `./testing` entry of the package that owns them (ADR 0269 decision 3). There is no `./node` or
@@ -108,6 +111,43 @@ What the e2e stack must provide (`stackra dev` started by `e2ePreset` with `STAC
 - in the desktop main process, a bridge named in `STACKRA_E2E_FAKES` answers with its value as `data`.
 
 None of these is served yet; the journeys that use `seed`, `loginAs` or `launchDesktop` fail until they are.
+
+## Fault injection
+
+The fault-injection tests of ADR 0182 decision 4 prove that an at-least-once path (a queue job, an outbox message, a
+payment) loses nothing and does nothing twice when a provider or the database fails at the worst moment. They are a
+suite inside the tiers, not a sixth tier: `<subject>.fault.test.ts` runs in the unit tier on memory stores, and
+`<subject>.fault.int.test.ts` in the integration tier on a real Postgres.
+
+```ts
+import { injectFaults, InjectedFaultError, postgresFault } from "@stackra/testing";
+
+// the store removes the finished job, then the answer is lost: the worker must not count it as the job's failure
+const store = injectFaults(new MemoryQueueDriver(), [{ method: "remove", when: "after" }]);
+const worker = new QueueWorkerService(store.target, clock);
+await expect(worker.drain()).rejects.toBeInstanceOf(InjectedFaultError);
+expect(store.callsOf("deadLetter")).toEqual([]);
+
+// the provider fails its first two sends with the refusal the code under test expects
+const provider = injectFaults(new MessageProvider(), [
+  { method: "send", calls: [1, 2], error: () => ProviderDownError.create() },
+]);
+
+// on Postgres: the first delete of a job row fails as if the connection dropped
+const fault = postgresFault({ name: "job_remove", table: "queue.jobs", on: "delete" });
+for (const sql of fault.install) await superuser(sql);
+```
+
+- `before` (the default): the target is never reached, as when a request never arrived. `after`: the target acts and
+  the answer is lost, as when a commit or a provider call succeeded and the connection dropped before the reply.
+- The wrapped target keeps the real object's prototype and runs every method on it, so the target's own internal calls
+  are neither recorded nor faulted. A rule naming a method the target lacks throws at once.
+- `postgresFault` builds SQL only; run `install` as a superuser or the table's owner and `remove` after. Its counter is
+  a sequence, which a rollback does not undo, so a fault that fails inside a transaction still counts. Remember that
+  a failed statement aborts its transaction: a fault inside one transaction rolls back everything written before it.
+- The tests that use them: `queue-worker.service.fault{,.int}.test.ts` (@stackra/queue),
+  `outbox-relay.service.fault{,.int}.test.ts` (@stackra/outbox), `payment.service.fault.test.ts` and
+  `postgres-payment-records.driver.fault.int.test.ts` (@stackra/payments).
 
 ## A fake, a matcher and a fixture
 

@@ -10,7 +10,9 @@
  *           `EventBus.connect`). A job of an action with a `job` option runs as a `job` actor when the action lists
  *           `ActorKind.Job`, else as the `system` actor, on behalf of the caller that queued it; a queued call of any
  *           other action runs as its caller. A refusal that is not retryable ends the job at once; any other error, a
- *           timeout included, is retried while attempts remain. A job whose key this process does not know is
+ *           timeout included, is retried while attempts remain. A store that cannot record an attempt's outcome (the
+ *           remove, the retry, the release, the dead letter) fails the drain or the delivery and the job stays
+ *           reserved until its lease lapses; it is never counted as the job's own failure (ADR 0182 decision 4). A job whose key this process does not know is
  *           dead-lettered at once. Every attempt carries an Idempotency-Key (the queued call's, else one derived from
  *           the job when a store is bound), so an attempt that ran but was not recorded replays instead of running
  *           twice. The timeout aborts the attempt's signal; code that ignores the signal keeps running unobserved.
@@ -29,7 +31,8 @@
  *           delivered has no claimed row: its row work (a dead letter kept in the store) runs in its own scope's
  *           isolation, so it takes that scope's tenant.
  * Runtime: node
- * Governing contract: ADR 0495 (decision 2 and the note of 2026-11-01); ADR 0148 (decisions 1, 2 and 3); ADR 0305
+ * Governing contract: ADR 0495 (decision 2 and the note of 2026-11-01); ADR 0148 (decisions 1, 2 and 3); ADR 0182
+ *                     (decision 4: fault injection, STA-2841); ADR 0305
  *                     (rules 28 and 30); ADR 0138 (as amended: the pipeline); ADR 0136 (decision 3: jobs derive their
  *                     Idempotency-Keys); ADR 0260 (decision 4); ADR 0327 (decisions 6 and 9: the call's scope, the
  *                     scope session); ADR 0239 (2026-11-07 amendment, gaps A and C).
@@ -212,21 +215,27 @@ export class QueueWorkerService extends Service {
     }
     const { type, plan } = found;
     let output: unknown;
+    let retryAt: Date | undefined;
     try {
-      const retryAt = await this.throttled(job, now);
-      if (retryAt !== undefined) {
-        await inOwner(() => this.driver.release(job.id, retryAt));
-        return Object.freeze({ job, outcome: JobOutcome.Throttled, retryAt });
-      }
+      retryAt = await this.throttled(job, now);
       // With a `CallIsolation` bound the pipeline isolates the attempt itself (the job's actor and scope), and commits
       // once, so no outer scope session wraps it: one would hold the commit past the call's after-commit work.
-      output = this.connected().resolver.has(CallIsolation)
-        ? await this.attempt(type, plan, job)
-        : await this.unisolated(job, () => this.attempt(type, plan, job));
-      await inOwner(() => this.driver.remove(job.id));
+      if (retryAt === undefined)
+        output = this.connected().resolver.has(CallIsolation)
+          ? await this.attempt(type, plan, job)
+          : await this.unisolated(job, () => this.attempt(type, plan, job));
     } catch (error) {
       return this.failed(type, plan, job, now, error, inOwner);
     }
+    // Recording the outcome is the store's work, not the attempt's: a store that fails here fails the drain, and the
+    // job stays reserved until its lease lapses, so the next attempt replays the result under the same key. It is never
+    // counted as the job's failure, which would retry, dead-letter or compensate work that succeeded (ADR 0182 d4).
+    if (retryAt !== undefined) {
+      const at = retryAt;
+      await inOwner(() => this.driver.release(job.id, at));
+      return Object.freeze({ job, outcome: JobOutcome.Throttled, retryAt: at });
+    }
+    await inOwner(() => this.driver.remove(job.id));
     await this.followUp(job, claim);
     return Object.freeze({ job, outcome: JobOutcome.Done, output });
   }
