@@ -125,6 +125,93 @@ export function mergesPr(args) {
   return group === "api" && args.some((a) => MERGE.test(a) || MERGE.test(normalizeWord(a)));
 }
 
+const CHECK_SEGMENTS = new Set(["statuses", "check-runs", "check-suites"]);
+const CHECK_MUTATION =
+  /\b(?:createCheckRun|updateCheckRun|createCheckSuite|rerequestCheckSuite|createCommitStatus)\b/;
+// gh api's shorthands that take a value (-F -f -H -p -q -t -X); -i is its only boolean shorthand.
+const SHORT_VALUE = new Set(["F", "f", "H", "p", "q", "t", "X"]);
+const LONG_VALUE = new Set([
+  "--field",
+  "--raw-field",
+  "--input",
+  "--method",
+  "--header",
+  "--jq",
+  "--template",
+  "--preview",
+  "--hostname",
+  "--cache",
+]);
+
+/**
+ * A `gh api` call parsed as gh's flag library reads it: bundled shorthands (`-iF k=v`, `-ifk=v`, `-iXPOST`), values
+ * attached with or without `=`, and the last `-X`/`--method` winning. The endpoint is the first positional after
+ * `api`; `-R`/`--repo` values are skipped. (Parser after the L4 review of figentra/figentra#73.)
+ */
+export function parseApi(args) {
+  const flags = [];
+  const positional = [];
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === "-R" || a === "--repo") i++;
+    else if (a.startsWith("--")) {
+      const [name, ...rest] = a.split("=");
+      if (rest.length > 0) flags.push([name, rest.join("=")]);
+      else flags.push([name, LONG_VALUE.has(name) ? (args[++i] ?? "") : ""]);
+    } else if (a.startsWith("-") && a.length > 1) {
+      for (let c = 1; c < a.length; c++) {
+        if (!SHORT_VALUE.has(a[c])) continue;
+        const attached = a.slice(c + 1).replace(/^=/, "");
+        flags.push([`-${a[c]}`, attached === "" ? (args[++i] ?? "") : attached]);
+        break;
+      }
+    } else positional.push(a);
+  }
+  const method = flags.findLast(([n]) => n === "-X" || n === "--method")?.[1] ?? "";
+  const fields = flags.filter(([n]) => ["-f", "-F", "--field", "--raw-field"].includes(n));
+  const input = flags.some(([n]) => n === "--input");
+  return { method: method.toUpperCase(), fields, input, endpoint: positional[1] ?? "" };
+}
+
+/** The endpoint as a normalized, lower-case path: a full URL reduced to its path first. */
+export function endpointPath(endpoint) {
+  let path;
+  try {
+    path = new URL(endpoint).pathname;
+  } catch {
+    // A relative endpoint such as `repos/o/r/statuses/<sha>` or `graphql`: its query and fragment go, or
+    // `statuses?x=1` would hide the segment (L4, second read of figentra#73).
+    path = endpoint.split(/[?#]/, 1)[0];
+  }
+  return normalizeWord(path).toLowerCase();
+}
+
+/** Whether a `gh api` call goes to the GraphQL endpoint, however it is spelled (`graphql`, `/graphql`, a full URL). */
+const toGraphql = (args) => endpointPath(parseApi(args).endpoint).split("/").at(-1) === "graphql";
+
+/**
+ * A write of a commit status or a check run or suite (STA-2761): a `gh api` call whose endpoint path has a `statuses`,
+ * `check-runs` or `check-suites` segment and that writes (a non-GET method, any field or `--input`), and any GraphQL
+ * call whose document comes from a file or stdin or names a check or status mutation. Reads stay open, and a field
+ * that merely mentions those words is not a write to them. Every agent acts as stackra-bot, so such a write could
+ * forge `stackra/verify`; this is a speed bump, not the fence (a raw bot token reaches the API without this command;
+ * the fence is the stackra-verify App and the ruleset bound to its integration id).
+ */
+export function writesCheck(args) {
+  const [group] = words("gh", args);
+  if (group !== "api") return false;
+  const { method, fields, input, endpoint } = parseApi(args);
+  const segments = endpointPath(endpoint).split("/");
+  if (segments.at(-1) === "graphql") {
+    const fromFile =
+      input || fields.some(([n, v]) => ["-F", "--field"].includes(n) && /=@/.test(v));
+    return fromFile || fields.some(([, v]) => CHECK_MUTATION.test(v));
+  }
+  const writes =
+    (method !== "" && method !== "GET" && method !== "HEAD") || fields.length > 0 || input;
+  return writes && segments.some((s) => CHECK_SEGMENTS.has(s));
+}
+
 /** The only `-c` keys an agent may set: display and identity, none runs a command or redirects a remote (STA-216). */
 const ALLOWED_C =
   /^(?:color\.ui|color\.diff|color\.status|color\.branch|core\.quotepath|core\.abbrev|core\.precomposeunicode|user\.name|user\.email|advice\.detachedhead|diff\.renames|diff\.algorithm|diff\.context|diff\.noprefix|log\.abbrevcommit|log\.decorate|log\.date|merge\.ff|merge\.conflictstyle|pull\.rebase|pull\.ff|push\.default|rebase\.autosquash|init\.defaultbranch|column\.ui|status\.short|status\.branch|status\.showuntrackedfiles)$/i;
@@ -188,9 +275,10 @@ export function unsafeArgs(tool, args) {
   }
   const [group, verb] = words("gh", args);
   if (group === "alias") return "`gh alias` rewrites the owner's gh config";
+  if (group === "extension") return "`gh extension` installs and runs code under the bot token";
   if (writesOwnerLabel(group, verb, args))
     return "`owner-approved` records the owner's own decision; an agent never adds it (ADR 0230 rule 4)";
-  if (group === "api" && args.includes("graphql") && args.some((a) => /=@|^@|^--input\b/.test(a)))
+  if (group === "api" && toGraphql(args) && args.some((a) => /=@|^@|^--input\b/.test(a)))
     return "GraphQL from a file cannot be checked for a merge mutation; inline the query";
   return null;
 }
@@ -248,6 +336,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const unsafe = unsafeArgs(tool, args);
   if (unsafe) {
     process.stderr.write(`bot-gh: ${unsafe}\n`);
+    process.exit(2);
+  }
+  if (tool !== "git" && writesCheck(args)) {
+    process.stderr.write(
+      "bot-gh: agents never write commit statuses or check runs; only the stackra-verify App posts results (STA-2761)\n",
+    );
     process.exit(2);
   }
   if (tool !== "git" && mergesPr(args)) {
