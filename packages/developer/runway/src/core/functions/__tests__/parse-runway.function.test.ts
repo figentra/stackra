@@ -351,6 +351,24 @@ describe("parseRunway", () => {
     ).toEqual(["edge.tls", "observability", "providers.github", "release.gate"]);
   });
 
+  it("reads release.npm.promoteLatestAfter as consumer-smoke or immediate, refusing any other value or key", () => {
+    for (const promoteLatestAfter of ["consumer-smoke", "immediate"] as const)
+      expect(
+        parseRunway("root", { ...ROOT, release: { npm: { promoteLatestAfter } } }).release?.npm,
+      ).toEqual({ promoteLatestAfter });
+    expect(parseRunway("root", { ...ROOT, release: { npm: {} } }).release?.npm).toEqual({});
+    for (const npm of [
+      { promoteLatestAfter: "later" },
+      { promoteLatestAfter: true },
+      { promoteLatestAfterSmoke: "immediate" },
+    ])
+      expect(issuePaths(() => parseRunway("root", { ...ROOT, release: { npm } }))).toEqual([
+        Object.keys(npm)[0] === "promoteLatestAfter"
+          ? "release.npm.promoteLatestAfter"
+          : "release.npm",
+      ]);
+  });
+
   it("refuses an upper-case or repeated GitHub topic, more than 20 topics, and a relative homepage", () => {
     for (const metadata of [
       { topics: ["TypeScript"] },

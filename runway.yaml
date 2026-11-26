@@ -276,3 +276,7 @@ release:
   # Every deploy job runs in a GitHub environment, so GitHub records each deployment.
   records: [github-deployments]
   buildOrder: [npm, cloudflare-workers]
+  # The package release (STA-2874): `latest` moves only after tools/scripts/consumer-smoke.mjs made an app with
+  # `stackra create` from the registry alone, as a new user does; release.yml's gate reads this and passes it on.
+  npm:
+    promoteLatestAfter: consumer-smoke

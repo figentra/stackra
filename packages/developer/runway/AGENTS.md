@@ -43,6 +43,9 @@ and only parses and prints; the work stays in the functions it calls.
   no Mintlify key (the GitHub app deploys the branch) and never pushes `src/` (ADR 0002 amendment, STA-1316).
 - `providers.npm.registry` is the one registry setting (ADR 0453): never hard-code a registry URL in code or a
   member's `publishConfig`; the release workflow passes it to `runway-npm.yml` as its `registry` input.
+- `release.npm.promoteLatestAfter` (`consumer-smoke` | `immediate`) is read by the caller of `runway-npm.yml` (core's
+  `release.yml` gate), not by this package: keep the zod constant, `tools/schemas/runway-root.schema.json` and
+  `schema/root.json` in step (STA-2874).
 - Provider settings are runway data (`targets.<destination>`, `environments.<env>.encore|mobile`, a dedicated
   deployment's own blocks); a provider never hard-codes a branch, channel or profile.
 - Event fan-out is gen's (`.stackra/encore/<member>/events.ts` and a relay service's `relay.ts`), never a runway key:

@@ -9,7 +9,10 @@
 #          publishes nothing), so the workspace `.pnpmfile.mjs` beforePacking
 #          hook strips the repo-only `imports` map and `@stackra/source` condition first. Every version is published
 #          under the holding dist-tag `release-pending`; `latest` moves only after every version is on the registry and the
-#          release's dependency closure (each dependency in the plan's own scopes) is complete there (STA-2778).
+#          release's dependency closure (each dependency in the plan's own scopes) is complete there (STA-2778), and,
+#          with `promote-latest-after: consumer-smoke` (the default), only after the caller's `consumer-smoke` command
+#          has passed as a clean consumer against the release on the registry (STA-2874): a new user's first command is
+#          proven before `latest` points them at it.
 # Boundary: publishes only to `registry`; never to npmjs (the optional mirror of ADR 0453 decision 16 is off and not
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
@@ -52,6 +55,23 @@ on:
           runway's `providers.npm.registry`; this default is the Stackra registry (ADR 0453).
         type: string
         default: https://npm.stackra.figentra.com/
+      promote-latest-after:
+        description: >-
+          When the dist-tags move (STA-2874). `consumer-smoke` (the default): only after the `consumer-smoke` command
+          passes against the release on the registry; until then every version stays under `release-pending`.
+          `immediate`: as soon as the release's dependency closure holds on the registry. The caller passes its root
+          runway's `release.npm.promoteLatestAfter`.
+        type: string
+        default: consumer-smoke
+      consumer-smoke:
+        description: >-
+          The clean-consumer smoke, a shell command run from the repository root with a scrubbed environment: only
+          PATH, LANG, a new empty HOME (so no npm or pnpm settings, cache or store), RUNWAY_REGISTRY (the `registry`
+          input) and RUNWAY_RELEASE (a file of `<name> TAB <version>` lines, every package of the release). No token,
+          no CI variable and no GitHub variable reach it. A non-zero exit keeps `latest` where it was. Required with
+          `promote-latest-after: consumer-smoke`.
+        type: string
+        default: ""
     secrets:
       app-id:
         description: The GitHub App id the version PR and tags are pushed as; unset, from ci/production/release.
@@ -72,7 +92,8 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     # 0.17.0 published 118 of 119 packages (~13 s each) before a 30-minute limit cancelled the job (run 42297058735).
-    timeout-minutes: 60
+    # The consumer smoke (STA-2874) adds a fresh `stackra create`: install, gen, type-check and test of a new app.
+    timeout-minutes: 90
     # Runbook (release): a human keeps this environment protected and restricted to main, so a branch that edits the
     # workflow cannot obtain a credential, and every run waits for the owner's approval.
     environment: ${{ inputs.environment }}
@@ -516,6 +537,24 @@ jobs:
           # the whole release is on the registry with its dependency closure, so a run that stops anywhere leaves `latest`
           # where it was and every install that resolves it still works.
           hold_tag=release-pending
+          # When the dist-tags move (STA-2874): `consumer-smoke` waits for the caller's clean-consumer command to pass
+          # against the release on the registry; `immediate` moves them once the closure holds. A mode that cannot run
+          # stops here, before anything is packed or published.
+          promote="${PROMOTE_LATEST_AFTER:-consumer-smoke}"
+          smoke_state="not run"
+          case "$promote" in
+            immediate) ;;
+            consumer-smoke)
+              if [ -z "${CONSUMER_SMOKE:-}" ]; then
+                echo "::error title=Consumer smoke::promote-latest-after is consumer-smoke and no consumer-smoke command is set. Pass the command, or promote-latest-after: immediate. Nothing was published."
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error title=Consumer smoke::promote-latest-after must be consumer-smoke or immediate, not '${promote}'. Nothing was published."
+              exit 1
+              ;;
+          esac
           plan="$RUNNER_TEMP/registry-plan.tsv"
           pnpm -r --workspace-concurrency=1 --reporter=silent exec node "$RUNNER_TEMP/registry-plan.mjs" --manifest |
             node "$RUNNER_TEMP/registry-plan.mjs" --plan "$plan"
@@ -656,6 +695,20 @@ jobs:
               node "$RUNNER_TEMP/registry-plan.mjs" --closure "$packed" "$packuments" "$1" < /dev/null
           }
 
+          # The clean consumer (STA-2874): the caller's command, from the repository root, with nothing of this job but
+          # PATH. `env -i` drops the OIDC request token, the publish token, the App token, CI and every GitHub variable, so
+          # the code the smoke downloads and runs can mint no token and the tools behave as on a new machine (pnpm reads
+          # CI to refuse an install without a lockfile). HOME is new and empty: no ~/.npmrc, no npm cache, no pnpm store.
+          consumer_smoke() {
+            local home="$RUNNER_TEMP/consumer-smoke-home" release="$RUNNER_TEMP/consumer-smoke-release.tsv"
+            rm -rf "$home"
+            mkdir -p "$home"
+            awk -F'\t' '{ print $1 "\t" $2 }' "$packed" > "$release"
+            echo "Consumer smoke: ${CONSUMER_SMOKE}"
+            env -i PATH="$PATH" LANG=C.UTF-8 HOME="$home" RUNWAY_REGISTRY="$REGISTRY" RUNWAY_RELEASE="$release" \
+              bash -c "$CONSUMER_SMOKE" < /dev/null
+          }
+
           # One git-tag event per version: the action pushes the tag and creates the GitHub release from it. A tag left by an
           # earlier run that published nothing is kept (run 40896627689); a new one is annotated, so it carries its tagger and
           # date (changesets/action has set the git user).
@@ -728,6 +781,11 @@ jobs:
             done
             [ "$stops" -eq 0 ] || exit 1
             echo "Dry run: ${would_publish} would be published, ${would_skip} already there; nothing was published, tagged or announced"
+            if [ "$promote" = consumer-smoke ]; then
+              echo "Dry run: latest would move only after the consumer smoke passed: ${CONSUMER_SMOKE}"
+            else
+              echo "Dry run: latest would move once the closure held on the registry (promote-latest-after: immediate)"
+            fi
             exit 0
           fi
 
@@ -749,6 +807,7 @@ jobs:
             { grep -vxFf "$settled" "$all" || true; } | sed 's/^/  /'
             echo "Dist-tags moved ($(count "$moved_file")); every other version stays under ${hold_tag}:"
             sed 's/^/  /' "$moved_file"
+            echo "Consumer smoke: ${smoke_state}"
           }
           finish() {
             local status=$?
@@ -824,6 +883,18 @@ jobs:
           fi
           moves="$RUNNER_TEMP/registry-moves.tsv"
           node "$RUNNER_TEMP/registry-plan.mjs" --moves "$packed" "$packuments" "$hold_tag" "$moves" < /dev/null
+          # STA-2874: no tag moves until a clean consumer has used the release from the registry. Only a move that sets a
+          # tag waits for it (a run with nothing to move, or that only drops the holding tag, runs no smoke); a re-run
+          # after a failed smoke runs it again, since the moves are still due.
+          if [ "$promote" = consumer-smoke ] && awk -F'\t' '$3 != "-" { due = 1 } END { exit !due }' "$moves"; then
+            if ! consumer_smoke; then
+              smoke_state="failed"
+              echo "::error title=Consumer smoke failed::a clean consumer could not use this release from the registry. Every version is on the registry under ${hold_tag}; latest has not moved. Fix the cause and release again, or re-run the failed jobs when the cause was outside the release."
+              exit 1
+            fi
+            smoke_state="passed"
+            echo "Consumer smoke passed; the dist-tags move"
+          fi
           load_lines "$moves"
           for line in "${lines[@]}"; do
             IFS=$'\t' read -r name version tag drop <<< "$line"
@@ -852,6 +923,8 @@ jobs:
         env:
           REGISTRY: ${{ inputs.registry }}
           DRY_RUN: "true"
+          PROMOTE_LATEST_AFTER: ${{ inputs.promote-latest-after }}
+          CONSUMER_SMOKE: ${{ inputs.consumer-smoke }}
         run: bash "$RUNNER_TEMP/registry-publish.sh"
 
       # ADR 0025 / 0119 D7: automation prepares, the owner decides. With pending changesets this opens or updates the
@@ -871,6 +944,8 @@ jobs:
         env:
           REGISTRY: ${{ inputs.registry }}
           NPM_CONFIG_PROVENANCE: "true"
+          PROMOTE_LATEST_AFTER: ${{ inputs.promote-latest-after }}
+          CONSUMER_SMOKE: ${{ inputs.consumer-smoke }}
 
       # The published list goes to the SBOM job as an artifact, not a job output: GitHub drops a job output that holds a
       # masked value, and a package name can (`@figentra-oss/flow`, run 41388316844: "Skip output 'packages'").

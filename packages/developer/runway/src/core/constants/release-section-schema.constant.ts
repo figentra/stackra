@@ -3,9 +3,10 @@
  * Purpose: `RELEASE_SECTION_SCHEMA`, the root runway's `release` block as a closed object, so a misspelt key fails
  *          `parseRunway` instead of passing silently.
  * Boundary: internal; validation only, with no defaults. `release` has no owner schema: its keys are the ones the
- *           repositories use, and only `buildOrder` is read today (`deployPlan`).
+ *           repositories use. `buildOrder` is read by `deployPlan`; `npm.promoteLatestAfter` by the caller of
+ *           runway-npm.yml (core's release.yml gate), which passes it as `promote-latest-after` (STA-2874).
  * Runtime: isomorphic
- * Governing contract: ADR 0296; the Runway inventory of 2026-11-02 (static/ finding 1); STA-1976.
+ * Governing contract: ADR 0296; the Runway inventory of 2026-11-02 (static/ finding 1); STA-1976; STA-2874.
  */
 import { z } from "zod";
 
@@ -20,9 +21,13 @@ const AVOID_WINDOW = z.union([
   }),
 ]);
 
+/** When a package release moves `latest` (STA-2874): after the clean-consumer smoke, or once the closure holds. */
+const PROMOTE_LATEST_AFTER = z.enum(["consumer-smoke", "immediate"]);
+
 /** The release policy: build order, promotion, gates, rollback, strategy, records and on-premises upgrades. */
 export const RELEASE_SECTION_SCHEMA = z.strictObject({
   buildOrder: z.array(z.string().min(1)).optional(),
+  npm: z.strictObject({ promoteLatestAfter: PROMOTE_LATEST_AFTER.optional() }).optional(),
   promote: z.strictObject({ unit: z.enum(["sha", "digest"]) }).optional(),
   gate: z
     .strictObject({

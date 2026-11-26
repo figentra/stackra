@@ -7,7 +7,9 @@
  *          @stackra/iam). A version already on the registry counts only with the content packed here (its `dist.integrity`);
  *          the registry's answers are read three ways (present, absent, unavailable). Every version goes out under the
  *          holding tag and `latest` moves only after the dependency closure holds on the registry (STA-2778: 0.33.1 left
- *          @stackra/cli on `latest` pinning eight versions that answered 404).
+ *          @stackra/cli on `latest` pinning eight versions that answered 404), and with `promote-latest-after:
+ *          consumer-smoke` only after the caller's clean-consumer command passed (STA-2874). The fixture runs `immediate`
+ *          unless a test asks for the smoke, so the tests before STA-2874 keep their meaning.
  * Boundary: the two scripts are cut out of the workflow text and run as written; `curl` is a stand-in registry (status
  *           codes, version documents with an integrity, packuments with their dist-tags, dist-tag writes, timeouts) and
  *           `pnpm publish` records the tarball and the tag it was given.
@@ -363,6 +365,7 @@ function fixture(packages) {
     ACTIONS_ID_TOKEN_REQUEST_TOKEN: "request-token",
     ACTIONS_ID_TOKEN_REQUEST_URL: "https://actions.test/token?api=1",
     PUBLISH_RETRY_DELAY: "0",
+    PROMOTE_LATEST_AFTER: "immediate",
     GIT_AUTHOR_NAME: "t",
     GIT_AUTHOR_EMAIL: "t@t",
     GIT_COMMITTER_NAME: "t",
@@ -1606,4 +1609,210 @@ test("the dry run walks the closure too and stops on a gap, with nothing publish
     );
     assert.deepEqual(result.distTags, []);
   });
+});
+
+/**
+ * A consumer smoke for the fixture (STA-2874): a bash script that records what it was given (its environment, its
+ * working folder, its HOME's contents and the release file) under `<root>/smoke-<n>`, appends `smoke` to the shims'
+ * event log, and exits `status`. It names its paths literally: the script's environment does not reach it.
+ */
+function smoke(run, status = 0) {
+  const script = join(run.root, "smoke.sh");
+  writeFileSync(
+    script,
+    [
+      "set -u",
+      `n=$(ls -d "${run.root}"/smoke-* 2>/dev/null | wc -l)`,
+      `out="${run.root}/smoke-$((n + 1))"`,
+      'mkdir -p "$out"',
+      'env | sort > "$out/env"',
+      'pwd > "$out/cwd"',
+      'ls -A "$HOME" > "$out/home"',
+      'cat "$RUNWAY_RELEASE" > "$out/release"',
+      `echo smoke >> "${run.state}/events.log"`,
+      `exit ${status}`,
+      "",
+    ].join("\n"),
+  );
+  return `bash ${script}`;
+}
+
+/** What each smoke run recorded, oldest first. */
+function smokeRuns(run) {
+  const runs = [];
+  for (let n = 1; existsSync(join(run.root, `smoke-${n}`)); n++) {
+    const read = (file) => readFileSync(join(run.root, `smoke-${n}`, file), "utf8");
+    runs.push({
+      env: Object.fromEntries(
+        read("env")
+          .trim()
+          .split("\n")
+          .map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]),
+      ),
+      cwd: read("cwd").trim(),
+      home: read("home").trim(),
+      release: read("release").trim().split("\n"),
+    });
+  }
+  return runs;
+}
+
+test("with consumer-smoke, the dist-tags move only after the smoke passed, and the smoke follows the last publish", () => {
+  withFixture(CHAIN, (run) => {
+    const result = run.run({
+      extraEnv: { PROMOTE_LATEST_AFTER: "consumer-smoke", CONSUMER_SMOKE: smoke(run) },
+    });
+    assert.equal(result.status, 0, result.output);
+    const lastPublish = result.order.findLastIndex((line) => line.startsWith("publish "));
+    const smokeAt = result.order.indexOf("smoke");
+    const firstMove = result.order.findIndex((line) => line.startsWith("PUT "));
+    assert.ok(lastPublish < smokeAt && smokeAt < firstMove, result.order.join("\n"));
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+    assert.equal(smokeRuns(run).length, 1);
+    assert.match(result.output, /Consumer smoke passed; the dist-tags move/);
+  });
+});
+
+test("the smoke runs as a clean consumer: no token, no CI or GitHub variable, an empty new HOME, the release and registry named", () => {
+  withFixture(CHAIN, (run) => {
+    const result = run.run({
+      extraEnv: {
+        PROMOTE_LATEST_AFTER: "consumer-smoke",
+        CONSUMER_SMOKE: smoke(run),
+        NODE_AUTH_TOKEN: "publish-token",
+        GITHUB_TOKEN: "app-token",
+        CI: "true",
+        GITHUB_ACTIONS: "true",
+        NPM_CONFIG_PROVENANCE: "true",
+      },
+    });
+    assert.equal(result.status, 0, result.output);
+    const [{ env, cwd, home, release }] = smokeRuns(run);
+    assert.deepEqual(
+      Object.keys(env)
+        .filter((key) => !["_", "PWD", "SHLVL", "OLDPWD"].includes(key))
+        .sort(),
+      ["HOME", "LANG", "PATH", "RUNWAY_REGISTRY", "RUNWAY_RELEASE"],
+    );
+    assert.equal(env.RUNWAY_REGISTRY, REGISTRY);
+    assert.notEqual(env.HOME, process.env.HOME);
+    assert.equal(home, "", "HOME starts empty: no .npmrc, no cache, no store");
+    assert.equal(cwd, run.root);
+    assert.deepEqual(release.sort(), ["@t/a\t1.0.0", "@t/b\t1.0.0", "@t/c\t1.0.0", "@t/z\t1.0.0"]);
+  });
+});
+
+test("a failed smoke moves no dist-tag and keeps every version under release-pending; the re-run smokes again and moves latest", () => {
+  withFixture(CHAIN, (run) => {
+    const first = run.run({
+      extraEnv: { PROMOTE_LATEST_AFTER: "consumer-smoke", CONSUMER_SMOKE: smoke(run, 1) },
+    });
+    assert.equal(first.status, 1);
+    assert.deepEqual([...first.published].sort(), ["@t/a", "@t/b", "@t/c", "@t/z"]);
+    assert.deepEqual(first.distTags, []);
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { "release-pending": "1.0.0" });
+    assert.match(
+      first.output,
+      /Consumer smoke failed::a clean consumer could not use this release/,
+    );
+    assert.match(first.output, /latest has not moved/);
+    assert.match(first.output, /Consumer smoke: failed/);
+    run.forgetTags();
+    const second = run.run({
+      extraEnv: { PROMOTE_LATEST_AFTER: "consumer-smoke", CONSUMER_SMOKE: smoke(run) },
+    });
+    assert.equal(second.status, 0, second.output);
+    assert.deepEqual(second.published, first.published, "nothing is published twice");
+    assert.equal(smokeRuns(run).length, 2);
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+  });
+});
+
+test("immediate moves the dist-tags once the closure holds and runs no smoke", () => {
+  withFixture(CHAIN, (run) => {
+    const result = run.run({
+      extraEnv: { PROMOTE_LATEST_AFTER: "immediate", CONSUMER_SMOKE: smoke(run, 1) },
+    });
+    assert.equal(result.status, 0, result.output);
+    assert.equal(smokeRuns(run).length, 0);
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+  });
+});
+
+test("a run with no dist-tag to move runs no smoke", () => {
+  withFixture(CHAIN, (run) => {
+    const env = { PROMOTE_LATEST_AFTER: "consumer-smoke", CONSUMER_SMOKE: smoke(run) };
+    const first = run.run({ extraEnv: env });
+    assert.equal(first.status, 0, first.output);
+    const again = run.run({ extraEnv: env });
+    assert.equal(again.status, 0, again.output);
+    assert.deepEqual(again.published, first.published, "nothing new was published");
+    assert.equal(smokeRuns(run).length, 1, "the second run had nothing to move");
+    assert.match(again.output, /Dist-tags: 0 moved after the closure check/);
+  });
+});
+
+test("consumer-smoke without a command, unset or empty, and an unknown mode stop the run before anything is packed or published", () => {
+  for (const extraEnv of [
+    { PROMOTE_LATEST_AFTER: "consumer-smoke" },
+    { PROMOTE_LATEST_AFTER: "consumer-smoke", CONSUMER_SMOKE: "" },
+    { PROMOTE_LATEST_AFTER: "", CONSUMER_SMOKE: "" },
+    { PROMOTE_LATEST_AFTER: "later", CONSUMER_SMOKE: "true" },
+  ])
+    withFixture(CHAIN, (run) => {
+      const result = run.run({ extraEnv });
+      assert.equal(result.status, 1, JSON.stringify(extraEnv));
+      assert.deepEqual(result.published, []);
+      assert.doesNotMatch(result.output, /Preflight:/);
+      assert.match(
+        result.output,
+        extraEnv.PROMOTE_LATEST_AFTER === "later"
+          ? /promote-latest-after must be consumer-smoke or immediate, not 'later'/
+          : /no consumer-smoke command is set/,
+      );
+    });
+});
+
+test("the dry run says when latest would move and runs no smoke", () => {
+  withFixture(CHAIN, (run) => {
+    const command = smoke(run);
+    const result = run.run({
+      extraEnv: {
+        DRY_RUN: "true",
+        PROMOTE_LATEST_AFTER: "consumer-smoke",
+        CONSUMER_SMOKE: command,
+      },
+    });
+    assert.equal(result.status, 0, result.output);
+    assert.equal(smokeRuns(run).length, 0);
+    assert.ok(
+      result.output.includes(
+        `Dry run: latest would move only after the consumer smoke passed: ${command}`,
+      ),
+      result.output,
+    );
+    const immediate = run.run({ extraEnv: { DRY_RUN: "true", PROMOTE_LATEST_AFTER: "immediate" } });
+    assert.match(immediate.output, /latest would move once the closure held on the registry/);
+  });
+});
+
+test("the workflow declares both inputs, consumer-smoke by default, and hands them to the script through the environment", () => {
+  assert.match(
+    WORKFLOW,
+    /promote-latest-after:\n {8}description: >-[\s\S]*?type: string\n {8}default: consumer-smoke\n/,
+  );
+  assert.match(
+    WORKFLOW,
+    /consumer-smoke:\n {8}description: >-[\s\S]*?type: string\n {8}default: ""\n/,
+  );
+  assert.equal(
+    WORKFLOW.match(/PROMOTE_LATEST_AFTER: \$\{\{ inputs\.promote-latest-after \}\}/g)?.length,
+    2,
+  );
+  assert.equal(WORKFLOW.match(/CONSUMER_SMOKE: \$\{\{ inputs\.consumer-smoke \}\}/g)?.length, 2);
+  assert.doesNotMatch(PUBLISH_SCRIPT, /\$\{\{/);
 });

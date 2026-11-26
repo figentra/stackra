@@ -152,12 +152,12 @@ test("a starter's files describe the app's doctor workspace", () => {
 });
 
 /** A gzipped ustar archive of these files under `package/`, as npm packs one. */
-function tgz(entries: Record<string, string>): Uint8Array {
+function tgz(entries: Record<string, string | Uint8Array>): Uint8Array {
   const blocks: Uint8Array[] = [];
   for (const [path, body] of Object.entries(entries)) {
     const header = new Uint8Array(512);
     const field = (offset: number, value: string) => header.set(encoder.encode(value), offset);
-    const bytes = encoder.encode(body);
+    const bytes = typeof body === "string" ? encoder.encode(body) : body;
     field(0, `package/${path}`);
     field(100, "0000644\0");
     field(124, `${bytes.length.toString(8).padStart(11, "0")}\0`);
@@ -186,6 +186,38 @@ test("starterTarball returns the template under template/, or the whole tarball 
   assert.deepEqual(
     [...starterTarball(tgz({ "stackra.starter.yaml": "version: 1\n" })).keys()],
     ["stackra.starter.yaml"],
+  );
+});
+
+test("starterTarball reads the published starter's nested dist/template.tgz whole, dotfiles included", () => {
+  const template = tgz({
+    "stackra.starter.yaml": "version: 1\n",
+    ".npmrc": "engine-strict=true\n",
+    ".gitignore": "node_modules/\n",
+    "package.json": '{"name":"acme-platform"}',
+  });
+  const packed = starterTarball(
+    tgz({
+      "package.json": '{"name":"@stackra/starter"}',
+      "dist/template.tgz": template,
+      // A stray template/ folder beside the archive is not read: the archive is the starter.
+      "template/stale.txt": "old\n",
+    }),
+  );
+  assert.deepEqual([...packed.keys()].sort(), [
+    ".gitignore",
+    ".npmrc",
+    "package.json",
+    "stackra.starter.yaml",
+  ]);
+  assert.equal(read(packed, ".npmrc"), "engine-strict=true\n");
+  assert.equal(read(packed, "package.json"), '{"name":"acme-platform"}');
+});
+
+test("starterTarball refuses a nested archive whose path climbs out", () => {
+  assert.throws(
+    () => starterTarball(tgz({ "dist/template.tgz": tgz({ "../escape.txt": "x" }) })),
+    /outside its folder/,
   );
 });
 

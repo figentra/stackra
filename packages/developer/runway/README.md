@@ -87,6 +87,11 @@ and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.fige
 the release workflow's `registry` input carries the same value to `runway-npm.yml`, and no member's `publishConfig`
 names a registry.
 
+`release.npm.promoteLatestAfter` says when a package release moves `latest` (STA-2874): `consumer-smoke` (the default
+when unset) only after the caller's clean-consumer smoke passed against the release on the registry, `immediate` once
+the release's dependency closure holds there. Core's `release.yml` gate reads it and passes it to `runway-npm.yml` as
+`promote-latest-after`, with `node tools/scripts/consumer-smoke.mjs` as the `consumer-smoke` command.
+
 ```ts
 import { checkPlacement } from "@stackra/runway";
 import { readRunway } from "@stackra/runway/node";

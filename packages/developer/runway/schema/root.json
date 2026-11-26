@@ -1095,6 +1095,17 @@
             "minLength": 1
           }
         },
+        "npm": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The package release (runway-npm.yml, STA-2874). The caller of runway-npm.yml reads it and passes it on.",
+          "properties": {
+            "promoteLatestAfter": {
+              "enum": ["consumer-smoke", "immediate"],
+              "description": "When `latest` (and every other dist-tag) moves to a new release. `consumer-smoke` (the default when unset): only after the caller's clean-consumer smoke passed against the release on the registry; until then every version stays under `release-pending`. `immediate`: as soon as the release's dependency closure holds on the registry."
+            }
+          }
+        },
         "promote": {
           "type": "object",
           "additionalProperties": false,

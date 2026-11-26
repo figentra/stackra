@@ -1,0 +1,10 @@
+// Turborepo package configuration: extends the root turbo.jsonc and declares this member's tags
+// (tier, category, runtimes; pnpm validate checks them). The build fetches the stackra-template commit that
+// package.json `stackra.template.commit` pins, so the commit is part of the build's input (package.json) and
+// dist/template.tgz is its output (the root `dist/**`).
+// Owner: release-operations · Secrets: forbidden
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tags": ["tier:lib", "category:developer", "runtime:node"],
+}
