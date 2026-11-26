@@ -9,13 +9,16 @@
  *           joined an outer transaction which then fails to commit leaves no done key, and its retry runs again
  *           instead of replaying a success that never committed (ADR 0495, note of 2026-11-01). A claim is one upsert
  *           that takes a free or expired key and leaves a live one untouched; a concurrent claim of a key another
- *           open transaction inserted waits for that transaction, so two concurrent calls never both run. `release`
- *           frees a held key a failed call leaves when its transaction still commits.
+ *           open transaction inserted waits for that transaction, so two concurrent calls never both run. A claim holds
+ *           its key for the lease; `complete` is one upsert that marks the held key (or a lapsed one) done for the
+ *           replay window, and the pipeline runs it inside the call's transaction, so the output commits with the
+ *           writes and a crash after the commit leaves no key in progress (STA-2797). `release` frees a held key a
+ *           failed call leaves when its transaction still commits; a done key is never freed.
  *           The output must be JSON-serialisable, as every action output is. Each claim also sweeps up to 100 expired
  *           keys, so the table stays bounded without a job. Raw SQL with every value bound (ADR 0160).
  * Runtime: node
  * Governing contract: ADR 0136 (decision 3: key, payload hash and result, 24 hours); ADR 0138 (as amended: the
- *                     idempotency step); ADR 0396 (decision 2); ADR 0160.
+ *                     idempotency step); ADR 0396 (decision 2); ADR 0160; ADR 0495 (notes of 2026-11-01 and 2026-11-26).
  */
 import type { EntityManager } from "@mikro-orm/postgresql";
 import { IdempotencyStore } from "@stackra/actions/contracts";
@@ -37,7 +40,7 @@ const SWEEP = 100;
  *
  * @example
  * // runway.yaml (production): config.actions.stores: { idempotency: postgres }
- * const earlier = await store.claim(key, fingerprint, Duration.hours(24));
+ * const earlier = await store.claim(key, fingerprint, Duration.minutes(15));
  */
 export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
   /** It joins the running transaction. */
@@ -63,9 +66,9 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
   async claim(
     key: string,
     fingerprint: string,
-    ttl: Duration,
+    lease: Duration,
   ): Promise<IdempotencyRecord | undefined> {
-    const ms = Math.max(1, Math.ceil(Duration.toMilliseconds(ttl)));
+    const ms = Math.max(1, Math.ceil(Duration.toMilliseconds(lease)));
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const earlier = await this.run(async (em) => {
         // raw-sql: the claim is one upsert: a free or expired key is taken, a live one is left as it is
@@ -104,13 +107,21 @@ export class PostgresIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     throw new Error(`The idempotency key ${key} changed hands three times while it was claimed`);
   }
 
-  /** Implements `IdempotencyStore.complete`, documented there. */
-  async complete(key: string, output: unknown): Promise<void> {
+  /**
+   * Implements `IdempotencyStore.complete`, documented there: one upsert that marks the key held with `fingerprint`,
+   * or a lapsed or missing one, done for `ttl`; a key another call holds, or one already done, is left as it is.
+   */
+  async complete(key: string, fingerprint: string, output: unknown, ttl: Duration): Promise<void> {
+    const ms = Math.max(1, Math.ceil(Duration.toMilliseconds(ttl)));
     await this.run(async (em) => {
-      // raw-sql: the held key is marked done with its output, keeping its expiry
+      // raw-sql: the held (or lapsed) key is marked done with its output for the replay window
       await em.execute(
-        `update ${KEYS} set done = true, output = ?::jsonb, updated_at = now() where key = ? and done = false`,
-        [JSON.stringify(output ?? null), key],
+        `insert into ${KEYS} (key, fingerprint, done, output, refusal, expires_at) ` +
+          "values (?, ?, true, ?::jsonb, null, now() + (? * interval '1 millisecond')) " +
+          "on conflict (key) do update set fingerprint = excluded.fingerprint, done = true, output = excluded.output, " +
+          "refusal = null, expires_at = excluded.expires_at, updated_at = now() " +
+          `where (${KEYS}.done = false and ${KEYS}.fingerprint = excluded.fingerprint) or ${KEYS}.expires_at <= now()`,
+        [key, fingerprint, JSON.stringify(output ?? null), ms],
       );
     });
   }

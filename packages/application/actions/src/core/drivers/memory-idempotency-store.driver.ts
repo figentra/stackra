@@ -3,10 +3,11 @@
  * Purpose: `MemoryIdempotencyStoreDriver`, the in-process `IdempotencyStore`: a map of scoped keys to their record and
  *          expiry, for tests, local runs and single-instance memory deployments.
  * Boundary: one process only; a restart forgets every key, so production with more than one instance binds the durable
- *           driver. `claim` is atomic because it never awaits between the read and the write. Expiry follows the
- *           Clock port, so a test moves time instead of waiting.
+ *           driver. `claim` is atomic because it never awaits between the read and the write. A held key lapses after
+ *           its lease, a done key after its replay window. Expiry follows the Clock port, so a test moves time instead
+ *           of waiting.
  * Runtime: isomorphic
- * Governing contract: ADR 0136 (decision 3); owner decision 2026-10-21 (the store behind a port).
+ * Governing contract: ADR 0136 (decision 3); owner decision 2026-10-21 (the store behind a port); STA-2797 (the lease).
  */
 import { Driver } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
@@ -24,7 +25,7 @@ type Entry = { readonly record: IdempotencyRecord; readonly expiresAt: number };
  *
  * @example
  * const store = new MemoryIdempotencyStoreDriver(clock);
- * await store.claim("orders.order.create@1:t:usr_1:k1", fingerprint, Duration.hours(24)); // undefined: claimed
+ * await store.claim("orders.order.create@1:t:usr_1:k1", fingerprint, Duration.minutes(15)); // undefined: claimed
  */
 export class MemoryIdempotencyStoreDriver extends Driver(IdempotencyStore) {
   /** Scoped key to its entry. */
@@ -40,29 +41,30 @@ export class MemoryIdempotencyStoreDriver extends Driver(IdempotencyStore) {
     this.clock = clock;
   }
 
-  /** Claims a free or lapsed key, or returns the live record under it untouched. */
+  /** Claims a free or lapsed key for `lease`, or returns the live record under it untouched. */
   async claim(
     key: string,
     fingerprint: string,
-    ttl: Duration,
+    lease: Duration,
   ): Promise<IdempotencyRecord | undefined> {
     const now = this.clock.now().getTime();
-    const live = this.entries.get(key);
-    if (live !== undefined && live.expiresAt > now) return live.record;
+    const earlier = this.live(key, now);
+    if (earlier !== undefined) return earlier.record;
     this.entries.set(key, {
       record: Object.freeze({ fingerprint, done: false }),
-      expiresAt: now + Duration.toMilliseconds(ttl),
+      expiresAt: now + Duration.toMilliseconds(lease),
     });
     return undefined;
   }
 
-  /** Stores the output of a held key; a key that lapsed or was released meanwhile is left alone. */
-  async complete(key: string, output: unknown): Promise<void> {
-    const held = this.entries.get(key);
-    if (held === undefined || held.record.done) return;
+  /** Stores the output for `ttl` under a key held with `fingerprint`, or a free one; anything else is left alone. */
+  async complete(key: string, fingerprint: string, output: unknown, ttl: Duration): Promise<void> {
+    const now = this.clock.now().getTime();
+    const held = this.live(key, now);
+    if (held !== undefined && (held.record.done || held.record.fingerprint !== fingerprint)) return;
     this.entries.set(key, {
-      record: Object.freeze({ fingerprint: held.record.fingerprint, done: true, output }),
-      expiresAt: held.expiresAt,
+      record: Object.freeze({ fingerprint, done: true, output }),
+      expiresAt: now + Duration.toMilliseconds(ttl),
     });
   }
 
@@ -82,5 +84,11 @@ export class MemoryIdempotencyStoreDriver extends Driver(IdempotencyStore) {
   /** Frees a held key; a done key keeps its output. */
   async release(key: string): Promise<void> {
     if (this.entries.get(key)?.record.done === false) this.entries.delete(key);
+  }
+
+  /** The entry under `key` that has not lapsed at `now`, if any. */
+  private live(key: string, now: number): Entry | undefined {
+    const entry = this.entries.get(key);
+    return entry !== undefined && entry.expiresAt > now ? entry : undefined;
   }
 }

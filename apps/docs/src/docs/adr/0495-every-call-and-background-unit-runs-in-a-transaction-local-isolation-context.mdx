@@ -107,6 +107,30 @@ running transaction with such a store bound (`idempotency_store_not_transactiona
 run; a deployment whose calls join outer transactions binds the Postgres store. Test: `postgres-idempotency-store.driver.int.test.ts` forces the outer commit
 to fail with a deferred constraint and claims the key again.
 
+## Note 2026-11-26: an idempotency key's result commits with the call (decision 6)
+
+The note of 2026-11-01 made the Postgres store join the call's transaction, but the pipeline still wrote the result
+(`complete`) after that transaction committed, and freed the key (`release`) when that write failed. A short database
+or Valkey failure there let the client's retry repeat a committed write, and a crash between the commit and the write
+left the key in progress for the whole 24-hour window. Now (STA-2797):
+
+1. A store that joins transactions is completed inside the call's transaction, after the interceptors, so the kept
+   output commits or rolls back with the writes. With no `CallIsolation` bound, the pipeline opens one `UnitOfWork`
+   transaction around a keyed call on such a store, and the action's own unit of work becomes a savepoint of it.
+2. A store that cannot join (Valkey, memory) is still completed after the commit, and first, before anything else that
+   runs after it. Once a call has committed, its key is never released: a failed completion is logged
+   (`actions.idempotency_store_failed`), the caller still gets its output, and the key stays held until its lease ends.
+3. A claim holds its key for a short lease (`IDEMPOTENCY_LEASE`, 15 minutes, never longer than the replay window);
+   `complete` keeps the output for the replay window (24 hours unless shortened). A call that never finished frees its
+   key after the lease.
+4. The Valkey store marks each held claim with a holder token and frees or completes a key only while it still holds
+   that claim, so a late release never deletes a done record or another call's claim.
+
+With Valkey or memory, a crash between the commit and the completion still lets a retry after the lease run the write
+again: bind the Postgres store wherever a repeated write is not acceptable. Tests:
+`action-pipeline.service.test.ts` (STA-2797 block) and `postgres-idempotency-store.driver.int.test.ts` (the pipeline on
+real Postgres, with and without an isolation).
+
 ## Note 2026-11-01: a job's tenant comes from its platform-written scope (decision 2)
 
 Owner approval, 2026-11-01 (STA-1823). Decision 2 said a scope that is not a tenant's matches no tenant row, so it
