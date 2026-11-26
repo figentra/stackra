@@ -124,5 +124,6 @@ None.
 - 2026-11-26 → Draft (STA-1717, from the PR's diff)
 - 2026-11-26 → Clarified (questions answered from the code)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-26 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-26
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Tasked (T007 added: the minor release with its compatibility note, from the CTO's review of stackra#1113)
