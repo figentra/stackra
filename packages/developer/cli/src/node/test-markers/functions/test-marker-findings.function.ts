@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `testMarkerFindings(root, today?, markers?)`, the flaky-test quarantine check of `stackra validate
- *          --repository`: every test marker (`testMarkers`) must be in the review list (`TEST_MARKERS_LEDGER_FILE`),
+ *          --repository`: every test marker (`testMarkers`) must be in the review list (`TEST_MARKERS_LIST_FILE`),
  *          so no test stops running unseen. An environment gate (`skipIf` / `runIf`) is listed under `gates` with the
  *          reason it only runs there; any marker may be listed under `quarantine` with its Linear issue, a reason and
  *          an `until` date (YYYY-MM-DD) at most `QUARANTINE_MAX_DAYS` days out. Findings: a committed `only`; a marker
@@ -19,7 +19,7 @@ import { join } from "node:path";
 import { parse } from "yaml";
 
 import { QUARANTINE_MAX_DAYS } from "#node/test-markers/constants/quarantine-max-days.constant";
-import { TEST_MARKERS_LEDGER_FILE } from "#node/test-markers/constants/test-markers-ledger-file.constant";
+import { TEST_MARKERS_LIST_FILE } from "#node/test-markers/constants/test-markers-list-file.constant";
 import { testMarkers } from "#node/test-markers/functions/test-markers.function";
 import type { TestMarker } from "#node/test-markers/types/test-marker.type";
 import type { DirFinding } from "#node/types/dir-finding.type";
@@ -28,7 +28,7 @@ import type { DirFinding } from "#node/types/dir-finding.type";
 type Quarantine = { readonly issue?: unknown; readonly reason?: unknown; readonly until?: unknown };
 
 /** The review list: per section, test file to title to the reason (gates) or the quarantine. */
-type Ledger = {
+type MarkerList = {
   readonly gates: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   readonly quarantine: Readonly<Record<string, Readonly<Record<string, Quarantine>>>>;
 };
@@ -54,20 +54,20 @@ function sectionOf<T>(value: unknown): Record<string, Record<string, T>> {
 }
 
 /** The review list at `root`, or the finding that it does not parse. */
-function readLedger(root: string): Ledger | DirFinding {
-  const path = join(root, TEST_MARKERS_LEDGER_FILE);
+function readMarkerList(root: string): MarkerList | DirFinding {
+  const path = join(root, TEST_MARKERS_LIST_FILE);
   if (!existsSync(path)) return { gates: {}, quarantine: {} };
   let value: unknown;
   try {
     value = parse(readFileSync(path, "utf8")) ?? {};
   } catch (error) {
     return {
-      dir: TEST_MARKERS_LEDGER_FILE,
+      dir: TEST_MARKERS_LIST_FILE,
       text: `does not parse: ${(error as Error).message.split("\n")[0]}`,
     };
   }
   if (!isRecord(value))
-    return { dir: TEST_MARKERS_LEDGER_FILE, text: "must be a map with gates and quarantine" };
+    return { dir: TEST_MARKERS_LIST_FILE, text: "must be a map with gates and quarantine" };
   return {
     gates: sectionOf(value["gates"]),
     quarantine: sectionOf<Quarantine>(value["quarantine"]),
@@ -126,7 +126,7 @@ function quarantineFindings(marker: TestMarker, entry: unknown, today: Date): Di
 /** The findings of one marker against the list; marks the entries it matched in `seen`. */
 function markerFindings(
   marker: TestMarker,
-  ledger: Ledger,
+  markerList: MarkerList,
   today: Date,
   seen: Set<string>,
 ): DirFinding[] {
@@ -146,15 +146,15 @@ function markerFindings(
         text: `line ${marker.line}: the .${marker.kind} marker names no title to list it by`,
       },
     ];
-  const gate = ledger.gates[marker.file]?.[marker.title];
-  const quarantine = ledger.quarantine[marker.file]?.[marker.title];
+  const gate = markerList.gates[marker.file]?.[marker.title];
+  const quarantine = markerList.quarantine[marker.file]?.[marker.title];
   if (gate !== undefined) seen.add(`gates\0${marker.file}\0${marker.title}`);
   if (quarantine !== undefined) seen.add(`quarantine\0${marker.file}\0${marker.title}`);
   if (gate !== undefined && quarantine !== undefined)
     return [
       {
         ...at,
-        text: `${name} is listed under both gates and quarantine in ${TEST_MARKERS_LEDGER_FILE}: keep one`,
+        text: `${name} is listed under both gates and quarantine in ${TEST_MARKERS_LIST_FILE}: keep one`,
       },
     ];
   if (quarantine !== undefined) return quarantineFindings(marker, quarantine, today);
@@ -168,14 +168,14 @@ function markerFindings(
       ];
     return filled(gate)
       ? []
-      : [{ ...at, text: `the gate ${name} needs its reason in ${TEST_MARKERS_LEDGER_FILE}` }];
+      : [{ ...at, text: `the gate ${name} needs its reason in ${TEST_MARKERS_LIST_FILE}` }];
   }
   return [
     {
       ...at,
       text: GATE_KINDS.has(marker.kind)
-        ? `${name} is not in ${TEST_MARKERS_LEDGER_FILE}: list it under gates with the reason it only runs there, or under quarantine with its issue`
-        : `${name} is not in ${TEST_MARKERS_LEDGER_FILE}: quarantine it with its Linear issue, reason and until date (at most ${QUARANTINE_MAX_DAYS} days out)`,
+        ? `${name} is not in ${TEST_MARKERS_LIST_FILE}: list it under gates with the reason it only runs there, or under quarantine with its issue`
+        : `${name} is not in ${TEST_MARKERS_LIST_FILE}: quarantine it with its Linear issue, reason and until date (at most ${QUARANTINE_MAX_DAYS} days out)`,
     },
   ];
 }
@@ -194,16 +194,16 @@ export function testMarkerFindings(
   today: Date = new Date(),
   markers: readonly TestMarker[] = testMarkers(root),
 ): DirFinding[] {
-  const ledger = readLedger(root);
-  if ("dir" in ledger) return [ledger];
+  const markerList = readMarkerList(root);
+  if ("dir" in markerList) return [markerList];
   const seen = new Set<string>();
-  const findings = markers.flatMap((marker) => markerFindings(marker, ledger, today, seen));
+  const findings = markers.flatMap((marker) => markerFindings(marker, markerList, today, seen));
   for (const section of ["gates", "quarantine"] as const)
-    for (const [file, entries] of Object.entries(ledger[section]))
+    for (const [file, entries] of Object.entries(markerList[section]))
       for (const title of Object.keys(entries))
         if (!seen.has(`${section}\0${file}\0${title}`))
           findings.push({
-            dir: TEST_MARKERS_LEDGER_FILE,
+            dir: TEST_MARKERS_LIST_FILE,
             text: `${section} lists "${title}" in ${file}, but no marker there names it any more: remove the entry`,
           });
   return findings;

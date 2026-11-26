@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "@stackra/testing";
 
 import { QUARANTINE_MAX_DAYS } from "#node/test-markers/constants/quarantine-max-days.constant";
-import { TEST_MARKERS_LEDGER_FILE } from "#node/test-markers/constants/test-markers-ledger-file.constant";
+import { TEST_MARKERS_LIST_FILE } from "#node/test-markers/constants/test-markers-list-file.constant";
 import { testMarkerFindings } from "#node/test-markers/functions/test-marker-findings.function";
 
 /** The day the fixtures are checked on. */
@@ -29,11 +29,11 @@ const TODAY = new Date("2026-11-26T12:00:00Z");
 /** The fixture test file. */
 const FILE = "packages/a/src/__tests__/a.test.ts";
 
-/** A temp repository with one test file holding `source` and the review list `ledger` (omitted when undefined). */
-function repository(source: string, ledger?: string): string {
+/** A temp repository with one test file holding `source` and the review list `markerList` (omitted when undefined). */
+function repository(source: string, markerList?: string): string {
   const root = mkdtempSync(join(tmpdir(), "test-marker-findings-"));
   const files: Record<string, string> = { [FILE]: source };
-  if (ledger !== undefined) files[TEST_MARKERS_LEDGER_FILE] = ledger;
+  if (markerList !== undefined) files[TEST_MARKERS_LIST_FILE] = markerList;
   for (const [path, text] of Object.entries(files)) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), text);
@@ -41,9 +41,9 @@ function repository(source: string, ledger?: string): string {
   return root;
 }
 
-/** The finding texts of `source` against `ledger`. */
-function findings(source: string, ledger?: string): string[] {
-  return testMarkerFindings(repository(source, ledger), TODAY).map(
+/** The finding texts of `source` against `markerList`. */
+function findings(source: string, markerList?: string): string[] {
+  return testMarkerFindings(repository(source, markerList), TODAY).map(
     ({ dir, text }) => `${dir}: ${text}`,
   );
 }
@@ -167,7 +167,7 @@ test("a marker listed under both sections, and an entry no marker matches, are f
       quarantined("      issue: STA-1\n      reason: r\n      until: 2026-12-01\n"),
     ),
     [
-      `${TEST_MARKERS_LEDGER_FILE}: quarantine lists "flaky" in ${FILE}, but no marker there names it any more: remove the entry`,
+      `${TEST_MARKERS_LIST_FILE}: quarantine lists "flaky" in ${FILE}, but no marker there names it any more: remove the entry`,
     ],
   );
 });
@@ -178,7 +178,7 @@ test("a list that does not parse or is not a map is one finding", () => {
     /test-markers\.yaml: does not parse/,
   );
   assert.deepEqual(findings('it.skip("a", () => {});', "- a\n"), [
-    `${TEST_MARKERS_LEDGER_FILE}: must be a map with gates and quarantine`,
+    `${TEST_MARKERS_LIST_FILE}: must be a map with gates and quarantine`,
   ]);
 });
 
