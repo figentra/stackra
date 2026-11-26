@@ -53,11 +53,12 @@ describe("EncorePrepareCommand", () => {
     expect(JSON.parse(tsconfig.replace(/^\/\/.*\n/, ""))).toEqual({
       extends: "@stackra/typescript-config/node",
       compilerOptions: {
-        paths: { "#src/*": ["./src/*", "./src/*.ts"], "#stackra/*": ["./.stackra/gen/*"] },
+        // each key's first target only: Encore reads no further (ADR 0091 rule 4, corrected 2026-11-10)
+        paths: { "#src/*": ["./src/*"], "#stackra/*": ["./.stackra/gen/*"] },
       },
     });
     // laid out as the formatter leaves it: a short array on its line
-    expect(tsconfig).toContain('    "#src/*": ["./src/*", "./src/*.ts"],\n');
+    expect(tsconfig).toContain('    "#src/*": ["./src/*"],\n');
 
     const second = await runCommandForTest([EncorePrepareCommand], ["encore:prepare", "--json"], {
       cwd: service,

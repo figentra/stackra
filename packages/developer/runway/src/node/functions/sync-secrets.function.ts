@@ -11,7 +11,7 @@
  *           app-wide, and the job's environment holds one value per name, so two services that name one secret share
  *           it. The Encore environment is `environments.<env>.encore.environment`, else the runway environment's own name. The
  *           writes run in a temporary folder holding only `encore.app` with the root runway's `providers.encore.app`, so
- *           they reach the app whatever the generated layout (a service member's `.stackra/encore`, or the deploy
+ *           they reach the app whatever the generated layout (a service member's `stackra-encore`, or the deploy
  *           commit's root, STA-2193). Writes run only in CI
  *           (`readMemberSecrets` refuses elsewhere); a dry run reads nothing.
  * Runtime: node

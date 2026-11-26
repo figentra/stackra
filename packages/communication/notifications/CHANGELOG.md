@@ -1,5 +1,25 @@
 # @stackra/notifications
 
+## 0.33.1
+
+### Patch Changes
+
+- Updated dependencies [bf2c6ea]
+  - @stackra/contracts@0.33.1
+  - @stackra/outbox@0.33.1
+  - @stackra/clients@0.33.1
+  - @stackra/money@0.33.1
+  - @stackra/integrations@0.33.1
+  - @stackra/assets@0.33.1
+  - @stackra/ui@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/container@0.33.1
+  - @stackra/errors@0.33.1
+  - @stackra/events@0.33.1
+  - @stackra/i18n@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/support@0.33.1
+
 ## 0.33.0
 
 ### Patch Changes

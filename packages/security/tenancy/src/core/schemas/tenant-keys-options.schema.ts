@@ -10,7 +10,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0188 (2026-11-09 amendment); ADR 0146 as amended; ADR 0294 (decisions 19 and 26).
  */
-import "#core/types/key-provider-driver-names.type";
+import "#core/types/tenant-data-key-store-driver-names.type";
 
 import type { DriverName } from "@stackra/container";
 import type { KeyProvider } from "@stackra/contracts";
@@ -43,7 +43,11 @@ export class TenantKeysOptions extends Schema {
   })
   cacheTenants = 1000;
 
-  /** Which `KeyProvider` driver runs: `ephemeral` (random keys in process, dev and tests) or `kms` (production). */
+  /**
+   * Which `KeyProvider` driver runs: `ephemeral` (random keys in process, dev and tests), `kms` (production), or one a
+   * product ships. This package declares no `DriverRegistry` entry for the port: the member's generated wiring declares
+   * the names it has, and a narrower one here would clash with it (TS2717, STA-2693).
+   */
   driver: DriverName<KeyProvider> = "ephemeral";
 
   /** Which `TenantDataKeyStore` holds the wrapped keys: `memory` (dev and tests) or `postgres` (production). */

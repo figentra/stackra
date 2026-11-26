@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `checkEncoreService`, `catalogEncoreVersion` and `pathsOfImports`: a service passes with the
- *          catalog's literal `encore.dev` and tsconfig `paths` equal to its `imports`; `catalog:`, another version, a
- *          missing or stale block is a finding; `checkMember` leaves the service's `encore.dev` literal to this rule.
+ *          catalog's literal `encore.dev` and tsconfig `paths` holding each `imports` key's first target; `catalog:`,
+ *          another version, a missing, stale or full-array block is a finding; `checkMember` leaves the service's
+ *          `encore.dev` literal to this rule.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0091 (decision 2, amendment of 2026-11-09); ADR 0022 (test placement).
@@ -18,15 +19,30 @@ import { pathsOfImports } from "#node/functions/paths-of-imports.function";
 const imports = { "#src/*": ["./src/*", "./src/*.ts"], "#stackra/*": "./.stackra/gen/*" };
 const tsconfig = {
   compilerOptions: {
-    paths: { "#stackra/*": ["./.stackra/gen/*"], "#src/*": ["./src/*", "./src/*.ts"] },
+    paths: { "#stackra/*": ["./.stackra/gen/*"], "#src/*": ["./src/*"] },
   },
 };
 const pkg = { name: "@figentra/service-x", imports, dependencies: { "encore.dev": "1.58.8" } };
 
 describe("checkEncoreService", () => {
-  it("passes the catalog literal and paths equal to imports (a string target is one element)", () => {
-    expect(pathsOfImports(imports)["#stackra/*"]).toEqual(["./.stackra/gen/*"]);
+  it("passes the catalog literal and paths with each imports key's first target", () => {
+    expect(pathsOfImports(imports)).toEqual({
+      "#src/*": ["./src/*"],
+      "#stackra/*": ["./.stackra/gen/*"],
+    });
+    expect(pathsOfImports({ "#x": [], "#y": { node: "./y.js" } })).toEqual({});
     expect(checkEncoreService({ pkg, tsconfig, catalogEncore: "1.58.8" })).toEqual([]);
+  });
+
+  it("refuses the full target array, which Encore does not read past its first entry", () => {
+    const full = {
+      compilerOptions: {
+        paths: { ...tsconfig.compilerOptions.paths, "#src/*": ["./src/*", "./src/*.ts"] },
+      },
+    };
+    expect(checkEncoreService({ pkg, tsconfig: full, catalogEncore: "1.58.8" })).toEqual([
+      expect.stringContaining("with its first target"),
+    ]);
   });
 
   it("refuses catalog:, another version and a stale paths block", () => {

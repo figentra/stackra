@@ -10,12 +10,13 @@
  */
 import { z } from "zod";
 
-import { KEY_PROVIDER_DRIVERS } from "#core/constants/key-provider-drivers.constant";
 import { TENANT_DATA_KEY_STORE_DRIVERS } from "#core/constants/tenant-data-key-store-drivers.constant";
 
 /** The shipped `TenantKeysConfig$`. */
 export const TENANT_KEYS_CONFIG_SCHEMA = z.object({
-  driver: z.enum(KEY_PROVIDER_DRIVERS).default("ephemeral"),
+  // Any driver name: products ship their own `KeyProvider` drivers, and the container refuses a name no driver has
+  // when it resolves the port (STA-2693).
+  driver: z.string().min(1).default("ephemeral"),
   store: z.enum(TENANT_DATA_KEY_STORE_DRIVERS).default("memory"),
   kmsKeyId: z.string().default(""),
   region: z.string().default(""),

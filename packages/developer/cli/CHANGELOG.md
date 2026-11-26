@@ -1,5 +1,58 @@
 # @stackra/cli
 
+## 0.33.1
+
+### Patch Changes
+
+- e885a38: `stackra dev --surface` and `stackra dev --product` go on when `stackra gen` refuses a member. gen already runs every
+  member and writes what it can before it exits 1, so one member's refusal no longer stops every surface: dev names the
+  refusal on stderr and serves with what gen wrote. Any other gen failure still stops dev, and a surface whose own
+  config gen did not write still stops as before. `stackra build` and `stackra gen --check` keep stopping on a refusal.
+- e885a38: A service whose configuration reads a required `@Secret` at boot starts under a local `stackra dev`. New command:
+  `stackra dev secrets init [--rotate] [--from <file>]` writes a random dev value for each required secret the
+  workspace's running members declare, and for each name a member's runway lists under `environments.dev.secrets`
+  (optional in the configuration or not), to `.stackra/dev-secrets.json` (gitignored, mode 600). It prints names, never a
+  value, and lists the names a random value would break (a connection string, the events relay's key pair) as needing
+  a value. An existing file only gains its missing names unless `--rotate`; `--from` copies a name shared with another
+  repository. `stackra dev` adds the file's values for a member's own declared names to its tool run. The testbed upload
+  excludes the file (ADR 0525, amendment of 2026-11-10).
+- d60f9d5: A service's Encore app resolves its `#` imports, and its typecheck no longer resolves a compiled workspace package's
+  `#` imports into the service. Encore honours only the first `./` target of a tsconfig `paths` key, so
+  `stackra encore:prepare` writes, and `stackra validate --repository` expects, each package.json `imports` key with its
+  first target only (`pathsOfImports`). And because tsc applies `paths` to every package a service compiles, gen writes
+  the service's `.stackra/tsconfig.typecheck.json` (its tsconfig without `paths`), and `stackra typecheck` runs on it in a
+  service. After upgrading, run `stackra encore:prepare` in each service and regenerate (ADR 0091, rule 4 as corrected
+  2026-11-10).
+- e885a38: A service's generated Encore services move out of the `.stackra` dot folder, so Encore finds them: it skips dot
+  folders when it discovers services, and an Encore build of `.stackra/encore/<svc>/` had no services at all.
+  
+  - `stackra gen` writes them into `stackra-encore/<svc>/` at the member root, beside `encore.app`; `@stackra/gen`
+    exports the folder name as `ENCORE_SERVICES_DIR`. The runtime entry and gen output stay in `.stackra/`, and the
+    generated files import them from there.
+  - `stackra dev` runs `encore run` in the member root.
+  - Runway's Encore Cloud deploy tree carries `stackra-encore/` and reads `encore.app` from the member root.
+  
+  Add `stackra-encore/` to your repository's `.gitignore`, then regenerate (`stackra gen`). The old
+  `.stackra/encore/` can be deleted; Encore never discovers it.
+- Updated dependencies [d60f9d5]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [e885a38]
+- Updated dependencies [bf2c6ea]
+  - @stackra/repo-checks@0.33.1
+  - @stackra/gen@0.33.1
+  - @stackra/runway@0.33.1
+  - @stackra/contracts@0.33.1
+  - @stackra/mcp@0.33.1
+  - @stackra/console@0.33.1
+  - @stackra/skills@0.33.1
+  - @stackra/config@0.33.1
+  - @stackra/validation@0.33.1
+  - @stackra/support@0.33.1
+
 ## 0.33.0
 
 ### Minor Changes

@@ -11,10 +11,12 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
+export { SettingsConfig } from "#config/settings.config";
 export { AccountSettings } from "#core/account.settings";
 export { DisplaySettings } from "#core/display.settings";
 export { Settings } from "#core/bases/settings.base";
 export { SETTINGS_CHANGE_SCHEMA as SettingsChange$ } from "#core/constants/settings-change-schema.constant";
+export { SETTINGS_CONFIG_SCHEMA as SettingsConfig$ } from "#core/constants/settings-config-schema.constant";
 export { SETTINGS_PACK_SCHEMA as SettingsPack$ } from "#core/constants/settings-pack-schema.constant";
 export { Setting } from "#core/decorators/setting.decorator";
 export { MarketPackSettingFloorSourceDriver } from "#core/drivers/market-pack-setting-floor-source.driver";
@@ -48,6 +50,7 @@ export { settingsPackToYaml } from "#core/functions/settings-pack-to-yaml.functi
 export { settingsPage } from "#core/functions/settings-page.function";
 export { visibleSettingFields } from "#core/functions/visible-setting-fields.function";
 export { IdempotencySettings } from "#core/idempotency.settings";
+export { SettingsConfigOptions } from "#core/schemas/settings-config-options.schema";
 export { RateLimitSettings } from "#core/rate-limit.settings";
 export { SettingsPackService } from "#core/services/settings-pack.service";
 export { SettingsReader } from "#core/services/settings-reader.service";
