@@ -16,7 +16,9 @@
  *          naming the commit that serves. A version uploaded before the proof names none: verify then takes
  *          Cloudflare's own deployment (that version at 100%) as the proof. After the 0% smoke, each promotion step's
  *          smoke has `stepSmokeAttempts` and stops at `deadline` (`RUNWAY_DEPLOY_DEADLINE`), so a degraded step rolls
- *          back before the job's timeout can kill it mid-split.
+ *          back before the job's timeout can kill it mid-split. Every phase prints one line to `log` (build, migrations,
+ *          upload, the version id, each smoke attempt, each rollout step with its percentage and hold, any rollback), and
+ *          each command's output streams there line by line while it runs, every secret value masked (STA-2860).
  * Boundary: runs `pnpm` (turbo and each member's own wrangler) through the given `CommandRunner`; wrangler logs in
  *           with the job's `CLOUDFLARE_API_TOKEN` (decrypted from sops in CI) or the owner's session. Ids, vars and
  *           secrets are read by name from `env`; a secret value goes to wrangler only in a 0600 file in a fresh temporary
@@ -28,7 +30,7 @@
  * Runtime: node
  * Governing contract: ADR 0352 (decisions 1, 3 and 6); ADR 0284 (Workers members); ADR 0173 (no secret is an
  *                     argument); ADR 0294 R3 and ADR 0305 rule 3 (the `Driver(Port)` base); STA-1921; ADR 0519; STA-1989, STA-1990;
- *                     ADR 0536 (gate 2, the version proof); STA-2786.
+ *                     ADR 0536 (gate 2, the version proof); STA-2786; STA-2860 (the streamed, masked deploy log).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -47,6 +49,7 @@ import { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { diffWorkerSettings } from "#core/functions/diff-worker-settings.function";
+import { maskSecrets } from "#core/functions/mask-secrets.function";
 import { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
 import { servedVersionProblem } from "#core/functions/served-version-problem.function";
 import { workerSettingsOf } from "#core/functions/worker-settings-of.function";
@@ -78,6 +81,9 @@ const VERSION = /(?:Worker|Current) Version ID:\s*([0-9a-f-]{36})/;
 
 /** How long a gradual rollout holds each partial step. */
 const ROLLOUT_HOLD_MS = 5 * 60_000;
+
+/** The variables whose values are masked in every line printed, besides each member's secrets and smoke bearers. */
+const ALWAYS_MASKED = ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_API_TOKEN_READ"] as const;
 
 /** What a promotion needs on top of its holds before the deadline: its smokes and, on a failure, the rollback. */
 const PROMOTION_MARGIN_MS = 3 * 60_000;
@@ -197,6 +203,14 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
   /** The clock, in epoch ms; a test replaces it. */
   now: () => number = Date.now;
 
+  /**
+   * Where the phase lines and each command's streamed output go, one line per call, every secret already masked
+   * (STA-2860); standard error by default, so a deploy job's log shows progress while it runs. A test replaces it.
+   */
+  log: (line: string) => void = (line) => {
+    process.stderr.write(`${line}\n`);
+  };
+
   /** Holds a partial rollout step, in milliseconds; a test replaces it. */
   sleep: (ms: number) => Promise<void> = (ms) =>
     new Promise((resolve) => {
@@ -219,6 +233,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
 
   /** The member keys to ship; empty ships every member of the target's kind. */
   only: readonly string[] = [];
+
+  /** The secret values of the deploy under way (each member's secrets and smoke bearers), masked in every line. */
+  private readonly secretValues = new Set<string>();
 
   /**
    * Epoch ms by which a promotion must have ended, from `RUNWAY_DEPLOY_DEADLINE` (epoch seconds, set by the deploy job
@@ -298,20 +315,33 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       });
       secrets.set(key, read);
     }
+    // Every value that could reach a line printed below is masked there.
+    this.secretValues.clear();
+    for (const [key, member] of members) {
+      for (const [name, from] of Object.entries(member.secrets))
+        this.secretValues.add(secrets.get(key)?.get(name) ?? this.env[from] ?? "");
+      for (const smoke of member.smoke)
+        if (smoke.bearer !== undefined) this.secretValues.add(this.env[smoke.bearer] ?? "");
+    }
 
     const versions: string[] = [];
     for (const [key, member] of members) {
       const cwd = join(this.root, member.path);
-      await this.run("pnpm", this.buildArgs(member), { cwd: this.root });
+      this.say(key, `build (turbo run build --filter=./${member.path})`);
+      await this.exec("pnpm", this.buildArgs(member), this.root);
       const config = join(cwd, "wrangler.jsonc");
       const original = await readFile(config, "utf8");
       const swapped = this.render(target, key, this.withIds(key, member, original));
       try {
         if (swapped !== original) await writeFile(config, swapped);
-        for (const database of member.d1)
-          await this.run("pnpm", [...WRANGLER, "d1", "migrations", "apply", database, "--remote"], {
+        for (const database of member.d1) {
+          this.say(key, `apply the D1 migrations of ${database}`);
+          await this.exec(
+            "pnpm",
+            [...WRANGLER, "d1", "migrations", "apply", database, "--remote"],
             cwd,
-          });
+          );
+        }
         // `render` already stripped the JSONC comments and trailing commas: `swapped` is strict JSON.
         const deployed = JSON.parse(swapped) as { name?: string; migrations?: unknown };
         const migrating = migrates(deployed);
@@ -336,10 +366,16 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
               ),
               { mode: 0o600 },
             );
-          output = await this.run(
+          this.say(
+            key,
+            migrating
+              ? "deploy at 100% (wrangler deploy: the config has Durable Object migrations)"
+              : "upload a version (wrangler versions upload)",
+          );
+          output = await this.exec(
             "pnpm",
             this.uploadArgs(member, sha, (name) => this.env[name] ?? "", migrating, file),
-            { cwd },
+            cwd,
           );
         } finally {
           if (folder !== undefined) await rm(folder, { recursive: true, force: true });
@@ -349,7 +385,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           throw new RunwayUnresolvedError(
             `wrangler versions upload of ${key} printed no version id`,
           );
+        this.say(key, `version ${version} uploaded`);
         if (migrating) {
+          this.say(key, `${version} serves 100%`);
           versions.push(`${key}=${version}`);
           continue;
         }
@@ -364,8 +402,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         // Every smoke reaches the version by override and must see it answer (STA-2786).
         const override = `${deployed.name ?? ""}="${version}"`;
         const check = (run: Omit<SmokeRun, "override"> = {}) =>
-          this.smokeAll(member, version, { ...run, override });
+          this.smokeAll(key, member, version, { ...run, override });
         await this.rollOut(target, key, cwd, version, steps, sha, check);
+        this.say(key, `${version} serves 100%`);
         versions.push(`${key}=${version}`);
       } finally {
         if (swapped !== original) await writeFile(config, original);
@@ -396,7 +435,8 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           detail: `${key} has no recorded version to prove its smoke against`,
         };
       const legacy = new Set<string>();
-      const failure = await this.smokeAll(member, version, { legacy });
+      this.say(key, `verify ${version} (${record.sha})`);
+      const failure = await this.smokeAll(key, member, version, { legacy });
       if (failure !== undefined)
         return { status: HealthStatus.Down, detail: `${key} smoke ${failure}` };
       if (legacy.size === 0) continue;
@@ -429,12 +469,15 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
       throw new RunwayUnresolvedError(
         `${target.id} has no recorded version of ${missing.join(", ")} for ${to.sha}`,
       );
-    for (const [key, member] of members)
-      await this.run(
+    for (const [key, member] of members) {
+      this.say(key, `roll back to ${versions.get(key) ?? ""} (${to.sha})`);
+      await this.exec(
         "pnpm",
         [...WRANGLER, "rollback", versions.get(key) ?? "", "--message", to.sha],
-        { cwd: join(this.root, member.path) },
+        join(this.root, member.path),
       );
+      this.say(key, `rolled back to ${versions.get(key) ?? ""}`);
+    }
     return { target: target.id, sha: to.sha, reference: to.reference };
   }
 
@@ -486,6 +529,38 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     }
     const [sha] = shas;
     return shas.size === 1 && sha !== undefined ? sha : null;
+  }
+
+  /** Prints one phase line of member `key`, masked. */
+  private say(key: string, text: string): void {
+    this.log(this.mask(`runway: ${key}: ${text}`));
+  }
+
+  /** `text` with every secret value of the deploy and the Cloudflare tokens masked. */
+  private mask(text: string): string {
+    return maskSecrets(text, [
+      ...this.secretValues,
+      ...ALWAYS_MASKED.map((name) => this.env[name] ?? ""),
+    ]);
+  }
+
+  /**
+   * Runs one deploy command with its output streamed to `log` line by line, masked, and answers its standard output.
+   * A failure whose message carries a secret is thrown again with it masked.
+   */
+  private async exec(command: string, args: readonly string[], cwd: string): Promise<string> {
+    try {
+      return await this.run(command, args, {
+        cwd,
+        onLine: (line) => this.log(this.mask(`  | ${line}`)),
+      });
+    } catch (error) {
+      const message = errorText(error);
+      const masked = this.mask(message);
+      if (masked === message) throw error;
+      // oxlint-disable-next-line eslint/preserve-caught-error -- the caught error carries the secret this masks; attached as the cause, it would print with it
+      throw new Error(masked);
+    }
   }
 
   /** `turbo run build` of one member, with what it depends on. */
@@ -580,7 +655,9 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     const before = await this.servingVersion(cwd);
     if (before === undefined) {
       // A first deploy has no version to stage beside or go back to: it moves at once, then proves itself.
-      await this.run("pnpm", this.deployVersionArgs([[version, 100]], sha), { cwd });
+      this.say(key, `first deploy: ${version} at 100% (no earlier version to stage beside)`);
+      await this.exec("pnpm", this.deployVersionArgs([[version, 100]], sha), cwd);
+      this.say(key, `smoke ${version} after its first deploy`);
       const failure = await check();
       if (failure !== undefined)
         throw new RunwayUnresolvedError(
@@ -590,7 +667,8 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     }
     // Cloudflare honours a version override only for a version in the current deployment and routes any other request
     // as usual, to `before`: so the version joins the deployment at 0% first, or its smoke would check `before`.
-    await this.run(
+    this.say(key, `stage ${version} at 0% beside ${before} at 100% for its smoke`);
+    await this.exec(
       "pnpm",
       this.deployVersionArgs(
         [
@@ -599,9 +677,11 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         ],
         STAGED(sha),
       ),
-      { cwd },
+      cwd,
     );
+    this.say(key, `0% smoke of ${version}`);
     const staged = await check();
+    if (staged === undefined) this.say(key, `0% smoke of ${version} passed`);
     // No traffic moves unless the promotion's holds and a margin still fit before the job's deadline.
     const { deadline } = this;
     const holds = (planned.length - 1) * ROLLOUT_HOLD_MS;
@@ -613,9 +693,15 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         : undefined;
     if (staged !== undefined || late !== undefined) {
       // No traffic moved; the version leaves the deployment, so no override reaches it any more.
-      const left = await this.run("pnpm", this.deployVersionArgs([[before, 100]], UNSTAGED(sha)), {
+      this.say(
+        key,
+        `${staged === undefined ? `not promoted: ${late ?? ""}` : `0% smoke failed: ${staged}`}; take ${version} out of the deployment, no traffic moved`,
+      );
+      const left = await this.exec(
+        "pnpm",
+        this.deployVersionArgs([[before, 100]], UNSTAGED(sha)),
         cwd,
-      }).then(
+      ).then(
         () => "",
         (error: unknown) => `; taking it out of the deployment failed too (${errorText(error)})`,
       );
@@ -630,7 +716,11 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     let moved = false;
     try {
       for (const [index, percent] of planned.entries()) {
-        await this.run(
+        this.say(
+          key,
+          `rollout step ${index + 1}/${planned.length}: ${version} at ${percent}%${percent === 100 ? "" : `, ${before} at ${100 - percent}%`}`,
+        );
+        await this.exec(
           "pnpm",
           this.deployVersionArgs(
             percent === 100
@@ -642,11 +732,18 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
             // Only the 100% step is a bare SHA: `current` names the commit that serves most of the traffic.
             percent === 100 ? sha : STEPPED(sha, percent),
           ),
-          { cwd },
+          cwd,
         );
         moved = true;
-        if (index < planned.length - 1) await this.sleep(ROLLOUT_HOLD_MS);
+        if (index < planned.length - 1) {
+          this.say(
+            key,
+            `hold ${percent}% for ${ROLLOUT_HOLD_MS / 60_000} min (until ${new Date(this.now() + ROLLOUT_HOLD_MS).toISOString()})`,
+          );
+          await this.sleep(ROLLOUT_HOLD_MS);
+        }
         // Each step ends in a smoke of the new version, the 100% one included.
+        this.say(key, `smoke ${version} at ${percent}%`);
         const failure = await check({
           attempts: this.stepSmokeAttempts,
           ...(until === undefined ? {} : { until }),
@@ -655,19 +752,22 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           throw new RunwayUnresolvedError(
             `${version} failed its smoke at ${percent}% (${failure})`,
           );
+        this.say(key, `smoke ${version} at ${percent}% passed`);
       }
     } catch (error) {
       if (!moved) throw error;
       // Production is split or moved: put the previous version back at 100% before failing.
-      const back = await this.run(
+      this.say(key, `roll back to ${before}: ${errorText(error)}`);
+      const back = await this.exec(
         "pnpm",
         [...WRANGLER, "rollback", before, "--message", ROLLED_BACK(sha, before)],
-        { cwd },
+        cwd,
       ).then(
         () => `${version} rolled back to ${before}`,
         (rollbackError: unknown) =>
           `${version} could NOT be rolled back to ${before} (${errorText(rollbackError)}); traffic may still be split between ${version} and ${before}`,
       );
+      this.say(key, back);
       throw new RunwayDeployFailedError(target.id, [
         {
           record: { target: target.id, sha, reference: `${key}=${before}` },
@@ -684,12 +784,16 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
    * `run.attempts` and `run.until` bound each check's retries; `run.legacy` (verify) accepts an answer naming none.
    */
   private async smokeAll(
+    key: string,
     member: Member,
     version: string,
     run: SmokeRun = {},
   ): Promise<string | undefined> {
     if (member.smoke.length === 0)
       return `proves no version: the member lists no smoke check to reach ${version} with`;
+    // A bearer is masked in every line from here on, also in `verify`, which runs without `apply`.
+    for (const smoke of member.smoke)
+      if (smoke.bearer !== undefined) this.secretValues.add(this.env[smoke.bearer] ?? "");
     const { override, legacy } = run;
     const pin: Record<string, string> =
       override === undefined ? {} : { [WORKER_VERSION.override]: override };
@@ -702,7 +806,13 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
     // A Worker whose answers are static assets names its version at one route, read on each smoke host.
     const proveRoute = async (): Promise<string | undefined> => {
       for (const origin of new Set(member.smoke.map((smoke) => new URL(smoke.url).origin))) {
-        const failure = await this.probe(`${origin}${WORKER_VERSION.route}`, pin, proof(true), run);
+        const failure = await this.probe(
+          key,
+          `${origin}${WORKER_VERSION.route}`,
+          pin,
+          proof(true),
+          run,
+        );
         if (failure !== undefined) return failure;
       }
       return undefined;
@@ -718,7 +828,13 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
           ? {}
           : { authorization: `Bearer ${this.env[smoke.bearer] ?? ""}` }),
       };
-      const failure = await this.probe(smoke.url, headers, routed ? undefined : proof(false), run);
+      const failure = await this.probe(
+        key,
+        smoke.url,
+        headers,
+        routed ? undefined : proof(false),
+        run,
+      );
       if (failure !== undefined) return failure;
     }
     return routed ? proveRoute() : undefined;
@@ -728,9 +844,10 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
    * One smoke check, retried while it is not 2xx (a new domain's certificate) and, for at most `proofAttempts`, while
    * another version answers (a deployment still reaching the edge; a route member's `/-/version` answering 404 is a
    * version without the route): what is wrong with its last answer, or `undefined`. It stops after `run.attempts`
-   * (`smokeAttempts`) attempts, and makes no new attempt after `run.until`.
+   * (`smokeAttempts`) attempts, and makes no new attempt after `run.until`. Each attempt prints one line of `key`.
    */
   private async probe(
+    key: string,
     url: string,
     headers: Record<string, string>,
     proof: Proof | undefined,
@@ -775,6 +892,7 @@ export class CloudflareWorkersProviderDriver extends Driver(RunwayProvider) {
         },
         (error: unknown) => `failed: ${errorText(error)}`,
       );
+      this.say(key, `smoke ${url} attempt ${attempts}/${limit}: ${status ?? "ok"}`);
       if (status === undefined) return undefined;
       if (wrong) others += 1;
     }
