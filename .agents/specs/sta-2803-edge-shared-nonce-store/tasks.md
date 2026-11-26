@@ -43,4 +43,4 @@ description: "Tasks for STA-2803: a shared edge nonce store over Cache.add, and 
 
 - [x] T015 barrel exports and both manifests in `packages/runtime/app/src/server/index.ts`, `packages/runtime/app/stackra.manifest.json` and `workers/edge/stackra.manifest.json` — covers: FR-010, AC-008, P-006 — route: spec-task — deps: T010, T013
 - [x] T016 [P] ADR 0437 Enforcement, READMEs and AGENTS.md in `apps/docs/src/docs/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks.mdx`, `packages/runtime/app/README.md`, `packages/runtime/app/AGENTS.md`, `packages/runtime/cache/README.md` and `packages/runtime/cache/AGENTS.md` — covers: FR-010, AC-008 — route: steward-docs — deps: T015
-- [x] T017 [P] changeset for `@stackra/cache` and `@stackra/app` in `.changeset/edge-shared-nonce-store.md` — covers: FR-010, AC-008 — route: steward-changesets — deps: T015
+- [x] T017 [P] changeset for the cache and app packages (`packages/runtime/cache`, `packages/runtime/app`) in `.changeset/edge-shared-nonce-store.md` — covers: FR-010, AC-008 — route: steward-changesets — deps: T015
