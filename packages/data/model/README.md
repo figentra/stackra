@@ -20,7 +20,7 @@ Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/validation`, `@
 
 | Import           | Holds                     | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ---------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `Archivable`, `Partitioned`, `Retention`, `AppendOnly`, `HasCorrections`, `Commentable`, `HasAttachments`, `Taggable`, `HasTree`, `Translatable`, `HasEncryptedFields`), `currentRows`, `Model.global`, `ModelAddition`, `DataClass`, `PrivilegedDataClass`, `CredentialDataClass`, `Classify`, `DocumentNumber`, `AiAudience`, `SupportAccess`, `SearchSnippet`, `ExportLabel`, `Meter`, `createTrait`, `traitsOf`, `SYSTEM_FIELDS`, `SystemField`, `systemFieldsOf`, `ValidateOnFlush`, `publicIdToUuid`, `uuidToPublicId`, `PublicIdType`, `encryptedFieldsOf`, `encryptedSubjectOf`, `EncryptedFieldsSubscriber`, `SubjectCipherResolver`, `EncryptedFieldsOptions`, `EncryptedFieldsResealService`, `KeyUsage`, `ResealOptions`, `ResealStep`, `encryptedLookupOf`, `encryptedScopeOf`, `whereEncrypted`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema`, `CapturesChanges`, `changeCaptureOf`, `Cached`, `CachedOptions`, `cacheTtlOf` |
+| `@stackra/model` | `src/core/`: node runtime | `Model`, traits (`HasPublicId`, `Timestamps`, `UserStamps`, `Versioned`, `SoftDeletes`, `Archivable`, `Partitioned`, `Retention`, `AppendOnly`, `HasCorrections`, `Commentable`, `HasAttachments`, `Taggable`, `HasTree`, `Translatable`, `HasEncryptedFields`), `currentRows`, `Model.global`, `ModelAddition`, `DataClass`, `PrivilegedDataClass`, `CredentialDataClass`, `Classify`, `DocumentNumber`, `AiAudience`, `SupportAccess`, `SearchSnippet`, `ExportLabel`, `Meter`, `createTrait`, `traitsOf`, `SYSTEM_FIELDS`, `SystemField`, `systemFieldsOf`, `ValidateOnFlush`, `publicIdToUuid`, `uuidToPublicId`, `PublicIdType`, `encryptedFieldsOf`, `encryptedSubjectOf`, `EncryptedFieldsSubscriber`, `SubjectCipherResolver`, `AttachmentParentVisibility`, `AttachmentParent`, `canViewAttachment`, `AttachmentVisibilityCache`, `AttachmentVisibilityCacheOptions`, `EncryptedFieldsOptions`, `EncryptedFieldsResealService`, `KeyUsage`, `ResealOptions`, `ResealStep`, `encryptedLookupOf`, `encryptedScopeOf`, `whereEncrypted`, `Index`, `Searchable`, `Visibility`, `ManyToOne`, `OneToOne`, `OneToMany`, `ManyToMany`, `OnDelete`, `Collection`, `Ref`, `Link`, `Translated`, `Attributes`, `LinkType`, `TranslatedType`, `MoneySchema`, `CapturesChanges`, `changeCaptureOf`, `Cached`, `CachedOptions`, `cacheTtlOf` |
 
 Entry barrels are generated, never authored (ADR 0294 decision 15); until `stackra gen` writes them (STA-339),
 `src/core/index.ts` is a stand-in barrel.
@@ -64,7 +64,7 @@ order.record(OrderPlaced.create({ orderId: order.id })); // kept beside the inst
 | `AppendOnly`                                                  | nothing                                           | Marker read by `traitsOf`; updates are refused                                  |
 | `HasCorrections`                                              | `corrects` (the corrected row's id)               | With `AppendOnly`; `currentRows` keeps the latest correction                    |
 | `Commentable`                                                 | nothing                                           | Marker; comments live in the collaboration service                              |
-| `HasAttachments`                                              | nothing                                           | Marker; attached files live in the files service                                |
+| `HasAttachments`                                              | nothing                                           | Marker; files live in the files service, served after `canViewAttachment`       |
 | `Taggable`                                                    | `tags` (tag keys)                                 | Keys from the tenant's tag list; GIN index to filter                            |
 | `HasTree`                                                     | `parentId`, `treePath` (`ltree`)                  | Hierarchy; path kept by @stackra/database, `t.tree()` (GiST)                    |
 | `Translatable(fields)`                                        | nothing                                           | Names the model's `Translated` fields (jsonb, `.in(locale)`)                    |
@@ -78,6 +78,37 @@ Ownership by a tenant is not a model trait: `BelongsToTenant` is `@stackra/tenan
 decision 3), built with `createTrait`, as in the example above. `createTrait(name, apply, options)` makes a trait for
 another package, and `traitsOf(Model)` lists a model's traits with their options. `Model.with` refuses a trait applied
 twice.
+
+### Attachments: who may be served a file
+
+A file attached to a `HasAttachments` record is to be served only to whoever can view that record (ADR 0333,
+2026-10-24 amendment). The files service checks the file's tenant and scope itself, then asks `canViewAttachment`,
+which asks the `AttachmentParentVisibility` bound in the files service's own process. That binding answers as a read
+of the record in its owning service would decide:
+
+```ts
+// bound in the files service; a parent model it cannot route refuses
+export class ParentVisibilityDriver extends Driver(AttachmentParentVisibility) {
+  async canView(parent: AttachmentParent, actor: Actor) {
+    const owner = this.owners.get(parent.model);
+    return owner !== undefined && (await owner.canView(parent, actor));
+  }
+}
+
+// files service, after its own tenant and scope checks; `file.parent` comes from the file row
+if (!(await canViewAttachment(this.parents, file.parent, ctx.actor, this.cache)))
+  throw FileNotFoundError.create({ id });
+```
+
+It fails closed: no bound driver, or any answer but `true`, refuses, and a driver's error propagates. A parent that is
+not `<module>.<model>` with a public id throws. `new AttachmentVisibilityCache({ ttlMs })` keeps answers per parent and
+per whole actor chain for at most 60 seconds (default 30), shares a question in flight, never keeps a failed one, and
+`forget(parent)` drops a parent's answers when its visibility changes.
+
+Not built yet (STA-2833): gen does not emit the canView contract query on each `HasAttachments` model's owning
+service, nor the files-side driver that routes `parent.model` to it, and no files service calls `canViewAttachment`
+yet. Until those land, an attachment is served without its parent being checked, and `owners` above is a product's
+own wiring.
 
 ### System fields
 
