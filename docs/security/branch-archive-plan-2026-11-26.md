@@ -40,7 +40,8 @@ node tools/scripts/secrets-history-scan.mjs branches --repo stackra.git --prs pr
 # 2. one verified bundle per branch, plus manifest.tsv (branch, tip, bundle, sha256) and delete-after-review.sh
 node tools/scripts/secrets-history-scan.mjs archive --repo stackra.git --branches archive.txt --dir stackra-branches
 
-# 3. copy the bundles to a second place and check them against manifest.tsv, then delete the branches:
+# 3. for each save/* and wt-* snapshot branch, confirm its work landed elsewhere (or keep its bundle);
+#    copy the bundles to a second verified place and check them against manifest.tsv, then delete the branches:
 cd stackra.git && bash ../stackra-branches/delete-after-review.sh
 ```
 

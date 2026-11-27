@@ -11,7 +11,7 @@ commit and the refs that carry them. No value appears here.
 
 - **No live credential was found in either repository's history.**
 - **Core:** no findings under the repository's policy, across 5,992 commits on 289 branches, 4,048 tags and 1,282 pull
-  request refs. With gitleaks' default rules, no allowlist and inline `gitleaks:allow` comments ignored there are 25
+  request refs. With gitleaks' default rules, no repository allowlist (gitleaks' built-in global allowlist still applies) and inline `gitleaks:allow` comments ignored there are 25
   findings. All 25 are in test files or fixtures that hold deliberately fake or published test values, and each one is
   reviewed below. Ten of them are lines marked `gitleaks:allow` in the source, which a first run of this scan skipped;
   see [Lines marked gitleaks:allow](#lines-marked-gitleaksallow).
@@ -24,14 +24,14 @@ commit and the refs that carry them. No value appears here.
 
 ## Method
 
-| Item     | Value                                                                                                                                                                                                                                                                                                             |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Source   | a fresh anonymous `git clone --mirror` of each public repository on 2026-11-26. A mirror holds every branch, every tag and GitHub's `refs/pull/*/head` and `refs/pull/*/merge`, which stay public after a branch is deleted.                                                                                      |
-| Scanner  | gitleaks 8.30.1, the version `mise.toml` pins (ADR 0019, ADR 0027)                                                                                                                                                                                                                                                |
-| Coverage | `--log-opts=--all`: every commit reachable from any ref, with full patches                                                                                                                                                                                                                                        |
-| Passes   | 1. the repository's own policy (`.gitleaks.toml`, in core `.gitleaksignore`, and inline `gitleaks:allow` comments). 2. gitleaks' default rules with no allowlist, no ignore file and `--ignore-gitleaks-allow`, so allowlisted fixtures and lines marked `gitleaks:allow` on any ref are listed and reviewed too. |
-| Values   | `--redact=100`, and the tool prints only file, line, commit, rule, entropy and refs. Before printing, it checks its output against every matched text and refuses if one is present.                                                                                                                              |
-| Tool     | `tools/scripts/secrets-history-scan.mjs scan` (tests in `tools/scripts/__tests__/secrets-history-scan.test.mjs`)                                                                                                                                                                                                  |
+| Item     | Value                                                                                                                                                                                                                                                                                                                                                                      |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source   | a fresh anonymous `git clone --mirror` of each public repository on 2026-11-26. A mirror holds every branch, every tag and GitHub's `refs/pull/*/head` and `refs/pull/*/merge`, which stay public after a branch is deleted.                                                                                                                                               |
+| Scanner  | gitleaks 8.30.1, the version `mise.toml` pins (ADR 0019, ADR 0027)                                                                                                                                                                                                                                                                                                         |
+| Coverage | `--log-opts=--all`: every commit reachable from any ref, with full patches                                                                                                                                                                                                                                                                                                 |
+| Passes   | 1. the repository's own policy (`.gitleaks.toml`, in core `.gitleaksignore`, and inline `gitleaks:allow` comments). 2. gitleaks' default rules with no repository allowlist (its built-in global allowlist still applies), no ignore file and `--ignore-gitleaks-allow`, so allowlisted fixtures and lines marked `gitleaks:allow` on any ref are listed and reviewed too. |
+| Values   | `--redact=100`, and the tool prints only file, line, commit, rule, entropy and refs. Before printing, it checks its output against every matched text and refuses if one is present.                                                                                                                                                                                       |
+| Tool     | `tools/scripts/secrets-history-scan.mjs scan` (tests in `tools/scripts/__tests__/secrets-history-scan.test.mjs`)                                                                                                                                                                                                                                                           |
 
 To run it again:
 
@@ -57,7 +57,7 @@ Add `--fail-on-findings` to exit 2 when the policy pass reports anything. "Looks
 Scanned 5992 commits reachable from 289 branches, 4048 tags and 1282 pull request refs with gitleaks 8.30.1.
 
 - Findings under the repository's policy (`.gitleaks.toml`, `.gitleaksignore`): **0**
-- Findings with gitleaks' default rules, no allowlist and no inline `gitleaks:allow`: **25**
+- Findings with gitleaks' default rules, no repository allowlist (gitleaks' built-in global allowlist still applies) and no inline `gitleaks:allow`: **25**
 - Findings that look like a credential and need a person to look: **23**
 
 | File                                                                                            | Line | Commit         | Rule                | Policy      | Looks like  | On `main` | Branches                                                                                                                                                                                 | Tags                                                                                                    | Pull requests                                   |
@@ -93,7 +93,7 @@ Scanned 5992 commits reachable from 289 branches, 4048 tags and 1282 pull reques
 Scanned 305 commits reachable from 18 branches, 18 tags and 78 pull request refs with gitleaks 8.30.1.
 
 - Findings under the repository's policy (`.gitleaks.toml`, `.gitleaksignore`): **1**
-- Findings with gitleaks' default rules, no allowlist and no inline `gitleaks:allow`: **3**
+- Findings with gitleaks' default rules, no repository allowlist (gitleaks' built-in global allowlist still applies) and no inline `gitleaks:allow`: **3**
 - Findings that look like a credential and need a person to look: **3**
 
 | File                                    | Line | Commit         | Rule            | Policy      | Looks like | On `main` | Branches                                                                                                                                                                                                                                  | Tags                                                                                                                                   | Pull requests                      |
@@ -150,10 +150,9 @@ token and opens nothing. gitleaks' default rules do not report it, and the fixtu
 above was done by reading the file.
 
 The commits are on `figentra/sta-2783-box-deploy` (open pull request #1081), `box/sta-2783-box-deploy` and
-`save/wt-sta2783-2026-11-25`, and in `refs/pull/1081/*`. The same fixture also holds a Cloudflare account id and a KV
-namespace id that match the ones in the Workers config on `main`. Those are identifiers, not credentials: they grant
-nothing without a token. Removing internal identifiers from public files is part of the batch-23 clean-up, not of
-this scan.
+`save/wt-sta2783-2026-11-25`, and in `refs/pull/1081/*`. The same fixture also holds internal
+identifiers, which are not credentials. Removing them from public files is the internal-content clean-up's work
+(STA-2876), not this scan's.
 
 ## Owner steps
 
