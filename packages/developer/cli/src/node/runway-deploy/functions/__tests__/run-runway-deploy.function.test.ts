@@ -113,6 +113,8 @@ describe("runRunwayDeploy", () => {
         "production/web → cloudflare-workers",
         "  .$ pnpm turbo run build --filter=./workers/static",
         `  workers/static$ pnpm exec wrangler versions upload --message ${SHA}`,
+        // The new version joins the deployment at 0% for its smoke before it takes the traffic (STA-2786).
+        `  workers/static$ pnpm exec wrangler versions deploy $SERVING@100 $VERSION@0 --message ${SHA} (0% smoke) --yes`,
         `  workers/static$ pnpm exec wrangler versions deploy $VERSION@100 --message ${SHA} --yes`,
         "",
       ].join("\n"),
