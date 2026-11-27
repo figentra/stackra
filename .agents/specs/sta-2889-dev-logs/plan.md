@@ -64,6 +64,7 @@ client to Vite's own client module and answers `/__stackra/browser-log` after `b
 - **P-008**: `last_error` answers the latest error entry's block (only server lines group; a browser report is a block of one), or `error: null` when no entry is an error — Validates: FR-008
 - **P-009**: every report `browser_logs` answers is a `browser` entry matching its kind, lowest level, member, time and text, without `source` or `stream` — Validates: FR-009
 - **P-010**: for every tool of the three, a repository with no dev log answers a tool error whose fix names `stackra dev`, and nothing is written — Validates: FR-010
+- **P-012**: for every teed dev run on a terminal, the tool's stdout is the terminal's open file exactly when the run is `screen` (`expo start`, `wrangler dev`), and its stderr is always teed; a `--no-log` run has no tee and writes no dev log — Validates: FR-011
 
 ## Architecture overview
 
@@ -198,7 +199,9 @@ none (one machine-local NDJSON file; `DevLogEntry` is its line shape)
 level: "debug" | "info" | "warn" | "error"; member; message; stream?; kind?; url?; stack?; fields? }`;
   `devLogFile(from: string): string`; `appendDevLog(file: string, entries: readonly DevLogEntry[]): void`;
   `readDevLog(file: string): DevLogEntry[]`.
-- `@stackra/cli`: `ToolRun.tee?: (stream: "stdout" | "stderr", text: string) => void`.
+- `@stackra/cli`: `ToolRun.tee?: (stream: "stdout" | "stderr", text: string) => void`; `ToolRun.screen?: boolean`
+  (set by `resolveTool` on `expo start` and `wrangler dev`: a teed run on a terminal keeps their stdout there and tees
+  stderr only, FR-011); `stackra dev [--target <target>] [--no-log]`, `--no-log` refused at the workspace root.
 - `@stackra/vite-plugin`: `corePlugins()` ends with `stackra:browser-logs`; route `POST /__stackra/browser-log` with
   body `{ entries: [{ kind, level, message, stack?, url?, time? }] }`, answering 204, or 400 / 403 / 405 / 413 / 415 /
   500 with a plain-text reason.

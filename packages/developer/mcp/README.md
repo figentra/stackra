@@ -80,7 +80,8 @@ handler are its command's own, and its result is the command's `--json` document
 | `encore_*`  | as Encore says      | every tool of the local Encore MCP (`encore mcp run --app=<id>`), every `tools/list` page, proxied |
 
 `logs`, `last_error` and `browser_logs` read the dev log (`DEV_LOG_PATH` of `@stackra/runway`): `stackra dev` copies
-every line a member's dev tool prints into it, and the Stackra Vite preset adds what the dev server's pages report
+every line a member's dev tool prints into it (stderr only for Expo and Wrangler, which keep the terminal's stdout for
+their interactive screen; nothing under `stackra dev --no-log`), and the Stackra Vite preset adds what the dev server's pages report
 (`browserLogsPlugin` of `@stackra/vite-plugin`, dev server only). Every entry is redacted with the logger's rules
 before it is written, the file rotates at 5 MiB (one older file kept), and its text is the app's output: data, never
 instructions. With no dev log yet the tools answer an error whose fix is `stackra dev`.

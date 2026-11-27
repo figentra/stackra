@@ -5,12 +5,13 @@
  *          has nothing to build; at the workspace root it fans out through
  *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
  *          the site and then fails on a broken link, naming the page (STA-2026); a member's `dev` copies the tool's
- *          output into the repository's dev log, redacted, between a start and an end line (STA-2889).
+ *          output into the repository's dev log, redacted, between a start and an end line (STA-2889); a native
+ *          member's `expo start` and a worker's `wrangler dev` run as screen tools; `--no-log` writes no dev log.
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -62,6 +63,7 @@ describe("toolCommand", () => {
     expect(test.summary).toBe("Run the tests");
     expect(test.usage).toBe("stackra test [--tier <tier>] [--target <target>]");
     expect(toolCommand("lint", "Lint").usage).toBe("stackra lint");
+    expect(toolCommand("dev", "Dev").usage).toBe("stackra dev [--target <target>] [--no-log]");
   });
 
   it("generates, then starts the member's tool", async () => {
@@ -157,6 +159,50 @@ describe("toolCommand", () => {
       ["warn", "apps/console"],
     ]);
     expect(log[2]?.message).toBe("4:25AM ERR call failed authorization=[redacted]");
+  });
+
+  it("keeps the terminal's stdout for a native member's Expo and a worker's Wrangler", async () => {
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
+    const mobile = join(root, "apps", "mobile");
+    mkdirSync(mobile, { recursive: true });
+    writeFileSync(join(mobile, "stackra.config.ts"), "export default defineApp({});\n");
+    writeFileSync(join(mobile, "stackra.manifest.json"), JSON.stringify({ targets: ["ios"] }));
+    expect(await toolCommand("dev", "Dev").run({ ...context(), cwd: mobile })).toBe(0);
+    // `screen` is what makes runProcess leave stdout on the terminal, so Expo still draws its QR code and key menu.
+    expect(spawn).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        command: "expo",
+        screen: true,
+        tee: expect.any(Function),
+      }),
+      expect.anything(),
+    );
+    const worker = join(root, "apps", "edge");
+    mkdirSync(worker, { recursive: true });
+    writeFileSync(join(worker, "stackra.config.ts"), "export default defineWorker({});\n");
+    expect(await toolCommand("dev", "Dev").run({ ...context(), cwd: worker })).toBe(0);
+    expect(spawn).toHaveBeenLastCalledWith(
+      expect.objectContaining({ command: "wrangler", screen: true }),
+      expect.anything(),
+    );
+  });
+
+  it("writes no dev log with --no-log and leaves the terminal to the tool", async () => {
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
+    const member = join(root, "apps", "edge");
+    mkdirSync(member, { recursive: true });
+    writeFileSync(join(member, "stackra.config.ts"), "export default defineWorker({});\n");
+    expect(
+      await toolCommand("dev", "Dev").run({ ...context({ "no-log": true }), cwd: member }),
+    ).toBe(0);
+    const [run] = spawn.mock.calls[0] ?? [];
+    expect(run).toMatchObject({ command: "wrangler" });
+    expect(run?.tee).toBeUndefined();
+    expect(existsSync(devLogFile(member))).toBe(false);
+    // At the root, turbo runs each member's own `stackra dev`; the flag belongs to one member.
+    await expect(toolCommand("dev", "Dev").run(context({ "no-log": true }))).rejects.toThrow(
+      CliUsageError,
+    );
   });
 
   it("copies a docs site's dev output into the dev log too, without the dev secrets", async () => {

@@ -3,7 +3,8 @@
  * Purpose: `runProcess(run, io)`, starts one tool process and resolves with its exit code: with the terminal when
  *          `io.inherit`, otherwise with its output piped into `io`. A run with a `tee` always pipes its output, hands
  *          each chunk to the io and to the tee, and keeps the terminal's input (and colour, through `FORCE_COLOR`,
- *          when this process writes to a terminal). Every `node_modules/.bin` from the tool's directory up goes first
+ *          when this process writes to a terminal); a teed `screen` run on the terminal keeps the terminal's stdout
+ *          too, so the tool still draws its interactive screen, and only its stderr is piped and teed. Every `node_modules/.bin` from the tool's directory up goes first
  *          on `PATH`, so the member's own pinned tools win.
  * Boundary: never uses a shell, so no argument is parsed as shell syntax; never reads or prints a secret. A tool that
  *           cannot start resolves 127 with the reason written to `io.err`. One still running past `run.timeoutMs` gets
@@ -54,7 +55,10 @@ export function runProcess(run: ToolRun, io: CliIo): Promise<number> {
       stdio:
         io.inherit && tee === undefined
           ? "inherit"
-          : [io.inherit ? "inherit" : "ignore", "pipe", "pipe"],
+          : // A screen tool (Expo, Wrangler) on a terminal keeps its stdout there, or it drops its interactive screen.
+            io.inherit && run.screen === true
+            ? ["inherit", "inherit", "pipe"]
+            : [io.inherit ? "inherit" : "ignore", "pipe", "pipe"],
     });
     child.stdout?.setEncoding("utf8").on("data", (text: string) => {
       io.out(text);

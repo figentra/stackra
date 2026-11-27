@@ -7,7 +7,9 @@
 
 `stackra dev` now keeps a dev log, and the local developer MCP reads it (STA-2889). A member's `stackra dev` copies
 every line its dev tool prints into `.stackra/logs/dev.ndjson` at the repository root, still printing everything (in
-colour on a terminal), with one line when the tool starts and one when it ends. Each line becomes an entry with its
+colour on a terminal), with one line when the tool starts and one when it ends. Expo (`expo start`) and Wrangler
+(`wrangler dev`) keep the terminal's stdout, so their QR code, key menu and hotkeys still work, and only their stderr
+reaches the dev log; `stackra dev --no-log` runs any dev tool with the terminal alone and writes no dev log. Each line becomes an entry with its
 level (read from a JSON line, a level word such as `ERR` or `WARN`, or a JavaScript error line; a stack frame takes the
 level of the line above it). The Stackra Vite preset adds `stackra:browser-logs` to the dev server only: the pages it
 serves report uncaught errors, unhandled promise rejections and `console.error` / `console.warn` to

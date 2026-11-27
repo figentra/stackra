@@ -3,12 +3,14 @@
  * Purpose: unit tests of `runProcess`: piped output reaches the io, the exit code is returned, arguments are not
  *          shell-parsed, a missing program resolves 127, `node_modules/.bin` above the directory is on `PATH`, and a
  *          process past its `timeoutMs` is stopped and resolves 124 while one that ends first keeps its code; a tee
- *          gets every chunk by stream while the io still gets the output, even when the io inherits the terminal.
+ *          gets every chunk by stream while the io still gets the output, even when the io inherits the terminal; a
+ *          teed `screen` run on the terminal keeps the terminal's stdout (the same open file as this process's) and
+ *          tees its stderr only.
  * Boundary: test only; starts `node` and throwaway scripts in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5).
  */
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, fstatSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -74,6 +76,33 @@ describe("runProcess", () => {
     ).toBe("TypeError: boom\n");
     expect(output()).toContain("ready");
     expect(output()).toContain("TypeError: boom");
+  });
+
+  it("keeps a teed screen tool's stdout on the terminal and tees its stderr only", async () => {
+    // The child names the file behind its stdout on stderr; inherited, it is the very file this process writes to.
+    const probe =
+      "const s = require('node:fs').fstatSync(1); process.stderr.write(`${s.dev}:${s.ino}\\n`)";
+    const own = fstatSync(1);
+    const stdoutOf = async (screen: boolean) => {
+      const { io, output } = captureIo();
+      const teed: [string, string][] = [];
+      const code = await runProcess(
+        {
+          command: process.execPath,
+          args: ["-e", probe],
+          cwd: root,
+          tee: (stream, text) => teed.push([stream, text]),
+          screen,
+        },
+        { ...io, inherit: true },
+      );
+      expect(code).toBe(0);
+      expect(teed.map(([stream]) => stream)).toEqual(["stderr"]);
+      return output().trim();
+    };
+    // Expo and Wrangler draw their interactive screen only when this is a terminal, so it must not become a pipe.
+    expect(await stdoutOf(true)).toBe(`${own.dev}:${own.ino}`);
+    expect(await stdoutOf(false)).not.toBe(`${own.dev}:${own.ino}`);
   });
 
   it("passes arguments without a shell", async () => {

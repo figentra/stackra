@@ -14,7 +14,9 @@
  *          service has nothing to build either: Encore builds it at deploy (ADR 0091).
  *          A member's `dev` (a docs site's too) copies the tool's output into the repository's dev log (`devLogTee` into
  *          `.stackra/logs/dev.ndjson`, redacted), still printing everything, so the local MCP's `logs` and
- *          `last_error` tools can read what the server said (STA-2889).
+ *          `last_error` tools can read what the server said (STA-2889). A tool that draws an interactive screen (Expo,
+ *          Wrangler) keeps the terminal's stdout, so only its stderr reaches the log; `--no-log` runs the tool with the
+ *          terminal alone and writes no dev log.
  * Boundary: starts at most one tool (two in sequence for a Mintlify docs app's `lint`); a gen refusal stops before
  *           the tool and exits 1.
  * Runtime: node
@@ -51,7 +53,7 @@ const TSDOWN_CONFIGS = [
 
 /** The options each task accepts. */
 const OPTIONS: Readonly<Record<ToolTask, CliCommand["options"]>> = {
-  dev: { target: { type: "string" } },
+  dev: { target: { type: "string" }, "no-log": { type: "boolean" } },
   build: { target: { type: "string" } },
   start: {},
   typecheck: {},
@@ -76,7 +78,9 @@ function hasTsdownConfig(cwd: string): boolean {
  */
 export function toolCommand(task: ToolTask, summary: string): CliCommand {
   const options = OPTIONS[task] ?? {};
-  const flags = Object.keys(options).map((name) => ` [--${name} <${name}>]`);
+  const flags = Object.entries(options).map(([name, { type }]) =>
+    type === "boolean" ? ` [--${name}]` : ` [--${name} <${name}>]`,
+  );
   return {
     name: task,
     summary,
@@ -85,10 +89,13 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
     async run({ cwd, values, io }) {
       const target = typeof values["target"] === "string" ? values["target"] : undefined;
       const tier = typeof values["tier"] === "string" ? values["tier"] : undefined;
+      const log = values["no-log"] !== true;
 
       if (existsSync(join(cwd, "pnpm-workspace.yaml"))) {
         if (target !== undefined)
           throw new CliUsageError("--target picks one app's target; run it in the app");
+        if (!log)
+          throw new CliUsageError("--no-log applies to one member's dev; run it in the member");
         if (tier !== undefined && tier !== "unit" && tier !== "e2e") {
           throw new CliUsageError(`unknown tier: ${tier} (expected unit or e2e)`);
         }
@@ -122,7 +129,7 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
       }
       // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679); a docs
       // site has none and regenerates as its pages change instead. Either way the output is copied into the dev log the
-      // local MCP reads (STA-2889).
+      // local MCP reads (STA-2889), unless `--no-log` asks for the terminal alone.
       if (task === "dev") {
         const watcher = docs
           ? watchDocsSite(
@@ -134,23 +141,21 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
               (error) => io.err(`gen: ${error instanceof Error ? error.message : String(error)}\n`),
             )
           : undefined;
-        const tee = devLogTee(
-          devLogFile(cwd),
-          relative(workspaceRoot(cwd), cwd) || ".",
-          [tool.command, ...tool.args].join(" "),
-          (error) => io.err(`stackra: the dev log is not written: ${error.message}\n`),
-        );
+        const tee = log
+          ? devLogTee(
+              devLogFile(cwd),
+              relative(workspaceRoot(cwd), cwd) || ".",
+              [tool.command, ...tool.args].join(" "),
+              (error) => io.err(`stackra: the dev log is not written: ${error.message}\n`),
+            )
+          : undefined;
+        const run = docs ? tool : { ...tool, env: { ...tool.env, ...devSecretEnv(cwd) } };
         let code: number | undefined;
         try {
-          code = await runProcess(
-            docs
-              ? { ...tool, tee: tee.write }
-              : { ...tool, env: { ...tool.env, ...devSecretEnv(cwd) }, tee: tee.write },
-            io,
-          );
+          code = await runProcess(tee === undefined ? run : { ...run, tee: tee.write }, io);
           return code;
         } finally {
-          tee.end(code);
+          tee?.end(code);
           watcher?.close();
         }
       }

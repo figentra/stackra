@@ -17,6 +17,7 @@ icon: "terminal"
 | `stackra new <kind> <name>`          | حزمة `package` (مع `--category`) أو خدمة `service` (مع `--area`) أو `seed-pack` بالقواعد |
 | `stackra gen [--check]`              | يشتقّ ويكتب `.stackra/`؛ و`--check` يفشل حين لا يطابق بيان ملتزَم به الإعلانات           |
 | `stackra dev`                        | gen ثم التشغيل: Vite للويب، وExpo للهواتف، وWrangler للـWorkers، وEncore للخدمات         |
+| `stackra dev --no-log`               | الشيء نفسه مع الطرفية وحدها: لا يُنسخ شيء إلى سجلّ التطوير                               |
 | `stackra dev --surface <s> --os <c>` | سطح منتج في هيكل أو إس الحقيقي، مع إعادة تحميل فورية                                     |
 | `stackra build`                      | gen ثم البناء: tsdown وVite و`expo export` وتشغيل Wrangler تجريبي                        |
 | `stackra typecheck`، `test`، `lint`  | gen ثم `tsc --noEmit`، وvitest (أو Playwright وMaestro بحسب الطبقة)، و`oxlint .`         |
@@ -37,7 +38,8 @@ staging خلف اعتماد المالك؛ ويشغّل `stackra smoke --env <e>
 ## الوكلاء
 
 يقدّم `stackra mcp` خادم MCP المطوّر المحلي عبر stdio، فيقرأ المساعد داخل المستودع حقائق التطبيق والبيانات
-والمسارات، ويقرأ سجلّ التطوير الذي يكتبه `stackra dev` (`logs` و`last_error`، و`browser_logs` لما أبلغت عنه الصفحات)،
+والمسارات، ويقرأ سجلّ التطوير الذي يكتبه `stackra dev` (`logs` و`last_error`، و`browser_logs` لما أبلغت عنه الصفحات؛
+ويحتفظ Expo وWrangler بالطرفية لرمز QR وقائمة المفاتيح والاختصارات، فلا يصل إلى ذلك السجلّ منهما إلا stderr)،
 ويشغّل `new` و`gen` و`validate` و`check` و`verify` و`test` و`typecheck` و`lint` عبر بوابات سطر الأوامر
 نفسها بنتائج منظَّمة؛ ويصيّر `stackra mcp sync` الملف `.mcp.json` من `.mcp.yaml`،
 ويبدأ `stackra mcp exec --` خادمًا بأسراره من دون أن يقرأها أحد
