@@ -63,3 +63,4 @@ export type { ProbeAnswer } from "#server/types/probe-answer.type";
 export type { ServerApp } from "#server/types/server-app.type";
 export type { ServerAppOptions } from "#server/types/server-app-options.type";
 export type { ServerHandlers } from "#server/types/server-handlers.type";
+export type { ServerRunOptions } from "#server/types/server-run-options.type";

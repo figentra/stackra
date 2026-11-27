@@ -587,7 +587,8 @@ on a queue without its visibility timeout and dead-letter queue. A member with n
 deployed, so nothing is refused (STA-1727).
 
 For a service, gen writes the first parts of the Encore app (ADR 0148): `.stackra/encore/<member>/cron.ts` holds one
-`CronJob` per action whose `job` has a `cron` (its endpoint calls `SchedulerService.fire(<locked key>)`; ids by
+`CronJob` per action whose `job` has a `cron` (its endpoint calls `SchedulerService.fire(<locked key>)` through
+`app.handlers.run(call, { shed: false })`, so load shedding never drops a run Encore would not retry; ids by
 `cronJobId`, which `encoreCronJobs()` also calls) and the stored schedules' minute tick; `.stackra/encore/<member>/queues.ts`
 holds one Pub/Sub `Topic` and `Subscription` per queue its job actions name, registered as `queue.<name>` for a
 broker-delivered queue driver, each delivery run through `QueueWorkerService.process`. Both reach the member through the

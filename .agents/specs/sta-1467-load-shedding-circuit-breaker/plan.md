@@ -25,8 +25,10 @@ answers 503 through the new `handlers.shed`. The integrations managed client abo
 - **Trade-off: per-instance state** instead of a breaker shared in a cache: no extra round trip on every provider call
   and no new failure mode when the cache is the thing that is slow. The cost: N instances let up to N × the threshold
   of failures through before all open. A bulkhead is per instance by nature.
-- **Trade-off: one server compartment** for every call kind (HTTP, Pub/Sub, queue, cron) rather than one per kind:
-  the process has one event loop and one memory to protect; transports retry a shed delivery.
+- **Trade-off: one server compartment** for HTTP, Pub/Sub and queue calls rather than one per kind: the process has
+  one event loop and one memory to protect; transports retry a shed delivery. Cron runs skip it (`run(call,
+{ shed: false })`): Encore never retries a failed CronJob invocation, and a cron run is one call per job per
+  schedule, so it cannot itself overload the instance.
 - **Research**: ADR 0140 (`Unavailable` is 503, retryable); RFC 9110 section 10.2.3 (`Retry-After` on 503); the
   classic breaker states (Nygard, _Release It!_); the existing drain accounting in `createApp`.
 
@@ -74,6 +76,7 @@ answers 503 through the new `handlers.shed`. The integrations managed client abo
 - **P-004**: a trial's outcome alone closes or reopens a half-open circuit; a stale outcome changes nothing — Validates: FR-007
 - **P-005**: a shed call never gets a request container and never reaches the provider — Validates: FR-002, FR-008, FR-009
 - **P-006**: every attempt's timer is cleared and every place released, whatever the outcome — Validates: FR-006, FR-010
+- **P-007**: a call run with `{ shed: false }` (every generated cron run) never waits on or is refused by the bulkhead, however full it is, and is still counted in flight — Validates: FR-013
 
 ## Architecture overview
 
@@ -93,6 +96,9 @@ flowchart TD
 ```
 
 ## Components and responsibilities
+
+Three components: the primitives (C1), the server's load shedding with the generated adapters (C2), and the
+integrations' per-provider resilience (C3).
 
 ### C1 `Bulkhead` and `CircuitBreaker`
 
@@ -135,15 +141,36 @@ packages/runtime/app/src/
 ├── server/functions/create-app.function.ts          (changed: Bulkhead in run, shed)
 ├── server/errors/app-overloaded.error.ts            (new)
 ├── server/constants/overload-retry-after.constant.ts (new)
-├── server/types/server-handlers.type.ts             (changed: shed)
-├── server/index.ts                                  (changed: export)
+├── server/types/server-handlers.type.ts             (changed: shed, run options)
+├── server/types/server-run-options.type.ts          (new: shed: false for cron runs)
+├── server/index.ts                                  (changed: exports)
 ├── config/http.config.ts                            (docs)
 ├── core/schemas/http-options.schema.ts              (changed: three keys)
 └── core/constants/http-config-schema.constant.ts    (changed: three keys)
 packages/developer/gen/src/core/functions/emit-encore-http.function.ts (changed: .catch → handlers.shed)
+packages/developer/gen/src/core/functions/emit-encore-cron-jobs.function.ts (changed: run with { shed: false })
+packages/developer/gen/__golden__/                    (regenerated: http.ts.golden, cron.ts.golden)
 ```
 
-**Failure modes**: a non-shed error passed to `shed` is rethrown unchanged.
+```ts
+export interface ServerRunOptions {
+  readonly shed?: boolean; // false: skip the bulkhead (cron runs)
+}
+export interface ServerHandlers {
+  run: <T>(
+    call: (container: Container) => T | Promise<T>,
+    options?: ServerRunOptions,
+  ) => Promise<T>;
+  shed: (request: Request, error: unknown) => Promise<Response>;
+}
+export class AppOverloadedError extends Refusal({ kind: ErrorKind.Unavailable, retryable: true }) {
+  static create(options: { retryAfterMs: number }): AppOverloadedError;
+  retryAfterMs?: number;
+}
+```
+
+**Failure modes**: a non-shed error passed to `shed` is rethrown unchanged; a cron run is never shed (Encore does not
+retry a failed CronJob invocation).
 
 ### C3 Integration resilience
 
@@ -159,14 +186,46 @@ packages/communication/integrations/src/core/
 └── errors/provider-unavailable.error.ts             (changed: reason)
 ```
 
+```ts
+export interface IntegrationOptions {
+  readonly timeout?: Duration; // per attempt, 30 s by default
+  readonly circuitBreaker?:
+    false | { readonly failureThreshold?: number; readonly cooldown?: Duration };
+  readonly concurrency?: {
+    readonly limit: number;
+    readonly queue?: number;
+    readonly maxWait?: Duration;
+  };
+}
+export class ProviderUnavailableError extends Refusal({
+  kind: ErrorKind.Unavailable,
+  retryable: true,
+}) {
+  reason?: "timeout" | "circuit_open" | "bulkhead_full";
+}
+```
+
 **Failure modes**: open circuit / full bulkhead → `ProviderUnavailableError` without a request; caller abort → the
 caller's reason.
 
 ## Files and folders
 
-The trees of C1 to C3, plus the READMEs and AGENTS.md of the three runtime packages, the generated manifests
-(`apps/playground`, `workers/edge`, `packages/foundation/contracts`, `packages/runtime/app`) and
-`.changeset/load-shedding-circuit-breaker.md`.
+The trees of C1 to C3, plus:
+
+```text
+apps/playground/stackra.manifest.json                (generated: app_overloaded)
+workers/edge/stackra.manifest.json                   (generated: app_overloaded)
+packages/foundation/contracts/stackra.manifest.json  (generated: CircuitState)
+packages/foundation/contracts/README.md              (docs)
+packages/foundation/contracts/AGENTS.md              (docs)
+packages/runtime/app/stackra.manifest.json           (generated: app_overloaded)
+packages/runtime/app/README.md                       (docs)
+packages/runtime/app/AGENTS.md                       (docs)
+packages/communication/integrations/README.md        (docs)
+packages/communication/integrations/AGENTS.md        (docs)
+packages/developer/gen/README.md                     (docs: the cron adapter)
+.changeset/load-shedding-circuit-breaker.md          (changeset)
+```
 
 ## Data models and migrations
 
@@ -192,6 +251,7 @@ No tenant data; the 503 echoes only an allowed origin through `corsHeaders`; ref
 - AC-004, AC-005, AC-006: `managed-client.function.test.ts` and `integration-runtime.service.test.ts` "STA-1467", `read-integration-options.function.test.ts`
 - P-001 to P-004: `bulkhead.value.test.ts`, `circuit-breaker.value.test.ts`
 - AC-007: the barrel tests and the gen manifest check
+- AC-008, P-007: `create-app.function.test.ts` "runs a cron call ({ shed: false }) at once while the bulkhead and its queue are full", `emit-encore-cron-jobs.function.test.ts` "runs every CronJob outside the load-shedding bulkhead" and the `cron.ts.golden` files
 
 ## Rollout
 

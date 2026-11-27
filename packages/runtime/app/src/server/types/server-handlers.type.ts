@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `ServerHandlers`, the `handlers` of a `ServerApp`: what the generated Encore adapters reach the member
  *          through. The classes they expose by kind code, and `run`, which admits one call through the load-shedding
- *          bulkhead, gives it its request container and counts it until it settles, so `drain()` can wait for it,
+ *          bulkhead (a cron run skips it), gives it its request container and counts it until it settles, so `drain()` can wait for it,
  *          `guard`, which runs every contributed `RequestGuard` on an inbound request, and `shed`, which answers a call
  *          `run` turned away (overloaded or draining) as 503.
  * Boundary: a type only. The adapters are generated (ADR 0091, 0124); a service never calls these itself.
@@ -12,6 +12,8 @@
  */
 import type { AnyClass, Container } from "@stackra/container";
 
+import type { ServerRunOptions } from "#server/types/server-run-options.type";
+
 /** The handler side of a server app. */
 export interface ServerHandlers {
   /** The bound classes by kind code (`action`, `query`, `controller`, `listener`, ...), in wiring order. */
@@ -20,13 +22,19 @@ export interface ServerHandlers {
   /**
    * Runs one call with a fresh request container and tracks it until it settles. With `HttpConfig.maxConcurrentCalls`
    * above 0, at most that many calls run at once; the next `maxQueuedCalls` wait in arrival order for at most
-   * `maxQueueWaitMs`, and any other call is turned away before it starts.
+   * `maxQueueWaitMs`, and any other call is turned away before it starts. With `options.shed` `false` (a cron run) the
+   * call skips the bulkhead and starts at once.
    *
    * @throws AppDrainingError (as a rejection) once the app drains.
    * @throws AppOverloadedError (as a rejection) when the call is turned away: the bulkhead and its queue are full, or
-   *         no place came free within the wait.
+   *         no place came free within the wait. Never with `options.shed` `false`.
+   * @example
+   * await app.handlers.run((container) => container.get(SchedulerService).fire(key), { shed: false });
    */
-  run: <T>(call: (container: Container) => T | Promise<T>) => Promise<T>;
+  run: <T>(
+    call: (container: Container) => T | Promise<T>,
+    options?: ServerRunOptions,
+  ) => Promise<T>;
 
   /**
    * Runs every `RequestGuard` the booted modules contribute on `request`, lowest `order` first, one after another,

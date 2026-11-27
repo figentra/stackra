@@ -21,7 +21,9 @@
  *          `Bulkhead` sized by `HttpConfig` (`maxConcurrentCalls` at once, `maxQueuedCalls` waiting at most
  *          `maxQueueWaitMs`): a call it turns away is refused with `AppOverloadedError` before its request container
  *          exists, counted on the bound `Metrics` as `app.calls.shed`, and `handlers.shed` answers it 503 with
- *          `Retry-After` (STA-1467). A queued call counts as in flight, so a drain waits for it too.
+ *          `Retry-After` (STA-1467). A queued call counts as in flight, so a drain waits for it too. A call run with
+ *          `{ shed: false }` (the generated cron adapter) skips the bulkhead, since Encore never retries a failed
+ *          CronJob invocation and a shed cron run would be lost.
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
@@ -110,7 +112,7 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
 
   const handlers: ServerHandlers = {
     byKind,
-    run(call) {
+    run(call, runOptions) {
       if (draining !== undefined) return Promise.reject(AppDrainingError.create());
       const start = () => {
         const scoped = container.forRequest();
@@ -119,8 +121,9 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
         carriers.set(scoped, carrier);
         return tracer.continueTrace(carrier, () => Promise.resolve().then(() => call(scoped)));
       };
+      // A cron run skips the bulkhead: Encore never retries a failed CronJob invocation, so a shed run is lost.
       const result =
-        bulkhead === undefined
+        bulkhead === undefined || runOptions?.shed === false
           ? Promise.resolve().then(start)
           : bulkhead.enter().then(async (release) => {
               if (release === undefined) {

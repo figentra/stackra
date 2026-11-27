@@ -148,14 +148,17 @@ SIGINT close and exit 0, or report and exit 1 when shutdown fails.
 
 ### Load shedding
 
-Every call through `handlers.run` (HTTP, a Pub/Sub delivery, a queue job, a cron tick) passes one `Bulkhead` sized by
+Every call through `handlers.run` (HTTP, a Pub/Sub delivery, a queue job) passes one `Bulkhead` sized by
 `app.http`: at most `maxConcurrentCalls` (1024) run at once, the next `maxQueuedCalls` (1024) wait in arrival order for
 at most `maxQueueWaitMs` (5000), and every other call is refused with `AppOverloadedError` before its request container
 exists, so an overload answers fast instead of piling up until the process stalls. Each shed call is counted on the
 bound `Metrics` as `app.calls.shed` (`reason: overloaded`). The generated HTTP adapter answers it through
 `handlers.shed(request, error)`: 503 with the refusal's envelope, `Retry-After: 1`, `Cache-Control: no-store` and the
 CORS headers, and a draining refusal the same way without a wait. A shed Pub/Sub delivery or queue job is retried by
-its transport. A queued call counts as in flight, so a drain waits for it. `maxConcurrentCalls: 0` turns shedding off.
+its transport. A cron run is never shed: Encore does not retry a failed CronJob invocation and `SchedulerService.fire`
+moves no watermark, so the generated cron adapter calls `handlers.run(call, { shed: false })`, which skips the
+bulkhead (the run is still counted in flight and still refused while draining). A queued call counts as in flight, so
+a drain waits for it. `maxConcurrentCalls: 0` turns shedding off.
 `/healthz` and `/readyz` never pass the bulkhead, so an overloaded instance stays live and ready.
 
 ```ts

@@ -574,6 +574,41 @@ describe("createApp (server)", () => {
       await app.close();
     });
 
+    it("runs a cron call ({ shed: false }) at once while the bulkhead and its queue are full", async () => {
+      const app = await createApp(OrdersModule, { wiring: tight });
+      const started: string[] = [];
+      const first = gated(started, "first");
+      const second = gated(started, "second");
+      const running = app.handlers.run(first.call);
+      const queued = app.handlers.run(second.call);
+      await vi.waitFor(() => expect(started).toEqual(["first"]));
+      const refused = await app.handlers.run(() => "http").catch((error: unknown) => error);
+      expect(isRefusal(refused, AppOverloadedError)).toBe(true);
+      const cron = gated(started, "cron");
+      const fired = app.handlers.run(cron.call, { shed: false });
+      await vi.waitFor(() => expect(started).toEqual(["first", "cron"]));
+      expect(MemoryMetricsDriver.counted).toHaveLength(1);
+      // In flight like any call: a drain waits for the cron run, and a draining app refuses the next one.
+      let drained = false;
+      const draining = app.drain().then(() => (drained = true));
+      first.gate.finish?.();
+      await running;
+      await vi.waitFor(() => expect(started).toEqual(["first", "cron", "second"]));
+      second.gate.finish?.();
+      await queued;
+      await Promise.resolve();
+      expect(drained).toBe(false);
+      const late = await app.handlers
+        .run(() => "late", { shed: false })
+        .catch((error: unknown) => error);
+      expect(isRefusal(late, AppDrainingError)).toBe(true);
+      cron.gate.finish?.();
+      await expect(fired).resolves.toBe("cron");
+      await draining;
+      expect(drained).toBe(true);
+      await app.close();
+    });
+
     it("runs 1024 calls at once by default and queues the 1025th", async () => {
       const app = await createApp(OrdersModule, { wiring });
       const started: string[] = [];
