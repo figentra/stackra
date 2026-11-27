@@ -42,6 +42,16 @@ export type RunwayApi = {
     service: unknown,
   ) => readonly { readonly path: string; readonly message: string }[];
 
+  /**
+   * The deployed environments of a parsed service runway that keep an action store its manifest binds in memory
+   * (STA-2798; absent before 0.34).
+   */
+  readonly checkActionStores?: (
+    root: unknown,
+    service: unknown,
+    manifest: unknown,
+  ) => readonly { readonly path: string; readonly message: string }[];
+
   /** The `config` blocks of a parsed runway that set a runtime-only field (STA-2844; absent before it). */
   readonly checkRuntimeOnlyConfig?: (
     document: unknown,

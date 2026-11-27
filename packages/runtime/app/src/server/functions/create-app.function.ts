@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `createApp` of the server target: boots the member's root module from the generated wiring and
- *          `process.env`, and returns the `ServerApp` the generated Encore app imports. It owns boot order, readiness,
+ * Purpose: `createApp` of the server target: boots the member's root module from the generated wiring,
+ *          `process.env` and runway's generated `config` values (`options.runway`), and returns the `ServerApp` the generated Encore app imports. It owns boot order, readiness,
  *          drain, shutdown and the signal handling: SIGTERM or SIGINT drains, closes and exits 0 (1 when shutdown
  *          fails, after reporting it). Once the container is ready it awaits the member's `#stackra/boot` (when given)
  *          with a shutdown signal that `close()` aborts after the drain; the boot takes its database url from the
@@ -26,8 +26,8 @@
  *                     by 0263 (lifecycle); ADR 0014 (decision 5: the runtime provides the connection); ADR 0260
  *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards);
  *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here);
- *                     ADR 0143 (decision 3: draining timeouts); ADR 0296 (amendment 2026-11-26: the environment comes
- *                     from the runtime only), STA-2844.
+ *                     ADR 0143 (decision 3: draining timeouts); ADR 0296 (decision 1: runway's values; amendment
+ *                     2026-11-26: the environment comes from the runtime only); STA-2844; STA-2798.
  */
 import { buildConfig, ENVIRONMENT_VARIABLE, readEnvironment } from "@stackra/config";
 import type { AnyClass, ModuleClass } from "@stackra/container";
@@ -65,6 +65,7 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
   const { container, reporter, wiring } = await bootApp(options.wiring, {
     roots: [root],
     env: { ...process.env, [ENVIRONMENT_VARIABLE]: environment },
+    ...(options.runway === undefined ? {} : { runway: options.runway }),
   });
   const shutdown = new AbortController();
   await options.boot?.(container, { signal: shutdown.signal });

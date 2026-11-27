@@ -2,14 +2,15 @@
  * Stackra file contract:
  * Purpose: `checkRunwayFiles(input)`, ADR 0296 enforcement (STA-598): each runway file parses as YAML with no repeated key
  *          and passes `parseRunway` for its kind; the root also passes `checkPlacement` against the service keys, and each
- *          service runway passes `checkRequires` against the root (STA-2049); the root passes `checkDestinations`, when
- *          the runway build has it (O8, STA-2100), and `checkEnvironmentRegion` (ADR 0524). Every parsed file passes
- *          `checkRuntimeOnlyConfig` against `runtimeOnly`, when the runway build has it: a `config` block never sets a
- *          field only the runtime may set (STA-2844).
- * Boundary: pure apart from `read`; `runway` is the built `@stackra/runway` entry (or a fake). Errors other than
- *           `RunwayInvalidError` propagate.
+ *          service runway passes `checkRequires` against the root (STA-2049) and, when the runway build has it,
+ *          `checkActionStores` against the root and the member's committed manifest (STA-2798); the root passes
+ *          `checkDestinations`, when the runway build has it (O8, STA-2100), and `checkEnvironmentRegion` (ADR 0524).
+ *          Every parsed file passes `checkRuntimeOnlyConfig` against `runtimeOnly`, when the runway build has it: a
+ *          `config` block never sets a field only the runtime may set (STA-2844).
+ * Boundary: pure apart from `read` and `readManifest`; `runway` is the built `@stackra/runway` entry (or a fake).
+ *           Errors other than `RunwayInvalidError` propagate.
  * Runtime: node
- * Governing contract: ADR 0296 (and its amendment of 2026-11-26, STA-2844).
+ * Governing contract: ADR 0296 (and its amendment of 2026-11-26, STA-2844); STA-2798.
  */
 import { parseDocument } from "yaml";
 
@@ -21,7 +22,8 @@ import type { RuntimeOnlyFieldShape } from "#node/types/runtime-only-field-shape
  * The runway-file findings.
  *
  * @param input - the runway `files`, `read` for their text, the `runway` API, the service member keys `services` and
- *                the repository's runtime-only fields `runtimeOnly` (none when omitted).
+ *                `readManifest` for a member's parsed `stackra.manifest.json` (`undefined` when it has none), and the
+ *                repository's runtime-only fields `runtimeOnly` (none when omitted).
  * @example
  * checkRunwayFiles({ files: ["runway.yaml"], read, runway, services: ["notes"] });
  */
@@ -30,9 +32,10 @@ export function checkRunwayFiles(input: {
   readonly read: (path: string) => string;
   readonly runway: RunwayApi;
   readonly services: readonly string[];
+  readonly readManifest?: (path: string) => unknown;
   readonly runtimeOnly?: readonly RuntimeOnlyFieldShape[];
 }): string[] {
-  const { files, read, runway, services, runtimeOnly = [] } = input;
+  const { files, read, runway, services, readManifest, runtimeOnly = [] } = input;
   const out: string[] = [];
   let root: unknown;
   const parsedServices: [file: string, runway: unknown][] = [];
@@ -79,7 +82,15 @@ export function checkRunwayFiles(input: {
   // A requirement is served by an environment's driver, which the root's defaults may set (STA-2049).
   if (root !== undefined)
     for (const [file, parsed] of parsedServices)
-      for (const { path, message } of runway.checkRequires(root, parsed))
+      for (const { path, message } of [
+        ...runway.checkRequires(root, parsed),
+        // STA-2798: a deployed environment never keeps a bound action store in memory.
+        ...(runway.checkActionStores?.(
+          root,
+          parsed,
+          readManifest?.(file.replace(/runway\.yaml$/, "stackra.manifest.json")),
+        ) ?? []),
+      ])
         out.push(`${file}: ${path}: ${message}`);
   return out;
 }

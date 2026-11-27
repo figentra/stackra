@@ -5,7 +5,9 @@
  *          calls `createApp` from the `@stackra/app` subpath of its runtime in the form that subpath takes, and
  *          exports the result. A service gets `server`; an app gets `browser` (web, PWA, the desktop renderer) and
  *          `native` (iOS and Android). A service's server entry hands `createApp` its `#stackra/boot` when gen writes
- *          one, so the bus, inbox and relay connect at service start. The native entry of an app with web and native
+ *          one, so the bus, inbox and relay connect at service start, and its `#stackra/runway-config` when gen writes
+ *          one, so runway's `config` values of the running environment reach the configuration (STA-2798); the seed
+ *          entry hands `bootApp` the same. The native entry of an app with web and native
  *          targets takes `nativeWiring`, whose follow-the-system ports default to the native drivers. A service with
  *          seeders and a boot also gets `seed`, which `stackra db seed` runs: it boots the container, connects the
  *          database over `directDatabaseUrl()` without the relay loop, hands `runSeedEntry` its seeders (key, module,
@@ -20,7 +22,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0295 (decisions 7 to 9: generated runtime entries, `createApp` per subpath, no service
  *                     factory); ADR 0127 2026-10-24 note (the runtime-target entries); ADR 0263 (boot runs on the ready
- *                     container); ADR 0260 (decision 4).
+ *                     container); ADR 0260 (decision 4); ADR 0296 (decision 1: runway's values); STA-2798.
  */
 import { clientRuntimes } from "#core/functions/client-runtimes.function";
 import { factoryPairsOf } from "#core/functions/factory-pairs-of.function";
@@ -67,12 +69,14 @@ export function emitRuntimeEntries(
         .filter((name) => generated.includes(`.stackra/gen/${name}.ts`))
         .map((name) => `import "#stackra/${name}";`);
       const boots = runtime === "server" && generated.includes(".stackra/gen/boot.ts");
+      // Runway's config values per environment, which bootApp applies for the running one (STA-2798).
+      const runway = runtime === "server" && generated.includes(".stackra/gen/runway-config.ts");
       const call =
         runtime === "browser"
           ? "await createApp(wiring)"
           : runtime === "native"
             ? `createApp(${root.name}, { wiring })`
-            : `await createApp(${root.name}, { wiring${boots ? ", boot" : ""} })`;
+            : `await createApp(${root.name}, { wiring${boots ? ", boot" : ""}${runway ? ", runway: runwayConfig" : ""} })`;
       const header = generatedHeader({
         from: `stackra.config.ts, the root module and #stackra/wiring`,
         purpose: `the ${runtime} runtime entry of ${ir.package}: builds the app from the root module and the generated wiring.`,
@@ -87,6 +91,7 @@ export function emitRuntimeEntries(
           header,
           ...loads,
           ...(boots ? ['import { boot } from "#stackra/boot";'] : []),
+          ...(runway ? ['import { runwayConfig } from "#stackra/runway-config";'] : []),
           `import { createApp } from "@stackra/app/${runtime}";`,
           ...(runtime === "browser" ? [] : [`import { ${root.name} } from "${root.from}";`]),
           // A web-and-native app's shared wiring takes memory; its native entry takes the native drivers.
@@ -165,6 +170,7 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
     !generated.includes(".stackra/gen/boot.ts")
   )
     return undefined;
+  const runway = generated.includes(".stackra/gen/runway-config.ts");
   // Local names in use; a later clash is imported as `Imported<Name>` (STA-2061).
   const taken = new Set([
     "bootApp",
@@ -173,6 +179,7 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
     "runSeedEntry",
     "registerModelPartners",
     "boot",
+    "runwayConfig",
     "wiring",
     root.name,
   ]);
@@ -246,12 +253,14 @@ function seedEntry(ir: MemberIR, generated: readonly string[]): GeneratedFile | 
       `import { ${database.join(", ")} } from "@stackra/database";`,
       'import { directDatabaseUrl, runSeedEntry } from "@stackra/database/node";',
       'import { boot } from "#stackra/boot";',
+      ...(runway ? ['import { runwayConfig } from "#stackra/runway-config";'] : []),
       'import { wiring } from "#stackra/wiring";',
       `import { ${root.name} } from "${root.from}";`,
       ...importLines(imports),
       "",
       ...(pairLines.length > 0 ? ["registerModelPartners([", ...pairLines, "]);", ""] : []),
-      `const { container } = await bootApp(wiring, { roots: [${root.name}], env: process.env });`,
+      // `stackra db seed --env <name>` sets STACKRA_ENVIRONMENT; runway's values of it select the stores (STA-2798).
+      `const { container } = await bootApp(wiring, { roots: [${root.name}], env: process.env${runway ? ", runway: runwayConfig" : ""} });`,
       "const shutdown = new AbortController();",
       "await boot(container, { signal: shutdown.signal, url: directDatabaseUrl(), relay: false });",
       "try {",
