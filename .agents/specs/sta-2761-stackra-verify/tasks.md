@@ -28,6 +28,6 @@ description: "Tasks for STA-2761: stackra/verify, main's gate run on our machine
 
 ## Phase 4: Polish
 
-- [x] T010 Keep `tools/policy/licences.json` as JSON and the OSV canary lockfile as block YAML in `packages/developer/repo-checks/src/node/constants/must-stay-json.constant.ts`, `tools/scripts/osv-canary.lock.yaml` and `.changeset/repo-checks-licence-policy-json.md` — covers: AC-001 — route: steward-docs
+- [x] T010 Keep `tools/policy/licences.json` as JSON and the OSV canary lockfile as block YAML in `packages/developer/repo-checks/src/node/constants/must-stay-json.constant.ts` with `packages/developer/repo-checks/src/node/functions/__tests__/repository-checks.test.ts`, `tools/scripts/osv-canary.lock.yaml` and `.changeset/repo-checks-licence-policy-json.md` — covers: AC-001 — route: steward-docs
 - [x] T011 Document the guard in the header of `tools/scripts/stackra-verify.mjs` — covers: AC-004, AC-005, AC-006, AC-007 — route: steward-docs — deps: T009
 - [ ] T012 The box-1 proof rerun of #1118 on the fixed head, run by the lead, in `tools/scripts/stackra-verify.mjs` — covers: AC-002, AC-004, AC-005, AC-006 — route: verify-fix — deps: T011

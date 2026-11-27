@@ -28,12 +28,14 @@ JavaScript could still run inside a judge through a preload, an inline or stdin 
 
 ### Sources
 
-- `tools/scripts/stackra-verify.mjs` (the service; its header records the CTO's rulings of 2026-11-24, round 5 B and
-  rounds 6 to 8) and `tools/scripts/__tests__/stackra-verify.test.mjs`
-- `tools/scripts/pr-merge.mjs` (merge conditions 5 and 6, behind `VERIFY_ENFORCED`) and its tests
-- `tools/policy/licences.json` (the licence policy, CTO ruling 2026-11-24), `tools/README.md`
-- the review history of #1043 and the #1118 proof report at `35ab9c76b` (findings F1 a to c and F2)
-- ADR 0166 (CI policy and check matrix), ADR 0502 (spec tiers), ADR 0022 (test placement), ADR 0173 (secrets)
+- **SRC-001**: `tools/scripts/stackra-verify.mjs` (the service; its header records the CTO's rulings of 2026-11-24, round 5 B and rounds 6 to 8) and `tools/scripts/__tests__/stackra-verify.test.mjs` on the branch (FR-001 to FR-007)
+- **SRC-002**: `tools/scripts/pr-merge.mjs` (merge conditions 5 and 6, behind `VERIFY_ENFORCED`) and `tools/scripts/__tests__/pr-merge.test.mjs` (FR-001)
+- **SRC-003**: `.github/workflows/ci.yml` on `origin/main`: the Quality Gate steps and their order that the service runs (FR-001, FR-007)
+- **SRC-004**: the #1118 proof report at `35ab9c76b`: F1 a (`ERR_PNPM_NO_OFFLINE_META` in the offline judge install), F1 b (`node_modules/.pnpm-store` left by the rebuild), F1 c (gen's macro packages unbuilt) and F2 (a PR's preload, inline or stdin script, or anonymous `node:vm` compile running in a judge) (FR-002 to FR-006)
+- **SRC-005**: the box-2 `docker build --network none` runs of the judge Dockerfile lines, at HEAD and with the fix (SC-002) (FR-002, FR-003)
+- **SRC-006**: the review history of #1043 (the CTO's rulings of 2026-11-24: judges run main's code only; PR facts never through `node -e`) (FR-001, FR-004 to FR-007)
+- **SRC-007**: `tools/policy/licences.json` (the licence policy, CTO ruling 2026-11-24) and `tools/README.md` (FR-001)
+- **SRC-008**: ADR 0166 (CI policy and check matrix), ADR 0502 (spec tiers), ADR 0022 (test placement), ADR 0173 (secrets) in `apps/docs/src/docs/adr/` (FR-001 to FR-007)
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
@@ -54,7 +56,7 @@ JavaScript could still run inside a judge through a preload, an inline or stdin 
 - **ADR needed**: no (implements the CTO's rulings of 2026-11-24 recorded on #1043, under ADR 0166)
 - **New dependencies**: none in the workspace; the gate's pinned tools (actionlint, zizmor, osv-scanner, squawk,
   gitleaks) are downloaded by checksum into the store image (THIRD_PARTY_NOTICES.md)
-- **Deploy modes**: not applicable (an internal CI service on the build box)
+- **Deploy modes**: same in all three: none (an internal CI service on Stackra's build box; no SaaS, on-prem or air-gapped deployment ships it)
 - **Licence tier**: free (MIT, this repo's tooling)
 - **UI surfaces**: the `stackra/verify` and `stackra/verify-mobile` check runs on GitHub
 - **Docs to update**: the service header in `tools/scripts/stackra-verify.mjs`, `tools/README.md`, `STATE.md`, a patch
@@ -147,18 +149,13 @@ compiled through `node:vm` without a file name. The judge runs main's code; the 
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
-- **AC-001**: WHEN verify is enforced and the head has no passing `stackra/verify` run from the verify App THE pr-merge
-  check SHALL refuse the merge.
-- **AC-002**: WHEN the judge image is built from a store image whose fetch ran as root THE offline install SHALL succeed
-  with no network, and the tree SHALL hold no `node_modules/.pnpm-store` after the rebuild.
+- **AC-001**: WHEN verify is enforced and the head has no passing `stackra/verify` run from the verify App THE pr-merge check SHALL refuse the merge.
+- **AC-002**: WHEN the judge image is built from a store image whose fetch ran as root THE offline install SHALL succeed with no network, and the tree SHALL hold no `node_modules/.pnpm-store` after the rebuild.
 - **AC-003**: THE judge image SHALL build every macro package main's gen loads before it runs gen.
-- **AC-004**: IF NODE_OPTIONS or the command line names a preload or loader in the tested tree that is not main's THEN
-  THE guard SHALL refuse it before it runs.
-- **AC-005**: IF a judge without the inline marker or code from strings is given `-e`, `--eval`, `-p`, `--print`, `-i` or
-  a script from stdin THEN THE guard SHALL refuse it.
+- **AC-004**: IF NODE_OPTIONS or the command line names a preload or loader in the tested tree that is not main's THEN THE guard SHALL refuse it before it runs.
+- **AC-005**: IF a judge without the inline marker or code from strings is given `-e`, `--eval`, `-p`, `--print`, `-i` or a script from stdin THEN THE guard SHALL refuse it.
 - **AC-006**: IF code from strings is off and main's code compiles text with no file THEN THE guard SHALL refuse it.
-- **AC-007**: WHEN validate runs main's self-tests in a judge THE guard SHALL let their `node -e` run, with code from
-  strings still off.
+- **AC-007**: WHEN validate runs main's self-tests in a judge THE guard SHALL let their `node -e` run, with code from strings still off.
 - **AC-008**: THE gate script SHALL read the PR facts through `/in/facts-reader.cjs`.
 
 ## Success Criteria _(mandatory)_

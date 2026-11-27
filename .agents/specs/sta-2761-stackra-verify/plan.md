@@ -37,6 +37,23 @@ image's offline build (F1) and closes the judge code-execution gap (F2).
 | Licence tier (ADR 0077)               | PASS   | free                                                              |
 | Docs and ADRs                         | PASS   | service header, tools/README.md, STATE.md, a changeset            |
 
+## Deploy modes
+
+| Mode       | Behaviour                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------ |
+| SaaS       | none: stackra/verify runs on Stackra's own build box and gates this repository's PRs only        |
+| On-prem    | none: no on-prem deployment ships or runs the service                                            |
+| Air-gapped | none: no air-gapped deployment ships or runs it; its judges already run with no network (FR-002) |
+
+## Correctness properties
+
+- **P-001**: for any PR head with `VERIFY_ENFORCED` on, pr-merge passes condition 5 only when a passing `stackra/verify` run from the verify App is bound to that exact head SHA, after main's ci.yml steps ran in ci.yml's order — Validates: FR-001
+- **P-002**: for any store image whose `pnpm fetch` ran as root, the judge image's install with no network succeeds as the judge user, and no rebuild leaves `node_modules/.pnpm-store` in the tree — Validates: FR-002
+- **P-003**: every package under `packages/*/*/src/node/database/macros` is built in the judge image before main's gen runs — Validates: FR-003
+- **P-004**: for any way node is started in a judge (PATH, the image's node, a clean environment, a fork), the guard is the first code to run, and `--run`, a config-file or a snapshot option before the script never starts node — Validates: FR-004
+- **P-005**: no text from the tested tree runs as code in a judge: a preload or loader that is not main's, `--env-file`, `--expose-internals`, an inline or stdin script (except where validate's mounted marker allows it) and, where code from strings is off, a compile with no file to check are each refused before they run — Validates: FR-005, FR-006
+- **P-006**: the gate script reads the PR facts with `/in/facts-reader.cjs` and never starts `node -e` — Validates: FR-007
+
 ## Architecture overview
 
 Store image (main's lockfile fetched, pinned tools) → judge image (main's tree installed offline, judges and macro
@@ -62,7 +79,13 @@ image's node, `/in/judge-guard.cjs` preloaded first, `/work` from a noexec read-
 ```text
 tools/scripts/stackra-verify.mjs
 tools/scripts/__tests__/stackra-verify.test.mjs
+tools/scripts/pr-merge.mjs
+tools/scripts/__tests__/pr-merge.test.mjs
 tools/scripts/osv-canary.lock.yaml
+tools/policy/licences.json
+tools/README.md
+THIRD_PARTY_NOTICES.md
+STATE.md
 packages/developer/repo-checks/src/node/constants/must-stay-json.constant.ts
 packages/developer/repo-checks/src/node/functions/__tests__/repository-checks.test.ts
 .changeset/repo-checks-licence-policy-json.md
