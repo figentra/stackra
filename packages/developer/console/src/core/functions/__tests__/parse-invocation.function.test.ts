@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: proves `parseInvocation` binds long, short, `=`, negated, repeated and `--` tokens, converts numbers, and
+ * Purpose: proves `parseInvocation` binds long, short, `=`, negated, repeated and `--` tokens (a boolean named
+ *          `no-<x>` beside a string option `<x>` read as itself), converts numbers, and
  *          reports a missing argument, an unknown option, a bad number, a value out of bounds and a surplus token.
  * Boundary: unit test.
  * Runtime: node
  * Governing contract: STA-1730 spec FR-009, FR-010 and FR-015; ADR 0022 (test placement).
  */
 // @covers sta-1730:FR-009 sta-1730:FR-010 sta-1730:FR-015
-import { Int, List, Num } from "@stackra/validation";
+import { Int, List, Num, Str } from "@stackra/validation";
 
 import { Command } from "#core/bases/command.base";
 import { Argument } from "#core/decorators/argument.decorator";
@@ -51,6 +52,26 @@ class CopyCommand extends Command({
 }
 
 const structure = readCommand(CopyCommand);
+
+/** A string option beside a boolean whose own flag is its `no-` form (`stackra dev --infra` and `--no-infra`). */
+class ServeCommand extends Command({
+  name: "serve",
+  description: "Serve",
+}) {
+  @Option
+  @Str
+  infra?: string;
+
+  @Option
+  noInfra = false;
+
+  @Option
+  quiet2 = true;
+
+  handle() {
+    return 0;
+  }
+}
 const parse = (...tokens: string[]) => parseInvocation(tokens, structure);
 
 describe("parseInvocation", () => {
@@ -68,6 +89,18 @@ describe("parseInvocation", () => {
       force: false,
       tag: ["x", "y"],
     });
+  });
+
+  it("reads a boolean named no-<x> as itself beside a string option <x>, not as its negation", () => {
+    const serve = readCommand(ServeCommand);
+    expect(parseInvocation(["--no-infra"], serve).values).toEqual({ noInfra: true });
+    expect(parseInvocation(["--infra", "mail,clam", "--no-infra"], serve).values).toEqual({
+      infra: "mail,clam",
+      noInfra: true,
+    });
+    expect(parseInvocation(["--infra=mail"], serve).values).toEqual({ infra: "mail" });
+    // Any other flag still negates as before.
+    expect(parseInvocation(["--no-quiet2"], serve).values).toEqual({ quiet2: false });
   });
 
   it("treats every token after -- as positional", () => {

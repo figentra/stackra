@@ -81,6 +81,17 @@ export class DevCommand extends Command({
   })
   tunnel = false;
 
+  /** Opt-in dev infra blocks. */
+  @Option({
+    description: "Also start these opt-in blocks of the dev compose (comma-separated names)",
+  })
+  @Str
+  infra?: string;
+
+  /** Skip the dev compose. */
+  @Option({ description: "Start no dev compose (Valkey, SeaweedFS, Mailpit, …) for this run" })
+  noInfra = false;
+
   /** Serves until the tool stops; the exit code is its own. */
   handle(io: CommandIo): Promise<number> {
     return runBody(io, DEV_COMMAND, {
@@ -95,6 +106,8 @@ export class DevCommand extends Command({
         api: this.api,
         device: this.device,
         tunnel: this.tunnel,
+        infra: this.infra,
+        "no-infra": this.noInfra,
       },
     });
   }

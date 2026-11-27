@@ -91,6 +91,7 @@ left out. `context.cli` runs a nested `stackra` line under the same runtime from
 ## Files and folders
 
 ```text
+packages/developer/console/src/core/functions/parse-invocation.function.ts
 .changeset/cli-native-commands.md
 apps/docs/src/docs/cli.ar.mdx
 apps/docs/src/docs/cli.mdx

@@ -44,7 +44,8 @@ question.
 - **Services touched**: none
 - **Packages touched**: packages/developer/cli (23 command classes under `src/node/commands/`, `runBody`, `askNew`,
   `newKinds`, `currentCliRuntime`, `CLI_RUNTIME_STORE`, `PIPED_RUNTIME`, `runCli`, `runGen`, `GEN_COMMAND`, the
-  `CliCommand` / `CliContext` / `CliRuntime` / `GenOutcome` / `NewAnswers` types, its manifest)
+  `CliCommand` / `CliContext` / `CliRuntime` / `GenOutcome` / `NewAnswers` types, its manifest), packages/developer/console
+  (`parseInvocation` reads a boolean named `no-<x>` beside an option `<x>` as itself)
 - **Public contract change**: `@stackra/cli` (0.x, minor). Removed: `legacyCommand` and `CliCommand.group` / `hidden`
   (added by STA-2872, never released; a command's group and hidden flag live on its class). Added: the command classes,
   `runBody`, `askNew`, `newKinds`, `currentCliRuntime`, `CLI_RUNTIME_STORE`, `PIPED_RUNTIME`, the types `CliRuntime`,
@@ -218,6 +219,9 @@ None.
 findings }` and `validate --repository` `{ findings: [{ dir, text }] }`; FR-005 names the check commands.
 - 2026-11-27 · CTO review condition: the `--os` help of `dev` and `build` is neutral ("the template checkout"), and
   their examples use `../template`, so the public help names no Figentra product. Added AC-007 and T011.
+- 2026-11-27 · main's dev compose flags (`stackra dev --infra <names>` and `--no-infra`, STA-2664) arrived after the
+  port: `DevCommand` declares both, and the console's `parseInvocation` reads `--no-infra` as its own boolean, where
+  `node:util.parseArgs` would read it as the negation of `--infra`. Added T012.
 
 ## Status history
 

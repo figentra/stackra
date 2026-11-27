@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `parseInvocation(tokens, structure?)`, the global options and the field values of one invocation, parsed by
  *          `node:util.parseArgs` (strict, negatable flags, repeated list options, `--`), with numbers converted and
- *          bounds, missing arguments and surplus tokens reported as a `UsageError`.
+ *          bounds, missing arguments and surplus tokens reported as a `UsageError`. A boolean field whose flag is
+ *          `no-<x>` beside an option `<x>` (`--infra <names>` and `--no-infra`) is read as itself, never as the
+ *          negation `parseArgs` would make of it.
  * Boundary: pure apart from `parseArgs`; never constructs a command. With no structure only global options are
  *           accepted. A missing argument is not an error when `--help` is given. Isomorphic because `node:util` is in
  *           every runtime Stackra targets for a CLI.
@@ -30,6 +32,18 @@ function optionsOf(fields: readonly CommandField[]): NonNullable<ParseArgsConfig
       ...(field.short === undefined ? {} : { short: field.short }),
     };
   return options;
+}
+
+/**
+ * The boolean fields whose own flag is the `no-` form of another field's (`no-infra` beside `infra`): `parseArgs` reads
+ * `--no-infra` as the negation of `--infra`, so these are taken out of the tokens before it runs.
+ */
+function ownNegatives(fields: readonly CommandField[]): readonly CommandField[] {
+  const flags = new Set(fields.map((field) => field.flag));
+  return fields.filter(
+    (field) =>
+      field.kind === "boolean" && field.flag.startsWith("no-") && flags.has(field.flag.slice(3)),
+  );
 }
 
 /** The global options in `values`. */
@@ -63,10 +77,21 @@ export function parseInvocation(
   structure?: CommandStructure,
 ): ParsedInvocation {
   const fields = structure === undefined ? [] : [...structure.arguments, ...structure.options];
+  // `--no-infra` of a `noInfra` field beside `infra`, taken out before `parseArgs` would negate `--infra` with it.
+  const own = ownNegatives(structure?.options ?? []);
+  const given = new Set<string>();
+  const args: string[] = [];
+  let rest = false;
+  for (const token of tokens) {
+    const field = rest ? undefined : own.find((candidate) => token === `--${candidate.flag}`);
+    if (field === undefined) args.push(token);
+    else given.add(field.property);
+    if (token === "--") rest = true;
+  }
   let parsed: ReturnType<typeof parseArgs>;
   try {
     parsed = parseArgs({
-      args: [...tokens],
+      args,
       options: optionsOf(structure?.options ?? []),
       strict: true,
       allowPositionals: true,
@@ -80,14 +105,14 @@ export function parseInvocation(
   const values: Record<string, unknown> = {};
   try {
     for (const field of structure?.options ?? []) {
-      const given = parsed.values[field.flag];
-      if (given === undefined) continue;
+      const value = given.has(field.property) ? true : parsed.values[field.flag];
+      if (value === undefined) continue;
       values[field.property] =
         field.kind === "boolean"
-          ? given
-          : Array.isArray(given)
-            ? given.map((token) => convertToken(field, String(token)))
-            : convertToken(field, String(given));
+          ? value
+          : Array.isArray(value)
+            ? value.map((token) => convertToken(field, String(token)))
+            : convertToken(field, String(value));
     }
     const positionals = [...parsed.positionals];
     for (const field of structure?.arguments ?? []) {
