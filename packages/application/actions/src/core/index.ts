@@ -9,6 +9,7 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export type { RecordPolicyRun } from "#core/types/record-policy-run.type";
+export { AuditConfig } from "#config/audit.config";
 export { RateLimitConfig } from "#config/rate-limit.config";
 export { StoresConfig } from "#config/stores.config";
 export { Action } from "#core/bases/action.base";
@@ -18,6 +19,7 @@ export { ExtensionPoint } from "#core/bases/extension-point.base";
 export { Interceptor } from "#core/bases/interceptor.base";
 export { Precondition } from "#core/bases/precondition.base";
 export { Query } from "#core/bases/query.base";
+export { AUDIT_CONFIG_SCHEMA as AuditConfig$ } from "#core/constants/audit-config-schema.constant";
 export { RATE_LIMIT_CONFIG_SCHEMA as RateLimitConfig$ } from "#core/constants/rate-limit-config-schema.constant";
 export { SHARED_CACHE_CONTEXT } from "#core/constants/shared-cache-context.constant";
 export { STORES_CONFIG_SCHEMA as StoresConfig$ } from "#core/constants/stores-config-schema.constant";
@@ -75,6 +77,7 @@ export { QueryCacheEvictorListener } from "#core/listeners/query-cache-evictor.l
 export { ActionPipeline } from "#core/services/action-pipeline.service";
 export { ReplicaFeed } from "#core/services/replica-feed.service";
 export { RequestContext } from "#core/services/request-context.service";
+export { AuditOptions } from "#core/schemas/audit-options.schema";
 export { StoresOptions } from "#core/schemas/stores-options.schema";
 export type { ActionAccepts } from "#core/types/action-accepts.type";
 export type { ActionApproval } from "#core/types/action-approval.type";
