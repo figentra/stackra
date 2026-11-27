@@ -87,6 +87,10 @@ zone tz)`) and match it with `metricBuckets`, which steps the wall clock; never 
 - The migration runner (`migrate`, `rollback`) is the only writer of `schema_migrations` and
   `schema_migrations_history`. Keep `schema_migrations` in golang-migrate's `(version, dirty)` shape (Encore reads it);
   anything more goes in the history table. Every run holds the runner's advisory lock for its whole session.
+- Developer inspections (`describeSchema`, `queryInScope`, `migrationStatus`, STA-2906) read only: every one runs in
+  `openInspectionSession`'s READ ONLY transaction, always rolled back, and only where `inspectionTarget` allows (local
+  dev and the testbed). `queryInScope` sets the tenant with `set_config(…, true)` and refuses a role that can bypass
+  row-level security; never add an option that skips the tenant, turns row-level security off or writes.
 - Entity cache (data-layer gap ca5): `entityCacheOf` decides every cached read and `EntityResultCacheAdapter` is the
   only store (MikroORM's result cache over the bound `Cache`, in the shared namespace through `SHARED_CACHE_CONTEXT`).
   Only a `{ id }` read with no option, no visibility condition and no transaction is cached, keyed by

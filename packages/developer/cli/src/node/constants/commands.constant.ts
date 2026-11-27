@@ -3,7 +3,8 @@
  * Purpose: `COMMANDS`, every command the `stackra` binary has (native console classes and the `CliCommand`s not yet ported), in help order: new, gen, console (a member's own console, STA-1731), the member tool commands (`dev`
  *          with its `--surface` mode, ADR 0436 decision 6), the
  *          check command and its aliases (validate, verify, code:check, code:fix), the product deploy, mobile onboard and
- *          preview serve commands (ADR 0482, STA-1676), the db commands, the seed-pack
+ *          preview serve commands (ADR 0482, STA-1676), the db commands (the read-only `db:schema`, `db:query` and
+ *          `db:migrations:status` inspections among them, STA-2906), the seed-pack
  *          command, the settings pack commands, the search reindex and status commands, the offline audit check, the operator bootstrap (`ops
  *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the consumer gate (`consumer-gate`, ADR 0500), the local MCP and agent-file commands,
  *          the registry item commands (add, publish; ADR 0453), and the repository commands moved from
@@ -49,7 +50,10 @@ import { ConsumerGateCommand } from "#node/commands/consumer-gate.command";
 import { CreateCommand } from "#node/commands/create.command";
 import { CyclesCommand } from "#node/commands/cycles.command";
 import { DbMigrateCommand } from "#node/commands/db-migrate.command";
+import { DbMigrationsStatusCommand } from "#node/commands/db-migrations-status.command";
+import { DbQueryCommand } from "#node/commands/db-query.command";
 import { DbRollbackCommand } from "#node/commands/db-rollback.command";
+import { DbSchemaCommand } from "#node/commands/db-schema.command";
 import { DevSecretsInitCommand } from "#node/commands/dev-secrets-init.command";
 import { DocStandardCommand } from "#node/commands/doc-standard.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
@@ -106,6 +110,9 @@ export const COMMANDS: CliCommands = [
   ),
   DbMigrateCommand,
   DbRollbackCommand,
+  DbMigrationsStatusCommand,
+  DbSchemaCommand,
+  DbQueryCommand,
   DevSecretsInitCommand,
   DB_SEED_COMMAND,
   DB_DIFF_COMMAND,

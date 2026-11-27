@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `ruleIssues`: a secret reference must sit after `stackra mcp exec --` in a local server and
- *          never in env, a URL or a header; npx packages must be pinned to an exact version.
+ *          never in env, a URL or a header; npx packages must be pinned to an exact version; a separate local Encore
+ *          server is refused (ADR 0334 rule 8) while the remote `encore-cloud` server stays.
  * Boundary: test only; pure values.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 9); ADR 0173.
@@ -24,9 +25,23 @@ describe("ruleIssues", () => {
     ).toEqual([]);
     expect(codesOf({ command: "npx", args: ["-y", "tool@1.2.3-beta.1"] })).toEqual([]);
     expect(
-      codesOf({ command: "encore", args: ["mcp", "run"], env: { NODE_ENV: "production" } }),
+      codesOf({ command: "docs-mcp", args: ["--stdio"], env: { NODE_ENV: "production" } }),
     ).toEqual([]);
+    expect(codesOf({ command: "encore", args: ["run"] })).toEqual([]);
     expect(codesOf({ type: "http", url: "https://mcp.linear.app/mcp" })).toEqual([]);
+  });
+
+  it("refuses a separate local Encore server, which stackra mcp already proxies", () => {
+    expect(codesOf({ command: "encore", args: ["mcp", "run", "--app=acme-platform"] })).toEqual([
+      "separate_encore_server",
+    ]);
+    expect(codesOf({ command: "/usr/local/bin/encore", args: ["mcp", "run"] })).toEqual([
+      "separate_encore_server",
+    ]);
+    expect(
+      codesOf({ command: "mise", args: ["exec", "--", "encore", "mcp", "run", "--app=a"] }),
+    ).toEqual(["separate_encore_server"]);
+    expect(codesOf({ type: "http", url: "https://api.encore.dev/mcp" })).toEqual([]);
   });
 
   it("refuses a secret without the launcher, before it or in env", () => {

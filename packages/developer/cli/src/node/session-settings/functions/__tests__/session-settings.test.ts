@@ -10,7 +10,7 @@
  *          line; set_config with the literal `true` is not, nor are a test file, an allow-listed path or a file
  *          outside `packages/`, `services/`, `apps/` and `workers/`; commas inside strings and calls do not shift the
  *          third argument; the shipped allow list names only the isolation driver, `TenantIsolationService`, the
- *          database drivers and the iam snapshot store.
+ *          database drivers, the developer inspection queryInScope (STA-2906) and the iam snapshot store.
  * Boundary: writes fixture trees into temp directories; the last test reads this checkout, which must be clean. The
  *           check scans this file too (rule 1 exempts no test), so the fixtures splice `SC` and `A` into the forms.
  * Runtime: node (vitest)
@@ -162,10 +162,11 @@ test("an app.* set_config is exempt in the allow list, a testing helper and a te
   );
 });
 
-test("the shipped allow list is the isolation driver, TenantIsolationService, withScope, the settings replay, the iam snapshot store and runAsTenant's test seam", () => {
+test("the shipped allow list is the isolation driver, TenantIsolationService, withScope, the settings replay, the developer inspection, the iam snapshot store and runAsTenant's test seam", () => {
   assert.deepEqual(Object.keys(SESSION_SETTING_ALLOWED).sort(), [
     "packages/data/database/src/core/functions/replay-row-security-settings.function.ts",
     "packages/data/database/src/core/functions/run-in-scope.function.ts",
+    "packages/data/database/src/node/functions/query-in-scope.function.ts",
     "packages/security/iam/src/node/drivers/postgres-policy-snapshot-store.driver.ts",
     "packages/security/tenancy/src/node/drivers/call-isolation.driver.ts",
     "packages/security/tenancy/src/node/services/tenant-isolation.service.ts",

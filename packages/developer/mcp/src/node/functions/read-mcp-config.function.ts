@@ -20,7 +20,7 @@ import type { McpConfig } from "#core/types/mcp-config.type";
  * @param file - the path of a `.mcp.yaml`.
  * @throws McpConfigInvalidError when the file cannot be read, is not YAML, or breaks the shape or rules.
  * @example
- * readMcpConfig(".mcp.yaml").mcpServers.encore; // { command: "encore", args: ["mcp", "run", "--app=acme-platform"] }
+ * readMcpConfig(".mcp.yaml").mcpServers.stackra; // { command: "pnpm", args: ["exec", "stackra", "mcp"] }
  */
 export function readMcpConfig(file: string): McpConfig {
   let document: unknown;

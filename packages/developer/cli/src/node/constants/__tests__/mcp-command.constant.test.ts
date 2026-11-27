@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `MCP_COMMAND`: it serves the local MCP with the CLI version and the working directory, and
- *          its runner runs the CLI in-process with a capturing io, returning the exit code and the output.
+ * Purpose: unit tests of `MCP_COMMAND`: it serves the local MCP with the CLI version and the working directory, the
+ *          read-only `doctor` and database inspection tools (`db_query` needs its tenant and query), and its runner runs
+ *          the CLI in-process with a capturing io, returning the exit code and the output.
  * Boundary: test only; `serveLocalMcp` is replaced by a fake, so no stdio server starts.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 5).
@@ -38,8 +39,15 @@ describe("MCP_COMMAND", () => {
     const options = vi.mocked(serveLocalMcp).mock.calls[0]?.[0];
     expect(options?.version).toBe(cliVersion());
     expect(options?.root).toBe("/repo");
-    // doctor is served from its own command definition, read-only.
-    expect(options?.tools?.map((tool) => [tool.name, tool.readOnly])).toEqual([["doctor", true]]);
+    // doctor and the database inspections are served from their own command definitions, read-only.
+    expect(options?.tools?.map((tool) => [tool.name, tool.readOnly])).toEqual([
+      ["doctor", true],
+      ["db_schema", true],
+      ["db_query", true],
+      ["db_migrations_status", true],
+    ]);
+    const query = options?.tools?.find((tool) => tool.name === "db_query");
+    expect(query?.inputSchema).toMatchObject({ required: ["scope", "sql"] });
     expect(await options?.run?.(["gen", "--check"])).toEqual({ exitCode: 3, output: "checked\n" });
     expect(cli.mock.calls[0]?.[0]).toEqual(["gen", "--check"]);
     expect(cli.mock.calls[0]?.[1].inherit).toBe(false);
