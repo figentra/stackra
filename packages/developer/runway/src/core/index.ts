@@ -8,7 +8,8 @@
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
  *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the approved Postgres extensions (`PostgresExtension`,
- *          `APPROVED_POSTGRES_EXTENSIONS`, ADR 0160), the `SmokeDriver` port of the smoke
+ *          `APPROVED_POSTGRES_EXTENSIONS`, ADR 0160) with the extensions a server must hold and the script that creates them
+ *          (`plannedExtensions`, `createExtensionsScript`, ADR 0160 note of 2026-11-26), the `SmokeDriver` port of the smoke
  *          step (STA-265), the Worker version proof (`WORKER_VERSION`, `WorkerVersionProof`, `servedVersionProblem`,
  *          STA-2786), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
@@ -59,12 +60,14 @@ export { checkRequires } from "#core/functions/check-requires.function";
 export { checkRuntimeOnlyConfig } from "#core/functions/check-runtime-only-config.function";
 export { checkRegions } from "#core/functions/check-regions.function";
 export { checkZoneOwners } from "#core/functions/check-zone-owners.function";
+export { createExtensionsScript } from "#core/functions/create-extensions-script.function";
 export { deploy } from "#core/functions/deploy.function";
 export { deployTargets } from "#core/functions/deploy-targets.function";
 export { devComposeOf } from "#core/functions/dev-compose-of.function";
 export { devPorts } from "#core/functions/dev-ports.function";
 export { mobileIdsOf } from "#core/functions/mobile-ids-of.function";
 export { parseRunway } from "#core/functions/parse-runway.function";
+export { plannedExtensions } from "#core/functions/planned-extensions.function";
 export { poolMaxOf } from "#core/functions/pool-max-of.function";
 export { previewDatabaseOf } from "#core/functions/preview-database-of.function";
 export { previewSeedStep } from "#core/functions/preview-seed-step.function";

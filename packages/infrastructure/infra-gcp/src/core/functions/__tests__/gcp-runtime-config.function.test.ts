@@ -6,16 +6,24 @@
  *          `false`, an unknown class refused; the slow-statement threshold (one second, the runway's, or off); no
  *          server where the runway declares none; a server without a tier or version refused; a Valkey cache sized by
  *          the runway with defaults filled, none for another engine, and one with an unknown node type or no VPC
- *          refused.
+ *          refused; the server holds the extensions every service names for the environment, none without services.
  * Boundary: test only; roots are built through `parseRunway`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401.
+ * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401; ADR 0160 (note of 2026-11-26).
  */
-import { RunwayInvalidError } from "@stackra/runway";
+import { RunwayInvalidError, parseRunway } from "@stackra/runway";
 import { describe, expect, it } from "@stackra/testing";
 
 import { gcpRuntimeConfig } from "#core/functions/gcp-runtime-config.function";
 import { at, gcpRoot } from "#core/functions/__tests__/fixtures/gcp-root.fixture";
+
+/** A service runway naming `extensions` for production only. */
+function service(extensions: readonly string[]) {
+  return parseRunway("service", {
+    version: 3,
+    environments: { production: { database: { extensions } } },
+  });
+}
 
 describe("gcpRuntimeConfig", () => {
   it("sizes production's server, backups and recovery window in its KSA region", () => {
@@ -31,7 +39,25 @@ describe("gcpRuntimeConfig", () => {
       pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
       slowQueryMs: 1000,
       network: "ref:gcp.network.prod",
+      extensions: [],
     });
+  });
+
+  it("gives the server the extensions every service names for the environment", () => {
+    const services = {
+      commerce: service(["pg_trgm", "citext"]),
+      search: service(["vector", "pg_trgm"]),
+    };
+
+    expect(
+      gcpRuntimeConfig(gcpRoot(), "production", undefined, services).database?.extensions,
+    ).toEqual(["citext", "pg_trgm", "vector"]);
+    expect(
+      gcpRuntimeConfig(gcpRoot(), "production", "firm", services).database?.extensions,
+    ).toEqual(["citext", "pg_trgm", "vector"]);
+    expect(
+      gcpRuntimeConfig(gcpRoot(), "staging", undefined, services).database?.extensions,
+    ).toEqual([]);
   });
 
   it("keeps backups on with Cloud SQL's defaults when the runway does not size them", () => {
@@ -44,6 +70,7 @@ describe("gcpRuntimeConfig", () => {
       pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
       slowQueryMs: 1000,
       network: null,
+      extensions: [],
     });
   });
 

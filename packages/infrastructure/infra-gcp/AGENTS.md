@@ -24,7 +24,9 @@ program) and `./testing` (Pulumi's mocks).
   project number) arrives as runway data.
 - No region, project id, project number, billing account, currency or amount in code: they arrive as runway values or
   `ref:` paths and are resolved from the stack config. Which Figentra region runs on GCP is Figentra's runway, not
-  this package. No secret value is read anywhere, and no service account key or HMAC key is created.
+  this package. No secret value is read anywhere, and no service account key or HMAC key is created. The one secret
+  input is `gcpRuntime`'s `adminPassword` (the deploy job's, from the vault): it reaches only the Cloud SQL admin user
+  and its in-region Secret Manager copy, never a job, log or output (ADR 0160 note of 2026-11-26).
 - An egress address is `retainOnDelete`: a partner allow-lists it, so a stack change never releases it. Reserve the
   addresses here; attaching them to a Cloud NAT is the network's job.
 - The health driver's target is `InfraGcpConfig` (`src/config/infra-gcp.config.ts`, key `infra_gcp`), injected by type:
