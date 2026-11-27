@@ -4,8 +4,10 @@
  *          request ids, and the signing keys the `env` driver reads.
  * Boundary: a shape class; it registers this package's own schema (`EDGE_CONFIG_SCHEMA`) for itself when the module
  *           loads. The defaults are `memory` (ADR 0266 decision 2): with no key every signed request is refused, and a
- *           replay is refused per instance until a shared nonce store ships. A deployment behind the edge names `env`
- *           in runway and sets the secret. The keys are the `STACKRA_EDGE_SIGNING_KEYS` secret, never a value.
+ *           replay is refused per instance only. A deployment behind the edge names `env` (or `secrets`) for the keys
+ *           and `cache` for the nonces in runway, binds a shared `Cache` driver (`valkey` or `postgres`) and sets the
+ *           secret. The keys are the `STACKRA_EDGE_SIGNING_KEYS` secret (or the one `signingKeysSecret` names), never a
+ *           value.
  * Runtime: isomorphic
  * Governing contract: ADR 0437 (decision 4); ADR 0266; ADR 0294 (decisions 4, 19 and 26); ADR 0173.
  */
@@ -31,10 +33,21 @@ export class EdgeOptions extends Schema {
   @Secret("STACKRA_EDGE_SIGNING_KEYS")
   signingKeys = "";
 
-  /** Which driver answers the active signing keys: `memory` (tests) or `env` (the secret above). */
+  /**
+   * Which driver answers the active signing keys: `memory` (tests), `env` (the secret above, read once at boot) or
+   * `secrets` (the secret `signingKeysSecret` names, read from the bound `SecretStore` on every check). `bootApp` binds
+   * the boot environment as that store and does not reload it (STA-2804), so with either driver a rotation needs a
+   * restart today.
+   */
   keys: DriverName<EdgeSigningKeys> = "memory";
 
-  /** Where seen request ids are kept: `memory` (per instance). */
+  /** The secret name the `secrets` driver reads the keys by; its value is the secret store's, never here. */
+  signingKeysSecret = "STACKRA_EDGE_SIGNING_KEYS";
+
+  /**
+   * Where seen request ids are kept: `memory` (per instance) or `cache` (the bound `Cache` through its atomic `add`,
+   * shared by every instance on the same `valkey` or `postgres` store).
+   */
   nonces: DriverName<EdgeNonceStore> = "memory";
 }
 

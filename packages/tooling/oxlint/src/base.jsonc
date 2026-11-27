@@ -413,6 +413,15 @@
       "plugins": ["react"],
       "rules": { "react/jsx-no-literals": "off", "react/display-name": "off" },
     },
+    {
+      // STA-2582: a mail body puts HTML it did not write (a tenant's note, a client's rich text) into a mail only through
+      // `useMail().richText`, which writes back what @stackra/csp's `sanitizeHtml` keeps. Raw HTML in a `.mail.tsx`
+      // body reaches every mail client that renders it, so `dangerouslySetInnerHTML` is refused there. Last, so no later
+      // override can turn it off.
+      "files": ["**/*.mail.tsx"],
+      "plugins": ["react"],
+      "rules": { "react/no-danger": "error" },
+    },
   ],
   "ignorePatterns": [
     "**/dist/**",

@@ -3,12 +3,13 @@
  * Purpose: the consumer contract of the `./server` entry: `createApp` (the template's service entries import it),
  *          the `Controller` kind, the `RequestGuard` extension point, `AppDrainingError`, `DrainTimeoutError` (what the
  *          drain deadline reports) and the edge-header guard
- *          with its memory drivers and refusal, the bearer-token guard with its config, key drivers, refusal and
+ *          with its key and nonce drivers (memory, `env`, `secrets`, `cache`) and refusal, the bearer-token guard with its config, key drivers, refusal and
  *          `VerifiedToken`, `CallAuthenticator` (the generated auth handler's check), `ServiceClientSessionDriver`
  *          (the tokens a service call sends), the origin and CSRF guards with
  *          their configuration and refusals,
- *          `apiCacheControl`, `corsHeaders`, `nodeBodyStream` (the adapter's request body) and the dev sign-in's
- *          `devIssuerKeys` and `verifyCallToken` are exported, nothing else is, and `createApp` resolves to a `ServerApp`.
+ *          `apiCacheControl`, `corsHeaders`, `nodeBodyStream` (the adapter's request body), `providePlatformEnvironment`
+ *          (STA-2844) and the dev sign-in's `devIssuerKeys` and `verifyCallToken` are exported, nothing else is, and
+ *          `createApp` resolves to a `ServerApp`.
  * Boundary: test only; imports the stand-in barrel through its `#server` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decision 8); ADR 0127 2026-10-24 note; ADR 0437.
@@ -25,6 +26,7 @@ describe("@stackra/app/server", () => {
       "BearerConfig",
       "BearerTokenGuard",
       "BearerTokenInvalidError",
+      "CacheEdgeNonceStoreDriver",
       "CallAuthenticator",
       "Controller",
       "CorsConfig",
@@ -44,6 +46,7 @@ describe("@stackra/app/server", () => {
       "OriginGuard",
       "OriginNotAllowedError",
       "RequestGuard",
+      "SecretsEdgeSigningKeysDriver",
       "ServiceClientSessionDriver",
       "VerifiedToken",
       "VisitorConfig",
@@ -53,6 +56,7 @@ describe("@stackra/app/server", () => {
       "createApp",
       "devIssuerKeys",
       "nodeBodyStream",
+      "providePlatformEnvironment",
       "serveGuardedCall",
       "verifyCallToken",
     ]);

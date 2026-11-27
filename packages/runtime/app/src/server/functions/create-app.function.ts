@@ -14,7 +14,10 @@
  *          resolved once after boot. The drain waits for calls in flight for at most `HttpConfig.drainTimeoutSeconds`
  *          (read once after boot; its default when the wiring binds no `HttpConfig`); at the deadline it reports one
  *          `DrainTimeoutError` with the count still running and resolves, so a hung call never keeps the shutdown
- *          hooks from running before the platform's SIGKILL (STA-2820).
+ *          hooks from running before the platform's SIGKILL (STA-2820). The configuration reads `process.env` with
+ *          `STACKRA_ENVIRONMENT` set to the running environment from the one reader (`readEnvironment`), given what the
+ *          platform reported to `providePlatformEnvironment`, so a configuration never sees an unset or misspelt
+ *          environment and a deployment never boots as `dev` (STA-2844).
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process; so do dev
  *           sign-in keys (`STACKRA_DEV_ISSUER_KEYS`) outside `STACKRA_ENVIRONMENT=dev` (`devIssuerKeys`, STA-2795). The outbox
@@ -24,10 +27,11 @@
  *                     by 0263 (lifecycle); ADR 0014 (decision 5: the runtime provides the connection); ADR 0260
  *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards);
  *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here);
- *                     ADR 0143 (decision 3: draining timeouts); ADR 0206 (amendment of 2026-11-26: the dev issuer
- *                     never boots in a deployed environment).
+ *                     ADR 0143 (decision 3: draining timeouts); ADR 0296 (amendment 2026-11-26: the environment comes
+ *                     from the runtime only), STA-2844; ADR 0206 (amendment of 2026-11-26: the dev issuer never boots
+ *                     in a deployed environment).
  */
-import { buildConfig } from "@stackra/config";
+import { buildConfig, ENVIRONMENT_VARIABLE, readEnvironment } from "@stackra/config";
 import type { AnyClass, ModuleClass } from "@stackra/container";
 import { HealthIndicator, Tracer } from "@stackra/contracts";
 import type { TraceCarrier } from "@stackra/contracts";
@@ -37,6 +41,7 @@ import { HttpConfig } from "#config/http.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { bootApp } from "#core/functions/boot-app.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
+import { PLATFORM_ENVIRONMENT_HOST } from "#server/constants/platform-environment-host.constant";
 import { answerProbe } from "#server/functions/answer-probe.function";
 import { devIssuerKeys } from "#server/functions/dev-issuer-keys.function";
 import { AppDrainingError } from "#server/errors/app-draining.error";
@@ -54,14 +59,16 @@ const DEADLINE = Symbol("drain deadline");
 /**
  * Boots `root` and returns its server app.
  *
- * @throws ConfigInvalidError or UnresolvedPortError (as a rejection) when boot fails.
+ * @throws ConfigInvalidError or UnresolvedPortError (as a rejection) when boot fails, ConfigInvalidError too when the
+ *         running environment cannot be read (a typo, `dev` on a deployed platform).
  * @example
  * export const app = await createApp(CommerceModule, { wiring, boot });
  */
 export async function createApp(root: ModuleClass, options: ServerAppOptions): Promise<ServerApp> {
+  const environment = readEnvironment(process.env, PLATFORM_ENVIRONMENT_HOST.current);
   const { container, reporter, wiring } = await bootApp(options.wiring, {
     roots: [root],
-    env: process.env,
+    env: { ...process.env, [ENVIRONMENT_VARIABLE]: environment },
   });
   // Dev sign-in keys outside `stackra dev` fail boot here, so a deployment never answers a dev token (STA-2795).
   if (container.has(BearerConfig)) {

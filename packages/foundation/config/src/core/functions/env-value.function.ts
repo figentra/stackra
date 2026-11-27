@@ -23,7 +23,7 @@ interface EnvValueState {
  * A parser that checks a set value with `schema`.
  *
  * @example
- * envValue<string>(z.string()).default("dev").parse(process.env.STACKRA_ENVIRONMENT, "STACKRA_ENVIRONMENT");
+ * envValue<string>(z.string()).default("me").parse(process.env.STACKRA_REGION, "STACKRA_REGION");
  */
 export function envValue<T>(
   schema: ZodType,
