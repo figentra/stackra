@@ -39,4 +39,4 @@ description: "Tasks for STA-2859: the CLI's doctor, dev tunnel and starter carry
 ## Phase 5: Polish
 
 - [x] T009 Docs and changesets: `packages/developer/cli/README.md`, `.changeset/cli-no-internal-residue.md`, `.changeset/mcp-exec-secrets-checkout.md` — covers: SC-004, AC-002, AC-006 — route: steward-docs — deps: T008
-- [x] T010 Run the `@stackra/cli` and `@stackra/mcp` tests, typecheck, oxlint and oxfmt for both packages — covers: SC-001, SC-002, SC-003, SC-004, AC-001, AC-002, AC-003, AC-004, AC-005, AC-006 — route: verify-fix — deps: T009
+- [x] T010 Run the tests, typecheck, oxlint and oxfmt of `packages/developer/cli` and `packages/developer/mcp` — covers: SC-001, SC-002, SC-003, SC-004, AC-001, AC-002, AC-003, AC-004, AC-005, AC-006 — route: verify-fix — deps: T009
