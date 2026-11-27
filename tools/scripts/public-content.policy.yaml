@@ -1,4 +1,12 @@
-# What guard-public-content.mjs does not read, each entry with why and the issue that removes it. Keep it short.
+# The public-content policy of this repository, read by guard-public-content.mjs (STA-2911): what the guard does not
+# read. An invalid entry stops the guard (exit 2), so a typo never turns it off. Keep it short.
+#
+# No denied term and no hash of one goes here: a hash of a short name is recovered by hashing guesses, so it would
+# publish the name. The denied terms are in a private policy outside this repository (`deny` entries, from
+# `node tools/scripts/guard-public-content.mjs --hash <term>`), which the guard reads from `--private-policy <file>` or
+# the file PUBLIC_CONTENT_PRIVATE_POLICY_FILE names; the public policy refuses a `deny` key.
+#
+# allow: what the guard does not read, each with why and the issue that removes it:
 # - path: a repository path (`dir/**` or exact): the whole file, unread.
 # - path + lineSha256: one line of that exact file, by the SHA-256 of its text (`--hash-line <path>:<n>` prints
 #   it); the guard reports the entry once the line is gone.
@@ -92,5 +100,17 @@ allow:
     issue: "STA-2905"
   - path: ".agents/specs/sta-2844-one-environment-reader/spec.md"
     lineSha256: "94c7e2f4b8b7bb2e9bb7fc97e4839a5b1a9682de695e9f479a3f9b51aa292c53"
+    reason: "A spec approval line that names the approver; only the approver rewrites it, with the role only."
+    issue: "STA-2905"
+  - path: ".agents/specs/sta-2664-dev-infra-compose/spec.md"
+    lineSha256: "255f98c0ea1b59492fbf35419e0ed430e38e6fc5dbbf01eba1ec4535ccda23a2"
+    reason: "A spec approval line that names the approver; only the approver rewrites it, with the role only."
+    issue: "STA-2905"
+  - path: ".agents/specs/sta-2876-scrub-internal-content/spec.md"
+    lineSha256: "255f98c0ea1b59492fbf35419e0ed430e38e6fc5dbbf01eba1ec4535ccda23a2"
+    reason: "A spec approval line that names the approver; only the approver rewrites it, with the role only."
+    issue: "STA-2905"
+  - path: ".agents/specs/sta-2911-public-content-policy/spec.md"
+    lineSha256: "255f98c0ea1b59492fbf35419e0ed430e38e6fc5dbbf01eba1ec4535ccda23a2"
     reason: "A spec approval line that names the approver; only the approver rewrites it, with the role only."
     issue: "STA-2905"

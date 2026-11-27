@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for the ci/build/turbo scope only
+      id-token: write # ADR 0525: GitHub OIDC token, exchanged with Google Cloud for ci/build/turbo (and one ci/build name)
     steps:
       # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
       - name: Checkout
@@ -104,6 +104,25 @@ jobs:
         uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
         with:
           scope: ci/build/turbo
+
+      # STA-2911: the public-content guard's denied terms (hashed `deny` entries) are a private policy, never a public
+      # file. Exports only PUBLIC_CONTENT_PRIVATE_POLICY from the sops scope ci/build and writes it where `pnpm validate`
+      # reads it (PUBLIC_CONTENT_PRIVATE_POLICY_FILE). Off until the owner adds that name and sets the repository
+      # variable PUBLIC_CONTENT_PRIVATE_POLICY to `sops`; until then the guard checks home folders and says the denied
+      # terms were not checked. Skipped on fork pull requests (no OIDC token there).
+      - name: Public-content private policy (sops)
+        if: ${{ vars.PUBLIC_CONTENT_PRIVATE_POLICY == 'sops' && !github.event.pull_request.head.repo.fork }}
+        uses: ./.github/actions/secrets-decrypt # zizmor: ignore[self-repository]
+        with:
+          scope: ci/build
+          names: PUBLIC_CONTENT_PRIVATE_POLICY
+
+      - name: Public-content private policy file
+        if: ${{ vars.PUBLIC_CONTENT_PRIVATE_POLICY == 'sops' && !github.event.pull_request.head.repo.fork }}
+        run: |
+          umask 077
+          printf '%s\n' "$PUBLIC_CONTENT_PRIVATE_POLICY" > "$RUNNER_TEMP/public-content.private.yaml"
+          echo "PUBLIC_CONTENT_PRIVATE_POLICY_FILE=$RUNNER_TEMP/public-content.private.yaml" >> "$GITHUB_ENV"
 
       # Every member but the two that alias `uniwind` to Uniwind Pro, whose postinstall downloads the licensed build
       # against a monthly CI quota; the Mobile apps job below covers those two. Lint, typecheck and build drop them too.

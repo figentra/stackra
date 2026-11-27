@@ -56,8 +56,9 @@ icon: "package-check"
     1. Trivy scans the lockfile; a critical vulnerability with a released fix stops the run ([0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)).
     2. It installs and builds what `build-args` selects, packs every package with `"private"` not true and
        reads each tarball with `tools/scripts/guard-public-content.mjs --pack` (the `pack-check` input): a tarball
-       that names an internal product, person, host, cloud account or home folder stops the run before anything is
-       published (STA-2876).
+       with a personal home folder stops the run before anything is published (STA-2876). Its exemptions are the
+       `allow` list of `tools/scripts/public-content.policy.yaml`; the denied names are a private policy that the
+       Quality Gate reads for the sources and this step does not read yet (STA-2911, STA-2923).
     3. For each package with `"private": false` whose version is not on the registry yet, it asks GitHub
        for an ID token with audience `npm:npm.stackra.figentra.com`, exchanges it at
        `/-/npm/v1/oidc/token/exchange/package/<name>` for a publish token bound to that one name
@@ -123,7 +124,7 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 | -------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Version pull request not opened  | Nothing released           | Check the App secrets and the host setting for pull requests from workflows, then push any commit to `main` or re-run                                                                                                                                                                                          |
 | Trivy                            | Nothing released           | Update the vulnerable dependency on `main`; the next run retries                                                                                                                                                                                                                                               |
-| Tarball check                    | Nothing released           | The log names `<tarball>!<file>:<line>` and what it found: use a neutral example (acme, example.com, `/Users/me`) on `main` and release again; an exemption goes in `tools/scripts/public-content.allow.yaml` with its issue                                                                                   |
+| Tarball check                    | Nothing released           | The log names `<tarball>!<file>:<line>` and what it found: use a neutral example (acme, example.com, `/Users/me`) on `main` and release again; an exemption goes in the `allow` list of `tools/scripts/public-content.policy.yaml` with its reason and issue                                                   |
 | OIDC exchange answers 401 or 403 | Nothing for that package   | The publisher row does not match: check the run is `release.yml` on `refs/heads/main` in the `release` environment                                                                                                                                                                                             |
 | Publish refused (400 or 422)     | Earlier packages published | Read the registry's message (decision 7 above), fix on `main`, release again; published versions stay                                                                                                                                                                                                          |
 | Run stopped half way             | Some packages published    | Re-run: versions already on the registry are skipped                                                                                                                                                                                                                                                           |
@@ -143,17 +144,17 @@ Re-run only the failed jobs of the same run unless a row says otherwise.
 
 ## Checks that back this page
 
-| Rule                                          | Check                                          | State                        |
-| --------------------------------------------- | ---------------------------------------------- | ---------------------------- |
-| Changeset per changed member                  | `pnpm changeset:status`                        | Script live; not in `verify` |
-| No local `changeset version`                  | `guard-bash`                                   | Live                         |
-| Conventional commits and generated changelogs | commitlint, changesets                         | Live                         |
-| Publish only from the release workflow        | registry publisher rows and OIDC claim match   | Live                         |
-| Publish checks, signatures, provenance        | `workers/registry`                             | Live                         |
-| `id-token: write` scope of the workflows      | `zizmor` in the Quality Gate                   | Live                         |
-| No internal content in sources or tarballs    | `guard-public-content.mjs` (validate, release) | Live                         |
-| Packed-tarball smoke test                     | release job                                    | Not built                    |
-| Tag ruleset                                   | owner setting                                  | Not checked                  |
+| Rule                                          | Check                                                      | State                               |
+| --------------------------------------------- | ---------------------------------------------------------- | ----------------------------------- |
+| Changeset per changed member                  | `pnpm changeset:status`                                    | Script live; not in `verify`        |
+| No local `changeset version`                  | `guard-bash`                                               | Live                                |
+| Conventional commits and generated changelogs | commitlint, changesets                                     | Live                                |
+| Publish only from the release workflow        | registry publisher rows and OIDC claim match               | Live                                |
+| Publish checks, signatures, provenance        | `workers/registry`                                         | Live                                |
+| `id-token: write` scope of the workflows      | `zizmor` in the Quality Gate                               | Live                                |
+| No internal content in sources or tarballs    | `guard-public-content.mjs` (pre-commit, validate, release) | Live; names need the private policy |
+| Packed-tarball smoke test                     | release job                                                | Not built                           |
+| Tag ruleset                                   | owner setting                                              | Not checked                         |
 
 See also [Get access and install](/customers/install) (the consumer side), [Mobile release](/runbooks/mobile-release),
 [Deploys](/runbooks/deploys) and [Commits and releases](/guides/workflow).

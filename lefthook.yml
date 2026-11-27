@@ -42,6 +42,15 @@ pre-commit:
         else
           echo "gitleaks not installed (mise install); CI still scans"
         fi
+    - name: public-content
+      # STA-2911: no internal product, person, host, cloud account id or home folder in a staged file
+      # (tools/scripts/public-content.policy.yaml); secret-shaped strings stay gitleaks' job
+      run: |
+        if command -v node >/dev/null 2>&1 && [ -d node_modules/yaml ]; then
+          node tools/scripts/guard-public-content.mjs --files {staged_files}
+        else
+          echo "public-content skipped: node or the workspace install is missing; validate and CI check"
+        fi
     - name: shfmt
       glob: "*.sh"
       exclude:
