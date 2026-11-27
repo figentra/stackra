@@ -3,11 +3,19 @@
  * Purpose: unit tests of `DbMigrateCommand` on the console: it runs the member's runner with the environment, lists
  *          what it applied (the `--json` data), passes `--release` through, else `STACKRA_RELEASE`, else the checkout's
  *          commit (the default deploy path names its release), says so when nothing is pending, targets dev by default
- *          and refuses an unknown environment with exit 2 before the runner loads.
- * Boundary: test only; the runner is a fake, so no database is touched.
+ *          and refuses an unknown environment with exit 2 before the runner loads; in a real git checkout it names
+ *          that checkout's commit.
+ * Boundary: test only; the runner is a fake, so no database is touched. The real checkout is a temporary repository
+ *           with one commit, read by the console's own process runner.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 2 as amended); ADR 0506; STA-1966.
  */
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { NodeProcessRunnerDriver } from "@stackra/console/node";
 import { MemoryProcessRunnerDriver, runCommandForTest } from "@stackra/console/testing";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -87,6 +95,38 @@ describe("DbMigrateCommand", () => {
       environment: "production",
       release: HEAD,
     });
+  });
+
+  it("names the commit of a real git checkout it runs in (STA-1406)", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "stackra-release-"));
+    try {
+      const git = (...args: string[]) =>
+        execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+      git("init", "--quiet");
+      git(
+        "-c",
+        "user.name=test",
+        "-c",
+        "user.email=test@example.com",
+        "commit",
+        "--quiet",
+        "--allow-empty",
+        "-m",
+        "v",
+      );
+      migrate.mockResolvedValue({ applied: [] });
+      await runCommandForTest([DbMigrateCommand], ["db:migrate", "--env", "production"], {
+        cwd,
+        process: new NodeProcessRunnerDriver(),
+      });
+      expect(migrate).toHaveBeenCalledWith({
+        cwd,
+        environment: "production",
+        release: git("rev-parse", "HEAD").trim(),
+      });
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 
   it("prefers --release, then STACKRA_RELEASE, over the checkout's commit (STA-1406)", async () => {

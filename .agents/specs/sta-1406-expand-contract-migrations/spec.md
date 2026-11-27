@@ -97,7 +97,8 @@ through_version, finished_at)` table of finished release runs. A forward-only ru
   IF a forward-only run whose pending files hold a contract step names no release on a database with an applied file
   THEN THE runner SHALL refuse it before any change, naming `--release` and `STACKRA_RELEASE` and how to set them; a
   run of plain additive files naming no release SHALL apply them as before. `stackra db migrate` SHALL name a release
-  by default: `--release`, else `STACKRA_RELEASE`, else the commit of the member's checkout. IF a
+  by default: `--release`, else `STACKRA_RELEASE`, else the commit of the member's checkout, and the member console's
+  `db:migrate` SHALL name it through the same chain. IF a
   forward-only run on a database with an applied file would apply a contract step and the migration it waits for
   together THEN THE runner SHALL refuse it before any change, naming both files. WHILE the run of a release other than
   this run's that finished last (by `finished_at`) does not hold the named migration (`through_version` below its

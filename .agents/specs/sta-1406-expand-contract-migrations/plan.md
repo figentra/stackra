@@ -172,12 +172,15 @@ packages/data/database/
   src/node/__tests__/index.test.ts
   src/node/services/database-runner.service.ts
   src/testing/constants/platform-tables.constant.ts
+packages/developer/console/
+  src/core/functions/migration-release.function.ts
+  src/core/functions/__tests__/migration-release.function.test.ts
+  src/core/index.ts
+  README.md
 packages/developer/cli/
   src/node/commands/db-migrate.command.ts
   src/node/commands/__tests__/db-migrate.command.test.ts
   src/node/types/database-runner.type.ts
-  src/node/functions/migration-release.function.ts
-  src/node/functions/__tests__/migration-release.function.test.ts
 packages/developer/gen/src/core/constants/kind-files.constant.ts
 packages/developer/gen/src/node/constants/kind-bases.constant.ts
 packages/developer/coding-standard/src/core/constants/kind-bases.constant.ts

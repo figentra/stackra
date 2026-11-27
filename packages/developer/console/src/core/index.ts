@@ -25,6 +25,7 @@ export { UsageError } from "#core/errors/usage.error";
 export { createConsole } from "#core/functions/create-console.function";
 export { displayWidth } from "#core/functions/display-width.function";
 export { isolateBidi } from "#core/functions/isolate-bidi.function";
+export { migrationRelease } from "#core/functions/migration-release.function";
 export { readCommand } from "#core/functions/read-command.function";
 export { themeFromBrandTokens } from "#core/functions/theme-from-brand-tokens.function";
 export { toolsOf } from "#core/functions/tools-of.function";

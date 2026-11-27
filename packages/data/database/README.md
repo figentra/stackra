@@ -341,8 +341,8 @@ checksum, applied_at, release_id)` records each applied file's SHA-256 and the r
   goes back to the last applied file, clean, so the next run starts that file again. Only a crash mid-file leaves the
   version dirty.
 - Outside dev, preview and test, a run sets `stackra.migrate_from_version` to the version it started from and
-  `stackra.migrate_release` to its release (`--release`, else `STACKRA_RELEASE`, else, for `stackra db migrate`, the
-  checkout's commit: letters, digits and `. _ + / -`), which the release gate of every contract step reads (see
+  `stackra.migrate_release` to its release (`--release`, else `STACKRA_RELEASE`, else, for `stackra db migrate` and the
+  member console's `db:migrate` (one chain, @stackra/console's `migrationRelease`), the checkout's commit: letters, digits and `. _ + / -`), which the release gate of every contract step reads (see
   "Dropping and renaming"). There a run whose pending files hold a contract step must name its release once the
   database has an applied file, and is refused before any change otherwise, with a message naming `--release` and
   `STACKRA_RELEASE`; plain additive files apply with no release named, as before. There a run is also refused before
