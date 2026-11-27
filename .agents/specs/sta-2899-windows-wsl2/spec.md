@@ -69,8 +69,8 @@ which systems Stackra supports. Audit item 24.4 of the 26 Nov production-readine
   `.cmd` shim starts by its bare name with its arguments intact.
 - **AC-004**: THE `runProcess` SHALL hand the tool exactly one `PATH` key, with every `node_modules/.bin` from its
   directory up in front of the inherited path, whatever spelling (`Path`) the inherited environment uses.
-- **AC-005**: THE `clean` script of a package or service member `stackra new` writes, and of the starter's members,
-  SHALL remove its folders under sh and cmd.exe alike, without `rm`, and a missing folder SHALL be no error.
+- **AC-005**: WHEN `stackra new` writes a package or service member, THE member's `clean` script SHALL remove its
+  folders under sh and cmd.exe alike, without `rm`, and treat a missing folder as no error.
 - **AC-006**: THE `stackra-console create` install and the scaffold's format step SHALL start the package manager
   through the same cross-spawn path (the process port, or cross-spawn directly).
 - **AC-007**: THE CI SHALL run the Windows cases on a hosted windows-latest runner in a job that is not required and that

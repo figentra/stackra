@@ -8,4 +8,3 @@
 - [x] T004 the portable clean script of the members `stackra new` writes, in `packages/developer/cli/src/node/functions/clean-script.function.ts`, `packages/developer/cli/src/node/functions/package-template.function.ts`, `packages/developer/cli/src/node/functions/service-template.function.ts`, `packages/developer/cli/src/node/functions/__tests__/clean-script.function.test.ts` — covers: AC-005, P-005 — route: spec-task
 - [x] T005 the Windows smoke job, in `.github/workflows/ci.yml` — covers: AC-007 — route: spec-task — deps: T001, T002, T003, T004
 - [x] T006 the supported-systems docs and the changeset, in `apps/docs/src/docs/quickstart.mdx`, `apps/docs/src/docs/customers/install.mdx`, `packages/developer/cli/README.md`, `.changeset/windows-wsl2-process-runners.md` — covers: AC-008 — route: spec-task
-- [x] T007 the starter's member clean scripts and its README (stackra-template repository, same branch name) — covers: AC-005, AC-008 — route: spec-task — deps: T004
