@@ -586,6 +586,59 @@ test("checkRunwayFiles: an unserved requirement names the service file and its r
   );
 });
 
+test("checkRunwayFiles: a memory action store names the service file; the manifest beside it reaches checkActionStores (STA-2798)", () => {
+  const files: Record<string, string> = {
+    "runway.yaml": "version: 3\nproject: acme\n",
+    "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
+  };
+  const manifest = { drivers: [{ key: "actions.IdempotencyStore" }] };
+  const asked: unknown[] = [];
+  const { runway } = stubRunway();
+  const out = checkRunwayFiles({
+    files: Object.keys(files),
+    read: (p) => files[p] ?? "",
+    readManifest: (p) => {
+      asked.push(p);
+      return p === "services/commerce/stackra.manifest.json" ? manifest : undefined;
+    },
+    runway: {
+      ...runway,
+      checkActionStores: (root, service, given) =>
+        given === manifest && (root as { readonly project?: string }).project === "acme" && service
+          ? [
+              {
+                path: "environments.production.config.actions.stores.idempotency",
+                message: "production keeps it in memory",
+              },
+            ]
+          : [],
+    },
+    services: ["commerce"],
+  });
+  assert.deepEqual(asked, ["services/commerce/stackra.manifest.json"]);
+  assert.deepEqual(out, [
+    "services/commerce/runway.yaml: environments.production.config.actions.stores.idempotency: production keeps it in memory",
+  ]);
+});
+
+test("checkRunwayFiles: a runway build without checkActionStores still checks the rest", () => {
+  const files: Record<string, string> = {
+    "runway.yaml": "version: 3\nproject: acme\n",
+    "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
+  };
+  const { runway } = stubRunway();
+  assert.deepEqual(
+    checkRunwayFiles({
+      files: Object.keys(files),
+      read: (p) => files[p] ?? "",
+      readManifest: () => ({ drivers: [{ key: "actions.IdempotencyStore" }] }),
+      runway,
+      services: ["commerce"],
+    }),
+    [],
+  );
+});
+
 test("checkRunwayFiles: schema issues name file and path; placement issues name the code", () => {
   const files: Record<string, string> = {
     "runway.yaml": "version: 3\nproject: acme\n",

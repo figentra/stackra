@@ -37,6 +37,7 @@ peers, each loaded only by the entry that needs it.
 | `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                    |
 | `registerContext`                            | `./react`   | a client package names the component of its context key                               |
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
+| `providePlatformEnvironment`                 | `./server`  | the generated Encore `environment.ts` hands it Encore's report; it settles `STACKRA_ENVIRONMENT` through the one reader (STA-2844) |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
 | `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) and `drainTimeoutSeconds` (20) |
@@ -72,7 +73,7 @@ peers, each loaded only by the entry that needs it.
 
 ```ts
 // services/commerce/.stackra/entry/server.ts
-export const app = await createApp(CommerceModule, { wiring, boot });
+export const app = await createApp(CommerceModule, { wiring, boot, runway: runwayConfig });
 
 // apps/web/.stackra/entry/worker.ts
 export const app = await createApp(wiring, {
@@ -109,6 +110,13 @@ reader (`readEnvironment` of `@stackra/config`), given what the platform reporte
 any other generated file loads the app, so a deployed Encore service (which cannot set the variable) runs as
 `preview`, `staging` or `production`, never `dev`; `dev` or `test` declared on a deployment, a misspelt name, or a
 self-hosted image that reports nothing fails the process at boot (STA-2844).
+
+Runway's `config` values are the last layer before the secrets (ADR 0296). Gen writes them per environment into the
+service's `#stackra/runway-config`, the server, seed and console entries pass them as `runway`, and `bootApp` applies
+the values of the running environment, read through the same reader (`readEnvironment`: `dev` when unset, a misspelt
+name fails boot), to each configuration by its key. A runway value for a runtime-only field (one mapped to
+`STACKRA_ENVIRONMENT`, such as `actions.stores.environment`) fails boot, so runway can choose the action stores but
+never the environment that judges them (STA-2798).
 
 ## Wiring sections
 
