@@ -209,7 +209,8 @@ beforeAll(async () => {
     false,
   );
   // The main database's extensions run, as awsDatabases hands it back.
-  const extensionsRun = new pulumi.CustomResource(
+  class ExtensionsRun extends pulumi.CustomResource {}
+  const extensionsRun = new ExtensionsRun(
     "pulumi-nodejs:dynamic:Resource",
     "academorix-production-main-db-extensions",
     {},
