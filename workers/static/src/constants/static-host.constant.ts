@@ -1,14 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: the public hostname of Stackra's hosted static files, the one host every schema `$id` must name.
- * Boundary: a constant only; wrangler.jsonc carries the same hostname as the Worker's custom domain.
+ * Purpose: the main public hostname of the shared static-files Worker, `static.figentra.com` (ADR 0284 amendment,
+ *          STA-2892): what a new schema's `$id` names and what `/schemas/index.json` reports as `host`.
+ * Boundary: a constant only; runway.yaml lists it first in the member's `customDomains`.
  * Runtime: node
- * Governing contract: ADR 0284 (hosted static files), ADR 0175 (domain names).
+ * Governing contract: ADR 0284 (hosted static files, decisions 2 and 3 as amended), ADR 0175 (domain names).
  */
 
 /**
- * Hostname of the static-files Worker. Each kind of file has its own first path segment under it (`/schemas/…`). A
- * schema whose `$id` names another host is a build error, because the published URL would not match the identifier
- * editors resolve. Keep in step with `routes` in wrangler.jsonc.
+ * Main hostname of the static-files Worker. Each kind of file has its own first path segment under it (`/schemas/…`).
+ * The Worker also answers on every host of `STATIC_HOSTS`. Keep in step with `customDomains` in runway.yaml.
  */
-export const STATIC_HOST = "static.stackra.figentra.com";
+export const STATIC_HOST = "static.figentra.com";

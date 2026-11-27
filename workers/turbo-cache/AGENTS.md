@@ -15,7 +15,8 @@ entry is `src/main.ts`, built by tsdown into `dist/main.mjs`, which wrangler dep
 
 - Never run `wrangler deploy`, `wrangler secret …` or anything that changes the Cloudflare account. Only
   `.github/workflows/deploy-turbo-cache.yml` deploys (main pushes and `workflow_dispatch`, never a pull request).
-- The host `turbo.stackra.figentra.com` is the `routes` Custom Domain in `wrangler.jsonc`; keep `workers_dev` false.
+- The hosts `turbo.figentra.com` (main) and `turbo.stackra.figentra.com` (kept, permanently) are the Custom Domains in
+  runway.yaml (`targets.cloudflare-workers.members.turbo-cache`); keep `workers_dev` false.
 - The deploy job runs in the `static` environment and decrypts only `ci/deploy` and `ci/build/turbo`; never give it a
   scope that pull requests can read.
 - Fail closed: a missing token or setting answers 503 before any bucket call. Never add a default token or skip auth.

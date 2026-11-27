@@ -9,9 +9,15 @@ import type { RetiredKey } from "#src/interfaces/retired-key.interface";
 
 /** The registry's settings. */
 export interface RegistrySettings {
-  /** The public host: tarball URLs, the realm and the default OIDC audience `npm:<host>`. */
+  /**
+   * The public host an answer names in tarball and attestation URLs, the realm and the browse pages: REGISTRY_HOST as
+   * read, and per request the served host the request came in on (`answerHost`), so metadata fetched on an alias host
+   * points back at that host.
+   */
   readonly host: string;
-  /** The OIDC audiences a publish token exchange accepts; `npm:<host>` unless REGISTRY_OIDC_AUDIENCES lists more. */
+  /** Every host the Worker answers on, REGISTRY_HOST (the main host) first, then REGISTRY_ALIAS_HOSTS. */
+  readonly hosts: readonly string[];
+  /** The OIDC audiences a publish token exchange accepts; `npm:<host>` for each of `hosts` unless set. */
   readonly oidcAudiences: readonly string[];
   /** While true, every request but a read answers 503 (REGISTRY_READ_ONLY, a data move). */
   readonly readOnly: boolean;

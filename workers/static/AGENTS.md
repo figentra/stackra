@@ -1,14 +1,15 @@
 # AGENTS — @figentra/worker-static
 
-Stackra's hosted static files: a Cloudflare static-assets Worker (`stackra-static`) at `static.stackra.figentra.com`
-(ADR 0284). Member at `workers/static` (`tier:app`, the tier `workers/*` reuses). Build code lives in `src/`; the
+Stackra's hosted static files: a Cloudflare static-assets Worker (`stackra-static`) at `static.figentra.com`, also
+answering on `static.stackra.figentra.com` (ADR 0284, STA-2892). Member at `workers/static` (`tier:app`, the tier `workers/*` reuses). Build code lives in `src/`; the
 entry is `src/main.ts`, which writes the assets to `dist/site`. Read `README.md` for the URL layout and deploy flow.
 
 ## Rules that fail the build
 
 - Versions are `catalog:<name>` or `workspace:*` only; `wrangler` comes from `catalog:deploy`.
 - `tsconfig.json` extends one `@stackra/typescript-config` preset and nothing else.
-- Every schema `$id` is `https://static.stackra.figentra.com/schemas/<name>.json`, and `<name>` may not start with
+- Every schema `$id` is `https://<host>/schemas/<name>.json` with `<host>` one of `STATIC_HOSTS`: a new schema names
+  `static.figentra.com`, an existing one keeps the host it names. `<name>` may not start with
   `latest`, `v<n>`, an `x.y.z` version or `index.json` (`parseSchema` throws).
 - A `schemas@*` tag is exactly `schemas@x.y.z` (`readSchemaReleases` throws on anything else).
 

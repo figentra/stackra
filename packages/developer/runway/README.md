@@ -89,7 +89,7 @@ one, where `fields` are the `env` rows that the manifests the files configure ma
 is the first such field: it comes from the platform or the runtime, never from a runway file (STA-2844).
 
 `providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
-and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);
+and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` (the registry's second host; its main host is `npm.figentra.com`) and `@stackra` (ADR 0453);
 the release workflow's `registry` input carries the same value to `runway-npm.yml`, and no member's `publishConfig`
 names a registry.
 

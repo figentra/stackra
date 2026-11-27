@@ -11,7 +11,7 @@ import type { DoctorNeed } from "#node/doctor/types/doctor-need.type";
 /** Need to the hosts it depends on. */
 export const DOCTOR_HOSTS: Readonly<Partial<Record<DoctorNeed | "base", readonly string[]>>> = {
   base: [
-    "npm.stackra.figentra.com",
+    "npm.figentra.com",
     "registry.npmjs.org",
     "github.com",
     "api.github.com",

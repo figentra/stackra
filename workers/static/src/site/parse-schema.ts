@@ -3,9 +3,9 @@
  * Purpose: validate one schema file and derive the name it is published under from its `$id`.
  * Boundary: pure; reads no file and throws on the first problem, naming the file.
  * Runtime: node
- * Governing contract: ADR 0284 (hosted static files, decision 2).
+ * Governing contract: ADR 0284 (hosted static files, decisions 2 and 3 as amended).
  */
-import { SCHEMAS_PATH, STATIC_HOST } from "#src/constants";
+import { SCHEMAS_PATH, STATIC_HOSTS } from "#src/constants";
 import type { ParsedSchema, SchemaSource } from "#src/interfaces";
 
 /**
@@ -17,8 +17,9 @@ const RESERVED_SEGMENT = /^(?:latest|v\d+|\d+\.\d+\.\d+|index\.json)$/;
 /**
  * Parse a schema file and return its name, title and document.
  *
- * The `$id` is the single source of the URL: it must be `https://static.stackra.figentra.com/schemas/<name>.json`
- * with no query or fragment, so the address an editor resolves is exactly the address the Worker serves.
+ * The `$id` is the single source of the URL: it must be `https://<host>/schemas/<name>.json` with no query or
+ * fragment, where `<host>` is one of `STATIC_HOSTS` (`static.figentra.com` for a new schema; an existing one keeps
+ * `static.stackra.figentra.com`), so the address an editor resolves is exactly an address the Worker serves.
  *
  * @param source - the file as read from the working tree or a release tag.
  * @returns the validated schema.
@@ -40,10 +41,12 @@ export function parseSchema(source: SchemaSource): ParsedSchema {
   const id = record.$id;
   if (typeof id !== "string") throw new Error(`${source.file}: no string "$id"`);
   const url = URL.canParse(id) ? new URL(id) : null;
-  const expected = `https://${STATIC_HOST}${SCHEMAS_PATH}/<name>.json`;
+  const expected = STATIC_HOSTS.map((host) => `https://${host}${SCHEMAS_PATH}/<name>.json`).join(
+    " or ",
+  );
   if (
     url?.protocol !== "https:" ||
-    url.host !== STATIC_HOST ||
+    !STATIC_HOSTS.includes(url.host) ||
     url.search ||
     url.hash ||
     !url.pathname.startsWith(`${SCHEMAS_PATH}/`) ||
@@ -55,5 +58,5 @@ export function parseSchema(source: SchemaSource): ParsedSchema {
   if (RESERVED_SEGMENT.test(first))
     throw new Error(`${source.file}: "$id" may not use the reserved segment "${first}"`);
   const title = typeof record.title === "string" ? record.title : url.pathname;
-  return { name, title, document: record };
+  return { name, host: url.host, title, document: record };
 }

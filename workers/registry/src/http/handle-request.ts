@@ -10,6 +10,7 @@ import { handleBrowsePackage } from "#src/browse/handle-browse-package";
 import { catalogueItem } from "#src/catalogue/catalogue-item";
 import { handleEntitlements } from "#src/catalogue/handle-entitlements";
 import { listCatalogue } from "#src/catalogue/list-catalogue";
+import { answerHost } from "#src/http/answer-host";
 import { failure } from "#src/http/failure";
 import { parsePath } from "#src/http/parse-path";
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
@@ -120,11 +121,13 @@ async function dispatch(request: Request, deps: RegistryDeps): Promise<Response>
  * The registry's answer to one request.
  *
  * @example
- * const response = await handleRequest(new Request("https://npm.stackra.figentra.com/-/ping"), deps);
+ * const response = await handleRequest(new Request("https://npm.figentra.com/-/ping"), deps);
  */
 export async function handleRequest(request: Request, deps: RegistryDeps): Promise<Response> {
   try {
-    const response = await dispatch(request, deps);
+    // Every URL an answer names is on the host the request came in on (STA-2892).
+    const settings = answerHost(deps.settings, new URL(request.url));
+    const response = await dispatch(request, { ...deps, settings });
     return request.method === "HEAD"
       ? new Response(null, { status: response.status, headers: response.headers })
       : response;

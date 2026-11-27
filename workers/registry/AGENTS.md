@@ -2,7 +2,8 @@
 
 # AGENTS — @figentra/worker-registry
 
-The Stackra npm registry, Cloudflare Worker `stackra-registry` at `npm.stackra.figentra.com` (ADR 0453). Member at
+The Stackra npm registry, Cloudflare Worker `stackra-registry` at `npm.figentra.com`, also answering on
+`npm.stackra.figentra.com` (ADR 0453, STA-2892). Member at
 `workers/registry` (`tier:app`). The entry is `src/main.ts`; tsdown bundles it to `dist/main.mjs`, which
 `wrangler.jsonc` deploys. Read `README.md` for the routes, rules and settings.
 
