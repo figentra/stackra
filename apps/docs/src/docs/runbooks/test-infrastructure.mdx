@@ -330,7 +330,7 @@ only, required reviewer the owner, and these environment variables (none is secr
 - `TESTBED_KEY_PAIR` (required) = the name of the EC2 key pair the boxes get, one that exists in the account in every
   enabled region and whose private key the operators hold (`aws ec2 describe-key-pairs` with `--key-names <name>`
   finds it in each region). The workflow refuses to apply without it and never falls back to the package default, so
-  an apply never swaps the boxes key. Change it together with the CLIs key file (`TESTBED_CLI_DEFAULTS.key`, or
+  an apply never swaps the boxes' key. Change it together with the CLI's key file (`TESTBED_CLI_DEFAULTS.key`, or
   `STACKRA_TESTBED_SSH_KEY` on each machine).
 - `TESTBED_SSH_CIDRS` (optional) = a port-22 allowlist as `x.x.x.x/32`, comma-separated, for `--ssh-direct` only.
   Leave it unset: the CLI reaches the boxes through SSM. A rule already applied stays until the owner revokes it.
