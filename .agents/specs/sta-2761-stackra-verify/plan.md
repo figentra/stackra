@@ -50,7 +50,7 @@ image's offline build (F1) and closes the judge code-execution gap (F2).
 - **P-001**: for any PR head with `VERIFY_ENFORCED` on, pr-merge passes condition 5 only when a passing `stackra/verify` run from the verify App is bound to that exact head SHA, after main's ci.yml steps ran in ci.yml's order — Validates: FR-001
 - **P-002**: for any store image whose `pnpm fetch` ran as root, the judge image's install with no network succeeds as the judge user, and no rebuild leaves `node_modules/.pnpm-store` in the tree — Validates: FR-002
 - **P-003**: every package under `packages/*/*/src/node/database/macros` is built in the judge image before main's gen runs — Validates: FR-003
-- **P-004**: for any way node is started in a judge (PATH, the image's node, a clean environment, a fork), the guard is the first code to run, and `--run`, a config-file or a snapshot option before the script never starts node — Validates: FR-004
+- **P-004**: for any way node is started in a judge (PATH, the image's node, a clean environment, a fork), the guard is the first code to run, and `--run`, a config-file or a snapshot option before the script never starts node, also behind an option the scan does not know (it fails closed) — Validates: FR-004
 - **P-005**: no text from the tested tree runs as code in a judge: a preload or loader that is not main's, `--env-file`, `--expose-internals`, an inline or stdin script (except where validate's mounted marker allows it) and, where code from strings is off, a compile with no file to check are each refused before they run — Validates: FR-005, FR-006
 - **P-006**: the gate script reads the PR facts with `/in/facts-reader.cjs` and never starts `node -e` — Validates: FR-007
 

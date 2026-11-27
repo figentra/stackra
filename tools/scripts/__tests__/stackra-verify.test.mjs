@@ -201,6 +201,7 @@ import {
   JUDGE_GUARD,
   JUDGE_INLINE,
   FACTS_READER_FILE,
+  NODE_FLAG_OPTIONS,
   NODE_REFUSED_EXIT,
   NODE_VALUED_OPTIONS,
   REBUILD_COMMAND,
@@ -2686,7 +2687,7 @@ test(
     assert.equal(run.status, 0, run.stdout);
     assert.deepEqual(
       MOBILE_STEPS.map((s) => s.id),
-      ["licence-policy", "mobile-apps"],
+      ["licence-policy", "mobile-apps", "mobile-test"],
     );
     // the full install, unfiltered: the mobile-only packages and the mobile-scoped exceptions are checked here
     assert.deepEqual(
@@ -2700,8 +2701,13 @@ test(
     const red = runGate(fixture, "licence-check *", mobileScript);
     assert.equal(red.status, 1);
     assert.equal(red.sections["licence-policy"].result, "FAIL");
-    // the mobile apps' step still runs and reports
+    // the mobile apps' steps still run and report
     assert.equal(red.sections["mobile-apps"].result, "pass");
+    assert.equal(red.sections["mobile-test"].result, "pass");
+    assert.deepEqual(
+      run.calls("mobile-test").map((c) => c.call),
+      ["pnpm exec turbo run test --filter=@figentra/mobile"],
+    );
     assert.deepEqual(
       run.calls("mobile-apps").map((c) => c.call),
       [
@@ -4227,7 +4233,11 @@ test("runJob mobile: the full install with the licensed build; a licence failure
   assert.equal(calls.runs[2].at(-1), "bash /in/prepare.sh");
   assert.deepEqual(
     calls.runs.slice(3).map((run) => run.at(-1)),
-    ["bash /in/mobile.sh --step licence-policy", "bash /in/mobile.sh --step mobile-apps"],
+    [
+      "bash /in/mobile.sh --step licence-policy",
+      "bash /in/mobile.sh --step mobile-apps",
+      "bash /in/mobile.sh --step mobile-test",
+    ],
   );
   const licence = Object.assign(new Error("could not build the licensed image"), { licence: true });
   const failed = await runJob({ ...JOB, kind: "mobile" }, fakeDeps({ storeError: licence }).deps);
@@ -6787,6 +6797,51 @@ test("#1118 proof 6: the guard is node's first preload; a PR preload, inline scr
   }
 });
 
+test("#1118 CTO review: an unknown node option before --run is refused, so the scan fails closed (FR-004, R-2)", () => {
+  const g = guardFixture();
+  try {
+    const main = join(g.tree, "main.mjs");
+    // the bypass: node takes the next word as --experimental-sea-config's value, so --run would be node's own option
+    assert.ok(!NODE_VALUED_OPTIONS.includes("--experimental-sea-config"));
+    assert.ok(!NODE_FLAG_OPTIONS.includes("--experimental-sea-config"));
+    for (const args of [
+      ["--experimental-sea-config", "sea.json", "--run", "x"],
+      ["--experimental_sea_config", "sea.json", "--run=x"],
+      ["--some-future-option", "value", "--snapshot-blob", "x.blob", main],
+      ["--some-future-flag", "--run", "x"],
+      ["--some-future-flag", "-x", "y", "--experimental-config-file", "node.config.json", main],
+      // an early option is never taken as a value, even of a known valued option
+      ["--title", "--run", "x"],
+      // fail closed: the word after an unknown option may be its value, so it is never taken as the script
+      ["--some-future-flag", main, "--run", "x"],
+    ]) {
+      const r = g.guarded(args);
+      assert.equal(r.status, NODE_REFUSED_EXIT, args.join(" "));
+      assert.match(r.stderr, /stackra-verify: a judge never lets node run --/, args.join(" "));
+    }
+    // allowed: a known flag, a negation and an option with its value attached end at the script, whose own
+    // arguments may be anything; an unknown option followed by its value and the script also runs
+    for (const args of [
+      ["--disallow-code-generation-from-strings", main, "--run", "x"],
+      ["--no-warnings", main, "--run", "x"],
+      ["--title=t", main, "--run", "x"],
+      ["--report-uncaught-exception", main, "a", "--run", "x"],
+    ]) {
+      const r = g.guarded(args);
+      assert.equal(r.status, 0, `${args.join(" ")}: ${r.stderr}`);
+      assert.equal(r.stdout, "judge pkg\ntree helper\ntree main\n", args.join(" "));
+    }
+    // the known flags take no value in the node that runs the tests (node --help shows a value as `--name=...`)
+    const help = spawnSync(process.execPath, ["--help"], { encoding: "utf8" }).stdout;
+    for (const flag of NODE_FLAG_OPTIONS) {
+      assert.ok(!NODE_VALUED_OPTIONS.includes(flag), flag);
+      assert.doesNotMatch(help, new RegExp(`^\\s+(?:-\\w, )?${flag}=`, "m"), flag);
+    }
+  } finally {
+    rmSync(g.dir, { recursive: true, force: true });
+  }
+});
+
 test("#1118 proof 6: code with no file to check (anonymous vm, _compile, data: imports, Worker strings) runs only with eval on", () => {
   const g = guardFixture();
   try {
@@ -6902,6 +6957,7 @@ test("B: every gate step is a judge or a PR step, as ruled; judges never start f
     [
       ["licence-policy", true, undefined],
       ["mobile-apps", false, "base"],
+      ["mobile-test", false, "base"],
     ],
   );
 });

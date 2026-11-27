@@ -777,6 +777,15 @@ export const MOBILE_STEPS = Object.freeze([
     line: 350,
     run: "pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground --continue=dependencies-successful",
   },
+  // main's ci.yml runs the mobile app's unit tests in the mobile job (#1185); a PR step, like the one before it
+  {
+    id: "mobile-test",
+    from: "base",
+    job: "mobile",
+    ci: "Test the mobile app",
+    line: 357,
+    run: "pnpm exec turbo run test --filter=@figentra/mobile",
+  },
 ]);
 
 /**
@@ -2574,7 +2583,11 @@ export const IMAGE_NODE = "/usr/local/bin/node";
 
 /** The guarded node's exit when it refuses its arguments before starting node. */
 export const NODE_REFUSED_EXIT = 126;
-/** node's options that take their value as the next word (`--title x`), so that word is not the script. */
+/**
+ * node's options that take their value as the next word (`--title x`), so that word is not the script. Not a complete
+ * list: the guarded node treats an option it knows neither here nor in NODE_FLAG_OPTIONS as one that may take a value,
+ * and keeps scanning (fail closed, the CTO's review of 2026-11-27).
+ */
 export const NODE_VALUED_OPTIONS = Object.freeze([
   "-r",
   "--require",
@@ -2635,6 +2648,49 @@ export const NODE_VALUED_OPTIONS = Object.freeze([
   "--use-largepages",
   "--watch-kill-signal",
 ]);
+/**
+ * node's options known to take no value, so the next word is the script or another option. Any `--no-` option is one
+ * too (node negates only options that take no value). A name here must never take a value: one that did would let its
+ * value pass as the script and end the scan early (the test checks each against `node --help`).
+ */
+export const NODE_FLAG_OPTIONS = Object.freeze([
+  "-c",
+  "--check",
+  "-v",
+  "--version",
+  "-h",
+  "--help",
+  "--disallow-code-generation-from-strings",
+  "--enable-source-maps",
+  "--expose-gc",
+  "--experimental-vm-modules",
+  "--experimental-strip-types",
+  "--experimental-transform-types",
+  "--experimental-require-module",
+  "--experimental-detect-module",
+  "--experimental-wasm-modules",
+  "--experimental-import-meta-resolve",
+  "--experimental-test-coverage",
+  "--frozen-intrinsics",
+  "--abort-on-uncaught-exception",
+  "--pending-deprecation",
+  "--throw-deprecation",
+  "--trace-deprecation",
+  "--trace-warnings",
+  "--trace-uncaught",
+  "--preserve-symlinks",
+  "--preserve-symlinks-main",
+  "--zero-fill-buffers",
+  "--cpu-prof",
+  "--heap-prof",
+  "--permission",
+  "--test",
+  "--watch",
+  "--watch-preserve-output",
+  "--inspect",
+  "--inspect-brk",
+  "--inspect-wait",
+]);
 /** A sh case pattern for node option names (`--a-b` also as `--a_b`, as node reads it). */
 const optionPattern = (names) =>
   names.map((n) => (n.startsWith("--") ? `--${n.slice(2).replaceAll("-", "[-_]")}` : n)).join("|");
@@ -2658,7 +2714,11 @@ const NODE_EARLY = optionPattern([
  * `--require ./evil.js` there ran before the guard), and on the command line. The guard refuses every other preload,
  * inline and stdin script it is given. What node does before any preload runs (--run runs a package.json script;
  * the config files and snapshots load before preloads) is refused here, among the options before the script: the
- * first word that is not an option or the value of one of NODE_VALUED_OPTIONS.
+ * first word that is not an option or the value of one of NODE_VALUED_OPTIONS. The scan fails closed (FR-004, R-2,
+ * the CTO's review of 2026-11-27): an early option is refused even where it stands as a value, and after an option
+ * that is in neither NODE_VALUED_OPTIONS nor NODE_FLAG_OPTIONS (and is no `--no-` option and has no `=value`), the
+ * next word may be its value, so a word that is not an option is skipped there, never taken as the script
+ * (`--experimental-sea-config x --run y` is refused). The cost: `node --unknown-flag script --run` is refused too.
  */
 export const judgeNodeSource = (
   inDir = IN_DIR,
@@ -2677,15 +2737,23 @@ export const judgeNodeSource = (
     "export NODE_OPTIONS",
     "value=",
     'for arg in "$@"; do',
-    '  if [ -n "$value" ]; then value=; continue; fi',
+    // an early option is refused wherever it stands before the script, a value's place included
     '  case "$arg" in',
-    "    --) break ;;",
     `    ${NODE_EARLY}|${NODE_EARLY.split("|")
       .map((p) => `${p}=*`)
       .join("|")})`,
     `      echo "stackra-verify: a judge never lets node run $arg" >&2; exit ${NODE_REFUSED_EXIT} ;;`,
+    "  esac",
+    // a known option's value; after an unknown option a word that is not an option may be its value (fail closed)
+    '  case "$value" in',
+    "    1) value=; continue ;;",
+    '    maybe) value=; case "$arg" in -?*) ;; *) continue ;; esac ;;',
+    "  esac",
+    '  case "$arg" in',
+    "    --) break ;;",
     `    ${optionPattern(NODE_VALUED_OPTIONS)}) value=1 ;;`,
-    "    -?*) ;;",
+    `    ${optionPattern(NODE_FLAG_OPTIONS)}|--no[-_]*|-?*=*) ;;`,
+    "    -?*) value=maybe ;;",
     "    *) break ;;",
     "  esac",
     "done",

@@ -26,6 +26,9 @@ description: "Tasks for STA-2761: stackra/verify, main's gate run on our machine
 - [x] T008 Refuse code with no file to check where eval is off in `tools/scripts/stackra-verify.mjs` (`judgeGuard`) — covers: FR-006, AC-006 — route: tests — deps: T006
 - [x] T009 The inline marker mounted for validate only and the PR facts reader as a file in `tools/scripts/stackra-verify.mjs` (`runJob`, `stepScript`, `kindFiles`, `kindMounts`) — covers: FR-005, FR-007, AC-007, AC-008 — route: tests — deps: T007
 
+- [x] T013 Test first (`#1118 CTO review` test, the `--experimental-sea-config` bypass), then the guarded node's scan fails closed on an unknown option in `tools/scripts/stackra-verify.mjs` (`judgeNodeSource`, `NODE_FLAG_OPTIONS`) with `tools/scripts/__tests__/stackra-verify.test.mjs` — covers: FR-004, AC-009 — route: tests — deps: T006
+- [x] T014 Mirror main's new mobile job step (`mobile-test`, "Test the mobile app") in `tools/scripts/stackra-verify.mjs` (`MOBILE_STEPS`) with `tools/scripts/__tests__/stackra-verify.test.mjs` — covers: FR-001, AC-010 — route: tests — deps: T001
+
 ## Phase 4: Polish
 
 - [x] T010 Keep `tools/policy/licences.json` as JSON and the OSV canary lockfile as block YAML in `packages/developer/repo-checks/src/node/constants/must-stay-json.constant.ts` with `packages/developer/repo-checks/src/node/functions/__tests__/repository-checks.test.ts`, `tools/scripts/osv-canary.lock.yaml` and `.changeset/repo-checks-licence-policy-json.md` — covers: AC-001 — route: steward-docs

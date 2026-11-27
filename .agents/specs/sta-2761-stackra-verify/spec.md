@@ -138,7 +138,11 @@ compiled through `node:vm` without a file name. The judge runs main's code; the 
 - **FR-003**: THE judge image SHALL build every workspace package main's gen loads (`packages/*/*/src/node/database/macros`)
   with the judges.
 - **FR-004**: THE guarded node SHALL preload the guard as CommonJS first (head of NODE_OPTIONS and its command line),
-  and refuse `--run`, the config-file and snapshot options before starting node.
+  and refuse `--run`, the config-file and snapshot options before starting node. The scan of the options before the
+  script SHALL fail closed: after an option it does not know (not a known valued option, not a known flag, no `--no-`
+  negation, no `=value`), the next word that is not an option may be that option's value and SHALL never be taken as
+  the script, so an unknown option before `--run` is refused; an early option is refused even where it stands as a
+  value.
 - **FR-005**: THE guard SHALL refuse, before any other code runs, a preload or loader that is not an absolute file
   outside the tree or main's in it, `--env-file`, `--expose-internals`, and, unless the step allows inline scripts or
   code from strings, an inline script or a script from stdin.
@@ -157,6 +161,8 @@ compiled through `node:vm` without a file name. The judge runs main's code; the 
 - **AC-006**: IF code from strings is off and main's code compiles text with no file THEN THE guard SHALL refuse it.
 - **AC-007**: WHEN validate runs main's self-tests in a judge THE guard SHALL let their `node -e` run, with code from strings still off.
 - **AC-008**: THE gate script SHALL read the PR facts through `/in/facts-reader.cjs`.
+- **AC-009**: IF an option the guarded node does not know stands before `--run`, a config-file or a snapshot option THEN THE guarded node SHALL refuse to start node, as for `node --experimental-sea-config sea.json --run x`.
+- **AC-010**: THE mobile gate SHALL run every step of the mobile job of main's ci.yml in order, its "Test the mobile app" step included.
 
 ## Success Criteria _(mandatory)_
 
@@ -180,8 +186,11 @@ compiled through `node:vm` without a file name. The judge runs main's code; the 
 - **R-1**: A main tool that legitimately preloads a bare specifier or compiles anonymous code in a judge would now be
   refused; the box-1 proof rerun runs every judge on a real PR to find one.
 - **R-2**: The guarded node's scan for pre-preload options knows node's options that take a separate value
-  (`NODE_VALUED_OPTIONS`); an unknown one followed by `--run` ends the scan early. The guard still refuses every
-  preload, inline and stdin script node parsed.
+  (`NODE_VALUED_OPTIONS`) and some that take none (`NODE_FLAG_OPTIONS`). An option in neither no longer ends the scan
+  early: the word after it is treated as its possible value (FR-004, AC-009; the CTO's review of 2026-11-27). The cost
+  is a false refusal of `node --unknown-flag script --run …`, which no gate tool starts; a flag added to
+  `NODE_FLAG_OPTIONS` is checked against `node --help` so a valued option is never listed as a flag. The guard still
+  refuses every preload, inline and stdin script node parsed.
 
 ## Out of scope
 
@@ -198,7 +207,9 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-27 (the CTO's review of #1118, held): FR-004 and R-2 now fail closed on an unknown node option before the
+  script (AC-009, T013). Merging main brought the mobile job's new step from main's ci.yml ("Test the mobile app",
+  #1185); the gate mirrors it as the PR step `mobile-test` (AC-010, T014), as FR-001's mirror of main's ci.yml requires.
 
 ## Status history
 
