@@ -48,7 +48,10 @@ export type DeployEvidence = {
       | null;
   };
 
-  /** Whether the deploy carries a destructive migration; `null` until gen classifies migrations. */
+  /**
+   * Whether the deploy carries a destructive migration (ADR 0159 class contract or banned, as gen classed it) that
+   * the previous deploy to the environment did not ship; `null` when unknown.
+   */
   readonly destructive: boolean | null;
 
   /** The destructive migrations by id (`<module>.<NNNN>_<stem>`), empty while `destructive` is not `true`. */
