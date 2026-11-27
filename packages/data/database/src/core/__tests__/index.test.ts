@@ -182,6 +182,7 @@ describe("@stackra/database", () => {
       "AppendOnlyWriteError",
       "Backfill",
       "CacheInvalidationService",
+      "ConnectionPoolExhaustedError",
       "ConstraintViolatedError",
       "Count",
       "CrudService",

@@ -189,6 +189,9 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
 - The pool comes from `DatabaseConfig.pool` (and `DATABASE_POOL_MAX` over its `max`, ADR 0473); never hard-code a
   pool size in a driver. A tool that holds session state (a session `SET`, a session advisory lock) connects with
   `directDatabaseUrl()`, never the pooled `DATABASE_URL`, since a transaction-mode proxy cannot keep it.
+- Every transaction that takes a connection of its own (top-level or `requiresNew`) goes through `holdConnection`, so
+  the pool's `ConnectionGate` admits it by depth (STA-1716). A new path that opens one with `em.transactional` outside
+  `runTransaction` calls it too; never open a second connection from inside a transaction without it.
 - `assertRowSecurity` (`./testing`, stackra-258) is owner-agnostic: it takes the column, setting, role and probe
   values and names no tenant; `@stackra/tenancy/testing` supplies the tenant form. Its probe always rolls back.
   It audits every table, not a list: a table without the owner column must be named by `PLATFORM_TABLES` or the

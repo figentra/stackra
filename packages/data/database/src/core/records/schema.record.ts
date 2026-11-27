@@ -454,8 +454,14 @@ export class SchemaRecord implements SchemaBuilder {
    *
    * @param schema - the module's Postgres schema.
    * @param createsSchema - whether the transactional step creates the schema first.
+   * @param warn - given for a frozen migration: receives each authoring rule a table breaks instead of a throw
+   *               (STA-2160).
    */
-  compile(schema: string, createsSchema: boolean): readonly CompiledStep[] {
+  compile(
+    schema: string,
+    createsSchema: boolean,
+    warn?: (rule: string) => void,
+  ): readonly CompiledStep[] {
     const transactional: CompiledStatement[] = [];
     const online: CompiledStep[] = [];
     // The SET NOT NULL statements a whole-table `refuseNulls` above already vouched for.
@@ -513,7 +519,7 @@ export class SchemaRecord implements SchemaBuilder {
         continue;
       }
       if ("blueprint" in operation) {
-        const compiled = operation.blueprint.compile(schema);
+        const compiled = operation.blueprint.compile(schema, warn);
         transactional.push(
           ...compiled.statements.map((statement) =>
             refused.has(statement.sql)

@@ -7,7 +7,7 @@
  *          column grants and its role-scoped policies last. A platform-form table with `systemAccess` update columns
  *          lets the role through its restrictive `_write_update`, so a claim with no tenant reaches tenant rows.
  * Boundary: internal. It enforces the migration safety rules it can see in one table: every column states its
- *           nullability and has a comment; a column added to an existing table is nullable, defaulted or generated;
+ *           nullability and has a comment (an authoring rule: a frozen migration reports it as a warning, STA-2160); a column added to an existing table is nullable, defaulted or generated;
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
  *           builds in the transaction; no primary key is added to an existing table; a column change (`t.change`) is
  *           made only on an existing table, once per column, and never on a column the same blueprint adds; a foreign
@@ -894,9 +894,14 @@ export class BlueprintRecord {
    * The statements of this table: the transactional ones in order, then each online index as its own step.
    *
    * @param schema - the module's Postgres schema.
-   * @throws TypeError when a column lacks its nullability or comment, or a safety rule above is broken.
+   * @param warn - given for a frozen migration (STA-2160): an authoring rule it breaks (a column without its
+   *               nullability or comment) is passed here instead of thrown, and the table compiles as written.
+   * @throws TypeError when a column lacks its nullability or comment (unless `warn`), or a safety rule above is broken.
    */
-  compile(schema: string): {
+  compile(
+    schema: string,
+    warn?: (rule: string) => void,
+  ): {
     readonly statements: readonly CompiledStatement[];
     readonly online: readonly CompiledStep[];
   } {
@@ -904,10 +909,11 @@ export class BlueprintRecord {
     const incomplete = this.columns.filter(
       (column) => column.nullability === undefined || column.commentText === undefined,
     );
-    if (incomplete.length > 0)
-      throw new TypeError(
-        `${this.table}: every column states notNull() or nullable() and has a comment(); not ${incomplete.map((column) => column.name).join(", ")}`,
-      );
+    if (incomplete.length > 0) {
+      const rule = `${this.table}: every column states notNull() or nullable() and has a comment(); not ${incomplete.map((column) => column.name).join(", ")}`;
+      if (warn === undefined) throw new TypeError(rule);
+      warn(rule);
+    }
     const compiled = this.creating
       ? this.compileCreate(schema, qualified)
       : this.compileAlter(schema, qualified);

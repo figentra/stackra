@@ -43,6 +43,7 @@ export { StaleVersionError } from "#core/errors/stale-version.error";
 export { DuplicateRecordError } from "#core/errors/duplicate-record.error";
 export { ConstraintViolatedError } from "#core/errors/constraint-violated.error";
 export { TransactionConflictError } from "#core/errors/transaction-conflict.error";
+export { ConnectionPoolExhaustedError } from "#core/errors/connection-pool-exhausted.error";
 export { translateDbError } from "#core/functions/translate-db-error.function";
 export { maintainAllPartitions } from "#core/functions/maintain-all-partitions.function";
 export { maintainPartitions } from "#core/functions/maintain-partitions.function";

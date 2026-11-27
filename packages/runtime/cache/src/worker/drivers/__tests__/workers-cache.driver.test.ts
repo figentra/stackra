@@ -3,7 +3,7 @@
  * Purpose: unit tests of `WorkersCacheDriver`: it is the `Cache` port, it finds its KV namespace by the configured
  *          binding name and refuses to start without one, it writes with an `expirationTtl` of at least KV's 60
  *          seconds while a shorter lifetime still ends on the clock, `forget` follows every `list` page, dropping
- *          only the covered keys, and `forgetTag` drops the tagged entries with their marker keys.
+ *          only the covered keys, and `forgetTag` drops the tagged entries with their marker keys; `add` rejects.
  * Boundary: test only; the binding lookup (`cloudflare:workers`) is mocked with an in-memory KV namespace.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0297 (decision 3);
@@ -84,6 +84,13 @@ function setup(binding = "PAGE_CACHE"): { cache: WorkersCacheDriver; clock: Manu
 describe("WorkersCacheDriver", () => {
   it("is a driver of the Cache port", () => {
     expect(setup().cache).toBeInstanceOf(Cache);
+  });
+
+  it("rejects add: Workers KV has no atomic set-if-absent", async () => {
+    const { cache } = setup();
+    await expect(
+      cache.add(CacheKey.of(Product, "req-1"), true, Duration.minutes(10)),
+    ).rejects.toThrow(new TypeError("WorkersCacheDriver does not support add"));
   });
 
   it("refuses to start when the Worker has no KV namespace under the binding name", () => {
