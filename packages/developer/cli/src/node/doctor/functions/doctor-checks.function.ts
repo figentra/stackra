@@ -2,16 +2,19 @@
  * Stackra file contract:
  * Purpose: `doctorChecks(root, workspace, options?)`, the `stackra doctor` checklist of the workspace at `root`, in
  *          order: the base checks (mise tools, pnpm install, disk, network, GitHub), then one group per need
- *          `doctorNeeds` finds (Docker, Encore and the Encore ports; the `@stackra` and `@figentra` registry reads;
+ *          `doctorNeeds` finds (Docker, Encore and the Encore ports; the `@stackra` and `@figentra` registry reads and
+ *          the effective `.npmrc` mapping of each Stackra scope the workspace installs, `scopeRegistryCheck`;
  *          Pulumi; Xcode and a simulator; the agent tooling, sops and its Google login included), then the members' dev ports. `quick` keeps only
  *          what `stackra dev` needs before it starts: mise tools, Docker and the ports. `fresh` is a workspace not
  *          written yet (`stackra create` checks a starter): no install and no agents:check.
- * Boundary: runs read-only status commands (`mise ls`, `docker info`, `gh auth status`, `pnpm view`, `xcode-select
- *           -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes hosts and
- *           tries to bind ports; installs and changes nothing. Secrets: forbidden: output is parsed, never printed;
- *           the registry check reads only the exit status of a version lookup, so no token is read or shown.
+ * Boundary: runs read-only status commands (`mise ls`, `docker info`, `gh auth status`, `pnpm view`, `pnpm config get`
+ *           of the registry keys only, `xcode-select -p`, `xcrun simctl list`, `aws sts get-caller-identity`), probes
+ *           hosts and tries to bind ports; installs and changes nothing. Secrets: forbidden: output is parsed, never
+ *           printed; the registry check reads only the exit status of a version lookup and the scope check reads only
+ *           `registry` and `<scope>:registry` (URLs, never an auth key), so no token is read or shown.
  * Runtime: node
- * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121; STA-1952 spec FR-014 to FR-019; ADR 0515.
+ * Governing contract: ADR 0027 (CLI tools pinned in mise); ADR 0121; STA-1952 spec FR-014 to FR-019; ADR 0515;
+ *                     ADR 0453 (decisions 4 and 10: a Stackra scope never resolves from npmjs).
  */
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { existsSync, statfsSync } from "node:fs";
@@ -27,8 +30,11 @@ import { droppedAddresses } from "#node/doctor/functions/dropped-addresses.funct
 import { googleCredentialsPath } from "#node/doctor/functions/google-credentials-path.function";
 import { publishedDependency } from "#node/doctor/functions/published-dependency.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
+import { npmConfigValue } from "#node/doctor/functions/npm-config-value.function";
 import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
+import { scopeRegistryCheck } from "#node/doctor/functions/scope-registry-check.function";
 import { simulatorAvailable } from "#node/doctor/functions/simulator-available.function";
+import { stackraScopesUsed } from "#node/doctor/functions/stackra-scopes-used.function";
 import type { DoctorNeed } from "#node/doctor/types/doctor-need.type";
 import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 import type { DoctorWorkspace } from "#node/doctor/types/doctor-workspace.type";
@@ -190,6 +196,27 @@ export async function doctorChecks(
       detail: origin,
       fix: "@stackra reads need no token: check the network row above, and that .npmrc maps `@stackra:registry` to the Stackra registry",
     });
+
+  // The scope mapping the install itself uses (the check above names the registry, so it passes without one). An
+  // unmapped Stackra scope installs from the default registry, npmjs, where anyone can publish under that name.
+  // A fresh workspace has no .npmrc yet: `stackra create` checks the app's own config once its files are written.
+  if (options.fresh !== true) {
+    const config = (key: string): { ok: boolean; value: string | undefined } => {
+      const r = sh("pnpm", ["config", "get", key, "--json"], root);
+      return { ok: r.error === undefined && r.status === 0, value: npmConfigValue(r.stdout ?? "") };
+    };
+    const fallback = config("registry");
+    for (const scope of stackraScopesUsed(workspace.manifests)) {
+      const scoped = config(`${scope}:registry`);
+      add(
+        scopeRegistryCheck(
+          scope,
+          scoped.ok && fallback.ok ? { scoped: scoped.value, registry: fallback.value } : undefined,
+          origin,
+        ),
+      );
+    }
+  }
 
   if (!has("gh"))
     add({

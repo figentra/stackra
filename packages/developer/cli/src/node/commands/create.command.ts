@@ -5,13 +5,16 @@
  *          and package manager (each also a flag; `--yes` takes every default; without a terminal nothing is asked),
  *          fetches the starter (`@stackra/starter` from the Stackra registry at the CLI's version, or `--starter
  *          <dir|tgz>`), runs the doctor for what the profile needs, writes the profile's files under the chosen
- *          names, installs, runs `stackra gen` and shows what it wrote as a tree, each step a task, type-checks and tests, makes the
- *          first commit and prints the next steps.
+ *          names, refuses to install while the app's effective package-manager config leaves a Stackra scope
+ *          (`@stackra`, `@stackra-pro`) unmapped or mapped to a public registry (`scopeRegistryCheck`, with the exact
+ *          `.npmrc` line to add), installs, runs `stackra gen` and shows what it wrote as a tree, each step a task,
+ *          type-checks and tests, makes the first commit and prints the next steps.
  * Boundary: writes only inside `<directory>` and runs pnpm, gen and git there. The starter tarball is checked
  *           against the registry's SHA-512 integrity; `STACKRA_LICENCE_TOKEN` is checked for presence only and sent
  *           only to the registry origin. A failed step stops the run, keeps the folder and names the step.
  * Runtime: node
- * Governing contract: ADR 0515; STA-1952 spec User Story 1, FR-001 to FR-013; STA-1730 (the console create flow).
+ * Governing contract: ADR 0515; STA-1952 spec User Story 1, FR-001 to FR-013; STA-1730 (the console create flow);
+ *                     ADR 0453 (decisions 4 and 10: a Stackra scope never resolves from npmjs).
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
@@ -20,13 +23,17 @@ import { Argument, Command, Option, type CommandIo } from "@stackra/console";
 import { tarballSpecs } from "@stackra/console/node";
 import { Str } from "@stackra/validation";
 
+import { ITEM_SCOPES } from "#node/constants/item-scopes.constant";
 import { genTree } from "#node/create/functions/gen-tree.function";
 import { readStarter } from "#node/create/functions/read-starter.function";
 import { starterFiles } from "#node/create/functions/starter-files.function";
 import { starterTarball } from "#node/create/functions/starter-tarball.function";
 import { starterWorkspace } from "#node/create/functions/starter-workspace.function";
 import { doctorChecks } from "#node/doctor/functions/doctor-checks.function";
+import { npmConfigValue } from "#node/doctor/functions/npm-config-value.function";
 import { renderDoctor } from "#node/doctor/functions/render-doctor.function";
+import { scopeRegistryCheck } from "#node/doctor/functions/scope-registry-check.function";
+import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 import { cliVersion } from "#node/functions/cli-version.function";
 import { httpCatalogueClient } from "#node/functions/http-catalogue-client.function";
 import { registryOrigin } from "#node/functions/registry-origin.function";
@@ -209,6 +216,8 @@ export class CreateCommand extends Command({
       }
     });
 
+    await this.refuseUnmappedScopes(io, directory, pm);
+
     // A failed step ends the run and its task shows the tail of the step's output (the process port's detail).
     const step = (command: string, args: readonly string[]) =>
       io.process.run(command, args, { cwd: directory });
@@ -253,6 +262,49 @@ export class CreateCommand extends Command({
       "Next",
     );
     return { directory, name, scope, edition, profile: this.profile, files: files.size, generated };
+  }
+
+  /**
+   * Refuses the install while the app's effective config (its `.npmrc`, `~/.npmrc`, the `registries` of its
+   * `pnpm-workspace.yaml`, as the package manager reads them) leaves a Stackra scope unmapped or mapped to a public
+   * registry: `@stackra/*` would then install from where anyone can publish under that name. A scope mapped to another
+   * host is a warning.
+   */
+  private async refuseUnmappedScopes(io: CommandIo, directory: string, pm: string): Promise<void> {
+    const origin = registryOrigin(directory, undefined);
+    // One `config get` per key, as the install will read it; undefined when the package manager could not answer.
+    const get = async (key: string): Promise<{ value: string | undefined } | undefined> => {
+      const { code, output } = await io.process.run(pm, ["config", "get", key, "--json"], {
+        cwd: directory,
+        check: false,
+      });
+      return code === 0 ? { value: npmConfigValue(output) } : undefined;
+    };
+    const rows = await io.output.task(
+      "Checking the Stackra scopes map to the Stackra registry",
+      async () => {
+        const registry = await get("registry");
+        const checked: DoctorResult[] = [];
+        for (const scope of ITEM_SCOPES) {
+          const scoped = await get(`${scope}:registry`);
+          checked.push(
+            scopeRegistryCheck(
+              scope,
+              registry && scoped ? { scoped: scoped.value, registry: registry.value } : undefined,
+              origin,
+            ),
+          );
+        }
+        return checked;
+      },
+    );
+    const flagged = rows.filter((row) => row.status !== "ok");
+    if (flagged.length === 0) return;
+    for (const line of renderDoctor(flagged).split("\n")) io.output.line(line);
+    if (flagged.some((row) => row.status === "fail"))
+      throw new Error(
+        "refusing to install: a Stackra scope is not mapped to the Stackra registry, so it would resolve from where anyone can publish under its name (ADR 0453); fix the .npmrc line shown above, then run pnpm install",
+      );
   }
 
   /** The starter: `--starter`, else the registry's at the CLI's version, else its latest. */

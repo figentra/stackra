@@ -123,7 +123,37 @@ test("tarballs become pnpm overrides; an existing .npmrc keeps its lines", () =>
   );
   assert.equal(
     read(files, ".npmrc"),
-    "@figentra:registry=https://npm.stackra.figentra.com/\n@stackra:registry=https://npm.stackra.figentra.com/\n",
+    "@figentra:registry=https://npm.stackra.figentra.com/\n@stackra:registry=https://npm.stackra.figentra.com/\n@stackra-pro:registry=https://npm.stackra.figentra.com/\n",
+  );
+});
+
+test("a starter .npmrc keeps its own Stackra registry line and gets the missing scope", () => {
+  const files = starterFiles(
+    starter({ ".npmrc": "@stackra:registry=http://localhost:8787/\n" }),
+    options,
+  );
+  assert.equal(
+    read(files, ".npmrc"),
+    "@stackra:registry=http://localhost:8787/\n@stackra-pro:registry=https://npm.stackra.figentra.com/\n",
+  );
+});
+
+test("a starter .npmrc that maps a Stackra scope to a public registry is refused (ADR 0453)", () => {
+  assert.throws(
+    () =>
+      starterFiles(
+        starter({ ".npmrc": "@stackra:registry=https://registry.npmjs.org/\n" }),
+        options,
+      ),
+    /maps @stackra to https:\/\/registry\.npmjs\.org\/, a public registry/,
+  );
+  assert.throws(
+    () =>
+      starterFiles(
+        starter({ ".npmrc": "  @stackra-pro:registry = https://npm.pkg.github.com/\n" }),
+        options,
+      ),
+    /maps @stackra-pro to https:\/\/npm\.pkg\.github\.com\/, a public registry/,
   );
 });
 
