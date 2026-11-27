@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-26
 
-**Status**: Tasked <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
+**Status**: Implementing <!-- Draft → Clarified → Planned → Tasked → Implementing → Done, or Abandoned / Superseded (OR12). spec-gate refuses a status ahead of its artifacts; append every change to Status history -->
 
 **Tier**: feature
 
@@ -250,3 +250,5 @@ None.
 - 2026-11-26 · Clarified → Planned · Claude (STA-2887, batch 14) · plan.md
 - 2026-11-26 · Planned → Tasked · Claude (STA-2887, batch 14) · tasks.md; the tasks marked done are already on the branch; Implementing waits for the approver's Planned approval (ADR 0502)
 - 2026-11-27 · Tasked (amended) · Claude (STA-2887, batch 14) · FR-007, FR-008, AC-006, AC-007 and T010: exact floors and reversal cuts, and a refusal where a floor cannot be checked exactly; still waiting for the approver's Planned approval before → Implementing (ADR 0502)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
+- 2026-11-27 · Tasked → Implementing · Claude (STA-2887, batch 14) · the CTO's condition (floor checks in BigInt with a near-MAX_SAFE_INTEGER property test) is met by T010 on the branch
