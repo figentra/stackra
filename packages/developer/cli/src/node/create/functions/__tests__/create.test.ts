@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: hold `stackra create`'s pure parts to their contract: a profile writes only its paths and overlays, the
  *          rename list and the catalog pin apply, the starter's own files never reach the app, a malformed manifest or
- *          an unknown profile is refused; the gen tree groups by member and kind; a starter's files describe the
+ *          an unknown profile is refused; the `.npmrc` maps `@stackra` to the chosen registry; the gen tree groups by member and kind; a starter's files describe the
  *          doctor workspace of the app they make.
  * Boundary: pure functions on in-memory files; runs no command.
  * Runtime: node (vitest)
@@ -124,6 +124,35 @@ test("tarballs become pnpm overrides; an existing .npmrc keeps its lines", () =>
   assert.equal(
     read(files, ".npmrc"),
     "@figentra:registry=https://npm.stackra.figentra.com/\n@stackra:registry=https://npm.stackra.figentra.com/\n",
+  );
+});
+
+test("a chosen registry maps @stackra and moves every scope the starter maps to the default registry", () => {
+  const npmrc = [
+    "# the scopes",
+    "@stackra:registry=https://npm.stackra.figentra.com/",
+    "@stackra-pro:registry=https://npm.stackra.figentra.com",
+    "@other:registry=https://other.test/",
+    "",
+  ].join("\n");
+  const files = starterFiles(starter({ ".npmrc": npmrc }), {
+    ...options,
+    registry: "http://localhost:8787/",
+  });
+  assert.equal(
+    read(files, ".npmrc"),
+    [
+      "# the scopes",
+      "@stackra:registry=http://localhost:8787/",
+      "@stackra-pro:registry=http://localhost:8787/",
+      "@other:registry=https://other.test/",
+      "",
+    ].join("\n"),
+  );
+  // A starter without an .npmrc gets the one line, naming the chosen registry.
+  assert.equal(
+    read(starterFiles(starter(), { ...options, registry: "https://mirror.test/" }), ".npmrc"),
+    "@stackra:registry=https://mirror.test/\n",
   );
 });
 

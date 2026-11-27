@@ -9,6 +9,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { MEMBER_METADATA } from "#node/constants/member-metadata.constant";
 import { checkMemberMetadata } from "#node/functions/check-member-metadata.function";
 import { npmMetadataFor } from "#node/functions/npm-metadata-for.function";
 import { turboTagsFor } from "#node/functions/turbo-tags-for.function";
@@ -73,6 +74,39 @@ describe("checkMemberMetadata", () => {
     );
     expect(checkMemberMetadata(service)).toEqual([]);
     expect(checkMemberMetadata({ dir: "", pkg: {} })).toEqual([]);
+  });
+
+  it("points an npmjs member at the repository that signs its provenance, every other member at the repository's own URLs", () => {
+    // npm refuses a provenance publish (E422) unless repository.url names the signing repository (STA-2897).
+    expect(npmMetadataFor("packages/developer/create-stackra")).toMatchObject({
+      repository: {
+        type: "git",
+        url: "git+https://github.com/stackra-inc/stackra.git",
+        directory: "packages/developer/create-stackra",
+      },
+      homepage:
+        "https://github.com/stackra-inc/stackra/tree/main/packages/developer/create-stackra#readme",
+      bugs: { url: "https://github.com/stackra-inc/stackra/issues" },
+    });
+    expect(npmMetadataFor(storage.dir).repository.url).toBe(MEMBER_METADATA.repositoryUrl);
+    const initializer = member(
+      "packages/developer/create-stackra",
+      {
+        kind: "package",
+        tier: "lib",
+        category: "developer",
+        runtimes: ["node"],
+        summary: "Use it to start a new Stackra app with one command.",
+      },
+      ["stackra", "developer", "create"],
+    );
+    expect(checkMemberMetadata(initializer)).toEqual([]);
+    expect(
+      checkMemberMetadata({
+        ...initializer,
+        pkg: { ...initializer.pkg, repository: npmMetadataFor(storage.dir).repository },
+      }),
+    ).toHaveLength(1);
   });
 
   it("finds each missing npm field", () => {

@@ -5,7 +5,7 @@
  *          and package manager (each also a flag; `--yes` takes every default; without a terminal nothing is asked),
  *          fetches the starter (`@stackra/starter` from the Stackra registry at the CLI's version, or `--starter
  *          <dir|tgz>`), runs the doctor for what the profile needs, writes the profile's files under the chosen
- *          names, installs, runs `stackra gen` and shows what it wrote as a tree, each step a task, type-checks and tests, makes the
+ *          names (the `.npmrc` mapping `@stackra` to the registry it fetched from), installs, runs `stackra gen` and shows what it wrote as a tree, each step a task, type-checks and tests, makes the
  *          first commit and prints the next steps.
  * Boundary: writes only inside `<directory>` and runs pnpm, gen and git there. The starter tarball is checked
  *           against the registry's SHA-512 integrity; `STACKRA_LICENCE_TOKEN` is checked for presence only and sent
@@ -172,14 +172,16 @@ export class CreateCommand extends Command({
     );
 
     const version = cliVersion();
+    const registry = registryOrigin(cwd, undefined);
     const starter = await io.output.task("Fetching the starter", () =>
-      this.readStarter(cwd, version),
+      this.readStarter(cwd, registry, version),
     );
     const files = starterFiles(starter, {
       profile: this.profile,
       name,
       scope,
       stackraVersion: version,
+      registry,
       ...(this.tarballs === undefined
         ? {}
         : { tarballs: tarballSpecs(resolve(cwd, this.tarballs)) }),
@@ -256,10 +258,14 @@ export class CreateCommand extends Command({
   }
 
   /** The starter: `--starter`, else the registry's at the CLI's version, else its latest. */
-  private async readStarter(cwd: string, version: string): Promise<Map<string, Uint8Array>> {
+  private async readStarter(
+    cwd: string,
+    registry: string,
+    version: string,
+  ): Promise<Map<string, Uint8Array>> {
     if (this.starter !== undefined) return readStarter(resolve(cwd, this.starter));
     const client = httpCatalogueClient({
-      origin: registryOrigin(cwd, undefined),
+      origin: registry,
       token: process.env["STACKRA_LICENCE_TOKEN"] || undefined,
     });
     // shortcut: falls back to `latest` when the CLI's own version has no starter; pick the newest of the CLI's minor

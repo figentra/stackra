@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `CreateCommand` on the console: its steps run through the process port as tasks, gen's summary
- *          is drawn as a tree, and a failed step stops the run and shows the tail of its output.
+ *          is drawn as a tree, the app's `.npmrc` names the registry it fetched from, and a failed step stops the run
+ *          and shows the tail of its output.
  * Boundary: test only; the starter is a stub, the folder a temporary one and every child process scripted.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); STA-1952 spec User Story 1; STA-1966.
  */
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -69,6 +70,23 @@ describe("CreateCommand", () => {
     expect(result.stdout).toContain("stackra gen wrote 2 files");
     expect(result.stdout).toContain("services/example");
     expect(result.stdout).toContain("the contract");
+  });
+
+  it("writes the registry it fetched from (STACKRA_REGISTRY here) into the app's .npmrc", async () => {
+    vi.stubEnv("STACKRA_REGISTRY", "http://localhost:8787");
+    try {
+      const result = await runCommandForTest(
+        [CreateCommand],
+        [...argv, "--no-install", "--no-git"],
+        { process: new MemoryProcessRunnerDriver(), cwd: root },
+      );
+      expect(result.exitCode).toBe(0);
+      expect(readFileSync(join(root, "app", ".npmrc"), "utf8")).toBe(
+        "@stackra:registry=http://localhost:8787/\n",
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("stops at a failed step and shows the tail of its output", async () => {

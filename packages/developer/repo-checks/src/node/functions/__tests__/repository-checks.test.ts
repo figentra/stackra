@@ -78,6 +78,45 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
   }
 });
 
+test("the npm create initializer is the one unscoped member (ADR 0199, amendment of 2026-11-27)", () => {
+  assert.equal(expectedName("packages/developer/create-stackra"), "create-stackra");
+  assert.deepEqual(
+    checkMember({
+      ...ok,
+      dir: "packages/developer/create-stackra",
+      pkg: { ...ok.pkg, name: "create-stackra" },
+    }).filter((m) => m.startsWith("package name")),
+    [],
+  );
+  // Any other folder keeps its scope, a create-* name included.
+  assert.equal(expectedName("packages/developer/create-other"), "@stackra/create-other");
+});
+
+test("the npmjs initializer's repository is the one that signs its npmjs provenance (stackra-inc/stackra, STA-2897)", () => {
+  const dir = "packages/developer/create-stackra";
+  const repositoryFindings = (url: string) =>
+    checkMemberFiles({
+      dir,
+      pkg: {
+        name: "create-stackra",
+        description: "The initializer.",
+        license: "MIT",
+        sideEffects: false,
+        exports: { "./package.json": "./package.json" },
+        repository: { url, directory: dir },
+        publishConfig: { access: "public", provenance: true },
+      },
+      files: ["README.md", "AGENTS.md", "CHANGELOG.md", "LICENSE"],
+      agents: "## PII\n",
+      licenseText: "MIT",
+      rootLicense: "MIT",
+    }).filter((m) => m.includes("repository"));
+  assert.deepEqual(repositoryFindings("git+https://github.com/stackra-inc/stackra.git"), []);
+  assert.deepEqual(repositoryFindings("git+https://github.com/figentra/stackra.git"), [
+    'package.json repository must be { type: "git", url: "git+https://github.com/stackra-inc/stackra.git", directory } (ADR 0177)',
+  ]);
+});
+
 test("no member is in the @stackra-pro scope: the Pro wrapper moved to figentra/stackra-pro (ADR 0461)", () => {
   assert.equal(expectedName("packages/design-system/ui-pro"), "@stackra/ui-pro");
   assert.equal(expectedName("packages/design-system/ui"), "@stackra/ui");

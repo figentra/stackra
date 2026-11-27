@@ -1,0 +1,89 @@
+{
+  "name": "create-stackra",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The npm create stackra initializer: maps the @stackra scope to the Stackra registry for one run, with no .npmrc written, and starts @stackra/cli create",
+  "keywords": [
+    "create",
+    "developer",
+    "initializer",
+    "scaffolding",
+    "stackra"
+  ],
+  "homepage": "https://github.com/stackra-inc/stackra/tree/main/packages/developer/create-stackra#readme",
+  "bugs": {
+    "url": "https://github.com/stackra-inc/stackra/issues"
+  },
+  "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stackra-inc/stackra.git",
+    "directory": "packages/developer/create-stackra"
+  },
+  "bin": {
+    "create-stackra": "./dist/create-stackra.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#node/*": [
+      "./src/node/*",
+      "./src/node/*.ts",
+      "./src/node/*/index.ts"
+    ],
+    "#stackra/*": [
+      "./.stackra/gen/*",
+      "./.stackra/gen/*.ts",
+      "./.stackra/gen/*.tsx",
+      "./.stackra/gen/*/index.ts"
+    ]
+  },
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "devDependencies": {
+    "@stackra/tsdown-config": "workspace:*",
+    "@stackra/typescript-config": "workspace:*",
+    "@stackra/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:quality",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "developer",
+    "runtimes": [
+      "node"
+    ],
+    "summary": "Use it to start a new Stackra app with one command (npm create stackra my-app): it maps the @stackra scope for that run and hands every other argument to stackra create."
+  }
+}
