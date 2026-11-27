@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: `serveLocalMcp(options)`, the local developer MCP behind `stackra mcp`: answers `initialize`, `ping`,
  *          `tools/list` and `tools/call` over stdio with the `LOCAL_TOOLS` (manifest reads and the CLI's `new`, `gen`,
- *          `validate` and `verify`) and every local Encore tool, proxied under an `encore_` prefix. Resolves when the
- *          client disconnects.
+ *          `validate` and `verify`) and every local Encore tool, proxied under an `encore_` prefix, with the
+ *          `ENCORE_TOOL_NOTES` note before its description (Encore's `query_database` points to `db_query`). Resolves
+ *          when the client disconnects.
  * Boundary: every write runs through the given `StackraRunner`, the CLI's own commands and gates; this file writes
  *           nothing itself. Tool arguments are checked before anything runs. The hosted mode of ADR 0282 is a separate
  *           deployment, not this server.
@@ -12,6 +13,7 @@
  */
 import { z } from "zod";
 
+import { ENCORE_TOOL_NOTES } from "#node/constants/encore-tool-notes.constant";
 import { LOCAL_TOOLS } from "#node/constants/local-tools.constant";
 import { MCP_PROTOCOL_VERSIONS } from "#node/constants/mcp-protocol-versions.constant";
 import { McpProtocolError } from "#node/errors/mcp-protocol.error";
@@ -67,7 +69,13 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
   // shortcut: reads the first tools/list page only; follow `nextCursor` when Encore paginates its tools.
   const upstreamTools = upstream
     .then(async (peer) =>
-      peer ? ((await peer.request("tools/list")) as { tools: { name: string }[] }).tools : [],
+      peer
+        ? (
+            (await peer.request("tools/list")) as {
+              tools: { name: string; description?: string }[];
+            }
+          ).tools
+        : [],
     )
     .catch(() => []);
 
@@ -174,7 +182,16 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
                 inputSchema: tool.inputSchema,
                 annotations: { readOnlyHint: tool.readOnly },
               })),
-              ...(await upstreamTools).map((tool) => ({ ...tool, name: `${ENCORE}${tool.name}` })),
+              ...(await upstreamTools).map((tool) => {
+                const note = ENCORE_TOOL_NOTES.get(tool.name);
+                return {
+                  ...tool,
+                  name: `${ENCORE}${tool.name}`,
+                  ...(note === undefined
+                    ? {}
+                    : { description: `${note}${tool.description ?? ""}` }),
+                };
+              }),
             ],
           };
         }

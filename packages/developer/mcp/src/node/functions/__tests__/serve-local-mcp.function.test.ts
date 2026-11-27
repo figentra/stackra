@@ -3,8 +3,9 @@
  * Purpose: unit tests of `serveLocalMcp`: the handshake answers the client's protocol revision; `tools/list` holds the
  *          local tools and the Encore tools under `encore_`; `manifest` reads the committed manifests; `new`, `gen`,
  *          `validate` and `verify` run through the given CLI runner (the CLI's gates), with a failing exit marked as
- *          an error; invalid arguments are refused before anything runs; an Encore call is forwarded unprefixed; the
- *          server resolves when the client disconnects; command tools (STA-1966) are served with their own schema and
+ *          an error; invalid arguments are refused before anything runs; an Encore call is forwarded unprefixed; Encore's
+ *          `query_database` is described as running with no tenant and points to `db_query` (STA-2906); the server
+ *          resolves when the client disconnects; command tools (STA-1966) are served with their own schema and
  *          handler, their `--json` document as the structured result.
  * Boundary: test only; in-memory streams, a fake runner, a fake Encore peer and a throwaway repository in the OS temp
  *           directory.
@@ -218,6 +219,50 @@ describe("serveLocalMcp", () => {
     disconnect();
     await served;
     await expect(encore.closed).resolves.toBeUndefined();
+  });
+
+  it("tells an agent that Encore's query_database runs with no tenant and points it to db_query", async () => {
+    const upstreamHandle = vi.fn(async (method: string, params: unknown) =>
+      method === "tools/list"
+        ? {
+            tools: [
+              { name: "query_database", description: "Run SQL", inputSchema: { type: "object" } },
+              { name: "get_traces", description: "List traces", inputSchema: { type: "object" } },
+            ],
+          }
+        : { content: [{ type: "text", text: JSON.stringify(params) }] },
+    );
+    const toEncore = new PassThrough();
+    const fromEncore = new PassThrough();
+    connectMcp(toEncore, fromEncore, upstreamHandle);
+    const encore = connectMcp(fromEncore, toEncore);
+
+    const { client, served, disconnect } = start(vi.fn<StackraRunner>(), encore);
+    const { tools } = (await client.request("tools/list")) as {
+      tools: { name: string; description: string }[];
+    };
+    const query = tools.find((tool) => tool.name === "encore_query_database");
+    expect(query?.description).toMatch(
+      /^Runs with no tenant set: a table under row-level security answers no rows/,
+    );
+    expect(query?.description).toContain("`db_query`");
+    expect(query?.description).toContain("never turn row-level security off");
+    expect(query?.description.endsWith("Run SQL")).toBe(true);
+    expect(tools.find((tool) => tool.name === "encore_get_traces")?.description).toBe(
+      "List traces",
+    );
+
+    const called = await client.request("tools/call", {
+      name: "encore_query_database",
+      arguments: { query: "select 1" },
+    });
+    expect(JSON.parse(textOf(called))).toEqual({
+      name: "query_database",
+      arguments: { query: "select 1" },
+    });
+
+    disconnect();
+    await served;
   });
 
   it("serves command tools with their own schema and handler, replacing a built-in of the same name", async () => {

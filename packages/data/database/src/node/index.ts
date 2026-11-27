@@ -8,7 +8,9 @@
  *          the `HoldRegistry` every service binds over its `HoldChannel`; `DatabaseRunner`, the three `db:*` commands (`DbMigrateCommand`, `DbRollbackCommand`, `DbStatusCommand`, STA-1731) and `SeedPackStatusCommand` (`seed-pack:status`, STA-1852); `migrate` and `rollback`, the runner
  *          `stackra db` calls; `seedState` and `applySeed`, the runner `stackra seed-pack` calls; `runSeeders`,
  *          `runSeedEntry`, `seederLedger` and `seederOf`, the seeder runner a service's generated seed entry calls (STA-1709);
- *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `PrimaryConnectionResolverDriver`, the free one-pool
+ *          `DatabaseHealthIndicatorDriver`, the `/readyz` probe; `describeSchema`, `queryInScope` and `migrationStatus`, the
+ *          read-only developer inspections `stackra db:schema`, `db:query` and `db:migrations:status` (and the local
+ *          MCP's `db_*` tools) call, with their `InspectionRefusedError` (STA-2906); `PrimaryConnectionResolverDriver`, the free one-pool
  *          `ConnectionResolver` (stackra-310); `DatabaseQueryBudgetDriver`, the action pipeline's `QueryBudget` (N+1
  *          guard), and `LoggerQueryObserverDriver`, the slow-statement log (stackra-282). The partition upkeep,
  *          retention and time series rollup jobs live in @stackra/data-maintenance (ADR 0462 decision 1) and call
@@ -34,12 +36,24 @@ export { PostgresIdempotencyStoreDriver } from "#node/drivers/postgres-idempoten
 export { PostgresRateLimitStoreDriver } from "#node/drivers/postgres-rate-limit-store.driver";
 export { PrimaryConnectionResolverDriver } from "#node/drivers/primary-connection-resolver.driver";
 export { ServiceHoldRegistryDriver } from "#node/drivers/service-hold-registry.driver";
+export { InspectionRefusedError } from "#node/errors/inspection-refused.error";
 export { applySeed } from "#node/functions/apply-seed.function";
 export { databaseUrl } from "#node/functions/database-url.function";
+export { describeSchema } from "#node/functions/describe-schema.function";
 export { directDatabaseUrl } from "#node/functions/direct-database-url.function";
 export { migrate } from "#node/functions/migrate.function";
+export { migrationStatus } from "#node/functions/migration-status.function";
+export type { MigrationFileStatus } from "#node/types/migration-file-status.type";
+export type { MigrationStatus } from "#node/types/migration-status.type";
 export { provideDatabaseUrl } from "#node/functions/provide-database-url.function";
+export { queryInScope } from "#node/functions/query-in-scope.function";
 export { readMigratedSchema } from "#node/functions/read-migrated-schema.function";
+export type { SchemaColumn } from "#node/types/schema-column.type";
+export type { SchemaDescription } from "#node/types/schema-description.type";
+export type { SchemaPolicy } from "#node/types/schema-policy.type";
+export type { SchemaTable } from "#node/types/schema-table.type";
+export type { ScopedQuery } from "#node/types/scoped-query.type";
+export type { ScopedQueryResult } from "#node/types/scoped-query-result.type";
 export type { SeedLedger } from "#node/types/seed-ledger.type";
 export type { SeederEntry } from "#node/types/seeder-entry.type";
 export { rollback } from "#node/functions/rollback.function";

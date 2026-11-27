@@ -70,7 +70,22 @@ process.exitCode = await execWithSecrets(argv); // or { secretsDir: "/path/to/fi
 
 Every command tool runs through the `run` option, so a write passes the CLI's own commands and gates; the CLI passes
 its command core, and the default spawns `stackra`. The Encore app id is the root runway's `providers.encore.app`; when
-there is none, or Encore does not answer within ten seconds, the local tools still work.
+there is none, or Encore does not answer within ten seconds, the local tools still work. Because `stackra mcp` is the
+one Encore path, a `.mcp.yaml` with its own `encore mcp …` server fails as `separate_encore_server` (ADR 0334 rule 8);
+the remote `encore-cloud` server stays.
+
+`stackra mcp` also serves the CLI's read-only database inspections from their command definitions (`tools`), for the
+member named by `member` (local dev and the testbed only):
+
+| Tool                   | Does                                                                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db_schema`            | the tables with their columns, keys, indexes, row-level security (enabled, forced) and policies                                                          |
+| `db_query`             | one SELECT in a READ ONLY transaction as the app's role, under the tenant's `scope` id given, with a row limit and a timeout; refuses a role that bypasses row-level security |
+| `db_migrations_status` | each compiled migration: applied, pending, or edited since it ran                                                                                         |
+
+Encore's own `query_database` (served as `encore_query_database`) runs with no tenant set, so a table under row-level
+security answers no rows there. Its description says so and points to `db_query`: query tenant tables with `db_query`
+and the tenant's scope id, never by turning row-level security off.
 
 ```ts
 import { serveLocalMcp } from "@stackra/mcp/node";

@@ -156,6 +156,26 @@
       "entry": "node"
     },
     {
+      "name": "db:migrations:status",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DbMigrationsStatusCommand",
+      "file": "src/node/commands/db-migrations-status.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "db:query",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DbQueryCommand",
+      "file": "src/node/commands/db-query.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "db:rollback",
       "aliases": [],
       "hidden": false,
@@ -163,6 +183,16 @@
       "bin": true,
       "class": "DbRollbackCommand",
       "file": "src/node/commands/db-rollback.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "db:schema",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DbSchemaCommand",
+      "file": "src/node/commands/db-schema.command.ts",
       "entry": "node"
     },
     {

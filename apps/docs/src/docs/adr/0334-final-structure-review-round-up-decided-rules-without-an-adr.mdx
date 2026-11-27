@@ -206,9 +206,11 @@ anchor for each framework-side capability, and this page records the map so that
 ## Enforcement
 
 - planned — gen checks (STA-340): a field without a docblock, a column without nullability, a foreign key out of
-  order, an extension outside the approved set, a `.mcp.yaml` with an `encore` entry, a web member without its
-  per-locale manifests or its security headers, and a package whose group folders do not match its manifest
-  `contributions`.
+  order, an extension outside the approved set, a web member without its per-locale manifests or its security
+  headers, and a package whose group folders do not match its manifest `contributions`.
+- built — rule 8 (STA-2906): `@stackra/mcp`'s `.mcp.yaml` rules refuse a local server that runs `encore mcp`
+  (`separate_encore_server`), so `stackra mcp sync` fails on a separate `encore` entry; the remote `encore-cloud` entry
+  stays. The template has no such entry.
 - planned — an oxlint house rule, under [0129](/adr/0129-house-lint-plugin-and-coding-standard): the docblock form of
   rule 17, and a validation message given as a string literal (rule 5).
 - planned — a gateway test: an unknown route on the API host answers the JSON envelope, and no API route answers HTML.

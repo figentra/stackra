@@ -23,6 +23,10 @@ export const SESSION_SETTING_ALLOWED: Readonly<Record<string, string>> = Object.
   // `withTenant`, and iam must not depend on tenancy; it sets the tenant transaction-locally in a transaction of its own
   "packages/security/iam/src/node/drivers/postgres-policy-snapshot-store.driver.ts":
     "the snapshot store sets its own tenant transaction-locally in its requiresNew transaction (ADR 0495)",
+  // a developer inspection (STA-2906): it reads a local or testbed database under an explicit tenant, with no actor and
+  // outside any call, in a READ ONLY transaction of its own that it always rolls back; database cannot depend on tenancy
+  "packages/data/database/src/node/functions/query-in-scope.function.ts":
+    "queryInScope (stackra db:query): app.tenant_id transaction-local in its own read-only, rolled-back transaction, local dev and the testbed only (STA-2906)",
   // ./testing only, which never ships to a server: a test's setup rows pass the tenant policy without an action
   "packages/security/tenancy/src/testing/orm/run-as-tenant.subscriber.ts":
     "runAsTenant's test-setup seam: app.tenant_id transaction-local in each transaction started inside runAsTenant (ADR 0495, testing entry)",

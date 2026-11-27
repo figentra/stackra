@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: `ruleIssues(config)`, the `.mcp.yaml` rules a shape cannot say: a `$NAME` reference in a local server that
  *          does not start through `stackra mcp exec --` (Claude Code would pass it literally), a `$NAME` reference in a
- *          remote server (those sign in with OAuth), and an npx package not pinned to an exact version.
+ *          remote server (those sign in with OAuth), an npx package not pinned to an exact version, and a separate local
+ *          Encore server (`encore mcp …`), whose tools `stackra mcp` already proxies with the app id from runway.
  * Boundary: reads a shape-valid document; returns issues and throws nothing.
  * Runtime: isomorphic
  * Governing contract: ADR 0282 (decisions 9 and 10); ADR 0173 (secret values never in files); the template's
- *                     `.mcp.yaml` contract (npx servers pinned, no @latest).
+ *                     `.mcp.yaml` contract (npx servers pinned, no @latest); ADR 0334 (rule 8: no separate `encore`
+ *                     entry); STA-2906.
  */
 import { secretNamesOf } from "#core/functions/secret-names-of.function";
 import type { McpConfig } from "#core/types/mcp-config.type";
@@ -14,6 +16,9 @@ import type { McpIssue } from "#core/types/mcp-issue.type";
 
 /** `stackra mcp exec --`, the launcher that injects secret values. */
 const EXEC = ["stackra", "mcp", "exec", "--"];
+
+/** A word that runs the Encore CLI: `encore`, or a path ending in it. */
+const ENCORE = /(?:^|[\\/])encore(?:\.exe)?$/;
 
 /** An npx package spec pinned to an exact version (`name@1.2.3`, `@scope/name@1.2.3-beta.1`). */
 const PINNED = /^(?:@[^/@]+\/)?[^@]+@\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/;
@@ -49,6 +54,13 @@ export function ruleIssues(config: McpConfig): McpIssue[] {
       ...(execAt === -1 ? argv : argv.slice(0, execAt)),
       ...Object.values(server.env ?? {}),
     ]);
+    if (argv.some((word, index) => ENCORE.test(word) && argv[index + 1] === "mcp"))
+      issues.push({
+        path,
+        code: "separate_encore_server",
+        message:
+          "the local Encore tools reach agents through `stackra mcp` (as encore_*, with the app id from runway): remove this server",
+      });
     if (names.length > 0)
       issues.push({
         path,

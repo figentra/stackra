@@ -236,6 +236,27 @@ checksum, applied_at)` records each applied file's SHA-256. A run refuses to sta
   goes back to the last applied file, clean, so the next run starts that file again. Only a crash mid-file leaves the
   version dirty.
 
+### Looking at a local database (developer inspections)
+
+Three read-only inspections in `./node` back `stackra db:schema`, `stackra db:query` and `stackra db:migrations:status`,
+and the `db_schema`, `db_query` and `db_migrations_status` tools of the local developer MCP (`stackra mcp`):
+
+- `describeSchema({ schema?, table? })`: every table outside the system schemas with its columns, primary key, indexes,
+  row-level security (enabled, forced) and policies. Catalogue reads only.
+- `queryInScope({ sql, scope, role?, limit?, timeoutMs? })`: one query read the way the app reads it, in a READ ONLY
+  transaction, as the app's role, with `app.tenant_id` set to `scope` (the tenant's scope id) for that transaction only, a row limit (100, at
+  most 1000) and a statement timeout (5 s, at most 30 s). A table under row-level security answers the tenant's rows
+  instead of none, so nobody turns row-level security off to look. It refuses a role that can bypass row-level security
+  or owns a table whose row-level security is not forced (on a superuser connection, pass the service's runtime role as
+  `role`), and a query that calls `set_config`; the query runs on the extended protocol inside `select * from (…)`, so a
+  write or a second statement fails, and the transaction is always rolled back.
+- `migrationStatus({ cwd })`: the compiled files against `schema_migrations`, each applied or pending, and edited when
+  `schema_migrations_history` recorded another checksum for it. No advisory lock, no table created.
+
+Each reads local dev and the testbed only (`inspectionTarget`): `STACKRA_ENVIRONMENT` must be `dev` (the default) or
+`test`, and in dev the connection (`DATABASE_DIRECT_URL`, else `DATABASE_URL`) must reach this machine. A refusal is an
+`InspectionRefusedError` (code `inspection_refused`).
+
 ## Scope isolation
 
 Isolation stays in the database: row-level security, never an application WHERE filter (ADR 0327 d9,

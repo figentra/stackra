@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: the consumer contract of the `./node` entry: the Postgres, unit-of-work, replica-reads, idempotency and
  *          rate-limit drivers, the service-backed hold registry, the migration runner, the seed runner, the seeder runner
- *          (STA-1709), the direct URL
+ *          (STA-1709), the developer inspections (STA-2906), the direct URL
  *          reader, the health indicator, the primary connection resolver, the query budget driver and the slow-statement observer are
  *          exported, nothing else is.
  * Boundary: test only; no database is connected.
@@ -24,6 +24,7 @@ describe("@stackra/database/node", () => {
       "DbMigrateCommand",
       "DbRollbackCommand",
       "DbStatusCommand",
+      "InspectionRefusedError",
       "LoggerQueryObserverDriver",
       "PostgresDatabaseDriver",
       "PostgresIdempotencyStoreDriver",
@@ -33,9 +34,12 @@ describe("@stackra/database/node", () => {
       "ServiceHoldRegistryDriver",
       "applySeed",
       "databaseUrl",
+      "describeSchema",
       "directDatabaseUrl",
       "migrate",
+      "migrationStatus",
       "provideDatabaseUrl",
+      "queryInScope",
       "readMigratedSchema",
       "rollback",
       "runSeedEntry",

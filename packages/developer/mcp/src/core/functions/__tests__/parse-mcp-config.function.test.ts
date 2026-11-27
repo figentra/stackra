@@ -18,7 +18,7 @@ const TEMPLATE = {
   mcpServers: {
     stackra: { command: "pnpm", args: ["exec", "stackra", "mcp"] },
     "stackra-cloud": { type: "http", url: "https://mcp.stackra.figentra.com/mcp" },
-    encore: { command: "encore", args: ["mcp", "run", "--app=acme-platform"] },
+    "encore-cloud": { type: "http", url: "https://api.encore.dev/mcp" },
     context7: {
       command: "pnpm",
       args: [
