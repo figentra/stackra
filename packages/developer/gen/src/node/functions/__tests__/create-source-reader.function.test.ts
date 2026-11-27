@@ -9,7 +9,7 @@
  *          derived shape (`PickType`) and a discriminated union read correctly; and each model's entity facts
  *          (a trait's public id fields stay public ids, STA-1720; its list, prefix-less id, Translated and enum fields keep
  *          their types, STA-2215; `[OptionalProps]` keys, a one-to-many with its inverse, a `Ref` many-to-one, a `Link` across models,
- *          getters) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
+ *          getters, a trait object argument keeping its constant properties, STA-1408) with `relation_decorator_missing` for a relation gen cannot read; `Translated`,
  *          `TranslatedStrings` and `Upload<Bucket>` fields read as the `translated` and `upload` kinds (STA-1218);
  *          a replica query's `Promise<ReplicaPage>` or `Promise<ReplicaPage<T>>` reads as `replica` (ADR 0338), and a
  *          stream action's `Promise<ReadableStream<T>>` as `stream` (G1b); a
@@ -379,6 +379,7 @@ const MODEL_STAND_IN: Readonly<Record<string, string>> = {
     'export declare const Phase: { readonly Draft: "draft"; readonly Live: "live" };',
     "export type Phase = (typeof Phase)[keyof typeof Phase];",
     "export declare const Phased: Trait<{ phase: Phase }>;",
+    "export declare function Partitioned(options: { readonly by: string; readonly interval: string; readonly premake?: number }): Trait<object>;",
     "export declare const OptionalProps: unique symbol;",
     "// A symbol-keyed trait member: the checker names it `__@OptionalProps@<id>`, which must never become a field.",
     'export declare const Timestamps: Trait<{ createdAt: Date; updatedAt: Date; [OptionalProps]?: "createdAt" }>;',
@@ -458,6 +459,18 @@ const MODEL_SOURCES: Readonly<Record<string, string>> = {
     "}",
     "",
   ].join("\n"),
+  // A trait object argument with one option that is not constant (STA-1408).
+  "src/node/models/entry.model.ts": [
+    'import { HasPublicId, Model, Partitioned } from "@stackra/model";',
+    "",
+    "export class Entry extends Model.with(",
+    '  HasPublicId("ent"),',
+    '  Partitioned({ by: "occurredAt", interval: "month", premake: Number("2") }),',
+    ") {",
+    "  occurredAt!: Date;",
+    "}",
+    "",
+  ].join("\n"),
   "src/node/models/receipt.model.ts": [
     'import { HasPublicId, Model, OptionalProps, Timestamps } from "@stackra/model";',
     "",
@@ -475,8 +488,20 @@ describe("createSourceReader on models", async () => {
   const host = await openHost(join(root, "tsconfig.json"));
   const reader = createSourceReader(host, readMemberFacts(root));
   const shapes = reader.sources.flatMap((file) => reader.shapes(file));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
   host.close();
   const entity = (name: string) => shapes.find((shape) => shape.name === name)?.entity;
+
+  it("keeps a trait object argument's constant properties when another is not constant (STA-1408)", () => {
+    expect(classes.find((declared) => declared.name === "Entry")?.traits).toEqual([
+      { name: "HasPublicId", args: ["ent"] },
+      { name: "Partitioned", args: [{ by: "occurredAt", interval: "month" }] },
+    ]);
+    expect(classes.find((declared) => declared.name === "Receipt")?.traits).toEqual([
+      { name: "HasPublicId", args: ["rcp"] },
+      { name: "Timestamps", args: [] },
+    ]);
+  });
 
   it("reads a trait's public id fields as public ids with their prefix, never unknown (STA-1720)", () => {
     const fields = shapes.find((shape) => shape.name === "Terminal")?.fields ?? [];

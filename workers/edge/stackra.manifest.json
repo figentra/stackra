@@ -58,9 +58,38 @@
   "models": [],
   "drivers": [
     {
+      "port": "EdgeNonceStore",
+      "key": "app.EdgeNonceStore",
+      "candidates": ["cache", "memory"],
+      "classes": {
+        "cache": {
+          "class": "CacheEdgeNonceStoreDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "Cache",
+                "from": "@stackra/cache/contracts"
+              }
+            }
+          ]
+        },
+        "memory": {
+          "class": "MemoryEdgeNonceStoreDriver",
+          "from": "@stackra/app/server"
+        }
+      },
+      "selectedBy": "config:app.edge.nonces",
+      "config": {
+        "class": "EdgeConfig",
+        "from": "@stackra/app/server"
+      },
+      "from": "@stackra/app"
+    },
+    {
       "port": "EdgeSigningKeys",
       "key": "app.EdgeSigningKeys",
-      "candidates": ["env", "memory"],
+      "candidates": ["env", "memory", "secrets"],
       "classes": {
         "env": {
           "class": "EnvEdgeSigningKeysDriver",
@@ -77,26 +106,27 @@
         "memory": {
           "class": "MemoryEdgeSigningKeysDriver",
           "from": "@stackra/app/server"
+        },
+        "secrets": {
+          "class": "SecretsEdgeSigningKeysDriver",
+          "from": "@stackra/app/server",
+          "deps": [
+            {
+              "class": {
+                "name": "SecretStore",
+                "from": "@stackra/config/contracts"
+              }
+            },
+            {
+              "class": {
+                "name": "EdgeConfig",
+                "from": "@stackra/app/server"
+              }
+            }
+          ]
         }
       },
       "selectedBy": "config:app.edge.keys",
-      "config": {
-        "class": "EdgeConfig",
-        "from": "@stackra/app/server"
-      },
-      "from": "@stackra/app"
-    },
-    {
-      "port": "EdgeNonceStore",
-      "key": "app.EdgeNonceStore",
-      "candidates": ["memory"],
-      "classes": {
-        "memory": {
-          "class": "MemoryEdgeNonceStoreDriver",
-          "from": "@stackra/app/server"
-        }
-      },
-      "selectedBy": "config:app.edge.nonces",
       "config": {
         "class": "EdgeConfig",
         "from": "@stackra/app/server"

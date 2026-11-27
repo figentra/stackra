@@ -86,6 +86,7 @@ import { emitClientTools } from "#core/functions/emit-client-tools.function";
 import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
 import { emitEncoreCronJobs } from "#core/functions/emit-encore-cron-jobs.function";
 import { emitEncoreDatabase } from "#core/functions/emit-encore-database.function";
+import { emitEncoreEnvironment } from "#core/functions/emit-encore-environment.function";
 import { emitEncoreBrokerMessage } from "#core/functions/emit-encore-broker-message.function";
 import { emitEncoreEvents } from "#core/functions/emit-encore-events.function";
 import { emitEncoreHttp } from "#core/functions/emit-encore-http.function";
@@ -318,6 +319,7 @@ export function generateMember(
     emitEncoreService(ir),
     emitEncoreApi(ir, manifest),
     emitEncoreCronJobs(ir, manifest),
+    emitEncoreEnvironment(ir),
     emitEncoreDatabase(ir),
     emitEncoreQueues(ir, manifest),
     emitEncoreHttp(ir),

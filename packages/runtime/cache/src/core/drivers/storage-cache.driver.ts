@@ -6,7 +6,7 @@
  *           marker keys under `cache.#`. Each value is JSON with its expiry on the `Clock`; the area's own time-to-live
  *           only reclaims space. `forget` lists the area's keys by prefix. Reads and writes go to the area's memory
  *           copy and persist in the background (`Storage.flush()`). Single-flight is per process and `lock` changes
- *           nothing here. The `cache` area holds disposable data a reload may rebuild; it is not where secrets go.
+ *           nothing here. The area has no atomic set-if-absent across tabs, so `add` rejects. The `cache` area holds disposable data a reload may rebuild; it is not where secrets go.
  * Runtime: isomorphic
  * Governing contract: ADR 0150 (decisions 1, 2 and 4); ADR 0256 (decision 2: the `cache` area); ADR 0305 (rule 32).
  */
