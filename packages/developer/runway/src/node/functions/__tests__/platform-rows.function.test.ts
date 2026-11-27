@@ -23,7 +23,7 @@ const APP_LINKS = {
 
 /** The host row of a production host of `surface`. */
 const row = (surface: string, canonical: string) => ({
-  product: "mezzora",
+  product: "bistro",
   surface,
   region: "me-central",
   status: "active",
@@ -51,22 +51,22 @@ describe("platformRows", () => {
       Object.entries(rows).map(([key, value]) => [key, JSON.parse(value)]),
     );
     expect(parsed).toEqual({
-      "host:console.mezzora.figentra.com": row("console", "console.mezzora.figentra.com"),
-      "host:mezzora.figentra.com": row("landing", "mezzora.figentra.com"),
-      "host:mezzora.com": row("landing", "mezzora.figentra.com"),
-      "wellknown:console.mezzora.figentra.com:apple-app-site-association": {
+      "host:console.bistro.figentra.com": row("console", "console.bistro.figentra.com"),
+      "host:bistro.figentra.com": row("landing", "bistro.figentra.com"),
+      "host:bistro.example": row("landing", "bistro.figentra.com"),
+      "wellknown:console.bistro.figentra.com:apple-app-site-association": {
         applinks: {
           details: [
-            { appIDs: ["ABCDE12345.com.figentra.mezzora.staff"], components: [{ "/": "*" }] },
+            { appIDs: ["ABCDE12345.com.figentra.bistro.staff"], components: [{ "/": "*" }] },
           ],
         },
       },
-      "wellknown:console.mezzora.figentra.com:assetlinks.json": [
+      "wellknown:console.bistro.figentra.com:assetlinks.json": [
         {
           relation: ["delegate_permission/common.handle_all_urls"],
           target: {
             namespace: "android_app",
-            package_name: "com.figentra.mezzora.staff",
+            package_name: "com.figentra.bistro.staff",
             sha256_cert_fingerprints: ["AA:BB"],
           },
         },
@@ -77,12 +77,12 @@ describe("platformRows", () => {
   it("gives a preset surface its preset and the preset's realm", () => {
     const root = parseRunway("root", {
       ...PRODUCT_ROOT,
-      surfaces: { portal: { shell: "os/console@3", preset: "portal", host: "family.mezzora" } },
+      surfaces: { portal: { shell: "os/console@3", preset: "portal", host: "family.bistro" } },
       mobile: {},
     });
     const rows = platformRows(root, "production", {});
-    expect(JSON.parse(rows["host:family.mezzora.figentra.com"] ?? "")).toEqual({
-      ...row("portal", "family.mezzora.figentra.com"),
+    expect(JSON.parse(rows["host:family.bistro.figentra.com"] ?? "")).toEqual({
+      ...row("portal", "family.bistro.figentra.com"),
       realm: "portal",
       preset: "portal",
     });
@@ -93,7 +93,7 @@ describe("platformRows", () => {
       region: "eu-west",
       appLinks: APP_LINKS,
     });
-    expect(JSON.parse(rows["host:mezzora.com"] as string).region).toBe("eu-west");
+    expect(JSON.parse(rows["host:bistro.example"] as string).region).toBe("eu-west");
   });
 
   it("lists every row it cannot resolve", () => {
@@ -116,7 +116,7 @@ describe("platformRows", () => {
     const root = parseRunway("root", PRODUCT_ROOT);
     // Assigned by key, so it is typed as a web surface: a spread literal cannot satisfy `ops` beside the catchall.
     const surfaces: NonNullable<typeof root.surfaces> = root.surfaces ?? {};
-    surfaces.portal = { shell: "os/console@3", preset: "portal", host: "console.mezzora" };
+    surfaces.portal = { shell: "os/console@3", preset: "portal", host: "console.bistro" };
     root.surfaces = surfaces;
     expect(issuePaths(() => platformRows(root, "production", { appLinks: APP_LINKS }))).toEqual([
       "surfaces.portal.host",

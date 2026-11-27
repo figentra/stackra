@@ -31,16 +31,31 @@
  *   paths are normalised, a glob filter's names and a Grep root above a credential folder count; `rsync --delete`
  *   asks. Repo-only rules (muslin's read-only checkouts and shared index, juristra's editable own hooks) stay in
  *   each repo.
+ * Paths: the Stackra checkout is the porter's own, `~/Projects/stackra`, or `GUARD_PORT_STACKRA` (absolute); the
+ *   muslin port also needs `GUARD_PORT_MUSLIN_REFERENCE`, the absolute path of the read-only reference checkout it
+ *   must never write. No person's path is written here (STA-2876).
  * Exit: 0 patched, 1 an anchor drifted (nothing half-written: files are written only after every hunk applied),
- *   2 usage.
+ *   2 usage (including a muslin port without its reference checkout).
  */
 import { spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SOURCE = fileURLToPath(new URL("../../.agents/hooks/", import.meta.url));
-const STACKRA = "/Users/akouta/Projects/stackra";
+/** The Stackra checkout the ported rules protect and route through: the porter's own. */
+const STACKRA = (process.env.GUARD_PORT_STACKRA || join(homedir(), "Projects", "stackra")).replace(
+  /\/+$/,
+  "",
+);
+/** `path` as regular-expression source, slashes escaped for a literal. */
+const rxPath = (path) => path.replaceAll(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+/** The muslin port's read-only reference checkout, absolute; undefined when unset. */
+const muslinReference = () => {
+  const path = process.env.GUARD_PORT_MUSLIN_REFERENCE?.replace(/\/+$/, "");
+  return path?.startsWith("/") ? path : undefined;
+};
 const SLUG = { os: "figentra/os", muslin: "figentra/muslin", juristra: "figentra/juristra" };
 const COPIED = [
   "_io.mjs",
@@ -79,11 +94,18 @@ const REPO_ROW = {
     why: "docs/catalogue/<service>.md is generated from its YAML. Edit docs/catalogue/<service>.yaml and run \`node tools/scripts/catalogue.mjs render\`.",
   },
 `,
-  muslin: `  {
-    rx: /^\\/Users\\/akouta\\/Projects\\/academorix\\//, // port: muslin
-    why: "academorix is a read-only reference for Muslin (.opencode/rules/platform-rules.md, docs/HANDOVER.md §2); never write there.",
+  get muslin() {
+    const reference = muslinReference();
+    if (reference === undefined)
+      throw new Error(
+        "the muslin port needs GUARD_PORT_MUSLIN_REFERENCE, its read-only reference checkout",
+      );
+    return `  {
+    rx: /^${rxPath(reference)}\\//, // port: muslin
+    why: "${reference} is a read-only reference for Muslin (.opencode/rules/platform-rules.md, docs/HANDOVER.md §2); never write there.",
   },
-`,
+`;
+  },
   juristra: "", // juristra keeps its own path rules in repo-paths.mjs
 };
 
@@ -109,9 +131,9 @@ const GIT_INTERNALS =
 const GIT_INTERNALS_WHY =
   "Git's config files, .git/hooks and a worktree's \`.git\` file are written only by git: an alias (\`!gh …\`), a credential helper, a push URL, a hook or another git directory written there runs past the push and GitHub rules. Use \`git config\` with an allowed key, or propose the change in chat.";
 /** port: the Stackra checkout and its worktrees: the bot wrappers run from there with every /agents value. */
-const STACKRA_TREE = /^\/Users\/akouta\/Projects\/stackra(?:\/|$)/i;
+const STACKRA_TREE = /^${rxPath(STACKRA)}(?:\/|$)/i;
 const STACKRA_WHY =
-  "The Stackra checkout is not this repository's: its bot wrappers (package.json, tools/scripts/bot-*.mjs, pr-merge.mjs, secrets-exec.mjs) run with the agents' secrets, so no session here writes, moves or checks out anything under /Users/akouta/Projects/stackra. Change Stackra from a session rooted there.";
+  "The Stackra checkout is not this repository's: its bot wrappers (package.json, tools/scripts/bot-*.mjs, pr-merge.mjs, secrets-exec.mjs) run with the agents' secrets, so no session here writes, moves or checks out anything under ${STACKRA}. Change Stackra from a session rooted there.";
 /** port: temporary folders: a copy of config there that is no checkout (\`cp -r .claude <scratchpad>\`) is no guard. */
 const TEMP = /^\/(?:private\/)?(?:tmp|var\/folders)\//;
 /** port: true when the absolute path matches the config pattern rx anywhere but in a temporary copy. */
@@ -923,9 +945,10 @@ const LINE_WORD = new RegExp(
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [dir, repo] = process.argv.slice(2);
-  if (!dir || !SLUG[repo]) {
+  if (!dir || !SLUG[repo] || (repo === "muslin" && muslinReference() === undefined)) {
     console.error(
-      "usage: node tools/scripts/guard-port.mjs <target>/.agents/hooks <os|muslin|juristra>",
+      "usage: node tools/scripts/guard-port.mjs <target>/.agents/hooks <os|muslin|juristra>" +
+        " (muslin: GUARD_PORT_MUSLIN_REFERENCE=<absolute path of its read-only reference checkout>)",
     );
     process.exit(2);
   }

@@ -47,7 +47,7 @@ const root = rootRunway({
       accountId: "ref:cloudflare.accountId",
       zones: {
         "figentra.com": "ref:cloudflare.zones.com",
-        "figentra.cloud": "ref:cloudflare.zones.cloud",
+        "dev.example": "ref:cloudflare.zones.cloud",
       },
     },
   },
@@ -55,10 +55,10 @@ const root = rootRunway({
 });
 
 const stack = parseCloudflareStack({
-  devZone: "figentra.cloud",
-  zones: { "figentra.cloud": { edge: false } },
+  devZone: "dev.example",
+  zones: { "dev.example": { edge: false } },
   buckets: { "turbo-cache": { expireDays: 7 } },
-  tunnels: { akouta: {} },
+  tunnels: { dana: {} },
   access: { githubOrganization: "figentra", identityProviderId: "ref:access.github" },
 });
 
@@ -74,22 +74,22 @@ describe("cloudflareCoreStack", () => {
           zone.importId,
         ]),
       ),
-    ).toEqual({ "figentra.com": "zone-com", "figentra.cloud": "zone-cloud" });
+    ).toEqual({ "figentra.com": "zone-com", "dev.example": "zone-cloud" });
     expect(Object.keys(inputsByName(declared, "cloudflare:index/ruleset:Ruleset")).sort()).toEqual([
       "figentra.com-cache-bypass",
       "figentra.com-rate-limit",
       "figentra.com-waf",
     ]);
-    expect(core.zones["figentra.cloud"]?.edge).toBeUndefined();
+    expect(core.zones["dev.example"]?.edge).toBeUndefined();
     expect(inputsByName(declared, "cloudflare:index/dnsRecord:DnsRecord")).toEqual({
-      "tunnel-figentra-akouta-console-akouta.figentra.cloud": {
+      "tunnel-figentra-dana-console-dana.dev.example": {
         zoneId: "zone-cloud",
-        name: "console-akouta.figentra.cloud",
+        name: "console-dana.dev.example",
         type: "CNAME",
-        content: "tunnel-figentra-akouta-id.cfargotunnel.com",
+        content: "tunnel-figentra-dana-id.cfargotunnel.com",
         proxied: true,
         ttl: 1,
-        comment: "Dev tunnel figentra-akouta (ADR 0290 decision 5)",
+        comment: "Dev tunnel figentra-dana (ADR 0290 decision 5)",
       },
     });
     expect(
@@ -97,7 +97,7 @@ describe("cloudflareCoreStack", () => {
         declared,
         "cloudflare:index/zeroTrustAccessApplication:ZeroTrustAccessApplication",
       )["access-dev"],
-    ).toMatchObject({ accountId: "acc-1", domain: "*.figentra.cloud", allowedIdps: ["idp-1"] });
+    ).toMatchObject({ accountId: "acc-1", domain: "*.dev.example", allowedIdps: ["idp-1"] });
     expect(
       inputsByName(declared, "cloudflare:index/r2BucketLifecycle:R2BucketLifecycle")[
         "r2-turbo-cache-lifecycle"
@@ -113,7 +113,7 @@ describe("cloudflareCoreStack", () => {
     expect(core.access).toBeUndefined();
     expect(core.buckets).toEqual({});
     expect(core.caches).toEqual({});
-    expect(Object.keys(core.zones)).toEqual(["figentra.com", "figentra.cloud"]);
+    expect(Object.keys(core.zones)).toEqual(["figentra.com", "dev.example"]);
   });
 
   it("refuses a runway without a Cloudflare account and a zone the runway does not name", () => {
@@ -150,12 +150,12 @@ describe("cloudflareCoreStack", () => {
     const policy = parseStorefront(STOREFRONT_SETTINGS);
     expect(
       thrownIssues(() =>
-        cloudflareCoreStack({ root, stack, storefront: { "figentra.cloud": policy } }),
+        cloudflareCoreStack({ root, stack, storefront: { "dev.example": policy } }),
       ).map((issue) => issue.path),
     ).toEqual([
-      "storefront.figentra.cloud",
-      "storefront.figentra.cloud.campaigns.spring-drop.host",
-      "storefront.figentra.cloud.campaigns.quiet.host",
+      "storefront.dev.example",
+      "storefront.dev.example.campaigns.spring-drop.host",
+      "storefront.dev.example.campaigns.quiet.host",
     ]);
   });
 

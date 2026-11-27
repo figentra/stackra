@@ -31,7 +31,7 @@ function driver(): { kv: WranglerEdgeKvDriver; calls: Parameters<CommandRunner>[
 describe("WranglerEdgeKvDriver", () => {
   it("puts a row with wrangler in the namespace", async () => {
     const { kv, calls } = driver();
-    await kv.put("release:mezzora:console", '{"version":"1.2.0"}');
+    await kv.put("release:bistro:console", '{"version":"1.2.0"}');
     expect(calls).toEqual([
       [
         "wrangler",
@@ -39,7 +39,7 @@ describe("WranglerEdgeKvDriver", () => {
           "kv",
           "key",
           "put",
-          "release:mezzora:console",
+          "release:bistro:console",
           '{"version":"1.2.0"}',
           `--namespace-id=${NAMESPACE}`,
           "--remote",
@@ -51,24 +51,17 @@ describe("WranglerEdgeKvDriver", () => {
 
   it("expires a row after the given seconds", async () => {
     const { kv, calls } = driver();
-    await kv.put("host:mezzora-pr-1.figentra.cloud", "{}", 604_800);
+    await kv.put("host:bistro-pr-1.dev.example", "{}", 604_800);
     expect(calls[0]?.[1]).toContain("--ttl=604800");
   });
 
   it("deletes a row with wrangler in the namespace", async () => {
     const { kv, calls } = driver();
-    await kv.delete("canary:mezzora:console");
+    await kv.delete("canary:bistro:console");
     expect(calls).toEqual([
       [
         "wrangler",
-        [
-          "kv",
-          "key",
-          "delete",
-          "canary:mezzora:console",
-          `--namespace-id=${NAMESPACE}`,
-          "--remote",
-        ],
+        ["kv", "key", "delete", "canary:bistro:console", `--namespace-id=${NAMESPACE}`, "--remote"],
         {},
       ],
     ]);
@@ -78,16 +71,14 @@ describe("WranglerEdgeKvDriver", () => {
     const { kv, calls } = driver();
     kv.run = async (command, args, options) => {
       calls.push([command, args, options]);
-      return '{"product":"mezzora"}';
+      return '{"product":"bistro"}';
     };
-    await expect(kv.read("host:mezzora-pr-1.figentra.cloud")).resolves.toBe(
-      '{"product":"mezzora"}',
-    );
+    await expect(kv.read("host:bistro-pr-1.dev.example")).resolves.toBe('{"product":"bistro"}');
     expect(calls[0]?.[1]).toEqual([
       "kv",
       "key",
       "get",
-      "host:mezzora-pr-1.figentra.cloud",
+      "host:bistro-pr-1.dev.example",
       `--namespace-id=${NAMESPACE}`,
       "--text",
       "--remote",

@@ -38,7 +38,7 @@ hand-built: each parses its own arguments, prints its own help and errors, and s
 no shared command framework, and no declared shape for a command that a package could expose. ADR 0294 decision 23 says
 "Command means a CLI command only", but the kind table has no row for one. ADR 0127's 2026-10-24 note folded a `console`
 package into `cli` on that reading, which put every command inside one CLI package. The basalt port of
-`@stackra/console` (Academorix spec 030) used a provider API (`defineConsoleCommand`, string tokens) that v3 retires
+`@stackra/console` (the academy product spec 030) used a provider API (`defineConsoleCommand`, string tokens) that v3 retires
 ([0145](/adr/0145-tokens-are-define-token-values-and-global-helpers-are-banned), [0294](/adr/0294-programming-model-v3-grammar-folders-identities-and-naming)
 decision 17). Commands need the v3 shape: a class, decorated fields, constructor collaborators, and a folder of their own.
 
@@ -168,7 +168,7 @@ Related: [0005](/adr/0005-di-container-and-legacy-decorators), [0295](/adr/0295-
 
 Sources: the owner's decision of 2026-10-31 on the `@stackra/console` spec (`.agents/specs/sta-1730-console/spec.md`, the
 decisions taken at the spec stop) and its design (`plan.md`); the leader's approval of the class style and the optional
-gen; Linear STA-1730 (phase 1), STA-1731 (phase 2) and STA-1732 (the number reservation); the basalt port, Academorix
+gen; Linear STA-1730 (phase 1), STA-1731 (phase 2) and STA-1732 (the number reservation); the basalt port, the academy product
 spec 030.
 
 ## Amendment 2026-11-02 (owner decision): one CLI engine

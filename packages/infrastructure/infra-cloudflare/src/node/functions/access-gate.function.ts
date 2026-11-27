@@ -21,7 +21,7 @@ import type { CloudflareStack } from "#core/types/cloudflare-stack.type";
  * @param args - the account id, the project (a name prefix), the dev zone, the resolved GitHub identity provider id
  *               and the stack's Access config.
  * @example
- * accessGate({ accountId, project: "figentra", devZone: "figentra.cloud", identityProviderId, access: stack.access });
+ * accessGate({ accountId, project: "figentra", devZone: "dev.example", identityProviderId, access: stack.access });
  */
 export function accessGate(args: {
   readonly accountId: string;

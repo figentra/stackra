@@ -5,7 +5,7 @@
  *          constant time, accepts it at most once and returns the record to store next.
  * Boundary: pure apart from Web Crypto (`getRandomValues`, HMAC). It stores nothing: the service persists the record
  *           with a compare-and-set. Code length, lifetime and attempts are rule-set or settings values the caller
- *           passes (`@academorix/safeguarding-rules`), never defaults here. The pepper is the caller's key source.
+ *           passes (`@academy/safeguarding-rules`), never defaults here. The pepper is the caller's key source.
  * Runtime: isomorphic
  * Governing contract: ADR 0305 (one declaration per file); ADR 0173 (nobody reads a value); ACA-538; STA-934;
  *                     STA-1383 (record renamed `KeyedOneTimeCodeRecord`).

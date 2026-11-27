@@ -37,10 +37,10 @@ const BRAND_CLAIMS: GithubClaims = {
 
 /** A brand kit: package.json plus assets, no src/ and no source maps. */
 const KIT = {
-  name: "@figentra/brand-academorix",
+  name: "@figentra/brand-academy",
   version: "1.0.0",
   license: "SEE LICENSE IN LICENSE",
-  description: "Academorix brand kit",
+  description: "Academy brand kit",
 };
 const KIT_ASSETS = {
   "tokens/colors.json": '{"primary":"#123456"}',

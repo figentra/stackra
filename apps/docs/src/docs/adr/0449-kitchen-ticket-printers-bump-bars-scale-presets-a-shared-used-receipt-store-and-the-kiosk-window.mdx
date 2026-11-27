@@ -3,7 +3,7 @@ title: "0449 — Kitchen ticket printers, bump bars, scale presets, a shared use
 description: "Proposed · 2026-10-27"
 ---
 
-{/* Stackra file contract: Purpose: the decision record for the peripherals and platform additions Mezzora, Organza and Commerce asked for (named kitchen printers with raster Arabic and a buzzer, the bump bar driver, the precision scale preset, the shared used-receipt store port, the kiosk window kind). Boundary: decision text only; the code is in packages/experience/peripherals and packages/experience/platform. Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0253, 0281, 0339, 0428, 0429. */}
+{/* Stackra file contract: Purpose: the decision record for the peripherals and platform additions the commerce editions and Commerce asked for (named kitchen printers with raster Arabic and a buzzer, the bump bar driver, the precision scale preset, the shared used-receipt store port, the kiosk window kind). Boundary: decision text only; the code is in packages/experience/peripherals and packages/experience/platform. Runtime: docs. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0253, 0281, 0339, 0428, 0429. */}
 
 <Note>
   Proposed (STA-925, batch stackra-49; the remainder of STA-801). It extends
@@ -12,8 +12,8 @@ description: "Proposed · 2026-10-27"
   (peripherals), [0429](/adr/0429-exit-gates-on-signed-receipt-tokens-and-continuous-scale-weights)
   (decision 3: the shared used-receipt store, "later") and
   [0281](/adr/0281-desktop-surfaces-targets-desktop-modes-and-overlay-styles) (desktop windows).
-  Sources: Mezzora module catalogue open question 4, Organza module catalogue (precision scale
-  preset), Commerce module catalogue gaps (platform: no kiosk window kind).
+  Sources: an edition's module catalogue (open question 4), Organza module catalogue (precision
+  scale preset), Commerce module catalogue gaps (platform: no kiosk window kind).
 </Note>
 
 ## Context
@@ -64,6 +64,6 @@ planned — the unit tests in `packages/experience/peripherals/src/{core,desktop
 
 ## Supersedes and sources
 
-Supersedes: none (0429 decision 3's "later" is this). Sources: Mezzora `apps/docs/src/docs/build/module-catalogue.mdx` open
+Supersedes: none (0429 decision 3's "later" is this). Sources: an edition's `apps/docs/src/docs/build/module-catalogue.mdx` open
 question 4; Organza `apps/docs/src/docs/build/module-catalogue.mdx` (pieces, buyback); Commerce
 `apps/docs/src/docs/build/module-catalogue.mdx` (platform gap).

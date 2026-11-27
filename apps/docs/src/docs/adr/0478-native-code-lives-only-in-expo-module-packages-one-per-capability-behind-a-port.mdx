@@ -17,7 +17,7 @@ description: "Accepted · 2026-10-28"
 
 ## Context
 
-Commerce, Mezzora and Jute need receipt printers, cash drawers, scales and card readers on phones, tablets and Android
+Commerce and its editions need receipt printers, cash drawers, scales and card readers on phones, tablets and Android
 tills, which only vendor SDKs (Epson, Star, Sunmi, PAX, Stripe Terminal, scale makers) reach. 0345 decision 6 gave an
 app a `src/native-sources/<surface>/` group for hand-written Swift and Kotlin, and 0458 and 0459 put the Sunmi and PAX
 Kotlin there, inside the till app. That ties vendor SDKs to one app, repeats them in every app that needs the same
@@ -65,7 +65,7 @@ per capability, behind a TypeScript port with a mock driver. Apps contain no han
    packages; the tarball carries `ios/`, `android/`, `plugin/` and `expo-module.config.json`. There is no separate
    Swift Package Manager, CocoaPods or Maven publish. If a pure-native app ever needs one, the native core splits into
    its own library and the Expo module becomes a thin wrapper over it.
-8. **First modules.** For Commerce, Mezzora and Jute: receipt printer, cash drawer, scale and card terminal (the owner's
+8. **First modules.** For Commerce and its editions: receipt printer, cash drawer, scale and card terminal (the owner's
    "card reader": the existing `CardTerminal` port; each acquirer SDK is still its own ADR, 0442 decision 6). Barcode
    scanning uses the camera modules first and becomes `@stackra/native-barcode-scanner` only when a built-in scan head
    (Sunmi, PAX) needs its SDK.

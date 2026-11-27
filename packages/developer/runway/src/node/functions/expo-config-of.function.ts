@@ -46,8 +46,8 @@ function nameOf(plugin: ExpoPluginEntry): string {
  * @param input.capabilities - `capabilityConfig` of the app's flags on the template line.
  * @param input.variant - the white-label variant, whose identity replaces the entry's key by key.
  * @example
- * expoConfigOf(template.expo, { project: "mezzora", app: "staff", entry, capabilities }).ios;
- * // { bundleIdentifier: "com.figentra.mezzora.staff", … }
+ * expoConfigOf(template.expo, { project: "bistro", app: "staff", entry, capabilities }).ios;
+ * // { bundleIdentifier: "com.figentra.bistro.staff", … }
  */
 export function expoConfigOf(
   base: Readonly<Block>,

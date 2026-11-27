@@ -59,7 +59,7 @@ function workload(
   return {
     key: `workloads.${name}`,
     workload: name,
-    name: `academorix-production-${name}`,
+    name: `academy-production-${name}`,
     image: DIGEST,
     port: 8080,
     health: "/debug/healthz",
@@ -85,7 +85,7 @@ function worker(name: string, healthCommand: readonly string[]): WorkloadPlan {
   return {
     key: `workloads.${name}`,
     workload: name,
-    name: `academorix-production-${name}`,
+    name: `academy-production-${name}`,
     image: DIGEST,
     healthCommand,
     command: [],
@@ -102,7 +102,7 @@ function worker(name: string, healthCommand: readonly string[]): WorkloadPlan {
 }
 
 const PLAN: RuntimePlan = {
-  project: "academorix",
+  project: "academy",
   environment: "production",
   queues: [],
   caches: [],
@@ -111,7 +111,7 @@ const PLAN: RuntimePlan = {
     {
       key: "resources.main-db",
       resource: "main-db",
-      name: "academorix-production-main-db",
+      name: "academy-production-main-db",
       engine: "rds",
       version: "18",
       instanceClass: "db.r7g.large",
@@ -194,7 +194,7 @@ describe("awsWorkloads", () => {
   // @covers sta-1640:FR-009
   // @covers sta-1640:FR-010
   it("reads the workload's own secrets and its resources' variables from SSM by name", () => {
-    const task = resource("TaskDefinition", "academorix-production-zitadel").inputs;
+    const task = resource("TaskDefinition", "academy-production-zitadel").inputs;
     const [container] = JSON.parse(String(task["containerDefinitions"])) as {
       secrets: { name: string; valueFrom: string }[];
       image: string;
@@ -211,12 +211,12 @@ describe("awsWorkloads", () => {
       expect.arrayContaining([
         {
           name: "ZITADEL_MASTERKEY",
-          valueFrom: "/academorix/production/workloads/zitadel/ZITADEL_MASTERKEY",
+          valueFrom: "/academy/production/workloads/zitadel/ZITADEL_MASTERKEY",
         },
-        { name: "MAIN_DB_URL", valueFrom: "/academorix/production/runtime/main-db/MAIN_DB_URL" },
+        { name: "MAIN_DB_URL", valueFrom: "/academy/production/runtime/main-db/MAIN_DB_URL" },
         {
           name: "ZITADEL_DATABASE_POSTGRES_DSN",
-          valueFrom: "/academorix/production/runtime/main-db/MAIN_DB_URL",
+          valueFrom: "/academy/production/runtime/main-db/MAIN_DB_URL",
         },
       ]),
     );
@@ -230,19 +230,19 @@ describe("awsWorkloads", () => {
 
   // @covers sta-1640:FR-009
   it("leaves an image's default command when the workload names no arguments", () => {
-    const task = resource("TaskDefinition", "academorix-production-ocr").inputs;
+    const task = resource("TaskDefinition", "academy-production-ocr").inputs;
     const [container] = JSON.parse(String(task["containerDefinitions"])) as { command?: unknown }[];
 
     expect(container).not.toHaveProperty("command");
   });
 
   it("gives a worker with no port no port mapping and its health command as the container's check", () => {
-    const task = resource("TaskDefinition", "academorix-production-sidekiq").inputs;
+    const task = resource("TaskDefinition", "academy-production-sidekiq").inputs;
     const [container] = JSON.parse(String(task["containerDefinitions"])) as Record<
       string,
       unknown
     >[];
-    const ocr = resource("TaskDefinition", "academorix-production-ocr").inputs;
+    const ocr = resource("TaskDefinition", "academy-production-ocr").inputs;
     const [served] = JSON.parse(String(ocr["containerDefinitions"])) as Record<string, unknown>[];
 
     expect(container).not.toHaveProperty("portMappings");
@@ -252,12 +252,12 @@ describe("awsWorkloads", () => {
     expect(served).not.toHaveProperty("healthCheck");
     expect(served?.["portMappings"]).toEqual([{ containerPort: 8080, protocol: "tcp" }]);
     expect(all("TargetGroup").map((group) => group.name)).not.toContain(
-      "academorix-production-sidekiq",
+      "academy-production-sidekiq",
     );
   });
 
   it("runs a workload's migration as its own task, once per revision, before the service", () => {
-    const task = resource("TaskDefinition", "academorix-production-zitadel-migrate").inputs;
+    const task = resource("TaskDefinition", "academy-production-zitadel-migrate").inputs;
     const [container] = JSON.parse(String(task["containerDefinitions"])) as {
       name: string;
       image: string;
@@ -266,7 +266,7 @@ describe("awsWorkloads", () => {
       secrets: { name: string }[];
     }[];
 
-    expect(task).toMatchObject({ family: "academorix-production-zitadel-migrate", cpu: "1024" });
+    expect(task).toMatchObject({ family: "academy-production-zitadel-migrate", cpu: "1024" });
     expect(container).toMatchObject({
       name: "zitadel",
       image: DIGEST,
@@ -276,9 +276,9 @@ describe("awsWorkloads", () => {
     expect(container?.secrets.map((secret) => secret.name)).toEqual(
       expect.arrayContaining(["ZITADEL_MASTERKEY", "ZITADEL_DATABASE_POSTGRES_DSN"]),
     );
-    expect(resource("Resource", "academorix-production-zitadel-migrate").inputs).toMatchObject({
-      name: "academorix-production-zitadel",
-      taskDefinition: "arn:mock:academorix-production-zitadel-migrate",
+    expect(resource("Resource", "academy-production-zitadel-migrate").inputs).toMatchObject({
+      name: "academy-production-zitadel",
+      taskDefinition: "arn:mock:academy-production-zitadel-migrate",
       container: "zitadel",
       subnets: ["subnet-a"],
       securityGroups: ["sg-workloads"],
@@ -287,50 +287,48 @@ describe("awsWorkloads", () => {
   });
 
   it("gives a workload without migrate no migration task and no run", () => {
-    expect(
-      registered.filter((entry) => entry.name === "academorix-production-ocr-migrate"),
-    ).toEqual([]);
+    expect(registered.filter((entry) => entry.name === "academy-production-ocr-migrate")).toEqual(
+      [],
+    );
   });
 
   // @covers sta-1640:FR-009
   it("puts a public workload behind an HTTPS ALB open to Cloudflare only, with autoscaling", () => {
-    const group = resource("SecurityGroup", "academorix-production-workloads-alb").inputs;
+    const group = resource("SecurityGroup", "academy-production-workloads-alb").inputs;
     const [rule] = group["ingress"] as { cidrBlocks: string[]; fromPort: number }[];
     expect(rule?.fromPort).toBe(443);
     expect(rule?.cidrBlocks).toContain("104.16.0.0/13");
 
-    expect(resource("Listener", "academorix-production-zitadel").inputs).toMatchObject({
+    expect(resource("Listener", "academy-production-zitadel").inputs).toMatchObject({
       protocol: "HTTPS",
       certificateArn: "arn:aws:acm:mock:cert",
     });
-    expect(resource("TargetGroup", "academorix-production-zitadel").inputs).toMatchObject({
+    expect(resource("TargetGroup", "academy-production-zitadel").inputs).toMatchObject({
       healthCheck: { path: "/debug/healthz" },
       targetType: "ip",
     });
-    expect(resource("Target", "academorix-production-zitadel").inputs).toMatchObject({
+    expect(resource("Target", "academy-production-zitadel").inputs).toMatchObject({
       minCapacity: 2,
       maxCapacity: 4,
     });
-    expect(hosts.public).toBe("academorix-production-zitadel.elb.mock");
-    expect(hosts.internal).toBe("zitadel.production.workloads.academorix.internal");
+    expect(hosts.public).toBe("academy-production-zitadel.elb.mock");
+    expect(hosts.internal).toBe("zitadel.production.workloads.academy.internal");
   });
 
   // @covers sta-1640:FR-009
   it("gives an internal workload discovery only: no load balancer and no autoscaling", () => {
     const ecs = registered.find(
       (entry) =>
-        entry.type === "aws:ecs/service:Service" && entry.name === "academorix-production-ocr",
+        entry.type === "aws:ecs/service:Service" && entry.name === "academy-production-ocr",
     );
     expect(ecs?.inputs).toMatchObject({
       desiredCount: 1,
       launchType: "FARGATE",
     });
-    expect(all("LoadBalancer").map((entry) => entry.name)).toEqual([
-      "academorix-production-zitadel",
-    ]);
+    expect(all("LoadBalancer").map((entry) => entry.name)).toEqual(["academy-production-zitadel"]);
     // a streamed answer (60 to 120 s) outlives the ALB's default 60 s idle timeout
     expect(all("LoadBalancer")[0]?.inputs).toMatchObject({ idleTimeout: 180 });
-    expect(all("Target").map((entry) => entry.name)).toEqual(["academorix-production-zitadel"]);
+    expect(all("Target").map((entry) => entry.name)).toEqual(["academy-production-zitadel"]);
   });
 
   it("refuses a public workload without a certificate", () => {

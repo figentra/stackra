@@ -25,7 +25,7 @@ Scale makers and protocols are pack data: `SCALE_PROTOCOLS`, the default of `Nat
 Why these two: MT-SICS is the one fully public vendor command set from the largest retail and precision scale maker,
 and it answers every field a legal-for-trade record needs (stability, unit, net weight, tare, overload). The A&D
 standard format is the most copied continuous serial output among indicator makers, so one stream driver covers a wide
-set of counter and precision scales (jewellery and buy-back weighing for Mezzora, weighed goods for Jute) without a
+set of counter and precision scales (jewellery and buy-back weighing, weighed groceries) without a
 vendor SDK. Both are plain ASCII lines, so the native side is a byte pipe and every parse stays in tested TypeScript.
 Next candidates, each a driver plus a pack entry: Toledo 8217 (scanner-scales, the `ScannerScale` port), CAS and DIGI.
 

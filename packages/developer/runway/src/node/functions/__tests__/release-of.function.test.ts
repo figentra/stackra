@@ -16,7 +16,7 @@ const BUNDLE: EdgeBundle = {
   surface: "console",
   folder: "/repo/dist/bundles/console/1.2.0",
   manifest: {
-    package: "@mezzora/console-ui",
+    package: "@bistro/console-ui",
     surface: "console",
     targets: "console@3",
     version: "1.2.0",
@@ -29,9 +29,9 @@ const BUNDLE: EdgeBundle = {
 
 describe("releaseOf", () => {
   it("places every URL under the bundle's versioned folder", () => {
-    const base = "https://assets.figentra.com/mezzora/console/1.2.0/";
+    const base = "https://assets.figentra.com/bistro/console/1.2.0/";
 
-    expect(releaseOf(BUNDLE, "mezzora", "https://assets.figentra.com")).toEqual({
+    expect(releaseOf(BUNDLE, "bistro", "https://assets.figentra.com")).toEqual({
       version: "1.2.0",
       url: `${base}entry-abc.js`,
       base,
@@ -42,8 +42,8 @@ describe("releaseOf", () => {
   });
 
   it("drops trailing slashes of the origin", () => {
-    expect(releaseOf(BUNDLE, "mezzora", "http://127.0.0.1:4173/assets//").base).toBe(
-      "http://127.0.0.1:4173/assets/mezzora/console/1.2.0/",
+    expect(releaseOf(BUNDLE, "bistro", "http://127.0.0.1:4173/assets//").base).toBe(
+      "http://127.0.0.1:4173/assets/bistro/console/1.2.0/",
     );
   });
 });

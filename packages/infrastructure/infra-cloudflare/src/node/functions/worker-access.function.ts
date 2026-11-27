@@ -18,7 +18,7 @@ import type { CloudflareStack } from "#core/types/cloudflare-stack.type";
  * @param args - the account id, the project, the resolved identity provider id, the stack's Access config, the
  *               account's `workers.dev` subdomain and each member's custom domains.
  * @example
- * workerAccess({ accountId, project: "figentra", identityProviderId, access, workersDevSubdomain: "figentra", members: { console: { hostnames: ["console.figentra.cloud"] } } });
+ * workerAccess({ accountId, project: "figentra", identityProviderId, access, workersDevSubdomain: "figentra", members: { console: { hostnames: ["console.dev.example"] } } });
  */
 export function workerAccess(args: {
   readonly accountId: string;

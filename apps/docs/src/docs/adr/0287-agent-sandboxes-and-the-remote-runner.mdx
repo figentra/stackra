@@ -17,7 +17,7 @@ description: "Accepted · 2026-10-22"
 ## Context
 
 Agent work ran on one shared machine, with at most three worktree agents at once ([0194](/adr/0194-developer-and-agent-compute)).
-On 2026-10-22 the agent box queue at Academorix showed what that costs. CI jobs of 64 to 70 minutes held three of four
+On 2026-10-22 the agent box queue at the academy product showed what that costs. CI jobs of 64 to 70 minutes held three of four
 boxes, and each box ran one job at a time at low load. A 16 GB box swapped, new spot boxes waited on AMI snapshots, and one
 seed test took 23 minutes. This ADR is about compute for internal development only. "Sandbox" in
 [0210](/adr/0210-tenancy-recursive-tenant-tree-lifecycle-one-context-and-region), [0242](/adr/0242-commercial-model-plan-ladder-add-ons-metric-and-trial) and [0280](/adr/0280-sandbox-to-live-promotion-and-environment-banner)
@@ -83,7 +83,7 @@ means a tenant sandbox, which is data and is out of scope here. Tenant code stay
 12. **The runner and the sandboxes are one system (SB12).** Runner jobs run inside sandboxes on the box or on its
     autoscaled copies. Decided reading: CI and agents use one lock implementation, with separate slot pools. CI runners keep their dedicated boxes under a hard cap (lesson 1), and agent sandboxes take only agent slots, so CI never waits behind agent sandboxes.
 
-### Binding lessons from the Academorix box queue
+### Binding lessons from the academy product box queue
 
 These seven requirements are binding on STA-255, STA-307 and STA-236. They were observed on 2026-10-22.
 
@@ -119,7 +119,7 @@ These seven requirements are binding on STA-255, STA-307 and STA-236. They were 
     needs an owner raise. Sandboxes run in eu-central-1, hold no tenant data, and use only synthetic seeds.
 15. **Account (OP3).** The shared tooling AWS account is created now, under AWS Organizations with Identity Center, as
     [0172](/adr/0172-aws-accounts-primary-region-and-cloud-cost-controls) says. The box of STA-236 is built there, not in the
-    Academorix account.
+    the academy product account.
 16. **Order (OP4).** STA-236 (the box) comes first, then STA-307 on the box, then STA-298 uses the box for evidence
     ([0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution) decision 11). The local Docker driver
     is built first for STA-307. STA-298's steps that need no evidence may start on a laptop meanwhile.
@@ -151,4 +151,4 @@ Supersedes: none. Amends [0194](/adr/0194-developer-and-agent-compute) (decision
 [0267](/adr/0267-infisical-agent-vault-deferred), [0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc),
 [0286](/adr/0286-vellum-as-the-sdlc-spike-bar-approvals-evidence-and-distribution),
 [0288](/adr/0288-merging-the-queue-fallback-and-the-sta-302-order). Sources: owner decisions of 2026-10-22 (SB1 to SB14, OP3
-and OP4); the seven Academorix box queue lessons of 2026-10-22; Linear STA-236, STA-255, STA-298, STA-307, STA-313, STA-328, STA-332 and STA-333.
+and OP4); the seven academy-product box queue lessons of 2026-10-22; Linear STA-236, STA-255, STA-298, STA-307, STA-313, STA-328, STA-332 and STA-333.

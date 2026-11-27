@@ -6,7 +6,7 @@
  *           host gave it, never a prorated share. The till driver the pack names seals what this returns, so the same
  *           code serves a ZATCA simplified invoice, an ETA e-receipt and every EU till driver.
  * Runtime: isomorphic
- * Governing contract: ADR 0364 (decision 8); Mezzora guest_checks spec (RES-150, RES-216).
+ * Governing contract: ADR 0364 (decision 8); Bistro guest_checks spec (RES-150, RES-216).
  */
 import { Money } from "@stackra/money";
 

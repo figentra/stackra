@@ -36,7 +36,7 @@ function shell(pkg: string, version: string, surfaces: readonly string[]): Stack
 function member(dependencies: MemberIR["dependencies"], extra: Partial<MemberIR> = {}): MemberIR {
   return {
     member: "console_ui",
-    package: "@mezzora/console-ui",
+    package: "@bistro/console-ui",
     version: "1.4.0",
     layout: "package",
     modules: [],
