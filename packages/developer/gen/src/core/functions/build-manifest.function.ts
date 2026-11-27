@@ -1145,6 +1145,16 @@ export function buildManifest(ir: MemberIR): {
     for (const field of shape?.fields ?? []) {
       if (field.type.kind !== "driver_name") continue;
       const port = field.type.port;
+      // An own port none of whose drivers live here (`QueueLeader` of `@stackra/query`) still records its selector,
+      // with no candidate: a host that lists another package's driver of it reads the config field and refuses a name
+      // that is not one of them, instead of taking its only driver whatever the field says (STA-1605).
+      if (
+        byName.get(port)?.kind === "port" &&
+        ![...drivers.values()].some((entry) => entry.port === port)
+      ) {
+        const key = portKey(ir.member, port);
+        drivers.set(key, { port, key, candidates: [], ...(published ? { classes: {} } : {}) });
+      }
       for (const entry of drivers.values())
         if (entry.port === port) {
           entry.selectedBy = `config:${configKeyOf(declared.name, ir.member)}.${field.name}`;

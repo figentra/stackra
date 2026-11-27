@@ -278,6 +278,40 @@ describe("Container", () => {
       ).rejects.toThrow(/config:points.ledger is "redis", but its drivers are memory, postgres/);
     });
 
+    it("refuses an unknown name when the selector and the driver come from different wirings (STA-1605)", async () => {
+      // The declaring package's row names the field and no driver; another package's row lists the only driver. A
+      // name that is none of them (a renamed driver's old name) fails at boot, never takes the only driver.
+      const declaring = points({
+        drivers: [
+          {
+            port: Ledger,
+            key: "points.Ledger",
+            selectedBy: "config:points.ledger",
+            candidates: {},
+          },
+        ],
+      });
+      const provider: Wiring = {
+        member: "points_postgres",
+        drivers: [
+          {
+            port: Ledger,
+            key: "points.Ledger",
+            candidates: { postgres: () => Promise.resolve(PostgresLedgerDriver) },
+          },
+        ],
+      };
+      const renamed = Object.assign(new PointsConfig(), { ledger: "postgres_ledger" });
+      await expect(
+        Container.create([declaring, provider], { overrides: new Map([[PointsConfig, renamed]]) }),
+      ).rejects.toThrow(/config:points.ledger is "postgres_ledger", but its drivers are postgres/);
+      const chosen = Object.assign(new PointsConfig(), { ledger: "postgres" });
+      const container = await Container.create([declaring, provider], {
+        overrides: new Map([[PointsConfig, chosen]]),
+      });
+      expect(container.get(Ledger)).toBeInstanceOf(PostgresLedgerDriver);
+    });
+
     it("binds a replacement in place of the port's drivers", async () => {
       const memory = vi.fn(() => Promise.resolve(MemoryLedgerDriver));
       const wiring = points({

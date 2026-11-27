@@ -885,6 +885,60 @@ describe("emitWiring", () => {
     expect(content).not.toContain('"locking.LockDriver": ');
   });
 
+  it("selects another package's driver by the field of the package that declares the port (STA-1605)", () => {
+    // `@stackra/locking` declares the port and the selecting field but ships no driver of it; another package does.
+    const locking: MemberIR["dependencies"][number] = {
+      package: "@stackra/locking",
+      manifest: {
+        member: "locking",
+        package: "@stackra/locking",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "LockDriver",
+            key: "locking.LockDriver",
+            candidates: [],
+            selectedBy: "config:locking.driver",
+            classes: {},
+            config: { class: "LockingConfig", from: "@stackra/locking" },
+          },
+        ],
+      },
+    };
+    const redis: MemberIR["dependencies"][number] = {
+      package: "@stackra/locking-redis",
+      manifest: {
+        member: "locking_redis",
+        package: "@stackra/locking-redis",
+        version: "0.1.0",
+        drivers: [
+          {
+            port: "LockDriver",
+            key: "locking.LockDriver",
+            candidates: ["redis"],
+            classes: { redis: { class: "RedisLockDriver", from: "@stackra/locking-redis" } },
+          },
+        ],
+      },
+    };
+    for (const order of [
+      [locking, redis],
+      [redis, locking],
+    ]) {
+      const content = emitWiring({
+        ...BILLING_IR,
+        dependencies: [...BILLING_IR.dependencies, ...order],
+      });
+      for (const line of [
+        "      port: LockDriver,",
+        '      selectedBy: "config:locking.driver",',
+        '        "redis": () => import("@stackra/locking-redis").then((m) => m.RedisLockDriver),',
+        '    { key: "locking", provide: LockingConfig },',
+      ])
+        expect(content).toContain(line);
+    }
+  });
+
   it("lists no browser, React Native or Electron driver in a service, nor a port that has only those", () => {
     const identity: MemberIR["dependencies"][number] = {
       package: "@stackra/identity",

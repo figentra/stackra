@@ -58,6 +58,17 @@
           ]
         }
       }
+    },
+    {
+      "port": "QueueLeader",
+      "key": "query.QueueLeader",
+      "candidates": [],
+      "classes": {},
+      "selectedBy": "config:query.queueLeader",
+      "config": {
+        "class": "QueryConfig",
+        "from": "@stackra/query"
+      }
     }
   ],
   "integrations": [],

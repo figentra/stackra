@@ -13,7 +13,8 @@
  *          Integration roles and listing with `integration_role_unknown`, `webhook_event_id_undeclared` (webhooks
  *          that name no event id outside Standard Webhooks), the `@Replaces` section, and a replica
  *          query's `ReplicaPage` output schema (ADR 0338); a package's drivers with each candidate's class, entry and
- *          tokens and the selecting config class (STA-1297); a package's `config` section (STA-1308); the `agents`,
+ *          tokens and the selecting config class (STA-1297), and the selector of an own port with no driver in the
+ *          package (STA-1605); a package's `config` section (STA-1308); the `agents`,
  *          `passes` and `entitlements` sections with derived entitlement keys and gates (STA-903).
  * Boundary: test only; runs on the commerce IR fixture.
  * Runtime: node (vitest)
@@ -1182,6 +1183,25 @@ describe("buildManifest's package drivers (STA-1297)", () => {
             ],
           },
         },
+        config: { class: "LoyaltyKitConfig", from: "@acme/loyalty-kit" },
+      },
+    ]);
+  });
+
+  it("records the selector of an own port none of whose drivers live in the package, with no candidate (STA-1605)", () => {
+    const ir: MemberIR = {
+      ...LOYALTY_KIT_IR,
+      classes: LOYALTY_KIT_IR.classes.filter(
+        (candidate) => candidate.name !== "MemoryLoyaltyLedgerDriver",
+      ),
+    };
+    expect(buildManifest(ir).manifest.drivers).toEqual([
+      {
+        port: "LoyaltyLedger",
+        key: "loyalty_kit.LoyaltyLedger",
+        candidates: [],
+        selectedBy: "config:loyalty_kit.ledger",
+        classes: {},
         config: { class: "LoyaltyKitConfig", from: "@acme/loyalty-kit" },
       },
     ]);

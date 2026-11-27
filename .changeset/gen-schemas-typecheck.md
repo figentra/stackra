@@ -10,9 +10,9 @@
 "@stackra/csp": patch
 "@stackra/database": patch
 "@stackra/cli": patch
-"@stackra/runway": patch
-"@stackra/platform": patch
-"@stackra/fiscal": patch
+"@stackra/runway": minor
+"@stackra/platform": minor
+"@stackra/fiscal": minor
 ---
 
 **Generated code now typechecks, and every library member checks it.** The `library` preset of `@stackra/typescript-config` includes `.stackra/gen` and `.stackra/entry`, so a type error in what `stackra gen` writes (a schema, its `X$Check`, the wiring) fails the member's own `typecheck` instead of hiding until a consumer builds it. Every member of this repo passes with it (STA-1605).
@@ -28,7 +28,7 @@ What gen writes differently:
 
 ### Driver names (manifest change)
 
-A port named after its member (`PlatformPushTransport` of `platform`, `RunwayProvider` of `runway`, `FiscalSigner` of `fiscal`) now also strips the rest of its name from a driver file's stem, as ADR 0263 names drivers by file prefix: `expo-push-transport.driver.ts` is `expo` (was `expo_push_transport`), `cloudflare-workers-provider.driver.ts` is `cloudflare_workers`, `cades-signer.driver.ts` is `cades`. These are the names the packages' own `DriverRegistry` stand-ins already used. A config that selected one of these drivers by its old long name selects it by the short name now; the committed manifests of `@stackra/platform`, `@stackra/runway` and `@stackra/fiscal` are regenerated.
+A port named after its member (`PlatformPushTransport` of `platform`, `RunwayProvider` of `runway`, `FiscalSigner` of `fiscal`) now also strips the rest of its name from a driver file's stem, as ADR 0263 names drivers by file prefix: `expo-push-transport.driver.ts` is `expo` (was `expo_push_transport`), `cloudflare-workers-provider.driver.ts` is `cloudflare_workers`, `cades-signer.driver.ts` is `cades`. These are the names the packages' own `DriverRegistry` stand-ins already used. A config that selected one of these drivers by its old long name selects it by the short name now; the committed manifests of `@stackra/platform`, `@stackra/runway` and `@stackra/fiscal` are regenerated. These three packages take a minor bump for it. An old name is no longer one of the port's drivers, so the container fails at boot naming the field, the value and the drivers, and never takes another driver in its place. A package that declares a port and the config field that selects its driver, but no driver of it (`@stackra/query`'s `QueueLeader`), now records that field in its manifest with no candidate: a host that lists another package's driver of the port selects it by that field and refuses a name that is none of its drivers, where before it took the only driver whatever the field said.
 
 Package schema fixes the new check found: `@stackra/analytics` destination `include` and `exclude` are optional, as `AnalyticsDestination` states (absent takes every event); `@stackra/panel`'s `pdfPage.heightMm` admits `undefined`; `@stackra/settings` stores a list of strings, as `SettingValue` allows; `@stackra/registry` states a catalogue action's `kind` and `dataClass`.
 
