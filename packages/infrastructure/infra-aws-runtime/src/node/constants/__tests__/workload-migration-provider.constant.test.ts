@@ -4,10 +4,12 @@
  *          workload's subnets and security group with no public address, waits until it stops, and keeps its ARN; a
  *          non-zero exit, a task ECS did not start and a task past its timeout (stopped) each fail naming the service
  *          and that the rollout did not start; only a new task definition revision or cluster runs it again, and an
- *          update does.
+ *          update does; the same run for a database's extensions starts as `runway-extensions`, keeps its own id and
+ *          fails saying that no migration ran.
  * Boundary: test only; `@aws-sdk/client-ecs` is mocked, so no AWS call is made.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0493 (as amended: a workload's migrate task).
+ * Governing contract: ADR 0022 (test placement); ADR 0493 (as amended: a workload's migrate task); ADR 0160 (note of
+ *                     2026-11-26).
  */
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
@@ -139,6 +141,28 @@ describe("WORKLOAD_MIGRATION_PROVIDER", () => {
       command: "StopTaskCommand",
       input: { task: "arn:aws:ecs:me-central-1:1:task/run-1" },
     });
+  });
+
+  it("runs a database's extensions as their own run, whose failure says no migration ran", async () => {
+    const extensions: WorkloadMigrationInputs = {
+      ...INPUTS,
+      name: "academorix-production-main-db",
+      container: "extensions",
+      purpose: "extensions",
+    };
+    ecs.states = [{ lastStatus: "STOPPED", containers: [{ name: "extensions", exitCode: 0 }] }];
+
+    const result = await WORKLOAD_MIGRATION_PROVIDER.create?.(extensions);
+
+    expect(ecs.sent[0]?.input).toMatchObject({ startedBy: "runway-extensions" });
+    expect(result?.id).toBe("academorix-production-main-db-extensions");
+
+    ecs.states = [{ lastStatus: "STOPPED", containers: [{ name: "extensions", exitCode: 3 }] }];
+    const message = await failureOf(WORKLOAD_MIGRATION_PROVIDER.create?.(extensions));
+
+    expect(message).toContain("the create-extension task");
+    expect(message).toContain("exit code 3");
+    expect(message).toContain("no migration ran");
   });
 
   it("runs again only for a new revision or cluster, and an update runs it", async () => {

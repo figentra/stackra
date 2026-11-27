@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `WorkloadMigrationInputs`, what `WORKLOAD_MIGRATION_PROVIDER` runs a workload's `migrate` task with: the
  *          service it migrates for, the region, cluster and task definition revision, the container whose exit code
- *          counts, the network the task runs in, and how long and how often the rollout waits for it.
+ *          counts, the network the task runs in, how long and how often the rollout waits for it, and what the run is
+ *          for (a migration, or a database's planned extensions before any migration, ADR 0160 note of 2026-11-26).
  * Boundary: type only; plain values once Pulumi resolves them. No secret appears: the task reads its own from SSM.
  * Runtime: node
  * Governing contract: ADR 0493 (as amended: a workload's migrate task), ADR 0173.
@@ -28,4 +29,6 @@ export type WorkloadMigrationInputs = {
   readonly timeoutMinutes: number;
   /** Seconds between two looks at the task. */
   readonly pollSeconds: number;
+  /** `migrate` (the default): a workload migration; `extensions`: a database's planned extensions (ADR 0160). */
+  readonly purpose?: "migrate" | "extensions";
 };

@@ -26,6 +26,7 @@ import {
   ResourceKind,
   ResourceSize,
   RunwayInvalidError,
+  plannedExtensions,
 } from "@stackra/runway";
 import type { RootRunway, RunwayEnvironment, ServiceRunway } from "@stackra/runway";
 
@@ -236,11 +237,7 @@ export function runtimePlan(
       const sized = POSTGRES_SIZES[size];
       const consumers = consumersOf.get(name) ?? [];
       // Workloads name no extensions; only member runways do.
-      const named = consumers.flatMap(
-        (consumer) => services[consumer]?.environments[environment]?.database?.extensions ?? [],
-      );
-      // oxlint-disable-next-line unicorn/no-array-sort -- a copy built here
-      const extensions = [...new Set(named)].sort();
+      const extensions = plannedExtensions(services, environment, consumers);
       databases.push({
         key,
         resource: name,

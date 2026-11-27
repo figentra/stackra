@@ -79,12 +79,17 @@ over its cap is refused before anything is declared, and production only warns u
 | member or workload `uses: [<name>]`             | the resource's security group admits it; it gets `<NAME>_URL`, `_HOST`, `_PORT`, `_USER`, `_PASSWORD`                |
 | `workloads.<name>` `aliases`, `command`         | the same SSM parameter under the name the image reads (a used Postgres variable only); the container's arguments     |
 | `workloads.<name>` `migrate`                    | a second task definition (its arguments, no port) run once per revision before the service rolls; a failure stops the apply |
+| a member using a Postgres resource names `environments.<env>.database.extensions` | a one-shot Fargate task (`<db>-extensions`, Postgres client image, its own outbound-only security group) that runs `createExtensionsScript` with the admin login in `template1` and every database, once per revision (the extensions, image or host), before any workload's migration or service; a failure stops the apply (ADR 0160 note of 2026-11-26) |
 
 The deploy job calls `ensureDatabasePasswords` before the program (it reuses the password the job has, or generates
 one and writes it blind to the vault, sops in `figentra/secrets`, at `<env>:/runtime/<resource>`), passes the result
 as `databasePasswords`, and calls `publishResourceSecrets` after `pulumi up`. Workloads read their secrets from SSM
 parameters runway's secrets sync fills (`/<project>/<env>/workloads/<name>/<NAME>`, `/<project>/<env>/runtime/<resource>/<NAME>`). RDS Proxy logs in
-through a Secrets Manager copy of the password, read only by the proxy.
+through a Secrets Manager copy of the password, read only by the proxy and by the extensions task's execution role,
+which hands it to psql as `PGPASSWORD` (`<secret>:password::`); no task definition, input or state holds it. The
+extensions task pulls `postgres:18.6-alpine` from Docker Hub, or `docker-hub/library/postgres:18.6-alpine` under
+`workloads.registry` when the runtime names its ECR pull-through cache. A database created later from `template1` (a
+service's own, by its migrations) starts with the extensions already.
 
 ## Not here
 
