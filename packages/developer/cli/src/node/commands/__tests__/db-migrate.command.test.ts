@@ -1,13 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DbMigrateCommand` on the console: it runs the member's runner with the environment, lists
- *          what it applied (the `--json` data), passes `--release` through, says so when nothing is pending, targets dev
- *          by default and refuses an unknown environment with exit 2 before the runner loads.
+ *          what it applied (the `--json` data), passes `--release` through, else `STACKRA_RELEASE`, else the checkout's
+ *          commit (the default deploy path names its release), says so when nothing is pending, targets dev by default
+ *          and refuses an unknown environment with exit 2 before the runner loads.
  * Boundary: test only; the runner is a fake, so no database is touched.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 2 as amended); ADR 0506; STA-1966.
  */
-import { runCommandForTest } from "@stackra/console/testing";
+import { MemoryProcessRunnerDriver, runCommandForTest } from "@stackra/console/testing";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -23,7 +24,17 @@ beforeEach(() => {
   vi.mocked(loadDatabaseRunner).mockReset();
   vi.mocked(loadDatabaseRunner).mockResolvedValue({ migrate, rollback: vi.fn() });
   vi.stubEnv("STACKRA_ENVIRONMENT", undefined);
+  vi.stubEnv("STACKRA_RELEASE", undefined);
 });
+
+/** The commit a deploy's checkout is at. */
+const HEAD = "4f1c2b0e9d8a7f6e5d4c3b2a1908f7e6d5c4b3a2";
+
+/** A process runner whose `git rev-parse` answers `HEAD`, as in a deploy's checkout. */
+const checkout = (): MemoryProcessRunnerDriver =>
+  new MemoryProcessRunnerDriver().on("git rev-parse --verify --quiet HEAD", {
+    output: `${HEAD}\n`,
+  });
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -54,6 +65,59 @@ describe("DbMigrateCommand", () => {
     });
     migrate.mockClear();
     await runCommandForTest([DbMigrateCommand], ["db:migrate", "--env", "production"]);
+    expect(migrate).toHaveBeenCalledWith({ cwd: "/work", environment: "production" });
+  });
+
+  it("names the checkout's commit as the release when neither --release nor STACKRA_RELEASE is given, so the default deploy path passes one (STA-1406)", async () => {
+    migrate.mockResolvedValue({ applied: ["0002_add_status"] });
+    const process = checkout();
+    const result = await runCommandForTest(
+      [DbMigrateCommand],
+      ["db:migrate", "--env", "production"],
+      {
+        process,
+      },
+    );
+    expect(result.exitCode).toBe(0);
+    expect(process.calls.map((call) => [call.line, call.cwd])).toEqual([
+      ["git rev-parse --verify --quiet HEAD", "/work"],
+    ]);
+    expect(migrate).toHaveBeenCalledWith({
+      cwd: "/work",
+      environment: "production",
+      release: HEAD,
+    });
+  });
+
+  it("prefers --release, then STACKRA_RELEASE, over the checkout's commit (STA-1406)", async () => {
+    migrate.mockResolvedValue({ applied: [] });
+    await runCommandForTest(
+      [DbMigrateCommand],
+      ["db:migrate", "--env", "production", "--release", "v1.4.0"],
+      { process: checkout() },
+    );
+    expect(migrate).toHaveBeenLastCalledWith({
+      cwd: "/work",
+      environment: "production",
+      release: "v1.4.0",
+    });
+    vi.stubEnv("STACKRA_RELEASE", "2026.11.27-1");
+    const process = checkout();
+    await runCommandForTest([DbMigrateCommand], ["db:migrate", "--env", "production"], { process });
+    expect(migrate).toHaveBeenLastCalledWith({
+      cwd: "/work",
+      environment: "production",
+      release: "2026.11.27-1",
+    });
+    expect(process.calls).toEqual([]);
+  });
+
+  it("names no release outside a git checkout, leaving the runner to refuse a run that needs one (STA-1406)", async () => {
+    migrate.mockResolvedValue({ applied: [] });
+    const process = new MemoryProcessRunnerDriver().on("git rev-parse --verify --quiet HEAD", {
+      code: 128,
+    });
+    await runCommandForTest([DbMigrateCommand], ["db:migrate", "--env", "production"], { process });
     expect(migrate).toHaveBeenCalledWith({ cwd: "/work", environment: "production" });
   });
 

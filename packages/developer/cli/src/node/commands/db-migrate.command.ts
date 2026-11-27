@@ -3,8 +3,9 @@
  * Purpose: `DbMigrateCommand`, `stackra db migrate [--env <environment>] [--release <id>]`: applies the member's
  *          pending migrations in order and lists them (`--json`: the environment and the applied names). It is the
  *          release step, in every environment, SaaS and on-prem; `--release` names the release it applies (the
- *          deploy's version or commit), which contract steps' release gates compare (else the runner reads
- *          `STACKRA_RELEASE`).
+ *          deploy's version or commit), which contract steps' release gates compare, else `STACKRA_RELEASE`, else the
+ *          commit the member's checkout is at (`migrationRelease`), so a deploy running it in its checkout names its
+ *          release by default.
  * Boundary: runs in the member's folder through its own `@stackra/database/node`; the CLI holds no database driver.
  *           The connection comes from the member's runway and config, never from an argument. The release is passed
  *           through as given; the runner checks its shape and refuses one that is not a version, tag or commit.
@@ -18,6 +19,7 @@ import { Str } from "@stackra/validation";
 
 import { databaseEnvironment } from "#node/functions/database-environment.function";
 import { loadDatabaseRunner } from "#node/functions/load-database-runner.function";
+import { migrationRelease } from "#node/functions/migration-release.function";
 
 /** Applies the member's pending migrations. */
 export class DbMigrateCommand extends Command({
@@ -36,7 +38,7 @@ export class DbMigrateCommand extends Command({
   /** The release this run applies. */
   @Option({
     description:
-      "The release applied (version, tag or commit), which contract steps' release gates compare (default: STACKRA_RELEASE)",
+      "The release applied (version, tag or commit), which contract steps' release gates compare (default: STACKRA_RELEASE, else the checkout's commit)",
   })
   @Str
   release?: string;
@@ -44,13 +46,10 @@ export class DbMigrateCommand extends Command({
   /** Applies the migrations and returns what it applied. */
   async handle(io: CommandIo): Promise<Readonly<Record<string, unknown>>> {
     const environment = databaseEnvironment({ env: this.env });
+    const release = await migrationRelease(this.release, io);
     const { applied } = await (
       await loadDatabaseRunner(io.cwd)
-    ).migrate({
-      cwd: io.cwd,
-      environment,
-      ...(this.release === undefined || this.release === "" ? {} : { release: this.release }),
-    });
+    ).migrate({ cwd: io.cwd, environment, ...(release === undefined ? {} : { release }) });
     if (applied.length === 0) io.output.info(`db migrate (${environment}): no pending migrations`);
     else {
       io.output.success(`db migrate (${environment}): applied ${applied.length}`);
