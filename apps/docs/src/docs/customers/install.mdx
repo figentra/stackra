@@ -4,7 +4,7 @@ description: "Point your package manager at the Stackra registry, install the fr
 icon: "download"
 ---
 
-{/* Stackra file contract: Purpose: the customer guide from zero to an installed package: the registry, the one line that starts a new app (npm create stackra), the .npmrc, the free and licensed scopes, licence tokens in CI, the answers the registry gives and what is still pending. Boundary: customer-facing documentation only; the decision is ADR 0453 and the registry's behaviour is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 4, 10, 13 and 18); ADR 0461; ADR 0316; ADR 0025 (decision 3); ADR 0199 (amendment of 2026-11-27); STA-1575; STA-2897. */}
+{/* Stackra file contract: Purpose: the customer guide from zero to an installed package: the registry, the one line that starts a new app (the scope-mapped npx line), the .npmrc, the free and licensed scopes, licence tokens in CI, the answers the registry gives and what is still pending. Boundary: customer-facing documentation only; the decision is ADR 0453 and the registry's behaviour is workers/registry/README.md. Runtime: docs. Governing contract: ADR 0453 (decisions 4, 10, 13 and 18); ADR 0461; ADR 0316; ADR 0025 (decision 3); ADR 0199 (amendment of 2026-11-27); STA-1575; STA-2897. */}
 
 Every Stackra package is served by one npm-compatible registry, `https://npm.stackra.figentra.com/`
 ([ADR 0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)). It
@@ -35,23 +35,22 @@ usual registry.
 One line, from any folder, on a machine with Node.js 24 and pnpm 12:
 
 ```bash
-npm create stackra@latest my-app
-```
-
-It runs `stackra create` with the `@stackra` scope mapped to the Stackra registry for that one run: you write no
-`.npmrc`, nothing changes in your npm settings, and every other package still comes from your usual registry. The new
-app gets its own `.npmrc` with the mapping below. With pnpm it is `pnpm create stackra my-app`. Options for
-`stackra create` follow the folder (after `--` with npm: `npm create stackra@latest my-app -- --yes`); `--registry`
-and `STACKRA_REGISTRY` choose another Stackra registry.
-
-<Warning>
-  `create-stackra` is not on npmjs yet (it waits on the npm name, STA-2897), so today `npm create stackra` answers
-  404. Run the same thing directly; it needs no setup either:
-
-```bash
 npx -y --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create my-app
 ```
 
+`--@stackra:registry` maps the `@stackra` scope to the Stackra registry for that one run: you write no `.npmrc`,
+nothing changes in your npm settings, and every other package still comes from your usual registry. `stackra create`
+asks for the app's name, scope, edition and package manager (`--yes` takes every default), fetches the starter from
+the same registry and gives the new app its own `.npmrc` with the mapping below. `STACKRA_REGISTRY` points the run at
+another Stackra registry (a mirror, or a local one).
+
+<Warning>
+  Status, 2026-11-27: this line does not give you a working app yet. Three things it needs are still
+  pending, each a row of [Not ready yet](#not-ready-yet): `@stackra/cli@latest` installs only once
+  every `@stackra` package it depends on is published at its version (STA-2794); `stackra create`
+  fetches the starter as `@stackra/starter`, which is not on the registry yet (STA-2874); and the
+  starter's example service does not pass `stackra gen` yet (STA-2794). This page changes when they
+  land.
 </Warning>
 
 ## Install the free packages
@@ -173,11 +172,14 @@ served at `https://npm.stackra.figentra.com/-/npm/v1/attestations/@scope%2fname@
 
 ## Not ready yet
 
-| Item                                                              | State                                                            |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------- |
-| The Pro licence text (`LICENSE` of `@stackra-pro/*`)              | pending, owner (STA-30)                                          |
-| Whether a Pro package checks its licence at runtime               | pending, owner (STA-1589); today access is gated at install only |
-| How to buy a licence and request tokens                           | pending, owner (STA-1576)                                        |
-| `stackra whoami` (the entitlements call from the CLI)             | not built; use the `curl` call above                             |
-| A signed offline licence file for on-prem and air-gapped installs | not built (0453 decision 15)                                     |
-| `npm create stackra` (the `create-stackra` initializer on npmjs)  | built; publishing waits on the owner's npm name claim (STA-2897) |
+| Item                                                               | State                                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| The Pro licence text (`LICENSE` of `@stackra-pro/*`)               | pending, owner (STA-30)                                                     |
+| Whether a Pro package checks its licence at runtime                | pending, owner (STA-1589); today access is gated at install only            |
+| How to buy a licence and request tokens                            | pending, owner (STA-1576)                                                   |
+| `stackra whoami` (the entitlements call from the CLI)              | not built; use the `curl` call above                                        |
+| A signed offline licence file for on-prem and air-gapped installs  | not built (0453 decision 15)                                                |
+| `@stackra/cli@latest` installable on a clean machine               | pending (STA-2794): a package it depends on is not published at its version |
+| `@stackra/starter` on the registry (what `stackra create` fetches) | pending (STA-2874)                                                          |
+| The starter's example service passing `stackra gen`                | pending (STA-2794)                                                          |
+| `npm create stackra`                                               | pending, owner (STA-2897); use only the `npx` line above                    |

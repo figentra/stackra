@@ -4,9 +4,9 @@ description: "Accepted, amended by 0268, 0282, 0290 and the amendment of 2026-11
 ---
 
 <Note>
-  Amended 2026-11-27 (below): the one-command scaffold is the npm initializer `create-stackra`, run as
-  `npm create stackra@latest <folder>`; `create-stackra-app` was never built. It maps the `@stackra` scope for one run
-  and hands over to `stackra create` in `@stackra/cli`.
+  Amended 2026-11-27 (below): `create-stackra-app` was never built. The one documented command is the scope-mapped
+  `npx -y --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create <folder>`; the npm initializer
+  `create-stackra` is built to run the same thing and is documented only once the owner holds its npmjs name.
 </Note>
 
 <Note>
@@ -70,12 +70,23 @@ Stackra registry breaks every other package, since that registry never proxies n
    where the origin is `--registry`, else `STACKRA_REGISTRY`, else the Stackra registry. It writes no file and no npm
    setting, has no dependency, and asks nothing: every question, check and file belongs to `stackra create`, which
    writes the same origin into the new app's `.npmrc`.
-3. **The documented install line** is `npm create stackra@latest <folder>`. Until the package is on npmjs, the same
-   run is `npx -y --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create <folder>`.
+3. **The documented install line** is the scope-mapped run of `stackra create`:
+
+   ```bash
+   npx -y --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create <folder>
+   ```
+
+   No page tells a reader to run the initializer by its npm name until the owner has claimed `create-stackra` on
+   npmjs (a placeholder publish from the Stackra account is enough): a documented initializer name that nobody holds
+   can be published by anyone, and every reader would run that code. The claim is the precondition for any docs
+   change that names it; once the package is published there, that line becomes the documented one.
+
 4. **Publishing waits on the owner.** The npmjs name `create-stackra` is to be claimed by the owner, and publishing it
    to npmjs is an exception to 0453's "only the Stackra registry", which the owner rules on. Until both, the member
    stays `"private": true`, so the release workflow (which publishes every non-private member to the Stackra
-   registry, which takes scoped names only) leaves it out. Tracked in STA-2897.
+   registry, which takes scoped names only) leaves it out. Its `repository`, `homepage` and `bugs` name
+   `stackra-inc/stackra`, the repository whose workflow would sign its npmjs provenance (`NPMJS_REPOSITORY` in
+   `@stackra/repo-checks`). Tracked in STA-2897.
 
 ## Supersedes and sources
 
