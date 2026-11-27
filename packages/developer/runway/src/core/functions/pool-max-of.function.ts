@@ -6,15 +6,21 @@
  *          `DATABASE_POOL_MAX`, which the generated boot puts over `DatabaseConfig.pool.max`.
  * Boundary: pure; parsed runways in, a number out. A member outside a grouped topology's groups, an isolated member
  *           and a monolith or split environment count one instance unless a group states more. No budget means
- *           `undefined`: the pool keeps its configured size.
+ *           `undefined`: the pool keeps its configured size. A share below two connections is refused: a call holds
+ *           its isolation transaction while a `requiresNew` store (permission, rate limit, access log) opens a second,
+ *           so a pool of one could serve no such call (ADR 0495, STA-1716).
  * Runtime: isomorphic
- * Governing contract: ADR 0473 (decision 2); ADR 0238 (implementation note 2, closed by 0473); ADR 0296 (decision 1).
+ * Governing contract: ADR 0473 (decision 2 and the 2026-11-26 note); ADR 0238 (implementation note 2, closed by 0473);
+ *                     ADR 0296 (decision 1); ADR 0495 (consequences); STA-1716.
  */
 import type { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 import { TopologyMode } from "#core/enums/topology-mode.enum";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import type { RootRunway } from "#core/types/root-runway.type";
 import type { ServiceRunway } from "#core/types/service-runway.type";
+
+/** The fewest connections an instance may get: a call's isolation transaction and the `requiresNew` store it opens. */
+const POOL_SHARE_MIN = 2;
 
 /**
  * The per-instance pool size.
@@ -23,7 +29,8 @@ import type { ServiceRunway } from "#core/types/service-runway.type";
  * @param service - the parsed service runway of `member`.
  * @param member - the service member key, as the topology lists it.
  * @param environment - the environment being deployed.
- * @throws RunwayInvalidError when the budget is below the instance count, which would leave an instance no connection.
+ * @throws RunwayInvalidError when the budget gives an instance fewer than two connections, which a call under
+ *         isolation holds at once.
  * @example
  * poolMaxOf(root, commerce, "commerce", "production"); // 50 connections over 4 instances: 12
  */
@@ -44,14 +51,14 @@ export function poolMaxOf(
         groups.find(([name]) => name === topology.default))
       : undefined;
   const instances = group?.[1].instances?.max ?? 1;
-  if (budget < instances)
+  if (budget < instances * POOL_SHARE_MIN)
     throw new RunwayInvalidError(own === undefined ? "root runway" : `${member} runway`, [
       {
         path:
           own === undefined
             ? `environments.${environment}.defaults.service.database.poolBudget`
             : `environments.${environment}.database.poolBudget`,
-        message: `A budget of ${budget} connections cannot give each of ${instances} instances of ${member} one (ADR 0473)`,
+        message: `A budget of ${budget} connections cannot give each of ${instances} instances of ${member} the ${POOL_SHARE_MIN} a call under isolation holds at once (ADR 0473, ADR 0495)`,
       },
     ]);
   return Math.floor(budget / instances);

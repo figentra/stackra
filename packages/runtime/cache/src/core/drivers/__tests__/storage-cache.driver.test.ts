@@ -3,7 +3,7 @@
  * Purpose: unit tests of `StorageCacheDriver`: it is the `Cache` port, it keeps each entry in the storage `cache` area
  *          under `cache.` and the namespaced key with the lifetime as the area's time-to-live, it serves a value until
  *          its lifetime passes on the clock, `remember` loads once, `forget` drops the covered keys while the area's
- *          other keys stay, and `forgetTag` drops the tagged entries and their marker keys.
+ *          other keys stay, and `forgetTag` drops the tagged entries and their marker keys; `add` rejects.
  * Boundary: test only; the storage is the real in-memory driver from `@stackra/storage/testing`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing; fakes are real drivers);
@@ -57,6 +57,13 @@ function setup(): {
 describe("StorageCacheDriver", () => {
   it("is a driver of the Cache port", () => {
     expect(setup().cache).toBeInstanceOf(Cache);
+  });
+
+  it("rejects add: the storage area has no atomic set-if-absent", async () => {
+    const { cache } = setup();
+    await expect(cache.add(CacheKey.of(Product, "req-1"), true, TEN_MINUTES)).rejects.toThrow(
+      new TypeError("StorageCacheDriver does not support add"),
+    );
   });
 
   it("keeps each entry in the cache area under its prefix, with the lifetime as its time-to-live", async () => {

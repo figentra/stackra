@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./node` entry of @stackra/runway until `stackra gen` writes the entry barrels
  *          (STA-339): `RUNWAY_COMMANDS`, which `stackra runway` runs (ADR 0529 decision 4, STA-2214), the build-time helpers the generated Vite configs import (`definesFor`, `devServer`, folded in
- *          from the old `./vite` entry, owner Q4), the runway file reader, and the deploy providers that run a
+ *          from the old `./vite` entry, owner Q4), the runway file reader, the fields a runway `config` block may never set
+ *          (`runtimeOnlyFieldsOf`, STA-2844), and the deploy providers that run a
  *          destination's own CLI (`encore-cloud`, `eas`, `mintlify` for a docs site, STA-1316, `cloudflare-workers`, STA-1921) with the command runner they share (ADR 0352 decision 3),
  *          the `neon` driver of the `PreviewDatabaseBrancher` port (ADR 0238 decision 1),
  *          and the mobile job (`runMobileJob`, `capabilityConfig`, ADR 0439; `startWhiteLabelJob` for the OS event) with its types, the brand step
@@ -97,6 +98,7 @@ export { proveGithubJob } from "#node/functions/prove-github-job.function";
 export { readMemberSecrets } from "#node/functions/read-member-secrets.function";
 export { readRunway } from "#node/functions/read-runway.function";
 export { readRunways } from "#node/functions/read-runways.function";
+export { runtimeOnlyFieldsOf } from "#node/functions/runtime-only-fields-of.function";
 export { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
 export { syncSecrets } from "#node/functions/sync-secrets.function";
 export { releaseOf } from "#node/functions/release-of.function";

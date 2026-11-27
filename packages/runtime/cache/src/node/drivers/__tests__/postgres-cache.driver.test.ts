@@ -4,7 +4,9 @@
  *          binds every value, it upserts an entry with the instant its row may go and reads it back until the lifetime
  *          passes on the clock, `forget` drops only the covered keys through an escaped prefix `like`, `forgetTag` drops
  *          the tagged entries and the tag's members, `remember` loads once, a write sweeps at most `postgres.sweep`
- *          dead rows (none at `0`), and a failed statement rejects the call.
+ *          dead rows (none at `0`), a failed statement rejects the call, and `add` is one bound upsert that replaces
+ *          only a dead row and answers by its returned row (atomicity itself is proven on real Postgres in
+ *          @stackra/database's cache-tables integration test).
  * Boundary: test only; `CacheSql` is an in-memory fake that runs the driver's statements over two maps.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0150 (decisions 1, 2
@@ -71,6 +73,13 @@ class MapCacheSql extends Driver(CacheSql) {
       return this.entries.has(String(first))
         ? [{ body: this.entries.get(String(first))?.body }]
         : [];
+    if (sql.startsWith("insert into") && sql.includes('."entries" as kept')) {
+      // the upsert's where clause: a live row is kept and nothing is returned
+      const kept = this.entries.get(String(first));
+      if (kept !== undefined && kept.expiresAt.getTime() > (params[3] as Date).getTime()) return [];
+      this.entries.set(String(first), { body: String(second), expiresAt: third as Date });
+      return [{ key: first }];
+    }
     if (sql.startsWith("insert into") && sql.includes('."entries"')) {
       this.entries.set(String(first), { body: String(second), expiresAt: third as Date });
       return [];
@@ -233,5 +242,27 @@ describe("PostgresCacheDriver", () => {
     const { cache, sql } = setup();
     sql.failNext = true;
     await expect(cache.get(CacheKey.of(Product, "prd_1"))).rejects.toThrow("connection refused");
+  });
+
+  it("adds with one bound upsert that replaces only a dead row, answering by its returned row", async () => {
+    const { cache, sql, clock } = setup();
+    const key = CacheKey.of(Product, "req-1");
+    await expect(cache.add(key, true, Duration.seconds(120))).resolves.toBe(true);
+    const [statement, params] = sql.statements[0] ?? ["", []];
+    expect(statement).toBe(
+      'insert into "cache"."entries" as kept (key, body, expires_at) values (?, ?, ?) ' +
+        "on conflict (key) do update set body = excluded.body, expires_at = excluded.expires_at " +
+        "where kept.expires_at <= ? returning key",
+    );
+    expect(params).toEqual([
+      "/Product:req-1",
+      expect.any(String),
+      new Date(clock.time + 120_000),
+      new Date(clock.time),
+    ]);
+    await expect(cache.add(key, "again", Duration.seconds(120))).resolves.toBe(false);
+    clock.time += 120_000;
+    await expect(cache.add(key, "again", Duration.seconds(120))).resolves.toBe(true);
+    await expect(cache.get(key)).resolves.toBe("again");
   });
 });

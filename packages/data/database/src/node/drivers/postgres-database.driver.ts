@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `PostgresDatabaseDriver`, the `Database` on Postgres through MikroORM: connects with the generated entities
  *          and the Stackra naming strategy, resolves the entity manager of the running context, runs transactions
- *          (`runTransaction`: statement and lock timeouts, isolation, read-only, retry), starts every session with the configured timeouts, sizes the pool, registers the
+ *          (`runTransaction`: statement and lock timeouts, isolation, read-only, retry), starts every session with the configured timeouts, sizes the pool and
+ *          admits each transaction that takes a connection of its own through the pool's `ConnectionGate` (a call
+ *          holding its isolation connection always gets the next one a `requiresNew` store opens), registers the
  *          `deleted`/`archived` filters of the keep-the-row delete policies, sets the scope
  *          settings row-level security reads, and runs read-only work on a read replica when the
  *          runtime handed it one; every statement is counted for the query guard and handed to the
@@ -17,7 +19,8 @@
  *           primary's transaction.
  * Runtime: node
  * Governing contract: ADR 0014; ADR 0097; ADR 0238; ADR 0239; ADR 0327 (decisions 3 and 5); ADR 0136 (decision 2); the
- *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool);
+ *                     STA-335 entity-schema spike; ADR 0057 (decision 6: read replica); ADR 0473 (decision 2: the pool,
+ *                     and the 2026-11-26 note: the gate, STA-1716);
  *                     data-layer gap mo6 (stackra-279: transaction options); gaps sc7 and sc8 (stackra-282: query
  *                     telemetry and the N+1 guard).
  */
@@ -31,6 +34,8 @@ import type { DetachedStep } from "@stackra/actions/contracts";
 import type { ScopeRef } from "@stackra/contracts";
 
 import { ACTIVE_DATABASE } from "#core/constants/active-database.constant";
+import { CONNECTION_GATES } from "#core/constants/connection-gates.constant";
+import { POOL_GATE_DEFAULTS } from "#core/constants/pool-gate-defaults.constant";
 import { REGISTERED_ENTITIES } from "#core/constants/registered-entities.constant";
 import { connectDetachedRuns } from "#core/functions/connect-detached-runs.function";
 import { deleteFilters } from "#core/functions/delete-filters.function";
@@ -40,9 +45,11 @@ import { replayRowSecuritySettings } from "#core/functions/replay-row-security-s
 import { runInScope } from "#core/functions/run-in-scope.function";
 import { sessionTimeoutsUrl } from "#core/functions/session-timeouts-url.function";
 import { runTransaction } from "#core/functions/run-transaction.function";
+import { timeoutMilliseconds } from "#core/functions/timeout-milliseconds.function";
 import { EntityResultCacheAdapter } from "#core/orm/entity-result-cache.adapter";
 import { StackraNamingStrategy } from "#core/orm/stackra.naming-strategy";
 import { Database } from "#core/ports/database.port";
+import { ConnectionGate } from "#core/values/connection-gate.value";
 import { observedLogger } from "#node/functions/observed-logger.function";
 import type { DatabaseOptions } from "#core/types/database-options.type";
 import type { TransactionOptions } from "#core/types/transaction-options.type";
@@ -74,10 +81,17 @@ export class PostgresDatabaseDriver extends Driver(Database) {
    * Connects and makes the driver `Database.current()`.
    *
    * @throws Error when Postgres refuses the connection or an entity schema is invalid.
-   * @throws RangeError when `options.pool` cannot serve a query (`poolConfig`).
+   * @throws RangeError when `options.pool` cannot serve a query (`poolConfig`), or its `nesting` is not a whole number
+   *         of at least 1 (`ConnectionGate`).
    */
   static async connect(options: DatabaseOptions): Promise<PostgresDatabaseDriver> {
     const entities = [...(options.entities ?? REGISTERED_ENTITIES)];
+    const { max, nesting, acquireTimeout } = options.pool ?? {};
+    const gate = new ConnectionGate(
+      max ?? POOL_GATE_DEFAULTS.max,
+      nesting ?? POOL_GATE_DEFAULTS.nesting,
+      timeoutMilliseconds(acquireTimeout ?? POOL_GATE_DEFAULTS.acquireTimeout),
+    );
     const orm = await MikroORM.init({
       clientUrl: sessionTimeoutsUrl(options.url, options.timeouts),
       ...(options.replicas === undefined || options.replicas.length === 0
@@ -100,6 +114,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
       debug: options.debug ?? false,
       loggerFactory: (settings) => observedLogger(settings, options.observers ?? []),
     });
+    CONNECTION_GATES.set(orm.em.getDriver(), gate);
     const driver = new PostgresDatabaseDriver(orm);
     ACTIVE_DATABASE.current = driver;
     connectDetachedRuns();
@@ -171,6 +186,7 @@ export class PostgresDatabaseDriver extends Driver(Database) {
   /** Implements `Database.close`, documented there. */
   async close(): Promise<void> {
     if (ACTIVE_DATABASE.current === this) ACTIVE_DATABASE.current = undefined;
+    CONNECTION_GATES.delete(this.orm.em.getDriver());
     await this.orm.close(true);
   }
 }
