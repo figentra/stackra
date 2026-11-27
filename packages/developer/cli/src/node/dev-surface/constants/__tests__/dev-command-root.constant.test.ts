@@ -45,7 +45,7 @@ beforeEach(() => {
   calls.member.length = 0;
   root = mkdtempSync(join(tmpdir(), "stackra-cli-dev-root-"));
   writeFileSync(join(root, "pnpm-workspace.yaml"), "packages: ['services/*']\n");
-  writeFileSync(join(root, "runway.yaml"), "environments:\n  dev: {}\n");
+  writeFileSync(join(root, "runway.yaml"), "version: 3\nproject: acme\nenvironments:\n  dev: {}\n");
 });
 
 afterEach(() => {

@@ -1,10 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `writeDevFacts`: the file it writes round-trips through `readDevFacts` with lane offsets, and
- *          carries each dev infra block's port (the gateway `encore run` serves on) shifted unless `perLane: false`.
+ *          it holds the gateway's and each dev compose container's address, a refused block left out.
  * Boundary: test only; temporary repositories.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); STA-2029; STA-2840.
+ * Governing contract: ADR 0022 (test placement); STA-2029; STA-2664 (item 6); STA-2840.
  */
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -51,12 +51,38 @@ describe("writeDevFacts", () => {
     }
   });
 
+  it("writes the gateway's and each dev compose container's address, lane offsets applied", () => {
+    const root = repository("environments:\n  dev: {}\n");
+    writeFileSync(
+      join(root, "runway.yaml"),
+      [
+        "version: 3",
+        "project: acme",
+        "environments:",
+        "  dev:",
+        "    lanes: { portStep: 10 }",
+        "    infra:",
+        "      gateway: { port: 4000, dashboard: 9400 }",
+        "      postgres: { image: postgres:17, port: 5432 }",
+        `      valkey: { image: "valkey/valkey:8.1@sha256:${"a".repeat(64)}", port: 6379 }`,
+        `      clamav: { image: "clamav/clamav:1.5.3@sha256:${"b".repeat(64)}", port: 3310 }`,
+        "      broken: { image: example/thing:1 }",
+        "",
+      ].join("\n"),
+    );
+    expect(writeDevFacts(root, 1).infra).toEqual({
+      gateway: { port: 4010, url: "http://localhost:4010" },
+      valkey: { port: 6389, url: "redis://127.0.0.1:6389" },
+      clamav: { port: 3310, url: "tcp://127.0.0.1:3310" },
+    });
+  });
+
   it("leaves out a member without a dev port", () => {
     const root = repository("environments:\n  dev: {}\n");
     expect(writeDevFacts(root).members).toEqual({});
   });
 
-  it("writes the dev infra ports, shifted by the lane unless the block opts out", () => {
+  it("writes the gateway port root stackra dev reads, shifted by the lane; Encore's own Postgres has no address", () => {
     const root = repository("environments:\n  dev: {}\n");
     writeFileSync(
       join(root, "runway.yaml"),
@@ -64,7 +90,6 @@ describe("writeDevFacts", () => {
     );
     expect(writeDevFacts(root, 2).infra).toEqual({
       gateway: { port: 4200, url: "http://localhost:4200" },
-      postgres: { port: 5432, url: "http://localhost:5432" },
     });
   });
 });
