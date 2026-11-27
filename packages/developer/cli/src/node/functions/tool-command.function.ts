@@ -12,6 +12,9 @@
  *          A package gen wrote no entry for (a fresh `stackra new package`, nothing under `src/` yet) and with no
  *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown. A
  *          service has nothing to build either: Encore builds it at deploy (ADR 0091).
+ *          A member's `dev` (a docs site's too) copies the tool's output into the repository's dev log (`devLogTee` into
+ *          `.stackra/logs/dev.ndjson`, redacted), still printing everything, so the local MCP's `logs` and
+ *          `last_error` tools can read what the server said (STA-2889).
  * Boundary: starts at most one tool (two in sequence for a Mintlify docs app's `lint`); a gen refusal stops before
  *           the tool and exits 1.
  * Runtime: node
@@ -19,20 +22,24 @@
  *                     commands run `turbo run <task>`); ADR 0182 (test tiers).
  */
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
 import { watchDocsSite } from "@stackra/gen/node";
 
+import { devLogFile } from "@stackra/runway/node";
+
 import { devSecretEnv } from "#node/dev-secrets/functions/dev-secret-env.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { checkDocsLinks } from "#node/functions/check-docs-links.function";
+import { devLogTee } from "#node/functions/dev-log-tee.function";
 import { readMember } from "#node/functions/read-member.function";
 import { resolveTool } from "#node/functions/resolve-tool.function";
 import { runGen } from "#node/functions/run-gen.function";
 import { runProcess } from "#node/functions/run-process.function";
 import type { CliCommand } from "#node/types/cli-command.type";
 import type { ToolTask } from "#node/types/tool-task.type";
+import { workspaceRoot } from "#node/functions/workspace-root.function";
 
 /** The member-root config names tsdown finds itself. */
 const TSDOWN_CONFIGS = [
@@ -113,24 +120,40 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
         io.out("every internal link resolves\n");
         return 0;
       }
-      if (docs && task === "dev") {
-        const watcher = watchDocsSite(
-          cwd,
-          ({ errors, changed }) => {
-            for (const error of errors) io.err(`${formatGenError(error)}\n`);
-            for (const path of changed) io.out(`wrote ${path}\n`);
-          },
-          (error) => io.err(`gen: ${error instanceof Error ? error.message : String(error)}\n`),
+      // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679); a docs
+      // site has none and regenerates as its pages change instead. Either way the output is copied into the dev log the
+      // local MCP reads (STA-2889).
+      if (task === "dev") {
+        const watcher = docs
+          ? watchDocsSite(
+              cwd,
+              ({ errors, changed }) => {
+                for (const error of errors) io.err(`${formatGenError(error)}\n`);
+                for (const path of changed) io.out(`wrote ${path}\n`);
+              },
+              (error) => io.err(`gen: ${error instanceof Error ? error.message : String(error)}\n`),
+            )
+          : undefined;
+        const tee = devLogTee(
+          devLogFile(cwd),
+          relative(workspaceRoot(cwd), cwd) || ".",
+          [tool.command, ...tool.args].join(" "),
+          (error) => io.err(`stackra: the dev log is not written: ${error.message}\n`),
         );
+        let code: number | undefined;
         try {
-          return await runProcess(tool, io);
+          code = await runProcess(
+            docs
+              ? { ...tool, tee: tee.write }
+              : { ...tool, env: { ...tool.env, ...devSecretEnv(cwd) }, tee: tee.write },
+            io,
+          );
+          return code;
         } finally {
-          watcher.close();
+          tee.end(code);
+          watcher?.close();
         }
       }
-      // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679).
-      if (task === "dev")
-        return runProcess({ ...tool, env: { ...tool.env, ...devSecretEnv(cwd) } }, io);
       return runProcess(tool, io);
     },
   };

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `ToolRun`, the one process a tool command starts: the program, its arguments, the directory it runs in and
- *          the variables it adds to the environment.
+ * Purpose: `ToolRun`, the one process a tool command starts: the program, its arguments, the directory it runs in,
+ *          the variables it adds to the environment, its deadline, and a tee that gets a copy of what it prints.
  * Boundary: type only; `resolveTool` builds it and `runProcess` starts it without a shell.
  * Runtime: node
  * Governing contract: ADR 0295 (decision 5: tools read the configs gen writes into `.stackra/`).
@@ -23,4 +23,10 @@ export type ToolRun = {
 
   /** How long it may run before it is stopped and answers 124; no limit when omitted. */
   readonly timeoutMs?: number;
+
+  /**
+   * Gets a copy of every chunk the process prints, by stream (`stackra dev`'s dev log, STA-2889). With a tee the
+   * output is piped even when the io inherits the terminal, and still reaches the io.
+   */
+  readonly tee?: (stream: "stdout" | "stderr", text: string) => void;
 };

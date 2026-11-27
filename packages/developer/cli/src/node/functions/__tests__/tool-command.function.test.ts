@@ -4,7 +4,8 @@
  *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
  *          has nothing to build; at the workspace root it fans out through
  *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
- *          the site and then fails on a broken link, naming the page (STA-2026).
+ *          the site and then fails on a broken link, naming the page (STA-2026); a member's `dev` copies the tool's
+ *          output into the repository's dev log, redacted, between a start and an end line (STA-2889).
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule.
@@ -14,6 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { devLogFile, readDevLog } from "@stackra/runway/node";
 import { vi } from "vitest";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
@@ -130,6 +132,52 @@ describe("toolCommand", () => {
     expect(output()).toContain("/: /gone (no page or file)");
     writeFileSync(join(site, "build", "client", "index.html"), '<a href="/">Home</a>');
     expect(await toolCommand("lint", "Lint").run(context())).toBe(0);
+  });
+
+  it("copies a member's dev output into the repository's dev log, redacted", async () => {
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
+    const member = join(root, "apps", "console");
+    mkdirSync(member, { recursive: true });
+    writeFileSync(join(member, "stackra.config.ts"), "export default defineWorker({});\n");
+    spawn.mockImplementation(async (run) => {
+      run.tee?.("stdout", "  VITE ready\n");
+      run.tee?.("stderr", "4:25AM ERR call failed authorization=Bearer abc.def\n");
+      return 1;
+    });
+    expect(await toolCommand("dev", "Dev").run({ ...context(), cwd: member })).toBe(1);
+    expect(spawn).toHaveBeenCalledWith(
+      expect.objectContaining({ cwd: member, tee: expect.any(Function) }),
+      expect.anything(),
+    );
+    const log = readDevLog(devLogFile(member));
+    expect(log.map(({ level, member: folder }) => [level, folder])).toEqual([
+      ["info", "apps/console"],
+      ["info", "apps/console"],
+      ["error", "apps/console"],
+      ["warn", "apps/console"],
+    ]);
+    expect(log[2]?.message).toBe("4:25AM ERR call failed authorization=[redacted]");
+  });
+
+  it("copies a docs site's dev output into the dev log too, without the dev secrets", async () => {
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
+    const site = join(root, "apps", "docs");
+    mkdirSync(join(site, "src", "config"), { recursive: true });
+    writeFileSync(join(site, "src", "config", "docs.config.ts"), "");
+    spawn.mockImplementation(async (run) => {
+      run.tee?.("stderr", "Error: page not found: /guides/missing\n");
+      return 0;
+    });
+    expect(await toolCommand("dev", "Dev").run({ ...context(), cwd: site })).toBe(0);
+    const [run] = spawn.mock.calls[0] ?? [];
+    expect(run).toMatchObject({ command: "mint", tee: expect.any(Function) });
+    expect(run?.env).toBeUndefined();
+    const log = readDevLog(devLogFile(site));
+    expect(log.map(({ level, member, message }) => [level, member, message.slice(0, 22)])).toEqual([
+      ["info", "apps/docs", "stackra dev: started m"],
+      ["error", "apps/docs", "Error: page not found:"],
+      ["info", "apps/docs", "stackra dev: mint dev "],
+    ]);
   });
 
   it("fans out through turbo at the workspace root", async () => {

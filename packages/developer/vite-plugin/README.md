@@ -64,6 +64,15 @@ export default defineConfig(({ mode }) =>
    `<name>/index.ts`), the same real file Metro, Node, tests and agents read (ADR 0261). Vite watches it, so
    `stackra gen --watch` hot-updates the app. A module gen has not written fails with "run `stackra gen`".
 3. **`stackra:server-only`**: a `.server` import in the browser bundle fails the build.
+4. **`stackra:browser-logs`** (dev server only, never in a build): adds a small client to Vite's own client module
+   that reports uncaught errors, unhandled promise rejections and `console.error` / `console.warn` (which still print)
+   to `/__stackra/browser-log`, with the page's origin and path (never its query) and the stack. A console call's
+   arguments travel structured, and the dev server writes their text from the logger's `redact`, so a field such as
+   `email` or `authorization` inside them is masked by name. The dev server takes
+   a report only as a same-origin JSON `POST` with the client's `x-stackra-browser-log` header (a cross-site page
+   cannot send it without a preflight that is never answered), at most 64 KiB and 50 entries a request and 200 a page
+   load, and appends it to the repository's dev log (`.stackra/logs/dev.ndjson`, redacted) for the local MCP's
+   `browser_logs`, `logs` and `last_error` tools.
 
 ## What `viteConfig` adds
 

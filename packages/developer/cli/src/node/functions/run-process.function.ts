@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `runProcess(run, io)`, starts one tool process and resolves with its exit code: with the terminal when
- *          `io.inherit`, otherwise with its output piped into `io`. Every `node_modules/.bin` from the tool's directory
- *          up goes first on `PATH`, so the member's own pinned tools win.
+ *          `io.inherit`, otherwise with its output piped into `io`. A run with a `tee` always pipes its output, hands
+ *          each chunk to the io and to the tee, and keeps the terminal's input (and colour, through `FORCE_COLOR`,
+ *          when this process writes to a terminal). Every `node_modules/.bin` from the tool's directory up goes first
+ *          on `PATH`, so the member's own pinned tools win.
  * Boundary: never uses a shell, so no argument is parsed as shell syntax; never reads or prints a secret. A tool that
  *           cannot start resolves 127 with the reason written to `io.err`. One still running past `run.timeoutMs` gets
  *           SIGTERM (SIGKILL 5 s later) and resolves 124, the `timeout` convention.
@@ -34,15 +36,34 @@ function pathFrom(cwd: string): string {
  * process.exitCode = await runProcess({ command: "vitest", args: ["run"], cwd: root }, PROCESS_IO);
  */
 export function runProcess(run: ToolRun, io: CliIo): Promise<number> {
+  const tee = run.tee;
+  // A teed tool on a terminal still prints in colour, as it would with the terminal itself.
+  const colour =
+    tee !== undefined &&
+    io.inherit &&
+    process.stdout.isTTY === true &&
+    process.env["FORCE_COLOR"] === undefined &&
+    process.env["NO_COLOR"] === undefined
+      ? { FORCE_COLOR: "1" }
+      : {};
   return new Promise((resolve) => {
     // shortcut: no shell, so Windows `.cmd` shims do not start; add `shell: true` with quoting when Windows is supported.
     const child = spawn(run.command, [...run.args], {
       cwd: run.cwd,
-      env: { ...process.env, ...run.env, PATH: pathFrom(run.cwd) },
-      stdio: io.inherit ? "inherit" : ["ignore", "pipe", "pipe"],
+      env: { ...process.env, ...colour, ...run.env, PATH: pathFrom(run.cwd) },
+      stdio:
+        io.inherit && tee === undefined
+          ? "inherit"
+          : [io.inherit ? "inherit" : "ignore", "pipe", "pipe"],
     });
-    child.stdout?.setEncoding("utf8").on("data", io.out);
-    child.stderr?.setEncoding("utf8").on("data", io.err);
+    child.stdout?.setEncoding("utf8").on("data", (text: string) => {
+      io.out(text);
+      tee?.("stdout", text);
+    });
+    child.stderr?.setEncoding("utf8").on("data", (text: string) => {
+      io.err(text);
+      tee?.("stderr", text);
+    });
     let settled = false;
     let timedOut = false;
     // A testbed probe that never answers (a box still booting keeps an SSH session open) must not stall its caller.

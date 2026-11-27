@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `runProcess`: piped output reaches the io, the exit code is returned, arguments are not
  *          shell-parsed, a missing program resolves 127, `node_modules/.bin` above the directory is on `PATH`, and a
- *          process past its `timeoutMs` is stopped and resolves 124 while one that ends first keeps its code.
+ *          process past its `timeoutMs` is stopped and resolves 124 while one that ends first keeps its code; a tee
+ *          gets every chunk by stream while the io still gets the output, even when the io inherits the terminal.
  * Boundary: test only; starts `node` and throwaway scripts in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5).
@@ -40,6 +41,39 @@ describe("runProcess", () => {
     expect(code).toBe(3);
     expect(output()).toContain("out;");
     expect(output()).toContain("err;");
+  });
+
+  it("hands every chunk to the tee by stream and still to the io", async () => {
+    const { io, output } = captureIo();
+    const teed: [string, string][] = [];
+    const code = await runProcess(
+      {
+        command: process.execPath,
+        args: [
+          "-e",
+          "process.stdout.write('ready\\n'); process.stderr.write('TypeError: boom\\n')",
+        ],
+        cwd: root,
+        tee: (stream, text) => teed.push([stream, text]),
+      },
+      // An io that inherits the terminal: the tee still sees the output, so it is piped, and the io still prints it.
+      { ...io, inherit: true },
+    );
+    expect(code).toBe(0);
+    expect(
+      teed
+        .filter(([stream]) => stream === "stdout")
+        .map(([, text]) => text)
+        .join(""),
+    ).toBe("ready\n");
+    expect(
+      teed
+        .filter(([stream]) => stream === "stderr")
+        .map(([, text]) => text)
+        .join(""),
+    ).toBe("TypeError: boom\n");
+    expect(output()).toContain("ready");
+    expect(output()).toContain("TypeError: boom");
   });
 
   it("passes arguments without a shell", async () => {

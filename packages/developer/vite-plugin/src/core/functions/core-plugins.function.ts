@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `corePlugins`, the plugins every Stackra Vite build runs: gen's class-component pass (first, so React, the
- *          React Router plugin and Fast Refresh see plain function components), `#stackra/*` served from gen's files
- *          and the `.server` import refusal.
+ *          React Router plugin and Fast Refresh see plain function components), `#stackra/*` served from gen's files,
+ *          the `.server` import refusal, and the dev server's browser log (`browserLogsPlugin`, serve only, STA-2889).
  * Boundary: wires gen's pass and never reimplements it (registry A14: gen ships the pass, this package wires it). The
  *           pass is added only when the given plugins do not already hold it, so a generated config that lists
  *           `classComponents()` itself runs it once.
@@ -12,6 +12,7 @@
 import { classComponents } from "@stackra/gen/node";
 import type { Plugin, PluginOption, Rolldown } from "vite";
 
+import { browserLogsPlugin } from "#core/functions/browser-logs-plugin.function";
 import { generatedModulesPlugin } from "#core/functions/generated-modules-plugin.function";
 import { serverOnlyPlugin } from "#core/functions/server-only-plugin.function";
 
@@ -29,8 +30,8 @@ function namesOf(options: readonly PluginOption[]): string[] {
  *
  * @param existing - plugins the config already runs, checked for the class-component pass.
  * @example
- * corePlugins(); // [stackra:class-components, stackra:generated-modules, stackra:server-only]
- * corePlugins([classComponents()]); // [stackra:generated-modules, stackra:server-only]
+ * corePlugins(); // [stackra:class-components, stackra:generated-modules, stackra:server-only, stackra:browser-logs]
+ * corePlugins([classComponents()]); // [stackra:generated-modules, stackra:server-only, stackra:browser-logs]
  */
 export function corePlugins(existing: readonly PluginOption[] = []): Plugin[] {
   const pass = classComponents();
@@ -43,6 +44,6 @@ export function corePlugins(existing: readonly PluginOption[] = []): Plugin[] {
       transform: (code, id) => pass.transform(code, id) as Promise<Rolldown.TransformResult>,
     });
   }
-  plugins.push(generatedModulesPlugin(), serverOnlyPlugin());
+  plugins.push(generatedModulesPlugin(), serverOnlyPlugin(), browserLogsPlugin());
   return plugins;
 }

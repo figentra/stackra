@@ -36,6 +36,16 @@
       "entry": "node"
     },
     {
+      "name": "browser:logs",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "BrowserLogsCommand",
+      "file": "src/node/commands/browser-logs.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "check",
       "aliases": [],
       "hidden": false,
@@ -56,6 +66,16 @@
       "entry": "node"
     },
     {
+      "name": "last:error",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "LastErrorCommand",
+      "file": "src/node/commands/last-error.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "lint",
       "aliases": [],
       "hidden": false,
@@ -63,6 +83,16 @@
       "bin": true,
       "class": "LintCommand",
       "file": "src/node/commands/lint.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "logs",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "LogsCommand",
+      "file": "src/node/commands/logs.command.ts",
       "entry": "node"
     },
     {

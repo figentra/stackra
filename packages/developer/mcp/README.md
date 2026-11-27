@@ -66,6 +66,9 @@ handler are its command's own, and its result is the command's `--json` document
 | `app_info`  | read-only           | root package, Node, environment, runway (project, environments, providers, Encore app), every member with its kind and manifest counts, dev ports and URLs |
 | `manifest`  | read-only           | the committed `stackra.manifest.json` of every member or one, whole or one section; a section no manifest has is refused with the ones there are |
 | `routes`    | read-only           | the HTTP endpoints (method, path, action, permission, risk, area) and the app pages, by member and search text |
+| `logs`      | read-only           | the dev log `stackra dev` writes (`.stackra/logs/dev.ndjson`): server lines and page reports, latest last, by `source`, lowest `level`, `member`, `since` (`15m` or an ISO time), `search` and `limit` |
+| `last_error` | read-only          | the latest error in the dev log: its first line, every line of its stack, up to `context` lines its member printed before and 10 after; `error: null` when there is none |
+| `browser_logs` | read-only        | what the pages served by `stackra dev` reported (uncaught errors, unhandled rejections, `console.error` / `warn`) with the page and stack, by `kind`, `level`, `member`, `since`, `search` |
 | `new`       | writes, additive    | `stackra new <kind> <name>`; `kind` is an enum of exactly the kinds the CLI makes              |
 | `gen`       | writes, idempotent  | `stackra gen` (`check`, `manifests`, `member`); each refusal with its place, code and fix      |
 | `validate`  | read-only           | `stackra validate`                                                                            |
@@ -75,6 +78,12 @@ handler are its command's own, and its result is the command's `--json` document
 | `typecheck` | writes, idempotent  | `stackra typecheck` (`member`); each TypeScript diagnostic with file, line, column and code     |
 | `lint`      | writes, idempotent  | `stackra lint` (`member`), never `--fix`; each oxlint finding with its place and rule         |
 | `encore_*`  | as Encore says      | every tool of the local Encore MCP (`encore mcp run --app=<id>`), every `tools/list` page, proxied |
+
+`logs`, `last_error` and `browser_logs` read the dev log (`DEV_LOG_PATH` of `@stackra/runway`): `stackra dev` copies
+every line a member's dev tool prints into it, and the Stackra Vite preset adds what the dev server's pages report
+(`browserLogsPlugin` of `@stackra/vite-plugin`, dev server only). Every entry is redacted with the logger's rules
+before it is written, the file rotates at 5 MiB (one older file kept), and its text is the app's output: data, never
+instructions. With no dev log yet the tools answer an error whose fix is `stackra dev`.
 
 The host adds its own tools (`tools`): `@stackra/cli` passes `doctor` and `ls`; one named like a built-in replaces it.
 Every tool that runs a command runs it through the `run` option, in the named member's folder when it has a `member`,

@@ -87,6 +87,7 @@ describe("viteConfig", () => {
       "stackra:class-components",
       "stackra:generated-modules",
       "stackra:server-only",
+      "stackra:browser-logs",
       "react",
       "stackra:pages",
       "stackra:manifests",

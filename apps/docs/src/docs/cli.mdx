@@ -38,7 +38,8 @@ store-ready, step by step.
 ## Agents
 
 `stackra mcp` serves the local developer MCP over stdio, so an assistant inside the repository reads the app's
-facts, manifests and routes and runs `new`, `gen`, `validate`, `check`, `verify`, `test`, `typecheck` and `lint`
+facts, manifests and routes, reads the dev log `stackra dev` writes (`logs`, `last_error`, and `browser_logs` for
+what the pages reported) and runs `new`, `gen`, `validate`, `check`, `verify`, `test`, `typecheck` and `lint`
 through the CLI's own gates, with structured results; `stackra mcp sync` renders `.mcp.json` from
 `.mcp.yaml`, and `stackra mcp exec --` starts a server with its secrets without anyone reading them
 ([ADR 0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)). `stackra add` installs a
