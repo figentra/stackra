@@ -198,7 +198,7 @@ classes, never row values. Every unknown resolves to floor.
 - AC-009: `split-sql-statements.function.test.ts`, `classify-migrations.function.test.ts`.
 - AC-010: `classify-migration-statement.function.test.ts` (reads, `DO` blocks and assignments that call an unknown
   function, inline and block comments, quoted names), `sql-code-of.function.test.ts`.
-- AC-006: the workspace `pnpm gen` run on box 2 and a classification of all 98 package migrations.
+- AC-006: the workspace `pnpm gen` run and a classification of all 98 package migrations.
 - Revert check: with the gen and runway sources put back to `main` (and the classifier short-circuited) 49 gen tests
   and 6 runway tests fail. Review fixes: with their gen and runway sources put back to the first commit, 19 gen tests
   fail (the split, `IF NOT EXISTS`, the empty safety file and 12 golden trees) and every runway test file fails to load
@@ -206,7 +206,7 @@ classes, never row values. Every unknown resolves to floor.
   Review fixes 2: with the classifier and splitter put back to the second commit, 21 classifier tests fail (unknown
   calls in reads and `DO` blocks, `SELECT … INTO`, filled `CREATE TABLE … AS`, inline and block comments, quoted
   names). AC-006 after them: `stackra gen` exits 0 with no `migration_*` refusal in each of the 25 packages that hold
-  the 98 package migrations (box 2, 2026-11-27).
+  the 98 package migrations (2026-11-27).
 
 ## Rollout
 

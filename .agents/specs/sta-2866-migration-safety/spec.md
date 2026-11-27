@@ -76,7 +76,8 @@ migration classification"). It also cannot name which migrations are destructive
   `online` runs without blocking writes (a concurrent index build or drop, an index drop, a constraint validation, a
   concurrent reindex or refresh). `contract` removes or narrows what the running release uses (a dropped table, column,
   function, policy or trigger, a rename, `SET NOT NULL`, a type change, a NOT NULL column without a default, a
-  constraint checked under a lock). `banned` never belongs in a migration (a data write, an index built on an existing
+  constraint checked under a lock, row level security enabled or forced, a restrictive policy, a changed policy, a
+  revoked privilege). `banned` never belongs in a migration (a data write, an index built on an existing
   table without `CONCURRENTLY`, a lock, a vacuum, a table rewrite).
 - **Destructive**: a migration whose class is `contract` or `banned`.
 - **Released banned migration**: one of the ten migrations already released that hold a banned statement
@@ -177,6 +178,12 @@ names the migration, step and statement, and says to move the backfill to a queu
   every existing row under an exclusive lock, so it is `contract`. A default calls only the stable functions on a short
   list (`now`, `current_setting`, the JSON builders …) to stay `additive`; any other call counts as volatile. On a
   table the same migration created, it stays `additive` (no row yet).
+- **EC-12**: Security that narrows what the running release reads or writes is `contract`, like a dropped column:
+  `ENABLE` or `FORCE ROW LEVEL SECURITY` (the release then sees only the rows a policy allows, none without one),
+  `CREATE POLICY … AS RESTRICTIVE`, any `ALTER POLICY` (its rows, checks, roles or name), and any `REVOKE`, including
+  one inside `ALTER DEFAULT PRIVILEGES`. On a table the same migration created they stay `additive`; a `REVOKE` stays
+  `additive` only when it names exactly one such table. A permissive `CREATE POLICY`, `DISABLE` and `NO FORCE ROW
+LEVEL SECURITY` and `GRANT` widen access and stay `additive`.
 
 ## Requirements _(mandatory)_
 
@@ -231,6 +238,7 @@ names the migration, step and statement, and says to move the backfill to a queu
   whole name (`ücount(` is not `count(`), so it is never matched against the read-only list by its tail.
 - **AC-012**: WHEN `ADD COLUMN` on an existing table has a volatile default (a call outside the stable list), a `serial` type, a stored generated column or an identity column THE classifier SHALL class it `contract`, since Postgres fills every row by rewriting the table; a constant or stable default (`now()`, `'{}'::jsonb`) stays `additive`.
 - **AC-013**: WHEN the service's committed migration lock names a migration with a `banned` statement THE gen run SHALL compile it, classed `banned` and destructive, instead of refusing it.
+- **AC-014**: WHEN a statement on a table the running release already uses enables or forces row level security, creates a restrictive policy, alters a policy, or revokes a privilege (directly or in `ALTER DEFAULT PRIVILEGES`) THE classifier SHALL class it `contract`, and `additive` when the table is one the same migration created.
 
 ## Success Criteria _(mandatory)_
 
@@ -243,7 +251,9 @@ names the migration, step and statement, and says to move the backfill to a queu
   `runway-migrations-record.command.test.ts` prove FR-005 to FR-009, and fail when the change is reverted — verified
   by: unit
 - **SC-003**: `pnpm gen` over the whole workspace passes with the classifier on, and every package migration is
-  classed (59 additive, 15 online, 14 contract, 10 banned released) — verified by: manual (box 2)
+  classed (55 additive, 15 online, 18 contract, 10 banned released; before EC-12 it was 59, 15, 14 and 10: the four that
+  moved to `contract` revoke privileges on existing tables, `outbox.0007_revoke_secure_change_partition` and the three
+  append-only migrations of `ai`, `loyalty_kit` and `access_log`) — verified by: manual
 - **SC-004**: the gen and runway tests, typecheck, oxlint and oxfmt pass — verified by: manual
 
 ## Compatibility and migration
@@ -304,6 +314,10 @@ None.
   SHA-256 migration lock (STA-2160), a migration the committed lock names counts as released like
   `RELEASED_BANNED_MIGRATIONS` (FR-003 changed, AC-013 added). Re-classing all 13,862 statements of the 1,750 compiled
   package migration files in the repository changes none.
+- 2026-11-27 · CTO review conditions (Claude, STA-2866 session): row level security enabled or forced, a restrictive
+  policy, any `ALTER POLICY` and any `REVOKE` (one in `ALTER DEFAULT PRIVILEGES` included) are `contract` on a table
+  the running release uses, `additive` on one the same migration created (Glossary changed, EC-12 and AC-014 added,
+  T019).
 
 ## Status history
 
@@ -312,3 +326,4 @@ None.
 - 2026-11-26 · Clarified → Planned · Claude (STA-2866 session) · plan.md
 - 2026-11-26 · Planned → Tasked · Claude (STA-2866 session) · tasks.md
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2866 session) · T001 to T010 committed on the branch
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27

@@ -7,7 +7,8 @@
  *          removes or narrows what the running release uses (a dropped table, column, function, policy or trigger, a
  *          rename, `SET NOT NULL`, a type change, a NOT NULL column without a default, an added column that rewrites
  *          the table: a volatile default, a `serial`, a stored generated or identity column, a constraint checked
- *          under a lock) and `banned` never belongs in a migration (a data write, an index built on an existing table without
+ *          under a lock, row level security enabled or forced, a restrictive policy, a changed policy, a revoked
+ *          privilege) and `banned` never belongs in a migration (a data write, an index built on an existing table without
  *          `CONCURRENTLY`, a lock, a vacuum, a table rewrite). A statement on a table the same migration created with a
  *          plain `CREATE TABLE` is `additive`, since no release reads that table yet; `CREATE TABLE IF NOT EXISTS`
  *          may adopt a table that already exists, so it marks nothing created. A statement gen cannot read counts as
@@ -22,6 +23,9 @@
  *           anything else (a body that is no dollar-quoted one included) `contract`.
  *           `CREATE TABLE … AS` copies rows (`banned`) unless it is empty or temporary; a temporary one and
  *           `CREATE MATERIALIZED VIEW … AS` are judged by their query like a read.
+ *           Security narrows reads and writes like a dropped column does: `ENABLE` or `FORCE ROW LEVEL SECURITY`, a
+ *           `CREATE POLICY … AS RESTRICTIVE`, any `ALTER POLICY` and any `REVOKE` (a `REVOKE` in
+ *           `ALTER DEFAULT PRIVILEGES` too) are `contract`, unless they touch a table the same migration created.
  * Runtime: isomorphic
  * Governing contract: ADR 0159 (decision 3; the 2026-10-23 note: Additive, Online, Contract and Banned); ADR 0334
  *                     (rule 4: no data change in a migration).
@@ -152,6 +156,21 @@ const NON_VOLATILE_DEFAULT_CALLS: ReadonlySet<string> = new Set([
 /** The reason of an added column that rewrites the table. */
 const ADD_REWRITES =
   "adds a column every existing row must be filled for, which rewrites the table under an exclusive lock; add it nullable, backfill it with a queue job, then set its default";
+
+/** The reason of row level security turned on or forced on a table the running release uses. */
+const RLS_ON =
+  "turns on or forces row level security, so the running release reads and writes only the rows a policy lets it (none without one)";
+
+/** The reason of a restrictive policy added to a table the running release uses. */
+const RESTRICTIVE =
+  "adds a restrictive policy, which narrows the rows the running release reads and writes";
+
+/** The reason of a changed policy. */
+const POLICY_CHANGED =
+  "changes a policy's rows, checks or roles, which may narrow what the running release reads and writes";
+
+/** The reason of a revoked privilege. */
+const REVOKES = "revokes a privilege the running release may still use";
 
 /** The reason of a type change. */
 const TYPE_CHANGE =
@@ -288,6 +307,7 @@ function alterTableClause(clause: string): ClassifiedStatement {
     return of("additive", "relaxes or annotates a column");
   if (/^detach partition\b/.test(clause))
     return of("contract", "detaches a partition, whose rows the running release stops seeing");
+  if (/^(?:enable|force) row level security\b/.test(clause)) return of("contract", RLS_ON);
   if (
     /^(?:enable|disable|force|no force|owner to|set \(|reset \(|attach partition|replica identity|cluster on|set without cluster|inherit|no inherit|of |not of)/.test(
       clause,
@@ -320,7 +340,14 @@ function doBlock(sql: string): ClassifiedStatement {
 }
 
 /** The class of an `ALTER` that is not `ALTER TABLE`. */
-function alterOther(s: string): ClassifiedStatement {
+function alterOther(s: string, created: ReadonlySet<string>): ClassifiedStatement {
+  const policy = new RegExp(String.raw`^alter policy ${IDENT} on (${QUALIFIED})`).exec(s);
+  if (policy !== null)
+    return created.has(nameOf(policy[1]))
+      ? of("additive", "changes a policy of a table this migration creates")
+      : of("contract", POLICY_CHANGED);
+  if (/^alter policy\b/.test(s)) return of("contract", POLICY_CHANGED);
+  if (/^alter default privileges\b.*\brevoke\b/.test(s)) return of("contract", REVOKES);
   if (/^alter type\b/.test(s))
     return /\b(?:rename|drop attribute|alter attribute)\b/.test(s)
       ? of("contract", "renames or removes part of a type the running release uses")
@@ -332,6 +359,17 @@ function alterOther(s: string): ClassifiedStatement {
   )
     ? of("additive", "changes an object's settings, not its data")
     : of("contract", UNREAD);
+}
+
+/**
+ * The class of a `REVOKE`: `contract`, since the running release may still use the privilege, unless it names one
+ * table this migration created (no release holds a privilege on it yet).
+ */
+function revoke(s: string, created: ReadonlySet<string>): ClassifiedStatement {
+  const on = new RegExp(String.raw`^revoke .+? on (?:table )?(${QUALIFIED}) from `).exec(s);
+  return on !== null && created.has(nameOf(on[1]))
+    ? of("additive", "revokes a privilege on a table this migration creates")
+    : of("contract", REVOKES);
 }
 
 /** A `CREATE TABLE … AS` or `CREATE MATERIALIZED VIEW … AS`: its persistence, the object and the query that fills it. */
@@ -382,6 +420,9 @@ function createOrDrop(s: string, created: ReadonlySet<string>): ClassifiedStatem
     return table[1] === undefined
       ? { ...of("additive", "creates a table"), creates: nameOf(table[2]) }
       : of("additive", "creates a table unless it exists, so it may adopt one already in use");
+  const policy = new RegExp(String.raw`^create policy ${IDENT} on (${QUALIFIED})`).exec(s);
+  if (policy !== null && /\bas restrictive\b/.test(s) && !created.has(nameOf(policy[1])))
+    return of("contract", RESTRICTIVE);
   if (/^create\b/.test(s)) return of("additive", "creates a new object");
   if (/^drop index\b/.test(s)) return of("online", "drops an index, which loses no data");
   const dropped = new RegExp(
@@ -441,8 +482,9 @@ export function classifyMigrationStatement(
       : clausesOf(alter[2] ?? "")
           .map((clause) => alterTableClause(clause))
           .reduce(higher, of("additive", "changes the table's settings, not its data"));
-  if (/^alter\b/.test(s)) return alterOther(s);
-  if (/^(?:comment on|grant|revoke|set|reset|security label|analyze)\b/.test(s))
+  if (/^alter\b/.test(s)) return alterOther(s, created);
+  if (/^revoke\b/.test(s)) return revoke(s, created);
+  if (/^(?:comment on|grant|set|reset|security label|analyze)\b/.test(s))
     return of("additive", "annotates, grants or sets a setting; changes no data");
   if (/^do\b/.test(s)) return doBlock(sql);
   return of("contract", UNREAD);

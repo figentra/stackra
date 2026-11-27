@@ -10,7 +10,8 @@
  *          block is judged by its body, and an unknown statement or a string of several statements counts as contract;
  *          a call is read from its whole name in any script, and an added column that rewrites the table (a volatile
  *          default, a `serial`, a stored generated or identity column) is contract while a constant or stable default
- *          stays additive.
+ *          stays additive; row level security enabled or forced, a restrictive policy, a changed policy and a revoked
+ *          privilege are contract unless they touch a table the same migration created.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 3; the 2026-10-23 note); ADR 0334 (rule 4).
@@ -35,10 +36,11 @@ describe("classifyMigrationStatement", () => {
     'alter table "orders"."orders" add constraint "ck_orders_note_not_null" check ("note" is not null) not valid',
     'alter table "orders"."orders" alter column "note" drop not null',
     'alter table "orders"."orders" drop constraint if exists "ck_old", add constraint "ck_new" check (a > 0) not valid',
-    'alter table "orders"."orders" enable row level security',
+    'alter table "orders"."orders" disable row level security',
+    'alter table "orders"."orders" no force row level security',
+    'create policy "pol_orders_read" on "orders"."orders" as permissive for select using (true)',
     'comment on column "orders"."orders"."note" is \'drop column note when it is empty\'',
     'grant execute on function "orders"."f"() to current_user',
-    "revoke update on outbox.changes from public",
     "-- stackra:system-function orders.claim_due claims due rows",
     'create or replace function "orders"."f"() returns int language sql as $f$ delete from x; select 1 $f$',
     "alter type orders.state add value 'held'",
@@ -350,6 +352,57 @@ describe("classifyMigrationStatement", () => {
         "orders.orders",
       ]),
     ).toBe("additive");
+  });
+
+  /**
+   * Security that narrows what the running release reads or writes is a contract step like a dropped column: row
+   * level security turned on or forced, a restrictive policy, a changed policy, a revoked privilege (CTO review of
+   * STA-2866).
+   */
+  it.each([
+    'alter table "orders"."orders" enable row level security',
+    'alter table "orders"."orders" force row level security',
+    "alter table if exists only orders.orders enable row level security",
+    'alter table "orders"."orders" add column "a" text null, force row level security',
+    'create policy "pol_orders_tenant" on "orders"."orders" as restrictive for all using (tenant_id = current_setting(\'app.tenant\'))',
+    'create policy "pol_orders_tenant" on "orders"."orders" as restrictive using (true)',
+    'alter policy "pol_orders_tenant_id" on "orders"."orders" using (tenant_id = current_setting(\'app.tenant\'))',
+    'alter policy "pol_orders_tenant_id" on "orders"."orders" to app_reader',
+    'alter policy "pol_steps_tenant_id" on "ai"."run_steps" rename to "pol_run_steps_tenant_id"',
+    "revoke update on outbox.changes from public",
+    'revoke update, delete on table "orders"."orders" from "app"',
+    "revoke all on function outbox.secure_change_partition(text) from public",
+    "revoke grant option for select on orders.orders from app_reader",
+    "revoke usage on schema orders from public",
+    'revoke update on "orders"."orders", "orders"."lines" from public',
+    "alter default privileges in schema orders revoke select on tables from app_reader",
+  ])("classes %s as contract", (sql) => {
+    const classified = classifyMigrationStatement(sql, new Set());
+    expect(classified.class).toBe("contract");
+    expect(classified.reason).toMatch(/row level security|policy|revokes/);
+  });
+
+  /** On a table no release reads yet, the same security steps are additive: nothing running loses a row or a right. */
+  it("keeps security steps on a table this migration created additive", () => {
+    const created = ["orders.orders"];
+
+    expect(classOf('alter table "orders"."orders" enable row level security', created)).toBe(
+      "additive",
+    );
+    expect(classOf('alter table "orders"."orders" force row level security', created)).toBe(
+      "additive",
+    );
+    expect(
+      classOf(
+        'create policy "p" on "orders"."orders" as restrictive using (tenant_id = current_setting(\'app.tenant\'))',
+        created,
+      ),
+    ).toBe("additive");
+    expect(classOf('alter policy "p" on "orders"."orders" to app_reader', created)).toBe(
+      "additive",
+    );
+    expect(classOf("revoke update, delete on orders.orders from public", created)).toBe("additive");
+    expect(classOf("revoke update, delete on orders.other from public", created)).toBe("contract");
   });
 
   /** Every class says why, so a refusal and the evidence can name it. */

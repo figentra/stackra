@@ -15,6 +15,8 @@ advisory locks) is `contract`, `SELECT … INTO` and a filled `CREATE TABLE … 
 class. A call's name is read whole in any script, so `ücount(` never passes as `count(`. An `ADD COLUMN` that makes
 Postgres rewrite the table is `contract`: a volatile default such as `gen_random_uuid()` or `nextval()`, a `serial`
 type, a stored generated column or an identity column; a constant or stable default such as `now()` stays `additive`.
+Security that narrows what the running release reads or writes is `contract` on an existing table: `ENABLE` or
+`FORCE ROW LEVEL SECURITY`, a restrictive policy, any `ALTER POLICY` and any `REVOKE`.
 Ten released migrations already hold a banned statement. They are frozen, so gen keeps compiling them and classes them
 `banned`; so is any migration the service's committed migration lock names, since a database may already have applied
 it. New exports: `classifyMigrationStatement`, `classifyMigrations`, `emitMigrationSafety`,
