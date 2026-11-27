@@ -154,6 +154,8 @@ targets:
           headSamplingRate: 0.1
         smoke:
           - url: https://static.stackra.figentra.com/schemas/index.json
+        # Its answers are static assets: the script's /-/version names the version each smoke step reached (STA-2786).
+        versionProof: route
       # ADR 0453. The ids are the `registry` environment's variables, swapped for the zero placeholders of
       # wrangler.jsonc on the runner only. /-/npm/v1/keys answers only once the signing key is readable.
       registry:
@@ -191,7 +193,8 @@ targets:
         smoke:
           - url: https://turbo.stackra.figentra.com/v8/artifacts/status
             bearer: TURBO_TOKEN
-      # ADR 0514, STA-2026: the Fumadocs site, assets only (apps/docs/wrangler.jsonc). llms.txt is the agent index.
+      # ADR 0514, STA-2026: the Fumadocs site (apps/docs/wrangler.jsonc), static assets but for the /-/version route.
+      # llms.txt is the agent index.
       docs:
         path: apps/docs
         preset: public-site
@@ -206,6 +209,8 @@ targets:
         smoke:
           - url: https://docs.stackra.figentra.com/
           - url: https://docs.stackra.figentra.com/llms.txt
+        # As static: /-/version names the version each smoke step reached (STA-2786).
+        versionProof: route
     workflows:
       docs: deploy-docs.yml
       static: deploy-static.yml

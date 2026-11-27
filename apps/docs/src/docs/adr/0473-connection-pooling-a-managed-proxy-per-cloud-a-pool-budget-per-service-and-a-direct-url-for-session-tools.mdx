@@ -3,7 +3,7 @@ title: "0473 — Connection pooling: a managed proxy per cloud, a pool budget pe
 description: "Accepted · 2026-10-28"
 ---
 
-{/* Stackra file contract. Purpose: ADR 0473 (Accepted 2026-10-28, owner decision 5 of the data-layer questionnaire), closing ADR 0238 implementation notes 2 and 3: the connection proxy per cloud, how a service's runway pool budget becomes the pool of each instance, and the direct URL the session-mode tools use. Boundary: decision text only; the code is batch stackra-254 (`@stackra/database`, `@stackra/gen`, `@stackra/runway`, the infra READMEs). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0238, 0159, 0136, 0168, 0296; notes handover/gap-analysis/data-layer (database-migrations.md gap 11, scale-performance.md gap 6, DECISIONS.md 5). */}
+{/* Stackra file contract. Purpose: ADR 0473 (Accepted 2026-10-28, owner decision 5 of the data-layer questionnaire), closing ADR 0238 implementation notes 2 and 3: the connection proxy per cloud, how a service's runway pool budget becomes the pool of each instance, and the direct URL the session-mode tools use; the note of 2026-11-26 (STA-1716) adds the connection gate and a share of at least two. Boundary: decision text only; the code is batch stackra-254 (`@stackra/database`, `@stackra/gen`, `@stackra/runway`, the infra READMEs). Runtime: documentation. Governing contract: ADR template (apps/docs/src/docs/adr/template.mdx); ADR 0238, 0159, 0136, 0168, 0296; notes handover/gap-analysis/data-layer (database-migrations.md gap 11, scale-performance.md gap 6, DECISIONS.md 5). */}
 
 <Note>
   Reserved number: 0473, assigned to batch stackra-254 (STA-1409) for the data-layer wave 3 round of
@@ -60,6 +60,39 @@ which a transaction-mode proxy does not keep, and they had only the pooled `DATA
 tests; the `emitBoot` test for `DATABASE_POOL_MAX`; the `directDatabaseUrl` test, and both runners read it (stackra-254).
 planned — the deploy provider setting `DATABASE_POOL_MAX` and `DATABASE_DIRECT_URL` per service, and the RDS Proxy on
 AWS.
+
+## Note 2026-11-26: the connection gate, and a share of at least two (STA-1716)
+
+[0495](/adr/0495-every-call-and-background-unit-runs-in-a-transaction-local-isolation-context) runs every call in an
+isolation transaction, and a call holds that connection while a `requiresNew` store opens a second one (the iam
+policy snapshot, the Postgres rate limit, the access log, a webhook attempt). A background chain nests deeper: a relay
+tick, the delivery it isolates, the inbox receipt that runs a listener's call, and that call's store. With as many
+concurrent calls as the pool has connections, every call held one and waited for a second, and since the `pg` pool waits
+without a limit by default, the service hung. A pool of twice the concurrency (the rule first proposed) only moves the
+line: under more load it hangs the same way, and the deeper chains need more than twice.
+
+The decision of 2 now has two more parts:
+
+1. **A gate per pool.** `PostgresDatabaseDriver` admits every transaction that takes a connection of its own (a
+   top-level one or a `requiresNew` one, never a savepoint) through a `ConnectionGate`, by how deep in its chain it
+   opens. With `nesting` levels (`DatabaseConfig.pool.nesting`, default 4, capped at `max`), at most
+   `max - (nesting - d)` transactions run at depth `d` or shallower. So the top level gets `max - (nesting - 1)` places
+   and each deeper level keeps one more, and a chain no deeper than `nesting` always gets its next connection, under any
+   load. A chain deeper than `max` is refused at once (`RangeError`), since no pool of that size could serve it. A
+   transaction that waits past `pool.acquireTimeout` (default 30 seconds) is refused with the retryable
+   `ConnectionPoolExhaustedError` (`connection_pool_exhausted`, 503) instead of hanging. Waiters are served in arrival
+   order, skipping one that does not fit yet, so a waiting top-level call never blocks a deeper transaction. A query
+   outside a transaction holds nothing while it waits, so it is not gated; the replica pool is not gated, since a
+   replica transaction opens nothing inside it.
+2. **A share of at least two.** `poolMaxOf` refuses a budget that gives an instance fewer than two connections: a call
+   under isolation holds two at once. A budget is sized as the concurrency an instance should serve plus `nesting - 1`.
+
+Enforcement: `connection-gate.value.test.ts` (chains two and three deep finish with more chains than connections, where
+the same chains with no gate stall; the places per level; the refusals); `postgres-database-pool-nesting.driver.int.test.ts`
+(real Postgres: nine concurrent calls on a pool of three, each taking a rate-limit token through the real
+`requiresNew` store, finish; three-deep chains finish; a chain deeper than the pool and a wait past `acquireTimeout`
+are refused); `run-transaction.function.test.ts` (only a transaction on a connection of its own waits for the gate);
+the `poolMaxOf` test (a share of one refused).
 
 ## Supersedes and sources
 

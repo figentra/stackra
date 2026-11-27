@@ -138,8 +138,20 @@ probed before any limit applied.
 - built — `EdgeHeaderGuard` (`@stackra/app/server`, order -100) rejects a request that carries any edge header whose
   signature is missing, invalid, older than the window or already seen (its unit tests); gen binds it in every service
   (`SERVER_CONTRIBUTIONS`, STA-2577). The test in the OS service template is still planned.
-- planned — a shared nonce store (`Cache.add`, an atomic set-if-absent): until it ships, a replay is refused per
-  instance only. Acceptable only while no edge is live; it must land before any edge goes live (leader, 2026-11-09).
+- built — a shared nonce store (STA-2803): `EdgeNonceStore`'s `cache` driver (`CacheEdgeNonceStoreDriver`) claims each
+  request id with `Cache.add`, an atomic set-if-absent on the `memory` (one process), `valkey` (`SET NX`) and `postgres`
+  (an upsert that replaces only a dead row) drivers; `storage` and `workers` reject it, so a claim fails closed. Its
+  tests: the guard refuses on a second instance a request the first accepted, and on real Valkey and Postgres exactly
+  one of concurrent adds wins (`valkey-cache.driver.int.test.ts`, `edge-nonce-shared.int.test.ts`, the cache-tables
+  migration test). A region with more than one API instance sets `app.edge.nonces: cache` over a shared cache before
+  its edge goes live; `memory` stays the default for tests and a single instance.
+- built — a signing-keys driver over the secret store (STA-2803): `EdgeSigningKeys`' `secrets` driver reads the secret
+  `app.edge.signingKeysSecret` names (`STACKRA_EDGE_SIGNING_KEYS`) from the bound `SecretStore` on every check; `env`
+  keeps the value `bootApp` resolved. `edge-signing-keys-boot.test.ts` pins that a store the caller reloads is followed
+  with no reboot.
+- planned — rotation with no restart (STA-2804): every shipped target's `bootApp` binds the boot environment as the
+  `SecretStore` (never the wiring's `secrets.store` driver) and nothing reloads it, so today a rotation lists both keys,
+  restarts every API instance, then switches the Worker to the new key.
 - built — core's `workers/edge` (`@figentra/worker-edge`, STA-1566) resolves the host from a host-map var, refuses a bad
   JWT by JWKS, strips inbound edge headers and signs with `signEdgeRequest`; its tests cover unknown hosts, header
   stripping and the signing round trip against `EdgeHeaderGuard`.

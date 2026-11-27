@@ -27,7 +27,14 @@
  *           (`queue_unprovisioned`, STA-1727).
  *           A service's full run also writes its compiled migrations to `.stackra/migrations` (`compileMigrations`,
  *           stackra-248) and removes any `.sql` file there it did not produce; `--check` reports a stale, missing or
- *           leftover one.
+ *           leftover one. It locks them in the `migrations` section of `stackra.manifest.json` (each id and SHA-256,
+ *           in apply order); a migration the committed lock names is frozen: changed, gone or out of place, it is
+ *           refused, and a rule added since its lock only warns (STA-2160). A malformed lock is refused
+ *           (`migration_lock_malformed`). A package's own migrations are checked but not locked: only a service's
+ *           database applies them, so the lock of each service that hosts the package freezes them. Beside them it
+ *           writes `.stackra/migration-safety.json`, the ADR 0159 class of each migration (`classifyMigrations`,
+ *           STA-2866), for every service, with no rows when it has no migration, so a missing file always means gen
+ *           has not run; and it refuses a banned statement outside a released migration (`migration_banned`).
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
  *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
@@ -39,7 +46,8 @@
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
  *                     allowed at the manifest level); ADR 0091 (decision 2) and ADR 0029 (the Encore app file); ADR 0159
- *                     (the compiled migrations); ADR 0514 (amendment of 2026-11-09: the docs member).
+ *                     (the compiled migrations, and the 2026-10-23 note: the SHA-256 lock); ADR 0514 (amendment of
+ *                     2026-11-09: the docs member); STA-2160 (frozen migrations).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -55,9 +63,12 @@ import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
+import { emitMigrationSafety } from "#core/functions/emit-migration-safety.function";
 import { encoreMigrationSql } from "#core/functions/encore-migration-sql.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
+import { formatJson } from "#core/functions/format-json.function";
 import { generateMember } from "#core/functions/generate-member.function";
+import { migrationLockOf } from "#core/functions/migration-lock-of.function";
 import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import { compileMigrations } from "#node/functions/compile-migrations.function";
@@ -163,7 +174,8 @@ const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
 /**
  * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
  * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
- * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed.
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed. The
+ * `.stackra/migration-safety.json` of a service is rewritten on every run, never left stale.
  */
 function staleMigrations(
   root: string,
@@ -297,9 +309,16 @@ export async function generate(
     ir.layout === "package" &&
     existsSync(ownMigrations) &&
     readdirSync(ownMigrations).some((name) => name.endsWith(".migration.ts"));
+  // The committed migration lock freezes what a database may already have applied (STA-2160). Only a service
+  // applies migrations, so only a service is locked: a package's own migrations are checked, and frozen by the lock
+  // of each service that hosts them.
+  const lock =
+    ir.layout === "service" ? migrationLockOf(previous) : { locked: [], errors: [] as GenError[] };
   const migrations =
     (ir.layout === "service" || checked) && options.pass === undefined
-      ? await compileMigrations(root, ir)
+      ? lock.errors.length > 0
+        ? { files: [], errors: lock.errors }
+        : await compileMigrations(root, ir, { locked: lock.locked })
       : { files: [], errors: [] };
   // Every job queue but `default` is provisioned in each environment of the service's runway (STA-1727).
   const queues =
@@ -314,7 +333,11 @@ export async function generate(
         })),
         ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
       ]
-    : migrations.files;
+    : [
+        ...migrations.files,
+        // The ADR 0159 class of each migration, which `runway evidence` reads, empty without one (STA-2866).
+        ...(migrations.safety === undefined ? [] : [emitMigrationSafety(migrations.safety)]),
+      ];
   // Encore reads migrations only from a local folder, so a
   // service's compiled files are copied under its Encore service too. Encore runs each file in one transaction, so
   // an online step's copy builds in its plain form (ADR 0159, amendment of 2026-11-10).
@@ -333,7 +356,16 @@ export async function generate(
           })),
         ];
   const errors = [...hatchErrors(root), ...encore.errors, ...migrations.errors, ...queues];
-  let files = [...result.files, ...encoreFiles, ...migrationFiles];
+  // A service's manifest takes this run's migration lock, in apply order; with no migration it has no section.
+  const manifestFiles =
+    ir.layout !== "service" || migrations.lock === undefined
+      ? result.files
+      : result.files.map((file) =>
+          file.path === MANIFEST_FILE
+            ? { ...file, content: formatJson({ ...result.manifest, migrations: migrations.lock }) }
+            : file,
+        );
+  let files = [...manifestFiles, ...encoreFiles, ...migrationFiles];
   // A member with an `.int.test.ts`, its own or gen's, gets the integration-tier config beside the unit one
   // (`stackra test --tier int`), so the generated tenant-isolation test runs with no authored int test beside it.
   if (
@@ -409,10 +441,15 @@ export async function generate(
         ),
       );
   }
-  if (errors.length > 0) return { errors, warnings, files: [], changed: partial };
+  // A locked migration that breaks a rule added since its lock warns (`migration_rule_frozen`, STA-2160).
+  const compiledWarnings = [...warnings, ...(migrations.warnings ?? [])];
+  if (errors.length > 0) return { errors, warnings: compiledWarnings, files: [], changed: partial };
   result = { ...result, files };
   // A listener of a contract-only producer's event that the producer's contract does not subscribe (STA-1910).
-  const reported = [...warnings, ...(options.pass === undefined ? checkSubscriptions(ir) : [])];
+  const reported = [
+    ...compiledWarnings,
+    ...(options.pass === undefined ? checkSubscriptions(ir) : []),
+  ];
   return {
     errors: [],
     files: result.files,

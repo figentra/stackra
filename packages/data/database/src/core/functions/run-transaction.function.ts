@@ -12,9 +12,12 @@
  *           dropped by the ORM. Any other error, or the last attempt's, leaves unchanged (`translateDbError` maps it
  *           at the action boundary). A `requiresNew` transaction runs on another connection, which has none of the
  *           caller's transaction-local settings, so they are read before it opens and replayed first inside it: its
- *           rows land in the caller's scope and tenant and commit even if the caller rolls back (STA-2565).
+ *           rows land in the caller's scope and tenant and commit even if the caller rolls back (STA-2565). Each
+ *           attempt of a transaction on a connection of its own waits for its place in the pool's `ConnectionGate`
+ *           (`holdConnection`), so a call that holds one connection always gets its next (STA-1716).
  * Runtime: node
- * Governing contract: ADR 0136 (decision 2); data-layer gap mo6 (P1 part, stackra-279); ADR 0327 (decisions 3 and 5).
+ * Governing contract: ADR 0136 (decision 2); data-layer gap mo6 (P1 part, stackra-279); ADR 0327 (decisions 3 and 5);
+ *                     ADR 0473 (the 2026-11-26 note: the gate).
  */
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -22,6 +25,7 @@ import { TransactionPropagation } from "@mikro-orm/core";
 import type { EntityManager } from "@mikro-orm/postgresql";
 
 import { TRANSACTION_RETRY } from "#core/constants/transaction-retry.constant";
+import { holdConnection } from "#core/functions/hold-connection.function";
 import { readRowSecuritySettings } from "#core/functions/read-row-security-settings.function";
 import { replayRowSecuritySettings } from "#core/functions/replay-row-security-settings.function";
 import { retryDelay } from "#core/functions/retry-delay.function";
@@ -63,18 +67,24 @@ export async function runTransaction<T>(
   const settings = requiresNew === true ? await readRowSecuritySettings(em) : [];
   for (let attempt = 0; ; attempt += 1) {
     try {
-      return await em.transactional(
-        async (trx) => {
-          await replayRowSecuritySettings(settings, (sql, params) => trx.execute(sql, params));
-          // raw-sql: transaction-local timeouts, each a whole number of milliseconds from the caller's Duration
-          for (const statement of locals) await trx.execute(statement);
-          return work();
-        },
-        {
-          ...(requiresNew === true ? { propagation: TransactionPropagation.REQUIRES_NEW } : {}),
-          ...(isolation === undefined ? {} : { isolationLevel: isolation }),
-          ...(readOnly === true ? { readOnly: true } : {}),
-        },
+      // a transaction on a connection of its own waits for its place in the pool's gate first (STA-1716)
+      return await holdConnection(
+        em,
+        () =>
+          em.transactional(
+            async (trx) => {
+              await replayRowSecuritySettings(settings, (sql, params) => trx.execute(sql, params));
+              // raw-sql: transaction-local timeouts, each a whole number of milliseconds from the caller's Duration
+              for (const statement of locals) await trx.execute(statement);
+              return work();
+            },
+            {
+              ...(requiresNew === true ? { propagation: TransactionPropagation.REQUIRES_NEW } : {}),
+              ...(isolation === undefined ? {} : { isolationLevel: isolation }),
+              ...(readOnly === true ? { readOnly: true } : {}),
+            },
+          ),
+        requiresNew === true,
       );
     } catch (error) {
       const state = sqlStateOf(error);

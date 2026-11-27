@@ -5,11 +5,11 @@
  *          a `Date` is `timestamptz`, JSON-like shapes are `jsonb`).
  * Boundary: pure. Returns undefined for a field type with no agreed mapping (`Duration`, `Upload`, shipped types,
  *           unions, the `@Field(zod)` hatch, and a number with neither `@Int` nor `@Num`), so the comparison reports
- *           `type_unmapped` and never guesses. A `Money` field is two columns and is expanded by the builder, not here.
+ *           `type_unmapped` and never guesses. A trait's column is typed by `traitColumnsOf`, never by its field name. A `Money` field is two columns and is expanded by the builder, not here.
  *           `@Str({ max })` does not narrow the type: `text` agrees with any `varchar(n)` (`postgresTypeAgrees`).
  * Runtime: isomorphic
  * Governing contract: ADR 0135 (public ids are `varchar(33)`); ADR 0159 (the migration owns the type); ADR 0162
- *                     (decision 2: `Translated` is `jsonb`); STA-1808.
+ *                     (decision 2: `Translated` is `jsonb`); STA-1808; STA-1408.
  */
 import type { FieldIR } from "#core/types/field-ir.type";
 
@@ -57,8 +57,8 @@ export function postgresTypeOf(field: FieldIR): string | undefined {
     case "number": {
       if (field.rules.some((rule) => rule.name === "Int")) return "integer";
       if (field.rules.some((rule) => rule.name === "Num")) return "numeric";
-      // The optimistic-lock `version` of the `Versioned` trait carries no rule and is an integer column.
-      return field.name === "version" ? "integer" : undefined;
+      // A trait's column (the `Versioned` trait's `version`) is typed by its `TRAIT_COLUMNS` row, not by its name here.
+      return undefined;
     }
     default: {
       return undefined;

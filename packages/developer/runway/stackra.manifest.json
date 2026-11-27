@@ -299,6 +299,16 @@
       "entry": "node"
     },
     {
+      "name": "migrations:record",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "RunwayMigrationsRecordCommand",
+      "file": "src/node/commands/runway-migrations-record.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "plan",
       "aliases": [],
       "hidden": false,
@@ -459,6 +469,10 @@
     "runway.WorkerPreset": {
       "type": "string",
       "enum": ["public-site", "api", "internal-tool", "cache", "edge"]
+    },
+    "runway.WorkerVersionProof": {
+      "type": "string",
+      "enum": ["header", "route"]
     }
   }
 }

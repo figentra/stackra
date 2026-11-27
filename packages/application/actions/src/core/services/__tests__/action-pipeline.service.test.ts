@@ -2,7 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `ActionPipeline`: the fixed order of the steps; the actor check and fail-closed permission;
  *          input validation from a registered schema; idempotency (required, replayed, reused, derived, released on
- *          failure, a shorter window, a @ShownOnce output field never kept); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`, keyed by (app, scope), a refusal
+ *          failure, a shorter window, a @ShownOnce output field never kept; STA-2797: a joining store completed inside
+ *          the call's transaction, the pipeline's own transaction with no isolation, never released after the commit,
+ *          a failed completion logged with the output still returned, the lease apart from the replay window, a store
+ *          outside the transaction re-confirmed before the commit: a crash after it keeps the key held, a call that
+ *          outran its lease after a retry took the key rolls back, one nobody overtook commits); the area and action rate limits (the area bucket plan-sized by `RateLimitBudget`, keyed by (app, scope), a refusal
  *          with its back-off details and a `rate_limited` usage event, the default per-scope and per-hashed-address
  *          buckets of an action with no `rateLimit`); the unit of work with `afterCommit`; the audit entry; the call
  *          context (frozen clock, request facts, registered key, the call's scope, `RequestContext`); the workflow,
@@ -158,6 +162,7 @@ import { OfflinePrecondition } from "#core/enums/offline-precondition.enum";
 import { DeviceRevokedError } from "#core/errors/device-revoked.error";
 import { DeviceSequenceOutOfOrderError } from "#core/errors/device-sequence-out-of-order.error";
 import { IdempotencyKeyRequiredError } from "#core/errors/idempotency-key-required.error";
+import { IDEMPOTENCY_STORE_FAILED } from "#core/constants/idempotency-store-failed.constant";
 import { IdempotencyStoreNotTransactionalError } from "#core/errors/idempotency-store-not-transactional.error";
 import { InputInvalidError } from "#core/errors/input-invalid.error";
 import { OfflineCapReachedError } from "#core/errors/offline-cap-reached.error";
@@ -988,13 +993,13 @@ describe(ActionPipeline, () => {
   });
 
   describe("retention window (IdempotencyRetentionSource)", () => {
-    /** Records the ttl each claim passes. */
+    /** Records the replay window each completion keeps the output for. */
     class Recording extends MemoryIdempotencyStoreDriver {
       readonly ttls: unknown[] = [];
 
-      override async claim(...args: Parameters<MemoryIdempotencyStoreDriver["claim"]>) {
-        this.ttls.push(args[2]);
-        return super.claim(...args);
+      override async complete(...args: Parameters<MemoryIdempotencyStoreDriver["complete"]>) {
+        this.ttls.push(args[3]);
+        return super.complete(...args);
       }
     }
 
@@ -1090,9 +1095,9 @@ describe(ActionPipeline, () => {
         return super.claim(...args);
       }
 
-      override async complete(key: string, output: unknown) {
-        stored.push({ output });
-        return super.complete(key, output);
+      override async complete(...args: Parameters<MemoryIdempotencyStoreDriver["complete"]>) {
+        stored.push({ output: args[2], ttl: args[3] });
+        return super.complete(...args);
       }
     }
     const action = new RegisterEndpointAction();
@@ -1113,8 +1118,10 @@ describe(ActionPipeline, () => {
     expect(first).toEqual({ endpointId: "whe_1", signingSecret: "whsec_1" });
     expect(again).toEqual({ endpointId: "whe_1", secretOmitted: true });
     expect(action.registered).toBe(1);
+    // the lease is never longer than the action's own 10-minute window, which the output then keeps
     expect(stored[0]?.ttl).toEqual(Duration.minutes(10));
     expect(stored[1]?.output).toEqual({ endpointId: "whe_1", secretOmitted: true });
+    expect(stored[1]?.ttl).toEqual(Duration.minutes(10));
     expect(JSON.stringify(stored)).not.toContain("whsec_");
   });
 
@@ -3540,6 +3547,347 @@ async function refusal(work: Promise<unknown>): Promise<Record<string, unknown>>
   if (refused === undefined) throw new Error("the call ran");
   return refused as Record<string, unknown>;
 }
+
+/** A store that joins the running transaction, as the Postgres store does; it logs each completion. */
+class JoiningIdempotencyStore extends MemoryIdempotencyStoreDriver {
+  override readonly joinsTransaction = true;
+
+  override async complete(...args: Parameters<MemoryIdempotencyStoreDriver["complete"]>) {
+    log.push("idempotency:complete");
+    return super.complete(...args);
+  }
+}
+
+/** A store that cannot join a transaction and whose completion fails (a Valkey blip after the commit). */
+class FailingCompletionStore extends MemoryIdempotencyStoreDriver {
+  override async complete(): Promise<void> {
+    throw new Error("valkey down");
+  }
+}
+
+/** A read-your-writes mark that fails once, standing in for anything that breaks after the call committed. */
+class BrokenReplicaReads extends Driver(ReplicaReads) {
+  broken = true;
+
+  async onReplica<T>(work: () => Promise<T>): Promise<T> {
+    return work();
+  }
+
+  async wrote(): Promise<void> {
+    if (!this.broken) return;
+    this.broken = false;
+    throw new Error("crashed after the commit");
+  }
+
+  async pinned(): Promise<boolean> {
+    return true;
+  }
+}
+
+/** A movable clock for a store's lease, apart from the pipeline's frozen one. */
+class StoreClock extends Clock {
+  time = NOW.getTime();
+
+  now(): Date {
+    return new Date(this.time);
+  }
+}
+
+/** Fails after `next()` resolved, so the action's own unit of work has already committed. */
+class FailAfterInterceptor extends Interceptor {
+  async intercept(_ctx: QueryContext, next: () => Promise<unknown>): Promise<unknown> {
+    await next();
+    throw new TypeError("interceptor broke after the commit");
+  }
+}
+
+/** A Required write whose interceptor fails after its unit of work. */
+class FailAfterCommitAction extends Action({
+  key: "order.fail_after_commit",
+  actors: [ActorKind.User],
+  interceptors: [FailAfterInterceptor],
+  idempotency: Idempotency.Required,
+}) {
+  ran = 0;
+
+  async handle(): Promise<{ ran: number }> {
+    this.ran += 1;
+    return { ran: this.ran };
+  }
+}
+
+/** A store that cannot join a transaction, whose process dies after the commit, before `complete` lands. */
+class CrashBeforeCompletionStore extends MemoryIdempotencyStoreDriver {
+  override async complete(): Promise<void> {}
+}
+
+/** A store that cannot join a transaction and cannot be reached when the claim is re-confirmed. */
+class FailingExtendStore extends MemoryIdempotencyStoreDriver {
+  override async extend(): Promise<boolean> {
+    throw new Error("valkey down");
+  }
+}
+
+/** A Required write that waits in `handle` until the test opens its gate, so a test can hold it past the lease. */
+class GatedAction extends Action({
+  key: "order.gated",
+  actors: [ActorKind.User],
+  idempotency: Idempotency.Required,
+}) {
+  readonly gates: (() => void)[] = [];
+
+  ran = 0;
+
+  async handle(): Promise<{ run: number }> {
+    this.ran += 1;
+    const run = this.ran;
+    await new Promise<void>((resolve) => {
+      this.gates.push(resolve);
+    });
+    return { run };
+  }
+}
+
+/** The bindings of a call with no isolation, and of one inside `CallIsolation`. */
+const isolations = (): (readonly (readonly [AnyClass, object])[])[] => [
+  [],
+  [[CallIsolation, new LoggingIsolation()]],
+];
+
+/** A keyed `CreateOrderAction` call, the same each time. */
+const order = (pipeline: ActionPipeline) =>
+  pipeline.execute(CreateOrderAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" });
+
+describe("ActionPipeline idempotency completion (STA-2797)", () => {
+  it("completes a joining store inside the call's transaction, after the interceptors, before the commit", async () => {
+    const { pipeline } = setup([
+      [CallIsolation, new LoggingIsolation()],
+      [IdempotencyStore, new JoiningIdempotencyStore(new FixedClock())],
+    ]);
+    await order(pipeline);
+    expect(log.slice(log.indexOf("handle"))).toEqual([
+      "handle",
+      "commit",
+      "interceptor:after",
+      "idempotency:complete",
+      "isolation:commit",
+      "after-commit:1",
+      "after-commit:2",
+    ]);
+  });
+
+  it("replays a call that committed when something fails after the commit, so handle never runs twice", async () => {
+    for (const store of [
+      new JoiningIdempotencyStore(new FixedClock()),
+      new MemoryIdempotencyStoreDriver(new FixedClock()),
+    ]) {
+      const { pipeline, shop } = setup([
+        [CallIsolation, new LoggingIsolation()],
+        [IdempotencyStore, store],
+        [ReplicaReads, new BrokenReplicaReads()],
+      ]);
+      await expect(order(pipeline)).rejects.toThrow("crashed after the commit");
+      expect(await order(pipeline)).toEqual({ orderId: "ord_1", key: "k1" });
+      expect(shop.placed).toBe(1);
+    }
+  });
+
+  it("returns the output and keeps the key held when a store's completion fails after the commit", async () => {
+    const { pipeline, shop, lines } = setup([
+      [IdempotencyStore, new FailingCompletionStore(new FixedClock())],
+    ]);
+    expect(await order(pipeline)).toEqual({ orderId: "ord_1", key: "k1" });
+    expect(lines.errors).toContainEqual([
+      IDEMPOTENCY_STORE_FAILED,
+      expect.objectContaining({ key: "order.create", step: "complete", cause: expect.any(Error) }),
+    ]);
+    // the key is not freed: the retry is told the first call is in progress instead of placing a second order
+    await expect(order(pipeline)).rejects.toBeInstanceOf(IdempotencyKeyInProgressError);
+    expect(shop.placed).toBe(1);
+  });
+
+  it("keeps the key held when an interceptor fails after the action's own unit of work committed", async () => {
+    const action = new FailAfterCommitAction();
+    const { pipeline } = setup([
+      [FailAfterCommitAction, action],
+      [FailAfterInterceptor, new FailAfterInterceptor()],
+    ]);
+    const call = () =>
+      pipeline.execute(FailAfterCommitAction, {}, { actor: customer, idempotencyKey: "k1" });
+    await expect(call()).rejects.toBeInstanceOf(TypeError);
+    await expect(call()).rejects.toBeInstanceOf(IdempotencyKeyInProgressError);
+    expect(action.ran).toBe(1);
+  });
+
+  it("holds a running call's key for the lease and keeps the output for the replay window", async () => {
+    const clock = new StoreClock();
+    const store = new MemoryIdempotencyStoreDriver(clock);
+    const claims: unknown[] = [];
+    const completions: unknown[] = [];
+    class Recording extends MemoryIdempotencyStoreDriver {
+      override async claim(...args: Parameters<MemoryIdempotencyStoreDriver["claim"]>) {
+        claims.push(args[2]);
+        return store.claim(...args);
+      }
+
+      override async complete(...args: Parameters<MemoryIdempotencyStoreDriver["complete"]>) {
+        completions.push(args[3]);
+        return store.complete(...args);
+      }
+    }
+    const { pipeline, flaky } = setup([[IdempotencyStore, new Recording(clock)]]);
+    const call = () =>
+      pipeline.execute(FlakyAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" });
+    flaky.mode = "wait";
+    // the first call never finishes (its process died): the key is held, not done
+    void call();
+    await vi.waitFor(() => expect(flaky.ran).toBe(1));
+    await expect(call()).rejects.toBeInstanceOf(IdempotencyKeyInProgressError);
+    clock.time += Duration.toMilliseconds(Duration.minutes(15));
+    flaky.mode = "ok";
+    // after the lease, not after 24 hours, the retry runs; its output then replays for the whole window
+    expect(await call()).toEqual({ ran: 3 });
+    clock.time += Duration.toMilliseconds(Duration.hours(23));
+    expect(await call()).toEqual({ ran: 3 });
+    expect(flaky.ran).toBe(2);
+    expect(claims[0]).toEqual(Duration.minutes(15));
+    expect(completions).toEqual([Duration.hours(24)]);
+  });
+
+  it("opens one unit of work around a keyed call on a joining store when no isolation is bound", async () => {
+    const { pipeline } = setup([[IdempotencyStore, new JoiningIdempotencyStore(new FixedClock())]]);
+    await order(pipeline);
+    expect(log.slice(log.indexOf("tenancy") + 1)).toEqual([
+      "begin",
+      "permission",
+      "precondition",
+      "entitlement",
+      "flag",
+      "interceptor:before",
+      "begin",
+      "handle",
+      "commit",
+      "interceptor:after",
+      "idempotency:complete",
+      "commit",
+      "after-commit:1",
+      "after-commit:2",
+    ]);
+    // a call without a key needs no transaction of the pipeline's own
+    log = [];
+    await pipeline.execute(InspectAction, {}, { actor: customer });
+    expect(log.filter((line) => line.startsWith("begin"))).toHaveLength(1);
+  });
+
+  it("frees the key of a call that failed before its commit, so the retry runs", async () => {
+    const { pipeline, flaky } = setup([
+      [CallIsolation, new LoggingIsolation()],
+      [IdempotencyStore, new JoiningIdempotencyStore(new FixedClock())],
+    ]);
+    const call = () =>
+      pipeline.execute(FlakyAction, { quantity: 1 }, { actor: customer, idempotencyKey: "k1" });
+    flaky.mode = "crash";
+    await expect(call()).rejects.toBeInstanceOf(TypeError);
+    expect(log).toContain("isolation:rollback");
+    expect(log).not.toContain("idempotency:complete");
+    flaky.mode = "ok";
+    expect(await call()).toEqual({ ran: 3 });
+  });
+
+  it("keeps a committed call's key held past the lease when the process dies before completing it", async () => {
+    for (const isolation of isolations()) {
+      const clock = new StoreClock();
+      const { pipeline, shop } = setup([
+        ...isolation,
+        [IdempotencyStore, new CrashBeforeCompletionStore(clock)],
+      ]);
+      expect(await order(pipeline)).toEqual({ orderId: "ord_1", key: "k1" });
+      // an offline device's queue or a queued job retries long after the lease: it never places a second order
+      clock.time += Duration.toMilliseconds(Duration.hours(23));
+      await expect(order(pipeline)).rejects.toBeInstanceOf(IdempotencyKeyInProgressError);
+      expect(shop.placed).toBe(1);
+    }
+  });
+
+  it("keeps the key held past the lease when an interceptor fails after the action's unit of work committed", async () => {
+    const clock = new StoreClock();
+    const action = new FailAfterCommitAction();
+    const { pipeline } = setup([
+      [FailAfterCommitAction, action],
+      [FailAfterInterceptor, new FailAfterInterceptor()],
+      [IdempotencyStore, new MemoryIdempotencyStoreDriver(clock)],
+    ]);
+    const call = () =>
+      pipeline.execute(FailAfterCommitAction, {}, { actor: customer, idempotencyKey: "k1" });
+    await expect(call()).rejects.toBeInstanceOf(TypeError);
+    clock.time += Duration.toMilliseconds(Duration.hours(23));
+    await expect(call()).rejects.toBeInstanceOf(IdempotencyKeyInProgressError);
+    expect(action.ran).toBe(1);
+  });
+
+  it("rolls back a call that outran its lease after a retry took the key, so only one write commits", async () => {
+    for (const isolation of isolations()) {
+      const clock = new StoreClock();
+      const action = new GatedAction();
+      const { pipeline } = setup([
+        ...isolation,
+        [IdempotencyStore, new MemoryIdempotencyStoreDriver(clock)],
+        [GatedAction, action],
+      ]);
+      const rollback = isolation.length === 0 ? "rollback" : "isolation:rollback";
+      const call = () =>
+        pipeline.execute(GatedAction, {}, { actor: customer, idempotencyKey: "k1" });
+      const first = call();
+      await vi.waitFor(() => expect(action.gates).toHaveLength(1));
+      // the first call runs past its lease; a retry claims the lapsed key and runs too
+      clock.time += Duration.toMilliseconds(Duration.minutes(16));
+      const retry = call();
+      await vi.waitFor(() => expect(action.gates).toHaveLength(2));
+      action.gates[0]?.();
+      await expect(first).rejects.toBeInstanceOf(IdempotencyKeyInProgressError);
+      expect(log.filter((line) => line === rollback)).toHaveLength(1);
+      action.gates[1]?.();
+      expect(await retry).toEqual({ run: 2 });
+      // the retry's write is the one that committed, and it is the answer every later call replays
+      expect(await call()).toEqual({ run: 2 });
+      expect(log.filter((line) => line === rollback)).toHaveLength(1);
+    }
+  });
+
+  it("commits a call that outran its lease when no other call took the key, and replays it", async () => {
+    for (const isolation of isolations()) {
+      const clock = new StoreClock();
+      const action = new GatedAction();
+      const { pipeline } = setup([
+        ...isolation,
+        [IdempotencyStore, new MemoryIdempotencyStoreDriver(clock)],
+        [GatedAction, action],
+      ]);
+      const call = () =>
+        pipeline.execute(GatedAction, {}, { actor: customer, idempotencyKey: "k1" });
+      const first = call();
+      await vi.waitFor(() => expect(action.gates).toHaveLength(1));
+      clock.time += Duration.toMilliseconds(Duration.minutes(16));
+      action.gates[0]?.();
+      expect(await first).toEqual({ run: 1 });
+      clock.time += Duration.toMilliseconds(Duration.hours(23));
+      expect(await call()).toEqual({ run: 1 });
+      expect(action.ran).toBe(1);
+    }
+  });
+
+  it("rolls the call back when the claim cannot be re-confirmed before the commit", async () => {
+    for (const isolation of isolations()) {
+      const { pipeline } = setup([
+        ...isolation,
+        [IdempotencyStore, new FailingExtendStore(new FixedClock())],
+      ]);
+      await expect(order(pipeline)).rejects.toThrow("valkey down");
+      expect(log).toContain(isolation.length === 0 ? "rollback" : "isolation:rollback");
+      expect(log).not.toContain("after-commit:1");
+    }
+  });
+});
 
 describe("ActionPipeline approval stage (ADR 0509)", () => {
   it("parks a call whose condition is true: refused with the id, count and expiry, binding and request written", async () => {

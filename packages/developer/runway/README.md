@@ -40,6 +40,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `.`         | `runwayJsonSchema(kind)`                                                                                                                                    | the zod schemas as JSON Schema, tested against the shipped canonical files                                                                                             |
 | `.`         | `deployTargets(root, environment)`                                                                                                                          | every place a release lands, in release order (regions, dedicated tenants)                                                                                             |
 | `.`         | `deploy`, `promote`, `rollback`                                                                                                                             | ship, promote and roll back a release through the providers                                                                                                            |
+| `.`         | `WORKER_VERSION`, `WorkerVersionProof`, `servedVersionProblem` | the Worker deploy's version proof: the `x-stackra-version` header, the `/-/version` route, the override header and the check of one answer (STA-2786) |
 | `.`         | `withDeployLock`, `DeployLock`, `RunwayLockedError`                                                                                                         | one apply per environment at a time (ADR 0435)                                                                                                                         |
 | `.`         | `RunwayProvider`                                                                                                                                            | the provider port: plan, apply, verify, rollback and current (ADR 0352 d3)                                                                                             |
 | `.`         | `RunwayConfig`, `RunwayConfig$`                                                                                                                             | what the providers need beyond the runway: the Encore app id and tree, the mobile and docs folders (key `runway`)                                                      |
@@ -81,6 +82,11 @@ root runway states where members run: providers, destinations, shared pools, def
 `topology`. In a grouped environment every service member sits in exactly one group, or in the `default` group;
 `checkPlacement` reports what is not. `checkRequires(root, service)` reports each `valkey` requirement that no environment's
 cache driver serves (`config.cache.driver`, in the member or the root's `defaults.service.config`).
+
+A `config` block never sets a field only the runtime may set: `checkRuntimeOnlyConfig(document, fields)` reports each
+one, where `fields` are the `env` rows that the manifests the files configure map to a safety-critical variable
+(`runtimeOnlyFields`, or `runtimeOnlyFieldsOf(root)` from `./node`). The running environment (`STACKRA_ENVIRONMENT`)
+is the first such field: it comes from the platform or the runtime, never from a runway file (STA-2844).
 
 `providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
 and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);
@@ -392,6 +398,40 @@ shared port) and each member's dev ports (service, web, docs, dev console, Elect
 checkPorts(root, { console: consoleRunway }); // [] when every effective port has one owner
 ```
 
+## The dev compose
+
+`environments.dev.infra` names what `stackra dev` runs beside the code. `gateway` and `postgres` are Encore's own
+(`encore run` starts them). Every other block is one container of the dev compose: `devComposeOf(input)` plans it from
+the block's `kind` (the block name when absent, `DEV_INFRA_KINDS`) or, for any other image, its own `containerPorts`.
+Each port is the host port, written in the runway so `checkPorts` sees it, moved by lane × `portStep` unless
+`perLane: false`; every container is published on 127.0.0.1 only and runs without a credential.
+
+| Kind        | Ports                             | A member's run gets                                                                    |
+| ----------- | --------------------------------- | -------------------------------------------------------------------------------------- |
+| `valkey`    | `port` (6379)                     | `CACHE_`, `LOCKING_`, `QUEUE_BROKER_`, `REALTIME_` and `ACTIONS_VALKEY_URL`            |
+| `seaweedfs` | `port` (8333); `buckets` made     | `AWS_ENDPOINT_URL_S3`, for the `s3` disk; a placeholder key pair only without an AWS credential |
+| `mailpit`   | `smtpPort` (1025), `uiPort` (8025) | `SMTP_HOST`, `SMTP_PORT`; the inbox at the `uiPort`                                   |
+| `clamav`    | `port` (3310); one for every lane | nothing: `MediaConfig.clamav` already reads 127.0.0.1:3310                             |
+| `otel-lgtm` | `grpcPort`, `httpPort`, `uiPort`  | `OTEL_EXPORTER_OTLP_ENDPOINT`                                                          |
+
+```yaml
+environments:
+  dev:
+    infra:
+      valkey: { image: "valkey/valkey:8.1@sha256:…", port: 6379 }
+      seaweedfs: { image: "chrislusf/seaweedfs:4.45@sha256:…", port: 8333, buckets: [acme-files] }
+      mailpit: { image: "axllent/mailpit:v1.31.6@sha256:…", smtpPort: 1025, uiPort: 8025 }
+      clamav: { image: "clamav/clamav:1.5.3@sha256:…", port: 3310 }
+      otel-lgtm: { image: "grafana/otel-lgtm:0.37.0@sha256:…", grpcPort: 4317, httpPort: 4318, uiPort: 3000, when: opt-in }
+```
+
+A missing image or port, an unknown kind, a bad bucket name or two blocks that give one variable is a `DevInfraIssue`,
+and nothing is planned; an image without a digest is a warning. Object storage is SeaweedFS because MinIO publishes no
+community image any more. It has no identity configured, so it takes any signature: a developer's own AWS credential
+(a profile, SSO) signs for it, and its placeholder key pair is returned apart as `fallbackCredentials`, never in `env`,
+so a global `AWS_ACCESS_KEY_ID` never shadows that credential for the run's other AWS clients. `writeDevFacts` writes the gateway's and each container's address into the dev facts, so a
+`from-port: valkey` var resolves.
+
 ## Regions and clouds
 
 The root runway names every data region once, with the cloud and cloud region that serve it, and each environment
@@ -479,12 +519,14 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 | `runway promote <sha> [--dry-run]`           | Dispatches every production caller that takes a `sha`, for a commit of origin/main; the record is `rollback to <sha>`                       | 0                        |
 | `runway rollback <sha> [--dry-run]`          | The same for an earlier commit; refuses the head of origin/main (ADR 0352)                                                                   | 0; 2 on the head         |
 | `runway status [env]`                        | What each GitHub environment runs, from GitHub's deployment records: commit, time, state                                                     | 0                        |
-| `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), a product's staging and production `region` and a ksa environment's GCP project (ADR 0524), service `requires`; deprecated fields and an unused AWS account opt-in warn | 0; 1 with each finding   |
+| `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), a product's staging and production `region` and a ksa environment's GCP project (ADR 0524), service `requires`, a `config` block that sets a runtime-only field such as the running environment (STA-2844); deprecated fields and an unused AWS account opt-in warn | 0; 1 with each finding   |
 | `runway drift [env]`                         | Each Cloudflare Worker's live settings against what runway.yaml renders (read-only, `CLOUDFLARE_API_TOKEN_READ`)                            | 0; 1 when a Worker drifted |
 | `runway secrets sync <env> [--dry-run]` (alias `runway env sync`) | The member secrets of `env`, and the names each member's manifest declares (STA-2104), from the job's environment (the sops scope `products/<project>/<env>` that `.github/actions/secrets-decrypt` decrypted, ADR 0525) into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves. `--from-env` is accepted and ignored (deprecated) | 0                        |
 | `runway secrets decrypt --scope <s> [--dir <d>] [--names A,B]` | One figentra/secrets scope (ADR 0525), decrypted with the job's own Cloud KMS identity from the ciphertext `.github/actions/secrets-decrypt` downloads, masked and exported into `GITHUB_ENV`; names only on output, and it refuses to run without `GITHUB_ENV` | 0; throws on a bad scope, a missing name or a refused key |
 | `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, the `names:` of a `secrets-decrypt` step) has a sops scope (`products/<project>/<dev\|staging\|production>`; a preview reads dev's); a raw read of an undeclared name warns. Names only, no login | 1 on an error |
 | `runway env check --values --env <env>` | CI only: each declared name of `<env>`, read from the job's environment after `secrets-decrypt`, checked against its rules; prints names, the scope, pass or the broken rule and a SHA-256 prefix, never a value | 1 on an error |
+| `runway evidence <env> --target <t> --sha <sha> [--member <m>] [--previous <record>]` | The approvals bot's evidence for one deploy job (ADR 0533): `rollout`, and `destructive` from gen's migration classes against the `runway-migrations` record of the environment's last successful deploy; writes `runway-evidence-<env>[-<m>].json` | 0; 2 on a bad option or record |
+| `runway migrations:record <env> --target <t> --sha <sha> [--member <m>]` | After the deploy step succeeded: the `<member>:<id>` keys of the migrations it applied, `runway-migrations-<env>[-<m>].json`, the next evidence's `--previous` | 0; 2 on a bad option |
 | `runway env orphans <env> [--dir <d>]` | CI only: warns on each name in `<env>`'s sops scope (its ciphertext file names under `<d>`, default `.secrets`) that no code declares; decrypts nothing | 0 |
 
 Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
@@ -500,7 +542,8 @@ region in release order, then each dedicated tenant's services. A dedicated targ
 `dedicated: { key, scope }`, where `scope` is the id the runway's `tenant` field gives (ADR 0323). `deploy` applies and verifies each target through its
 provider and stops at the first one that is down; `promote` ships what the source environment runs to an environment
 with `deploy.on: promote`; `rollback` returns each target to its record from an earlier release (the caller reads the
-records from the release log, ADR 0352 decision 7).
+records from the release log, ADR 0352 decision 7). Going back is the safe direction, so `rollback` does not stop at a
+target that verifies down: it rolls every target back, then throws one `RunwayDeployFailedError` naming each that is.
 
 ```ts
 import { buildConfig } from "@stackra/config";
@@ -518,9 +561,47 @@ const results = await promote(root, "staging", "production", providers); // one 
 | `encore-cloud` | `git push encore://<app> <sha>:refs/heads/<branch>` (`encore.branch`)                                            | the branch holds the commit, then `GET <encore.origin>/readyz` is 200 | force-push the earlier commit      |
 | `eas`          | `eas build --profile <channel>` or `eas update --channel` (`targets.eas`)                                        | build status, or the group                                            | republish the earlier group        |
 | `mintlify`     | `stackra build` and `stackra lint`, then `.stackra/site` force-pushed as one commit to `targets.mintlify.branch` | the branch's `Source:` trailer is the SHA                             | refused: promote the last good SHA |
+| `cloudflare-workers` | per member: build, D1 migrations, `wrangler versions upload`, staged at 0%, smoked, then moved in its `rollout` steps with a smoke after each | the commit from `wrangler deployments list`, then the smoke against the recorded version | `wrangler rollback <recorded version>` |
 
 The `encore-cloud` verify reads `/readyz` (@stackra/app's readiness route, every bound `HealthIndicator`) when the
 environment's `encore` block, or its region's, names an `origin`; without one it checks the branch only.
+
+The `cloudflare-workers` provider (`CloudflareWorkersProviderDriver`, `./node`) never smokes a version Cloudflare
+would not route to. A version override (`Cloudflare-Workers-Version-Overrides`) is honoured only for a version in the
+current deployment; any other request is routed as usual, to the version already serving. So the new version first
+joins the deployment at 0% (`wrangler versions deploy <serving>@100 <new>@0`), is smoked there by override, and only
+then takes traffic, in the member's `rollout` steps in production (10/50/100 by default) and at once elsewhere, with a
+smoke after every step. Every smoke proves the version that answered (STA-2786): each answer's `x-stackra-version`
+header must name the version under test (`versionProof: header`, the default), or, for a Worker whose answers are
+static assets, its `GET /-/version` route must, read before and after the member's checks (`versionProof: route`).
+Another version answering, or none named, fails the step (a route member's `/-/version` answering 404 is another
+version); it is retried for a minute at most (`proofAttempts`). In the 0% smoke a non-2xx answer is retried for ten
+minutes (a new domain's certificate); a promotion step's smoke gets `stepSmokeAttempts` (6) attempts per check and makes
+none after `RUNWAY_DEPLOY_DEADLINE` (epoch seconds) less a minute, and no traffic moves unless the holds fit before it, so
+a degraded step rolls back inside the job's timeout instead of being killed mid-split. A failed 0% smoke takes the
+version out of the deployment again and moves no traffic; a failed later step puts the previous version back, and a
+failed rollback is reported with the smoke failure and the split it may have left. A partial step's deployment message
+is `<sha> (<percent>%)` and the rollback's `<sha> (rolled back to <version>)`: only the 100% step carries the bare SHA,
+and `current` skips a failed attempt, so it always names the commit that serves. A member with no `smoke` entry is
+refused before anything ships. `verify` proves the version its record names; a version uploaded before the proof names
+none, so for it (a rollback to an older record) the answers must be 2xx and Cloudflare's own deployment
+(`wrangler deployments status`) must show it at 100%. `WORKER_VERSION`, `WorkerVersionProof` and
+`servedVersionProblem` (`.`) are the names and the check, for another smoke to apply the same proof.
+
+```yaml
+targets:
+  cloudflare-workers:
+    members:
+      registry: # a script on every path: x-stackra-version on every answer
+        path: workers/registry
+        preset: api
+        smoke: [{ url: https://npm.example.com/-/ping }]
+      docs: # static assets, plus a script that answers GET /-/version only
+        path: apps/docs
+        kind: docs
+        smoke: [{ url: https://docs.example.com/ }]
+        versionProof: route
+```
 
 A store build cannot be rolled back; the EAS provider refuses it. The `mintlify` provider (STA-1316, ADR 0002 amendment
 of 2026-10-27) publishes the site gen assembles in a docs app's `.stackra/site/`: the Mintlify GitHub app builds the
