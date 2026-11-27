@@ -6,13 +6,15 @@
  *          file Encore already applied is adopted, never applied twice) and `stackra db seed --profile <seed> --env dev`
  *          (when it has seeders and a profile is set), so a fresh clone boots with its schema and data.
  * Boundary: runs each member's commands in the member folder with `DATABASE_URL` set for that one process; the
- *           connection string is never printed. A member that fails is named and the others still run; the answer is
+ *           connection string is never printed. A database whose connection string is not on this machine
+ *           (`isLocalDatabaseUrl`) is refused and named: no migration or seeder runs against it. A member that fails is named and the others still run; the answer is
  *           the first non-zero exit code, or 0. Answers 1 without touching a database when the gateway never answered,
  *           and 0 without a word when the run ended first (`options.signal`).
  * Runtime: node
  * Governing contract: ADR 0159 (decision 2: `stackra db migrate`); ADR 0190 (profiles); ADR 0325 (decision 7);
  *                     STA-1709; STA-2664 (item 5); STA-2840.
  */
+import { isLocalDatabaseUrl } from "#node/dev-root/functions/is-local-database-url.function";
 import type { DevRootPlan } from "#node/dev-root/types/dev-root-plan.type";
 import type { DevRootTools } from "#node/dev-root/types/dev-root-tools.type";
 import type { CliIo } from "#node/types/cli-io.type";
@@ -63,6 +65,13 @@ export async function prepareDevData(
     } catch (error) {
       io.err(
         `stackra dev: ${service.key}: no connection string for database ${service.database}: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      code ||= 1;
+      continue;
+    }
+    if (!isLocalDatabaseUrl(url)) {
+      io.err(
+        `stackra dev: ${service.key}: database ${service.database} is not on this machine; the dev data step migrates and seeds local databases only\n`,
       );
       code ||= 1;
       continue;

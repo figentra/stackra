@@ -13,3 +13,8 @@ dev port. The lane comes from `STACKRA_LANE`, else from the product's row of `en
 (`devLane`), and the quick doctor checks that lane's ports, not the dashboard one Encore daemon shares. The dev facts
 file carries the dev infra ports (the gateway). `stackra db seed` in a service builds the seed entry alone, since a
 service has no tsdown config. The run ends together: encore exiting, the fan-out failing or Ctrl-C stops the rest.
+
+Compatibility: a member's dev port is now a loopback-only forward to the one gateway, not its own `encore run`; the
+root run seeds with `demo` unless `--seed none` (migrations always run) and touches only a database on this machine;
+and a product listed in `lanes.repos` gets that row's lane unless `STACKRA_LANE` is set. `stackra dev` inside one
+member is unchanged.

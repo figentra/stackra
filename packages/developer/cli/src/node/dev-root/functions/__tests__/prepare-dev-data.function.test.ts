@@ -3,7 +3,8 @@
  * Purpose: unit tests of `prepareDevData`: once the gateway answers, each member with a database gets Encore's
  *          connection string and runs its own `stackra db migrate` then `stackra db seed --profile <seed>` with
  *          `DATABASE_URL` set; no profile runs no seeder; a failing member is named and the next still runs; a gateway
- *          that never answers touches no database; a run that ended first says nothing; nothing to do waits for nothing.
+ *          that never answers touches no database; a database that is not on this machine is refused and named while
+ *          the next still runs; a run that ended first says nothing; nothing to do waits for nothing.
  * Boundary: test only; fake tools, no process starts.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 2); ADR 0190; STA-2840.
@@ -41,8 +42,8 @@ const plan = (seed: string | undefined): DevRootPlan => ({
   ],
 });
 
-/** Fake tools that record every call; `failing` exits 3. */
-function tools(up: boolean, failing?: string) {
+/** Fake tools that record every call; `failing` exits 3; `remote` gets a connection string to another machine. */
+function tools(up: boolean, failing?: string, remote?: string) {
   const runs: ToolRun[] = [];
   const captured: string[][] = [];
   const waited: string[] = [];
@@ -57,7 +58,8 @@ function tools(up: boolean, failing?: string) {
       },
       capture: async (command: string, args: readonly string[], options: { cwd: string }) => {
         captured.push([command, ...args, options.cwd]);
-        return `postgresql://local:5432/${args[2]}\n`;
+        const host = args[2] === remote ? "db.example.com" : "localhost";
+        return `postgresql://${host}:5432/${args[2]}\n`;
       },
       waitFor: async (url: string) => {
         waited.push(url);
@@ -87,7 +89,7 @@ describe("prepareDevData", () => {
         "migrate",
         "--env",
         "dev",
-        "postgresql://local:5432/billing",
+        "postgresql://localhost:5432/billing",
       ],
       [
         "/r/services/billing",
@@ -98,7 +100,7 @@ describe("prepareDevData", () => {
         "demo",
         "--env",
         "dev",
-        "postgresql://local:5432/billing",
+        "postgresql://localhost:5432/billing",
       ],
       [
         "/r/services/usage",
@@ -107,7 +109,7 @@ describe("prepareDevData", () => {
         "migrate",
         "--env",
         "dev",
-        "postgresql://local:5432/usage",
+        "postgresql://localhost:5432/usage",
       ],
     ]);
     expect(output()).toContain("migrated and seeded billing, usage");
@@ -123,6 +125,20 @@ describe("prepareDevData", () => {
       "/r/services/usage migrate",
     ]);
     expect(output()).toContain("billing: stackra db migrate --env dev exited 3");
+  });
+
+  it("refuses a database that is not on this machine, names it and never prints its connection string", async () => {
+    const fake = tools(true, undefined, "billing");
+    const { io, output } = captureIo();
+    expect(await prepareDevData(plan("demo"), "/app", fake.tools, io)).toBe(1);
+    expect(fake.runs.map((run) => `${run.cwd} ${run.args[1]}`)).toEqual([
+      "/r/services/usage migrate",
+    ]);
+    expect(output()).toContain(
+      "billing: database billing is not on this machine; the dev data step migrates and seeds local databases only",
+    );
+    expect(output()).not.toContain("db.example.com");
+    expect(output()).not.toContain("migrated and seeded");
   });
 
   it("touches no database when the gateway never answers, and waits for nothing with nothing to do", async () => {

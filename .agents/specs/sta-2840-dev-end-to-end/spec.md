@@ -42,7 +42,8 @@ gen writes no tsdown config for, and `seederLedger` queried `seed_records` witho
 - **Cross-service events**: none changed; in dev every service now runs in one Encore app, so topics reach their
   subscriptions as they do when deployed
 - **Tenancy and data**: dev only: the local databases get their migrations and the chosen seed profile
-- **Security and privacy**: the port forwards listen on loopback only; the database connection string is never printed
+- **Security and privacy**: the port forwards listen on loopback only; the data step migrates and seeds only a database
+  on this machine; the database connection string is never printed
 - **Secrets**: none; every member's dev secrets reach the one process as they reached each before
 - **ADR needed**: no (implements ADR 0296 decision 3 for dev)
 - **New dependencies**: none
@@ -69,10 +70,36 @@ gen writes no tsdown config for, and `seederLedger` queried `seed_records` witho
   other processes and the forwards.
 - **AC-008**: WHEN `stackra db seed` runs in a member without a root tsdown config THE CLI SHALL build the seed entry
   alone, and the seeder ledger SHALL use `"database"."seed_records"`.
+- **AC-009**: WHEN `stackra dev` forwards a member's dev port THE forward SHALL listen on 127.0.0.1 (and ::1 where the
+  machine has it) only, never on a network address.
+- **AC-010**: IF a service database's connection string is not local THEN THE data step SHALL refuse it by name,
+  never printing the string, run no migration or seeder against it, and exit non-zero while the others still run
+  (local: a loopback host, a Unix socket or no host).
+
+## Compatibility and migration
+
+- Root `stackra dev` in a product with service members used to start one `encore run` per member through turbo. It now
+  starts ONE `encore run` of every service, in the generated app under `.stackra/dev/encore`, on the gateway port. A
+  member's own dev port no longer has its own Encore process: it is a loopback forward to the gateway, so URLs that name
+  it still answer. `stackra dev` inside one member, and every deploy, behave as before.
+- Once the gateway answers, the root run now migrates every service database and seeds it with the `demo` profile by
+  default. Pass `--seed none` to run no seeder (migrations still run), or `--seed minimal|test` for another profile.
+  The step touches only a database on this machine (AC-010).
+- The lane, and so every dev port, now comes from the product's row of `environments.dev.lanes.repos` when
+  `STACKRA_LANE` is not set. A product listed there may get other ports than before; set `STACKRA_LANE` to keep a fixed
+  lane. The quick doctor checks that lane's ports.
+- Workers started by the root run get their lane's runway dev port passed to `wrangler dev`.
+- `stackra db seed` in a service member builds the seed entry alone, as a service has no tsdown config; a member with
+  its own tsdown config builds as before.
+- `seederLedger` reads and writes `"database"."seed_records"`, the table migration 0003 creates; a database that seeded
+  through the old unqualified name only worked when `database` was on the search path, and now works without it.
 
 ## Status history
 
 - 2026-11-26 → Clarified (the audit's claims re-checked on origin/main; all open, plus the two seed faults)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 → Tasked (tasks.md)
-- 2026-11-26 → Implementing (built and proven on box 2 in the stackra-demo container; approval pending)
+- 2026-11-26 → Implementing (built and proven end to end in a Linux container with two services; approval pending)
+- 2026-11-27 → Implementing (CTO conditions: AC-009 loopback-only forwards with a test, AC-010 the data step refuses a
+  database that is not local, the compatibility section, no internal machine names)

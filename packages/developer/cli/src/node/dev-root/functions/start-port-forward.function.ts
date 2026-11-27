@@ -83,7 +83,7 @@ function forwardServer(target: number, sockets: Set<Socket>): Server {
  * @param port - the port to listen on (0 picks a free one, for tests).
  * @param target - the gateway port.
  * @param hosts - the addresses to listen on; an address the machine lacks (no IPv6) is skipped.
- * @returns the ports it listens on and `close`.
+ * @returns the ports and addresses it listens on, and `close`.
  * @throws Error when no address could be listened on (the port is taken).
  * @example
  * const forward = await startPortForward(4019, 4000);
@@ -97,6 +97,7 @@ export async function startPortForward(
   const sockets = new Set<Socket>();
   const servers: Server[] = [];
   const ports: number[] = [];
+  const addresses: string[] = [];
   let failure: Error | undefined;
   for (const host of hosts) {
     const server = forwardServer(target, sockets);
@@ -107,7 +108,9 @@ export async function startPortForward(
       });
       servers.push(server);
       const address = server.address();
-      ports.push(typeof address === "object" && address !== null ? address.port : port);
+      const bound = typeof address === "object" && address !== null ? address : undefined;
+      ports.push(bound?.port ?? port);
+      addresses.push(bound?.address ?? host);
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
       // A machine without IPv6 (or without that address) has nothing to listen on there.
@@ -129,6 +132,7 @@ export async function startPortForward(
   }
   return {
     ports,
+    addresses,
     close: async () => {
       for (const socket of sockets) socket.destroy();
       await Promise.all(

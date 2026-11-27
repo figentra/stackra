@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `startPortForward`: a request to the forwarded port reaches the gateway with its method, path,
  *          headers and body and the answer comes back; an upgrade is piped both ways; a gateway that is down answers
- *          502 naming its port; a taken port is refused; `close` stops listening.
+ *          502 naming its port; a taken port is refused; `close` stops listening; by default it listens on
+ *          127.0.0.1 (and ::1 where the machine has it), never on a network address.
  * Boundary: test only; loopback servers on free ports.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); STA-2664 (item 2); STA-2840.
@@ -119,6 +120,17 @@ describe("startPortForward", () => {
     const answer = await call(started.ports[0] as number, "");
     expect(answer.status).toBe(502);
     expect(answer.text).toContain(`the gateway on port ${port} did not answer`);
+  });
+
+  it("listens on loopback only by default (127.0.0.1, and ::1 where the machine has it)", async () => {
+    const { port } = await gateway();
+    const started = await startPortForward(0, port);
+    opened.push(started);
+    expect(started.addresses).toContain("127.0.0.1");
+    for (const address of started.addresses) expect(["127.0.0.1", "::1"]).toContain(address);
+    expect(started.addresses).toHaveLength(started.ports.length);
+    const loopback = started.ports[started.addresses.indexOf("127.0.0.1")] as number;
+    expect((await call(loopback, "hi")).status).toBe(201);
   });
 
   it("refuses a taken port and stops listening on close", async () => {

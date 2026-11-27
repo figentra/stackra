@@ -16,7 +16,7 @@ for everything else. The lane comes from `devLane`; the doctor and a Worker's `w
 
 - **Language**: TypeScript (ESM), Node 24
 - **Members**: `packages/developer/cli`, `packages/developer/runway`, `packages/data/database`
-- **Testing**: vitest in `src/**/__tests__/`; the end-to-end run on box 2 in the stackra-demo container
+- **Testing**: vitest in `src/**/__tests__/`; an end-to-end run in a Linux container
 - **Storage**: the local Encore databases (dev only)
 - **Runtime target**: a developer machine
 
@@ -104,12 +104,14 @@ refused naming the file, at start and on each re-sync.
 
 ## Security and tenancy
 
-Loopback-only forwards; the connection string stays in the child's environment.
+Loopback-only forwards (AC-009, asserted on the addresses the sockets report); the data step migrates and seeds only a
+database whose connection string names this machine (AC-010, `isLocalDatabaseUrl`); the connection string stays in the
+child's environment.
 
 ## Testing strategy
 
-Unit tests per component (P-001 to P-008), each shown to fail with its change reverted; the end-to-end run in the
-stackra-demo container with two services on lane 3.
+Unit tests per component (P-001 to P-008), each shown to fail with its change reverted; an end-to-end run in a
+Linux container with two services on a non-default lane.
 
 ## Rollout
 

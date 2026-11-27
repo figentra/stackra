@@ -75,13 +75,13 @@ function fakes(encoreExit = 0, refused: number[] = []) {
         else tool.signal?.addEventListener("abort", () => resolve(143), { once: true });
       });
     },
-    capture: async (_command, args) => `postgresql://local/${args[2]}`,
+    capture: async (_command, args) => `postgresql://localhost/${args[2]}`,
     waitFor: async () => true,
     forward: async (port) => {
       if (refused.includes(port))
         throw new Error(`cannot forward port ${port} to the gateway: in use`);
       forwards.push(port);
-      return { ports: [port], close: async () => void (closed += 1) };
+      return { ports: [port], addresses: ["127.0.0.1"], close: async () => void (closed += 1) };
     },
   };
   return { tools, runs, forwards, closed: () => closed };
