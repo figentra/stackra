@@ -98,6 +98,18 @@
       ],
       "outputs": [],
     },
+    // ADR 0182 d1 and d4, STA-317: the load tier. Each `.load.test.ts` serves its subject and drives it with k6, then
+    // checks what it served. Never cached: the result is the box's throughput and latency, which no input hash sees.
+    // Defined only by members that have load tests; not part of `verify` (the weekly `load.yml` runs it). k6 is found
+    // on PATH or at STACKRA_K6; TESTBED_POSTGRES_HOST names the Postgres of the soaks that need one, and the
+    // STACKRA_LOAD_* settings (duration, rate, report folder) pass through without entering a key.
+    "test:load": {
+      "description": "Run a member's `.load.test.ts` files: each serves its subject and drives it with k6 (`stackra test --tier load`). Needs k6, and Postgres for the soaks that use it. Defined only by members that have load tests. After gen and //#gen:workspace, as test.",
+      "dependsOn": ["^build", "gen", "//#gen:workspace"],
+      "cache": false,
+      "passThroughEnv": ["STACKRA_K6", "STACKRA_LOAD_*", "TESTBED_POSTGRES_HOST"],
+      "outputs": [],
+    },
     // ADR 0022 (2026-11-09): a package's e2e tier. Never cached: it drives a real browser against a live page server.
     // Defined only by members that have an `.e2e.page.tsx`; not part of `verify`.
     "test:e2e": {

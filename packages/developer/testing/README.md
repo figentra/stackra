@@ -24,7 +24,7 @@ import { vi } from "vitest";
 | types `Matchers`, `FakeConstructor`, `FakeRecorder`, `FactoryDefaults`, `FixtureBuilder`, `TestScopeRef`                 | the shapes behind the helpers above                                                                                                                                |
 
 `.` is generic: it has no workspace dependency and no domain type. Domain helpers (`createTestingModule`, `run`,
-actors, `toRefuseWith`, …) live in the `./testing` entry of the package that owns them (ADR 0269 decision 3). There is no `./node` or
+actors, `toRefuseWith`, …) live in the `./testing` entry of the package that owns them (ADR 0269 decision 3). There is no
 `./contract` entry: nothing imports one yet.
 
 ## `./react` and `./native`
@@ -139,6 +139,42 @@ export const pointsEntry = factory<PointsEntry>({
   points: 100,
   reference: (i) => `ord_${i}`,
   at: () => new Date(),
+});
+```
+
+## `./node`
+
+The load tier's kit (ADR 0182 decision 4, STA-317). A `<subject>.load.test.ts` serves its subject in its own process
+and drives it with k6, then checks what the subject did with the load (every job run, every message relayed) and keeps
+the numbers. `stackra test --tier load` (`pnpm test:load` at the root) runs those files one after another; each skips
+itself when no k6 is installed, as an int test skips without `TESTBED_POSTGRES_HOST`.
+
+| Export                                                     | What it does                                                                                                                                        |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `serveLoadTarget(scenarios)`                               | a loopback HTTP server: `POST /scenarios/<name>` runs one unit of that scenario (204, or 500 with the error); `latency(name)` times it server-side |
+| `runK6(options)`                                           | one `k6 run` of the built-in script against `target`/`scenario` with the `load` and `thresholds`; answers the summary (`passed`, `crossed`, …)     |
+| `soakLoad({ rate, duration })`                             | an arrival-rate load; `STACKRA_LOAD_RATE` and `STACKRA_LOAD_DURATION` override the test's figures (ten minutes in the weekly run)                     |
+| `k6Binary()`                                               | `STACKRA_K6`, else `k6` on `PATH`, else `undefined` (skip the file)                                                                                 |
+| `writeLoadReport(name, report)`                            | writes `<STACKRA_LOAD_REPORT_DIR>/<name>.json` when that folder is set                                                                              |
+| `summariseLatencies`, `percentile`, `k6Args`, `readK6Summary`, `K6_SCENARIO_SCRIPT` | the pieces the above are made of                                                                                         |
+| types `LoadScenarios`, `LoadTarget`, `LatencySummary`, `K6Load`, `RunK6Options`, `K6Result` | their shapes                                                                                                                    |
+
+```ts
+// src/node/services/__tests__/queue-worker.load.test.ts
+import { k6Binary, runK6, serveLoadTarget, soakLoad } from "@stackra/testing/node";
+
+describe.skipIf(k6Binary() === undefined)("the queue under load", () => {
+  it("runs every job it took", async () => {
+    const target = await serveLoadTarget({ push: () => queue.push(SendAction, {}).then(() => {}) });
+    const result = await runK6({
+      target: target.url,
+      scenario: "push",
+      load: soakLoad({ rate: 200, duration: "30s" }),
+      thresholds: { http_req_failed: ["rate<0.001"] },
+    });
+    expect(result.crossed).toEqual([]);
+    await target.close();
+  });
 });
 ```
 

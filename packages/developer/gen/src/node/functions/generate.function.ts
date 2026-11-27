@@ -33,7 +33,8 @@
  *           (`migration_lock_malformed`). A package's own migrations are checked but not locked: only a service's
  *           database applies them, so the lock of each service that hosts the package freezes them.
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
- *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819), and one with a `.load.test.ts`
+ *           gets `.stackra/vitest.load.config.ts`, narrowed to the load tier (`emitLoadTierConfig`, STA-317).
  *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
  *           and `.stackra/playwright.e2e.config.ts` (`emitE2ePageFiles`, ADR 0022 amendment of 2026-11-09).
  *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
@@ -58,6 +59,7 @@ import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.con
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
 import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
+import { emitLoadTierConfig } from "#core/functions/emit-load-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
 import { encoreMigrationSql } from "#core/functions/encore-migration-sql.function";
@@ -74,6 +76,7 @@ import { generateDocsSite } from "#node/functions/generate-docs-site.function";
 import { hasE2ePages } from "#node/functions/has-e2e-pages.function";
 import { isDocsMember } from "#node/functions/is-docs-member.function";
 import { hasIntTests } from "#node/functions/has-int-tests.function";
+import { hasLoadTests } from "#node/functions/has-load-tests.function";
 import { readResourceTrees } from "#node/functions/read-resource-trees.function";
 import { runwayQueues } from "#node/functions/runway-queues.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
@@ -367,6 +370,9 @@ export async function generate(
     )
   )
     files.push(emitIntTierConfig(ir.package));
+  // A member with a `.load.test.ts` gets the load-tier config beside the unit one (`stackra test --tier load`, STA-317).
+  if (files.some((file) => file.path === ".stackra/vitest.config.ts") && hasLoadTests(root))
+    files.push(emitLoadTierConfig(ir.package));
   // A package with a `<name>.e2e.page.tsx` gets the Vite app that renders it and the Playwright config that runs the
   // `.e2e.test.ts` specs against it (`stackra test --tier e2e`; ADR 0022, 2026-11-09).
   if (ir.layout === "package" && hasE2ePages(root)) files.push(...emitE2ePageFiles(ir.package));

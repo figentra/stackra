@@ -90,6 +90,21 @@ describe("generate", () => {
     );
   });
 
+  it("writes the load-tier config only for a member with a .load.test.ts (STA-317)", async () => {
+    const root = writeFixtureMember("shop", SHOP_SOURCES);
+    await generate(root);
+    expect(existsSync(join(root, ".stackra/vitest.load.config.ts"))).toBe(false);
+    const test = join(root, "src/node/__tests__/orders.load.test.ts");
+    mkdirSync(dirname(test), { recursive: true });
+    writeFileSync(test, "");
+    const result = await generate(root);
+    expect(result.errors).toEqual([]);
+    expect(result.changed).toContain(".stackra/vitest.load.config.ts");
+    expect(readFileSync(join(root, ".stackra/vitest.load.config.ts"), "utf8")).toContain(
+      "export default loadTier(config);",
+    );
+  });
+
   it("writes the e2e app and Playwright config only for a package with an .e2e.page.tsx", async () => {
     const root = writeFixtureMember("shop", SHOP_SOURCES);
     await generate(root);

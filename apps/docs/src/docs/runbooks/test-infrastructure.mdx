@@ -78,6 +78,9 @@ For callers such as `fflow gate`:
   reaches it. `STACKRA_GEN_STRICT=1 pnpm turbo run test:int` does not make the tests strict: only `gen` and
   `//#gen:workspace` list it. To run the tests with it, run them normally first (that builds and generates), then again
   with `STACKRA_GEN_STRICT=1 pnpm turbo run test:int --only --env-mode=loose`, so only the tests see it.
+- The load tier (`pnpm test:load`, ADR 0182 decision 4) is not a box preset: it needs k6 (`STACKRA_K6` or `k6` on
+  `PATH`) and `TESTBED_POSTGRES_HOST`, measures the machine it runs on, and runs weekly in `load.yml`. What it measured
+  and how to remeasure are in the [capacity runbook](/runbooks/capacity).
 - Count a run as proof only when its output ends with turbo's own `Tasks: N successful, N total` line. Never wrap
   `testbed run` in `timeout` or pipe it: an interrupted run can then look like exit 0.
 
