@@ -85,14 +85,14 @@ For callers such as `fflow gate`:
 
 By SSH through **SSM Session Manager**: `ssh`, `rsync` and every verb connect to `ubuntu@<instance-id>` with an
 `AWS-StartSSHSession` `ProxyCommand`. The security group has no inbound rule, so a changing public IP (Cloudflare WARP)
-does not matter. Needs on the Mac: the `aws` CLI with the `academorix` profile, the SSH key, and the Session Manager
+does not matter. Needs on the Mac: the `aws` CLI with the `<profile>` profile, the SSH key, and the Session Manager
 plugin, pinned in `mise.toml` (`mise install`). The box side is already there: the instance role has
 `AmazonSSMManagedInstanceCore`, the Ubuntu image runs the SSM agent, and egress is open.
 
 `stackra testbed --ssh-direct` (or `STACKRA_TESTBED_SSH_DIRECT=1`) is the fallback: it connects to the public IP and
 swaps this machine's address into the port-22 allowlist, which exists only when `TESTBED_SSH_CIDRS` was set at apply.
 
-The `academorix` profile runs as the account root today, so it needs no policy. A non-root caller needs this much:
+The `<profile>` profile runs as the account root today, so it needs no policy. A non-root caller needs this much:
 
 ```json
 {
@@ -101,7 +101,7 @@ The `academorix` profile runs as the account root today, so it needs no policy. 
     {
       "Effect": "Allow",
       "Action": "ssm:StartSession",
-      "Resource": "arn:aws:ec2:eu-west-1:591473336656:instance/*",
+      "Resource": "arn:aws:ec2:eu-west-1:<account-id>:instance/*",
       "Condition": { "StringLike": { "ssm:resourceTag/stackra:testbed": ["heavy", "light"] } }
     },
     {
@@ -149,7 +149,7 @@ Replace, don't repair. A box that is unhealthy or acting oddly:
 3. The owner, or the tester with the owner's yes, marks it unhealthy:
 
 ```bash
-aws autoscaling set-instance-health --instance-id <id> --health-status Unhealthy --profile academorix --region eu-west-1
+aws autoscaling set-instance-health --instance-id <id> --health-status Unhealthy --profile <profile> --region eu-west-1
 ```
 
 The group starts a new box from the current image within about five minutes. Never SSH in to patch packages, edit
@@ -165,8 +165,8 @@ the toolchain pins give it a new version), the owner starts a build by hand, onl
 at 0. The usual way is `apply-testbed.yml` with `action=build-image` and `region=eu-west-1`; by hand:
 
 ```bash
-aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names stackra-testbed-heavy --query 'AutoScalingGroups[0].DesiredCapacity' --profile academorix --region eu-west-1
-aws imagebuilder start-image-pipeline-execution --image-pipeline-arn <arn of stackra-testbed> --profile academorix --region eu-west-1
+aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names stackra-testbed-heavy --query 'AutoScalingGroups[0].DesiredCapacity' --profile <profile> --region eu-west-1
+aws imagebuilder start-image-pipeline-execution --image-pipeline-arn <arn of stackra-testbed> --profile <profile> --region eu-west-1
 ```
 
 A failed build keeps the last good AMI.
@@ -175,7 +175,7 @@ To roll out a new image, the owner starts an instance refresh. Boxes running a j
 protected boxes until they are free:
 
 ```bash
-aws autoscaling start-instance-refresh --auto-scaling-group-name stackra-testbed-heavy --profile academorix --region eu-west-1
+aws autoscaling start-instance-refresh --auto-scaling-group-name stackra-testbed-heavy --profile <profile> --region eu-west-1
 ```
 
 Repeat with `stackra-testbed-light`, and in each region that runs boxes (`--region` of that region).
@@ -233,7 +233,7 @@ yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626
   </Step>
   <Step title="Canary">
     The tester runs the same jobs on both fleets for a day (core verify, playground e2e, an
-    integration suite, one Academorix job) and compares the results.
+    integration suite, one academy-product job) and compares the results.
   </Step>
   <Step title="Switch">
     `ci-box` becomes the shim (`tools/scripts/ci-box-shim.sh`): new boxes first, old boxes only when
@@ -245,7 +245,7 @@ yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626
   </Step>
   <Step title="Retire">
     After a week stopped and unused, terminate the old boxes and their disks, delete the emptied
-    `academorix-ci` security groups, and delete the shim's fallback with every `~/.ci-env`.
+    `stackra-testbed` security groups, and delete the shim's fallback with every `~/.ci-env`.
   </Step>
 </Steps>
 
@@ -269,8 +269,8 @@ Infisical web app (EU, `eu.infisical.com`); no value is typed anywhere.
 
    | Field                           | Value                                                                      |
    | ------------------------------- | -------------------------------------------------------------------------- |
-   | Allowed Principal ARNs          | `arn:aws:iam::591473336656:role/stackra-testbed-instance`                  |
-   | Allowed Account IDs             | `591473336656`                                                             |
+   | Allowed Principal ARNs          | `arn:aws:iam::<account-id>:role/stackra-testbed-instance`                  |
+   | Allowed Account IDs             | `<account-id>`                                                             |
    | STS Endpoint                    | leave the default `https://sts.amazonaws.com/`                             |
    | Access Token TTL                | `14400` (4 hours: covers the 3-hour job timeout, with the fetch before it) |
    | Access Token Max TTL            | `14400`                                                                    |
@@ -280,7 +280,7 @@ Infisical web app (EU, `eu.infisical.com`); no value is typed anywhere.
 4. Save. The identity page now lists two auth methods, OIDC Auth and AWS Auth.
 
 These settings belong to the AWS Auth method only; CI's OIDC tokens keep theirs. The role does not exist until step 2
-creates it, and Infisical accepts the ARN before then. Account `591473336656` is the `academorix` profile's.
+creates it, and Infisical accepts the ARN before then. The account is the testbed profile's.
 
 Step 2 needs two ids, neither of them secret: the identity's id (`INFISICAL_GATE_IDENTITY_ID`) and the project's id
 (`INFISICAL_GATE_PROJECT_ID`).
@@ -290,41 +290,41 @@ Step 2 needs two ids, neither of them secret: the identity's id (`INFISICAL_GATE
 Nothing is applied from the Mac. The testbed is applied by the manual workflow `apply-testbed.yml` (Actions, "Apply
 testbed", Run workflow), on `main` only, in the GitHub environment `testbed`, whose required reviewer (the owner)
 approves every run. It signs in to AWS by GitHub OIDC, so no AWS key is stored anywhere, and keeps Pulumi's state in the
-private, versioned bucket `stackra-pulumi-state-591473336656` (eu-west-1), which its first run creates. Pulumi's S3
+private, versioned bucket `stackra-pulumi-state-<account-id>` (eu-west-1), which its first run creates. Pulumi's S3
 backend locks with objects in that bucket, so there is no lock table. The stack holds ids and CIDRs only, so its
 passphrase is empty by design.
 
-### 2a. One-time bootstrap (owner, with the `academorix` AWS profile; done 2026-10-30)
+### 2a. One-time bootstrap (owner, with the `<profile>` AWS profile; done 2026-10-30)
 
 The workflow cannot create the role it signs in with, so the owner creates it once. GitHub's OIDC provider, if the
 account has none yet:
 
 ```bash
-aws iam create-open-id-connect-provider --url https://token.actions.githubusercontent.com --client-id-list sts.amazonaws.com --profile academorix
+aws iam create-open-id-connect-provider --url https://token.actions.githubusercontent.com --client-id-list sts.amazonaws.com --profile <profile>
 ```
 
 The deploy role, trusted only by this repository's `testbed` environment. The organization's tokens use the immutable
 subject form (`repo:figentra@314302700/stackra@1425140001:…`, as `ci.yml` notes), so both forms are listed:
 
 ```bash
-aws iam create-role --role-name stackra-testbed-deploy --profile academorix --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Federated":"arn:aws:iam::591473336656:oidc-provider/token.actions.githubusercontent.com"},"Action":"sts:AssumeRoleWithWebIdentity","Condition":{"StringEquals":{"token.actions.githubusercontent.com:aud":"sts.amazonaws.com","token.actions.githubusercontent.com:sub":["repo:figentra/stackra:environment:testbed","repo:figentra@314302700/stackra@1425140001:environment:testbed"]}}}]}'
+aws iam create-role --role-name stackra-testbed-deploy --profile <profile> --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Federated":"arn:aws:iam::<account-id>:oidc-provider/token.actions.githubusercontent.com"},"Action":"sts:AssumeRoleWithWebIdentity","Condition":{"StringEquals":{"token.actions.githubusercontent.com:aud":"sts.amazonaws.com","token.actions.githubusercontent.com:sub":["repo:figentra/stackra:environment:testbed","repo:figentra@314302700/stackra@1425140001:environment:testbed"]}}}]}'
 ```
 
 Its rights: everything but IAM (`PowerUserAccess`), plus IAM only for the testbed's own roles and instance profiles,
 and never for itself (the deny keeps it from granting its own role more):
 
 ```bash
-aws iam attach-role-policy --role-name stackra-testbed-deploy --policy-arn arn:aws:iam::aws:policy/PowerUserAccess --profile academorix
+aws iam attach-role-policy --role-name stackra-testbed-deploy --policy-arn arn:aws:iam::aws:policy/PowerUserAccess --profile <profile>
 ```
 
 ```bash
-aws iam put-role-policy --role-name stackra-testbed-deploy --policy-name testbed-iam --profile academorix --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["iam:*Role","iam:*Roles","iam:*RolePolicy","iam:*RolePolicies","iam:*InstanceProfile","iam:*InstanceProfiles","iam:*RoleFromInstanceProfile","iam:*RoleToInstanceProfile","iam:TagRole","iam:UntagRole","iam:TagInstanceProfile","iam:PassRole"],"Resource":["arn:aws:iam::591473336656:role/stackra-testbed-*","arn:aws:iam::591473336656:instance-profile/stackra-testbed-*"]},{"Effect":"Allow","Action":"iam:CreateServiceLinkedRole","Resource":"*"},{"Sid":"NeverItsOwnRole","Effect":"Deny","Action":"iam:*","Resource":"arn:aws:iam::591473336656:role/stackra-testbed-deploy"}]}'
+aws iam put-role-policy --role-name stackra-testbed-deploy --policy-name testbed-iam --profile <profile> --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["iam:*Role","iam:*Roles","iam:*RolePolicy","iam:*RolePolicies","iam:*InstanceProfile","iam:*InstanceProfiles","iam:*RoleFromInstanceProfile","iam:*RoleToInstanceProfile","iam:TagRole","iam:UntagRole","iam:TagInstanceProfile","iam:PassRole"],"Resource":["arn:aws:iam::<account-id>:role/stackra-testbed-*","arn:aws:iam::<account-id>:instance-profile/stackra-testbed-*"]},{"Effect":"Allow","Action":"iam:CreateServiceLinkedRole","Resource":"*"},{"Sid":"NeverItsOwnRole","Effect":"Deny","Action":"iam:*","Resource":"arn:aws:iam::<account-id>:role/stackra-testbed-deploy"}]}'
 ```
 
 Then in GitHub, figentra/stackra, Settings, Environments, New environment `testbed`: deployment branches **main**
 only, required reviewer the owner, and two environment variables (neither is secret):
 
-- `TESTBED_DEPLOY_ROLE_ARN` = `arn:aws:iam::591473336656:role/stackra-testbed-deploy`
+- `TESTBED_DEPLOY_ROLE_ARN` = `arn:aws:iam::<account-id>:role/stackra-testbed-deploy`
 - `TESTBED_SSH_CIDRS` (optional) = a port-22 allowlist as `x.x.x.x/32`, comma-separated, for `--ssh-direct` only.
   Leave it unset: the CLI reaches the boxes through SSM. A rule already applied stays until the owner revokes it.
 
@@ -358,7 +358,7 @@ eu-west-1 renames the old single-region stack `testbed` to `testbed-eu-west-1`. 
 
 1. **Stop the old boxes:** any old box in the region must be stopped first, because it uses the same quota.
 2. **Check the image is there:** the region must already hold the image, so that
-   `aws ssm get-parameter --name /imagebuilder/stackra-testbed/ami --region <region> --profile academorix` returns an
+   `aws ssm get-parameter --name /imagebuilder/stackra-testbed/ami --region <region> --profile <profile>` returns an
    AMI. A build after the four-region distribution put it there.
 3. **Apply the region:** **action** `up`, **region** `<region>`, **groups** ticked, heavy `0`, light `0`. That declares
    the security group, the launch template and the two groups. No box starts.

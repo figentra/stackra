@@ -134,7 +134,7 @@ describe("awsTestbed", () => {
   it("launches from the SSM parameter with IMDSv2, two gp3 disks deleted with the instance", () => {
     const template = resource("ec2/launchTemplate:LaunchTemplate", "testbed").inputs;
     expect(template.imageId).toBe("resolve:ssm:/imagebuilder/stackra-testbed/ami");
-    expect(template.keyName).toBe("academorix-ci");
+    expect(template.keyName).toBe("stackra-testbed");
     expect(template.metadataOptions).toMatchObject({ httpTokens: "required" });
     expect(template.blockDeviceMappings).toEqual([
       expect.objectContaining({
@@ -375,7 +375,7 @@ describe("awsTestbed for a member region (STA-2042)", () => {
     start = registered.length;
     member = awsTestbed(
       testbedPlan({ region: "eu-west-2", identityId: "identity-1", ciGateProjectId: "project-1" }),
-      { lockfilePath: LOCKFILE },
+      { lockfilePath: LOCKFILE, keyPair: "team-ci" },
     );
     await new Promise((resolve) => {
       member.securityGroupId.apply(resolve);
@@ -404,5 +404,9 @@ describe("awsTestbed for a member region (STA-2042)", () => {
     const template = later("ec2/launchTemplate:LaunchTemplate")[0]?.inputs;
     expect(template?.imageId).toBe("resolve:ssm:/imagebuilder/stackra-testbed/ami");
     expect(template?.iamInstanceProfile).toEqual({ name: "stackra-testbed-instance" });
+  });
+
+  it("names the stack's own key pair when it gives one, instead of the default", () => {
+    expect(later("ec2/launchTemplate:LaunchTemplate")[0]?.inputs.keyName).toBe("team-ci");
   });
 });

@@ -25,7 +25,7 @@ beforeEach(async () => {
 
 const access = (() => {
   const parsed = parseCloudflareStack({
-    devZone: "figentra.cloud",
+    devZone: "dev.example",
     access: { githubOrganization: "figentra", identityProviderId: "idp-1" },
   }).access;
   if (parsed === undefined) throw new Error("Expected an Access config");
@@ -44,7 +44,7 @@ describe("workerAccess", () => {
         identityProviderId: "idp-1",
         access,
         workersDevSubdomain: "figentra",
-        members: { console: { hostnames: ["console.figentra.cloud"] } },
+        members: { console: { hostnames: ["console.dev.example"] } },
       }),
     );
 
@@ -59,7 +59,7 @@ describe("workerAccess", () => {
     const apps = applications();
     expect(Object.keys(apps)).toEqual(["access-worker-console", "access-worker-console-versions"]);
     expect(apps["access-worker-console"]).toMatchObject({
-      destinations: [{ type: "public", uri: "console.figentra.cloud" }],
+      destinations: [{ type: "public", uri: "console.dev.example" }],
       policies: [{ id: "access-worker-github-id", precedence: 1 }],
     });
     expect(apps["access-worker-console-versions"]).toMatchObject({
@@ -74,7 +74,7 @@ describe("workerAccess", () => {
         project: "figentra",
         identityProviderId: "idp-1",
         access,
-        members: { console: { hostnames: ["console.figentra.cloud"] } },
+        members: { console: { hostnames: ["console.dev.example"] } },
       }),
     );
 

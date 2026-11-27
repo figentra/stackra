@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-01
 
-**Status**: Implementing <!-- owner decisions 2026-11-01: hybrid layout, agents, Academorix archived, agent does structure -->
+**Status**: Implementing <!-- owner decisions 2026-11-01: hybrid layout, agents, the academy product archived, agent does structure -->
 
 **Linear**: STA-1867
 

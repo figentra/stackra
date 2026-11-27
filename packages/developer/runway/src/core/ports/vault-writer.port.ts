@@ -11,6 +11,6 @@ import { Port } from "@stackra/contracts";
 
 /** Where generated secrets go. */
 export abstract class VaultWriter extends Port {
-  /** Writes `value` as the secret `name` at `path` (`prod:/ci/store/academorix`), creating or replacing it. */
+  /** Writes `value` as the secret `name` at `path` (`prod:/ci/store/academy`), creating or replacing it. */
   abstract write(path: string, name: string, value: string): Promise<void>;
 }

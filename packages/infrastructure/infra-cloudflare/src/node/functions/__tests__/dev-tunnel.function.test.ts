@@ -28,14 +28,14 @@ beforeEach(async () => {
 describe("devTunnel", () => {
   it("declares the tunnel, its ingress and a CNAME per dev host", async () => {
     const ingress = tunnelIngress({
-      label: "akouta",
-      zone: "figentra.cloud",
+      label: "dana",
+      zone: "dev.example",
       ports: { console: 5173, web: 5174 },
     });
     const tunnel = devTunnel({
       accountId: "acc-1",
       zoneId: "zone-dev",
-      name: "figentra-akouta",
+      name: "figentra-dana",
       ingress,
     });
     await settled(tunnel);
@@ -45,7 +45,7 @@ describe("devTunnel", () => {
         declared,
         "cloudflare:index/zeroTrustTunnelCloudflared:ZeroTrustTunnelCloudflared",
       )[0]?.inputs,
-    ).toEqual({ accountId: "acc-1", name: "figentra-akouta", configSrc: "cloudflare" });
+    ).toEqual({ accountId: "acc-1", name: "figentra-dana", configSrc: "cloudflare" });
     expect(
       declaredAs(
         declared,
@@ -53,27 +53,27 @@ describe("devTunnel", () => {
       )[0]?.inputs,
     ).toEqual({
       accountId: "acc-1",
-      tunnelId: "tunnel-figentra-akouta-id",
+      tunnelId: "tunnel-figentra-dana-id",
       config: {
         ingresses: [
-          { hostname: "console-akouta.figentra.cloud", service: "http://localhost:5173" },
-          { hostname: "web-akouta.figentra.cloud", service: "http://localhost:5174" },
+          { hostname: "console-dana.dev.example", service: "http://localhost:5173" },
+          { hostname: "web-dana.dev.example", service: "http://localhost:5174" },
           { service: "http_status:404" },
         ],
       },
     });
     expect(inputsByName(declared, "cloudflare:index/dnsRecord:DnsRecord")).toEqual(
       Object.fromEntries(
-        ["console-akouta.figentra.cloud", "web-akouta.figentra.cloud"].map((name) => [
-          `tunnel-figentra-akouta-${name}`,
+        ["console-dana.dev.example", "web-dana.dev.example"].map((name) => [
+          `tunnel-figentra-dana-${name}`,
           {
             zoneId: "zone-dev",
             name,
             type: "CNAME",
-            content: "tunnel-figentra-akouta-id.cfargotunnel.com",
+            content: "tunnel-figentra-dana-id.cfargotunnel.com",
             proxied: true,
             ttl: 1,
-            comment: "Dev tunnel figentra-akouta (ADR 0290 decision 5)",
+            comment: "Dev tunnel figentra-dana (ADR 0290 decision 5)",
           },
         ]),
       ),

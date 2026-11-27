@@ -66,7 +66,7 @@ unchanged, and an event published in pay reaches billing's inbox once in dev.
 - **Apps touched**: none
 - **Services touched**: none in core. Consumers and producers in other repositories adopt it by configuration and a
   regenerate: figentra/pay (payments, producer), figentra/billing (billing and usage, consumers), figentra/os
-  (scheduling-calendar, consumer), and later commerce, jute, mezzora and velora (follow-ups in those repositories)
+  (scheduling-calendar, consumer), and later commerce, its editions and velora (follow-ups in those repositories)
 - **Packages touched**: `packages/runtime/outbox` (the cross-app publisher, per-consumer delivery, the inbox endpoint,
   the envelope's two fields), `packages/developer/gen` (lift `client_event_remote_transport`, emit the inbox
   subscription and the inbox endpoint), `packages/developer/runway` (the relay's per-environment configuration and its

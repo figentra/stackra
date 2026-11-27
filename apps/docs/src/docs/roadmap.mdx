@@ -18,7 +18,7 @@ Stackra ships packages, and nothing deployable ([0075](/adr/0075-stackra-ships-p
 ## How to read this page
 
 - **Phases** run in dependency order. **Waves** inside a phase are package-disjoint, so each wave can be split across agents with no shared files.
-- **Source:** _Figentra OS, as-is_ or _port + adapt_ or _redesign_ ports from `/Users/akouta/Projects/figentra/packages/os/<category>/<name>` and is relicensed to MIT on port ([0084](/adr/0084-figentra-os-package-port-plan)). _Medusa (MIT parts)_ ports only Medusa's MIT paths, never its Enterprise paths. _Fresh_ is written new.
+- **Source:** _Figentra OS, as-is_ or _port + adapt_ or _redesign_ ports from `figentra/packages/os/<category>/<name>` and is relicensed to MIT on port ([0084](/adr/0084-figentra-os-package-port-plan)). _Medusa (MIT parts)_ ports only Medusa's MIT paths, never its Enterprise paths. _Fresh_ is written new.
 - **Tier:** every package in this table is free (`@stackra/*`, MIT). Pro work (`@stackra-pro/*`) lives in the private `figentra/stackra-pro` repository and is tracked as one track ([0077](/adr/0077-open-core-free-and-pro-lists)).
 - **Lane** follows [0120](/adr/0120-sdlc-spec-location-lanes-and-change-risk): a new package is change risk R2 or higher, so it takes the **full** lane. A mechanical _as-is_ port takes the **lite** lane (assumed: 0084 says only adapt, redesign and fresh rows need a spec; pending owner). Packages under `packages/security/**`, and the outbox and database packages, are R3: blocking security review and owner approval before merge.
 - **Issue** is the package's Linear issue in team STA. Each package issue is a child of its wave issue, and its blocked-by relations mirror the "Depends on" column. Specs create the task issues later; this plan creates none.
@@ -410,8 +410,8 @@ Already done: the Encore plus legacy-decorators spike (STA-6), the G3 generated-
 <Note>
   Pending owner FO4. The plan assumes the questionnaire's recommendation, **FO4 a**, because it is
   the smallest slice that exercises tenancy, iam, actions, the outbox, notifications, gen and deploy
-  together. Option b (the notifications service alone) proves less; option c (Academorix's first
-  module) belongs in the Academorix repository.
+  together. Option b (the notifications service alone) proves less; option c (the academy product's
+  first module) belongs in the academy product repository.
 </Note>
 
 Proposed slice, tracked in the "First product slice" project (STA-146):

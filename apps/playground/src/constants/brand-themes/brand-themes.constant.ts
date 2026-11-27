@@ -3,7 +3,7 @@
  * Purpose: `BRAND_THEMES`: the approved brand layers the showcase offers, Stackra first (the showcase default).
  * Boundary: data only. Each `<id>.json` is a copy of the brand repo's `brands/<id>/tokens/theme.json` (figentra/brand
  *           2632b06), taken for every brand whose `brand.json` and `versions.json` default are approved and that
- *           ships a `tokens/theme.json` (Academorix has none yet). Names and display faces are its `brand.json`'s.
+ *           ships a `tokens/theme.json` (a brand without one is not offered). Names and display faces are its `brand.json`'s.
  *           Then two presets inspired by other design systems, Medusa UI and Linear (colours, type, radius and
  *           shadows only; no names or marks of theirs beyond the label), each with a CSS layer; README.md says where
  *           each value came from. Last come Stackra's own style presets (HeroUI-style, tactile, glass, brutal), tokens
@@ -23,7 +23,7 @@ import LINEAR from "./linear.json";
 import LINEAR_CSS from "./linear-preset.css?raw";
 import MEDUSA from "./medusa.json";
 import MEDUSA_CSS from "./medusa-preset.css?raw";
-import MEZZORA from "./mezzora.json";
+import BISTRO from "./bistro.json";
 import ORGANZA from "./organza.json";
 import OS from "./os.json";
 import PAY from "./pay.json";
@@ -95,11 +95,11 @@ export const BRAND_THEMES: readonly BrandTheme[] = [
     layer: JURISTRA,
   },
   {
-    id: "mezzora",
-    name: { en: "Mezzora", ar: "ميزورا" },
+    id: "bistro",
+    name: { en: "Bistro", ar: "بيسترو" },
     display: "Geist Mono",
     displayArabic: "Cairo",
-    layer: MEZZORA,
+    layer: BISTRO,
   },
   {
     id: "tamo",

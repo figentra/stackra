@@ -13,7 +13,7 @@ import type { RuntimePlan } from "#core/types/runtime-plan.type";
  * The SSM parameter of secret `name` in `folder`.
  *
  * @example
- * workloadParameter(plan, "runtime/main-db", "MAIN_DB_URL"); // "/academorix/production/runtime/main-db/MAIN_DB_URL"
+ * workloadParameter(plan, "runtime/main-db", "MAIN_DB_URL"); // "/academy/production/runtime/main-db/MAIN_DB_URL"
  */
 export function workloadParameter(
   plan: Pick<RuntimePlan, "project" | "environment">,

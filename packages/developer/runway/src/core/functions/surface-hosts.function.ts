@@ -14,7 +14,7 @@ import type { RootRunway } from "#core/types/root-runway.type";
  * The resolved surface hosts of `environment`, sorted.
  *
  * @example
- * surfaceHosts(root, "production"); // ["app.mezzora.figentra.com", "mezzora.com"]
+ * surfaceHosts(root, "production"); // ["app.bistro.figentra.com", "bistro.example"]
  */
 export function surfaceHosts(root: RootRunway, environment: string): string[] {
   const zone = root.environments[environment as keyof RootRunway["environments"]]?.domains?.zone;

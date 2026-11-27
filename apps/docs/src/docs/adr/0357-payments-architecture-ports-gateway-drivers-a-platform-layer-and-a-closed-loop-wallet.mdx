@@ -13,7 +13,7 @@ description: "Accepted · 2026-10-25"
 
 ## Context
 
-Commerce, Muslin, Academorix fees, Juristra invoices and Figentra's own billing all take payments. Academorix (Stripe
+Commerce, Muslin, the academy product fees, Juristra invoices and Figentra's own billing all take payments. The academy product (Stripe
 Connect, dunning, disputes) and Muslin (split tender, gift cards, Paymob, Tabby) each carry their own payment code, and
 no gateway port exists in Stackra. [0219](/adr/0219-the-merchant-account-chain-and-registered-price-models) fixes the
 merchant chain, the payment modes and the fee cascade, and [0220](/adr/0220-stackra-money-and-the-ledger-package) the
@@ -29,7 +29,7 @@ Figentra's legal role are Figentra's choices, recorded in Figentra OS
 **Ports and one engine.**
 
 1. `@stackra/payments` holds the payment ports. A product never carries its own payment code: it calls the payments
-   engine built on these ports (for Figentra, the OS payments and payments-ledger services). Academorix and Muslin code
+   engine built on these ports (for Figentra, the OS payments and payments-ledger services). The academy product and Muslin code
    is not mixed in.
 2. The ports serve three layers:
    - **gateway drivers**: one driver per provider behind the gateway port, chosen per tenant and Market through the
@@ -71,7 +71,7 @@ Figentra's legal role are Figentra's choices, recorded in Figentra OS
 - One payment engine to build, certify and secure, instead of one per product.
 - Every product gets platform payments, wallets and payouts under its own brand without writing payment code.
 - The gateway port must serve a merchant's own provider and the platform provider in the same Market.
-- Academorix and Muslin move onto the engine at their rewrite.
+- The academy product and Muslin move onto the engine at their rewrite.
 
 ## Enforcement
 

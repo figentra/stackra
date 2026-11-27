@@ -1,0 +1,20 @@
+{
+  "$comment": "What guard-public-content.mjs does not read: a repository `path` (`dir/**` or exact) or a tarball's `package` name, each with why and the issue that removes the entry. Keep it short.",
+  "allow": [
+    {
+      "path": "packages/developer/cli/**",
+      "reason": "The CLI, doctor and starter are scrubbed on their own branch, which owns these files.",
+      "issue": "STA-2790"
+    },
+    {
+      "package": "@stackra/cli",
+      "reason": "The CLI's tarball, until its sources are scrubbed on their own branch.",
+      "issue": "STA-2790"
+    },
+    {
+      "path": "workers/registry/migrations/**",
+      "reason": "Applied D1 migrations are never edited once applied (their file contract); the registry worker is not published.",
+      "issue": "STA-2876"
+    }
+  ]
+}

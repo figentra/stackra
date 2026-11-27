@@ -81,16 +81,16 @@
         {
           "console": {
             "shell": "os/console@3",
-            "packages": ["@figentra/mezzora-console-ui"],
-            "host": "console.mezzora"
+            "packages": ["@figentra/bistro-console-ui"],
+            "host": "console.bistro"
           },
           "landing": {
             "shell": "os/landing@1",
             "content": "assets/landing",
-            "host": "mezzora"
+            "host": "bistro"
           },
           "ops": {
-            "contributes": "@figentra/mezzora-ops-ui"
+            "contributes": "@figentra/bistro-ops-ui"
           }
         }
       ]
@@ -1767,10 +1767,10 @@
                   "commerce": 1,
                   "organza": 2,
                   "jute": 3,
-                  "mezzora": 4,
+                  "bistro": 4,
                   "velora": 5,
                   "juristra": 6,
-                  "academorix": 7
+                  "academy": 7
                 }
               ]
             },
@@ -1950,6 +1950,11 @@
               "type": "string",
               "description": "A zone from `providers.cloudflare.zones`."
             },
+            "pullRequestZone": {
+              "type": "string",
+              "description": "Preview only: the zone a pull request's one host lives in, `<product>-pr-<n>.<zone>` (ADR 0289 decision 7). A separate registrable domain from production, so preview cookies and storage stay apart; a pull-request publish refuses a runway without it.",
+              "examples": ["preview.example"]
+            },
             "pattern": {
               "type": "string",
               "description": "Not read yet (Runway plan PR 16, STA-2001). Host pattern; `${member}` and `${pr}` are expanded.",
@@ -2081,7 +2086,7 @@
       "type": "string",
       "pattern": "^@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$",
       "description": "A scoped package name.",
-      "examples": ["@figentra/mezzora-console-ui"]
+      "examples": ["@figentra/bistro-console-ui"]
     },
     "surface": {
       "type": "object",
@@ -2109,7 +2114,7 @@
           "type": "string",
           "minLength": 1,
           "description": "The platform host label; Runway writes its `host:` row.",
-          "examples": ["console.mezzora"]
+          "examples": ["console.bistro"]
         },
         "hosts": {
           "type": "array",
@@ -2269,7 +2274,7 @@
                 "bundleId": {
                   "type": "string",
                   "pattern": "^[A-Za-z][A-Za-z0-9-]*(\\.[A-Za-z][A-Za-z0-9-]*)+$",
-                  "examples": ["com.figentra.mezzora.staff"]
+                  "examples": ["com.figentra.bistro.staff"]
                 },
                 "team": {
                   "type": "string"

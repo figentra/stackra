@@ -12,7 +12,7 @@
   `publishCriteria`.
 - `AwardService(AwardKindService, RuleSetService, Database, Clock)`: `grant`, `consider`, `revoke`, `awardsOf`,
   `verify` (hash lookup, then `withScope`), `certificateOf`; private `issue` writes award, event and index row.
-- `checkGrant` ports the Academorix `checkAwardIssue` behaviour (ORIGIN.md), returning codes not sentences.
+- `checkGrant` ports the academy product `checkAwardIssue` behaviour (ORIGIN.md), returning codes not sentences.
 
 ## Constitution Check
 

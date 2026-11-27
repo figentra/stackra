@@ -33,7 +33,7 @@ const ALREADY_EXISTS = 6;
  *
  * @example
  * const google = new GoogleCloudDriver();
- * await google.projectState("academorix"); // "ours"
+ * await google.projectState("academy"); // "ours"
  */
 export class GoogleCloudDriver extends Driver(GoogleCloud) {
   /** The job's environment; a test replaces it. */

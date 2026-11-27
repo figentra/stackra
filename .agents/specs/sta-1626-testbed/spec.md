@@ -44,7 +44,7 @@ Read from `~/.local/bin/ci-box` on 2026-10-30. Each row is a requirement on `sta
 | Mac-side claim `/tmp/ci-claim/<box>-<slot>`, stale when its pid is gone             | same claim, keyed by instance id                                         |
 | "every box busy, waiting", polling every 20 s                                       | same message; also raises the group's desired count after 2 min (ADR d9) |
 | Refuses a command that calls `ci-box`                                               | refuses `ci-box` and `stackra testbed`                                   |
-| Seeds a new copy from `~/academorix` so the Mac uploads only the diff               | reflink clone from `/data/seed/<project>`, refreshed after each job      |
+| Seeds a new copy from `~/<checkout>` so the Mac uploads only the diff               | reflink clone from `/data/seed/<project>`, refreshed after each job      |
 | rsync excludes (`node_modules`, `.claude/worktrees`, `.agents`, `.env*`, …)         | same list, in one constant                                               |
 | Blanks the Encore app id in `services/encore.app` so `encore test` runs offline     | same, inside the job's workspace                                         |
 | `pnpm install --frozen-lockfile` when `node_modules` is missing; `timeout 3h`       | offline install against the read-only store; same 3 h timeout            |
@@ -54,7 +54,7 @@ Read from `~/.local/bin/ci-box` on 2026-10-30. Each row is a requirement on `sta
 | SSH allowlist follows the Mac's public IP, one swap per region per run              | same, one region, one security group                                     |
 | Boxes stop after 60 idle minutes; `ci-box` starts them                              | boxes above the minimum terminate after 60 idle minutes (ADR d9)         |
 | `put-env`: owner copies a token to every `~/.ci-env`                                | removed; tokens come from Infisical per job (ADR d7)                     |
-| Serves Academorix, Retail OS, Legal OS and Figentra checkouts                       | same: a project is any directory; its secret paths are testbed config    |
+| Serves the academy product, Retail OS, Legal OS and Figentra checkouts              | same: a project is any directory; its secret paths are testbed config    |
 
 ## Requirements
 
@@ -95,7 +95,7 @@ Read from `~/.local/bin/ci-box` on 2026-10-30. Each row is a requirement on `sta
 - **Q3 Infisical.** (Amended 2026-10-30: the owner chose the shared gate identity, with AWS Auth added, instead of a new
   identity.) Originally: the fourth machine identity `figentra-ci-boxes` with AWS IAM auth, read-only on
   `figentra-ci` (and the other products' CI projects when they join)? You make the Infisical change.
-- **Q4 AWS account.** The boxes live in the `academorix` profile's account. Keep the testbed there?
+- **Q4 AWS account.** The boxes live in the `<profile>` profile's account. Keep the testbed there?
 - **Q5 Connection.** Keep SSH with the IP allowlist (no change for agents), or move to SSM Session Manager (no open
   port, no key file; the Mac needs the session-manager plugin)? Proposed: keep SSH for the migration, SSM later.
 - **Q6 Size of the 16 GiB box.** Keep `c7i.2xlarge`, or `m7i.2xlarge` (32 GiB, +17%) for `heavy` if the e2e suite

@@ -8,7 +8,7 @@
 
 **Clarifications status**: complete
 
-**Input**: the owner approved on 2026-10-31 porting `@stackra/console` (basalt `packages/os/console`, Academorix spec 030) into core and giving every Stackra CLI a Symfony Console and Laravel installer experience: a gradient logo,
+**Input**: the owner approved on 2026-10-31 porting `@stackra/console` (basalt `packages/os/console`, the academy product spec 030) into core and giving every Stackra CLI a Symfony Console and Laravel installer experience: a gradient logo,
 robust prompts, one layout, and a colour, logo and glyph per product. `stackra`, `runway` and the `figentra` CLI
 (ADR 0500) are hand-built today with plain output and no shared framework. On 2026-10-31 the owner approved the spec
 stop ("handle all, all approved") and added STA-1731: every package exposes its own commands, and gen collects them.

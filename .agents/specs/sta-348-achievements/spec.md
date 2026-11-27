@@ -16,7 +16,7 @@
 
 **Input**: Build `@stackra/achievements` (application, new package approved by OS ADR 0058, Stackra ADR 0368). Row of
 `notes/handover/stackra-package-needs.md`: "Award kinds, criteria and auto-grant, revoke, opaque verify token and QR,
-certificates (ported from Academorix's award code)"; asked by OS workforce and Academorix.
+certificates (ported from the academy product's award code)"; asked by OS workforce and the academy product.
 
 ## Impact
 

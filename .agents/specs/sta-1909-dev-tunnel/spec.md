@@ -17,7 +17,7 @@ command has no `--tunnel` option today, and 0290's Enforcement line ("`stackra d
 tests") is unmet.
 
 **Decisions (leader, 2026-11-01)**: the token is `CLOUDFLARE_TUNNEL_TOKEN` at Infisical `/agents`, one per developer
-machine; the tunnel is named `figentra-<dev>`, with hosts `<member>-<dev>.figentra.cloud`; the first tunnel is made by
+machine; the tunnel is named `figentra-<dev>`, with hosts `<member>-<dev>.<dev-zone>`; the first tunnel is made by
 hand in the dashboard (no infrastructure repository yet). The tunnel's ingress lives in Cloudflare (remote config), so
 the CLI needs no port mapping.
 

@@ -23,7 +23,7 @@ read only by an internal licence whose grants cover it; a customer licence, `nam
 catalogue never lists it.
 
 `@figentra` (migration `0003`, owner decision D9) is an `internal` scope: the brand kits `@figentra/brand-<id>`
-(figentra, os, stackra, commerce, pay, tamo, academorix, mezzora, juristra, organza, jute, velora), read only by an
+(figentra, os, stackra, commerce, pay, tamo, academy, bistro, juristra, organza, jute, velora), read only by an
 internal licence with an `@figentra` grant (`STACKRA_REGISTRY_TOKEN` in the brand tooling): no or unknown token is 401,
 any other licence 403. Its licence rule is `commercial`, and the catalogue never lists it.
 

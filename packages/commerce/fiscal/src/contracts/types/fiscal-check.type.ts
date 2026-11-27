@@ -6,7 +6,7 @@
  *           buyer, kind, currency and every line of the check; its `id`, `number` and `issuedAt` name the whole-check
  *           document.
  * Runtime: isomorphic
- * Governing contract: ADR 0364 (decision 8); Mezzora guest_checks spec (RES-150).
+ * Governing contract: ADR 0364 (decision 8); Bistro guest_checks spec (RES-150).
  */
 import type { FiscalCheckPart } from "#contracts/types/fiscal-check-part.type";
 import type { FiscalDocument } from "#contracts/types/fiscal-document.type";

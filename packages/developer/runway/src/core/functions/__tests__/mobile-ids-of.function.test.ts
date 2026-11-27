@@ -30,10 +30,10 @@ describe("mobileIdsOf", () => {
   // @covers sta-1623:FR-002
   it("keeps the ids the identity sets", () => {
     expect(
-      mobileIdsOf("academorix", "academorix", {
-        ios: { bundleId: "app.academorix.mobile" },
-        android: { package: "app.academorix.mobile" },
+      mobileIdsOf("academy", "academy", {
+        ios: { bundleId: "app.academy.mobile" },
+        android: { package: "app.academy.mobile" },
       }),
-    ).toEqual({ bundleId: "app.academorix.mobile", packageName: "app.academorix.mobile" });
+    ).toEqual({ bundleId: "app.academy.mobile", packageName: "app.academy.mobile" });
   });
 });

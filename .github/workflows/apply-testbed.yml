@@ -1,8 +1,8 @@
 # Stackra file contract:
 # Purpose: apply the testbed (ADR 0484, STA-1626) with Pulumi from CI only, by hand: build
 #          @stackra/infra-testbed, then `pulumi preview`, `pulumi up`, or a run of the image pipeline, against one
-#          region's stack `testbed-<region>` of packages/infrastructure/infra-testbed/pulumi in the academorix AWS
-#          account (591473336656). eu-west-1 is the home: its stack holds the global roles and the image pipeline,
+#          region's stack `testbed-<region>` of packages/infrastructure/infra-testbed/pulumi in the testbed AWS
+#          account. eu-west-1 is the home: its stack holds the global roles and the image pipeline,
 #          whose distribution copies each AMI to all four regions; the others hold their pool only (STA-2042). The
 #          old single-region stack `testbed` is renamed `testbed-eu-west-1` on its first run here.
 # Boundary: workflow_dispatch only, main only, in the `testbed` environment (restricted to main, required reviewer:
@@ -69,7 +69,8 @@ jobs:
       PROJECT_ID: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
       # Optional: the permissions boundary the program sets on the roles it creates (notes testbed-boundary draft).
       PERMISSIONS_BOUNDARY: ${{ vars.TESTBED_PERMISSIONS_BOUNDARY_ARN }}
-      STATE_BUCKET: stackra-pulumi-state-591473336656
+      # Optional: the EC2 key pair the boxes get, when it is not the package default (stackra-testbed).
+      KEY_PAIR: ${{ vars.TESTBED_KEY_PAIR }}
       PULUMI_TOOL: pulumi@3.268.0
       PULUMI_SKIP_UPDATE_CHECK: "true"
       PULUMI_CONFIG_PASSPHRASE: "" # the stack holds no secret (see Secrets above)
@@ -124,10 +125,13 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: apply-testbed-${{ github.run_id }}
 
-      # Pulumi's S3 backend locks with objects in the bucket itself, so no lock table is needed.
+      # Pulumi's S3 backend locks with objects in the bucket itself, so no lock table is needed. The bucket is named
+      # after the account the role assumed, read here, so this public file names no account id.
       - name: State bucket
         run: |
           set -euo pipefail
+          STATE_BUCKET="stackra-pulumi-state-$(aws sts get-caller-identity --query Account --output text)"
+          echo "STATE_BUCKET=$STATE_BUCKET" >> "$GITHUB_ENV"
           if ! aws s3api head-bucket --bucket "$STATE_BUCKET" 2>/dev/null; then
             aws s3api create-bucket --bucket "$STATE_BUCKET" --create-bucket-configuration "LocationConstraint=$AWS_REGION"
             aws s3api put-public-access-block --bucket "$STATE_BUCKET" --public-access-block-configuration \
@@ -167,6 +171,7 @@ jobs:
           done
           pulumi config set groups "$DECLARE_GROUPS"
           if [ -n "$PERMISSIONS_BOUNDARY" ]; then pulumi config set permissionsBoundary "$PERMISSIONS_BOUNDARY"; fi
+          if [ -n "$KEY_PAIR" ]; then pulumi config set keyPair "$KEY_PAIR"; else pulumi config rm keyPair || true; fi
           pulumi config set heavyMin "$HEAVY_MIN"
           pulumi config set lightMin "$LIGHT_MIN"
           # Image Builder components and recipes are kept in AWS when replaced (retainOnDelete, STA-1953). The engine

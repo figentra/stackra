@@ -106,6 +106,8 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
   domains: z
     .looseObject({
       zone: z.string().optional(),
+      /** Preview only: the zone a pull request's one host lives in (`<product>-pr-<n>.<zone>`, ADR 0289 decision 7). */
+      pullRequestZone: z.string().optional(),
       pattern: z.string().optional(),
       tenantDomains: z.string().optional(),
     })

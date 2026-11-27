@@ -24,8 +24,8 @@ Exit codes reserved: 73 slot busy, 75 box unhealthy (caller picks another box), 
   (`PNPM_CONFIG_NPMRC_AUTH_FILE`), so that file's `_authToken=${...}` line works. The identity id is in
   `/etc/testbed/identity` (an id, not a secret).
 - Instance tags: `stackra:testbed` = `heavy` | `light`; `Name` = `stackra-testbed-<group>`.
-- Defaults the CLI also knows: AWS profile `academorix`, region `eu-west-1`, SSH user `ubuntu`, security group
-  `stackra-testbed`, key file `~/.ssh/academorix-ci.pem` (key pair `academorix-ci` imported into eu-west-1).
+- Defaults the CLI also knows: AWS profile `<profile>`, region `eu-west-1`, SSH user `ubuntu`, security group
+  `stackra-testbed`, key file `~/.ssh/stackra-testbed.pem` (key pair `stackra-testbed` imported into eu-west-1).
 - Command argument: `job run ... -- <cmd>` receives the command as ONE string after `--`; the agent runs it inside the
   container with `sh -c '<cmd>'` (under `infisical run` when the project has grants).
 - Auto Scaling group names: `stackra-testbed-heavy` and `stackra-testbed-light` (the `Name` tag of an instance is

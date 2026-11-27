@@ -53,5 +53,5 @@ mode, and the approver rule `{ seatKind, notRequester, stepUp }` from the rule s
 ## Not built here
 
 - The OS tasks-approvals `ApprovalGate` driver that reads the rule set and applies `approverRefusal`.
-- The product seed rows (`seed-pack:juristra`, Academorix).
+- The product seed rows (`seed-pack:juristra`, the academy product).
 - Tests, typecheck and build are written but not run (owner mode).

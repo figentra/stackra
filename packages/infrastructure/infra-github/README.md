@@ -41,7 +41,7 @@ providers:
       CLOUDFLARE_ACCOUNT_ID: ref:cloudflare.accountId # public ids only; never a secret name
     environments:
       production:
-        reviewers: [figentra/owners, akouta] # a user login or <org>/<team-slug>, six at most
+        reviewers: [figentra/owners, octocat] # a user login or <org>/<team-slug>, six at most
       release:
         tags: ["*@*"]
 environments:

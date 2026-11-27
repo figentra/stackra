@@ -4,7 +4,7 @@
  *          version is approved and ships `tokens/theme.json`, built over the Stackra base. Stackra comes first and is
  *          the showcase's own theme (`SHOWCASE_THEME`).
  * Boundary: data only. `brand-themes/<id>.json` are copies of the brand repo's `brands/<id>/tokens/theme.json`
- *           (figentra/brand 2632b06); Academorix ships no `theme.json` yet, so it is not offered. Last come the
+ *           (figentra/brand 2632b06); a family brand with no `theme.json` yet is not offered. Last come the
  *           Medusa- and Linear-inspired presets, copies of the playground's (its brand-themes/README.md); their CSS
  *           layers are web-only.
  * Runtime: react-native
@@ -23,7 +23,7 @@ import JURISTRA from "./brand-themes/juristra.json";
 import JUTE from "./brand-themes/jute.json";
 import LINEAR from "./brand-themes/linear.json";
 import MEDUSA from "./brand-themes/medusa.json";
-import MEZZORA from "./brand-themes/mezzora.json";
+import BISTRO from "./brand-themes/bistro.json";
 import ORGANZA from "./brand-themes/organza.json";
 import OS from "./brand-themes/os.json";
 import PAY from "./brand-themes/pay.json";
@@ -43,7 +43,7 @@ export const BRAND_THEMES: readonly { id: string; label: string; theme: Theme }[
   { id: "commerce", label: "Figentra Commerce", theme: brandTheme(COMMERCE) },
   { id: "pay", label: "Figentra Pay", theme: brandTheme(PAY) },
   { id: "organza", label: "Organza", theme: brandTheme(ORGANZA) },
-  { id: "mezzora", label: "Mezzora", theme: brandTheme(MEZZORA) },
+  { id: "bistro", label: "Bistro", theme: brandTheme(BISTRO) },
   { id: "juristra", label: "Juristra", theme: brandTheme(JURISTRA) },
   { id: "jute", label: "Jute", theme: brandTheme(JUTE) },
   { id: "tamo", label: "Tamo", theme: brandTheme(TAMO) },

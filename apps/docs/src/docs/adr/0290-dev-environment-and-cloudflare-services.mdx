@@ -9,12 +9,12 @@ description: "Accepted, amended by 0453 and on 2026-11-05 (npflared retired) · 
   Decision 16 (CF8) closed by the owner on 2026-11-05 (STA-2113): the npflared Worker `npm-registry`
   is retired. On 2026-11-05 no configuration, workflow, lockfile or `.npmrc` on any branch of any
   organisation repository named `npm.figentra.com`, `NPM_FIGENTRA_*` or `NPFLARED_*`; only ADRs and
-  notes do, as history. Every former consumer (`@figentra/cli`, Academorix, Vellum, now Figentra
-  Flow) reads Figentra Registry (0453 as amended by STA-1733). The 30-day 410 period of 0453
-  decision 17 is moot, because the name has not resolved since about 2026-11-01. The owner deletes
-  the Worker, its R2 bucket and any leftover route on their go, after an optional archive of the old
-  tarballs. Private `@figentra/*` packages live in Figentra Registry's `@figentra` scope (0453
-  decision 10), so the question this decision left open is answered. The steps are in the
+  notes do, as history. Every former consumer (`@figentra/cli`, the academy product, Vellum, now
+  Figentra Flow) reads Figentra Registry (0453 as amended by STA-1733). The 30-day 410 period of
+  0453 decision 17 is moot, because the name has not resolved since about 2026-11-01. The owner
+  deletes the Worker, its R2 bucket and any leftover route on their go, after an optional archive of
+  the old tarballs. Private `@figentra/*` packages live in Figentra Registry's `@figentra` scope
+  (0453 decision 10), so the question this decision left open is answered. The steps are in the
   cloudflare-hosts runbook (stackra-notes).
 </Note>
 
@@ -25,7 +25,7 @@ description: "Accepted, amended by 0453 and on 2026-11-05 (npflared retired) · 
   under figentra.com (`console.pay.dev.figentra.com`, `console.pay.staging.figentra.com`), and
   production unlabelled (`console.pay.figentra.com`). A product's root runway states it as
   `environments.<env>.domains.zone` (`dev.figentra.com`, `preview.figentra.com`,
-  `staging.figentra.com`, `figentra.com`). figentra.cloud stays the zone for tunnels and dev machines
+  `staging.figentra.com`, `figentra.com`). The dev zone stays the zone for tunnels and dev machines
   (decisions 1, 2 and 4).
 </Note>
 
@@ -61,15 +61,15 @@ alternative is named.
 
 ### Zones and names
 
-1. **The dev and preview zone is figentra.cloud (DV1, owner-only).** The zone is owned and empty, so it costs nothing.
+1. **The dev and preview zone is a separate registrable domain, the dev zone (DV1, owner-only).** The zone is owned and empty, so it costs nothing.
    It also keeps dev cookies off figentra.com. The alternatives were to buy figentra.dev or to use subdomains of figentra.com.
 2. **One label deep on the dev zone (DV2).** Every dev name is one label deep, so Universal SSL covers it and no paid
    certificate is needed. Tunnels use `<app>-<dev>` and staging uses `<app>-staging`. Pull-request previews use the single
    host of [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 7, which
    supersedes the `pr-<n>-<app>` example in the answer. Extra custom names are welcome as one-label hosts. Vanity
-   nameservers (ns1.figentra.cloud) are skipped, because they are a Business-plan feature with no benefit here.
+   nameservers (ns1.<dev-zone>) are skipped, because they are a Business-plan feature with no benefit here.
 3. **Tenants point at figentra.com (CF6).** The fallback origin for Cloudflare for SaaS is a production name under
-   figentra.com, for example `cname.figentra.com`. figentra.cloud serves dev only, so dev and tenant traffic keep separate
+   figentra.com, for example `cname.figentra.com`. The dev zone serves dev only, so dev and tenant traffic keep separate
    access and WAF rules. This amends [0175](/adr/0175-edge-domains-and-tls).
 
 ### Tunnels and the dev loop
@@ -134,7 +134,7 @@ alternative is named.
     OS has public docs, and then it gets a second Mintlify project. Mintlify charges per project, and Figentra OS has nothing
     public yet ([0002](/adr/0002-docs-on-mintlify)).
 19. **The Clerk records come out after a check (CF11, owner-only).** The Clerk records on figentra.com (`accounts.`,
-    `clerk.`, `clkmail.` and the DKIM keys) are deleted only after confirming that nothing uses Clerk, Academorix included.
+    `clerk.`, `clkmail.` and the DKIM keys) are deleted only after confirming that nothing uses Clerk, the academy product included.
     The deletion goes through Pulumi once the zone is imported (decision 15). Clerk is not in the stack
     ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)), and a dangling record invites takeover.
 

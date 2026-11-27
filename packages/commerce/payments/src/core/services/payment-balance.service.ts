@@ -10,7 +10,7 @@
  *           The provider is called outside the lock; only the reservation and the settle run under it. How a balance is
  *           split (by seat, item, even) is the product's; this service only refuses a part that does not fit.
  * Runtime: isomorphic
- * Governing contract: ADR 0357 (decisions 2 and 6); ADR 0103 (locks); STA-1024; mezzora-15 (pay at table).
+ * Governing contract: ADR 0357 (decisions 2 and 6); ADR 0103 (locks); STA-1024; bistro-15 (pay at table).
  */
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";

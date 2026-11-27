@@ -6,7 +6,7 @@
  *           (`FiscalMandate.checkDocument`); `checkDocuments` and `FiscalService.sealCheck` read it. Codes are
  *           snake_case.
  * Runtime: isomorphic
- * Governing contract: ADR 0364 (decisions 2 and 8); ADR 0231 (snake_case codes); Mezzora guest_checks spec (RES-150).
+ * Governing contract: ADR 0364 (decisions 2 and 8); ADR 0231 (snake_case codes); Bistro guest_checks spec (RES-150).
  */
 import { Enum } from "@stackra/contracts";
 

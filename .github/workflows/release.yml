@@ -19,6 +19,7 @@
 #           `providers.npm.registry`, and the prerelease job's REGISTRY); no member's publishConfig names one. Never
 #           npmjs, never Keygen (ADR 0453).
 # Runtime: GitHub Actions
+#          Both paths read every tarball with tools/scripts/guard-public-content.mjs before publishing (STA-2876).
 # Governing contract: ADR 0453 (decisions 6, 7); ADR 0168; ADR 0174; ADR 0177 (PK5, the fixed version group); ADR 0468.
 # Owner: release-operations
 # Secrets: STACKRA_BOT_APP_ID / STACKRA_BOT_PRIVATE_KEY (repository secrets, the stackra-bot app token, owner
@@ -123,6 +124,8 @@ jobs:
       # Only what is published: the packages (@stackra-pro/ui lives in figentra/stackra-pro since ADR 0461).
       build-args: --filter=./packages/**
       dry-run: ${{ inputs.dry_run == true }}
+      # STA-2876: no tarball names an internal product, person, host, account or home folder.
+      pack-check: node tools/scripts/guard-public-content.mjs --pack
       # The one place the registry is set: runway.yaml `providers.npm.registry` (ADR 0453).
       registry: https://npm.stackra.figentra.com/
     secrets:
@@ -228,6 +231,20 @@ jobs:
           done < <(pnpm -r ls --depth -1 --json | jq -r '.[] | [.name, (.private // false | tostring), .path] | @tsv')
           [ "$found" -eq "$(wc -w <<< "$PACKAGES")" ] || {
             echo "::error title=packages::a package in the filter is not in the workspace"; exit 1; }
+
+      # STA-2876: the selected tarballs, packed as the publish packs them, carry no internal content.
+      - name: Tarball check
+        run: |
+          set -euo pipefail
+          packs="$RUNNER_TEMP/packs"
+          mkdir -p "$packs"
+          while IFS=$'\t' read -r name dir; do
+            case " $PACKAGES " in *" $name "*) ;; *) continue ;; esac
+            (cd "$dir" && pnpm pack --pack-destination "$packs" > /dev/null)
+          done < <(pnpm -r ls --depth -1 --json | jq -r '.[] | [.name, .path] | @tsv')
+          mapfile -t tarballs < <(find "$packs" -name '*.tgz' | sort)
+          [ "${#tarballs[@]}" -gt 0 ] || { echo "::error title=pack-check::no tarball was packed"; exit 1; }
+          node tools/scripts/guard-public-content.mjs --pack "${tarballs[@]}"
 
       # Per package: a GitHub ID token (audience npm:<host>) exchanged for a publish token bound to that one name
       # (ADR 0453 decision 6), masked and passed as NODE_AUTH_TOKEN; ~/.npmrc names the variable, never the value.

@@ -4,7 +4,7 @@ description: "One command takes a product's mobile app from nothing to store-rea
 icon: "rocket"
 ---
 
-{/* Stackra file contract: Purpose: the runbook of `stackra mobile onboard` and `stackra deploy --product --mobile-only`: what each onboarding step does, the one-time setup, every owner step and who does it, the academorix plan. Boundary: docs only; the code is @stackra/runway `onboardMobile` and @stackra/cli `runMobileOnboard`. Runtime: docs. Governing contract: ADR 0482, ADR 0480, ADR 0439, ADR 0062. */}
+{/* Stackra file contract: Purpose: the runbook of `stackra mobile onboard` and `stackra deploy --product --mobile-only`: what each onboarding step does, the one-time setup, every owner step and who does it, the acme plan. Boundary: docs only; the code is @stackra/runway `onboardMobile` and @stackra/cli `runMobileOnboard`. Runtime: docs. Governing contract: ADR 0482, ADR 0480, ADR 0439, ADR 0062. */}
 
 <Note>
   Status: built (STA-1623), waiting for the first live run. The real drivers are written against the
@@ -15,7 +15,7 @@ icon: "rocket"
 ## The commands
 
 ```bash
-stackra mobile onboard --app academorix
+stackra mobile onboard --app acme
 ```
 
 Run at a product root. Three modes:
@@ -82,25 +82,25 @@ goes. The listing, screenshots, review details and App Review submission are ADR
   `pnpm store build`); upload the first production `.aab` from EAS to Internal testing; keep Play App Signing on; invite
   the root kit's service account with release rights. The step is done once Play shows a release.
 
-## Academorix
+## Acme
 
-The offline plan of academorix's `runway.yaml` today (traced from the code, not run: this Mac runs no tests). Its ids
+The offline plan of acme's `runway.yaml` today (traced from the code, not run: this Mac runs no tests). Its ids
 are the live store ids, so `identity` keeps them.
 
-| Step             | Offline plan                                                                                   |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
-| identity         | done: keeps `app.academorix.mobile` (iOS and Android)                                          |
-| eas-project      | planned: would create `figentra/academorix-academorix` (`eas.project` is `ref:expo.projectId`) |
-| eas-profiles     | done: node 24.22.0                                                                             |
-| apple-bundle     | planned: would register `app.academorix.mobile`, enable push and associated domains            |
-| apple-app-record | manual (the live record exists; `--check` reads it)                                            |
-| google-project   | planned: would create `academorix`                                                             |
-| firebase         | planned                                                                                        |
-| analytics-link   | manual: name `google.analyticsAccount`                                                         |
-| sentry           | planned: would create `figentra/academorix-academorix`                                         |
-| signing, push    | blocked until the EAS project exists                                                           |
-| store-keys       | planned: checked by name in CI                                                                 |
-| play-app         | manual (the live app exists; `--check` reads it)                                               |
+| Step             | Offline plan                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| identity         | done: keeps `app.acme.mobile` (iOS and Android)                                    |
+| eas-project      | planned: would create `figentra/acme-acme` (`eas.project` is `ref:expo.projectId`) |
+| eas-profiles     | done: node 24.22.0                                                                 |
+| apple-bundle     | planned: would register `app.acme.mobile`, enable push and associated domains      |
+| apple-app-record | manual (the live record exists; `--check` reads it)                                |
+| google-project   | planned: would create `acme`                                                       |
+| firebase         | planned                                                                            |
+| analytics-link   | manual: name `google.analyticsAccount`                                             |
+| sentry           | planned: would create `figentra/acme-acme`                                         |
+| signing, push    | blocked until the EAS project exists                                               |
+| store-keys       | planned: checked by name in CI                                                     |
+| play-app         | manual (the live app exists; `--check` reads it)                                   |
 
-Before its first `--check`: set `mobile.academorix.eas.owner: academorix` (owner answer, STA-1623 Q4) and
+Before its first `--check`: set `mobile.acme.eas.owner: acme` (owner answer, STA-1623 Q4) and
 `google.analyticsAccount`, in the product's go-live change.
