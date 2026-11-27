@@ -49,6 +49,10 @@ model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `./node`.
   `outbox-relay.service.fault.int.test.ts` inject transport and database faults into the relay to prove nothing is
   lost, dead-lettered or run twice (ADR 0182 decision 4, STA-2841). A change to the relay's delivery or recording
   adds its case there.
+- Recording a delivery is the store's work, never the delivery's: a store that cannot delete a delivered message (or
+  record a retry) fails the tick, and the message is delivered again on a later one. Never route a store error into the
+  message's retry or dead letter: that dead-letters a message that was delivered. A failed cross-app fan-out is part
+  of the delivery and is retried as one.
 - `holding(value)` and `rewrite(id, data)` exist for erasure only (`redactSubjectMessages`, called by
   @stackra/privacy's saga): `holding` matches a string value at any payload depth, never a key; `rewrite` replaces
   the payload and keeps the delivery state. Never import @stackra/privacy here (privacy depends on outbox).

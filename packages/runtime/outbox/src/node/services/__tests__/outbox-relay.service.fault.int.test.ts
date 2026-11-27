@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: the database fault-injection tests of `OutboxRelayService` on real Postgres (ADR 0182 decisions 3 and 4): a
  *          row trigger (`postgresFault`) fails the write the relay records a delivery with, as the NOBYPASSRLS service
- *          role relays an owner's event. When the delete of a published message fails, the message is kept with its
- *          attempt counted and is published again under the same id on a later tick, then deleted: delivered at least
- *          once, never lost, never dead. When the update that records a failed publish fails, the tick fails and its
+ *          role relays an owner's event. When the delete of a published message fails, the tick fails, the message is
+ *          kept with no attempt counted and is published again under the same id on the next tick, then deleted:
+ *          delivered at least once, never lost, never dead. When the update that records a failed publish fails, the tick fails and its
  *          transaction rolls back: the message is untouched and is published on the next tick.
  * Boundary: integration tier (`.int`): runs only where `TESTBED_POSTGRES_HOST` names a Postgres and is skipped
  *           elsewhere. One fresh database for the file (`ownerPostgres`); each test arms its fault as the superuser and
@@ -109,13 +109,6 @@ describe.skipIf(HOST === undefined)("OutboxRelayService under database faults on
     return row === undefined ? undefined : [row["attempts"], row["dead"]];
   };
 
-  /** Makes message `id` due again, as its backoff passing would. */
-  const due = (id: string) =>
-    superuser(
-      "update outbox.messages set available_at = now() - interval '1 second' where id = ?",
-      [id],
-    );
-
   /** A relay over the Postgres stores with the owner's isolation, publishing through `publisher`. */
   const relayOf = (publisher: RecordingPublisher) => {
     const relay = new OutboxRelayService(
@@ -134,19 +127,16 @@ describe.skipIf(HOST === undefined)("OutboxRelayService under database faults on
   /** One tick as the service role in a session with no owner. */
   const tick = (relay: OutboxRelayService) => asService(postgres, undefined, () => relay.relay());
 
-  it("keeps a published message whose delete failed, and publishes it again under the same id", async () => {
+  it("fails the tick when the delete of a published message fails, counts no attempt, and publishes it again under the same id", async () => {
     await seed("evt_fault_delete");
     const publisher = new RecordingPublisher();
     const relay = relayOf(publisher);
-    await withFault(
-      postgresFault({ name: "message_remove", table: "outbox.messages", on: "delete" }),
-      async () => {
-        await expect(tick(relay)).resolves.toBe(1);
-        expect(await stateOf("evt_fault_delete")).toEqual([1, false]);
-        await due("evt_fault_delete");
-        await expect(tick(relay)).resolves.toBe(1);
-      },
-    );
+    const fault = postgresFault({ name: "message_remove", table: "outbox.messages", on: "delete" });
+    await withFault(fault, async () => {
+      await expect(tick(relay)).rejects.toThrow(fault.message);
+      expect(await stateOf("evt_fault_delete")).toEqual([0, false]);
+      await expect(tick(relay)).resolves.toBe(1);
+    });
     expect(publisher.published).toEqual(["evt_fault_delete", "evt_fault_delete"]);
     expect(await stateOf("evt_fault_delete")).toBeUndefined();
   });

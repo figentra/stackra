@@ -32,13 +32,15 @@ on clean refusals. The readiness audit of 26 Nov split this out of STA-229 as ST
 - `packages/commerce/payments/src/core/services/payment.service.ts` (`guard`, `onToken`, `refund`, `reconcile`)
 - `packages/developer/testing` (the generic kit, ADR 0269 decision 2)
 - FR-001 to FR-006: the PR's diff against `main` and its tests
+- FR-007: the CTO's review of the PR (2026-11-27): the relay recorded a failed delete as a failed delivery, the same
+  bug the queue fix removes (`deliver` in `outbox-relay.service.ts`)
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: `apps/docs` (`standards/testing-by-kind.mdx`)
 - **Services touched**: none
 - **Packages touched**: packages/developer/testing (new exports), packages/runtime/queue (worker fix and tests),
-  packages/runtime/outbox (tests and AGENTS.md), packages/commerce/payments (tests and AGENTS.md)
+  packages/runtime/outbox (relay fix, tests and AGENTS.md), packages/commerce/payments (tests and AGENTS.md)
 - **Public contract change**: additive. `@stackra/testing` `.` exports `injectFaults`, `postgresFault`,
   `InjectedFaultError` and the types `FaultRule`, `FaultCall`, `FaultTiming`, `FaultInjection`, `PostgresFault`,
   `PostgresFaultOptions`, `PostgresWrite`. `@stackra/queue`: no signature changes; `QueueWorkerService.drain` and
@@ -111,6 +113,8 @@ at any step loses no work and repeats no effect.
 - **EC-03**: A rule naming a method the target lacks, or a call number below 1, throws when the faults are injected.
 - **EC-04**: The wrapped target's own internal calls are neither recorded nor faulted.
 - **EC-05**: A store that removes a job and loses the answer leaves nothing to run again; the drain still fails.
+- **EC-06**: A store that deletes a delivered outbox message and loses the answer leaves nothing to deliver again; the
+  tick still fails and the rest of its batch is delivered on the next one.
 
 ## Requirements _(mandatory)_
 
@@ -131,14 +135,18 @@ at any step loses no work and repeats no effect.
 - **FR-006**: THE payments package SHALL ship `.fault.test.ts` and `.fault.int.test.ts` suites proving that provider and
   record faults on charge, refund and reconcile never charge or refund twice and leave a payment blocked until
   `reconcile` records it.
+- **FR-007**: WHEN the store fails to delete a delivered outbox message THE `OutboxRelayService` SHALL fail the tick
+  with that error and SHALL NOT count an attempt, retry or dead-letter the message; a failed cross-app fan-out SHALL
+  still count as a failed delivery.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
 - **AC-001**: WHEN a finished job's remove fails THE worker SHALL reject the drain and write no retry or dead letter,
   and the job SHALL replay its result after its lease lapses.
 - **AC-002**: WHEN a provider acts and loses its answer THE worker SHALL call it again under the same Idempotency-Key.
-- **AC-003**: WHEN the outbox store fails to delete a published message THE relay SHALL publish it again under the same
-  id and the inbox SHALL run the listener once.
+- **AC-003**: WHEN the outbox store fails to delete a published message THE relay SHALL fail the tick, count no
+  attempt, publish it again under the same id on a later tick, and the inbox SHALL run the listener once; however often
+  the delete fails, the message SHALL never be dead-lettered.
 - **AC-004**: WHEN the payment records fail after the provider charged THE retry SHALL reach the provider under the same
   reference and the provider SHALL hold one payment.
 - **AC-005**: THE `injectFaults` and `postgresFault` helpers SHALL behave as FR-001 and FR-002 say.
@@ -164,15 +172,17 @@ at any step loses no work and repeats no effect.
 
 - **R-1**: A job whose result is not replayable (no `IdempotencyStore` bound) runs its handler again after a store
   failure; at-least-once already allowed that, and the queue's docs say every job is idempotent.
-- **R-2**: The outbox relay still counts a delivery whose delete failed as a failed attempt; after ten such failures a
-  delivered message is dead-lettered. The inbox deduplicates its redelivery; the follow-up is in the report.
+- **R-2**: Resolved here (FR-007): the relay no longer counts a delivery whose delete failed as a failed attempt, so
+  a delivered message is never dead-lettered for it. What remains is at-least-once itself: after a failed delete an
+  event is published again (the inbox deduplicates it by id) and a row change message runs its change consumers again,
+  which the outbox already requires to be idempotent; how to hold consumers to that is STA-2915.
 - **R-3**: A token charge whose record could not be saved outside a transaction stays `pending` until `reconcile`; a
-  retried charge returns it unchanged. Follow-up in the report.
+  retried charge returns it unchanged. The payment engine's recording is not changed here; the follow-up is STA-2916.
 
 ## Out of scope
 
 - A `test:fault` turbo task (the suites run in `test` and `test:int`).
-- Changing the outbox relay's or the payment engine's recording behaviour (R-2, R-3).
+- Changing the payment engine's recording behaviour (R-3).
 - Latency faults; timeouts are covered by the existing worker timeout test.
 
 ## Assumptions
@@ -186,7 +196,11 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-27 · CTO review fixes (Claude, STA-2841 session): FR-005 and R-2 contradicted each other (the suites claimed
+  no dead letter while the relay still dead-lettered a delivered message whose delete kept failing). The relay now
+  records a delivery the way the queue worker records an attempt: a failed delete fails the tick and counts no attempt
+  (FR-007, EC-06, AC-003 changed, R-2 resolved, T011); the unit test that pinned `attempts: 1` is replaced. What
+  remains of R-2 is filed as STA-2915 and R-3 as STA-2916. The queue AGENTS.md bullet the first pass split is joined again.
 
 ## Status history
 
@@ -195,3 +209,4 @@ None.
 - 2026-11-26 · Clarified → Planned · Claude (STA-2841 session) · plan.md
 - 2026-11-26 · Planned → Tasked · Claude (STA-2841 session) · tasks.md
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2841 session) · T001 to T009 committed on the branch
+- 2026-11-27 · Implementing (amended) · Claude (STA-2841 session) · CTO review fixes: FR-007, EC-06, AC-003, R-2, T011

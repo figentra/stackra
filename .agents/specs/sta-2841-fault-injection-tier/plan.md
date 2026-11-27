@@ -54,6 +54,7 @@ outcome outside the attempt's `try`.
 - **P-002**: for every `skip` ≥ 0 and `times` ≥ 1, the trigger fails row writes `skip + 1` to `skip + times` and passes every other — Validates: FR-002
 - **P-003**: for every job, a store error while recording a finished attempt leaves no retry, no dead letter and no `onDeadLetter` call — Validates: FR-003
 - **P-004**: under every injected fault, the provider or listener acts at most once per job, message or reference, and no work is lost — Validates: FR-004, FR-005, FR-006
+- **P-005**: for every number of failed deletes of a delivered outbox message, the message keeps zero attempts, is never dead-lettered, and is delivered once the store answers — Validates: FR-007
 
 ## Architecture overview
 
@@ -99,7 +100,9 @@ packages/runtime/queue/
     └── __tests__/queue-worker.service.fault{,.int}.test.ts
 packages/runtime/outbox/
 ├── AGENTS.md
-└── src/node/services/__tests__/outbox-relay.service.fault{,.int}.test.ts
+└── src/node/services/
+    ├── outbox-relay.service.ts
+    └── __tests__/outbox-relay.service.fault{,.int}.test.ts
 packages/commerce/payments/
 ├── AGENTS.md
 └── src/
@@ -153,7 +156,7 @@ isolation, so the faults strike the same writes a deployed service makes.
   "…removes the job and loses the answer…") and `queue-worker.service.fault.int.test.ts` ("fails the drain when the
   delete of a finished job fails…"). Reverting the worker fix fails all three.
 - AC-002: "calls a provider that lost its answer again under the same Idempotency-Key".
-- AC-003: `outbox-relay.service.fault.test.ts` and `.fault.int.test.ts` (delete failure republished, inbox runs once).
+- AC-003: `outbox-relay.service.fault.test.ts` and `.fault.int.test.ts` (a delete failure fails the tick, counts no attempt and is republished; the inbox runs once).
 - AC-004: `payment.service.fault.test.ts` and `postgres-payment-records.driver.fault.int.test.ts`.
 - AC-005: the kit's unit tests and `index.test.ts`.
 
@@ -164,8 +167,8 @@ and `pnpm test:int`.
 
 ## Delegation and risk plan
 
-One session, one branch. Follow-ups: spec R-2 (outbox delete failure counts as an attempt) and R-3 (a pending token
-charge after an unsaved answer).
+One session, one branch. R-2 (an outbox delete failure counted as an attempt) is fixed in the branch after the CTO
+review, with its remainder filed as STA-2915; R-3 (a pending token charge after an unsaved answer) is STA-2916.
 
 ## ADRs
 

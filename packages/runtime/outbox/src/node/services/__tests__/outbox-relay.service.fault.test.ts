@@ -5,9 +5,10 @@
  *          outbox store. A transport that fails before delivering keeps the message, backs it off and delivers it once
  *          it answers. A transport that delivers and loses its answer makes the relay publish again under the same id,
  *          and the inbox runs the listener once. A store that cannot delete a delivered message (or deletes it and
- *          loses its answer) makes the relay publish it again, and the listener still runs once. A store that cannot
- *          claim, or cannot record a retry, fails the tick and loses nothing: the message is delivered on a later tick.
- *          Nothing is dead-lettered by any of these faults.
+ *          loses its answer) fails the tick and counts no attempt; the relay publishes it again on a later tick and the
+ *          listener still runs once, however often the delete fails. A store that cannot claim, or cannot record a
+ *          retry, fails the tick and loses nothing: the message is delivered on a later tick. Nothing is dead-lettered
+ *          by any of these faults. A failed cross-app fan-out is still a failed delivery, counted as an attempt.
  * Boundary: test only; the memory outbox, change feed, inbox and lock drivers, `injectFaults` around the publisher
  *           and the outbox store, a clock a test moves, and a stand-in database that runs the work. The database faults
  *           of the same paths are in `outbox-relay.service.fault.int.test.ts`.
@@ -36,6 +37,7 @@ import { MemoryOutboxDriver } from "#core/drivers/memory-outbox.driver";
 import { registerEventNames } from "#core/functions/register-event-names.function";
 import { InboxEventPublisherDriver } from "#node/drivers/inbox-event-publisher.driver";
 import { InboxService } from "#node/services/inbox.service";
+import { CrossAppFanOut } from "#node/services/cross-app-fan-out.service";
 import { OutboxRelayService } from "#node/services/outbox-relay.service";
 
 const NOON = new Date(Date.UTC(2026, 10, 26, 12));
@@ -82,6 +84,7 @@ function issued(id: OutboxMessage["id"], invoiceId: string): OutboxMessage {
 function setup(
   storeFaults: readonly FaultRule<keyof MemoryOutboxDriver & string>[] = [],
   transportFaults: readonly FaultRule<keyof InboxEventPublisherDriver & string>[] = [],
+  bindings: readonly (readonly [AnyClass, object])[] = [],
 ) {
   let now = NOON;
   const clock = { now: () => new Date(now) } as Clock;
@@ -105,7 +108,7 @@ function setup(
     clock,
     buildConfig(OutboxConfig, { values: { batchWindowSeconds: 0 } }),
   );
-  const bound = new Map<AnyClass, object>();
+  const bound = new Map<AnyClass, object>(bindings);
   const resolver: Resolver = {
     has: (type) => bound.has(type),
     get: <T extends object>(type: AnyClass<T>) => bound.get(type) as T,
@@ -162,25 +165,61 @@ describe("OutboxRelayService under injected faults", () => {
     expect(real.stored()).toEqual([]);
   });
 
-  it("publishes again when the store cannot delete a delivered message, and the listener runs once", async () => {
-    const { relay, real, store, listener, at } = setup([{ method: "remove" }]);
+  it("fails the tick when the store cannot delete a delivered message, counts no attempt, and the listener runs once", async () => {
+    const { relay, real, store, listener } = setup([{ method: "remove" }]);
     await real.write([issued("evt_A", "inv_1")]);
-    await relay.relay();
+    await expect(relay.relay()).rejects.toBeInstanceOf(InjectedFaultError);
     expect(listener.sent).toEqual(["inv_1"]);
-    expect(real.stored()).toMatchObject([{ id: "evt_A", attempts: 1 }]);
-    at(LATER);
-    await relay.relay();
+    // the delivery was not recorded as a failure: still due at once, no attempt counted, nothing dead
+    expect(real.stored()).toMatchObject([{ id: "evt_A", attempts: 0, availableAt: NOON }]);
+    expect(real.stored()[0]?.deadAt).toBeUndefined();
+    await expect(relay.relay()).resolves.toBe(1);
     expect(store.callsOf("remove")).toHaveLength(2);
     expect(listener.sent).toEqual(["inv_1"]);
     expect(real.stored()).toEqual([]);
   });
 
+  it("never dead-letters a delivered message whose delete keeps failing", async () => {
+    const { relay, real, store, listener } = setup([{ method: "remove", calls: "every" }]);
+    await real.write([issued("evt_A", "inv_1")]);
+    // more ticks than the relay's attempts: a store fault is never the message's own failure
+    for (let tick = 0; tick < 12; tick += 1)
+      // oxlint-disable-next-line no-await-in-loop -- each tick runs after the one before failed
+      await expect(relay.relay()).rejects.toBeInstanceOf(InjectedFaultError);
+    expect(real.stored()).toMatchObject([{ id: "evt_A", attempts: 0 }]);
+    expect(real.stored()[0]?.deadAt).toBeUndefined();
+    store.heal();
+    await expect(relay.relay()).resolves.toBe(1);
+    expect(listener.sent).toEqual(["inv_1"]);
+    expect(real.stored()).toEqual([]);
+  });
+
+  it("still counts a failed cross-app fan-out as a failed delivery, and keeps the message", async () => {
+    const fanOut = {
+      fanOut: async () => {
+        throw new Error("the deliveries table refused the write");
+      },
+    };
+    const { relay, real, store, listener } = setup([], [], [[CrossAppFanOut, fanOut]]);
+    await real.write([issued("evt_A", "inv_1")]);
+    await expect(relay.relay()).resolves.toBe(1);
+    expect(listener.sent).toEqual(["inv_1"]);
+    expect(store.callsOf("remove")).toEqual([]);
+    expect(real.stored()).toMatchObject([
+      {
+        id: "evt_A",
+        attempts: 1,
+        lastError: { message: "the deliveries table refused the write" },
+      },
+    ]);
+  });
+
   it("keeps no message and runs the listener once when the store deletes and loses the answer", async () => {
-    const { relay, real, listener, at } = setup([{ method: "remove", when: "after" }]);
+    const { relay, real, listener } = setup([{ method: "remove", when: "after" }]);
     await real.write([issued("evt_A", "inv_1"), issued("evt_B", "inv_2")]);
-    await relay.relay();
-    at(LATER);
-    await relay.relay();
+    await expect(relay.relay()).rejects.toBeInstanceOf(InjectedFaultError);
+    expect(real.stored()).toMatchObject([{ id: "evt_B", attempts: 0 }]);
+    await expect(relay.relay()).resolves.toBe(1);
     expect(listener.sent).toEqual(["inv_1", "inv_2"]);
     expect(real.stored()).toEqual([]);
   });

@@ -34,4 +34,5 @@ description: "Tasks for STA-2841: the fault-injection tier for the queue, the ou
 ## Phase 4: Polish
 
 - [x] T009 Document the kit, the suites and the worker rule in `packages/developer/testing/README.md`, the four `AGENTS.md` files, `apps/docs/src/docs/standards/testing-by-kind.mdx` and `.changeset/fault-injection-tier.md` — covers: SC-001, SC-002, SC-003, AC-001, AC-005 — route: steward-docs — deps: T008
+- [x] T011 [US2] Test first, then record an outbox delivery after the delivery's `try`: a failed delete fails the tick and counts no attempt, a failed fan-out still fails the delivery, in `packages/runtime/outbox/src/node/services/outbox-relay.service.ts`, its fault suites, `packages/runtime/outbox/AGENTS.md` and `.changeset/fault-injection-tier.md` (CTO review) — covers: FR-005, FR-007, P-005, EC-06, AC-003 — route: package — deps: T007
 - [ ] T010 Run the four packages' tests, typecheck, oxlint and oxfmt, then `pnpm verify` — covers: SC-001, SC-002, SC-003, SC-004, AC-001, AC-002, AC-003, AC-004, AC-005 — route: verify-fix — deps: T009
