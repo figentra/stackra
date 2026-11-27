@@ -4,11 +4,11 @@
 
 **Created**: 2026-11-26
 
-**Status**: Tasked
+**Status**: Implementing
 
 **Tier**: feature
 
-**Approver**: leader (technical-only stop, under the owner's delegation)
+**Approver**: CTO (Idris), whose verdict of 2026-11-26 sent stackra#1094 back
 
 **Linear**: STA-669
 
@@ -18,6 +18,11 @@
 `store` and `temporaryUrl` never called the `FileScanner` port, so a file one user uploaded could reach a served path
 (`public/…`, `private/…`) and be linked to others without a malware scan. This spec puts the scan gate in front of
 every file `MediaLibrary` places or links, and records the public contract that changes with it.
+
+The CTO's verdict on stackra#1094 (2026-11-26) asked for two more changes, built here: the `media.scanner` default
+`memory` marks every file but the EICAR test file clean, so it is refused outside `dev` and `test` at boot through the
+one environment reader of STA-2844 (merged as stackra#1166); and the `guard_duty` scanner checks the object's version or
+ETag, so GuardDuty's clean tag on other bytes than the ones the library places never counts.
 
 ### Sources
 
@@ -29,7 +34,13 @@ every file `MediaLibrary` places or links, and records the public contract that 
 - ADR 0222 (decision 2 and the consequence "an unscanned file is never served"), ADR 0354 (the scanner per cloud), ADR
   0140 (error envelope and kinds), ADR 0294 (decisions 16, 17 and 20), ADR 0465 (one object-storage port)
 - The review notes on stackra-inc/stackra#1094 (the `memory` scanner default, the GuardDuty bucket wiring)
-- FR-001 to FR-008 come from these sources; nothing was asked of the owner.
+- The CTO's verdict of 2026-11-26 on stackra#1094 (refuse the memory scanner outside dev and test through the STA-2844
+  reader; for `guard_duty`, check the object's version or ETag)
+- `packages/data/media/src/config/media.config.ts`, `src/core/constants/media-config-schema.constant.ts`,
+  `src/core/schemas/media-options.schema.ts` (the boot refusal), `src/node/drivers/guard-duty-file-scanner.driver.ts`
+  (the pinned verdict); `@stackra/config`'s `readEnvironment`, `isDeployedEnvironment` and `StackraEnvironment`
+  (STA-2844); ADR 0266 (decision 2) and ADR 0296 (amendment 2026-11-26)
+- FR-001 to FR-011 come from these sources; nothing was asked of the owner.
 
 ## Impact
 
@@ -43,23 +54,34 @@ every file `MediaLibrary` places or links, and records the public contract that 
   fourth argument; `MediaFile` gains the required `scan: ScanVerdict`; `UploadRejectedError.reason` widens with
   `malware` and `unscannable`; `temporaryUrl` becomes `async`, accepts `Pick<MediaFile, "id" | "path">` plus an optional
   `scan`, and can now refuse; new exported errors `FileBlockedError` (`file_blocked`) and `ScanPendingError`
-  (`scan_pending`); the manifest lists both errors and the fourth service dependency
+  (`scan_pending`); the manifest lists both errors and the fourth service dependency. `MediaConfig` (and
+  `MediaOptions`, `MediaConfig$`) gains `environment: StackraEnvironment`, mapped to `STACKRA_ENVIRONMENT` and
+  runtime-only (a new `env` row in the manifest); a deployed environment (`preview`, `staging`, `production`) with
+  `scanner: memory` now fails boot with `ConfigInvalidError`. The `guard_duty` scanner sends `HeadObject` and
+  `GetObject` besides `GetObjectTagging`, so its role needs `s3:GetObject` (and `s3:GetObjectVersion`,
+  `s3:GetObjectVersionTagging` on a versioned bucket)
 - **Cross-service events**: none
 - **Tenancy and data**: no table; the staged upload record `uploads/<id>.json` gains an optional `retainUntil` (read
   back tolerantly, so records written before the change still parse)
 - **Security and privacy**: closes a fail-open: an unscanned or infected file is no longer placed at a served path or
-  linked; error details never carry the threat name, the path or the file
+  linked; error details never carry the threat name, the path or the file. Closes two more: a deployment can no longer
+  run the memory scanner that calls everything clean, and GuardDuty's clean tag on a later write of the key (a second
+  `PUT` through the still-valid signed URL) no longer clears the bytes the claim read
 - **Secrets**: none
 - **ADR needed**: no (implements ADR 0222 decision 2 and its consequence as written; ADR 0222's Enforcement line is
   updated from "planned")
-- **New dependencies**: `testcontainers` (dev only, from the catalog) for the clamd integration test
-- **Deploy modes**: same in all three; the scanner differs per environment through `media.scanner` (ADR 0354)
+- **New dependencies**: `testcontainers` (dev only, from the catalog) for the clamd and S3 integration tests; the
+  `localstack/localstack:4.4.0` test image (an S3 API for the `guard_duty` integration test, no account)
+- **Deploy modes**: same in all three; the scanner differs per environment through `media.scanner` (ADR 0354), and
+  every deployed environment must name `guard_duty` or `clamav` in runway
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none
-- **Docs to update**: packages/data/media/README.md, packages/data/media/AGENTS.md, ADR 0222 Enforcement, the changeset
+- **Docs to update**: packages/data/media/README.md (the gate, the memory refusal, the pinned GuardDuty verdict and its
+  permissions), packages/data/media/AGENTS.md, ADR 0222 Enforcement, the changeset (upgrade step: set
+  `config.media.scanner` per deployed environment)
 - **Lane**: full
-- **Change risk**: R3 (a security control on file serving, and a constructor and type change every hand-built caller
-  must follow)
+- **Change risk**: R3 (a security control on file serving, a constructor and type change every hand-built caller
+  must follow, and a boot that refuses what it used to accept)
 
 ## Glossary
 
@@ -125,6 +147,46 @@ verdict (stored before the gate) is scanned first.
 3. **Given** a record without `scan` whose file is infected, **When** linked, **Then** `FileBlockedError` (`malware`)
    is raised and the file is left in place.
 
+### User Story 4 - A deployment never runs the memory scanner (Priority: P1)
+
+An operator deploys a service with `@stackra/media` to staging without setting `config.media.scanner`. Boot fails and
+names the field, instead of the memory scanner calling every upload clean.
+
+**Why this priority**: the memory scanner's `clean` is stored on the record, so files it passed are served for good.
+
+**Independent Test**: `media.config.test.ts` and `media-config-schema.constant.test.ts` (the refusal cases).
+
+**Acceptance Scenarios**:
+
+1. **Given** `STACKRA_ENVIRONMENT` is `preview`, `staging` or `production` in the runtime and `media.scanner` is
+   `memory`, **When** `MediaConfig` is built at boot, **Then** it fails with `ConfigInvalidError` on `scanner`, naming
+   the environment and `config.media.scanner`.
+2. **Given** the same environment with `guard_duty` or `clamav`, **When** built, **Then** it boots.
+3. **Given** `dev`, `test` or no variable, **When** built with `memory`, **Then** it boots.
+4. **Given** a runway or test value for `environment`, **When** built, **Then** it fails: the environment comes from the
+   runtime only (STA-2844).
+
+### User Story 5 - GuardDuty's verdict covers the bytes placed (Priority: P1)
+
+A client uploads one file, the service claims it, and before the scan the client puts other bytes through the still
+valid signed URL, which GuardDuty tags clean. The claim places nothing; claimed again, it places the bytes GuardDuty
+tagged.
+
+**Why this priority**: GuardDuty tags an object version, while the claim holds the bytes it read earlier; reading only
+the latest tag would clear unscanned bytes.
+
+**Independent Test**: `guard-duty-file-scanner.driver.test.ts` and, on a real S3 API (LocalStack),
+`guard-duty-file-scanner.driver.int.test.ts`.
+
+**Acceptance Scenarios**:
+
+1. **Given** a versioned bucket and a clean tag on the version the head sees, **When** that version holds the caller's
+   bytes, **Then** the verdict is `clean`.
+2. **Given** a clean tag on a later version (or, unversioned, on an object whose bytes differ from the caller's),
+   **When** scanned, **Then** the verdict is `pending`.
+3. **Given** an unversioned key written again between the head and the read-back (`If-Match` fails, or the same ETag
+   with another last write), **When** scanned, **Then** the verdict is `pending`.
+
 ### Edge Cases
 
 - **EC-01**: The object is replaced through the still-valid signed URL while the scan runs: the claim writes the bytes
@@ -134,6 +196,9 @@ verdict (stored before the gate) is scanned first.
 - **EC-03**: A pending `store` whose scan outlasts `uploadExpiresIn`: its later claim is refused `UploadExpiredError`
   like any expired upload, and the staged bytes are cleaned by the bucket's `uploads/` lifecycle.
 - **EC-04**: An upload record written before this change (no `retainUntil`) still parses.
+- **EC-05**: A misspelt `STACKRA_ENVIRONMENT` (`prod`) fails boot on `environment`; it never reads as `dev`.
+- **EC-06**: An unversioned key written again with identical bytes keeps its ETag; the read-back's last write differs,
+  so the verdict is `pending` (one more claim), never a tag of an object the head did not see.
 
 ## Requirements
 
@@ -155,6 +220,14 @@ verdict (stored before the gate) is scanned first.
 - **FR-008**: WHEN `temporaryUrl` is asked for a record whose `scan` is not `clean` THE `MediaLibrary` SHALL scan the
   file first and link it only when clean, raising `ScanPendingError` for `pending` and `FileBlockedError` for `infected`
   or `failed`.
+
+- **FR-009**: THE `MediaConfig` SHALL carry `environment`, mapped to `STACKRA_ENVIRONMENT` and typed by the closed
+  `StackraEnvironment` list of `@stackra/config`, so its value comes from the runtime only (STA-2844).
+- **FR-010**: IF `media.scanner` is `memory` and `isDeployedEnvironment(environment)` is true THEN THE `MediaConfig`
+  schema SHALL refuse the configuration with an issue on `scanner`, so boot fails.
+- **FR-011**: WHEN the `guard_duty` scanner reads a `NO_THREATS_FOUND` tag THE driver SHALL call the file `clean` only
+  if the tagged object, pinned by `VersionId` or else by `If-Match` on its ETag and the same last write, holds exactly
+  the caller's bytes, and SHALL answer `pending` otherwise.
 
 ### Key Entities
 
@@ -180,12 +253,21 @@ verdict (stored before the gate) is scanned first.
 - **AC-008**: WHEN the `clamav` scanner runs against a real clamd THE gate SHALL claim a clean upload and refuse an
   EICAR one before it reaches a served path.
 
+- **AC-009**: IF a deployed environment keeps `media.scanner: memory` THEN THE `MediaConfig` SHALL fail to build
+  with `ConfigInvalidError` on `scanner` (`STACKRA_ENVIRONMENT` `preview`, `staging` or `production`).
+- **AC-010**: IF a value sets `MediaConfig.environment` THEN THE `MediaConfig` SHALL fail to build, and a name outside
+  the closed list SHALL fail it too.
+- **AC-011**: WHEN a clean tag sits on other bytes than the caller's THE `guard_duty` scanner SHALL answer `pending`,
+  so `MediaLibrary.claim` places nothing.
+
 ## Success Criteria
 
 - **SC-001**: The scan-gate cases in `media-library.service.test.ts` pass and fail when the gate is reverted —
   verified by: unit
 - **SC-002**: The clamd integration suite passes on a Testcontainers `clamav/clamav:1.4` — verified by: integration
 - **SC-003**: The touched members' typecheck, lint, format and tests pass on the box — verified by: manual (box log)
+- **SC-004**: The refusal cases fail when the schema's refinement is reverted, and the `guard_duty` cases (unit and
+  LocalStack) fail on the driver as it was — verified by: unit and integration
 
 ## Compatibility and migration
 
@@ -196,11 +278,16 @@ verdict (stored before the gate) is scanned first.
 - Callers of `temporaryUrl` already await it; they now handle `ScanPendingError` (retry later) and `FileBlockedError`.
 - An exhaustive `switch` over `UploadRejectedError.reason` adds `malware` and `unscannable`.
 - The CDN must serve `public/*` only, never `uploads/*` (already the ADR 0222 key layout).
+- Before upgrading, set `config.media.scanner` to `guard_duty` or `clamav` in runway for every deployed environment;
+  until then the deployment's boot fails on `scanner`. Give the `guard_duty` role `s3:GetObject` (and the version
+  permissions on a versioned bucket).
 
 ## Risks
 
-- `media.scanner` defaults to `memory`, which detects only EICAR; outside tests it would mark everything clean and that
-  verdict is stored. Follow-up: refuse `memory` outside test and local, or re-scan memory-only verdicts.
+- Files a deployment's memory scanner already passed before this change keep their stored `clean`; re-scanning them
+  is the owning service's job (the refusal stops new ones).
+- In an unversioned bucket the pin is the ETag and the last write (one-second resolution): a tag read can only belong
+  to another write if GuardDuty scanned and tagged it between two requests; turn versioning on to pin by version.
 - The `guard_duty` driver depends on the infrastructure package turning malware protection on for the files bucket;
   that wiring is a follow-up.
 - `claim` now reads the whole staged file into memory (bounded by the bucket's `maxBytes`), and linking a pre-gate
@@ -218,7 +305,8 @@ verdict (stored before the gate) is scanned first.
 
 ## Amendments
 
-None.
+- 2026-11-27: the CTO's verdict of 2026-11-26 adds FR-009 to FR-011, AC-009 to AC-011, User Stories 4 and 5, EC-05,
+  EC-06 and SC-004; the memory-default risk is closed by FR-010.
 
 ## Status history
 
@@ -226,3 +314,5 @@ None.
 - 2026-11-26 → Clarified (no open question: every answer comes from ADR 0222, ADR 0354 and the code)
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md; built on the same branch)
+- 2026-11-27 → Implementing (built in this branch, with the CTO's changes of 2026-11-26 on the STA-2844 reader;
+  awaiting the CTO's approval)

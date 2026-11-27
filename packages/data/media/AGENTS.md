@@ -49,6 +49,13 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
   `FileScanner` called it `clean` while it waited under `uploads/`, and `temporaryUrl` links only a `clean` record
   (scanning one without a verdict first). Never add a path that places, links or returns a URL of a file before that,
   and never return a threat name in a refusal. `pending` keeps the upload and is retryable (`ScanPendingError`).
+- `media.scanner: memory` (the default) is for `dev` and `test` only: `MEDIA_CONFIG_SCHEMA` refuses it when
+  `MediaConfig.environment` is deployed (`isDeployedEnvironment` of @stackra/config). That field is mapped to
+  `STACKRA_ENVIRONMENT` and read from the runtime only (STA-2844); never give it a default other than `dev`, a value
+  from another source, or an environment list of this package's own.
+- `guard_duty` calls a file `clean` only when the tagged object is the caller's bytes (pinned by `VersionId`, else
+  `If-Match` on the ETag and the same last write, then compared). Never read the tag of "the latest object" alone: the
+  key can be written again through a still-valid signed URL while a claim runs (STA-669).
 - Gen binds `MediaLibrary` with `FileSystem`, `MediaConfig`, `Clock` and `FileScanner` (its `PLATFORM_BINDINGS` row,
   ADR 0465). Its `Uploader` and `FileScanner` candidates come from this package's manifest (STA-1297) and
   `FileSystem`'s from `@stackra/filesystem`'s: `memory` for each, so `.useDrivers("memory")` binds it. A host that injects `MediaLibrary`

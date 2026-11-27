@@ -10,13 +10,16 @@ Inject the `FileScanner` port into `MediaLibrary` and call it on every file befo
 `claim` and `store` scan the bytes while they wait under `uploads/` and write those same bytes to the bucket path only
 on a `clean` verdict; `infected` and `failed` delete and refuse, `pending` keeps the upload and raises a retryable
 error. `MediaFile` records the verdict, and `temporaryUrl` scans any record without a clean one before linking it.
+`MediaConfig` gains the runtime-only `environment` (STA-2844's reader), and its schema refuses the `memory` scanner in
+a deployed environment, so boot fails. The `guard_duty` driver pins GuardDuty's tag to the object it heads and calls
+it clean only when that object is the caller's bytes.
 
 ## Technical Context
 
 - **Language**: TypeScript (ESM), Node 24 (`mise.toml`)
 - **Members**: `packages/data/media`, `packages/developer/gen`, `packages/design-system/branding` (tests only)
 - **Testing**: vitest in `src/**/__tests__/` (ADR 0022); an integration tier (`vitest.int.config.ts`, `test:int`) on
-  Testcontainers clamd
+  Testcontainers clamd and a Testcontainers LocalStack (an S3 API) for `guard_duty`
 - **Storage**: the `FileSystem` disk; no database
 - **Runtime target**: a library used by services
 
@@ -54,6 +57,8 @@ error. `MediaFile` records the verdict, and `temporaryUrl` scans any record with
 - **P-005**: The bytes at the bucket path equal the bytes the scanner was given — Validates: FR-006
 - **P-006**: `temporaryUrl` returns a URL only for a file whose recorded or fresh verdict is `clean` — Validates: FR-008
 - **P-007**: Every `MediaFile` that `claim` or `store` returns has `scan` equal to `clean` — Validates: FR-007
+- **P-008**: `MediaConfig` takes `scanner: memory` only in `dev` or `test`, and `environment` from no value — Validates: FR-009, FR-010
+- **P-009**: `guard_duty` is `clean` only when the pinned object equals the caller's bytes, else `pending` — Validates: FR-011
 
 ## Architecture overview
 
@@ -73,6 +78,11 @@ adds the token so generated wiring resolves the configured scanner.
   manifest.
 - `UploadRejectedError` (media): `reason` gains `malware` and `unscannable`.
 - `PLATFORM_BINDINGS` (gen): `@stackra/media#MediaLibrary` lists `FileScanner` fourth.
+- `MediaConfig`, `MediaOptions`, `MEDIA_CONFIG_SCHEMA` (media): `environment` mapped to `STACKRA_ENVIRONMENT`; a
+  `superRefine` refuses `scanner: memory` where `isDeployedEnvironment` is true (the same shape as `StoresConfig` of
+  @stackra/actions); the manifest's `env` row.
+- `GuardDutyFileScannerDriver` (media): `HeadObject`, then `GetObjectTagging` of that version, then for a clean tag
+  `GetObject` by `VersionId` (or `If-Match` and the same last write) compared with `read()`; a `412` is `pending`.
 
 ## Files and folders
 
@@ -94,7 +104,16 @@ packages/data/media/
     │   ├── errors/upload-rejected.error.ts
     │   ├── services/media-library.service.ts
     │   └── types/media-file.type.ts
+    ├── config/media.config.ts
+    ├── config/__tests__/media.config.test.ts
+    ├── core/constants/media-config-schema.constant.ts
+    ├── core/constants/__tests__/media-config-schema.constant.test.ts
+    ├── core/drivers/memory-file-scanner.driver.ts
+    ├── core/schemas/media-options.schema.ts
     ├── node/actions/__tests__/create-upload.action.test.ts
+    ├── node/drivers/guard-duty-file-scanner.driver.ts
+    ├── node/drivers/__tests__/guard-duty-file-scanner.driver.test.ts
+    ├── node/drivers/__tests__/guard-duty-file-scanner.driver.int.test.ts
     ├── node/drivers/__tests__/clamav-file-scanner.driver.int.test.ts
     └── testing/functions/__tests__/fake-upload.function.test.ts
 packages/developer/gen/src/core/
@@ -110,6 +129,9 @@ packages/design-system/branding/src/node/
 - `index.ts`, `stackra.manifest.json`: exports, errors, service deps; `file-scanner.port.ts`: docblock purpose
 - `vitest.int.config.ts`, `package.json`: the integration tier (`test:int`, `testcontainers`)
 - `platform-bindings.constant.ts`: the binding; the remaining files are tests and docs
+- `media.config.ts`, `media-config-schema.constant.ts`, `media-options.schema.ts`: the runtime-only environment and
+  the memory refusal; `memory-file-scanner.driver.ts`: its boundary; `guard-duty-file-scanner.driver.ts`: the pinned
+  verdict
 
 ## Data models and migrations
 
@@ -121,10 +143,14 @@ none (the `uploads/<id>.json` record gains an optional field, read tolerantly)
   hand-built callers).
 - `MediaFile.scan: ScanVerdict` (required).
 - `temporaryUrl(file: Pick<MediaFile, "id" | "path"> & { readonly scan?: ScanVerdict }, expiresIn: Duration):
-  Promise<string>` (now `async`; may raise `ScanPendingError`, `FileBlockedError`).
+Promise<string>` (now `async`; may raise `ScanPendingError`, `FileBlockedError`).
 - `UploadRejectedError.reason`: `"media_type" | "size" | "content" | "malware" | "unscannable"`.
 - Manifest: errors `file_blocked` (`failed_precondition`) and `scan_pending` (`unavailable`); `MediaLibrary` deps gain
   `FileScanner` from `@stackra/media/contracts`.
+- `MediaConfig.environment: StackraEnvironment` (default `dev`), env `STACKRA_ENVIRONMENT`, runtime-only; the
+  manifest's `env` row (`kind: config`, `type: enum`, the five values).
+- `MediaConfig$` refuses `{ scanner: "memory" }` with a deployed `environment` (issue path `scanner`).
+- `GuardDutyFileScannerDriver.scan(path, read)` now calls `read` for a clean tag and needs `s3:GetObject`.
 - Changeset: `@stackra/media` minor, `@stackra/gen` patch.
 
 ## Error handling
@@ -139,8 +165,11 @@ none (the `uploads/<id>.json` record gains an optional field, read tolerantly)
 
 The gate enforces ADR 0222's "an unscanned file is never served": `uploads/*` is never served, and a file crosses to
 `public/` or `private/` only on `clean`. Writing the scanned bytes instead of moving the staged object closes a
-time-of-check window through the still-valid signed URL. No permission or tenant change. Residual risks (the `memory`
-default, GuardDuty bucket wiring) are named in the spec's Risks and left to follow-ups.
+time-of-check window through the still-valid signed URL. The same window on the GuardDuty side is closed by pinning
+the tag to the version (or ETag and last write) and comparing that object with the bytes placed. The `memory` scanner is
+refused in every deployed environment, judged by the one reader from the runtime only, so runway cannot relax it. No
+permission or tenant change. Residual risks (GuardDuty bucket wiring, unversioned buckets) are named in the spec's
+Risks.
 
 ## Testing strategy
 
@@ -152,16 +181,25 @@ default, GuardDuty bucket wiring) are named in the spec's Risks and left to foll
 - AC-008: `packages/data/media/src/node/drivers/__tests__/clamav-file-scanner.driver.int.test.ts` on Testcontainers
   `clamav/clamav:1.4` (`pnpm --filter @stackra/media test:int`).
 - Error shape: `file-blocked.error.test.ts`, `scan-pending.error.test.ts`; exports: `core/__tests__/index.test.ts`.
+- AC-009, AC-010: `packages/data/media/src/config/__tests__/media.config.test.ts` and
+  `src/core/constants/__tests__/media-config-schema.constant.test.ts`; they fail with the refinement reverted.
+- AC-011: `packages/data/media/src/node/drivers/__tests__/guard-duty-file-scanner.driver.test.ts` (versioned,
+  unversioned, `412`, same ETag with another last write, size mismatch) and
+  `guard-duty-file-scanner.driver.int.test.ts` on Testcontainers `localstack/localstack:4.4.0`, including a
+  `MediaLibrary.claim` over the `s3` disk; both fail on the driver as it was.
 
 ## Rollout
 
 Ships with the next `@stackra/media` minor. Services regenerate wiring with `stackra gen`; hand-built callers follow
-the changeset. Records stored earlier are scanned on their first link, so no backfill job is needed.
+the changeset. Records stored earlier are scanned on their first link, so no backfill job is needed. Before the
+upgrade, every deployed environment sets `config.media.scanner` in runway (else boot fails on `scanner`), and the
+`guard_duty` role gains `s3:GetObject`.
 
 ## ADRs
 
-ADR 0222 (decision 2 and its consequence), ADR 0354, ADR 0140, ADR 0294 (decisions 16, 17, 20), ADR 0465, all
-Accepted. No draft opened.
+ADR 0222 (decision 2 and its consequence), ADR 0354, ADR 0140, ADR 0294 (decisions 16, 17, 20), ADR 0465, ADR 0266
+(decision 2: a memory driver never reaches a deployment), ADR 0296 (amendment 2026-11-26: the environment comes from the
+runtime only, STA-2844), all Accepted. No draft opened.
 
 ## Docs
 

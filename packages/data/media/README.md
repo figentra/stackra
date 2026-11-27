@@ -115,7 +115,10 @@ serves:
 | scanner unreachable | keeps it and rethrows                                                 | deletes it and rethrows                                                                                     |
 
 `pending` is GuardDuty's answer before it has tagged the object, so with `guard_duty` a claim that comes straight after
-the upload, and every `store`, can see it; retry after a few seconds (a queue job's backoff does). A `store` that waits
+the upload, and every `store`, can see it; retry after a few seconds (a queue job's backoff does). `guard_duty` also
+answers `pending` when the key was written again under the claim (a second `PUT` through the still-valid signed URL):
+its clean tag then belongs to other bytes than the ones the claim read, so nothing is placed, and the next claim reads
+the object anew and places it once GuardDuty has tagged those bytes. A `store` that waits
 keeps its `retainUntil` in the upload record, and the claim writes the file with it. The upload still expires after
 `uploadExpiresIn`.
 
@@ -145,7 +148,7 @@ config:
   media:
     uploader: http # memory | http (an app's setting)
     uploadExpiresIn: PT1H # at most seven days
-    scanner: guard_duty # memory | clamav | guard_duty
+    scanner: guard_duty # memory | clamav | guard_duty; memory only in dev and test
     clamav: { host: clamd.internal, port: 3310, maxBytes: 26214400 } # the clamav scanner only
     ocr: # the paddle_ocr text extractor only; the service in this region
       endpoint: http://ocr.ksa.internal/ocr
@@ -161,6 +164,13 @@ config:
       region: auto
       endpoint: https://<account>.r2.cloudflarestorage.com
 ```
+
+`memory` is the default scanner and finds only the EICAR test file, so a deployed environment refuses it:
+when the running environment (`STACKRA_ENVIRONMENT`, read from the runtime only by `readEnvironment` of
+@stackra/config, or settled by the generated Encore `environment.ts`) is `preview`, `staging` or `production`, boot
+fails with `ConfigInvalidError` on `scanner` until runway sets `config.media.scanner` to `guard_duty` or `clamav` for
+that environment. `MediaConfig.environment` is that variable and nothing else: a runway or test value for it fails boot
+(STA-2844).
 
 No credential value is configuration. The disks use their SDK's default chain (see `@stackra/filesystem`). The C2PA certificate chain and
 its private key (PEM) are the secrets `MEDIA_C2PA_SIGNING_CERTIFICATE` and `MEDIA_C2PA_SIGNING_KEY`, read blind from the
@@ -181,7 +191,12 @@ removes uploads nobody claimed and their records.
 
 `FileScanner` (`./contracts`) scans every file before `MediaLibrary` places or links it (the scan gate above):
 `guard_duty` reads the
-`GuardDutyMalwareScanStatus` tag GuardDuty Malware Protection writes on the object (no tag yet is `pending`),
+`GuardDutyMalwareScanStatus` tag GuardDuty Malware Protection writes on the object (no tag yet is `pending`), pinned
+to the object it heads: the tag of that version (`VersionId` in a versioned bucket), and for a clean tag that object
+read back (by `VersionId`, else `If-Match` on its ETag with the same last write) and compared with the bytes the
+library holds, so a clean tag on other bytes is `pending`, never `clean`. Its role needs `s3:GetObject` and
+`s3:GetObjectTagging` (plus `s3:GetObjectVersion` and `s3:GetObjectVersionTagging` on a versioned bucket; versioning
+pins the verdict exactly),
 `clamav` streams the bytes to clamd (`INSTREAM`) where GuardDuty is not offered (GCP Dammam, a local stack), and
 `memory` finds only the EICAR test file. Verdicts are `clean`, `infected`, `pending` and `failed`.
 
