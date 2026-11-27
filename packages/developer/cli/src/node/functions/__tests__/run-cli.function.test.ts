@@ -2,15 +2,21 @@
  * Stackra file contract:
  * Purpose: unit tests of `runCli` on `@stackra/console`: a legacy command runs byte-identical and exits as before
  *          (usage error 2, failure 1), `--help` and `help <command>` never run a command, an unknown command exits 2
- *          naming the closest, the version, spaced command names, `cli` in the context running another command, and the
- *          list of commands still on passthrough pinned.
+ *          naming the closest, the version, spaced command names, `cli` in the context running another command, the
+ *          list of commands still on passthrough pinned, and a member's own console command run by its name with its
+ *          flags (STA-2888): listed under its member, never over a `stackra` command.
  * Boundary: test only; runs fake commands, never a tool.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5); ADR 0500 (decision 7); STA-1966.
+ * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5); ADR 0500 (decision 7); STA-1966;
+ *                     STA-2888.
  */
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { readCommand } from "@stackra/console";
 import { passthroughCommands } from "@stackra/console/testing";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { RunwayCommand } from "#node/commands/runway.command";
@@ -154,6 +160,93 @@ describe("runCli", () => {
 
   it("names a legacy command by its words joined with a colon", () => {
     expect(readCommand(legacyCommand(spaced, async () => 0, false)).name).toBe("mcp:sync");
+  });
+});
+
+describe("runCli with member commands (STA-2888)", () => {
+  let root = "";
+
+  /** A workspace whose services/orders declares `names` and runs them through a console entry returning 9. */
+  const workspace = (names: readonly string[]): string => {
+    root = mkdtempSync(join(tmpdir(), "stackra-run-cli-"));
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - services/*\n");
+    const orders = join(root, "services", "orders");
+    mkdirSync(join(orders, ".stackra", "entry"), { recursive: true });
+    writeFileSync(join(orders, "package.json"), JSON.stringify({ name: "@acme/service-orders" }));
+    writeFileSync(join(orders, "stackra.config.ts"), "export default defineService({});\n");
+    const rows = names.map((name) => ({
+      name,
+      aliases: [],
+      hidden: false,
+      audit: false,
+      bin: false,
+      class: "Probe",
+      file: "src/probe.command.ts",
+      entry: "core",
+    }));
+    writeFileSync(join(orders, "stackra.manifest.json"), JSON.stringify({ commands: rows }));
+    writeFileSync(
+      join(orders, ".stackra", "entry", "console.ts"),
+      [
+        "export const run = async (argv: readonly string[]): Promise<number> => {",
+        "  (globalThis as { ordersArgv?: unknown }).ordersArgv = [...argv];",
+        "  return 9;",
+        "};",
+        "",
+      ].join("\n"),
+    );
+    return root;
+  };
+
+  const runIn = async (args: readonly string[]) => {
+    const { io, output } = captureIo();
+    const code = await runCli(args, io, { cwd: root, commands });
+    return { code, output: output() };
+  };
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+    delete (globalThis as { ordersArgv?: unknown }).ordersArgv;
+  });
+
+  // @covers sta-2888:FR-001
+  it("runs a member command by its own name with its flags, no console <member> and no --", async () => {
+    workspace(["db:status"]);
+    const { code } = await runIn(["db:status", "--json", "--tenant", "acme"]);
+    expect(code).toBe(9);
+    expect((globalThis as { ordersArgv?: unknown }).ordersArgv).toEqual([
+      "db:status",
+      "--json",
+      "--tenant",
+      "acme",
+    ]);
+  });
+
+  // @covers sta-2888:FR-005
+  it("lists the member commands under their member", async () => {
+    workspace(["db:status", "orders:sync"]);
+    const { code, output } = await runIn([]);
+    expect(code).toBe(0);
+    expect(output).toMatch(
+      /services\/orders\n\s+db:status\s+Member command \(services\/orders\)\n\s+orders:sync/,
+    );
+    expect(output).toContain("echo");
+  });
+
+  // @covers sta-2888:FR-004
+  it("never lets a member command take a stackra command's name", async () => {
+    workspace(["echo", "db:status"]);
+    const { code, output } = await runIn(["echo", "a"]);
+    expect(code).toBe(0);
+    expect(output).toBe('{"loud":false,"positionals":["a"],"rest":[]}\n');
+    expect((globalThis as { ordersArgv?: unknown }).ordersArgv).toBeUndefined();
+  });
+
+  it("still refuses a name no command and no member takes, naming the closest of both", async () => {
+    workspace(["db:status"]);
+    const { code, output } = await runIn(["db:statsu"]);
+    expect(code).toBe(2);
+    expect(output).toContain("db:status");
   });
 });
 
