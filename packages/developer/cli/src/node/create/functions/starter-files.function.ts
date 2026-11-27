@@ -2,13 +2,16 @@
  * Stackra file contract:
  * Purpose: `starterFiles(files, options)`, the files of a new app from a starter's files: the chosen profile's
  *          included paths with its overlays, the rename list applied to every text file, catalog `stackra` pinned to
- *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line in `.npmrc`.
+ *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line in `.npmrc`,
+ *          and the chosen npm scope stored as the root package.json `stackra.scope`, which `stackra new` names the
+ *          app's members from (`memberNaming`).
  *          `stackra.starter.yaml`, `starter/` and `pnpm-lock.yaml` are never written: the install resolves fresh.
  *          Nor is `.infisical.yaml`: it binds the template's own Infisical project, never the app's (STA-2027).
  * Boundary: pure; returns the files and writes nothing. Refuses a manifest that does not match `StarterManifest`, an
- *           unknown profile, and an overlay whose source is missing.
+ *           unknown profile, an overlay whose source is missing, and a root package.json that is not a JSON object.
  * Runtime: node
- * Governing contract: ADR 0515 (decisions 3 to 5); ADR 0453 (decision 10); STA-1952 spec FR-006 and FR-007.
+ * Governing contract: ADR 0515 (decisions 3 to 5); ADR 0453 (decision 10); STA-1952 spec FR-006 and FR-007;
+ *                     STA-2890 (`stackra.scope`).
  */
 import { matchesGlob } from "node:path";
 
@@ -83,12 +86,27 @@ function pinWorkspace(source: string, options: StarterOptions): string {
   return document.toString();
 }
 
+/** The root `package.json` with `stackra.scope` set to the app's scope, other `stackra` keys kept. */
+function storeScope(source: string, scope: string): string {
+  const value: unknown = JSON.parse(source);
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    throw new Error("the starter's package.json is not a JSON object");
+  const pkg = value as Record<string, unknown>;
+  const stackra = pkg["stackra"];
+  pkg["stackra"] = {
+    ...(typeof stackra === "object" && stackra !== null && !Array.isArray(stackra) ? stackra : {}),
+    scope,
+  };
+  return `${JSON.stringify(pkg, null, 2)}\n`;
+}
+
 /**
  * The files of the app.
  *
  * @param files - the starter's files by POSIX path.
  * @param options - the profile, the names and the `@stackra/*` version.
- * @throws Error when the manifest is malformed, the profile unknown or an overlay source missing.
+ * @throws Error when the manifest is malformed, the profile unknown, an overlay source missing or the root
+ *         package.json not a JSON object.
  * @example
  * starterFiles(readStarter("./template"), { profile: "minimal", name: "acme", scope: "@acme", stackraVersion: "0.5.1" });
  */
@@ -128,6 +146,7 @@ export function starterFiles(
     }
     for (const { from, to } of renames) body = body.replaceAll(from, to);
     if (path === "pnpm-workspace.yaml") body = pinWorkspace(body, options);
+    if (path === "package.json") body = storeScope(body, options.scope);
     out.set(path, encoder.encode(body));
   }
   const npmrc = out.has(".npmrc") ? (text(out.get(".npmrc") ?? new Uint8Array()) ?? "") : "";
