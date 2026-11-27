@@ -2,28 +2,22 @@
  * Stackra file contract:
  * Purpose: `runProcess(run, io)`, starts one tool process and resolves with its exit code: with the terminal when
  *          `io.inherit`, otherwise with its output piped into `io`. Every `node_modules/.bin` from the tool's directory
- *          up goes first on `PATH`, so the member's own pinned tools win.
- * Boundary: never uses a shell, so no argument is parsed as shell syntax; never reads or prints a secret. A tool that
- *           cannot start resolves 127 with the reason written to `io.err`. One still running past `run.timeoutMs` gets
- *           SIGTERM (SIGKILL 5 s later) and resolves 124, the `timeout` convention.
+ *          up goes first on `PATH` (`toolEnv`), so the member's own pinned tools win.
+ * Boundary: starts the tool through cross-spawn: elsewhere that is `child_process.spawn` with no shell; on Windows it
+ *           finds the `.cmd` shim a package manager writes (`pnpm.cmd`, `node_modules/.bin/vitest.cmd`) and runs it
+ *           through cmd.exe with every argument escaped, so no argument is parsed as shell syntax on any system. Never
+ *           reads or prints a secret. A tool that cannot start resolves 127 with the reason written to `io.err`. One
+ *           still running past `run.timeoutMs` gets SIGTERM (SIGKILL 5 s later) and resolves 124, the `timeout`
+ *           convention.
  * Runtime: node
- * Governing contract: ADR 0295 (decision 5); POSIX exit status 127 for a command that cannot run.
+ * Governing contract: ADR 0295 (decision 5); POSIX exit status 127 for a command that cannot run; STA-2899 (Windows-
+ *                     safe process runners).
  */
-import { spawn } from "node:child_process";
-import { delimiter, dirname, join } from "node:path";
+import crossSpawn from "cross-spawn";
 
+import { toolEnv } from "#node/functions/tool-env.function";
 import type { CliIo } from "#node/types/cli-io.type";
 import type { ToolRun } from "#node/types/tool-run.type";
-
-/** `PATH` with every `node_modules/.bin` from `cwd` to the filesystem root in front. */
-function pathFrom(cwd: string): string {
-  const bins: string[] = [];
-  for (let folder = cwd; ; folder = dirname(folder)) {
-    bins.push(join(folder, "node_modules", ".bin"));
-    if (dirname(folder) === folder) break;
-  }
-  return [...bins, process.env["PATH"] ?? ""].join(delimiter);
-}
 
 /**
  * Runs `run` and resolves with its exit code.
@@ -35,10 +29,9 @@ function pathFrom(cwd: string): string {
  */
 export function runProcess(run: ToolRun, io: CliIo): Promise<number> {
   return new Promise((resolve) => {
-    // shortcut: no shell, so Windows `.cmd` shims do not start; add `shell: true` with quoting when Windows is supported.
-    const child = spawn(run.command, [...run.args], {
+    const child = crossSpawn(run.command, [...run.args], {
       cwd: run.cwd,
-      env: { ...process.env, ...run.env, PATH: pathFrom(run.cwd) },
+      env: toolEnv(run.cwd, run.env),
       stdio: io.inherit ? "inherit" : ["ignore", "pipe", "pipe"],
     });
     child.stdout?.setEncoding("utf8").on("data", io.out);
@@ -55,7 +48,8 @@ export function runProcess(run: ToolRun, io: CliIo): Promise<number> {
             child.kill("SIGTERM");
             setTimeout(() => child.kill("SIGKILL"), 5000).unref();
           }, run.timeoutMs);
-    // A spawn failure (no such program) emits `error` and then `close`; the first settle wins.
+    // A spawn failure (no such program) emits `error` and then `close`; the first settle wins. On Windows cross-spawn
+    // reports a program cmd.exe could not find the same way, as an ENOENT `error`.
     child.on("error", (error) => {
       if (settled) return;
       settled = true;

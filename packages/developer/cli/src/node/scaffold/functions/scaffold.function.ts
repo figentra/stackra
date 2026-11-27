@@ -11,7 +11,7 @@
  * Runtime: node
  * Governing contract: ADR 0126 (member shapes and scaffold templates); ADR 0294; ADR 0453 (decision 11).
  */
-import { execFileSync } from "node:child_process";
+import crossSpawn from "cross-spawn";
 import {
   copyFileSync,
   existsSync,
@@ -282,8 +282,16 @@ export function scaffold({
         ? join(root, "LICENSE")
         : join(home, "LICENSE");
     if (license) copyFileSync(license, join(dest, "LICENSE"));
-    if (format)
-      execFileSync("pnpm", ["exec", "oxfmt", "--write", dest], { cwd: home, stdio: "inherit" });
+    if (format) {
+      // cross-spawn, so `pnpm.cmd` starts on Windows (STA-2899).
+      const run = crossSpawn.sync("pnpm", ["exec", "oxfmt", "--write", dest], {
+        cwd: home,
+        stdio: "inherit",
+      });
+      if (run.error !== undefined) throw run.error;
+      if (run.status !== 0)
+        throw new Error(`pnpm exec oxfmt --write ${dest} exited ${run.status ?? "on a signal"}`);
+    }
   }
   return { dest, rel, files: sorted(files) };
 }

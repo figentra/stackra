@@ -2,17 +2,27 @@
  * Stackra file contract:
  * Purpose: proves the node process runner captures standard output and error in order, runs in the given working
  *          directory with the extra environment, streams each chunk to the listener, sends both outputs of an
- *          `inherit: "stderr"` child to standard error uncaptured (interactive or not), and resolves a command that
- *          cannot start as exit 127 with the reason.
+ *          `inherit: "stderr"` child to standard error uncaptured (interactive or not), resolves a command that
+ *          cannot start as exit 127 with the reason, and starts every child through cross-spawn, so on Windows a
+ *          `.cmd` shim starts by its bare name with its arguments intact (the Windows smoke job runs that case).
  * Boundary: unit test that spawns `node` itself.
  * Runtime: node
- * Governing contract: STA-1966 spec FR-007; ADR 0506 (amendment 2026-11-03); ADR 0022 (test placement).
+ * Governing contract: STA-1966 spec FR-007; ADR 0506 (amendment 2026-11-03); ADR 0022 (test placement); STA-2899.
  */
 // @covers sta-1966:FR-007
-import { realpathSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import crossSpawn from "cross-spawn";
 
 import { NodeProcessRunnerDriver } from "#node/drivers/node-process-runner.driver";
+
+// The real cross-spawn behind a spy, so a test can see that every child goes through it.
+vi.mock("cross-spawn", async (importOriginal) => {
+  const actual = (await importOriginal<{ default: typeof crossSpawn }>()).default;
+  return { default: vi.fn(actual) };
+});
 
 const runner = new NodeProcessRunnerDriver();
 
@@ -50,6 +60,42 @@ describe("NodeProcessRunnerDriver", () => {
       });
       expect(result).toEqual({ code: 0, output: "" });
       expect(chunks).toEqual([]);
+    },
+  );
+
+  it("starts the child through cross-spawn", async () => {
+    vi.mocked(crossSpawn).mockClear();
+    await runner.run(process.execPath, ["-e", ""], { cwd: tmpdir() });
+    expect(crossSpawn).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(crossSpawn).mock.calls[0]?.slice(0, 2)).toEqual([
+      process.execPath,
+      ["-e", ""],
+    ]);
+  });
+
+  it.runIf(process.platform === "win32")(
+    "starts a .cmd shim by its bare name, arguments intact",
+    async () => {
+      const directory = mkdtempSync(join(tmpdir(), "stackra-runner-"));
+      try {
+        const bin = join(directory, "node_modules", ".bin");
+        mkdirSync(bin, { recursive: true });
+        writeFileSync(
+          join(bin, "echo-args.js"),
+          "process.stdout.write(JSON.stringify(process.argv.slice(2)))",
+        );
+        // The shape of the shim pnpm and npm write: node on the script beside it, every argument passed on.
+        writeFileSync(join(bin, "stackra-echo.cmd"), '@node "%~dp0\\echo-args.js" %*\r\n');
+        const args = ["two words", "a&b|c", 'say "hi"'];
+        const result = await runner.run("stackra-echo", args, {
+          cwd: directory,
+          env: { PATH: `${bin};${process.env["PATH"] ?? ""}` },
+        });
+        expect(result.code).toBe(0);
+        expect(JSON.parse(result.output)).toEqual(args);
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
     },
   );
 

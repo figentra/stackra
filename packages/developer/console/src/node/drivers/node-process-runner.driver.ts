@@ -1,14 +1,18 @@
 /**
  * Stackra file contract:
- * Purpose: `NodeProcessRunnerDriver`, the `ProcessRunner` of a real process: spawns the child with no shell, captures
- *          its standard output and error interleaved (standard input closed, so it never waits on a prompt), or hands
- *          it the terminal when it is interactive or inherits it (`inherit: "stderr"`: standard input ignored, both
- *          outputs on standard error); a command that cannot start resolves as exit 127 with the reason.
- * Boundary: prints nothing itself; the console decides what of the output is shown.
+ * Purpose: `NodeProcessRunnerDriver`, the `ProcessRunner` of a real process: starts the child through cross-spawn,
+ *          captures its standard output and error interleaved (standard input closed, so it never waits on a prompt),
+ *          or hands it the terminal when it is interactive or inherits it (`inherit: "stderr"`: standard input
+ *          ignored, both outputs on standard error); a command that cannot start resolves as exit 127 with the reason.
+ * Boundary: prints nothing itself; the console decides what of the output is shown. cross-spawn is
+ *           `child_process.spawn` with no shell, except on Windows, where it finds the `.cmd` shim a package manager
+ *           writes (`pnpm.cmd`, `npm.cmd`, `node_modules/.bin/*.cmd`) and runs it through cmd.exe with every argument
+ *           escaped, so no argument is parsed as shell syntax on any system.
  * Runtime: node
- * Governing contract: STA-1966 spec FR-007 and FR-028; ADR 0506 (amendment 2026-11-03).
+ * Governing contract: STA-1966 spec FR-007 and FR-028; ADR 0506 (amendment 2026-11-03); STA-2899 (Windows-safe
+ *                     process runners).
  */
-import { spawn } from "node:child_process";
+import crossSpawn from "cross-spawn";
 
 import { Driver } from "@stackra/container";
 
@@ -18,7 +22,7 @@ import type { ProcessRunOptions } from "#contracts/types/process-run-options.typ
 
 /** Runs child processes of this machine. */
 export class NodeProcessRunnerDriver extends Driver(ProcessRunner) {
-  /** Spawns `command` with `args` and resolves with its exit code and output once it exits. */
+  /** Starts `command` with `args` and resolves with its exit code and output once it exits. */
   run(
     command: string,
     args: readonly string[],
@@ -30,7 +34,7 @@ export class NodeProcessRunnerDriver extends Driver(ProcessRunner) {
         output += chunk;
         options.onOutput?.(chunk);
       };
-      const child = spawn(command, [...args], {
+      const child = crossSpawn(command, [...args], {
         cwd: options.cwd,
         env: { ...process.env, ...options.env },
         // "stderr" wins over interactive, so stdout stays clean for a --json document.
@@ -43,6 +47,8 @@ export class NodeProcessRunnerDriver extends Driver(ProcessRunner) {
       });
       child.stdout?.setEncoding("utf8").on("data", take);
       child.stderr?.setEncoding("utf8").on("data", take);
+      // A start failure emits `error` and then `close`; on Windows cross-spawn reports a program cmd.exe could not
+      // find as an ENOENT `error` too. The promise keeps the first answer, so the 127 stands.
       child.on("error", (error) =>
         resolve({ code: 127, output: `${output}${command}: ${error.message}\n` }),
       );

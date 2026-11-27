@@ -20,6 +20,7 @@ import { Enum } from "@stackra/contracts";
 import { npmMetadataFor, turboTagsFor } from "@stackra/repo-checks/node";
 import { StackraCategory } from "@stackra/skills/contracts";
 
+import { cleanScript } from "#node/functions/clean-script.function";
 import type { TemplateFile } from "#node/types/template-file.type";
 import type { TemplateOptions } from "#node/types/template-options.type";
 
@@ -87,7 +88,7 @@ export function packageTemplate(options: TemplateOptions): readonly TemplateFile
       ...Object.fromEntries(tasks.map((task) => [task, `stackra ${task}`])),
       format: "oxfmt --write .",
       "format:check": "oxfmt --check .",
-      clean: "rm -rf dist coverage .turbo .stackra",
+      clean: cleanScript(["dist", "coverage", ".turbo", ".stackra"]),
     },
     dependencies: { "@stackra/contracts": stackraVersion },
     devDependencies: {

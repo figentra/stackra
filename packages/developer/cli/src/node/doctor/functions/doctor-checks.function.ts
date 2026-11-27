@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `doctorChecks(root, workspace, options?)`, the `stackra doctor` checklist of the workspace at `root`, in
- *          order: the base checks (mise tools, pnpm install, disk, network, GitHub), then one group per need
+ *          order: the supported system (`platformCheck`, a warning naming WSL 2 on native Windows, kept by `quick`
+ *          and `fresh`), the base checks (mise tools, pnpm install, disk, network, GitHub), then one group per need
  *          `doctorNeeds` finds (Docker, Encore and the Encore ports; the `@stackra` and `@figentra` registry reads;
  *          Pulumi; Xcode and a simulator; the agent tooling, sops and its Google login included), then the members' dev ports. `quick` keeps only
  *          what `stackra dev` needs before it starts: mise tools, Docker and the ports. `fresh` is a workspace not
@@ -25,6 +26,7 @@ import { dockerState } from "#node/doctor/functions/docker-state.function";
 import { doctorNeeds } from "#node/doctor/functions/doctor-needs.function";
 import { droppedAddresses } from "#node/doctor/functions/dropped-addresses.function";
 import { googleCredentialsPath } from "#node/doctor/functions/google-credentials-path.function";
+import { platformCheck } from "#node/doctor/functions/platform-check.function";
 import { publishedDependency } from "#node/doctor/functions/published-dependency.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
 import { probeHosts } from "#node/doctor/functions/probe-hosts.function";
@@ -77,6 +79,8 @@ export async function doctorChecks(
   const add = (result: DoctorResult): void => {
     out.push(result);
   };
+
+  add(platformCheck());
 
   if (!has("mise"))
     add({
