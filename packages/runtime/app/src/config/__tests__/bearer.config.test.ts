@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `BearerConfig`: keyed `app.bearer`, built with its defaults (no issuer, no audience, 60-second
- *          leeway, one-hour key cache, no dev keys), the issuer and audience and the dev sign-in's key set and
- *          environment from the environment, a host override, and refusing
+ *          leeway, one-hour key cache, no dev keys), the issuer and audience and the dev sign-in's key set from the
+ *          environment, no running-environment field at all (neither `STACKRA_ENVIRONMENT` nor a values layer reaches
+ *          it: the dev sign-in asks the one reader, STA-2844), a host override, and refusing
  *          an issuer that is not a URL or a leeway above five minutes; the shipped schema's defaults equal
  *          `BearerOptions`' initializers.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19, 20 and 26); ADR 0206 (decision 8).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19, 20 and 26); ADR 0206 (decision 8); ADR 0296
+ *                     (amendment 2026-11-26); STA-2844.
  */
 import { buildConfig, ConfigInvalidError, configKey } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
@@ -45,15 +47,19 @@ describe("BearerConfig", () => {
     expect(config.audience).toBe("project-1");
   });
 
-  it("reads the dev sign-in key set and the running environment from the environment", () => {
+  it("reads the dev sign-in key set from the environment, off by default", () => {
     const config = buildConfig(BaseBearerConfig, {
-      env: { STACKRA_DEV_ISSUER_KEYS: '{"keys":[]}', STACKRA_ENVIRONMENT: "dev" },
+      env: { STACKRA_DEV_ISSUER_KEYS: '{"keys":[]}' },
     });
     expect(config.devKeys).toBe('{"keys":[]}');
-    expect(config.environment).toBe("dev");
-    // off by default: no dev keys and no environment
     expect(buildConfig(BaseBearerConfig).devKeys).toBe("");
-    expect(buildConfig(BaseBearerConfig).environment).toBe("");
+  });
+
+  it("holds no running environment: the dev sign-in asks the one reader, never a configuration value", () => {
+    const fromEnv = buildConfig(BaseBearerConfig, { env: { STACKRA_ENVIRONMENT: "dev" } });
+    expect(fromEnv).not.toHaveProperty("environment");
+    expect(Object.keys(BEARER_CONFIG_SCHEMA.shape)).not.toContain("environment");
+    expect(Object.keys(new BearerOptions())).not.toContain("environment");
   });
 
   it("takes a host's override", () => {

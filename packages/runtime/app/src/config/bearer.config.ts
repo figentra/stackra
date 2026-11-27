@@ -30,6 +30,5 @@ export class BearerConfig extends Config({
     issuer: "STACKRA_BEARER_ISSUER",
     audience: "STACKRA_BEARER_AUDIENCE",
     devKeys: "STACKRA_DEV_ISSUER_KEYS",
-    environment: "STACKRA_ENVIRONMENT",
   },
 }) {}

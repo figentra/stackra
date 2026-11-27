@@ -9,14 +9,15 @@
  *          each one `BearerTokenInvalidError`, and so are an expired forward, a forward for another audience, a
  *          forwarded service token, a forward with no service bearer and a forward beside a user bearer; a forward for
  *          another scope than the principal's passes here, since only `CallIsolationDriver` reads the tree; no refusal carries a token; a key source that cannot reach the issuer
- *          throws its own error. The dev sign-in (STA-2795): under `stackra dev` (`STACKRA_DEV_ISSUER_KEYS` and
- *          `STACKRA_ENVIRONMENT=dev`) a minted dev token is its user actor, in its scope; with no dev keys a dev token
- *          is refused; and a deployment that carries the dev keys (preview, staging, production or no environment)
- *          never boots.
+ *          throws its own error. The dev sign-in (STA-2795): under `stackra dev` (`STACKRA_DEV_ISSUER_KEYS` and the
+ *          one environment reader answering `dev`) a minted dev token is its user actor, in its scope; with no dev
+ *          keys a dev token is refused; and a process that carries the dev keys where the reader answers anything
+ *          else (a test run, preview, staging, production, a production platform with no variable) never boots.
  * Boundary: test only; a real Web Crypto RS256 key pair, a host wiring with the memory key and principal drivers, and
  *           the bearer settings from the environment.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0209 (decision 3 and its 2026-11-07 amendment); ADR 0206 (decision 8).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0209 (decision 3 and its 2026-11-07 amendment); ADR 0206 (decision 8);
+ *                     ADR 0296 (amendment 2026-11-26); STA-2844.
  */
 import { Module } from "@stackra/container";
 import type { Wiring } from "@stackra/container";
@@ -33,6 +34,7 @@ import { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
 import { createDevIssuerKey } from "#core/functions/create-dev-issuer-key.function";
 import { mintDevToken } from "#core/functions/mint-dev-token.function";
 import { MemoryJsonWebKeysDriver } from "#server/drivers/memory-json-web-keys.driver";
+import { PLATFORM_ENVIRONMENT_HOST } from "#server/constants/platform-environment-host.constant";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 import { createApp } from "#server/functions/create-app.function";
 import { CallAuthenticator } from "#server/services/call-authenticator.service";
@@ -182,6 +184,7 @@ const bearer = async (claims: Record<string, unknown>) => `Bearer ${await token(
 describe(CallAuthenticator, () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    PLATFORM_ENVIRONMENT_HOST.current = undefined;
   });
 
   it("authenticates a user token as its user actor", async () => {
@@ -316,6 +319,7 @@ describe(CallAuthenticator, () => {
 describe("CallAuthenticator dev sign-in (STA-2795)", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    PLATFORM_ENVIRONMENT_HOST.current = undefined;
   });
 
   const DEV_SCOPE_ID = "scp_01j9z3k4m5n6p7q8r9s0t1v2w8";
@@ -362,12 +366,19 @@ describe("CallAuthenticator dev sign-in (STA-2795)", () => {
     });
   });
 
-  it.each(["preview", "staging", "production", undefined])(
-    "never boots a deployment that carries the dev keys (STACKRA_ENVIRONMENT=%s)",
-    async (environment) => {
+  it.each([
+    ["test", undefined],
+    ["preview", undefined],
+    ["staging", undefined],
+    ["production", undefined],
+    [undefined, { name: "acme-prod", type: "production", cloud: "aws" }],
+  ] as const)(
+    "never boots a process that carries the dev keys (STACKRA_ENVIRONMENT=%s, platform %o)",
+    async (environment, platform) => {
       const key = await createDevIssuerKey();
       vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", JSON.stringify({ keys: [key.publicKey] }));
       vi.stubEnv("STACKRA_ENVIRONMENT", environment);
+      PLATFORM_ENVIRONMENT_HOST.current = platform;
       const failure = await authenticate({ authorization: await devBearer(key.privateKey) }).then(
         () => undefined,
         (error: unknown) => error,

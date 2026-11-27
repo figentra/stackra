@@ -3,7 +3,7 @@
  * Purpose: `BearerTokenGuard`, the authentication check of ADR 0437's server-check order for an API that runs without
  *          the OS edge Worker: a `RequestGuard` that lets a request through only with an `Authorization: Bearer` JWT
  *          that `verifyCallToken` accepts under `BearerConfig` (issuer, audience, leeway) and the bound `JsonWebKeys`
- *          (or the dev issuer's keys under `stackra dev` only, STA-2795),
+ *          (or the dev issuer's keys only when the one reader answers `dev`, STA-2795 and STA-2844),
  *          and puts the verified claims on the request's `VerifiedToken` for the checks after it.
  * Boundary: `Lifetime.Request`, so it writes the `VerifiedToken` of its own request. A request with no bearer token
  *           reaches only a public path. Every failure is one `BearerTokenInvalidError`; an issuer that cannot be
@@ -19,6 +19,7 @@ import type { BearerConfig } from "#config/bearer.config";
 import type { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
+import { runningEnvironment } from "#server/functions/running-environment.function";
 import { verifyCallToken } from "#server/functions/verify-call-token.function";
 import type { VerifiedToken } from "#server/services/verified-token.service";
 
@@ -81,7 +82,7 @@ export class BearerTokenGuard extends RequestGuard {
     }
     const token = BEARER.exec(header.trim())?.[1];
     if (token === undefined) throw BearerTokenInvalidError.create();
-    const claims = await verifyCallToken(token, this.config, this.keys);
+    const claims = await verifyCallToken(token, this.config, this.keys, runningEnvironment());
     if (claims === undefined) throw BearerTokenInvalidError.create();
     this.verified.claims = claims;
   }

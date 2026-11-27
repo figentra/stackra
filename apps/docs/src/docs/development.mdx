@@ -63,8 +63,9 @@ TOKEN=$(stackra dev token)                       # --scope <path> --scope-id <sc
 curl -H "authorization: Bearer $TOKEN" http://localhost:4000/<your-route>
 ```
 
-Dev tokens count only under `stackra dev` (`STACKRA_ENVIRONMENT=dev`). A deployed service that carries the dev key
-refuses to start, and one without it refuses every dev token ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral),
+Dev tokens count only where the running environment is `dev` (`stackra dev` sets `STACKRA_ENVIRONMENT=dev`), as
+the one environment reader answers it from the runtime; no configuration value can turn them on. A deployed service
+that carries the dev key refuses to start, and one without it refuses every dev token ([0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral),
 amendment of 2026-11-26).
 
 ### Encore

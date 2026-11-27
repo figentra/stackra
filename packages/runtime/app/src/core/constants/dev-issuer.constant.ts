@@ -10,6 +10,7 @@
  * Governing contract: ADR 0206 (decision 8, amendment of 2026-11-26: the dev issuer); ADR 0170 (decision 5: `dev` is
  *                     a developer machine only).
  */
+import { StackraEnvironment } from "@stackra/config";
 
 /**
  * The dev issuer's facts.
@@ -24,8 +25,8 @@ export const DEV_ISSUER = Object.freeze({
   audience: "stackra-dev",
   /** The variable holding the dev issuer's public JWK Set, set by `stackra dev` only. */
   keysVariable: "STACKRA_DEV_ISSUER_KEYS",
-  /** The only `STACKRA_ENVIRONMENT` that accepts the dev issuer: a developer machine under `stackra dev`. */
-  environment: "dev",
+  /** The only running environment (`readEnvironment`) that accepts the dev issuer: a developer machine. */
+  environment: StackraEnvironment.Dev,
   /** The JWS algorithm of the dev key (ECDSA P-256). */
   algorithm: "ES256",
 } as const);

@@ -271,15 +271,6 @@
       "field": "signingKeys"
     },
     {
-      "name": "STACKRA_ENVIRONMENT",
-      "kind": "config",
-      "type": "string",
-      "required": false,
-      "config": "app.bearer",
-      "class": "BearerConfig",
-      "field": "environment"
-    },
-    {
       "name": "STACKRA_VISITOR_SIGNING_KEY",
       "kind": "secret",
       "type": "string",

@@ -7,13 +7,14 @@
  *          `--scope` without `--scope-id` and a run outside a workspace are usage errors (exit 2).
  * Boundary: test only; the workspace root is a temporary folder.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0206 (amendment of 2026-11-26: the dev issuer); STA-2795.
+ * Governing contract: ADR 0022; ADR 0206 (amendment of 2026-11-26: the dev issuer); ADR 0296 (amendment 2026-11-26);
+ *                     STA-2795; STA-2844.
  */
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { buildConfig } from "@stackra/config";
+import { buildConfig, StackraEnvironment } from "@stackra/config";
 import { BearerConfig, MemoryJsonWebKeysDriver, verifyCallToken } from "@stackra/app/server";
 import { runCommandForTest } from "@stackra/console/testing";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
@@ -48,9 +49,18 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-/** The claims `verifyCallToken` accepts `token` with, in a process whose env is `env`. */
-async function claimsUnder(token: string, env: Record<string, string>) {
-  return verifyCallToken(token, buildConfig(BearerConfig, { env }), new MemoryJsonWebKeysDriver());
+/** The claims `verifyCallToken` accepts `token` with, in a process whose env is `env`, running as `environment`. */
+async function claimsUnder(
+  token: string,
+  env: Record<string, string>,
+  environment: StackraEnvironment = StackraEnvironment.Dev,
+) {
+  return verifyCallToken(
+    token,
+    buildConfig(BearerConfig, { env }),
+    new MemoryJsonWebKeysDriver(),
+    environment,
+  );
 }
 
 describe("DevTokenCommand", () => {
@@ -62,14 +72,12 @@ describe("DevTokenCommand", () => {
     const { key, user } = await ensureDevIssuer(root);
     expect(result.stdout).not.toContain(String(key.privateKey.d));
     const devKeys = JSON.stringify({ keys: [key.publicKey] });
-    expect(
-      await claimsUnder(token, { STACKRA_DEV_ISSUER_KEYS: devKeys, STACKRA_ENVIRONMENT: "dev" }),
-    ).toMatchObject({
+    expect(await claimsUnder(token, { STACKRA_DEV_ISSUER_KEYS: devKeys })).toMatchObject({
       sub: user.id,
       email: user.email,
       [IDENTITY_CLAIMS.realm]: "tenant",
     });
-    expect(await claimsUnder(token, { STACKRA_ENVIRONMENT: "production" })).toBeUndefined();
+    expect(await claimsUnder(token, {}, StackraEnvironment.Production)).toBeUndefined();
   });
 
   it("shapes the token from its flags and answers it under --json", async () => {
@@ -109,7 +117,6 @@ describe("DevTokenCommand", () => {
     const { key } = await ensureDevIssuer(root);
     const claims = await claimsUnder(String(data["token"]), {
       STACKRA_DEV_ISSUER_KEYS: JSON.stringify({ keys: [key.publicKey] }),
-      STACKRA_ENVIRONMENT: "dev",
     });
     expect(claims).toMatchObject({
       sub: OTHER_USER,

@@ -4,19 +4,24 @@
  *          valid bearer token through and puts its claims on the request's `VerifiedToken`; it lets a request with no
  *          token through only on a public path; it refuses a missing token off a public path, a non-bearer scheme, an
  *          invalid token (wrong audience), a token whose key is unknown, and every token while the issuer is unset; it
- *          lets a dev token through under `stackra dev` only (STA-2795).
+ *          lets a dev token through only where the one environment reader answers `dev` (STA-2795, STA-2844): on a
+ *          production platform it throws `ConfigInvalidError` instead, even when the bearer configuration carries a
+ *          free-string `environment = "dev"` (the old `app.bearer.environment`).
  * Boundary: test only; a real Web Crypto RS256 key pair, the memory key driver and `buildConfig`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0206 (decision 8); ADR 0437 (decision 8); ADR 0457.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0206 (decision 8); ADR 0437 (decision 8); ADR 0457; ADR 0296 (amendment
+ *                     2026-11-26); STA-2844.
  */
-import { buildConfig } from "@stackra/config";
+import { buildConfig, ConfigInvalidError } from "@stackra/config";
 import { isRefusal } from "@stackra/errors";
 import { Realm } from "@stackra/contracts";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { BearerConfig } from "#config/bearer.config";
 import { createDevIssuerKey } from "#core/functions/create-dev-issuer-key.function";
 import { mintDevToken } from "#core/functions/mint-dev-token.function";
+import { PLATFORM_ENVIRONMENT_HOST } from "#server/constants/platform-environment-host.constant";
 import { MemoryJsonWebKeysDriver } from "#server/drivers/memory-json-web-keys.driver";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 import { BearerTokenGuard } from "#server/services/bearer-token.guard";
@@ -61,8 +66,8 @@ const now = Math.floor(Date.now() / 1000);
 const claims = { iss: ISSUER, aud: AUDIENCE, sub: "u1", exp: now + 300 };
 
 /** A guard over one key, with `/public/` open, and the `VerifiedToken` it writes. */
-async function setup(env: Record<string, string> = {}) {
-  const config = buildConfig(BearerConfig, {
+async function setup(env: Record<string, string> = {}, type: typeof BearerConfig = BearerConfig) {
+  const config = buildConfig(type, {
     env: { STACKRA_BEARER_ISSUER: ISSUER, STACKRA_BEARER_AUDIENCE: AUDIENCE, ...env },
   });
   const keys = new MemoryJsonWebKeysDriver();
@@ -90,6 +95,11 @@ const refuses = async (promise: Promise<void>) => {
 };
 
 describe("BearerTokenGuard", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    PLATFORM_ENVIRONMENT_HOST.current = undefined;
+  });
+
   it("runs after the edge, origin and CSRF guards", async () => {
     expect((await setup()).guard.order).toBe(-50);
   });
@@ -133,13 +143,33 @@ describe("BearerTokenGuard", () => {
   it("lets a dev token through under stackra dev only", async () => {
     const key = await createDevIssuerKey();
     const dev = `Bearer ${await mintDevToken(key.privateKey, { userId: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3", realm: Realm.Staff })}`;
-    const on = await setup({
-      STACKRA_DEV_ISSUER_KEYS: JSON.stringify({ keys: [key.publicKey] }),
-      STACKRA_ENVIRONMENT: "dev",
-    });
+    vi.stubEnv("STACKRA_ENVIRONMENT", "dev");
+    const on = await setup({ STACKRA_DEV_ISSUER_KEYS: JSON.stringify({ keys: [key.publicKey] }) });
     await on.guard.check(request("/orders", dev));
     expect(on.verified.claims).toMatchObject({ sub: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3" });
-    const off = await setup({ STACKRA_ENVIRONMENT: "dev" });
+    const off = await setup();
     await refuses(off.guard.check(request("/orders", dev)));
+  });
+
+  it("judges dev sign-in by the one environment reader, never by a configuration value", async () => {
+    const key = await createDevIssuerKey();
+    const minted = await mintDevToken(key.privateKey, {
+      userId: "usr_01j9z3k4m5n6p7q8r9s0t1v2w3",
+      realm: Realm.Staff,
+    });
+    const dev = `Bearer ${minted}`;
+    // a host override carrying the old free-string app.bearer.environment
+    class DevBearerConfig extends BearerConfig {
+      environment = "dev";
+    }
+    const devKeys = { STACKRA_DEV_ISSUER_KEYS: JSON.stringify({ keys: [key.publicKey] }) };
+    vi.stubEnv("STACKRA_ENVIRONMENT", undefined);
+    PLATFORM_ENVIRONMENT_HOST.current = { name: "acme-prod", type: "production", cloud: "aws" };
+    const { guard, verified } = await setup(devKeys, DevBearerConfig);
+    await expect(guard.check(request("/orders", dev))).rejects.toThrow(ConfigInvalidError);
+    expect(verified.claims).toBeUndefined();
+    // and the configuration's own STACKRA_ENVIRONMENT=dev changes nothing either
+    const named = await setup({ ...devKeys, STACKRA_ENVIRONMENT: "dev" });
+    await expect(named.guard.check(request("/orders", dev))).rejects.toThrow(ConfigInvalidError);
   });
 });

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `CallAuthenticator`, the authentication of one inbound API call: the `Authorization: Bearer` token verified
- *          by `verifyCallToken` under `BearerConfig` and the bound `JsonWebKeys` (or, under `stackra dev` only, the dev
- *          issuer's keys, STA-2795), then mapped to its `Actor` by
+ *          by `verifyCallToken` under `BearerConfig` and the bound `JsonWebKeys` (or the dev issuer's keys, only when
+ *          the one environment reader answers `dev`: STA-2795, STA-2844), then mapped to its `Actor` by
  *          @stackra/identity's `actorOf`: a user, or the service whose ZITADEL service account signed it (ADR 0209
  *          decision 3). A service that calls for a user also forwards the user's own access token in
  *          `Stackra-On-Behalf-Of`; the call is then that service with `onBehalfOf` the user (ADR 0209, amendment of
@@ -47,6 +47,7 @@ import { ApiKeyMode, ServicePrincipals } from "@stackra/identity/contracts";
 import { BearerConfig } from "#config/bearer.config";
 import { JsonWebKeys } from "#contracts/ports/json-web-keys.port";
 import { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
+import { runningEnvironment } from "#server/functions/running-environment.function";
 import { verifyCallToken } from "#server/functions/verify-call-token.function";
 import type { CallAuthData } from "#server/types/call-auth-data.type";
 import type { CallCredentials } from "#server/types/call-credentials.type";
@@ -156,6 +157,7 @@ export class CallAuthenticator {
       token,
       this.container.get(BearerConfig),
       this.container.get(JsonWebKeys),
+      runningEnvironment(),
     );
     if (claims === undefined) throw BearerTokenInvalidError.create();
     // No bound driver knows no service: an empty store refuses every service token.

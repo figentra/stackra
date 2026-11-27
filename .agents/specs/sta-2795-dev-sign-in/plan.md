@@ -6,10 +6,11 @@
 
 ## Summary
 
-`BearerConfig` gains two optional fields, `devKeys` (`STACKRA_DEV_ISSUER_KEYS`) and `environment`
-(`STACKRA_ENVIRONMENT`). A new `verifyCallToken` becomes the one token check behind `CallAuthenticator` and
-`BearerTokenGuard`: it first tries the dev issuer under the keys `devIssuerKeys` answers (only in `dev`), then the
-configured issuer as before. `createApp` calls `devIssuerKeys` before the generated boot, so dev keys outside `dev` fail
+`BearerConfig` gains one optional field, `devKeys` (`STACKRA_DEV_ISSUER_KEYS`), and no environment: the running
+environment is the answer of the one reader (`readEnvironment` of `@stackra/config`, STA-2844), which the CTO's verdict
+of 2026-11-26 requires of every dev-only relaxation. A new `verifyCallToken` becomes the one token check behind
+`CallAuthenticator` and `BearerTokenGuard`: it first tries the dev issuer under the keys `devIssuerKeys` answers (only
+when the reader answers `dev`), then the configured issuer as before. `createApp` calls `devIssuerKeys` before the generated boot, so dev keys outside `dev` fail
 boot. `createDevIssuerKey` and `mintDevToken` make the ES256 pair and tokens; `stackra dev` keeps the pair and a seeded
 dev user in `.stackra/dev-issuer.json` and hands a service only the public half; `stackra dev token` prints a token.
 
@@ -43,18 +44,20 @@ dev user in `.stackra/dev-issuer.json` and hands a service only the public half;
 | Mode       | Behaviour                                                                         |
 | ---------- | --------------------------------------------------------------------------------- |
 | SaaS       | no dev keys, so no dev token passes; a process that carries them fails boot       |
-| On-prem    | same as SaaS: `STACKRA_ENVIRONMENT` is never `dev`, so dev keys refuse to boot    |
+| On-prem    | same as SaaS: the reader never answers `dev` there, so dev keys refuse to boot    |
 | Air-gapped | same as SaaS; the dev issuer makes no network call (its issuer is under .invalid) |
 
 ## Correctness properties
 
 - **P-001**: a token minted by `mintDevToken` with the workspace key verifies under `verifyCallToken` with that key set
-  and `environment: dev`, and its claims are the identity claims given — Validates: AC-001, AC-008
+  in the running environment `dev`, and its claims are the identity claims given — Validates: AC-001, AC-008
 - **P-002**: a dev token signed by another key under the same `kid`, edited after signing, or past its `exp` plus
   leeway never verifies — Validates: AC-002
 - **P-003**: a token of the configured issuer verifies with dev keys set and without — Validates: AC-003
-- **P-004**: `createApp` rejects with `ConfigInvalidError` for dev keys in `preview`, `staging`, `production` and
-  with no environment, and the message never holds a key value — Validates: AC-004
+- **P-004**: `createApp` rejects with `ConfigInvalidError` for dev keys in `test`, `preview`, `staging`, `production`
+  and on a production platform that set no variable, and the message never holds a key value — Validates: AC-004
+- **P-009**: no configuration value reaches the gate: `BearerConfig` has no environment field, and a host override
+  naming `environment = "dev"` on a production platform is still refused, at boot and per call — Validates: AC-010
 - **P-005**: with no dev keys, a dev token is undefined under `verifyCallToken` — Validates: AC-005
 - **P-006**: `devIssuerKeys` refuses non-JSON, an empty or 9-key set, a non-ES256 key, a key without `kid` and a key
   with `d` — Validates: AC-006
@@ -66,12 +69,15 @@ dev user in `.stackra/dev-issuer.json` and hands a service only the public half;
 
 Before: `CallAuthenticator` (the generated Encore auth handler's check) and `BearerTokenGuard` each called
 `verifyBearerToken` with the configured issuer, audience and `JsonWebKeys`. After: both call `verifyCallToken(token,
-config, keys)`. It asks `devIssuerKeys(config)` for the dev public keys; when it answers keys, it tries
+config, keys, environment)`, with `environment` from `runningEnvironment()` (internal: `readEnvironment(process.env,
+PLATFORM_ENVIRONMENT_HOST.current)`, the same reader and platform report `createApp` boots with), asked on every call.
+It asks `devIssuerKeys(config, environment)` for the dev public keys; when it answers keys, it tries
 `verifyBearerToken` with `DEV_ISSUER.issuer`, `DEV_ISSUER.audience`, the config's leeway and a key lookup over the dev
 set, and returns those claims if they verify. Otherwise it falls through to the configured issuer exactly as before.
-`devIssuerKeys` answers undefined when `devKeys` is empty, throws `ConfigInvalidError` when it is set outside
-`environment === "dev"` or is not a public ES256 set, and caches per config instance. `createApp` calls it right after
-the container is built and before `options.boot`, closing the container and rethrowing on refusal.
+`devIssuerKeys` answers undefined when `devKeys` is empty, throws `ConfigInvalidError` when it is set while
+`environment !== StackraEnvironment.Dev` or is not a public ES256 set, and caches the parsed set per config instance
+(the environment is checked on every call). `createApp` calls it with the environment it boots as, right after the
+container is built and before `options.boot`, closing the container and rethrowing on refusal.
 
 On the CLI side, `stackra dev`'s tool command merges `devIssuerEnv(cwd, layout, env)` into a service's environment;
 `devIssuerEnv` calls `ensureDevIssuer(root)`, which reads or creates the workspace file. `stackra dev token` reads the
@@ -79,10 +85,11 @@ same file and calls `mintDevToken`.
 
 ## Components and responsibilities
 
-- `BearerOptions` / `BEARER_CONFIG_SCHEMA` / `BearerConfig`: two new string fields with empty defaults, read from
-  `STACKRA_DEV_ISSUER_KEYS` and `STACKRA_ENVIRONMENT`.
+- `BearerOptions` / `BEARER_CONFIG_SCHEMA` / `BearerConfig`: one new string field with an empty default, read from
+  `STACKRA_DEV_ISSUER_KEYS`; no environment field.
+- `runningEnvironment` (internal to `@stackra/app/server`): the one reader over `process.env` and the platform report.
 - `DEV_ISSUER` (`@stackra/app`): the issuer `https://dev-issuer.stackra.invalid`, audience `stackra-dev`, the variable
-  name, the one accepting environment `dev`, and `ES256`.
+  name, the one accepting environment `StackraEnvironment.Dev`, and `ES256`.
 - `devIssuerKeys` (`@stackra/app/server`): the dev-only rule and key-set validation, in one place.
 - `verifyCallToken` (`@stackra/app/server`): the one token check of both guards; dev issuer first, configured issuer
   second.
@@ -108,8 +115,8 @@ packages/runtime/app/
   src/core/types/{dev-issuer-key,dev-token-claims}.type.ts
   src/core/index.ts
   src/core/__tests__/index.test.ts
-  src/server/functions/{create-app,dev-issuer-keys,verify-call-token}.function.ts
-  src/server/functions/__tests__/{create-app,dev-issuer-keys,verify-call-token}.function.test.ts
+  src/server/functions/{create-app,dev-issuer-keys,running-environment,verify-call-token}.function.ts
+  src/server/functions/__tests__/{create-app,dev-issuer-keys,running-environment,verify-call-token}.function.test.ts
   src/server/services/{bearer-token.guard,call-authenticator.service}.ts
   src/server/services/__tests__/{bearer-token.guard,call-authenticator.service}.test.ts
   src/server/index.ts
@@ -145,12 +152,13 @@ that is not a valid dev sign-in throws naming the file and how to reset it, neve
 
 ## Contracts
 
-- `BearerOptions.devKeys: string = ""` and `BearerOptions.environment: string = ""`; the app manifest declares
-  `STACKRA_DEV_ISSUER_KEYS` and `STACKRA_ENVIRONMENT` as optional config of `app.bearer`.
-- `verifyCallToken(token, config: BearerConfig, keys: JsonWebKeys)` answers the verified claims or `undefined`; it
-  never throws on an untrusted token, throws when the configured issuer is unreachable, and throws
-  `ConfigInvalidError` when dev keys are set outside `dev`.
-- `devIssuerKeys(config)` takes `devKeys` and `environment` and answers the dev public keys or `undefined`.
+- `BearerOptions.devKeys: string = ""`; the app manifest declares `STACKRA_DEV_ISSUER_KEYS` as optional config of
+  `app.bearer` and nothing for `STACKRA_ENVIRONMENT`.
+- `verifyCallToken(token, config: BearerConfig, keys: JsonWebKeys, environment: StackraEnvironment)` answers the
+  verified claims or `undefined`; it never throws on an untrusted token, throws when the configured issuer is
+  unreachable, and throws `ConfigInvalidError` when dev keys are set outside `dev`.
+- `devIssuerKeys(config, environment: StackraEnvironment)` reads `devKeys` only and answers the dev public keys or
+  `undefined`.
 - `DEV_ISSUER`; `createDevIssuerKey()` answers a `DevIssuerKey`; `mintDevToken(privateKey, claims)` takes
   `DevTokenClaims` and answers the compact JWT.
 - CLI: `stackra dev token` with `--user`, `--realm` (tenant, customer or platform), `--scope` with `--scope-id`,
@@ -167,8 +175,9 @@ that is not a valid dev sign-in throws naming the file and how to reset it, neve
 
 ## Security and tenancy
 
-The new issuer is accepted only in a process with `STACKRA_ENVIRONMENT=dev` and a public key set; any other process
-carrying dev keys never boots, and an unset environment counts as not `dev` (fail closed). The issuer host is under
+The new issuer is accepted only in a process the one environment reader answers `dev` for, with a public key set;
+any other process carrying dev keys never boots (a deployed platform derives its environment with no variable, and a
+variable the reader refuses fails boot), and no configuration value takes part. The issuer host is under
 `.invalid` (RFC 2606), so no discovery or key fetch can ever reach a real provider. The private half never travels (a
 key with `d` is refused) and the workspace file is mode 600, git-ignored and excluded from the testbed sync. A dev token
 passes through `actorOf`, the scope chain and IAM like a real one; nothing bypasses authorisation (a fresh app without
@@ -180,8 +189,13 @@ a bound AccessControl answers 500, fail closed).
   configured issuer's token under stackra dev"); `call-authenticator.service.test.ts`, `bearer-token.guard.test.ts`.
 - AC-002: `verify-call-token.function.test.ts` ("refuses a dev token of another dev key, edited after signing, or
   expired"); `mint-dev-token.function.test.ts` (another key, another audience, ttl expiry).
-- AC-004: `create-app.function.test.ts` ("dev sign-in keys (STA-2795)": refused in preview, staging, production and with
-  no environment; boots under dev and with none); `dev-issuer-keys.function.test.ts` (names the variable only).
+- AC-004: `create-app.function.test.ts` ("dev sign-in keys (STA-2795)": refused in test, preview, staging, production
+  and on a production platform with no variable; boots under dev and with none); `dev-issuer-keys.function.test.ts`
+  (names the variable only); `running-environment.function.test.ts`.
+- AC-010: `bearer-token.guard.test.ts` ("judges dev sign-in by the one environment reader, never by a configuration
+  value"); `bearer.config.test.ts` ("holds no running environment"); `dev-issuer-keys.function.test.ts` and
+  `verify-call-token.function.test.ts` (the configuration's own `STACKRA_ENVIRONMENT=dev` turns nothing on);
+  `create-app.function.test.ts` (a host override naming `environment = "dev"` still fails boot).
 - AC-005: `verify-call-token.function.test.ts` ("refuses a dev token where no dev keys are set").
 - AC-006: `dev-issuer-keys.function.test.ts` ("refuses a key set that is not one of public ES256 keys, even in dev").
 - AC-007: `ensure-dev-issuer.function.test.ts`, `dev-issuer-env.function.test.ts`, `tool-command.function.test.ts`.

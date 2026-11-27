@@ -10,13 +10,17 @@
  *          the request's `traceparent` and edge request id; the drain stops waiting at its deadline
  *          (`HttpConfig.drainTimeoutSeconds`, 20 s by default or a host's override), reports one `DrainTimeoutError`
  *          with the calls still running and lets `close` and SIGTERM shut down, and leaves no timer when the calls
- *          settle in time. Dev sign-in keys (`STACKRA_DEV_ISSUER_KEYS`) fail boot outside `STACKRA_ENVIRONMENT=dev`,
- *          before the generated boot runs and with the container shut down, and boot under it (STA-2795).
+ *          settle in time. Dev sign-in keys (`STACKRA_DEV_ISSUER_KEYS`) fail boot wherever the one environment reader
+ *          answers anything but `dev` (a `test` run, a named deployment, a production platform that set no variable),
+ *          before the generated boot runs and with the container shut down, even under a host override of
+ *          `BearerConfig` that carries a free-string `environment = "dev"`; and they boot under `dev` (STA-2795,
+ *          STA-2844).
  * Boundary: test only; boots real containers; `process.exit` is mocked and signals are emitted as events; the
  *           deadline tests fake only `setTimeout` and `clearTimeout`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 to 9); ADR 0263; ADR 0260 (decision 4); ADR 0457;
- *                     ADR 0143 (decision 3: draining timeouts).
+ *                     ADR 0143 (decision 3: draining timeouts); ADR 0206 (amendment of 2026-11-26); ADR 0296
+ *                     (amendment 2026-11-26).
  */
 import { Driver, Module, Service } from "@stackra/container";
 import type { Container, Wiring } from "@stackra/container";
@@ -32,6 +36,7 @@ import { BearerConfig } from "#config/bearer.config";
 import { HttpConfig } from "#config/http.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { RequestGuard } from "#server/bases/request-guard.base";
+import { PLATFORM_ENVIRONMENT_HOST } from "#server/constants/platform-environment-host.constant";
 import { AppDrainingError } from "#server/errors/app-draining.error";
 import { DrainTimeoutError } from "#server/errors/drain-timeout.error";
 import { createApp } from "#server/functions/create-app.function";
@@ -202,21 +207,49 @@ describe("createApp (server)", () => {
 
     afterEach(() => {
       vi.unstubAllEnvs();
+      PLATFORM_ENVIRONMENT_HOST.current = undefined;
     });
 
-    it.each(["preview", "staging", "production", undefined])(
+    /** Boots with the dev keys and expects the refusal before the generated boot, with the container shut down. */
+    async function refusesToBoot(app: Wiring = bearerWiring): Promise<void> {
+      vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", SET);
+      const boot = vi.fn(async () => {});
+      const failure = await createApp(OrdersModule, { wiring: app, boot }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect(failure).toBeInstanceOf(ConfigInvalidError);
+      expect((failure as ConfigInvalidError).issues[0]?.path).toBe("STACKRA_DEV_ISSUER_KEYS");
+      expect(boot).not.toHaveBeenCalled();
+      expect(LedgerService.closed).toBe(1);
+    }
+
+    it.each(["test", "preview", "staging", "production"])(
       "never boots with them in STACKRA_ENVIRONMENT=%s, and never runs the generated boot",
       async (environment) => {
-        vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", SET);
         vi.stubEnv("STACKRA_ENVIRONMENT", environment);
-        const boot = vi.fn(async () => {});
-        await expect(createApp(OrdersModule, { wiring: bearerWiring, boot })).rejects.toThrow(
-          ConfigInvalidError,
-        );
-        expect(boot).not.toHaveBeenCalled();
-        expect(LedgerService.closed).toBe(1);
+        await refusesToBoot();
       },
     );
+
+    it("never boots with them on a production platform that set no STACKRA_ENVIRONMENT", async () => {
+      vi.stubEnv("STACKRA_ENVIRONMENT", undefined);
+      PLATFORM_ENVIRONMENT_HOST.current = { name: "acme-prod", type: "production", cloud: "aws" };
+      await refusesToBoot();
+    });
+
+    it("never boots with them under a host override that names environment dev", async () => {
+      // the old free-string app.bearer.environment, now set by a host's BearerConfig subclass: it turns nothing on
+      class DevBearerConfig extends BearerConfig {
+        environment = "dev";
+      }
+      vi.stubEnv("STACKRA_ENVIRONMENT", undefined);
+      PLATFORM_ENVIRONMENT_HOST.current = { name: "acme-prod", type: "production", cloud: "aws" };
+      await refusesToBoot({
+        ...wiring,
+        config: [{ key: "app.bearer", provide: BearerConfig, override: DevBearerConfig }],
+      });
+    });
 
     it("boots with them under stackra dev, and with none anywhere", async () => {
       vi.stubEnv("STACKRA_DEV_ISSUER_KEYS", SET);

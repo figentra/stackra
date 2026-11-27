@@ -1,20 +1,25 @@
 /**
  * Stackra file contract:
- * Purpose: `devIssuerKeys`, the dev issuer's public keys a server accepts dev tokens under (STA-2795): none when
- *          `BearerConfig.devKeys` is empty (the default, and every deployed environment), else the parsed JWK Set,
- *          but only in `STACKRA_ENVIRONMENT=dev`, the developer machine `stackra dev` runs (ADR 0170 decision 5).
- *          `createApp` calls it once at boot, so a deployment that carries the keys fails to start instead of
- *          answering dev tokens; `verifyCallToken` calls it per call.
- * Boundary: dev keys anywhere else are refused with `ConfigInvalidError` naming `STACKRA_DEV_ISSUER_KEYS` and the
- *           environment, never a value: an unset environment is not `dev`, so a deployment that forgot
- *           `STACKRA_ENVIRONMENT` still refuses (fail closed). So is a set that is not JSON, holds no key or more than
- *           eight, or a key that is not a public ES256 key (P-256, `x` and `y`) with a `kid`, or that carries a private
- *           member (`d`): the private half never travels. The answer is cached per configuration instance.
+ * Purpose: `devIssuerKeys(config, environment)`, the dev issuer's public keys a server accepts dev tokens under
+ *          (STA-2795): none when `BearerConfig.devKeys` is empty (the default, and every deployed environment), else
+ *          the parsed JWK Set, but only when the running environment is `StackraEnvironment.Dev`, the developer machine
+ *          `stackra dev` runs (ADR 0170 decision 5). The environment is the one reader's answer (`readEnvironment`,
+ *          STA-2844), passed in by `createApp` and by `verifyCallToken`'s callers; no configuration value names it, so
+ *          neither a values layer nor a host override can turn dev sign-in on. `createApp` calls it once at boot, so a
+ *          deployment that carries the keys fails to start instead of answering dev tokens; `verifyCallToken` calls it
+ *          per call.
+ * Boundary: dev keys in any other environment (`test`, `preview`, `staging`, `production`) are refused with
+ *           `ConfigInvalidError` naming `STACKRA_DEV_ISSUER_KEYS` and the environment, never a value. So is a set that
+ *           is not JSON, holds no key or more than eight, or a key that is not a public ES256 key (P-256, `x` and `y`)
+ *           with a `kid`, or that carries a private member (`d`): the private half never travels. The parsed set is
+ *           cached per configuration instance; the environment is checked on every call.
  * Runtime: node
  * Governing contract: ADR 0206 (decision 8, amendment of 2026-11-26: the dev issuer, accepted only in `dev`);
- *                     ADR 0170 (decision 5); ADR 0295 (decision 10: a bad environment fails boot).
+ *                     ADR 0296 (amendment 2026-11-26: the environment comes from the runtime only); ADR 0170
+ *                     (decision 5); ADR 0295 (decision 10: a bad environment fails boot); STA-2844.
  */
-import { ConfigInvalidError } from "@stackra/config";
+import { ConfigInvalidError, ENVIRONMENT_VARIABLE } from "@stackra/config";
+import type { StackraEnvironment } from "@stackra/config";
 
 import type { BearerConfig } from "#config/bearer.config";
 import { DEV_ISSUER } from "#core/constants/dev-issuer.constant";
@@ -25,8 +30,8 @@ const MAX_KEYS = 8;
 /** A public dev key: ES256, with its `kid`. */
 type DevPublicKey = JsonWebKey & { readonly kid: string };
 
-/** The answer per configuration instance. */
-const CACHE = new WeakMap<object, readonly DevPublicKey[] | undefined>();
+/** The parsed key set per configuration instance. */
+const CACHE = new WeakMap<object, readonly DevPublicKey[]>();
 
 /** The refusal naming the variable, never its value. */
 const refuse = (message: string): ConfigInvalidError =>
@@ -67,25 +72,28 @@ function parse(text: string): readonly DevPublicKey[] {
 }
 
 /**
- * The dev issuer's public keys under `config`, or undefined when dev sign-in is off.
+ * The dev issuer's public keys under `config` in `environment`, or undefined when dev sign-in is off.
  *
+ * @param config - the bearer configuration; only `devKeys` is read.
+ * @param environment - the running environment, from the one reader (`readEnvironment`), never a configuration value.
  * @throws ConfigInvalidError when dev keys are set outside `dev`, or are not a public ES256 key set.
  * @example
- * const keys = devIssuerKeys(container.get(BearerConfig)); // undefined in every deployed environment
+ * const keys = devIssuerKeys(container.get(BearerConfig), readEnvironment(process.env, platform));
  */
 export function devIssuerKeys(
-  config: Pick<BearerConfig, "devKeys" | "environment">,
+  config: Pick<BearerConfig, "devKeys">,
+  environment: StackraEnvironment,
 ): readonly DevPublicKey[] | undefined {
-  if (CACHE.has(config)) return CACHE.get(config);
   const text = config.devKeys.trim();
-  if (text === "") {
-    CACHE.set(config, undefined);
-    return undefined;
-  }
-  if (config.environment !== DEV_ISSUER.environment)
+  if (text === "") return undefined;
+  if (environment !== DEV_ISSUER.environment)
     throw refuse(
-      `is set in ${config.environment === "" ? "a process with no STACKRA_ENVIRONMENT" : `STACKRA_ENVIRONMENT=${config.environment}`}; the dev issuer runs only under stackra dev (STACKRA_ENVIRONMENT=dev), never in a deployed environment`,
+      `is set where the running environment is ${ENVIRONMENT_VARIABLE}=${environment}; the dev issuer runs only ` +
+        `under stackra dev (${ENVIRONMENT_VARIABLE}=${DEV_ISSUER.environment}), never in a test run or a deployed ` +
+        "environment",
     );
+  const cached = CACHE.get(config);
+  if (cached !== undefined) return cached;
   const keys = parse(text);
   CACHE.set(config, keys);
   return keys;
