@@ -24,8 +24,9 @@ workspace root the task commands fan out through Turborepo; in a member they run
 | `stackra verify`                     | the whole gate, tests included                                                                |
 | `stackra ls [section]`               | the identities a committed manifest locks: actions, events, permissions, …                    |
 
-A refusal names its code, its position and the fix; nothing is written when gen refuses. `stackra validate` is what
-CI runs on every pull request; `verify` is what runs on the box before a merge counts.
+A refusal names its code, its position and the fix; nothing is written when gen refuses. Every code gen, the checks
+and Runway print is on [Error codes](/customers/error-codes) with its cause and fix. `stackra validate` is what CI
+runs on every pull request; `verify` is what runs on the box before a merge counts.
 
 ## Products
 

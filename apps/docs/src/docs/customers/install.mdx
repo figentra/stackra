@@ -124,6 +124,9 @@ A job that installs only `@stackra/*` needs no secret.
 | `403` on `npm login`              | there is no login: access is the licence token                                                         | use the `.npmrc` above                                 |
 | `404`                             | the name is not on the registry (the registry never fetches from npmjs)                                | check the scope mapping and the spelling               |
 
+For the other failures a first install or first run can meet (Node, pnpm, mise, Docker, Encore, gen), see
+[Troubleshooting](/customers/troubleshooting).
+
 ## Licence lifecycle
 
 - A revoked token or licence stops working everywhere within about a minute (the registry caches a token check for 60

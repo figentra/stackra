@@ -1,0 +1,373 @@
+---
+title: "Error codes"
+description: "Every code stackra gen, stackra check and Runway can print: what causes it and how to fix it."
+icon: "list"
+---
+
+{/* Stackra file contract: Purpose: the customer reference of every machine code the developer tools print: gen's refusals and warnings, the rules of `stackra check` and `stackra validate`, and Runway's issue codes and errors, each with its cause and its fix. Boundary: customer-facing documentation only; the code is the source of truth and the message printed with a code is more specific than this page. apps/docs/scripts/error-codes/__tests__/error-codes.test.ts fails when a tool can print a code this page does not list, or the page lists a code no tool prints. Runtime: docs. Governing contract: ADR 0231 (snake_case machine codes); ADR 0294 (decisions 10 and 22); ADR 0282 (decision 3); ADR 0296 (enforcement); STA-2853. */}
+
+Every Stackra tool that refuses names a code. Find the code on this page for what usually causes it and the usual
+fix. The line the tool printed is always more specific (it names your class, file or key), so read it first; this page
+explains the rule behind it. For failures that come before any code (installing, Node, the registry, Encore), see
+[Troubleshooting](/customers/troubleshooting).
+
+## Gen
+
+`stackra gen` reads your classes and writes everything under `.stackra/`. When something it reads breaks a rule, it
+refuses: it prints every refusal of the run, writes nothing, and exits 1. Each refusal is two lines:
+
+```text
+src/modules/orders/models/order.model.ts:12:3 error shape_number_kind Order.total: a number field needs @Int or @Num
+  fix: add @Int for whole numbers or @Num for decimals above the field
+```
+
+The parts are the file (with the line and column when gen knows them), `error` or `warning`, the code, the subject (a
+class, `Class.field` or a key) and the message, then the fix. A **warning** prints the same way but never stops gen.
+`stackra gen --check` runs the same checks without writing and also fails when a committed generated file is out of
+date (`stackra check` reports that as the [`stale`](#check) rule).
+
+The five **staged** codes (`action_risk_below_write`, `idempotency_missing`, `model_tenancy_migration_missing`,
+`query_above_l1`, `step_up_missing`) print as warnings unless gen runs strict (`STACKRA_GEN_STRICT=1`); strict, they
+refuse like every other code. Treat them as refusals. When a root Turborepo task runs gen, list the variable in its
+`env` so it reaches gen (the [`gen-strict-env`](#check) rule).
+
+### Files, classes and kinds
+
+| Code                           | Cause                                                                                                                                                        | Fix                                                                                                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `two_declarations_in_file`     | A file exports more than one declaration.                                                                                                                    | Move each declaration to its own file; an enum's constant and its same-named type count as one.                                                                        |
+| `kind_class_name`              | A class in a kind file (such as `order.model.ts`) is not named after the file.                                                                               | Rename the class to the name gen expects, or rename the file after the class.                                                                                          |
+| `kind_suffix_mismatch`         | A class of one kind sits in a file with another kind's suffix.                                                                                               | Move it to a file with its own kind's suffix in its kind's folder, or extend the base of the suffix's kind.                                                            |
+| `kind_unregistered_base`       | A class in a kind file extends no base gen knows.                                                                                                            | Extend the kind's base from its `@stackra` package, or move the class out of the kind file. Run `pnpm install` first: an uninstalled package makes every base unknown. |
+| `kind_base_name_reserved`      | A model takes the name of a kind base (such as `Model`).                                                                                                     | Rename the model after the domain word it stands for.                                                                                                                  |
+| `kind_path`                    | A command class sits outside its kind's `commands/` folder.                                                                                                  | Move it to the folder the message names.                                                                                                                               |
+| `empty_module`                 | A module file states nothing gen cannot derive from its folder.                                                                                              | Delete the file: the folder is the module.                                                                                                                             |
+| `event_base_abstract`          | A class extends `Event`, the abstract base of the event kinds.                                                                                               | Extend `DomainEvent`, `IntegrationEvent`, `WebhookEvent` or `AnalyticsEvent`.                                                                                          |
+| `override_duplicate`           | Two classes in one member override the same base class.                                                                                                      | Keep one override per base and merge the other into it.                                                                                                                |
+| `override_legacy_name`         | An override does not keep the plain name of the class it overrides.                                                                                          | Rename it to the base's name and import the base under an alias (`Base<Name>`).                                                                                        |
+| `module_cycle`                 | Modules depend on each other in a cycle.                                                                                                                     | Move the shared part into one module, or into a third module both import, so dependencies point one way.                                                               |
+| `sibling_not_exported`         | A class injects a class of another module that the module does not export.                                                                                   | Add it to `exports` of that module's `Module({ exports })`, or inject something the module exports.                                                                    |
+| `token_not_a_class`            | A constructor parameter is not typed with a class.                                                                                                           | Type each injected parameter with the class or port to inject, or `Named<Port, "name">`.                                                                               |
+| `partner_mismatch`             | A paired class (policy, connection) is typed against a partner with a different name, or against a type alias.                                               | Name the class after its partner, or pass the partner explicitly as the message says.                                                                                  |
+| `partner_unresolved`           | A type argument names a class gen cannot import.                                                                                                             | Import the partner class by its own name from its package's public entry.                                                                                              |
+| `port_key_mismatch`            | A port's written `~key` brand differs from the key gen derives.                                                                                              | Write the derived key the message shows, or delete the brand.                                                                                                          |
+| `port_unbound`                 | A class injects a port that no driver binds in this member.                                                                                                  | Write a driver for the port, or add to `package.json` a package that ships one.                                                                                        |
+| `app_definition_not_static`    | The `defineApp` argument in `stackra.config.ts` is not plain data.                                                                                           | Pass one object of literals and enum cases: no spread, call, shorthand or computed key.                                                                                |
+| `shim_authored`                | A hand-written config file sits where gen writes its own (a tool config that does not import the generated one, a root declaration tsconfig, an `app.json`). | Import and extend the generated config, or delete the file so gen writes it.                                                                                           |
+| `manifest_unshipped`           | The package's `files` in `package.json` leaves out `stackra.manifest.json`.                                                                                  | Add `stackra.manifest.json` to `files`.                                                                                                                                |
+| `package_entities_modules`     | A package has models in more than one module.                                                                                                                | Keep a package's models in its one module.                                                                                                                             |
+| `module_key_collision`         | A module of the member has the same key as a module of a package it hosts.                                                                                   | Rename the member's module (its folder and key).                                                                                                                       |
+| `client_dependency_missing`    | A generated client imports an `@stackra` package the member does not declare.                                                                                | Add the package the message names to `dependencies`.                                                                                                                   |
+| `schema_dependency_missing`    | A generated schema imports a package (such as `zod`) the member does not declare.                                                                            | Add the package the message names to `dependencies`.                                                                                                                   |
+| `generated_dependency_missing` | The generated wiring needs a package the member does not declare, directly or through another undeclared package.                                            | Add every package the message lists to `dependencies`; one refusal lists them all as lines to paste.                                                                   |
+
+### Shapes and fields
+
+| Code                              | Cause                                                                                           | Fix                                                                                                                                  |
+| --------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `shape_unknown_type`              | A field's type is not one a schema can hold.                                                    | Use a shape type the message suggests (a primitive, an enum, a schema class, a brand).                                               |
+| `shape_number_kind`               | A number field has neither `@Int` nor `@Num`, or both.                                          | Add `@Int` for whole numbers or `@Num` for decimals (`each: true` inside an array or map).                                           |
+| `shape_decorator_type_mismatch`   | A rule decorator does not apply to the field's type.                                            | Remove the decorator, or change the field's type.                                                                                    |
+| `shape_rule_not_constant`         | A rule decorator's arguments are not constants.                                                 | Use literals or literal-typed `const` values.                                                                                        |
+| `shape_default_not_constant`      | A field default is computed.                                                                    | Use a literal, an enum case, a literal constant, `null`, `[]`, `{}`, `Duration.*` or `Money.of`; compute other values in `create()`. |
+| `shape_default_member_unresolved` | A default names a member its owner does not have (often a renamed enum case).                   | Use a member that exists, or check the import.                                                                                       |
+| `shape_hatch_reason_missing`      | `@Field(zod)` has no reason.                                                                    | Add a `// reason:` line above `@Field` saying why no type fits.                                                                      |
+| `shape_hatch_local_binding`       | `@Field(zod)` uses a value declared in the same file, which the generated schema cannot import. | Write the zod inline, or move the value to an exported constant imported by a package or `#` path.                                   |
+| `relation_decorator_missing`      | A relation field has no decorator naming its target model.                                      | Add `@ManyToOne`, `@OneToMany` or `@ManyToMany`, or type a model of another module as `Link<Target>`.                                |
+| `data_class_unknown`              | `dataClass` names no data class gen can read.                                                   | Use a `DataClassification` value or a `DataClass({ key })` class.                                                                    |
+
+### Identity and names
+
+Identities (action and query keys, event wire names, permission keys, public id prefixes) are part of your API. Once
+`stackra.manifest.json` is committed they are locked.
+
+| Code                       | Cause                                                                                | Fix                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `identity_changed`         | A locked identity changed: a class, key, setting or settings group was renamed.      | Add `@Renamed("old")` to the class, or restore the old name.                             |
+| `identity_collision`       | Two classes derive the same identity (key, integration key or report key).           | Rename one class, or give one a different written key or name.                           |
+| `identity_invalid`         | An error class's name does not give a valid code.                                    | Name the class in PascalCase ending in `Error`.                                          |
+| `identity_missing`         | An action, query, sequence or rule outcome has no written `key`.                     | Write the key the message shows, such as `Action({ key: "model.verb" })`.                |
+| `integration_key_invalid`  | An integration's written key is not two snake_case parts joined by a dot.            | Write `group.name`, such as `connectors.stripe`, or leave it out to derive it.           |
+| `integration_role_unknown` | An integration names a role that is not an Integration role.                         | Use one of the roles the message lists.                                                  |
+| `event_name_prefixed`      | An event's written name starts with the module or member key, which gen adds itself. | Drop the prefix: the wire name is always `module.name.vN`.                               |
+| `event_name_shape`         | An integration event's name is missing or is not `aggregate.verb` in snake_case.     | Write `IntegrationEvent({ name: "order.paid" })`; keep an old wire name with `@Renamed`. |
+| `prefix_invalid`           | A public id prefix is not 2 to 6 lowercase letters.                                  | Write a prefix such as `HasPublicId("ord")`.                                             |
+| `prefix_duplicate`         | Two models use the same public id prefix.                                            | Give one of them another prefix, or host only one of them.                               |
+| `prefix_taken`             | The prefix is registered to another member in gen's prefix registry.                 | Pick a prefix the registry does not list.                                                |
+| `effect_unknown`           | An effect tag is not one of the known tags.                                          | Use one of the tags the message lists.                                                   |
+| `permission_unknown`       | An action or query uses a permission no Permissions class declares.                  | Add the static the message shows to the module's Permissions class.                      |
+
+### Actions, queries and approvals
+
+| Code                                | Cause                                                                                                                                                   | Fix                                                                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `action_handle_signature`           | An action has no `handle`, its input is not a schema of this member, or its return type is not written as `Promise<Output>`.                            | Declare `handle(input)` with the member's input schema and an explicit `Promise` return type.                          |
+| `listener_handle_signature`         | A listener's `handle` does not take an event class.                                                                                                     | Type the first parameter with the event class it reacts to, or `EventEnvelope` for a relay of every event.             |
+| `action_risk_below_write`           | Staged. An action uses a permission below L2, but an action writes.                                                                                     | Raise the permission to `Permission.L2` (L3 for money, L4 for access, deletion or customer sends).                     |
+| `query_above_l1`                    | Staged. A query's permission is above L1, but a query only reads.                                                                                       | Give it an L0 or L1 permission, make it an action, or write a `// reason:` on its `permission` for a deliberate floor. |
+| `idempotency_missing`               | Staged. A client can call the action (an endpoint or a tool) but it declares no `idempotency`.                                                          | Write `idempotency: Idempotency.Optional`, `Required`, `Derived` or `Never`.                                           |
+| `step_up_missing`                   | Staged. A high-risk action a user can call declares no `stepUp`.                                                                                        | Add `stepUp: AssuranceLevel.Aal2`.                                                                                     |
+| `step_up_exemption_unlisted`        | An action declares a step-up exemption but is not a first-factor enrolment action.                                                                      | Declare `stepUp: AssuranceLevel.Aal2`.                                                                                 |
+| `credentials_ignore_not_anonymous`  | `credentials: "ignore"` on an action whose actors are not exactly anonymous.                                                                            | Set `actors: [ActorKind.Anonymous]`, or remove `credentials`.                                                          |
+| `action_cache`                      | An action declares `cache`; an action's answer is never cached.                                                                                         | Remove `cache`, or move the read into a query.                                                                         |
+| `query_precondition`                | A query declares `preconditions`, which only actions run.                                                                                               | Refuse inside `handle`, or make it an action.                                                                          |
+| `stream_output_mismatch`            | `stream: true` and a `ReadableStream` answer do not go together.                                                                                        | Declare both or neither.                                                                                               |
+| `public_without_endpoint`           | Something is marked `public` but has no endpoint.                                                                                                       | Give it an endpoint, or drop `public: true`.                                                                           |
+| `tool_reason_missing`               | An agent-tool choice (`tool: false` on a user action, `tool: true` on a risky one) has no reason; also printed for a code hatch file gen does not know. | Add a `// reason:` line above the `tool` option; move an unknown hatch's setting into `stackra.config.ts`.             |
+| `intent_phrases_missing`            | `intent: true` but the language catalogue has no intent phrases for the action.                                                                         | Add the `actions.<key>.intents` list to the catalogue, or drop `intent: true`.                                         |
+| `secret_output_kept`                | Warning. An action returns a field that reads as a secret, and the idempotency store keeps outputs for replays.                                         | Mark the field `@ShownOnce`, or declare `idempotency: Idempotency.Never`.                                              |
+| `site_cache_reads_caller`           | A query cached per site reads the caller, so one caller's answer is served to everyone.                                                                 | Stop reading the caller, or cache per principal (the default) or per scope.                                            |
+| `action_without_workflow`           | Warning. An action reaches past its module but starts no workflow, so a later failure cannot compensate.                                                | Move the cross-module work into a workflow started with `ctx.run`.                                                     |
+| `workflow_without_action`           | A controller or listener starts a workflow directly.                                                                                                    | Call an action that starts the workflow, or set the workflow's `startOn` for an event.                                 |
+| `approval_on_query`                 | A query declares approval; a query changes nothing.                                                                                                     | Remove `approval`, or make it an action.                                                                               |
+| `approval_not_constant`             | The `approval` option is not constant.                                                                                                                  | Write `approval` as `true` or an object of constants and class references.                                             |
+| `approval_actor_not_allowed`        | Approval is declared for an actor kind an approval may not gate.                                                                                        | Limit `actors` to users and agents, or remove `approval`.                                                              |
+| `approval_credential_input`         | An action with approval takes a credential in its input, which a parked request would keep.                                                             | Take a connection id instead of the credential, or remove `approval`.                                                  |
+| `approval_window_too_long`          | `expiresAfter` is above 30 days.                                                                                                                        | Write at most `"720h"`.                                                                                                |
+| `approval_condition_dependency`     | An approval condition has constructor dependencies.                                                                                                     | Remove the constructor; the condition receives a limited settings reader.                                              |
+| `approval_condition_reads_unmarked` | An approval condition reads a setting not marked for approval.                                                                                          | Mark the setting `@Setting({ approval: true })`, or read another key.                                                  |
+
+### Endpoints, jobs and webhooks
+
+| Code                          | Cause                                                                                           | Fix                                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `endpoint_collision`          | Two routes are on the same method and path.                                                     | Give one of them another key or `endpoint: { method, path }`.                                      |
+| `endpoint_method_mismatch`    | A query is not on GET, an action is on GET, or a transition is not on PUT.                      | Use the method the message names, or change the kind.                                              |
+| `endpoint_area_mismatch`      | A route's path does not start with its area.                                                    | Start the path with `/<area>/`, or set the right `area`.                                           |
+| `endpoint_versioned`          | A path has a version segment such as `/v1`.                                                     | Drop it: paths are unversioned and API versions travel in the `Stackra-Version` header.            |
+| `endpoint_param_unbound`      | A route binds a path parameter the input does not declare.                                      | Add the field to the input, or write the `endpoint` yourself.                                      |
+| `job_without_system_actor`    | An action declares `job` but its actors include neither system nor job.                         | Add `ActorKind.System` or `ActorKind.Job`, or drop `job`.                                          |
+| `cron_input_invalid`          | A cron job's `input` does not match the action's input schema.                                  | Write `input` as the message says.                                                                 |
+| `cron_job_collision`          | Two cron actions map to the same Encore cron job id.                                            | Give one of them another written key.                                                              |
+| `queue_unprovisioned`         | A job runs on a queue the root `runway.yaml` does not declare for an environment.               | Add the queue under `environments.<env>.queues` with its visibility timeout and dead-letter queue. |
+| `egress_invalid`              | An integration's `baseUrl` is not an https origin.                                              | Write an https URL; a per-region host uses a `{field}` of the credential set.                      |
+| `webhook_event_id_undeclared` | A webhook receiver names no event id, so the inbox would treat every event as one.              | Name `webhooks.eventId` or a signature id header.                                                  |
+| `webhook_event_unpaired`      | A hosted package's webhook event names an integration or connection its manifest does not list. | Regenerate that package's manifest, or declare the event beside its integration.                   |
+| `webhook_route_duplicate`     | Two classes handle the same provider webhook type.                                              | Keep one class for the type.                                                                       |
+
+### Data, migrations and search
+
+| Code                              | Cause                                                                                        | Fix                                                                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `model_tenancy_missing`           | A model is neither tenant-owned nor declared global, so its table has no row-level security. | Add `BelongsToTenant` to the model (and `t.belongsToTenant()` to its migration), or extend `Model.global(...)` for a global table. |
+| `model_tenancy_migration_missing` | Staged. A tenant-owned model's table has no migration that calls `t.belongsToTenant()`.      | Add a migration with `t.belongsToTenant()` and a backfill of `tenant_id`.                                                          |
+| `append_only_not_revoked`         | An `AppendOnly` model's table still allows UPDATE.                                           | Call `t.appendOnly()` in a new migration on the table.                                                                             |
+| `migration_numbering`             | A migration file is not named `NNNN-name.migration.ts` or breaks the numbering.              | Rename it as the message says; a migration that has run anywhere is frozen, so add a new one instead.                              |
+| `migration_compile_failed`        | A migration file does not compile, or exports more than one class.                           | Fix it as the message says; fix an applied migration in a new one.                                                                 |
+| `migration_load_failed`           | A migration or a migration macro file does not load.                                         | A migration imports only `@stackra/database` and `#stackra/migrations`; build a macro package before gen.                          |
+| `migration_import_forbidden`      | A migration imports something else.                                                          | Write table and column names as literals; a migration is a frozen snapshot.                                                        |
+| `migration_database_missing`      | The member has migrations but does not resolve `@stackra/database`.                          | Add `@stackra/database` to `dependencies`.                                                                                         |
+| `migration_after_unknown`         | `Migration({ after })` names an id no loaded migration has.                                  | Add the package that owns it, or fix the id.                                                                                       |
+| `migration_cycle`                 | `after` ids form a cycle.                                                                    | Remove one `after` so the migrations have one order.                                                                               |
+| `migration_id_duplicate`          | Two migrations have the same id.                                                             | Keep one copy of the package, or renumber the member's migration.                                                                  |
+| `sequence_misplaced`              | A sequence is outside its module's `database/sequences/` folder.                             | Move it there.                                                                                                                     |
+| `document_number_unsequenced`     | A document number names no declared sequence.                                                | Declare it with `Sequence({ key })`, or name an existing one.                                                                      |
+| `credential_field_not_encrypted`  | A field classified as a credential is not encrypted.                                         | Add the field to `HasEncryptedFields`.                                                                                             |
+| `encrypted_field_unknown`         | `HasEncryptedFields` names a field the model does not declare.                               | Declare the field, or remove it from the list.                                                                                     |
+| `encrypted_field_unclassified`    | An encrypted field has no `@Classified` class.                                               | Add `@Classified(DataClassification.<Class>)`.                                                                                     |
+| `encrypted_native_write`          | A raw or native write skips the unit of work, so encrypted fields would be stored in clear.  | Write through the repository or `CrudService`.                                                                                     |
+| `encrypted_lookup_unknown`        | `lookup` names a field that is not encrypted.                                                | Add it to the encrypted fields, or remove it from `lookup`.                                                                        |
+| `encrypted_lookup_undeclared`     | A looked-up field has no blind-index column on the model.                                    | Declare the index field the message names, and its column in a migration.                                                          |
+| `encrypted_lookup_not_indexed`    | No index leads with the blind-index column, so lookups scan the table.                       | Add the `@Index` the message shows, and the index to a migration.                                                                  |
+| `encrypted_lookup_subject`        | `lookup` is combined with a subject key, which would still match an erased subject.          | Drop `lookup`, or seal under the scope instead.                                                                                    |
+| `searchable_columns_drift`        | `@Searchable` and the latest `t.searchable` migration describe different fields.             | Follow the expand, reindex, contract steps the fix prints.                                                                         |
+| `searchable_semantic_ai_never`    | Semantic search would embed a field whose data class forbids AI.                             | Drop the field from the facet's text, or drop `semantic: true`.                                                                    |
+| `sort_not_indexed`                | A resource table sorts by a field no index leads with.                                       | Add the `@Index` the message shows, or drop the sort.                                                                              |
+| `filter_not_indexed`              | A resource table filters on a field no index leads with.                                     | Add the `@Index` the message shows, or drop the filter.                                                                            |
+| `entitlement_unknown`             | Something names an entitlement no member or hosted package declares.                         | Import an `Entitlement` class that exists, or add the package that declares it.                                                    |
+| `entitlement_counts_unknown`      | An entitlement counts a model this member does not have.                                     | Count a model this member or a hosted package declares.                                                                            |
+| `addition_target_missing`         | A model addition names no base model, or one the base's released manifest lacks.             | Extend `ModelAddition(Base)` with a released model, or build against a base version that has it.                                   |
+| `addition_base_source`            | A model addition imports its base from source.                                               | Import the base from the base product's released client package.                                                                   |
+| `addition_key_collision`          | Two additions nest fields on one base model under the same key.                              | Keep one addition per base model in a module.                                                                                      |
+
+### Clients, events and integrations
+
+| Code                           | Cause                                                                                                     | Fix                                                                                                                |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `client_service_unknown`       | A `#stackra/clients/<service>` import names a service with no committed manifest here.                    | Run `stackra gen` in that service, or add its contract package as a devDependency.                                 |
+| `client_name_mismatch`         | A constructor parameter is not typed with the client of the service it imports.                           | Type it with the client name the fix shows.                                                                        |
+| `client_event_unknown`         | A listener names an integration event the service does not publish.                                       | Import an event the service declares, or run `stackra gen` in it first.                                            |
+| `client_event_unsubscribed`    | A listener reacts to another service's event, but that service does not list this member as a subscriber. | Add this member under `events.subscribers` in the producer's `runway.yaml`, release its contract and bump it here. |
+| `connection_partner_ambiguous` | A connection matches more than one integration of the same name.                                          | Keep one, or rename the connection after its integration.                                                          |
+
+### Settings and secrets
+
+| Code                        | Cause                                                              | Fix                                                                                                    |
+| --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `settings_group_conflict`   | Two settings classes derive the same group key.                    | Rename one class, or override the other in `src/overrides/`.                                           |
+| `settings_group_key_empty`  | A settings class derives an empty group key.                       | Name it `<Group>Settings`, such as `OrdersSettings`.                                                   |
+| `settings_key_unresolved`   | A setting key in code names no setting field of the member.        | Use `Settings.<group>.<name>` keys the member's settings classes declare.                              |
+| `settings_scope_widened`    | A field allows scopes its enclosing class does not.                | List only the class's scopes, or widen the class.                                                      |
+| `settings_too_deep`         | A settings section nests more than one level.                      | Flatten the field into the section.                                                                    |
+| `settings_unsupported_type` | A setting's type cannot be stored.                                 | Use boolean, number, string, a brand, an enum, a connection id, or an array of strings or enum values. |
+| `secret_name_missing`       | `@Secret` does not name its secret with a SCREAMING_SNAKE literal. | Write `@Secret("PROVIDER_PURPOSE")`, such as `@Secret("RESEND_API_KEY")`.                              |
+
+### Resources, reports, commands and UI
+
+| Code                           | Cause                                                                             | Fix                                                                               |
+| ------------------------------ | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `resource_duplicate`           | Two resources (or two hosted packages) declare the same resource.                 | Keep one resource per model and area, or depend on one of the packages.           |
+| `resource_operation_unknown`   | A resource operation names no action or query of this member or its dependencies. | Name an existing action or query, or `true` for the standard read.                |
+| `resource_unloadable`          | A resource file could not be imported to record its tree.                         | Fix the import error; a resource file must load without starting anything.        |
+| `resource_loader_missing`      | Gen ran without a module loader, which resources need.                            | Run `stackra gen` or `stackra gen --check`, which load resources.                 |
+| `builder_impure`               | A resource builder member threw when run on a fresh builder.                      | Make `table`, `form` and the other builders read only their argument.             |
+| `report_misplaced`             | A report is outside its module's `reports/` folder.                               | Move it there.                                                                    |
+| `report_dimension_unknown`     | A report dimension reads a path that is not a field of its source.                | Name a declared field, or declare it.                                             |
+| `report_measure_unknown`       | A report measure reads a path that is not a field of its source.                  | Name a declared field, or declare it.                                             |
+| `report_vocabulary_invalid`    | A grain, measure kind or metric is outside the closed set or not constant.        | Use the values the message lists.                                                 |
+| `command_collision`            | Two commands or aliases have the same name.                                       | Rename one, or stop hosting the package that declares it.                         |
+| `route_duplicate`              | Two hosted packages ship the same route.                                          | Depend on only one, or rename the route file in its owner.                        |
+| `menu_duplicate`               | Two hosted packages ship the same menu.                                           | Depend on only one, or rename the menu file in its owner.                         |
+| `slot_undeclared`              | A component fills a slot the shell does not declare.                              | Fill a slot the shell's manifest lists, or regenerate the shell's manifest.       |
+| `slot_key_duplicate`           | Two slots declare the same key.                                                   | Give each slot its own key.                                                       |
+| `slot_fill_duplicate`          | Two fills target a slot that takes one.                                           | Keep one fill, or declare the slot with `cardinality: "many"`.                    |
+| `slot_props_mismatch`          | A fill was built against other props than the slot declares.                      | Update the shell dependency and fix the component to the slot's props.            |
+| `slot_surface_mismatch`        | A fill is on another surface than its slot.                                       | Fill on the slot's surface.                                                       |
+| `slot_options_not_constant`    | `defineSlot` or `fillSlot` options are computed.                                  | Write the options as literals.                                                    |
+| `surface_targets_conflict`     | A surface is on more than one shell version line.                                 | Depend on one shell version line.                                                 |
+| `anchor_undeclared`            | Code refers to an anchor no component declares.                                   | Put `anchor="<key>"` on the component, or point at a declared anchor.             |
+| `client_tool_collision`        | Two client tools get the same name.                                               | Rename the route or resource, or opt one out with `ai: false`.                    |
+| `context_record_not_public_id` | A page's context record is not a path parameter typed `PublicId`.                 | Name a path parameter in `context.record.param` and type it `PublicId<"prefix">`. |
+| `prefill_tool_off`             | A placement says `ai: true` but its action says `tool: false`.                    | Drop `ai: true`, or make the action a tool.                                       |
+| `i18n_key_missing`             | A translation key or namespace the code uses is missing from `assets/lang`.       | Add the key to every locale, or declare the package that ships the namespace.     |
+| `i18n_namespace_clash`         | Two packages ship the same language namespace.                                    | Declare only one, or rename the namespace.                                        |
+
+### Apps: Expo and Encore
+
+| Code                           | Cause                                                                            | Fix                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `encore_app_missing`           | The root `runway.yaml` names no Encore app id, so gen cannot write `encore.app`. | Set the app id at the key the message names in the root `runway.yaml`. |
+| `encore_app_stray`             | An `encore.app` sits outside a service member; gen writes the only one.          | Delete it and set the app id in the root `runway.yaml`.                |
+| `expo_identity_missing`        | The app targets iOS or Android without a bundle id or package name.              | Add `ios.bundleId` or `android.package` to `defineApp`.                |
+| `expo_owned_key`               | The `expo` section sets a key or plugin gen writes.                              | Remove it; gen derives it.                                             |
+| `expo_permission_text_missing` | A plugin needs a permission text the base locale lacks.                          | Add the key to `assets/lang/<base>/permissions.json`.                  |
+| `app_icon_drift`               | `AppIconConfig.icons` and `assets/app-icons` disagree.                           | Make the list match the icon sets on disk.                             |
+
+### Docs site
+
+| Code                            | Cause                                                                                                               | Fix                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `docs_config_invalid`           | The docs config (`docs.config.ts` or `docs.yaml`) cannot be read or has a wrong value.                              | Fix the field the message names.                                                     |
+| `docs_source_misplaced`         | A file sits where the docs layout does not allow it (a `docs.json`, a `README.md`, a non-page in the pages folder). | Move it as the fix says.                                                             |
+| `docs_page_outside`             | A page sits outside the pages folder.                                                                               | Move it under the pages folder; reusable fragments go in snippets.                   |
+| `docs_page_unlisted`            | A page is in no navigation group.                                                                                   | List it (or its folder) in a group, or delete it.                                    |
+| `docs_page_missing`             | The navigation lists a page or folder that does not exist.                                                          | Create the page, or remove the entry.                                                |
+| `docs_asset_missing`            | A config field names an asset that does not exist.                                                                  | Add the asset, or name one that exists.                                              |
+| `docs_asset_unreferenced`       | An asset is referenced by no page, snippet or config field.                                                         | Reference it, or delete it.                                                          |
+| `docs_component_unknown`        | A page uses a component the site does not map and the page does not import, or passes props to a snippet.           | Import the component, use a mapped one, or write it as code.                         |
+| `docs_redirect_shadows_page`    | A redirect leaves a path that is a page.                                                                            | Remove the redirect, or move the page.                                               |
+| `docs_redirect_target_missing`  | A redirect points at neither a page nor an absolute URL.                                                            | Point it at a page path or an `https://` URL.                                        |
+| `docs_owned_key`                | The raw config sets a key gen writes.                                                                               | Set it through the typed field instead.                                              |
+| `docs_service_unknown`          | The API reference names a service with no committed manifest.                                                       | Run `stackra gen` in the service and commit its manifest.                            |
+| `docs_meta_invalid`             | A `meta.json` is not an object, sets an unknown key or a wrong type.                                                | Write only `title`, `icon`, `pages`, `root` and `defaultOpen`, with the right types. |
+| `docs_meta_entry_invalid`       | A `meta.json` lists an entry that names no page or folder.                                                          | Name a page, a subfolder, a separator or `...`.                                      |
+| `docs_meta_root_nested`         | A folder below the top sets `root`.                                                                                 | Set `root` only on folders directly under the content folder.                        |
+| `docs_locales_invalid`          | A locale code is malformed, listed twice, or not exactly one locale is the default.                                 | Write each code once and mark one default.                                           |
+| `docs_locales_unsupported`      | `locales` is set but the site cannot serve more than one language.                                                  | Add `fumadocs-ui`, or remove `locales`.                                              |
+| `docs_locale_path_taken`        | A page sits in a folder named after a locale.                                                                       | Move it, or write it as a translation (`page.<code>.mdx`).                           |
+| `docs_locale_page_orphan`       | A translation has no page in the default locale.                                                                    | Add the default page, or delete the translation.                                     |
+| `docs_locale_page_untranslated` | Warning. A page has no translation for a locale, so that locale shows the default page.                             | Add the translation when it is ready.                                                |
+
+## Check
+
+`stackra check` runs the quality gate's phases in order: config, format, spelling, secrets, structure, docs, lint,
+hooks, gen, typecheck, catalogues and spec (`--with-tests`, or `stackra verify`, adds the tests). `stackra validate`
+runs the config, structure, docs, catalogues and spec phases. `--only` and `--skip` pick phases, `--fix` applies what
+can be fixed, and `--format json` prints the findings as data. Each finding
+names its location, its tool and rule, and the message (`[fixable]` when `stackra check --fix` can fix it):
+
+```text
+services/orders/src/modules/orders/actions/pay-order.action.ts  repo-checks/imports  import "../../../shared/money" climbs two or more folders; use the member's # alias (ADR 0233)
+```
+
+### Repository rules
+
+| Code                        | Cause                                                                                                                               | Fix                                                                                             |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `json-configs`              | A `.json` file that could be JSONC, or a `.jsonc` file that could be YAML.                                                          | Rename it to the format the message names; only the listed files stay JSON.                     |
+| `yaml-flow-maps`            | Repository YAML uses a flow mapping (`{ a: 1 }`).                                                                                   | Write it as a block mapping.                                                                    |
+| `gitignore-stackra`         | `.gitignore` does not ignore `.stackra/`, or a service's `encore.app`.                                                              | Add the lines the message names.                                                                |
+| `ignored-goldens`           | A file under `__golden__` is ignored by git, so the golden never reaches the repository.                                            | Un-ignore and commit it.                                                                        |
+| `constitution`              | The generated constitution file is missing or out of date.                                                                          | Run `stackra constitution` and commit it.                                                       |
+| `agent-sources`             | An agent, skill, routing or model file under `.agents/` is malformed.                                                               | Fix the file the message names.                                                                 |
+| `skill-tech`                | A skill teaches a technology the architecture rejected, with no reasoned allowance.                                                 | Change the skill, or record the allowance.                                                      |
+| `adr-numbers`               | An ADR's number is missing from the register, has another slug, or is used twice.                                                   | Register the number with the file's slug, or renumber.                                          |
+| `tool-pins`                 | A tool pinned in `mise.toml` differs from the version in the `pnpm-workspace.yaml` catalog.                                         | Pin the same version in both.                                                                   |
+| `gen-strict-env`            | A root turbo task that runs gen does not list `STACKRA_GEN_STRICT` in its `env`.                                                    | Add it, so a strict run sees the variable and the staged codes refuse.                          |
+| `layout`                    | The repository root holds something its template does not allow.                                                                    | Move it, or declare it with a reason in `package.json` `stackra.layout.allow`.                  |
+| `public-id-prefixes`        | Two members use the same public id prefix.                                                                                          | Use the prefix the message suggests.                                                            |
+| `test-placement`            | A test is outside `__tests__/`, is named `.spec`, or a forbidden file exists.                                                       | Move it into `__tests__/` and name it `.test`.                                                  |
+| `isolation-tier`            | A row-level security test runs in the unit tier, where the database bypasses the policies.                                          | Name it `.int.test.ts` so it runs against real Postgres.                                        |
+| `workflow-triggers`         | A pull-request or push workflow runs paid work, or a test job carries a deploy identity.                                            | Move paid work behind a dispatch, tag, schedule or release; keep deploy secrets in deploy jobs. |
+| `mise-action-version`       | A `jdx/mise-action` step names no mise `version`, or steps name different ones.                                                     | Name the same version on every step.                                                            |
+| `runway-schemas`            | A packaged runway schema differs from its canonical copy.                                                                           | Copy the canonical schema over it.                                                              |
+| `runway-unread-fields`      | The list of runway fields not read yet disagrees with the schema or the code.                                                       | Update the list and the schema description in the same change.                                  |
+| `runway-files`              | A `runway.yaml` does not parse, breaks its schema, or fails the placement, requirement or destination checks.                       | Fix the path the message names; `stackra runway validate` prints the same findings.             |
+| `wrangler-operational-keys` | A `wrangler.jsonc` holds an operational key (`account_id`, `routes`, `compatibility_date`, `observability`, `limits` and the like). | Move it to the member's `runway.yaml`; `wrangler.jsonc` holds code facts only.                  |
+| `imports`                   | An import names a file extension, or climbs more than one folder.                                                                   | Drop the extension; use the member's `#` alias for a deeper reach.                              |
+| `raw-sql`                   | A raw SQL call has no reason comment.                                                                                               | Add a `// raw-sql: <why>` comment on or above the call.                                         |
+| `ios-form-factor`           | An Expo config locks the orientation or requires full screen on iOS.                                                                | Remove the lock; the app takes any size and rotation.                                           |
+| `native-modules`            | Hand-written native code sits outside generated folders, or a native module package is incomplete.                                  | Move it into an Expo module package with its config and folders listed in `files`.              |
+| `window-sizing`             | An app reads its size from the device instead of its window.                                                                        | Read the window it is given.                                                                    |
+| `brand-notice`              | The docs brand folder has no `NOTICE`.                                                                                              | Restore `src/assets/brand/NOTICE`.                                                              |
+| `member`                    | A member's `package.json`, tier tag or tsconfig breaks the member rules (name, catalog versions, forbidden or Pro dependencies).    | Fix the field the message names.                                                                |
+| `member-metadata`           | A member's npm metadata or `stackra` field is incomplete or does not match its folder.                                              | Fix the field the message names.                                                                |
+| `member-files`              | A member lacks a README, AGENTS.md (with a PII section), CHANGELOG or LICENSE, or a required manifest field.                        | Add what the message names.                                                                     |
+| `forking-peers`             | A library declares a test-only package as a peer, or the web renderer as an optional peer, which forks its dependents' installs.    | Move a test-only peer to `devDependencies`; make the renderer a required peer.                  |
+| `hosted-peers`              | A library uses a hosted package's values without taking it as a peer.                                                               | Move it to `peerDependencies` (and `devDependencies` for its tests).                            |
+| `service`                   | A service has a hand-written Encore file, a wrong `encore.dev` version or tsconfig `paths`, or no `stackra.config.ts`.              | Delete the Encore file (gen writes it) and fix the field the message names.                     |
+| `doc-standard`              | A source file lacks its contract header or TSDoc on an export or member, or puts types in doc tags.                                 | Add the header or the TSDoc the message names.                                                  |
+| `catalogues`                | A language catalogue misses a key or namespace of `en`, has extra keys, or its ICU placeholders differ.                             | Make the catalogue match `en`.                                                                  |
+| `spec-gate`                 | A spec folder is not complete for its stage, or a change has no spec when its lane needs one.                                       | Fill the section the message names.                                                             |
+| `spec-trace`                | A spec's tasks and the code drift apart, or a requirement has no `@covers` test.                                                    | Update the spec, or add the test.                                                               |
+
+### Phase findings
+
+| Code             | Cause                                                          | Fix                                                                    |
+| ---------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `format`         | A file is not formatted.                                       | Run `pnpm format` (or `stackra check --fix`).                          |
+| `unknown-word`   | The spell checker does not know a word.                        | Fix the spelling, or add the word to `cspell.config.yaml`.             |
+| `stale`          | A generated file is out of date.                               | Run `stackra gen` (or `stackra check --fix`) and commit the result.    |
+| `compile`        | The hooks phase could not compile a component file.            | Fix the syntax error the message names.                                |
+| `rules-of-hooks` | A React hook is called conditionally or outside a component.   | Call hooks at the top level of a component or hook.                    |
+| `failed`         | A test task failed.                                            | Run `turbo run <task>` for its output.                                 |
+| `exit`           | A tool exited non-zero without a finding the phase could read. | Run the tool alone to see its output; the message holds its last line. |
+| `crash`          | A phase threw before it could report.                          | Read the message; it is usually a missing install or build.            |
+
+Some phases pass the tool's own rule names through: **lint** shows the oxlint rule (such as
+`oxlint/eslint(no-debugger)`; Stackra's own lint rules are named `stackra`), **secrets** shows the gitleaks rule, **typecheck** shows the TypeScript code (`TS2345`), and
+**gen** shows the [gen code](#gen) above.
+
+## Runway
+
+Runway checks the runway files and runs deploys, promotions and rollbacks.
+
+### Runway issue codes
+
+These come from the root `runway.yaml` checks. `stackra runway validate` prints placement issues as
+`runway.yaml: <message> (<code>)`.
+
+| Code                     | Cause                                                                                 | Fix                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `member_unplaced`        | A service is in no group of an environment's topology, and there is no default group. | Add it to a group, or set `default`.                     |
+| `member_placed_twice`    | A service is in two groups of one environment.                                        | Keep it in one.                                          |
+| `unknown_member`         | A group lists a name that is not a service member.                                    | Fix the name, or remove it.                              |
+| `unknown_default_group`  | `default` names a group that is not declared.                                         | Declare the group, or fix the name.                      |
+| `isolate_unknown_member` | `isolate` names something that is not a service member.                               | Fix the name, or remove it.                              |
+| `host_collision`         | Two surfaces use the same host in one environment.                                    | Give each surface its own host.                          |
+| `duplicate_port`         | Two dev ports land on the same port once lanes are added.                             | Change one port, the `portStep` or the repository index. |
+| `port_out_of_range`      | A dev port lands above 65535.                                                         | Lower the port, the `portStep` or the repository index.  |
+| `unknown_region`         | An environment deploys to a region `regions` does not declare.                        | Declare the region, or fix the key.                      |
+| `cloud_unconfigured`     | A region runs on a cloud whose `providers` section is missing.                        | Add the provider section.                                |
+| `unknown_account`        | A region names a cloud account the provider section does not have.                    | Add the account, or fix the name.                        |
+| `zone_owner_conflict`    | Two root runways claim the same DNS zone.                                             | Set `owner: true` in exactly one.                        |
+
+### Runway errors
+
+| Code                      | Cause                                                                                                                                                                                    | Fix                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `RunwayInvalidError`      | A runway file breaks its schema; the message lists every invalid path.                                                                                                                   | Fix each path; run `stackra runway validate`.                                          |
+| `RunwayUnresolvedError`   | A value cannot be resolved where it is read: no dev facts (`stackra dev` has not run), a missing environment, no earlier release, or a deploy-time value the environment does not carry. | Do what the message says: run `stackra dev`, add the environment, or set the variable. |
+| `RunwayLockedError`       | Another deploy, promotion or rollback is running in the environment.                                                                                                                     | Wait for it to end, then run again.                                                    |
+| `RunwayDeployFailedError` | A target did not verify after a deploy, promotion or rollback; later targets were not touched.                                                                                           | Read the provider detail in the message, fix the target, and run again.                |
+| `RunwaySmokeFailedError`  | The smoke step failed or had no driver for a subject, so promotion is blocked.                                                                                                           | Fix the failing subjects the message names, then promote again.                        |

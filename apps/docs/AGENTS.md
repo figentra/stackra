@@ -51,6 +51,17 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
   (`src/node/architecture-map/functions/__tests__/architecture-map.test.ts`, vitest, run by its `test` task).
 - The map draws; it never decides. A rule goes in validate, oxlint, turbo boundaries or gen, not in the generator.
 
+## Error-code reference (`scripts/error-codes/`)
+
+- `src/docs/customers/error-codes.mdx` lists every code gen, `stackra check` and Runway can print, one table row each
+  (code in backticks, cause, fix) under its tool's `## ` section (Gen, Check, Runway).
+  `scripts/error-codes/__tests__/error-codes.test.ts` reads the codes from the tools' source (`emitted-codes.ts`, the
+  TypeScript 6 compiler API) and fails when a code has no row, a row names a code no tool prints, a row lacks a cause
+  or a fix, or `customers/troubleshooting.mdx` names a code the reference does not list.
+- A new gen refusal, repository check rule, check phase rule, runway issue code or runway error class adds its row in
+  the same change. A code the extractor cannot follow to a literal fails the test: write it as a literal, or, for a
+  rule passed through from another tool, add it to `PASSED_THROUGH_RULES` and explain it on the page.
+
 ## Rules that fail the build
 
 - gen's refusals (`docs_source_misplaced`, `docs_page_unlisted`, `docs_page_missing`, `docs_asset_unreferenced`, …);

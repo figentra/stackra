@@ -8,7 +8,8 @@
  *           and `{ folder }` lists every page of one folder (`adr` keeps every ADR at `/adr/<file>`).
  * Runtime: node
  * Governing contract: ADR 0002 (2026-10-27 amendment); ADR 0295 (decisions 3 and 4); stackra-177 (STA-1317); STA-1575
- *                     (the customer tab and the /licensing redirect); ADR 0514; STA-2026.
+ *                     (the customer tab and the /licensing redirect); ADR 0514; STA-2026; STA-2853 (the troubleshooting
+ *                     and error-code pages).
  */
 import { DocsConfig } from "@stackra/gen";
 
@@ -91,6 +92,8 @@ export class StackraDocsConfig extends DocsConfig {
           group: "Use Stackra",
           pages: [
             "customers/install",
+            "customers/troubleshooting",
+            "customers/error-codes",
             "customers/support",
             "customers/security",
             "customers/residency",

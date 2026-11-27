@@ -55,6 +55,7 @@
     "@types/node": "catalog:",
     "oxfmt": "catalog:quality",
     "tailwindcss": "catalog:frontend",
+    "typescript6": "catalog:tooling",
     "vite": "catalog:frontend",
     "vitest": "catalog:quality",
     "wrangler": "catalog:deploy"
