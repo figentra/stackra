@@ -11,15 +11,40 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import * as network from "../bot-token.mjs";
 import {
   blockers,
   enqueueReady,
   gh,
   graphql,
+  definitionFieldsChanged,
+  isRecent,
+  mergeBlockers,
+  VERIFY_FRESH_MS,
+  isVerifyDefinition,
+  isVerifyOverlay,
+  isRootDefinition,
+  SHARED_STEP_LOADERS,
+  isGateToolPackage,
+  GATE_TOOL_BINS,
+  GATE_TOOL_PACKAGES,
+  VERIFY_OVERLAY_DIRS,
+  scriptsChanged,
   OWNER,
   ownerLabelled,
   parseArgs,
+  VERIFY_APP,
+  VERIFY_CHECK,
+  VERIFY_ENFORCED,
+  VERIFY_MOBILE_CHECK,
+  CODEQL_CHECK,
+  DEFINITION_FIELDS,
+  verifyFacts,
+  verifyRun,
+  JUDGE_ROOTS,
+  judgeMembers,
+  isJudgePath,
 } from "../pr-merge.mjs";
 import { fakeGh } from "./__fixtures__/fake-gh.mjs";
 
@@ -38,6 +63,30 @@ const pr = (over = {}) => ({
   ...over,
 });
 const green = [{ id: 2, status: "completed", conclusion: "success" }];
+// A stand-in verify App, so each case names the App it trusts; VERIFY_APP is the registered one (id 5907714).
+const APP = { slug: "stackra-verify", id: 4242 };
+// main's head in every case that does not name another; a run's base is it unless the case says otherwise
+const MAIN_HEAD = "f".repeat(40);
+const appRun = (
+  conclusion,
+  { id = 1, sha = SHA, app = APP, status = "completed", name = VERIFY_CHECK } = {},
+) => ({
+  id,
+  name,
+  head_sha: sha,
+  status,
+  conclusion: status === "completed" ? conclusion : null,
+  app,
+  html_url: `https://github.com/figentra/stackra/runs/${id}`,
+  external_id: `base:${MAIN_HEAD}`,
+});
+const verified = [appRun("success")];
+/** blockers with conditions 5 and 6 on (as after go-live, VERIFY_ENFORCED true) and main's head read. */
+const enforcedBlockers = (p, runs, options = {}) =>
+  blockers(p, runs, { enforced: true, mainSha: MAIN_HEAD, ...options });
+// Every pre-STA-2761 case runs with a green stackra/verify; conditions 5 and 6 have their own tests below.
+const check = (p, runs, options = {}) =>
+  enforcedBlockers(p, runs, { verifyRuns: verified, app: APP, ...options });
 // Shapes as the REST pull reviews API returns them.
 const review = (over = {}) => ({
   user: { login: OWNER, type: "User" },
@@ -48,30 +97,30 @@ const review = (over = {}) => ({
 });
 
 test("merges an open PR with a green gate, a clean merge state and no hold, with no review at all", () => {
-  assert.deepEqual(blockers(pr(), green), []);
+  assert.deepEqual(check(pr(), green), []);
   // UNSTABLE: only a non-required check is not green; HAS_HOOKS: mergeable with pre-receive hooks
-  assert.deepEqual(blockers(pr({ mergeStateStatus: "UNSTABLE" }), green), []);
-  assert.deepEqual(blockers(pr({ mergeStateStatus: "HAS_HOOKS" }), green), []);
+  assert.deepEqual(check(pr({ mergeStateStatus: "UNSTABLE" }), green), []);
+  assert.deepEqual(check(pr({ mergeStateStatus: "HAS_HOOKS" }), green), []);
 });
 
 test("condition 1: draft and closed PRs are refused", () => {
-  assert.match(blockers(pr({ isDraft: true }), green).join(), /draft/);
-  assert.match(blockers(pr({ state: "MERGED" }), green).join(), /MERGED/);
-  assert.match(blockers(pr({ state: "CLOSED" }), green).join(), /CLOSED/);
+  assert.match(check(pr({ isDraft: true }), green).join(), /draft/);
+  assert.match(check(pr({ state: "MERGED" }), green).join(), /MERGED/);
+  assert.match(check(pr({ state: "CLOSED" }), green).join(), /CLOSED/);
 });
 
 test("condition 2: gate missing, failed, in progress, or only an older rerun green", () => {
-  assert.match(blockers(pr(), []).join(), /no Quality Gate run/);
-  assert.match(blockers(pr(), [{ id: 1, conclusion: "failure" }]).join(), /is failure/);
+  assert.match(check(pr(), []).join(), /no Quality Gate run/);
+  assert.match(check(pr(), [{ id: 1, conclusion: "failure" }]).join(), /is failure/);
   assert.match(
-    blockers(pr(), [{ id: 1, status: "in_progress", conclusion: null }]).join(),
+    check(pr(), [{ id: 1, status: "in_progress", conclusion: null }]).join(),
     /is in_progress/,
   );
   const rerunRed = [
     { id: 1, conclusion: "success" },
     { id: 3, conclusion: "failure" },
   ];
-  assert.match(blockers(pr(), rerunRed).join(), /is failure/);
+  assert.match(check(pr(), rerunRed).join(), /is failure/);
 });
 
 test("condition 3: without a merge queue, the ruleset's merge state must let it merge", () => {
@@ -82,30 +131,27 @@ test("condition 3: without a merge queue, the ruleset's merge state must let it 
     ["UNKNOWN", /run pr:merge again/],
   ])
     assert.match(
-      blockers(pr({ mergeStateStatus: state }), green).join(),
+      check(pr({ mergeStateStatus: state }), green).join(),
       new RegExp(`mergeStateStatus is ${state} \\(.*${hint.source}`),
       state,
     );
-  assert.match(blockers(pr({ mergeStateStatus: undefined }), green).join(), /is UNKNOWN/);
+  assert.match(check(pr({ mergeStateStatus: undefined }), green).join(), /is UNKNOWN/);
   // the queue applies the ruleset itself, so any state enqueues
-  assert.deepEqual(blockers(pr({ mergeStateStatus: "BLOCKED" }), green, { queue: true }), []);
+  assert.deepEqual(check(pr({ mergeStateStatus: "BLOCKED" }), green, { queue: true }), []);
 });
 
 test("condition 4: a hold label in any case refuses, queue or not", () => {
   for (const name of ["hold", "HOLD", "Hold"]) {
-    assert.match(blockers(pr({ labels: [{ name }] }), green).join(), /labelled hold/, name);
-    assert.match(
-      blockers(pr({ labels: [{ name }] }), green, { queue: true }).join(),
-      /labelled hold/,
-    );
+    assert.match(check(pr({ labels: [{ name }] }), green).join(), /labelled hold/, name);
+    assert.match(check(pr({ labels: [{ name }] }), green, { queue: true }).join(), /labelled hold/);
   }
-  assert.deepEqual(blockers(pr({ labels: [{ name: "on-hold-later" }] }), green), []);
+  assert.deepEqual(check(pr({ labels: [{ name: "on-hold-later" }] }), green), []);
 });
 
 test("an AI-REVIEW verdict is never read: a FAIL comment does not refuse, and none is needed", () => {
   // blockers takes no comments; the reviewer App is retired (ADR 0523 decision 6)
   assert.equal(blockers.length, 2);
-  assert.deepEqual(blockers(pr(), green, { reviews: [] }), []);
+  assert.deepEqual(check(pr(), green, { reviews: [] }), []);
 });
 
 test("pr:merge arguments: a number and an optional -R owner/repo", () => {
@@ -118,17 +164,17 @@ test("pr:merge arguments: a number and an optional -R owner/repo", () => {
 
 test("design / risk:R3 need an owner approval on the head SHA or owner-approved", () => {
   const labels = [{ name: "risk:R3" }];
-  assert.match(blockers(pr({ labels }), green).join(), /owner approval/);
+  assert.match(check(pr({ labels }), green).join(), /owner approval/);
   const stale = [review({ commit_id: "abc" })];
-  assert.match(blockers(pr({ labels }), green, { reviews: stale }).join(), /owner approval/);
+  assert.match(check(pr({ labels }), green, { reviews: stale }).join(), /owner approval/);
   const notOwner = [review({ user: { login: "someone", type: "User" } })];
-  assert.match(blockers(pr({ labels }), green, { reviews: notOwner }).join(), /owner approval/);
+  assert.match(check(pr({ labels }), green, { reviews: notOwner }).join(), /owner approval/);
   const botOwner = [review({ user: { login: OWNER, type: "Bot" } })];
-  assert.match(blockers(pr({ labels }), green, { reviews: botOwner }).join(), /owner approval/);
-  assert.deepEqual(blockers(pr({ labels }), green, { reviews: [review()] }), []);
+  assert.match(check(pr({ labels }), green, { reviews: botOwner }).join(), /owner approval/);
+  assert.deepEqual(check(pr({ labels }), green, { reviews: [review()] }), []);
   const labelled = [{ name: "design" }, { name: "owner-approved" }];
   const byOwner = [labelEvent("labeled", OWNER, "User")];
-  assert.deepEqual(blockers(pr({ labels: labelled }), green, { events: byOwner }), []);
+  assert.deepEqual(check(pr({ labels: labelled }), green, { events: byOwner }), []);
 });
 
 // Shapes as the REST issue events API returns them.
@@ -142,7 +188,7 @@ const labelEvent = (event, login, type, created_at = T0, name = "owner-approved"
 
 test("STA-330 review: owner-approved counts only when the owner added it and it was not removed since", () => {
   const labels = [{ name: "design" }, { name: "owner-approved" }];
-  const merge = (events) => blockers(pr({ labels }), green, { events });
+  const merge = (events) => check(pr({ labels }), green, { events });
   assert.deepEqual(merge([labelEvent("labeled", OWNER, "User")]), []);
   // the label on the PR alone, or added by anyone but the owner, never counts
   for (const events of [
@@ -180,7 +226,7 @@ test("STA-330 review: owner-approved counts only when the owner added it and it 
     false,
   );
   // an owner review on the head still passes without the label
-  assert.deepEqual(blockers(pr({ labels }), green, { reviews: [review()], events: [] }), []);
+  assert.deepEqual(check(pr({ labels }), green, { reviews: [review()], events: [] }), []);
 });
 
 test("OP7: enqueueing waits for STA-302's connect timeout and retries", () => {
@@ -226,4 +272,744 @@ test("STA-302: gh() and graphql() retry reads only; a write that omits the flag 
     run(() => graphql("query{x}", [], "t")),
     { value: { x: 1 }, runs: 2 },
   );
+});
+
+test("condition 5: no stackra/verify check run from the verify App refuses (STA-2761, replaces merge-now)", () => {
+  assert.match(
+    enforcedBlockers(pr(), green, { app: APP }).join(),
+    /no stackra\/verify check run from stackra-verify on 0123/,
+  );
+});
+
+test("condition 5: VERIFY_APP is the registered stackra-verify App; an App without an id passes nothing", () => {
+  assert.deepEqual({ ...VERIFY_APP }, { slug: "stackra-verify", id: 5_907_714 });
+  assert.equal(Object.isFrozen(VERIFY_APP), true);
+  const registered = [appRun("success", { app: { slug: "stackra-verify", id: 5_907_714 } })];
+  assert.deepEqual(enforcedBlockers(pr(), green, { verifyRuns: registered }), []);
+  // the slug check stays: the right id under another slug never counts
+  const otherSlug = [appRun("success", { app: { slug: "stackra-bot", id: 5_907_714 } })];
+  assert.match(
+    enforcedBlockers(pr(), green, { verifyRuns: otherSlug }).join(),
+    /no stackra\/verify check run/,
+  );
+  const unregistered = { slug: "stackra-verify", id: null };
+  const runs = [appRun("success", { app: unregistered })];
+  assert.match(
+    enforcedBlockers(pr(), green, { verifyRuns: runs, app: unregistered }).join(),
+    /App is not registered/,
+  );
+  assert.equal(verifyRun(runs, SHA, unregistered), undefined);
+});
+
+test("condition 5: stackra/verify-mobile and stackra/codeql never pass or block a merge, whatever they say", () => {
+  assert.notEqual(VERIFY_MOBILE_CHECK, VERIFY_CHECK);
+  assert.notEqual(CODEQL_CHECK, VERIFY_CHECK);
+  // a red mobile or CodeQL run beside a green stackra/verify: merges
+  const redOthers = [
+    appRun("success", { id: 1 }),
+    appRun("failure", { id: 2, name: VERIFY_MOBILE_CHECK }),
+    appRun("failure", { id: 3, name: CODEQL_CHECK }),
+  ];
+  assert.deepEqual(check(pr(), green, { verifyRuns: redOthers }), []);
+  assert.equal(verifyRun(redOthers, SHA, APP).id, 1);
+  // a green mobile or CodeQL run alone never stands in for stackra/verify
+  const greenOthers = [
+    appRun("success", { id: 4, name: VERIFY_MOBILE_CHECK }),
+    appRun("success", { id: 5, name: CODEQL_CHECK }),
+  ];
+  assert.match(
+    check(pr(), green, { verifyRuns: greenOthers }).join(),
+    /no stackra\/verify check run/,
+  );
+  // and a newer mobile run never shadows the newest stackra/verify run (conditions 5 and 6 read only that name)
+  const mixed = [
+    appRun("failure", { id: 6 }),
+    appRun("success", { id: 7, name: VERIFY_MOBILE_CHECK }),
+  ];
+  assert.match(
+    check(pr(), green, { verifyRuns: mixed }).join(),
+    /stackra\/verify on .* is failure/,
+  );
+});
+
+test("condition 5: a failed, neutral, cancelled or unfinished run refuses and names its link", () => {
+  for (const conclusion of ["failure", "neutral", "cancelled", "timed_out", "skipped"])
+    assert.match(
+      enforcedBlockers(pr(), green, { app: APP, verifyRuns: [appRun(conclusion)] }).join(),
+      new RegExp(
+        `stackra/verify on ${SHA} is ${conclusion} \\(https://github.com/figentra/stackra/runs/1\\)`,
+      ),
+    );
+  for (const status of ["queued", "in_progress"])
+    assert.match(
+      enforcedBlockers(pr(), green, { app: APP, verifyRuns: [appRun(null, { status })] }).join(),
+      new RegExp(`is ${status}: wait`),
+    );
+});
+
+test("condition 5: forgery — a run from stackra-bot, another App, a same-slug App with another id, or a commit status never counts", () => {
+  const forged = [
+    appRun("success", { id: 9, app: { slug: "stackra-bot", id: 1 } }),
+    appRun("success", { id: 10, app: { slug: "github-actions", id: 15_368 } }),
+    appRun("success", { id: 11, app: { slug: "stackra-verify", id: 1 } }),
+    appRun("success", { id: 12, app: { slug: "impostor", id: APP.id } }),
+  ];
+  for (const forgery of forged) {
+    assert.equal(verifyRun([forgery], SHA, APP), undefined, JSON.stringify(forgery.app));
+    assert.match(
+      enforcedBlockers(pr(), green, { app: APP, verifyRuns: [forgery] }).join(),
+      /no stackra\/verify check run/,
+    );
+  }
+  // A newer forged success never hides the App's own failure.
+  assert.match(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [appRun("failure", { id: 1 }), ...forged],
+    }).join(),
+    /is failure/,
+  );
+});
+
+test("condition 5: a stale SHA — a run for another commit never stands in for the head", () => {
+  const stale = appRun("success", { sha: "f".repeat(40) });
+  assert.equal(verifyRun([stale], SHA, APP), undefined);
+  assert.match(
+    enforcedBlockers(pr(), green, { app: APP, verifyRuns: [stale] }).join(),
+    /no stackra\/verify check run/,
+  );
+});
+
+test("condition 5: only the newest App run counts (a re-run in progress refuses)", () => {
+  assert.deepEqual(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [appRun("failure", { id: 1 }), appRun("success", { id: 2 })],
+    }),
+    [],
+  );
+  assert.match(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [appRun("success", { id: 1 }), appRun("failure", { id: 2 })],
+    }).join(),
+    /is failure/,
+  );
+  assert.match(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [appRun("success", { id: 1 }), appRun(null, { id: 2, status: "in_progress" })],
+    }).join(),
+    /in_progress/,
+  );
+});
+
+test("condition 6: a PR that changes what the verify service checks needs risk:R3", () => {
+  for (const path of [
+    "turbo.jsonc",
+    "packages/data/database/turbo.jsonc",
+    "knip.jsonc",
+    "packages/ai/vitest.config.ts",
+    "packages/data/database/vitest.int.config.ts",
+    ".oxlintrc.json",
+    "packages/tooling/vitest-config/src/index.ts",
+    "tools/scripts/pr-merge.mjs",
+    ".npmrc",
+    "lefthook.yml",
+  ])
+    assert.equal(isVerifyDefinition(path), true, path);
+  // the Quality Gate's own policies are main's, so a PR cannot weaken the gate it is judged by
+  for (const path of [
+    ".github/zizmor.yml",
+    ".gitleaks.toml",
+    ".gitleaksignore",
+    ".commitlintrc.yaml",
+    "commitlint.config.mjs",
+    "osv-scanner.toml",
+    "tools/policy/licences.json",
+    "tools/scripts/stackra-verify.mjs",
+  ]) {
+    assert.equal(isVerifyOverlay(path), true, path);
+    assert.equal(isVerifyDefinition(path), true, path);
+  }
+  for (const path of [".github/workflows/ci.yml", "docs/zizmor.yml", "packages/x/osv-scanner.md"])
+    assert.equal(isVerifyOverlay(path), false, path);
+  for (const field of ["knip", "commitlint"]) {
+    assert.equal(DEFINITION_FIELDS.includes(field), true, field);
+    assert.equal(
+      definitionFieldsChanged(`{"${field}":{"a":1}}`, `{"${field}":{"a":2}}`),
+      true,
+      field,
+    );
+  }
+  for (const path of [
+    "packages/ai/src/index.ts",
+    "README.md",
+    "packages/ai/package.json",
+    "apps/docs/src/docs/x.mdx",
+  ])
+    assert.equal(isVerifyDefinition(path), false, path);
+  assert.equal(
+    scriptsChanged('{"scripts":{"test":"vitest run"}}', '{"scripts":{"test":"true"}}'),
+    true,
+  );
+  assert.equal(
+    scriptsChanged(
+      '{"scripts":{"test":"vitest run"},"version":"1"}',
+      '{"version":"2","scripts":{"test":"vitest run"}}',
+    ),
+    false,
+  );
+  assert.equal(scriptsChanged(null, '{"scripts":{"verify":"true"}}'), true);
+  const changes = ["turbo.jsonc", "package.json"];
+  assert.match(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: verified,
+      definitionChanges: changes,
+    }).join(),
+    /label it risk:R3/,
+  );
+  // with risk:R3 the owner's approval decides (the existing gated-label rule)
+  assert.match(
+    enforcedBlockers(pr({ labels: [{ name: "risk:R3" }] }), green, {
+      app: APP,
+      verifyRuns: verified,
+      definitionChanges: changes,
+    }).join(),
+    /needs an owner approval/,
+  );
+});
+
+test("condition 6: every config a gate tool discovers by name, at any depth, is main's (CTO review HIGH 1)", () => {
+  for (const path of [
+    "package.yaml",
+    "packages/a/package.yaml",
+    "packages/a/package.json5",
+    ".commitlintrc",
+    ".commitlintrc.json",
+    ".commitlintrc.cts",
+    "commitlint.config.mts",
+    ".config/config.json",
+    "packages/a/.config/commitlintrc.yaml",
+    "knip.json",
+    ".knip.json",
+    ".knip.jsonc",
+    "knip.ts",
+    "packages/a/knip.config.js",
+    "packages/a/.oxlintrc.json",
+    "packages/a/oxlint.config.mts",
+    "oxfmt.config.ts",
+    ".eslintignore",
+    ".oxlintignore",
+    "packages/a/.prettierignore",
+    ".prettierrc.json",
+    ".editorconfig",
+    "scripts/.shellcheckrc",
+    "services/a/.squawk.toml",
+    ".github/actionlint.yaml",
+    ".github/actionlint.yml",
+    "zizmor.yml",
+    "packages/a/vitest.projects.ts",
+  ]) {
+    assert.equal(isVerifyOverlay(path), true, path);
+    assert.equal(isVerifyDefinition(path), true, path);
+  }
+});
+
+test("condition 6: a root-level file is a definition unless it is inert documentation or tested code", () => {
+  // every root file main has today, as the rule sorts it
+  for (const path of [
+    ".commitlintrc.yaml",
+    ".editorconfig",
+    ".gitattributes",
+    ".gitignore",
+    ".gitleaks.toml",
+    ".gitleaksignore",
+    ".gitmodules",
+    ".markdownlint.yaml",
+    ".mcp.yaml",
+    ".node-version",
+    ".npmrc",
+    ".oxfmtrc.jsonc",
+    ".oxlintrc.jsonc",
+    ".pnpmfile.mjs",
+    "cspell.config.yaml",
+    "flow.config.json",
+    "knip.jsonc",
+    "lefthook.yml",
+    "mise.toml",
+    "opencode.jsonc",
+    "osv-scanner.toml",
+    "turbo.jsonc",
+    // and anything new a tool might read
+    "biome.json",
+    ".tool-versions",
+    "deno.json",
+  ]) {
+    assert.equal(isRootDefinition(path), true, path);
+    assert.equal(isVerifyOverlay(path), true, path);
+  }
+  for (const path of [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "SECURITY.md",
+    "STATE.md",
+    "THIRD_PARTY_NOTICES.md",
+    "TRADEMARKS.md",
+    "llms.txt",
+    "CHANGELOG.md",
+  ]) {
+    assert.equal(isRootDefinition(path), false, path);
+    assert.equal(isVerifyDefinition(path), false, path);
+  }
+  // tested code: a lane PR that bumps a dependency or edits a member's source is not a definition change
+  for (const path of ["package.json", "packages/a/src/index.ts", "docs/guide.md"])
+    assert.equal(isVerifyDefinition(path), false, path);
+  // runway.yaml decides where things deploy: the PR's copy is tested, and the PR needs risk:R3 (CTO ruling, round 4)
+  assert.equal(isVerifyOverlay("runway.yaml"), false);
+  assert.equal(isRootDefinition("runway.yaml"), false);
+  assert.equal(isVerifyDefinition("runway.yaml"), true);
+  assert.equal(isVerifyDefinition("packages/a/runway.yaml"), false);
+  for (const path of ["pnpm-lock.yaml", "pnpm-workspace.yaml"]) {
+    assert.equal(isRootDefinition(path), false, path);
+    assert.equal(isVerifyOverlay(path), false, path);
+    assert.equal(isVerifyDefinition(path), true, path);
+  }
+  // a name that only looks inert at the root is a definition below it only when a tool reads it
+  assert.equal(isVerifyDefinition("packages/a/README.md"), false);
+  assert.equal(isVerifyDefinition("packages/a/mise.toml"), false);
+});
+
+test("condition 6: a PR that adds only a patch and a workspace entry needs risk:R3 (it changes what verify runs)", () => {
+  for (const path of [
+    "patches/vitest@5.0.5.patch",
+    "pnpm-workspace.yaml",
+    "pnpm-lock.yaml",
+    "packages/a/tsconfig.json",
+    "packages/a/tsconfig.build.json",
+    "packages/a/vite.config.ts",
+    "packages/a/vitest.setup.ts",
+    ".pnpmfile.cjs",
+    ".gitattributes",
+  ])
+    assert.equal(isVerifyDefinition(path), true, path);
+  assert.equal(isVerifyOverlay("pnpm-workspace.yaml"), false);
+  assert.equal(isVerifyOverlay(".pnpmfile.cjs"), true);
+  const changes = ["patches/vitest@5.0.5.patch", "pnpm-workspace.yaml"];
+  assert.match(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: verified,
+      definitionChanges: changes,
+    }).join(),
+    /label it risk:R3/,
+  );
+});
+
+test("condition 6: package.json definition fields — scripts, pnpm, overrides, resolutions, packageManager; reads fail closed", () => {
+  const base = '{"name":"a","version":"1","scripts":{"test":"vitest run"}}';
+  assert.equal(
+    definitionFieldsChanged(base, '{"name":"a","version":"2","scripts":{"test":"vitest run"}}'),
+    false,
+  );
+  for (const head of [
+    '{"name":"a","scripts":{"test":"true"}}',
+    '{"name":"a","scripts":{"test":"vitest run"},"pnpm":{"patchedDependencies":{"vitest":"p"}}}',
+    '{"name":"a","scripts":{"test":"vitest run"},"overrides":{"vitest":"npm:noop"}}',
+    '{"name":"a","scripts":{"test":"vitest run"},"packageManager":"pnpm@1.0.0"}',
+  ])
+    assert.equal(definitionFieldsChanged(base, head), true, head);
+  assert.equal(definitionFieldsChanged(base, null, "modified"), true);
+  // a read failure counts as a change even when the copy that was read has no definition field
+  assert.equal(definitionFieldsChanged('{"name":"a"}', null, "modified"), true);
+  assert.equal(definitionFieldsChanged(null, '{"name":"a"}', "modified"), true);
+  assert.equal(definitionFieldsChanged(null, null, "modified"), true);
+  assert.equal(definitionFieldsChanged(null, base, "modified"), true);
+  assert.equal(definitionFieldsChanged(null, '{"name":"new"}', "added"), false);
+  assert.equal(definitionFieldsChanged(null, '{"name":"new","scripts":{"x":"y"}}', "added"), true);
+  assert.equal(definitionFieldsChanged(base, null, "removed"), true);
+  assert.equal(definitionFieldsChanged('{"name":"gone"}', null, "removed"), false);
+});
+
+test("condition 5: without a merge queue only a run against current main counts, however recent (CTO read of #1043)", () => {
+  const MAIN = "e".repeat(40);
+  const NOW = Date.parse("2026-11-24T15:00:00Z");
+  const ok = { ...appRun("success"), external_id: `base:${MAIN}` };
+  assert.deepEqual(
+    enforcedBlockers(pr(), green, { app: APP, verifyRuns: [ok], mainSha: MAIN }),
+    [],
+  );
+  // a minute old, against the previous main: refused without a queue, counted with one
+  const old = {
+    ...appRun("success"),
+    external_id: `base:${"d".repeat(40)}`,
+    completed_at: new Date(NOW - 60_000).toISOString(),
+  };
+  for (const queue of [false, undefined])
+    assert.match(
+      enforcedBlockers(pr(), green, {
+        app: APP,
+        verifyRuns: [old],
+        mainSha: MAIN,
+        now: NOW,
+        queue,
+      }).join(),
+      /run against base:d{40}, and main is now e{40}; without a merge queue only a run against current main counts: wait for the re-verify/,
+    );
+  assert.deepEqual(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [old],
+      mainSha: MAIN,
+      now: NOW,
+      queue: true,
+    }),
+    [],
+  );
+  // no base on the run, or main's head not read: refused either way
+  const unknown = { ...old, external_id: undefined };
+  assert.match(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [unknown],
+      mainSha: MAIN,
+      now: NOW,
+    }).join(),
+    /run against an unknown base/,
+  );
+  for (const queue of [false, true])
+    assert.match(
+      enforcedBlockers(pr(), green, {
+        app: APP,
+        verifyRuns: [ok],
+        mainSha: undefined,
+        queue,
+      }).join(),
+      /main's head was not read/,
+    );
+});
+
+/** A lockfile whose importers link the CLI to support (and support to errors); packages/c links nothing a judge uses. */
+const JUDGE_LOCK = `lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+
+importers:
+
+  .:
+    devDependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:packages/developer/cli
+
+  packages/c:
+    dependencies:
+      '@stackra/cli':
+        specifier: workspace:*
+        version: link:../../packages/developer/cli
+
+  packages/developer/cli:
+    dependencies:
+      '@stackra/support':
+        specifier: workspace:*
+        version: link:../../foundation/support
+      yaml:
+        specifier: 2.8.1
+        version: 2.8.1
+    devDependencies:
+      '@stackra/testing':
+        specifier: workspace:*
+        version: link:../testing
+
+  packages/developer/testing: {}
+
+  packages/foundation/errors: {}
+
+  packages/foundation/support:
+    optionalDependencies:
+      '@stackra/errors':
+        specifier: workspace:*
+        version: link:../errors
+
+packages:
+
+  yaml@2.8.1:
+    resolution: {integrity: sha512-x}
+`;
+
+test("B5: the judge members are JUDGE_ROOTS' runtime closure over main's lockfile importers; unreadable fails closed", () => {
+  assert.deepEqual(judgeMembers(JUDGE_LOCK), [
+    "packages/developer/cli",
+    "packages/developer/testing",
+    "packages/foundation/errors",
+    "packages/foundation/support",
+  ]);
+  const members = judgeMembers(JUDGE_LOCK);
+  assert.equal(isJudgePath("packages/foundation/errors/src/index.ts", members), true);
+  assert.equal(isJudgePath("packages/developer/cli/package.json", members), true);
+  // a dev dependency of a judge is built with it (turbo's `<root>...`), so it counts (round 6, L4); a member that only
+  // depends on a judge is not one
+  assert.equal(isJudgePath("packages/developer/testing/src/x.ts", members), true);
+  assert.equal(isJudgePath("packages/c/src/x.ts", members), false);
+  assert.equal(isJudgePath("packages/developer/cli-other/x.ts", members), false);
+  // the root links the CLI, but the root is never a judge directory (every path would be one)
+  assert.equal(isJudgePath("src/x.ts", judgeMembers(JUDGE_LOCK, [".", ...JUDGE_ROOTS])), false);
+  // a lockfile that names no importer (unreadable, or not a lockfile) counts every path
+  for (const text of [null, "", "{}", "lockfileVersion: '9.0'\n"]) {
+    assert.equal(judgeMembers(text), null);
+    assert.equal(isJudgePath("src/a.ts", judgeMembers(text)), true);
+  }
+  for (const root of JUDGE_ROOTS) assert.match(root, /^packages\/(?:developer|tooling)\/[\w-]+$/);
+});
+
+test("verifyFacts: the main block reads the head's verify runs, current main and every changed definition file", () => {
+  const HEAD = SHA;
+  const MAIN = "e".repeat(40);
+  const calls = [];
+  const api = (path) => {
+    calls.push(path);
+    if (path.startsWith("repos/figentra/stackra/commits/" + HEAD + "/check-runs"))
+      return { check_runs: [appRun("success")] };
+    if (path === "repos/figentra/stackra/pulls/7")
+      return { base: { sha: "b".repeat(40), ref: "main" }, changed_files: 7 };
+    if (path === "repos/figentra/stackra/commits/main") return { sha: MAIN };
+    throw new Error(`unexpected ${path}`);
+  };
+  const list = (path) => {
+    calls.push(path);
+    return [
+      { filename: "src/a.ts", status: "modified" },
+      { filename: "packages/a/package.json", status: "modified" },
+      { filename: "packages/b/package.json", status: "modified" },
+      { filename: "turbo.jsonc", status: "modified" },
+      { filename: "packages/foundation/support/src/x.ts", status: "modified" },
+      { filename: "packages/c/src/x.ts", status: "modified" },
+    ];
+  };
+  const raw = (path, ref) => {
+    if (path === "pnpm-lock.yaml") {
+      calls.push(`lock@${ref}`);
+      return JUDGE_LOCK;
+    }
+    if (path !== "packages/a/package.json") return '{"version":"' + ref.slice(0, 1) + '"}';
+    return ref === HEAD ? '{"scripts":{"test":"true"}}' : '{"scripts":{"test":"vitest run"}}';
+  };
+  const facts = verifyFacts({ repo: "figentra/stackra", n: "7", headSha: HEAD, api, list, raw });
+  assert.equal(facts.verifyRuns.length, 1);
+  assert.equal(facts.mainSha, MAIN);
+  assert.deepEqual(facts.definitionChanges, [
+    "1 unlisted files",
+    "packages/a/package.json",
+    "turbo.jsonc",
+    // a judge's own closure (B5), read from main's lockfile
+    "packages/foundation/support/src/x.ts",
+  ]);
+  assert.ok(calls.includes("repos/figentra/stackra/pulls/7/files?per_page=100"));
+  // the judges' members come from current main's lockfile, not the PR's older base (round 6, L5)
+  assert.deepEqual(
+    calls.filter((c) => c.startsWith("lock@")),
+    [`lock@${MAIN}`],
+  );
+  // only our App's runs are listed (LOW 8): another App's flood cannot push ours past the first page
+  assert.match(calls[0], /check-runs\?check_name=stackra%2Fverify&app_id=5907714&filter=all/);
+  assert.equal(VERIFY_APP.id, 5_907_714);
+});
+
+test("condition 6: a package.json `bin` or `directories` change can shadow a tool, so it counts", () => {
+  const base = '{"name":"a","scripts":{"t":"x"}}';
+  assert.equal(
+    definitionFieldsChanged(base, '{"name":"a","scripts":{"t":"x"},"bin":{"tsc":"./fake.js"}}'),
+    true,
+  );
+  assert.equal(
+    definitionFieldsChanged(base, '{"name":"a","scripts":{"t":"x"},"directories":{"bin":"./b"}}'),
+    true,
+  );
+});
+
+/** A success against an older main, finished at `completed_at`. */
+const oldBase = (completed_at) => ({
+  ...appRun("success"),
+  external_id: `base:${"d".repeat(40)}`,
+  completed_at,
+});
+
+test("condition 5: with a merge queue a green against an older main stands for a day (to enter it), then refuses", () => {
+  const MAIN = "e".repeat(40);
+  const NOW = Date.parse("2026-11-24T15:00:00Z");
+  assert.deepEqual(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [oldBase(new Date(NOW - 60_000).toISOString())],
+      mainSha: MAIN,
+      now: NOW,
+      queue: true,
+    }),
+    [],
+  );
+  assert.match(
+    enforcedBlockers(pr(), green, {
+      app: APP,
+      verifyRuns: [oldBase(new Date(NOW - VERIFY_FRESH_MS - 60_000).toISOString())],
+      mainSha: MAIN,
+      now: NOW,
+      queue: true,
+    }).join(),
+    /more than a day ago/,
+  );
+});
+
+test("mergeBlockers: the main block always passes main, the runs and the definition changes from verifyFacts", () => {
+  const facts = {
+    verifyRuns: [
+      {
+        ...appRun("success"),
+        external_id: `base:${"d".repeat(40)}`,
+        completed_at: "2026-01-01T00:00:00Z",
+      },
+    ],
+    mainSha: "e".repeat(40),
+    definitionChanges: ["turbo.jsonc"],
+  };
+  const reasons = mergeBlockers(pr(), green, { app: APP, enforced: true }, facts).join();
+  assert.match(reasons, /main is now e{40}/);
+  assert.match(reasons, /label it risk:R3/);
+});
+
+test("go-live switch (CTO read of #1043, High): conditions 5 and 6 are off until VERIFY_ENFORCED is flipped", () => {
+  // today: off, so the PRs that make the gate green (STA-2788, STA-2781) can merge before the service is live
+  assert.equal(VERIFY_ENFORCED, false);
+  const changes = ["turbo.jsonc", "tools/scripts/pr-merge.mjs"];
+  // off (the default): no stackra/verify run, a red one, or an unlabelled definition change refuses nothing
+  for (const verifyRuns of [[], [appRun("failure")], [appRun(null, { status: "in_progress" })]])
+    assert.deepEqual(
+      blockers(pr(), green, { app: APP, verifyRuns, definitionChanges: changes }),
+      [],
+    );
+  assert.deepEqual(blockers(pr(), green, { app: { slug: "x", id: 0 } }), []);
+  // the main block reads no verify facts while off
+  assert.deepEqual(mergeBlockers(pr(), green, { app: APP }, null), []);
+  // conditions 1 to 4 and the owner's approval hold either way
+  assert.match(blockers(pr({ isDraft: true }), green).join(), /draft/);
+  assert.match(blockers(pr(), []).join(), /no Quality Gate run/);
+  assert.match(blockers(pr({ mergeStateStatus: "DIRTY" }), green).join(), /merge conflicts/);
+  assert.match(blockers(pr({ labels: [{ name: "hold" }] }), green).join(), /labelled hold/);
+  assert.match(
+    blockers(pr({ labels: [{ name: "risk:R3" }] }), green).join(),
+    /needs an owner approval/,
+  );
+  // on (the go-live PR): the same cases refuse
+  const on = (options) =>
+    blockers(pr(), green, { enforced: true, mainSha: MAIN_HEAD, app: APP, ...options }).join();
+  assert.match(on({ verifyRuns: [] }), /no stackra\/verify check run/);
+  assert.match(on({ verifyRuns: [appRun("failure")] }), /stackra\/verify on .* is failure/);
+  assert.match(on({ verifyRuns: verified, definitionChanges: changes }), /label it risk:R3/);
+  assert.match(
+    blockers(pr(), green, { enforced: true, mainSha: MAIN_HEAD, app: { slug: "x", id: 0 } }).join(),
+    /is not registered/,
+  );
+  assert.match(
+    mergeBlockers(pr(), green, { app: APP, enforced: true }, null).join(),
+    /no stackra\/verify check run/,
+  );
+  // the main block reads the facts exactly when the switch is on
+  const source = readFileSync(new URL("../pr-merge.mjs", import.meta.url), "utf8");
+  assert.match(source, /const facts = !VERIFY_ENFORCED\s*\?\s*null\s*:\s*verifyFacts\(/);
+});
+
+test("isRecent: a future completed_at never counts as recent", () => {
+  const NOW = Date.parse("2026-11-24T15:00:00Z");
+  assert.equal(isRecent(new Date(NOW - 60_000).toISOString(), NOW), true);
+  assert.equal(isRecent(new Date(NOW + 60_000).toISOString(), NOW), false);
+  assert.equal(isRecent("garbage", NOW), false);
+});
+
+test("condition 6: a change to how a gate tool resolves needs risk:R3; the PR's resolution still runs (CTO ruling 2c)", () => {
+  // a vitest bump in a member's devDependencies is a definition change (the owner reviews it)
+  assert.equal(
+    definitionFieldsChanged(
+      '{"devDependencies":{"vitest":"5.0.5"}}',
+      '{"devDependencies":{"vitest":"5.0.6"}}',
+    ),
+    true,
+  );
+  assert.equal(
+    definitionFieldsChanged(
+      '{"dependencies":{"x":"1"}}',
+      '{"dependencies":{"x":"1","y":"npm:turbo@2"}}',
+    ),
+    true,
+  );
+  assert.equal(
+    definitionFieldsChanged(
+      '{"devDependencies":{"@vitest/coverage-v8":"5"}}',
+      '{"devDependencies":{}}',
+    ),
+    true,
+  );
+  // any other dependency stays tested code
+  assert.equal(
+    definitionFieldsChanged('{"dependencies":{"zod":"3"}}', '{"dependencies":{"zod":"4"}}'),
+    false,
+  );
+  // the catalogs, overrides and lockfile are VERIFY_SENSITIVE already
+  for (const path of ["pnpm-workspace.yaml", "pnpm-lock.yaml"])
+    assert.equal(isVerifyDefinition(path), true);
+  for (const name of [
+    "turbo",
+    "vitest",
+    "typescript",
+    "@commitlint/cli",
+    "@vitest/runner",
+    "tsx",
+    "knip",
+  ])
+    assert.equal(isGateToolPackage(name), true, name);
+  assert.deepEqual(GATE_TOOL_PACKAGES, [...new Set(Object.values(GATE_TOOL_BINS))].toSorted());
+});
+
+test("condition 6: devEngines, the Flow install and a nested pnpm-workspace.yaml are definitions (review LOW-4, NIT, HIGH-2)", () => {
+  assert.equal(DEFINITION_FIELDS.includes("devEngines"), true);
+  assert.equal(
+    definitionFieldsChanged('{"devEngines":{"packageManager":{"name":"pnpm"}}}', "{}"),
+    true,
+  );
+  for (const path of [
+    ".flow/lock.json",
+    ".flow/overrides/rules/x.md",
+    "packages/a/pnpm-workspace.yaml",
+    "apps/x/pnpm-workspace.yml",
+  ]) {
+    assert.equal(isVerifyOverlay(path), true, path);
+    assert.equal(isVerifyDefinition(path), true, path);
+  }
+  assert.equal(isVerifyOverlay("pnpm-workspace.yaml"), false);
+  assert.equal(VERIFY_OVERLAY_DIRS.test(".flow/new.json"), true);
+});
+
+test("condition 6 (round 5, C1): knip's config modules are main's; the members validate loads need risk:R3", () => {
+  for (const name of [
+    "vite.config.ts",
+    "tsdown.config.mts",
+    "babel.config.js",
+    ".babelrc.cjs",
+    "metro.config.js",
+    "app.config.ts",
+    "playwright.config.ts",
+    "react-native.config.js",
+    "react-router.config.ts",
+    "nuxt.config.mjs",
+  ])
+    for (const dir of ["", "packages/a/"]) {
+      assert.equal(isVerifyOverlay(`${dir}${name}`), true, `${dir}${name}`);
+      assert.equal(SHARED_STEP_LOADERS.test(`${dir}${name}`), true, `${dir}${name}`);
+    }
+  assert.equal(SHARED_STEP_LOADERS.test("packages/a/src/index.ts"), false);
+  assert.equal(SHARED_STEP_LOADERS.test("packages/a/.storybook/main.ts"), true);
 });

@@ -22,6 +22,15 @@ no product feature lands here. It is built by AI agent lanes (as the `stackra-bo
 - Toolchain (`mise.toml`, `package.json`, catalogs): Node 24.22.0, pnpm 12.16.1, Turborepo 2.11.9,
   TypeScript 6.0.3 / 7.0.2, tsdown 0.23.1, vitest 5.0.5, oxlint 1.86.0, oxfmt 0.71.0, lefthook 2.2.1,
   changesets 3.0.3, wrangler 4.148.0, gitleaks 8.30.1, sops 3.10.2, age 1.2.1, Figentra Flow `@figentra-oss/flow` 0.6.5 (`fflow`, stackra preset).
+- **Merge checks on the box (STA-2761, 2026-11-24).** The required `stackra/verify` check run, posted by the
+  stackra-verify GitHub App (id 5907714) from box 1, carries main's whole Quality Gate: ci.yml's `dependency-scan`
+  and `gate` jobs step by step (offline: OSV against a daemon-refreshed database, zizmor `--offline`), the licence
+  policy `tools/policy/licences.json` (the CTO's ruling of 2026-11-24) and the tests (`tools/scripts/stackra-verify.mjs`).
+  Two checks from the same App are never required: `stackra/verify-mobile` (ci.yml's `mobile` job) and
+  `stackra/codeql`. Reduced from per PR: SAST (CodeQL) now runs nightly on main and on demand (a PR labelled
+  `codeql` or `risk:R3`); GitHub's Dependency Review (a PR's added dependencies against GitHub's advisory database)
+  has no box run, and its per-PR part is the offline OSV scan of the whole lockfile in `stackra/verify`. Nothing
+  here is proven by a run yet.
 
 ## 3. Proven by a real run
 
@@ -78,7 +87,7 @@ no product feature lands here. It is built by AI agent lanes (as the `stackra-bo
 | `apps/playground`             | design-system playground                                                      |
 | `services/`                   | reference services `example`, `health`                                        |
 | `workers/`                    | Cloudflare Workers: `registry`, `static`, `turbo-cache`, `edge`               |
-| `tools/`                      | repository scripts, scaffold templates, schemas, consumer gate                |
+| `tools/`                      | repository scripts, scaffold templates, schemas, consumer gate, policy        |
 | `.agents/`                    | rules, agents, hooks, skills and Flow specs (`specs/`, 331 folders)           |
 | `.flow/`                      | Figentra Flow install: generated constitution, `lock.json`, `overrides/`      |
 | `.github/workflows/`          | 18 workflows (CI, release, deploys, runway, testbed, observability)           |
