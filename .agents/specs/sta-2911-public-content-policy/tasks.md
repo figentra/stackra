@@ -8,14 +8,14 @@ description: "Tasks for STA-2911: a public-content guard driven by a policy file
 
 **Prerequisites**: plan.md, spec.md
 
-## Phase 1: User Story 1 - A repository says what it denies and waives (Priority: P1)
+## Phase 1: User Story 1 - A repository says what it denies and what it exempts (Priority: P1)
 
 **Goal**: the deny list and the exemptions come from one checked policy file.
 
 **Independent Test**: `node --test tools/scripts/__tests__/guard-public-content.test.mjs`.
 
-- [x] T001 [US1] the recommended list, `parsePolicy`, `readPolicy`, `--policy`, `--recommended` and the `deny` shape of `--hash` in `tools/scripts/guard-public-content.mjs` — covers: FR-001, FR-002, FR-003, FR-004, FR-006, NFR-001, AC-001, AC-002, AC-003, P-001, P-002, P-004 — route: spec-task
-- [x] T002 [US1] the policy file `tools/scripts/public-content.policy.yaml` (renamed from the STA-2876 allow list, with `deny` and `waive` added) — covers: FR-002, AC-005 — route: spec-task — deps: T001
+- [x] T001 [US1] `parsePolicy`, `parsePrivatePolicy`, `readPolicy`, `--policy`, `--private-policy` and the `deny` shape of `--hash` in `tools/scripts/guard-public-content.mjs` — covers: FR-001, FR-002, FR-003, FR-004, FR-006, NFR-001, AC-001, AC-002, AC-003, P-001, P-002, P-004 — route: spec-task
+- [x] T002 [US1] the policy file `tools/scripts/public-content.policy.yaml` (renamed from the STA-2876 allow list; `allow` only) — covers: FR-002, AC-005 — route: spec-task — deps: T001
 - [x] T003 [US1] tests in `tools/scripts/__tests__/guard-public-content.test.mjs` — covers: FR-001 to FR-006, FR-009, AC-001, AC-002, AC-003, AC-006, SC-001 — route: tests — deps: T001
 
 ## Phase 2: User Story 2 - An internal name is stopped before it is committed (Priority: P1)
@@ -30,4 +30,5 @@ description: "Tasks for STA-2911: a public-content guard driven by a policy file
 
 ## Phase 3: Polish
 
+- [x] T008 [US1] the Quality Gate's private-policy steps in `.github/workflows/ci.yml` and the secret name in `runway.yaml` — covers: FR-010, AC-008, P-009 — route: spec-task — deps: T001
 - [x] T007 [P] docs in `tools/scripts/README.md` and `apps/docs/src/docs/runbooks/release.mdx` — covers: FR-007, FR-008, AC-007 — route: steward-docs — deps: T006

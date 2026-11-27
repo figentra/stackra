@@ -7,24 +7,25 @@
  *          internal product, person, host or cloud account id) and a home folder with a real user name
  *          (`/Users/<name>/`, `/home/<name>/`). Secret-shaped strings are gitleaks' job (`.gitleaks.toml`: lefthook
  *          pre-commit and the Quality Gate's `pnpm secrets:scan`).
- * Boundary: read-only. What is denied and what is exempt comes from one policy file, `public-content.policy.yaml`
- *           beside this script (`--policy <file>` names another): the recommended deny list below is the default, and
- *           the policy `deny`s more terms, `waive`s a recommended one (with its reason and the issue that decided it),
- *           and `allow`s a repository `path`, one line of a file by its `lineSha256`, or a tarball's `package` (each
- *           with its reason and the issue that removes it). An invalid policy stops every scan (exit 2), so a typo
- *           never turns the guard off. Denied terms are stored only as SHA-256 hashes of their lower-case spelling
- *           (with their length, to skip most words unhashed), so neither this file nor a policy publishes what it
- *           forbids; `--hash <term>` prints the `deny` entry to add one, `--recommended` the default list. A word is
- *           checked whole (letters and digits), and a dotted host by each of its suffixes of two labels or more. No
- *           line is exempt by its wording: a spec approval line passes because its format names a role and a date,
- *           never a person ("Approved by CTO <date>", STA-2905); one that names a person is a finding like any other.
- *           A line entry whose line is gone is reported, so the allow list only shrinks. `--hash-line <path>:<n>`
- *           prints the entry for one line.
+ * Boundary: read-only. Two policy files. The public one, `public-content.policy.yaml` beside this script (`--policy
+ *           <file>` names another), only `allow`s: a repository `path`, one line of a file by its `lineSha256`, or a
+ *           tarball's `package`, each with its reason and the issue that removes it. The denied terms are in a private
+ *           policy outside this repository (`--private-policy <file>`, or the file `PUBLIC_CONTENT_PRIVATE_POLICY_FILE`
+ *           names), as `deny` entries: the SHA-256 of the term's lower-case spelling, its length and a reason. A hash
+ *           of a short name is recovered by hashing guesses, so neither this file nor the public policy holds a
+ *           denied term or its hash, and the public policy refuses a `deny` entry. Without a private policy the guard
+ *           says so and checks home folders and the allow list only; a private policy that is named but cannot be
+ *           read, or any invalid policy, stops every scan (exit 2), so a typo never turns the guard off. `--hash
+ *           <term>` prints a private `deny` entry. A word is checked whole (letters and digits), and a dotted host by
+ *           each of its suffixes of two labels or more. No line is exempt by its wording: an approval line that names
+ *           a person is a finding like any other unless a line entry exempts it (STA-2905). A line entry whose line
+ *           is gone is reported, so the allow list only shrinks. `--hash-line <path>:<n>` prints the entry for one
+ *           line.
  * Runtime: node
  * Governing contract: ADR 0291 (porting provenance: a port keeps its reference, not its source's private paths);
- *                     ADR 0453 (the registry ships what the tarball holds); STA-2876; STA-2911 (the policy file).
- * Usage: `guard-public-content.mjs [--policy <file>]` (tracked files), `… --files <path>…` (those files),
- *        `… --pack <file.tgz>…` (tarballs), `--hash <term>`, `--hash-line <path>:<n>`, `--recommended`.
+ *                     ADR 0453 (the registry ships what the tarball holds); STA-2876; STA-2911 (the policy files).
+ * Usage: `guard-public-content.mjs [--policy <file>] [--private-policy <file>]` (tracked files), `… --files <path>…`
+ *        (those files), `… --pack <file.tgz>…` (tarballs), `--hash <term>`, `--hash-line <path>:<n>`.
  * Exit: 0 clean, 1 findings (each printed as `path:line: reason`; line 0 is the path itself), 2 usage or an invalid
  *       policy (each problem printed as `<policy>: <problem>`).
  */
@@ -36,46 +37,14 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { parse as parseYaml } from "yaml";
 
-/**
- * The recommended deny list, every repository's default: the SHA-256 of each denied term, lower case, with its length
- * and what it is; never the term itself. A repository adds terms with the policy's `deny` and drops one with `waive`.
- */
-export const RECOMMENDED_DENY = new Map([
-  [
-    "4fa92007b9d74eae84d5b60fc79abf801c2a202c3dcacd80bb76caa9caf32ae9",
-    { length: 10, reason: "an internal product name" },
-  ],
-  [
-    "82bfd5d79c5d89a7ba1b08f74d810136995bf1df127bb4628a52c4627abd8ca6",
-    { length: 7, reason: "an internal product name" },
-  ],
-  [
-    "b4fddab806d4f2543f1ba4326f3c1ea9bf4684d17f003ee1897a23ae840631a2",
-    { length: 6, reason: "a team member's name or user name" },
-  ],
-  [
-    "d908b42ccb44fe9f8c64ee851fa1d8872cdbeeef74d3e1141e3072c4ce25683b",
-    { length: 6, reason: "a team member's name" },
-  ],
-  [
-    "0a6e6d95821a32c68c98c65e8970fd18d7d91612ac53a02b82562baba54da825",
-    { length: 5, reason: "a team member's name" },
-  ],
-  [
-    "1842d7a9c4a12ab70ab90d8efdd090fb3d0ff5d2306d2ec55e1c4173a481b14d",
-    { length: 14, reason: "an internal host or zone" },
-  ],
-  [
-    "043e85b2d89404f78551a52f8f9ba8e0c5041fa262ec7b800b143b588bf697ac",
-    { length: 12, reason: "an internal cloud account id" },
-  ],
-]);
-
-/** The policy file beside this script. */
+/** The public policy file beside this script: allow entries only. */
 export const POLICY_FILE = fileURLToPath(new URL("public-content.policy.yaml", import.meta.url));
 
-/** The policy with nothing added, waived or allowed: the recommended deny list alone. */
-export const DEFAULT_POLICY = Object.freeze({ deny: RECOMMENDED_DENY, allow: Object.freeze([]) });
+/** The environment variable that names the private policy file (the denied terms), when no flag does. */
+export const PRIVATE_POLICY_ENV = "PUBLIC_CONTENT_PRIVATE_POLICY_FILE";
+
+/** Nothing denied, nothing allowed: the policy without either file. */
+export const EMPTY_POLICY = Object.freeze({ deny: new Map(), allow: Object.freeze([]) });
 
 /** User names that are not a person: placeholders in examples, CI runners and container service accounts. */
 export const PLACEHOLDER_USERS = new Set([
@@ -146,6 +115,15 @@ function filled(value) {
   return typeof value === "string" && value.trim() !== "";
 }
 
+/** The list `doc[key]` (empty when absent), or empty with a problem when it is not a list of entries. */
+function listOf(doc, key, errors) {
+  const value = doc[key] ?? [];
+  if (Array.isArray(value) && value.every((entry) => entry !== null && typeof entry === "object"))
+    return value;
+  errors.push(`${key}: a list of entries`);
+  return [];
+}
+
 /** The problems of one entry's keys: each key not in `known` is one. */
 function unknownKeys(entry, known, where) {
   return Object.keys(entry)
@@ -154,67 +132,27 @@ function unknownKeys(entry, known, where) {
 }
 
 /**
- * The policy a parsed `public-content.policy.yaml` document describes, and every problem with it. The effective deny
- * list is the recommended one, less its `waive` entries, plus its `deny` entries.
- *
- * - `deny`: `{ sha256, length, reason }`, a term the recommended list does not already deny (`--hash <term>`).
- * - `waive`: `{ sha256, reason, issue }`, an entry of the recommended list this repository does not deny.
- * - `allow`: `{ path | package, reason, issue }`, or `{ path, lineSha256, reason, issue }` for one line of one file.
+ * The public policy a parsed `public-content.policy.yaml` document describes, and every problem with it: its `allow`
+ * entries, `{ path | package, reason, issue }` or `{ path, lineSha256, reason, issue }` for one line of one file. A
+ * `deny` entry here is a problem: the denied terms belong in the private policy.
  *
  * @example
- * parsePolicy({ deny: [{ sha256: hashTerm("acme"), length: 4, reason: "a client name" }] }).errors; // []
+ * parsePolicy({ allow: [{ path: "dir/**", reason: "why", issue: "STA-1" }] }).errors; // []
  */
 export function parsePolicy(document) {
   const errors = [];
   const doc = document ?? {};
   if (typeof doc !== "object" || Array.isArray(doc))
-    return {
-      policy: DEFAULT_POLICY,
-      errors: ["the policy is not a mapping of deny, waive and allow"],
-    };
-  errors.push(...unknownKeys(doc, ["deny", "waive", "allow"], "policy"));
-  const list = (key) => {
-    const value = doc[key] ?? [];
-    if (Array.isArray(value) && value.every((entry) => entry !== null && typeof entry === "object"))
-      return value;
-    errors.push(`${key}: a list of entries`);
-    return [];
-  };
-
-  const waived = new Set();
-  list("waive").forEach((entry, index) => {
-    const where = `waive[${index}]`;
-    errors.push(...unknownKeys(entry, ["sha256", "reason", "issue"], where));
-    if (!SHA256.test(entry.sha256 ?? "")) errors.push(`${where}: sha256 is not a SHA-256 in hex`);
-    else if (!RECOMMENDED_DENY.has(entry.sha256))
-      errors.push(
-        `${where}: waives no entry of the recommended deny list (--recommended lists them)`,
-      );
-    else if (waived.has(entry.sha256)) errors.push(`${where}: waives the same entry twice`);
-    else waived.add(entry.sha256);
-    if (!filled(entry.reason)) errors.push(`${where}: needs a reason`);
-    if (!ISSUE.test(entry.issue ?? ""))
-      errors.push(`${where}: needs the issue that decided it (STA-123)`);
-  });
-
-  const deny = new Map([...RECOMMENDED_DENY].filter(([hash]) => !waived.has(hash)));
-  list("deny").forEach((entry, index) => {
-    const where = `deny[${index}]`;
-    errors.push(...unknownKeys(entry, ["sha256", "length", "reason"], where));
-    const lengthOk = Number.isInteger(entry.length) && entry.length > 0;
-    if (!lengthOk) errors.push(`${where}: length is the term's length, a positive whole number`);
-    if (!filled(entry.reason)) errors.push(`${where}: needs a reason`);
-    if (!SHA256.test(entry.sha256 ?? ""))
-      errors.push(`${where}: sha256 is not a SHA-256 in hex (--hash <term>)`);
-    else if (RECOMMENDED_DENY.has(entry.sha256) && !waived.has(entry.sha256))
-      errors.push(`${where}: already on the recommended deny list`);
-    else if (deny.has(entry.sha256)) errors.push(`${where}: denies the same term twice`);
-    else if (lengthOk && filled(entry.reason))
-      deny.set(entry.sha256, { length: entry.length, reason: entry.reason.trim() });
-  });
-
+    return { policy: EMPTY_POLICY, errors: ["the policy is not a mapping with an allow list"] };
+  if ("deny" in doc)
+    errors.push(
+      "deny: denied terms go in the private policy, never in this public file (a hash of a short name is " +
+        "recovered by hashing guesses)",
+    );
+  const others = Object.fromEntries(Object.entries(doc).filter(([key]) => key !== "deny"));
+  errors.push(...unknownKeys(others, ["allow"], "policy"));
   const allow = [];
-  list("allow").forEach((entry, index) => {
+  listOf(doc, "allow", errors).forEach((entry, index) => {
     const where = `allow[${index}]`;
     errors.push(...unknownKeys(entry, ["path", "package", "lineSha256", "reason", "issue"], where));
     const hasPath = filled(entry.path);
@@ -231,22 +169,70 @@ export function parsePolicy(document) {
       errors.push(`${where}: needs the issue that removes it (STA-123)`);
     allow.push(entry);
   });
-
-  return { policy: { deny, allow }, errors };
+  return { policy: { deny: new Map(), allow }, errors };
 }
 
-/** The policy in `file` and every problem with it; a file that cannot be read or parsed is one problem. */
-export function readPolicy(file = POLICY_FILE) {
-  let document;
+/**
+ * The deny list a parsed private policy document describes, and every problem with it: its `deny` entries,
+ * `{ sha256, length, reason }` (`--hash <term>` prints one).
+ *
+ * @example
+ * parsePrivatePolicy({ deny: [{ sha256: hashTerm("acme"), length: 4, reason: "a client name" }] }).errors; // []
+ */
+export function parsePrivatePolicy(document) {
+  const errors = [];
+  const doc = document ?? {};
+  if (typeof doc !== "object" || Array.isArray(doc))
+    return { deny: new Map(), errors: ["the private policy is not a mapping with a deny list"] };
+  errors.push(...unknownKeys(doc, ["deny"], "private policy"));
+  const deny = new Map();
+  listOf(doc, "deny", errors).forEach((entry, index) => {
+    const where = `deny[${index}]`;
+    errors.push(...unknownKeys(entry, ["sha256", "length", "reason"], where));
+    const lengthOk = Number.isInteger(entry.length) && entry.length > 0;
+    if (!lengthOk) errors.push(`${where}: length is the term's length, a positive whole number`);
+    if (!filled(entry.reason)) errors.push(`${where}: needs a reason`);
+    if (!SHA256.test(entry.sha256 ?? ""))
+      errors.push(`${where}: sha256 is not a SHA-256 in hex (--hash <term>)`);
+    else if (deny.has(entry.sha256)) errors.push(`${where}: denies the same term twice`);
+    else if (lengthOk && filled(entry.reason))
+      deny.set(entry.sha256, { length: entry.length, reason: entry.reason.trim() });
+  });
+  return { deny, errors };
+}
+
+/** The parsed YAML of `file`, or the one problem that kept it from being read. */
+function readYaml(file, what) {
   try {
-    document = parseYaml(readFileSync(file, "utf8"));
+    return { document: parseYaml(readFileSync(file, "utf8")) };
   } catch (error) {
-    return {
-      policy: DEFAULT_POLICY,
-      errors: [`cannot read the policy: ${error.message.split("\n")[0]}`],
-    };
+    return { problem: `cannot read the ${what}: ${error.message.split("\n")[0]}` };
   }
-  return parsePolicy(document);
+}
+
+/**
+ * The policy of the public file and, when one is named, the private file, with every problem as
+ * `{ file, problem }`. `hasPrivate` says whether denied terms are checked at all.
+ */
+export function readPolicy(file = POLICY_FILE, privateFile = undefined) {
+  const errors = [];
+  const pub = readYaml(file, "policy");
+  let policy = EMPTY_POLICY;
+  if (pub.problem !== undefined) errors.push({ file, problem: pub.problem });
+  else {
+    const parsed = parsePolicy(pub.document);
+    errors.push(...parsed.errors.map((problem) => ({ file, problem })));
+    policy = parsed.policy;
+  }
+  if (privateFile === undefined) return { policy, errors, hasPrivate: false };
+  const own = readYaml(privateFile, "private policy");
+  if (own.problem !== undefined) {
+    errors.push({ file: privateFile, problem: own.problem });
+    return { policy, errors, hasPrivate: true };
+  }
+  const parsed = parsePrivatePolicy(own.document);
+  errors.push(...parsed.errors.map((problem) => ({ file: privateFile, problem })));
+  return { policy: { deny: parsed.deny, allow: policy.allow }, errors, hasPrivate: true };
 }
 
 /**
@@ -255,7 +241,7 @@ export function readPolicy(file = POLICY_FILE) {
  * @example
  * lineFindings("see /Users/me/x"); // []
  */
-export function lineFindings(line, deny = RECOMMENDED_DENY) {
+export function lineFindings(line, deny = EMPTY_POLICY.deny) {
   const found = [];
   const lower = line.toLowerCase();
   for (const [word] of lower.matchAll(WORD)) {
@@ -285,11 +271,11 @@ export function allowedBy(path, pattern) {
 /**
  * Every finding of one file, as `{ path, line, reason }`: its path (line 0), then each line of its text.
  *
- * @param policy - `{ deny, allow }` (default: the recommended deny list, nothing allowed). An allow entry `{ path }`
+ * @param policy - `{ deny, allow }` (default: nothing denied, nothing allowed). An allow entry `{ path }`
  *                 (`dir/**` or exact) exempts the whole file, unread; `{ path, lineSha256 }` (an exact path) exempts
  *                 only the line of that file with that exact text.
  */
-export function scanText(path, text, policy = DEFAULT_POLICY) {
+export function scanText(path, text, policy = EMPTY_POLICY) {
   const { deny, allow } = policy;
   if (
     allow.some(
@@ -367,7 +353,7 @@ export function tarballFiles(bytes) {
  * Every finding of one tarball's files, each path `<tarball>!<path inside>`, against the policy's deny list. A tarball
  * whose `package/package.json` names a package the allow list exempts (`{ package, reason, issue }`) is not read.
  */
-export function scanTarball(label, bytes, policy = DEFAULT_POLICY) {
+export function scanTarball(label, bytes, policy = EMPTY_POLICY) {
   const files = tarballFiles(bytes);
   const manifest = files.find(([name]) => name === "package/package.json");
   let name;
@@ -393,8 +379,8 @@ function trackedFiles(root) {
 }
 
 const USAGE =
-  "usage: guard-public-content.mjs [--policy <file>] [--files <path>… | --pack <file.tgz>…] | --hash <term> | " +
-  "--hash-line <path>:<n> | --recommended";
+  "usage: guard-public-content.mjs [--policy <file>] [--private-policy <file>] [--files <path>… | --pack <file.tgz>…]" +
+  " | --hash <term> | --hash-line <path>:<n>";
 
 /** Prints the usage and exits 2. */
 function usage() {
@@ -421,26 +407,32 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(JSON.stringify({ path, lineSha256: hashLine(line), reason: "…", issue: "STA-…" }));
     process.exit(0);
   }
-  if (args[0] === "--recommended") {
-    if (args.length !== 1) usage();
-    for (const [sha256, entry] of RECOMMENDED_DENY)
-      console.log(JSON.stringify({ sha256, ...entry }));
-    process.exit(0);
-  }
   let policyFile = POLICY_FILE;
-  if (args[0] === "--policy") {
-    if (args[1] === undefined) usage();
-    policyFile = resolve(args[1]);
+  const fromEnv = process.env[PRIVATE_POLICY_ENV];
+  let privateFile = fromEnv === undefined || fromEnv === "" ? undefined : resolve(fromEnv);
+  for (;;) {
+    if (args[0] === "--policy") {
+      if (args[1] === undefined) usage();
+      policyFile = resolve(args[1]);
+    } else if (args[0] === "--private-policy") {
+      if (args[1] === undefined) usage();
+      privateFile = resolve(args[1]);
+    } else break;
     args = args.slice(2);
   }
-  const { policy, errors } = readPolicy(policyFile);
+  const { policy, errors, hasPrivate } = readPolicy(policyFile, privateFile);
   if (errors.length > 0) {
-    for (const problem of errors) console.error(`${policyFile}: ${problem}`);
+    for (const { file, problem } of errors) console.error(`${file}: ${problem}`);
     console.error(
       `guard-public-content: the policy is invalid (${errors.length} problem(s)); nothing was checked`,
     );
     process.exit(2);
   }
+  if (!hasPrivate)
+    console.error(
+      `guard-public-content: no private policy (--private-policy or ${PRIVATE_POLICY_ENV}): denied terms are not ` +
+        "checked, home folders are",
+    );
   const root = fileURLToPath(new URL("../..", import.meta.url));
   const read = (file) => {
     try {
@@ -475,5 +467,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     );
     process.exit(1);
   }
-  console.log("guard-public-content: no internal names, hosts or home folders");
+  console.log(
+    hasPrivate
+      ? "guard-public-content: no internal names, hosts or home folders"
+      : "guard-public-content: no home folders (denied terms not checked: no private policy)",
+  );
 }

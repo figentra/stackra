@@ -1,12 +1,14 @@
 /**
  * Stackra file contract:
- * Purpose: hold `guard-public-content.mjs` to its contract (STA-2876, STA-2911): the policy file (the recommended deny
- *          list as default, `deny` adds, `waive` drops one with its issue, `allow` exempts; an invalid policy stops
- *          every scan), denied words and hosts by hash, personal home folders, a file's path as well as its text,
+ * Purpose: hold `guard-public-content.mjs` to its contract (STA-2876, STA-2911): the two policy files (the public one
+ *          only `allow`s and refuses `deny`, the private one holds the hashed `deny` list, named by a flag or
+ *          `PUBLIC_CONTENT_PRIVATE_POLICY_FILE`; without it denied terms go unchecked and the guard says so; an
+ *          invalid or unreadable named policy stops every scan), no denied term or hash of one in a public file,
+ *          denied words and hosts by hash, personal home folders, a file's path as well as its text,
  *          approval lines checked like any other (STA-2905) and the role-only approval format clean, the allow list
  *          exempt (a path, one line by its hash, a package) and its stale line entries reported, `--files` for the
  *          pre-commit hook, tarballs read file by file (an allowed package skipped), the guard wired into validate,
- *          the pre-commit hook and both release pack steps, and this repository's tracked files clean.
+ *          the pre-commit hook, both release pack steps and the Quality Gate's private policy step.
  * Boundary: test-only denied terms ("zorblax", "zeta.cloud") live in in-memory or temporary policies; tarballs and
  *           policies are written to a temp folder (tarballs with the system `tar`); never writes this checkout.
  * Runtime: node
@@ -20,12 +22,13 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  DEFAULT_POLICY,
-  RECOMMENDED_DENY,
+  EMPTY_POLICY,
+  PRIVATE_POLICY_ENV,
   hashLine,
   hashTerm,
   lineFindings,
   parsePolicy,
+  parsePrivatePolicy,
   readPolicy,
   scanTarball,
   scanText,
@@ -48,11 +51,12 @@ const TEST_DENY = [
   { sha256: hashTerm("zeta.cloud"), length: 10, reason: "a test host" },
 ];
 
-/** A policy that denies the test terms on top of the recommended list, with `allow` as given. */
+/** A policy that denies the test terms (as a private policy would), with `allow` as given. */
 function policyWith(allow = []) {
-  const { policy, errors } = parsePolicy({ deny: TEST_DENY, allow });
-  assert.deepEqual(errors, []);
-  return policy;
+  const denied = parsePrivatePolicy({ deny: TEST_DENY });
+  const { policy, errors } = parsePolicy({ allow });
+  assert.deepEqual([...denied.errors, ...errors], []);
+  return { deny: denied.deny, allow: policy.allow };
 }
 const TEST = policyWith();
 /** The findings of one line against the test policy. */
@@ -66,8 +70,8 @@ function policyFile(name, yaml) {
   writeFileSync(file, yaml);
   return file;
 }
-const TEST_POLICY_FILE = policyFile(
-  "test.policy.yaml",
+const TEST_PRIVATE_FILE = policyFile(
+  "test.private.yaml",
   `deny:\n${TEST_DENY.map((d) => `  - { sha256: "${d.sha256}", length: ${d.length}, reason: "${d.reason}" }`).join("\n")}\n`,
 );
 
@@ -84,54 +88,52 @@ function tarball(name, files) {
   return file;
 }
 
-test("guard-public-content: every recommended entry is a hash with its length and reason, never the term", () => {
+test("guard-public-content: no public file holds a denied term or its hash; the public policy refuses deny", () => {
+  // A hash of a short name is recovered by hashing guesses: publishing it publishes the name (STA-2911).
   const source = readFileSync(TOOL, "utf8");
-  assert.ok(RECOMMENDED_DENY.size > 0);
-  for (const [hash, denied] of RECOMMENDED_DENY) {
-    assert.match(hash, /^[0-9a-f]{64}$/);
-    assert.ok(Number.isInteger(denied.length) && denied.length > 0, hash);
-    assert.ok(denied.reason.length > 0, hash);
-  }
+  assert.deepEqual(source.match(/\b[0-9a-f]{64}\b/g) ?? [], []);
   assert.ok(!source.includes("zorblax"));
-  assert.equal(DEFAULT_POLICY.deny, RECOMMENDED_DENY);
+  for (const line of read("tools/scripts/public-content.policy.yaml").split("\n"))
+    if (/\b[0-9a-f]{64}\b/.test(line)) assert.match(line, /^\s+lineSha256: "[0-9a-f]{64}"$/, line);
+  assert.deepEqual(EMPTY_POLICY.deny.size, 0);
+  assert.match(
+    parsePolicy({ deny: TEST_DENY, allow: [] }).errors.join("\n"),
+    /^deny: denied terms go in the private policy/,
+  );
 });
 
-test("guard-public-content: the policy's deny adds to the recommended list and waive drops one entry", () => {
-  const [first, second] = [...RECOMMENDED_DENY.keys()];
-  const { policy, errors } = parsePolicy({
-    deny: TEST_DENY,
-    waive: [{ sha256: first, reason: "this repository is that product", issue: "STA-9" }],
-  });
-  assert.deepEqual(errors, []);
-  assert.equal(policy.deny.size, RECOMMENDED_DENY.size - 1 + TEST_DENY.length);
-  assert.ok(!policy.deny.has(first) && policy.deny.has(second));
-  assert.deepEqual(lineFindings("a zorblax line", policy.deny), ["a test product name"]);
-  // The recommended list itself is never changed by a policy.
-  assert.ok(RECOMMENDED_DENY.has(first));
-  assert.deepEqual(lineFindings("a zorblax line"), []);
-  // An empty document is the recommended list alone.
-  assert.deepEqual(parsePolicy(null), {
-    policy: { deny: RECOMMENDED_DENY, allow: [] },
-    errors: [],
-  });
+test("guard-public-content: the private policy is the deny list and the public policy the allow list", () => {
+  const pub = policyFile(
+    "pub.policy.yaml",
+    'allow:\n  - { path: "x/**", reason: "a test", issue: "STA-1" }\n',
+  );
+  const both = readPolicy(pub, TEST_PRIVATE_FILE);
+  assert.deepEqual(both.errors, []);
+  assert.equal(both.hasPrivate, true);
+  assert.deepEqual(
+    [...both.policy.deny.keys()],
+    TEST_DENY.map((d) => d.sha256),
+  );
+  assert.deepEqual(
+    both.policy.allow.map((a) => a.path),
+    ["x/**"],
+  );
+  assert.deepEqual(lineFindings("a zorblax line", both.policy.deny), ["a test product name"]);
+  // Without a private policy nothing is denied, and the result says so.
+  const alone = readPolicy(pub);
+  assert.deepEqual(alone.errors, []);
+  assert.equal(alone.hasPrivate, false);
+  assert.equal(alone.policy.deny.size, 0);
+  assert.deepEqual(lineFindings("a zorblax line", alone.policy.deny), []);
+  // An empty document is an empty policy.
+  assert.deepEqual(parsePolicy(null), { policy: { deny: new Map(), allow: [] }, errors: [] });
+  assert.deepEqual(parsePrivatePolicy(null), { deny: new Map(), errors: [] });
 });
 
 test("guard-public-content: an invalid policy names each problem", () => {
-  const [first, second] = [...RECOMMENDED_DENY.keys()];
   const { errors } = parsePolicy({
-    denny: [],
-    deny: [
-      { sha256: "abc", length: 3, reason: "x" },
-      { sha256: hashTerm("acme"), length: 0, reason: "" },
-      { sha256: first, length: 10, reason: "again" },
-      { sha256: hashTerm("zorblax"), length: 7, reason: "a" },
-      { sha256: hashTerm("zorblax"), length: 7, reason: "b" },
-      { sha256: hashTerm("other"), length: 5, reason: "c", term: "other" },
-    ],
-    waive: [
-      { sha256: hashTerm("acme"), reason: "x", issue: "STA-1" },
-      { sha256: second, reason: "", issue: "soon" },
-    ],
+    deny: [],
+    waive: [],
     allow: [
       { path: "a.md", package: "@acme/a", reason: "x", issue: "STA-1" },
       { reason: "x", issue: "STA-1" },
@@ -141,16 +143,8 @@ test("guard-public-content: an invalid policy names each problem", () => {
     ],
   });
   for (const expected of [
-    'policy: unknown key "denny"',
-    "deny[0]: sha256 is not a SHA-256",
-    "deny[1]: length is the term's length",
-    "deny[1]: needs a reason",
-    "deny[2]: already on the recommended deny list",
-    "deny[4]: denies the same term twice",
-    'deny[5]: unknown key "term"',
-    "waive[0]: waives no entry of the recommended deny list",
-    "waive[1]: needs a reason",
-    "waive[1]: needs the issue that decided it",
+    "deny: denied terms go in the private policy",
+    'policy: unknown key "waive" (one of allow)',
     "allow[0]: names exactly one of path and package",
     "allow[1]: names exactly one of path and package",
     "allow[2]: a line entry names one exact file",
@@ -162,8 +156,31 @@ test("guard-public-content: an invalid policy names each problem", () => {
       errors.some((problem) => problem.startsWith(expected)),
       `${expected}\n${errors.join("\n")}`,
     );
-  assert.deepEqual(parsePolicy([]).errors, [
-    "the policy is not a mapping of deny, waive and allow",
+  const own = parsePrivatePolicy({
+    allow: [],
+    deny: [
+      { sha256: "abc", length: 3, reason: "x" },
+      { sha256: hashTerm("acme"), length: 0, reason: "" },
+      { sha256: hashTerm("zorblax"), length: 7, reason: "a" },
+      { sha256: hashTerm("zorblax"), length: 7, reason: "b" },
+      { sha256: hashTerm("other"), length: 5, reason: "c", term: "other" },
+    ],
+  }).errors;
+  for (const expected of [
+    'private policy: unknown key "allow" (one of deny)',
+    "deny[0]: sha256 is not a SHA-256",
+    "deny[1]: length is the term's length",
+    "deny[1]: needs a reason",
+    "deny[3]: denies the same term twice",
+    'deny[4]: unknown key "term"',
+  ])
+    assert.ok(
+      own.some((problem) => problem.startsWith(expected)),
+      `${expected}\n${own.join("\n")}`,
+    );
+  assert.deepEqual(parsePolicy([]).errors, ["the policy is not a mapping with an allow list"]);
+  assert.deepEqual(parsePrivatePolicy([]).errors, [
+    "the private policy is not a mapping with a deny list",
   ]);
   assert.deepEqual(parsePolicy({ allow: "a.md" }).errors, ["allow: a list of entries"]);
 });
@@ -277,7 +294,7 @@ test("guard-public-content: a line entry whose line is gone is reported, so the 
   assert.match(staleLineEntries(allow, (path) => files[path])[0].reason, /STA-2.*remove it/);
 });
 
-test("guard-public-content: --hash prints a deny entry, --hash-line a line entry, --recommended the default list", () => {
+test("guard-public-content: --hash prints a private deny entry, --hash-line a line entry", () => {
   const hash = spawnSync(process.execPath, [TOOL, "--hash", "Zorblax"], { encoding: "utf8" });
   assert.equal(hash.status, 0, hash.stderr);
   assert.deepEqual(JSON.parse(hash.stdout), {
@@ -286,7 +303,7 @@ test("guard-public-content: --hash prints a deny entry, --hash-line a line entry
     reason: "…",
   });
   assert.equal(
-    parsePolicy({ deny: [{ ...JSON.parse(hash.stdout), reason: "x" }] }).errors.length,
+    parsePrivatePolicy({ deny: [{ ...JSON.parse(hash.stdout), reason: "x" }] }).errors.length,
     0,
   );
 
@@ -299,17 +316,6 @@ test("guard-public-content: --hash prints a deny entry, --hash-line a line entry
   assert.equal(line.lineSha256, hashLine("Approved by zorblax 2026-11-26"));
   assert.equal(spawnSync(process.execPath, [TOOL, "--hash-line", `${file}:9`]).status, 2);
   assert.equal(spawnSync(process.execPath, [TOOL, "--hash-line", file]).status, 2);
-
-  const recommended = spawnSync(process.execPath, [TOOL, "--recommended"], { encoding: "utf8" });
-  assert.equal(recommended.status, 0, recommended.stderr);
-  const listed = recommended.stdout
-    .trim()
-    .split("\n")
-    .map((row) => JSON.parse(row));
-  assert.deepEqual(
-    listed.map((row) => row.sha256),
-    [...RECOMMENDED_DENY.keys()],
-  );
 });
 
 test("guard-public-content: the allow list exempts a folder or an exact path, never a sibling", () => {
@@ -341,8 +347,11 @@ test("guard-public-content: a tarball is read file by file, long paths included;
   const bytes = readFileSync(file);
   assert.ok(tarballFiles(bytes).some(([name]) => name === `package/${deep}`));
   assert.deepEqual(
-    scanTarball("dirty.tgz", bytes, TEST).map(({ path, line }) => `${path}:${line}`),
-    ["dirty.tgz!package/dist/index.mjs:1", `dirty.tgz!package/${deep}:1`],
+    // Sorted: `tar` adds a folder's entries in the file system's order, which differs between machines.
+    scanTarball("dirty.tgz", bytes, TEST)
+      .map(({ path, line }) => `${path}:${line}`)
+      .sort(),
+    [`dirty.tgz!package/${deep}:1`, "dirty.tgz!package/dist/index.mjs:1"].sort(),
   );
   assert.deepEqual(
     scanTarball("dirty.tgz", bytes, policyWith([entry({ package: "@acme/dirty" })])),
@@ -373,38 +382,54 @@ test("guard-public-content: the command exits 1 on a dirty tarball, 0 on a clean
   assert.equal(spawnSync(process.execPath, [TOOL, "--pack"]).status, 2);
   assert.equal(spawnSync(process.execPath, [TOOL, "--files"]).status, 2);
   assert.equal(spawnSync(process.execPath, [TOOL, "--policy"]).status, 2);
+  assert.equal(spawnSync(process.execPath, [TOOL, "--private-policy"]).status, 2);
+  assert.equal(spawnSync(process.execPath, [TOOL, "--recommended"]).status, 2);
   assert.equal(spawnSync(process.execPath, [TOOL, "--nope"]).status, 2);
 });
 
-test("guard-public-content: --policy denies what it adds, in tarballs and in --files", () => {
+test("guard-public-content: the private policy denies its terms, by flag or by environment, in tarballs and --files", () => {
   const product = tarball("product", {
     "package.json": JSON.stringify({ name: "@acme/product", version: "1.0.0" }),
     "README.md": "Built for Zorblax.\n",
   });
-  assert.equal(spawnSync(process.execPath, [TOOL, "--pack", product]).status, 0);
+  const env = { ...process.env, [PRIVATE_POLICY_ENV]: "" };
+  // Without a private policy the term passes, and the guard says it was not checked.
+  const unchecked = spawnSync(process.execPath, [TOOL, "--pack", product], {
+    encoding: "utf8",
+    env,
+  });
+  assert.equal(unchecked.status, 0);
+  assert.match(unchecked.stderr, /no private policy .*denied terms are not checked/);
+  assert.match(unchecked.stdout, /denied terms not checked/);
   const pack = spawnSync(
     process.execPath,
-    [TOOL, "--policy", TEST_POLICY_FILE, "--pack", product],
-    {
-      encoding: "utf8",
-    },
+    [TOOL, "--private-policy", TEST_PRIVATE_FILE, "--pack", product],
+    { encoding: "utf8", env },
   );
   assert.equal(pack.status, 1);
   assert.match(pack.stderr, /product\.tgz!package\/README\.md:1: a test product name/);
+  assert.doesNotMatch(pack.stderr, /no private policy/);
+  const fromEnv = spawnSync(process.execPath, [TOOL, "--pack", product], {
+    encoding: "utf8",
+    env: { ...process.env, [PRIVATE_POLICY_ENV]: TEST_PRIVATE_FILE },
+  });
+  assert.equal(fromEnv.status, 1);
+  assert.match(fromEnv.stderr, /product\.tgz!package\/README\.md:1: a test product name/);
 
   const note = join(root, "note.md");
   writeFileSync(note, "ok\nsee zeta.cloud\n");
   const files = spawnSync(
     process.execPath,
-    [TOOL, "--policy", TEST_POLICY_FILE, "--files", note, join(root, "gone.md")],
-    { encoding: "utf8" },
+    [TOOL, "--private-policy", TEST_PRIVATE_FILE, "--files", note, join(root, "gone.md")],
+    { encoding: "utf8", env },
   );
   assert.equal(files.status, 1, files.stderr);
   assert.match(files.stderr, /note\.md:2: a test host/);
   assert.doesNotMatch(files.stderr, /gone\.md/); // a deleted file is not committed
   writeFileSync(note, "ok\n");
   assert.equal(
-    spawnSync(process.execPath, [TOOL, "--policy", TEST_POLICY_FILE, "--files", note]).status,
+    spawnSync(process.execPath, [TOOL, "--private-policy", TEST_PRIVATE_FILE, "--files", note])
+      .status,
     0,
   );
 });
@@ -413,27 +438,40 @@ test("guard-public-content: an invalid policy stops every scan with exit 2 and n
   const clean = tarball("clean2", {
     "package.json": JSON.stringify({ name: "@acme/clean2", version: "1.0.0" }),
   });
-  const broken = policyFile(
-    "broken.policy.yaml",
+  const brokenPrivate = policyFile(
+    "broken.private.yaml",
     "deny:\n  - { sha256: nope, length: 4 }\nallo: []\n",
   );
-  for (const args of [["--pack", clean], ["--files", broken], []]) {
-    const out = spawnSync(process.execPath, [TOOL, "--policy", broken, ...args], {
+  const brokenPublic = policyFile("broken.policy.yaml", "deny: []\nallo: []\n");
+  for (const args of [["--pack", clean], ["--files", brokenPrivate], []]) {
+    const own = spawnSync(process.execPath, [TOOL, "--private-policy", brokenPrivate, ...args], {
       encoding: "utf8",
     });
-    assert.equal(out.status, 2, args.join(" "));
-    assert.match(out.stderr, /broken\.policy\.yaml: policy: unknown key "allo"/);
-    assert.match(out.stderr, /deny\[0\]: sha256 is not a SHA-256/);
-    assert.match(out.stderr, /deny\[0\]: needs a reason/);
-    assert.match(out.stderr, /nothing was checked/);
-  }
-  const unreadable = spawnSync(
-    process.execPath,
-    [TOOL, "--policy", join(root, "missing.yaml"), "--pack", clean],
-    {
+    assert.equal(own.status, 2, args.join(" "));
+    assert.match(own.stderr, /broken\.private\.yaml: private policy: unknown key "allo"/);
+    assert.match(own.stderr, /deny\[0\]: sha256 is not a SHA-256/);
+    assert.match(own.stderr, /deny\[0\]: needs a reason/);
+    assert.match(own.stderr, /nothing was checked/);
+    const pub = spawnSync(process.execPath, [TOOL, "--policy", brokenPublic, ...args], {
       encoding: "utf8",
-    },
-  );
+    });
+    assert.equal(pub.status, 2, args.join(" "));
+    assert.match(pub.stderr, /broken\.policy\.yaml: deny: denied terms go in the private policy/);
+    assert.match(pub.stderr, /broken\.policy\.yaml: policy: unknown key "allo"/);
+  }
+  // A private policy that is named but missing fails closed, by flag or by environment.
+  const missing = join(root, "missing.yaml");
+  for (const [args, env] of [
+    [["--private-policy", missing, "--pack", clean], process.env],
+    [["--pack", clean], { ...process.env, [PRIVATE_POLICY_ENV]: missing }],
+  ]) {
+    const out = spawnSync(process.execPath, [TOOL, ...args], { encoding: "utf8", env });
+    assert.equal(out.status, 2);
+    assert.match(out.stderr, /missing\.yaml: cannot read the private policy/);
+  }
+  const unreadable = spawnSync(process.execPath, [TOOL, "--policy", missing, "--pack", clean], {
+    encoding: "utf8",
+  });
   assert.equal(unreadable.status, 2);
   assert.match(unreadable.stderr, /cannot read the policy/);
 });
@@ -449,6 +487,13 @@ test("guard-public-content: the guard runs in validate, before each commit and i
       /node tools\/scripts\/guard-public-content\.mjs --files \{staged_files\}/,
       hooks,
     );
+  // The Quality Gate reads the private policy from sops once the owner turns it on, before `pnpm validate`.
+  const ci = read(".github/workflows/ci.yml");
+  const step = ci.indexOf("- name: Public-content private policy (sops)");
+  assert.ok(step > 0 && step < ci.indexOf("run: pnpm validate"));
+  assert.match(ci, /if: \$\{\{ vars\.PUBLIC_CONTENT_PRIVATE_POLICY == 'sops'/);
+  assert.match(ci, /names: PUBLIC_CONTENT_PRIVATE_POLICY\n/);
+  assert.match(ci, /PUBLIC_CONTENT_PRIVATE_POLICY_FILE=/);
   const release = read(".github/workflows/release.yml");
   assert.match(release, /pack-check: node tools\/scripts\/guard-public-content\.mjs --pack\n/);
   assert.match(
