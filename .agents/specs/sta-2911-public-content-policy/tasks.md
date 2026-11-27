@@ -15,7 +15,7 @@ description: "Tasks for STA-2911: a public-content guard driven by a policy file
 **Independent Test**: `node --test tools/scripts/__tests__/guard-public-content.test.mjs`.
 
 - [x] T001 [US1] the recommended list, `parsePolicy`, `readPolicy`, `--policy`, `--recommended` and the `deny` shape of `--hash` in `tools/scripts/guard-public-content.mjs` — covers: FR-001, FR-002, FR-003, FR-004, FR-006, NFR-001, AC-001, AC-002, AC-003, P-001, P-002, P-004 — route: spec-task
-- [x] T002 [US1] the policy file `tools/scripts/public-content.policy.yaml` (from `public-content.allow.yaml`, with `deny` and `waive`) — covers: FR-002, AC-005 — route: spec-task — deps: T001
+- [x] T002 [US1] the policy file `tools/scripts/public-content.policy.yaml` (renamed from the STA-2876 allow list, with `deny` and `waive` added) — covers: FR-002, AC-005 — route: spec-task — deps: T001
 - [x] T003 [US1] tests in `tools/scripts/__tests__/guard-public-content.test.mjs` — covers: FR-001 to FR-006, FR-009, AC-001, AC-002, AC-003, AC-006, SC-001 — route: tests — deps: T001
 
 ## Phase 2: User Story 2 - An internal name is stopped before it is committed (Priority: P1)
@@ -30,4 +30,4 @@ description: "Tasks for STA-2911: a public-content guard driven by a policy file
 
 ## Phase 3: Polish
 
-- [x] T007 [P] docs in `tools/scripts/README.md` and `apps/docs/src/docs/runbooks/release.mdx` — covers: FR-007, FR-008 — route: steward-docs — deps: T006
+- [x] T007 [P] docs in `tools/scripts/README.md` and `apps/docs/src/docs/runbooks/release.mdx` — covers: FR-007, FR-008, AC-007 — route: steward-docs — deps: T006

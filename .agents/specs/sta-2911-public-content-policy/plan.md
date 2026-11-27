@@ -73,6 +73,10 @@ steps (`--pack`, unchanged).
 - **P-002**: every policy that breaks FR-002 yields at least one problem, and any problem stops every scan with exit 2 — Validates: FR-002, FR-003
 - **P-003**: `--files` reports exactly what a whole-repository scan reports for those files — Validates: FR-005
 - **P-004**: no output of `--hash` or `--recommended`, and no line of the guard or the policy, holds a denied term — Validates: FR-006, NFR-001
+- **P-005**: in every scanning mode (tracked files, `--files`, `--pack`) the deny list comes from the `--policy` file when one is named and from `tools/scripts/public-content.policy.yaml` otherwise — Validates: FR-004
+- **P-006**: `pnpm validate`, which `pnpm verify` and the Quality Gate run, includes `pnpm public-content`, and that script runs the guard over the tracked files — Validates: FR-007
+- **P-007**: every pre-commit hook source (`lefthook.yml` and its override) runs `--files {staged_files}`, and every release pack step runs `--pack` — Validates: FR-008
+- **P-008**: for every line the result depends only on the denied terms it holds and the policy's line entries, never on its wording; a line in the role-only approval format holds no denied term and yields no finding — Validates: FR-009
 
 ## Architecture overview
 
@@ -89,6 +93,9 @@ flowchart TD
 ```
 
 ## Components and responsibilities
+
+Two components: C1 reads and checks the policy and scans files and tarballs; C2 wires the guard into validate,
+the pre-commit hook and the release pack steps.
 
 ### C1 The policy and the guard
 
@@ -164,6 +171,11 @@ Denied terms stay hashes in the guard and the policy. No tenant data.
 
 - AC-001 to AC-003, AC-006: `guard-public-content.test.mjs`.
 - AC-004: a staged file under lefthook on the build box. AC-005: `pnpm public-content` on this branch.
+- AC-007: review of `tools/scripts/README.md` and the release runbook against the policy file and the wiring.
+- P-001 to P-004: the policy, invalid-policy, `--hash` and `--recommended` cases of the same test file.
+- P-005: the cases "--policy denies what it adds" and "an invalid policy stops every scan".
+- P-006, P-007: the case "the guard runs in validate, before each commit and in both release pack steps".
+- P-008: the cases "an approval line that names a person is a finding" and "the role-only approval format passes".
 
 ## Rollout
 

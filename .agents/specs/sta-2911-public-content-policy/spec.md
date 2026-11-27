@@ -140,6 +140,7 @@ the pre-commit hook, and again by `pnpm verify` and the Quality Gate.
 - **AC-004**: WHEN a staged file names a personal home folder THE pre-commit hook SHALL fail and name the file and line.
 - **AC-005**: WHEN `pnpm validate` runs THE guard SHALL read every tracked file; this branch's report SHALL be clean.
 - **AC-006**: WHEN a spec carries the role-only approval format THE guard SHALL report nothing for it.
+- **AC-007**: THE scripts README (`tools/scripts/README.md`) and the release runbook SHALL say where the guard runs and how to deny, waive or allow an entry in the policy file.
 
 ## Success Criteria
 
