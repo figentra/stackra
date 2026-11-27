@@ -15,6 +15,9 @@
  *          `frozen`, so an authoring rule a later `@stackra/database` added comes back as a `migration_rule_frozen`
  *          warning instead of a refusal; it must still hash as locked (`checkMigrationLock`), and the locked ones keep
  *          their place at the head of the order (`orderMigrations`). Every other migration meets every rule.
+ *          It also returns the ADR 0159 class of every migration (`classifyMigrations`, STA-2866): a banned statement
+ *          is refused (`migration_banned`) unless its migration is released, in `RELEASED_BANNED_MIGRATIONS` or named
+ *          by the committed lock, since a database may already have applied it.
  * Boundary: imports the migration and macro files (Node 24 strips their types; `loadSourceModule` strips those of a
  *           package installed from the registry into `.stackra/cache`) and the member's `@stackra/database`, resolved
  *           from the member root so the migration classes and the compiler share one kind registry. Writes nothing
@@ -40,7 +43,9 @@ import { pascalCase } from "@stackra/support";
 import { isMacroClass } from "#core/functions/is-macro-class.function";
 import { macroHint } from "#core/functions/macro-hint.function";
 import { checkAppendOnly } from "#core/functions/check-append-only.function";
+import { classifyMigrations } from "#core/functions/classify-migrations.function";
 import { checkMigrationLock } from "#core/functions/check-migration-lock.function";
+import { RELEASED_BANNED_MIGRATIONS } from "#core/constants/released-banned-migrations.constant";
 import { emitMigrations } from "#core/functions/emit-migrations.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
@@ -52,6 +57,7 @@ import type { GenError } from "#core/types/gen-error.type";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { LockedMigration } from "#core/types/locked-migration.type";
 import type { MemberIR } from "#core/types/member-ir.type";
+import type { MigrationSafety } from "#core/types/migration-safety.type";
 import type { MigrationUnit } from "#core/types/migration-unit.type";
 import type { OwnMacro } from "#core/types/own-macro.type";
 import { dependencyPath } from "#node/functions/dependency-path.function";
@@ -83,6 +89,8 @@ interface CompiledMigrations {
   readonly warnings?: readonly GenError[];
   /** The migration lock of this run, in apply order; absent when nothing compiled or the run is refused. */
   readonly lock?: readonly LockedMigration[];
+  /** The ADR 0159 class of every migration (STA-2866); absent when the run is refused. */
+  readonly safety?: MigrationSafety;
 }
 
 /** The specifiers a migration may import: the frozen-snapshot rule of ADR 0159 (0305 note). */
@@ -294,10 +302,17 @@ export async function compileMigrations(
       ),
     };
   const blueprint = ir.layout === "service" ? emitBlueprintMacros(ownMacros) : [];
-  // No migration left: a lock that still names one is refused, since a database may have applied it.
+  // No migration left: a lock that still names one is refused, since a database may have applied it. Otherwise an
+  // empty classification, so runway can tell "nothing to ship" from "gen has not run" (STA-2866).
   if (found.length === 0) {
     const missing = checkMigrationLock(locked, []);
-    return missing.length > 0 ? { files: [], errors: missing } : { files: blueprint, errors: [] };
+    return missing.length > 0
+      ? { files: [], errors: missing }
+      : {
+          files: blueprint,
+          errors: [],
+          safety: { schema: "stackra.migration-safety/v1", migrations: [] },
+        };
   }
 
   const require = createRequire(join(root, "package.json"));
@@ -483,12 +498,20 @@ export async function compileMigrations(
     units,
     locked.map((entry) => entry.id),
   );
-  return orderErrors.length > 0
-    ? { files: [], errors: orderErrors, warnings }
+  if (orderErrors.length > 0) return { files: [], errors: orderErrors, warnings };
+  // Each statement's ADR 0159 class; a banned one is refused unless its migration is released: frozen in
+  // `RELEASED_BANNED_MIGRATIONS` or named by the committed lock (STA-2866).
+  const { safety, errors: safetyErrors } = classifyMigrations(
+    ordered,
+    new Set([...RELEASED_BANNED_MIGRATIONS, ...lockedIds]),
+  );
+  return safetyErrors.length > 0
+    ? { files: [], errors: safetyErrors, warnings }
     : {
         files: [...emitMigrations(ordered), ...blueprint],
         errors: [],
         warnings,
         lock: ordered.map((unit) => ({ id: unit.id, sha256: unit.sha256 ?? "" })),
+        safety,
       };
 }

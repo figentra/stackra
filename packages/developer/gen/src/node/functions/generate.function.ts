@@ -31,7 +31,10 @@
  *           in apply order); a migration the committed lock names is frozen: changed, gone or out of place, it is
  *           refused, and a rule added since its lock only warns (STA-2160). A malformed lock is refused
  *           (`migration_lock_malformed`). A package's own migrations are checked but not locked: only a service's
- *           database applies them, so the lock of each service that hosts the package freezes them.
+ *           database applies them, so the lock of each service that hosts the package freezes them. Beside them it
+ *           writes `.stackra/migration-safety.json`, the ADR 0159 class of each migration (`classifyMigrations`,
+ *           STA-2866), for every service, with no rows when it has no migration, so a missing file always means gen
+ *           has not run; and it refuses a banned statement outside a released migration (`migration_banned`).
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
  *           unit config narrowed to the integration tier (`emitTierConfig`, STA-1819), and one with a
  *           `.contract.test.ts` gets `.stackra/vitest.contract.config.ts`, narrowed to the contract tier (STA-2837).
@@ -61,6 +64,7 @@ import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
 import { emitTierConfig } from "#core/functions/emit-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
+import { emitMigrationSafety } from "#core/functions/emit-migration-safety.function";
 import { encoreMigrationSql } from "#core/functions/encore-migration-sql.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { formatJson } from "#core/functions/format-json.function";
@@ -171,7 +175,8 @@ const BLUEPRINT_FILE = ".stackra/gen/blueprint.ts";
 /**
  * The `.sql` files in `.stackra/migrations` this run did not produce (a renumbered or removed migration), deleted
  * unless `check`, so the runner never applies a stale file; with `compiled` (the migrations ran), also a leftover
- * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed.
+ * `.stackra/gen/blueprint.ts`, which would import a deleted macro. `--check` reports them as changed. The
+ * `.stackra/migration-safety.json` of a service is rewritten on every run, never left stale.
  */
 function staleMigrations(
   root: string,
@@ -329,7 +334,11 @@ export async function generate(
         })),
         ...(migrations.files.length > 0 ? emitMigrationsCheck(ir) : []),
       ]
-    : migrations.files;
+    : [
+        ...migrations.files,
+        // The ADR 0159 class of each migration, which `runway evidence` reads, empty without one (STA-2866).
+        ...(migrations.safety === undefined ? [] : [emitMigrationSafety(migrations.safety)]),
+      ];
   // Encore reads migrations only from a local folder, so a
   // service's compiled files are copied under its Encore service too. Encore runs each file in one transaction, so
   // an online step's copy builds in its plain form (ADR 0159, amendment of 2026-11-10).
