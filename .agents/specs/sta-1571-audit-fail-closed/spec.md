@@ -228,6 +228,8 @@ and the config value fail boot, the old wiring asks the one reader, and gen refu
   (delete `src/main.ts`, STA-344) or drop `@stackra/app`.
 - **Version skew**: gen refuses an `@stackra/app` older than `0.34.0` (`app_version_floor`) instead of writing an
   `environment.ts` that fails at import.
+- **Release order**: this change releases together with or after STA-1583, so the starter binds an `AuditTrail`
+  before any deployed starter refuses unaudited actions. No code gate enforces the order; the release does.
 
 ## Risks
 
@@ -255,5 +257,6 @@ None.
 - 2026-11-27 → Clarified (the CTO's verdict of 2026-11-26: rebase onto STA-2844, close five exceptions, raise gen's
   floor)
 - 2026-11-27 → Planned (plan.md, reworked)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-27 → Tasked (tasks.md, reworked)
 - 2026-11-27 → Implementing (built in this branch; awaiting the CTO's approval)
