@@ -267,3 +267,4 @@ Minor changeset for `@stackra/cli`. `stackra console <member>` keeps its form, s
 
 - 2026-11-27 · — → Draft · Claude (STA-2888, batch DX1) · written from the built change
 - 2026-11-27 · Draft → Implementing · Claude (STA-2888, batch DX1) · small tier, no approval stop (ADR 0502 decision 1)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
