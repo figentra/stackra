@@ -11,12 +11,15 @@
  *           indexes it left (a failed `create index concurrently`) are dropped and the version goes back to the last
  *           applied file, clean: the failed transaction rolled back and a failed single statement left nothing else,
  *           so the next run starts that file again. Each applied file's history row records the release the run applies
- *           (`release`, else `STACKRA_RELEASE`). In a forward-only environment (not dev, preview or test) a run with
- *           files to apply on a database that already has applied files must name its release, and is refused before
- *           any change when it names none: a row recorded with no release could not be told from the release that
- *           applied it, so a retry naming that release would pass a contract step's gate. Only a fresh database (no
- *           applied file, no older release serving) records files with no release there. The run sets
- *           `MIGRATE_FROM_VERSION_SETTING` to the version it started from and `MIGRATE_RELEASE_SETTING` to its release,
+ *           (`release`, else `STACKRA_RELEASE`; `stackra db migrate` names the checkout's commit when neither is
+ *           given). In a forward-only environment (not dev, preview or test) a run whose pending files hold a contract
+ *           step (a gated drop or finished rename, read from the gate's `CONTRACT_AFTER_MARKER` line) on a database
+ *           that already has applied files must name its release, and is refused before any change when it names
+ *           none, with a message naming `--release` and `STACKRA_RELEASE`. A run of plain additive files naming no
+ *           release applies them as before, recording no release: the gate never trusts who applied a step, only the
+ *           last finished run of another release, so a row with no release cannot let a contract step through.
+ *           The run sets `MIGRATE_FROM_VERSION_SETTING` to the version it started from and
+ *           `MIGRATE_RELEASE_SETTING` to its release,
  *           transaction-locally at the head of each transactional file (ADR 0495 decision 3: never session-level),
  *           which each contract step's release gate reads: a drop or finished rename is refused while the migration it
  *           waits for was applied under this same release (a retried deploy included), or while no run of a release
@@ -24,7 +27,9 @@
  *           any change when a pending file's contract step waits for a migration this same run would apply (read from
  *           the gate's `CONTRACT_AFTER_MARKER` line): the two belong to two releases. A named forward-only run that
  *           applies every pending file records its release as finished in `schema_migrations_releases`, with the last
- *           file version it holds; a failed run records nothing, so its release never counts as serving.
+ *           file version it holds; a failed run records nothing, so its release never counts as serving. "Finished"
+ *           means this run applied every pending file, so a pipeline runs migrate right before it rolls the release
+ *           out: a contract step's gate takes the release whose run finished last as the one serving.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 2 as amended 2026-10-24, decision 3: timeouts per session; destructive steps
  *                     deferred to a later release); ADR 0495 (decision 3: transaction-local settings).
@@ -53,10 +58,10 @@ const RELEASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._+/-]{0,127}$/;
  *
  * @param options.release - the release this run applies; `STACKRA_RELEASE` when absent.
  * @param env - the environment `STACKRA_RELEASE` is read from, `process.env` by default.
- * @throws TypeError for a release that is not a version, tag or commit; Error when a forward-only run with files to
- *         apply names no release on a database with applied files, a pending contract step waits for a migration the
- *         same run applies, an applied file was edited, the version is dirty or a file fails; the message names the
- *         file.
+ * @throws TypeError for a release that is not a version, tag or commit; Error when a forward-only run whose pending
+ *         files hold a contract step names no release on a database with applied files, a pending contract step
+ *         waits for a migration the same run applies, an applied file was edited, the version is dirty or a file
+ *         fails; the message names the file.
  * @example
  * const { applied } = await migrate({ cwd: "apps/api", environment: "production", release: "v1.4.0" });
  */
@@ -83,9 +88,10 @@ export async function migrate(
       );
     const pending = files.filter((candidate) => candidate.version > current.version);
     const forwardOnly = !ROLLBACK_ENVIRONMENTS.has(options.environment);
-    if (forwardOnly && release === undefined && current.version > 0 && pending.length > 0)
+    const contract = pending.find((file) => contractAfterIds(file.sql).length > 0);
+    if (forwardOnly && release === undefined && current.version > 0 && contract !== undefined)
       throw new Error(
-        `refused before any change: this ${options.environment} run names no release, and the database already has applied migrations (version ${current.version}): each file applied here records the release that applied it, which a contract step's release gate compares, so pass --release or set STACKRA_RELEASE to the deploy's version or commit`,
+        `refused before any change: this ${options.environment} run names no release, and the database already has applied migrations (version ${current.version}) while ${contract.name} holds a contract step, whose release gate compares the release this run applies. Name it: pass --release <version or commit> to stackra db migrate, or set STACKRA_RELEASE=<version or commit> in the release step's environment (stackra db migrate names the checkout's commit when it runs in a git checkout)`,
       );
     if (forwardOnly && current.version > 0) refuseSameReleaseContract(pending);
     await checkHistory(session, current.version);

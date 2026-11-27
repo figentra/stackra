@@ -54,7 +54,8 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
   `BackfillOptions`, `BackfillProgress`, `BackfillQuery`, `BackfillSession`, `ContractOptions`,
   `DroppedIndexOptions`, `ExclusionOptions`, `RenamedColumnOptions`, `RunBackfillOptions`; `./node` exports
   `backfill`. `compileMigration`'s `after` now also lists the ids its contract steps wait for. `migrate` and
-  `DatabaseRunner.migrate` (database and cli) take an optional `release` (else `STACKRA_RELEASE`), `db:migrate` (the
+  `DatabaseRunner.migrate` (database and cli) take an optional `release` (else `STACKRA_RELEASE`; `stackra db migrate`
+  names the checkout's commit when neither is given), `db:migrate` (the
   member console command and the `stackra db migrate` bin) gains `--release`, and the runner adds a nullable
   `release_id` column to its `schema_migrations_history` ledger and a `schema_migrations_releases(release_id,
 through_version, finished_at)` table of finished release runs. A forward-only run on a database with applied files
@@ -93,13 +94,17 @@ through_version, finished_at)` table of finished release runs. A forward-only ru
 - **AC-002**: IF a forward-only run's release applied the named migration THEN THE release gate SHALL refuse the step
   before any change, naming the step, the migration and the release, whether the run is that release's first or a
   retry of the same deploy; a migration never applied, and a run that names no release, are refused the same way.
-  IF a forward-only run with files to apply names no release on a database with an applied file THEN THE runner
-  SHALL refuse it before any change, so no file is recorded without the release a later retry names. IF a
+  IF a forward-only run whose pending files hold a contract step names no release on a database with an applied file
+  THEN THE runner SHALL refuse it before any change, naming `--release` and `STACKRA_RELEASE` and how to set them; a
+  run of plain additive files naming no release SHALL apply them as before. `stackra db migrate` SHALL name a release
+  by default: `--release`, else `STACKRA_RELEASE`, else the commit of the member's checkout. IF a
   forward-only run on a database with an applied file would apply a contract step and the migration it waits for
-  together THEN THE runner SHALL refuse it before any change, naming both files. WHILE no run of a release other than
-  this run's, holding the named migration, has finished since that migration was applied, THE release gate SHALL
-  refuse the step, so a release whose run failed (its code never live) never lets a later one drop what the release
-  before it reads; THE runner SHALL record a named forward-only run's release as finished only once it applied every
+  together THEN THE runner SHALL refuse it before any change, naming both files. WHILE the run of a release other than
+  this run's that finished last (by `finished_at`) does not hold the named migration (`through_version` below its
+  version) or finished before that migration was applied, THE release gate SHALL refuse the step, whoever applied the
+  migration (no release named included), so a release whose run failed (its code never live), or an older release
+  rolled back to, never lets a later one drop what the serving release reads. "Finished" means the migrate run
+  completed, so the pipeline runs migrate right before the rollout; THE runner SHALL record a named forward-only run's release as finished only once it applied every
   pending file, and SHALL set the gate's settings transaction-locally in each transactional file (ADR 0495).
 - **AC-003**: THE gate SHALL pass on a fresh database (the run started at version 0), in dev, preview and test, and
   wherever no `schema_migrations_history` exists (Encore's runner, tests).
@@ -142,3 +147,6 @@ through_version, finished_at)` table of finished release runs. A forward-only ru
 - 2026-11-27 → Implementing (review fixes: AC-002 the gate counts only a release whose run finished, and a contract
   step shipped with the migration it waits for is refused before any change; the gate settings are transaction-local;
   `stackra db migrate --release` in the CLI)
+- 2026-11-27 → Implementing (CTO merge conditions: `stackra db migrate` names the checkout's commit by default; the
+  no-release refusal fires only while a contract step is pending and names `--release` and `STACKRA_RELEASE`; the gate
+  reads the run of another release that finished last, so a rollback holds the step again)

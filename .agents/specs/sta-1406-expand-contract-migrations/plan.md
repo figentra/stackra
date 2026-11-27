@@ -72,7 +72,10 @@ contract step's data gate.
   database with an applied file is refused before `after` applies, so the retry with v2 records `after` under v2 and
   its contract step is refused; on a fresh database such a run applies every file; a run applying the contract step
   with the migration it waits for is refused before that migration applies; while the run that applied it failed, a
-  contract step is refused under every later release until a release holding it finishes its run — Validates: AC-002
+  contract step is refused under every later release until a release holding it finishes its run; with v2 finished
+  and v1 finishing again later, the v3 drop is refused until v2 finishes last; plain additive files apply with no
+  release named, and the contract step after them waits for a named run holding them to finish; the refusal names
+  `--release` and `STACKRA_RELEASE`, and `stackra db migrate` names the checkout's commit by default — Validates: AC-002
 - **P-013**: as an owner role on a `FORCE` table with no tenant set, or a role without SELECT on the table, the data
   gate is refused naming the role and both causes and the old column keeps its values; a backfill fails with 42501, records it and is not finished — Validates: AC-012
 - **P-014**: a rename whose new column has a default, a setting default, a generation or NOT NULL does not compile —
@@ -173,6 +176,8 @@ packages/developer/cli/
   src/node/commands/db-migrate.command.ts
   src/node/commands/__tests__/db-migrate.command.test.ts
   src/node/types/database-runner.type.ts
+  src/node/functions/migration-release.function.ts
+  src/node/functions/__tests__/migration-release.function.test.ts
 packages/developer/gen/src/core/constants/kind-files.constant.ts
 packages/developer/gen/src/node/constants/kind-bases.constant.ts
 packages/developer/coding-standard/src/core/constants/kind-bases.constant.ts

@@ -140,11 +140,13 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   edges. The gate reads `schema_migrations_history` (its `release_id`), `MIGRATE_FROM_VERSION_SETTING` and
   `MIGRATE_RELEASE_SETTING`, which only `migrate` sets, and only outside `ROLLBACK_ENVIRONMENTS`; keep them in step. It
   compares releases, never runs, and fails closed when a run names none: a retried deploy is the same release.
-  `migrate` refuses a forward-only run naming no release on a database with applied files, before any change, so no
-  history row but a fresh database's or a pre-ledger one has `release_id` null (the gate counts null as older). The
-  gate also needs a finished run (`schema_migrations_releases`, written by `migrate` only after every pending file
-  applied, with the last file version the release holds) of another release holding `after`, so a failed run's release
-  never counts as serving; `migrate` refuses, before any change, a contract step whose `after` is pending in the same
+  `migrate` refuses a forward-only run naming no release, before any change, only while a pending file holds a contract
+  step on a database with applied files (plain additive files apply as before, `release_id` null); the refusal names
+  `--release` and `STACKRA_RELEASE`. The gate never trusts who applied `after` (null included): it needs the run of
+  another release that finished last (`schema_migrations_releases`, written by `migrate` only after every pending file
+  applied, with the last file version the release holds and `finished_at`) to hold `after` and to have finished after
+  it was applied, so a failed run's release never counts as serving and a rollback to an older release holds the step
+  again; `migrate` refuses, before any change, a contract step whose `after` is pending in the same
   run, reading the gate's `CONTRACT_AFTER_MARKER` line (`contractAfterIds`). Keep the marker the gate's second line. A
   rename's expand (`t.renameColumn`, `schema.rename`) leaves the old name working (the `trg_` sync trigger, the
   `security_invoker` view); never drop either outside its finish step. A renamed column's new name has no default,

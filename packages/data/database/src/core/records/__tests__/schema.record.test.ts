@@ -3,8 +3,8 @@
  * Purpose: behaviour tests of the schema builder's table steps on a real Postgres engine (PGlite): a renamed table stays
  *          readable and writable under its old name through a view that keeps the caller's row-level security, its
  *          finish drops the view behind the release gate, a dropped table waits for its gate (a retried deploy of the
- *          release that applied the step it waits for, a run naming no release, and a later release while no run of a
- *          release holding that step has finished, are refused), and `requireBackfill`
+ *          release that applied the step it waits for, a run naming no release, and a later release while the run of
+ *          another release that finished last does not hold that step, are refused), and `requireBackfill`
  *          refuses while a row is pending, passes on a database with none, and refuses a role that row-level security
  *          would filter, or that lacks SELECT on the table, instead of counting the rows it can see (STA-1406).
  * Boundary: test only; each test applies compiled migrations to a fresh in-memory PGlite as the runner would, and plays
@@ -165,11 +165,13 @@ describe("SchemaRecord table steps on Postgres", () => {
     run(pg, 2, "v3");
     // v2's run never finished, so v1 may still read the old name
     await expect(apply(pg, finish)).rejects.toThrow(
-      /which release v2 applied, and no migrate run of a release holding it has finished since/,
+      /which release v2 applied, and the last migrate run of another release to finish \(none\) does not hold it/,
     );
     // a finished run of an older release that never held the rename does not count
     await finished(pg, "v1", 1);
-    await expect(apply(pg, finish)).rejects.toThrow(/no migrate run of a release holding it/);
+    await expect(apply(pg, finish)).rejects.toThrow(
+      /the last migrate run of another release to finish \(v1\) does not hold it/,
+    );
     await finished(pg, "v2", 2);
     await apply(pg, finish);
     expect(await rows(pg, "select to_regclass('shop.customer') as view")).toEqual([{ view: null }]);
@@ -198,14 +200,15 @@ describe("SchemaRecord table steps on Postgres", () => {
     expect(await rows(pg, "select to_regclass('shop.customer') as t")).toEqual([{ t: null }]);
   });
 
-  it("passes the release gate on a fresh database, with no ledger, and with the setting unset", async () => {
+  it("passes the release gate on a fresh database, with no ledger, with the setting unset, and past a finished run holding a step recorded with no release", async () => {
     const drop = compiled((schema) =>
       schema.drop("customer", { after: "shop.0002_stop_using_customer" }),
     );
     const fresh = await scopedRows();
     await ledger(fresh, [], 0);
     await apply(fresh, drop);
-    // a step recorded before the ledger kept releases belongs to an older release
+    // a step recorded with no release (before the ledger kept releases, or by a run naming none) waits, like any
+    // other, for a finished run that holds it
     const recordedBefore = await scopedRows();
     await ledger(
       recordedBefore,
@@ -216,6 +219,10 @@ describe("SchemaRecord table steps on Postgres", () => {
       2,
       "v3",
     );
+    await expect(apply(recordedBefore, drop)).rejects.toThrow(
+      /which release \(none named\) applied, and the last migrate run of another release to finish \(none\) does not hold it/,
+    );
+    await finished(recordedBefore, "v2", 2);
     await apply(recordedBefore, drop);
     const unledgered = await scopedRows();
     await apply(unledgered, drop);

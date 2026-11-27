@@ -3,9 +3,10 @@
  * Purpose: unit tests of `migrate`: an edited applied file is refused, applied files are adopted into the history, a
  *          step timeout is set and reset, each applied file is recorded with its checksum and release, a failed
  *          concurrent index is dropped with the version put back clean, a forward-only run naming no release is
- *          refused on a database with applied files, a contract step waiting for a migration the same run applies is
- *          refused before any statement, and a named run records its release as finished only when every file applied
- *          (STA-1406).
+ *          refused on a database with applied files only while a pending file holds a contract step (plain additive
+ *          files apply as before), the refusal naming `--release` and `STACKRA_RELEASE`, a contract step waiting for
+ *          a migration the same run applies is refused before any statement, and a named run records its release as
+ *          finished only when every file applied (STA-1406).
  * Boundary: test only; `openMigrationSession` is mocked by an in-memory session that records the SQL, so no Postgres
  *           runs.
  * Runtime: node (vitest)
@@ -233,15 +234,58 @@ describe("migrate", () => {
     expect((await migrate({ cwd: ".", environment: "dev" }, {})).applied).toHaveLength(2);
   });
 
-  it("refuses a forward-only run that names no release on a database with applied files, before any statement (STA-1406)", async () => {
-    // recorded with no release, the next file could not be told from the release a retry names, so a contract step
-    // waiting for it would pass its gate while this release still serves
-    reset([file(1, "select 1"), file(2, "select 2")], 1);
-    fake.history = [{ version: 1, name: "0001_orders_step", checksum: "sum1" }];
-    await expect(migrate({ cwd: ".", environment: "staging" }, {})).rejects.toThrow(
-      /refused before any change: this staging run names no release, and the database already has applied migrations \(version 1\)/,
+  it("refuses a forward-only run that names no release while a pending file holds a contract step, before any statement, naming --release and STACKRA_RELEASE (STA-1406)", async () => {
+    // the contract step's gate compares the release this run applies, so a run naming none cannot pass it
+    const drop = file(
+      3,
+      `${releaseGateSql("orders.0001_create_orders", "orders.orders drop column note")};\nalter table orders.orders drop column note`,
+      { name: "0003_orders_0003_drop_note" },
+    );
+    reset(
+      [file(1, "select 1", { name: "0001_orders_0001_create_orders" }), file(2, "select 2"), drop],
+      1,
+    );
+    fake.history = [{ version: 1, name: "0001_orders_0001_create_orders", checksum: "sum1" }];
+    const refusal = migrate({ cwd: ".", environment: "staging" }, {});
+    await expect(refusal).rejects.toThrow(
+      /refused before any change: this staging run names no release, and the database already has applied migrations \(version 1\) while 0003_orders_0003_drop_note holds a contract step/,
+    );
+    await expect(refusal).rejects.toThrow(
+      /pass --release <version or commit> to stackra db migrate, or set STACKRA_RELEASE=<version or commit> in the release step's environment/,
     );
     expect(fake.executed).toEqual([]);
+  });
+
+  it("applies plain additive files on a database with applied files when the run names no release, as before (STA-1406)", async () => {
+    // no contract step is pending, so no gate reads the release: the files apply and record none
+    reset([file(1, "select 1"), file(2, "select 2"), file(3, "select 3")], 1);
+    fake.history = [{ version: 1, name: "0001_orders_step", checksum: "sum1" }];
+    expect(await migrate({ cwd: ".", environment: "production" }, {})).toEqual({
+      applied: ["0002_orders_step", "0003_orders_step"],
+    });
+    const sql = fake.executed.map(([statement]) => statement);
+    expect(sql).toContain(
+      "select set_config('stackra.migrate_from_version', '1', true);\nselect 2",
+    );
+    expect(sql.some((statement) => statement.includes("schema_migrations_releases"))).toBe(false);
+    expect(sql.at(-1)).toContain("values (3, '0003_orders_step', 'sum3', null)");
+  });
+
+  it("applies a pending contract step once the default deploy path names its release (STA-1406)", async () => {
+    const drop = file(
+      2,
+      `${releaseGateSql("orders.0001_create_orders", "orders.orders drop column note")};\nalter table orders.orders drop column note`,
+      { name: "0002_orders_0002_drop_note" },
+    );
+    reset([file(1, "select 1", { name: "0001_orders_0001_create_orders" }), drop], 1);
+    fake.history = [{ version: 1, name: "0001_orders_0001_create_orders", checksum: "sum1" }];
+    const commit = "4f1c2b0e9d8a7f6e5d4c3b2a1908f7e6d5c4b3a2";
+    expect(await migrate({ cwd: ".", environment: "production", release: commit }, {})).toEqual({
+      applied: ["0002_orders_0002_drop_note"],
+    });
+    expect(fake.executed.map(([sql]) => sql).join("\n")).toContain(
+      `set_config('stackra.migrate_release', '${commit}', true)`,
+    );
   });
 
   it("applies a forward-only run that names no release on a fresh database, recording no release (STA-1406)", async () => {

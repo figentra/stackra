@@ -1,8 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: integration test of the release gate through the real runner on real Postgres: `migrate` in a forward-only
- *          environment refuses a run that names no release on a database with applied files before any change (so a
- *          retry naming the release cannot pass a step that run applied), refuses before any change a contract step
+ *          environment refuses a run that names no release on a database with applied files before any change while a
+ *          pending file holds a contract step (naming `--release` and `STACKRA_RELEASE`), applies plain additive files
+ *          naming none and holds a later contract step until a named run holding them finishes, refuses before any
+ *          change a contract step
  *          shipped with the migration it waits for, refuses a contract step whose release applied that migration,
  *          retried or not, and applies it under the next release; it holds the step under every later release while
  *          the run that applied the migration never finished, until a release holding it finishes its run; on a fresh
@@ -126,10 +128,14 @@ describe("migrate and the release gate", () => {
       await migrate({ cwd: member(ALL.slice(0, 1)), environment, release: "v1" }, env),
     ).toEqual({ applied: ["0001_notes_0001_create_notes"] });
     const next = member(ALL);
-    // the deploy of v2 forgot STACKRA_RELEASE: refused before 0002 applies, so no row of v2 is recorded without its
-    // release, where a retry naming v2 would take it for an older release and drop the column v1 still reads
-    await expect(migrate({ cwd: next, environment }, env)).rejects.toThrow(
-      /refused before any change: this production run names no release, and the database already has applied migrations \(version 1\)/,
+    // the deploy of v2 forgot STACKRA_RELEASE while it holds a contract step: refused before 0002 applies, naming both
+    // ways to set the release
+    const unnamed = migrate({ cwd: next, environment }, env);
+    await expect(unnamed).rejects.toThrow(
+      /refused before any change: this production run names no release, and the database already has applied migrations \(version 1\) while 0003_notes_0003_drop_ref holds a contract step/,
+    );
+    await expect(unnamed).rejects.toThrow(
+      /pass --release <version or commit> to stackra db migrate, or set STACKRA_RELEASE=<version or commit>/,
     );
     // v2 ships the drop with the migration it waits for: refused before 0002 applies, since v1 still reads legacy_ref
     // and a failed v2 would leave it serving
@@ -196,7 +202,7 @@ describe("migrate and the release gate", () => {
     const fixed = [...ALL.slice(0, 2), ["notes.0003_broken", "select 1"]] as const;
     const withDrop = member([...fixed, ["notes.0004_drop_ref", DropRefMigration]]);
     const unfinished =
-      /0004_notes_0004_drop_ref failed: .*notes\.notes drop column legacy_ref is a contract step after notes\.0002_stop_reading_ref, which release v2 applied, and no migrate run of a release holding it has finished since/;
+      /0004_notes_0004_drop_ref failed: .*notes\.notes drop column legacy_ref is a contract step after notes\.0002_stop_reading_ref, which release v2 applied, and the last migrate run of another release to finish \(v1\) does not hold it/;
     await expect(migrate({ cwd: withDrop, environment, release: "v3" }, env)).rejects.toThrow(
       unfinished,
     );
@@ -218,6 +224,36 @@ describe("migrate and the release gate", () => {
     });
     expect(await migrate({ cwd: withDrop, environment, release: "v6" }, env)).toEqual({
       applied: ["0004_notes_0004_drop_ref"],
+    });
+    expect(await columns()).not.toContainEqual({ column_name: "legacy_ref" });
+  });
+
+  it("applies plain additive files with no release named, and holds a later contract step until a named run holding them finishes", async () => {
+    const environment = "production";
+    const env = {};
+    await migrate({ cwd: member(ALL.slice(0, 1)), environment, release: "v1" }, env);
+    // a release step that names no release and ships only additive files applies them as before
+    const additive = member(ALL.slice(0, 2));
+    expect(await migrate({ cwd: additive, environment }, env)).toEqual({
+      applied: ["0002_notes_0002_stop_reading_ref"],
+    });
+    expect(
+      await read("select version, release_id from schema_migrations_history order by version"),
+    ).toEqual([
+      { version: "1", release_id: "v1" },
+      { version: "2", release_id: null },
+    ]);
+    // no named run holding 0002 has finished, so the drop waits whatever release it ships under
+    await expect(migrate({ cwd: member(ALL), environment, release: "v3" }, env)).rejects.toThrow(
+      /which release \(none named\) applied, and the last migrate run of another release to finish \(v1\) does not hold it/,
+    );
+    expect(await columns()).toContainEqual({ column_name: "legacy_ref" });
+    // the same files deployed under a named release finish its run; the drop applies in the release after it
+    expect(await migrate({ cwd: additive, environment, release: "v2" }, env)).toEqual({
+      applied: [],
+    });
+    expect(await migrate({ cwd: member(ALL), environment, release: "v3" }, env)).toEqual({
+      applied: ["0003_notes_0003_drop_ref"],
     });
     expect(await columns()).not.toContainEqual({ column_name: "legacy_ref" });
   });

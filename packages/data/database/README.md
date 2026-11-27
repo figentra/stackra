@@ -246,19 +246,26 @@ schema.drop("order_drafts", { after: "orders.0007_rename_note" });
   the migration of the earlier release. It compiles to a `DO` block first in the transaction that refuses the
   migration while `after` was applied under the release this run applies (or never), and `after` becomes one of the
   migration's edges, so gen orders the two and refuses an id no migration has. The release is the deploy's version or
-  commit: `stackra db migrate --release <id>`, else `STACKRA_RELEASE`. The runner records it on every
-  `schema_migrations_history` row and sets `stackra.migrate_from_version` and `stackra.migrate_release` in
-  forward-only environments, so a retried deploy of the same release (a CI retry, a re-run pipeline) is refused as its
-  first run was, a run that names no release is refused, and only the next release passes. Outside dev, preview and
-  test, `stackra db migrate` refuses a run that names no release before any change whenever the database already has
-  applied files: a file recorded with no release could not be told from the release a retry names, so the retry
-  would pass the drop while the release before still serves. Give every deploy its own id: one reused across deploys
-  holds the step until it changes. A release counts as serving only once its `stackra db migrate` run finished: a
-  named forward-only run that applies every pending file records its release in `schema_migrations_releases`, with the
-  last file version it holds, and the gate passes only when a release other than this run's, holding `after`, finished
-  its run after `after` was applied. So when the run that applied `after` failed (its code never went live, the
+  commit: `stackra db migrate --release <id>`, else `STACKRA_RELEASE`, else the commit the member's checkout is at
+  (`git rev-parse HEAD`, the commit `stackra deploy` ships), so a deploy that runs `stackra db migrate` in its checkout
+  names its release without a flag. The runner records it on every `schema_migrations_history` row and sets
+  `stackra.migrate_from_version` and `stackra.migrate_release` in forward-only environments, so a retried deploy of
+  the same release (a CI retry, a re-run pipeline) is refused as its first run was, a run that names no release is
+  refused, and only the next release passes. Outside dev, preview and test, `stackra db migrate` refuses, before any
+  change, a run that names no release while a pending file holds a contract step on a database that already has
+  applied files; the refusal says to pass `--release <version or commit>` or set `STACKRA_RELEASE=<version or
+  commit>` in the release step. A run of plain additive files that names no release applies them as before. Give every
+  deploy its own id: one reused across deploys holds the step until it changes. A release counts as serving only once
+  its `stackra db migrate` run finished: a named forward-only run that applies every pending file records its release
+  in `schema_migrations_releases`, with the last file version it holds and when it finished. "Finished" means the
+  migrate run completed, not that the rollout did, so the pipeline runs `stackra db migrate` right before it rolls the
+  release out. The gate passes only when the run of a release other than this run's that finished last holds `after`
+  and finished after `after` was applied. So when the run that applied `after` failed (its code never went live, the
   release before it still serves), every later release is refused until one holding `after` finishes without the
-  contract step. A run that would apply `after` and the contract step together is refused before any change on a
+  contract step; when an older release that never held `after` finishes a run later (a rollback), the step is refused
+  again until a release holding `after` finishes last; and a step applied by a run that named no release waits for a
+  named run holding it to finish. A run that would apply `after` and the contract step together is refused before any
+  change on a
   database with applied files (`migrate` reads the gate's `-- stackra:contract-after=<id>` line): ship the contract
   step in a later release. The gate passes on a fresh database, on dev, preview
   and test, and wherever Encore's runner or a test applies the files (no `schema_migrations_history`).
@@ -334,13 +341,15 @@ checksum, applied_at, release_id)` records each applied file's SHA-256 and the r
   goes back to the last applied file, clean, so the next run starts that file again. Only a crash mid-file leaves the
   version dirty.
 - Outside dev, preview and test, a run sets `stackra.migrate_from_version` to the version it started from and
-  `stackra.migrate_release` to its release (`--release`, else `STACKRA_RELEASE`: letters, digits and `. _ + / -`),
-  which the release gate of every contract step reads (see "Dropping and renaming"). There a run with files to apply
-  must name its release once the database has an applied file, and is refused before any change otherwise; only a
-  fresh database records files with no release. There a run is also refused before any change when a pending
-  contract step waits for a migration the same run applies, and a named run that applies every pending file records
-  its release as finished in `schema_migrations_releases(release_id, through_version, finished_at)`; a failed run
-  records nothing.
+  `stackra.migrate_release` to its release (`--release`, else `STACKRA_RELEASE`, else, for `stackra db migrate`, the
+  checkout's commit: letters, digits and `. _ + / -`), which the release gate of every contract step reads (see
+  "Dropping and renaming"). There a run whose pending files hold a contract step must name its release once the
+  database has an applied file, and is refused before any change otherwise, with a message naming `--release` and
+  `STACKRA_RELEASE`; plain additive files apply with no release named, as before. There a run is also refused before
+  any change when a pending contract step waits for a migration the same run applies, and a named run that applies
+  every pending file records its release as finished in `schema_migrations_releases(release_id, through_version,
+  finished_at)`; a failed run records nothing. "Finished" means the migrate run completed, so run migrate right before
+  the rollout.
 
 ## Scope isolation
 

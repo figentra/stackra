@@ -3,8 +3,10 @@
  * Purpose: behaviour tests of the blueprint's expand and contract steps on a real Postgres engine (PGlite): a column
  *          rename's sync trigger keeps both names equal for a release that writes either, its finish refuses while a
  *          row is not backfilled (also as an owner role that forced row security would show no row) and then drops the
- *          old column; a dropped column waits for its release gate, a retried deploy of that release included, and a
- *          later release while the run that applied the step it waits for never finished; a named
+ *          old column; a dropped column waits for its release gate, a retried deploy of that release included, a
+ *          later release while the run that applied the step it waits for never finished, while an older release that
+ *          never held that step finished last (a rollback), and while a step applied with no release named is held by
+ *          no finished run; a named
  *          check added to an existing table holds new rows at once and its validation scans the old ones; an
  *          exclusion constraint refuses an overlapping booking (STA-1406).
  * Boundary: test only; each test applies compiled migrations to a fresh in-memory PGlite as the runner would (a
@@ -171,12 +173,73 @@ describe("BlueprintRecord expand and contract on Postgres", () => {
     // the next release, while v2's run never finished (its code never went live, so v1 may still be serving)
     run(2, "v3");
     await expect(apply(pg, drop)).rejects.toThrow(
-      /shop\.orders drop column note is a contract step after shop\.0002_stop_reading_note, which release v2 applied, and no migrate run of a release holding it has finished since/,
+      /shop\.orders drop column note is a contract step after shop\.0002_stop_reading_note, which release v2 applied, and the last migrate run of another release to finish \(v1\) does not hold it/,
     );
     expect(await rows(pg, "select note from shop.orders order by id")).toHaveLength(2);
     // v2's run finished: the next release drops the column
     await pg.exec(
       "insert into schema_migrations_releases (release_id, through_version) values ('v2', 2)",
+    );
+    await apply(pg, drop);
+    expect(await rows(pg, "select * from shop.orders order by id")).toEqual([
+      { id: "a" },
+      { id: "b" },
+    ]);
+  });
+
+  it("holds a dropped column while an older release that never held the step it waits for finished last (a rollback)", async () => {
+    const pg = await shop();
+    const drop = compiled((schema) =>
+      schema.table("orders", (t: Blueprint) => {
+        t.dropColumn("note", { after: "shop.0002_stop_reading_note", type: "varchar(200)" });
+      }),
+    );
+    // v1 holds 0001, v2 holds 0002 and finished; then v1 was rolled back to and its run finished again, later
+    await pg.exec(
+      "create table schema_migrations_history (version bigint primary key, name text not null, checksum text not null, applied_at timestamptz not null default now(), release_id text); insert into schema_migrations_history (version, name, checksum, release_id, applied_at) values (1, '0001_shop_0001_create_orders', 'x', 'v1', '2026-11-01T10:00Z'), (2, '0002_shop_0002_stop_reading_note', 'y', 'v2', '2026-11-02T10:00Z'); create table schema_migrations_releases (release_id text primary key, through_version bigint not null, finished_at timestamptz not null default now()); insert into schema_migrations_releases (release_id, through_version, finished_at) values ('v1', 1, '2026-11-03T10:00Z'), ('v2', 2, '2026-11-02T10:05Z');",
+    );
+    runs.set(
+      pg,
+      "select set_config('stackra.migrate_from_version', '2', true), set_config('stackra.migrate_release', 'v3', true);\n",
+    );
+    // v1 serves again and still reads the column: the drop of v3 is refused although v2 once finished
+    await expect(apply(pg, drop)).rejects.toThrow(
+      /shop\.orders drop column note is a contract step after shop\.0002_stop_reading_note, which release v2 applied, and the last migrate run of another release to finish \(v1\) does not hold it/,
+    );
+    expect(await rows(pg, "select note from shop.orders order by id")).toHaveLength(2);
+    // v2 rolls forward again and its run finishes last: the drop of v3 applies
+    await pg.exec(
+      "update schema_migrations_releases set finished_at = '2026-11-04T10:00Z' where release_id = 'v2'",
+    );
+    await apply(pg, drop);
+    expect(await rows(pg, "select * from shop.orders order by id")).toEqual([
+      { id: "a" },
+      { id: "b" },
+    ]);
+  });
+
+  it("holds a dropped column whose step was applied by a run naming no release until a run holding it finishes", async () => {
+    const pg = await shop();
+    const drop = compiled((schema) =>
+      schema.table("orders", (t: Blueprint) => {
+        t.dropColumn("note", { after: "shop.0002_stop_reading_note", type: "varchar(200)" });
+      }),
+    );
+    // 0002 is plain additive, so a run naming no release applied it and recorded none (nor a finished release)
+    await pg.exec(
+      "create table schema_migrations_history (version bigint primary key, name text not null, checksum text not null, applied_at timestamptz not null default now(), release_id text); insert into schema_migrations_history (version, name, checksum, release_id, applied_at) values (1, '0001_shop_0001_create_orders', 'x', 'v1', '2026-11-01T10:00Z'), (2, '0002_shop_0002_stop_reading_note', 'y', null, '2026-11-02T10:00Z'); create table schema_migrations_releases (release_id text primary key, through_version bigint not null, finished_at timestamptz not null default now()); insert into schema_migrations_releases (release_id, through_version, finished_at) values ('v1', 1, '2026-11-01T10:05Z');",
+    );
+    runs.set(
+      pg,
+      "select set_config('stackra.migrate_from_version', '2', true), set_config('stackra.migrate_release', 'v3', true);\n",
+    );
+    await expect(apply(pg, drop)).rejects.toThrow(
+      /which release \(none named\) applied, and the last migrate run of another release to finish \(v1\) does not hold it/,
+    );
+    expect(await rows(pg, "select note from shop.orders order by id")).toHaveLength(2);
+    // a named release holding 0002 finishes its run: the drop of v3 applies
+    await pg.exec(
+      "insert into schema_migrations_releases (release_id, through_version, finished_at) values ('v2', 2, '2026-11-03T10:00Z')",
     );
     await apply(pg, drop);
     expect(await rows(pg, "select * from shop.orders order by id")).toEqual([
