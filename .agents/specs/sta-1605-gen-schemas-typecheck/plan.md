@@ -58,6 +58,7 @@ container gets no module. Four package schemas that disagreed with their own typ
 - **P-006**: for every member without `@stackra/container`, no generated file names a module — Validates: FR-009
 - **P-007**: for every class gen reads from an import, the generated wiring imports the name that import's specifier exports — Validates: FR-008
 - **P-008**: for every driver-name field whose port no driver reaches, the generated schema parses any string — Validates: FR-010
+- **P-009**: for every config field that selects a driver of a port its package declares, the package's manifest names that field, and a host whose wiring lists another package's driver of the port selects by it and refuses any other name — Validates: FR-011
 
 ## Architecture overview
 
@@ -143,6 +144,7 @@ packages/developer/cli/stackra.manifest.json
 packages/developer/runway/stackra.manifest.json
 packages/experience/platform/stackra.manifest.json
 packages/security/csp/stackra.manifest.json
+packages/state/query/stackra.manifest.json
 workers/edge/stackra.manifest.json
 workers/registry/stackra.manifest.json
 workers/static/stackra.manifest.json

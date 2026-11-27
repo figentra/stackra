@@ -44,6 +44,11 @@ a generated fixture, and the presets include the generated entries. This spec is
   (`MikroORM` from `@mikro-orm/postgresql`)
 - FR-009: `packages/developer/gen/src/core/functions/root-module-of.function.ts`; ADR 0305 (rules 15 and 16: the root
   module); the probe's TS2307 in `.stackra/entry`
+- FR-011: `packages/developer/gen/src/core/functions/build-manifest.function.ts`,
+  `packages/developer/gen/src/core/functions/emit-wiring.function.ts` (`dependencyDriverTables`) and
+  `packages/foundation/container/src/core/services/container.service.ts` (`chooseDriver`); `@stackra/query`'s
+  `QueryOptions.queueLeader`, a selecting field of a port none of whose drivers lives in the package; the CTO's
+  condition of 2026-11-27 (an unknown driver name fails at resolution)
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
@@ -176,6 +181,9 @@ driver variant and a Worker-only driver all produce generated code that typechec
 - **FR-008**: An imported class SHALL keep the name its import specifier exports it under.
 - **FR-009**: A member that does not use the container SHALL have no root module.
 - **FR-010**: A driver-name field with no candidate driver SHALL compile to `z.string()`.
+- **FR-011**: THE manifest of a package SHALL record the selecting config field of a port it declares even when none
+  of the port's drivers lives in it (no candidate), so a host that lists another package's driver of that port selects
+  it by that field and the container refuses a name that is none of the port's drivers.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
@@ -189,6 +197,7 @@ driver variant and a Worker-only driver all produce generated code that typechec
 - **AC-008**: IF a class declares a symbol key such as `[OptionalProps]` THEN THE `Fields` and `InputFields` types of it SHALL not list that key.
 - **AC-009**: WHEN gen reads a class imported under its export's name THE generated wiring SHALL import that name.
 - **AC-010**: IF no driver of a driver-name field's port reaches the member THEN THE generated schema SHALL accept any string.
+- **AC-011**: IF a config field names a driver that is none of its port's drivers (a renamed driver's old name, or any name the `z.string()` of AC-010 let through) THEN THE container SHALL fail at boot when it resolves the port's driver, naming the field, the value and the drivers, also when the selecting field and the driver come from different packages.
 
 ## Success Criteria _(mandatory)_
 
@@ -204,11 +213,19 @@ driver variant and a Worker-only driver all produce generated code that typechec
 - **SC-003**: every one of the 99 members with `.stackra/gen` passes `tsc --noEmit` after `pnpm gen` — verified by:
   manual (box 2)
 - **SC-004**: the touched packages' tests, typecheck, oxlint and oxfmt pass — verified by: manual
+- **SC-006**: `build-manifest.function.test.ts` ("records the selector of an own port none of whose drivers live in
+  the package") fails without FR-011; `emit-wiring.function.test.ts` ("selects another package's driver by the field
+  of the package that declares the port") and `container.service.test.ts` ("refuses an unknown name when the selector
+  and the driver come from different wirings") prove AC-011 — verified by: unit
 
 ## Compatibility and migration
 
 - A config that selected a platform push transport, a runway provider or a fiscal signer or onboarding driver by its
-  old long name selects it by the short name; no file in this repo or the template used a long name.
+  old long name selects it by the short name; no file in this repo or the template used a long name. The rename
+  breaks such a config, so `@stackra/platform`, `@stackra/runway` and `@stackra/fiscal` take a minor bump, and an
+  old name fails at boot with the port's driver names (AC-011) instead of selecting another driver.
+- A package that declares a port and its selecting field but none of its drivers (`@stackra/query`'s `QueueLeader`)
+  now lists the port in its manifest with no candidate; regenerate (`stackra gen`).
 - A library member outside this repo on the `library` preset now typechecks its generated files; a type error there
   is a real mismatch between a class and its schema to fix in the source.
 - Run `stackra gen` and commit the regenerated manifests. A manifest generated before this change has no `node` on a
@@ -243,12 +260,17 @@ None.
   `platform.CaptchaVerifier` with the memory driver alone. FR-006 now keeps a portable driver from its `./node` entry
   (manifest `node`), with AC-007, EC-07 and SC-005. AC-008 to AC-010 name what FR-005, FR-008 and FR-010 already
   delivered; the Sources map each FR.
+- 2026-11-27 · the CTO's conditions: `@stackra/platform`, `@stackra/runway` and `@stackra/fiscal` take minor bumps
+  for the driver renames; an unknown driver name fails at resolution (FR-011, AC-011, SC-006, T012), including for a
+  port whose selecting field and driver live in different packages, which before took the only driver whatever the
+  field said.
 
 ## Status history
 
 - 2026-11-26 · — → Draft · Claude (STA-1605, batch 13) · written from the branch's diff
 - 2026-11-26 · Draft → Clarified · Claude (STA-1605, batch 13) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-1605, batch 13) · plan.md
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 · Planned → Tasked · Claude (STA-1605, batch 13) · tasks.md
 - 2026-11-26 · Tasked → Implementing · Claude (STA-1605, batch 13) · T001 to T010 done on the branch; the Planned approval is the approver's to write (ADR 0502)
 - 2026-11-27 · Implementing (amended) · Claude (STA-1605, batch 13) · review fixes: portable `./worker` drivers (T011), sources and criteria mapped; still Implementing, the Planned approval stays the approver's
