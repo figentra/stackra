@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `MemoryEntries`, the memory repository the `Journal` tests share: the entries of one model in memory, unique
  *          on the model's (account, reference) index as Postgres keeps it, answering the filters the journal sends
- *          (equality, `$lt`, `$in`, `$or`) and its `find`, `findOne`, `count`, `sum` and `insert` calls.
+ *          (equality, `$lt`, `$in`, `$or`) and its `find`, `findOne`, `count`, `sum` and `insert` calls. `sum` is
+ *          exact, as Postgres sums a bigint column, so a test sees the journal's own rounding and no fixture's.
  * Boundary: test fixture only; nothing here reaches a database.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0220 (decisions 4 and 5).
@@ -63,10 +64,13 @@ export class MemoryEntries {
     return this.rows.filter((row) => matches(row, where)).length;
   }
 
+  /** The exact sum, as Postgres sums an integer column, rounded once to a number on the way out. */
   async sum(field: string, where: Row): Promise<number> {
-    return this.rows
-      .filter((row) => matches(row, where))
-      .reduce((total, row) => total + Number(row[field]), 0);
+    return Number(
+      this.rows
+        .filter((row) => matches(row, where))
+        .reduce((total, row) => total + BigInt(Number(row[field])), 0n),
+    );
   }
 
   async insert(data: Row): Promise<Row> {

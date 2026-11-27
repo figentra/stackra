@@ -37,8 +37,10 @@ programming model v3.1 shape (ADR 0294, 0305). Entries `.` and `./node`.
   so a consumer that calls it often gives its model an index on (scope column, reference).
 - Amounts are safe integers (points or minor units). A money model names a `currency` field in `@Journaled`: postings share one
   currency and balances are per currency (ADR 0220).
-- Sum amounts in BigInt wherever a sum decides something (a posting's balance check): a `number` sum of safe integers
-  rounds past 2^53 and once wrote an unbalanced posting (STA-2887).
+- Sum amounts in BigInt wherever a sum decides something (a posting's balance check, a floor check, a reversal's
+  running balance): a `number` sum of safe integers rounds past 2^53 and once wrote an unbalanced posting, crossed a
+  floor by a unit and cut a reversal short (STA-2887). A balance read from the repository is a `number`: never check a
+  floor against one that is not a safe integer (`exactBalance` throws a `RangeError`).
 - `journal-properties.service.test.ts` holds the property tests (fast-check) of postings, balances, floors and
   reversals; a counterexample it finds stays as an example test. The memory journal the tests share is
   `__tests__/journal-over.fixture.ts` over `__tests__/memory-entries.fixture.ts`.

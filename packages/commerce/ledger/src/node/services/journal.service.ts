@@ -3,7 +3,8 @@
  * Purpose: `Journal<M>`, the double-entry arithmetic every ledger shares, over one append-only entry model: append once
  *          per (account, reference), the balance as the sum of an account's entries, a debit refused below a balance
  *          floor, set-based reversal cut at the floor, balanced multi-line postings, and a posting's lines read back by
- *          reference. A model that names a currency field has every entry and posting in one ISO
+ *          reference. Every sum that decides something (a posting's balance, an account's net, a floor check, a
+ *          reversal's cut) is exact, in BigInt, so it never rounds past 2^53 (STA-2887). A model that names a currency field has every entry and posting in one ISO
  *          4217 currency and every balance per currency (ADR 0220). A model that lists `extra` fields has them written
  *          from each entry's `extra` and read back beside the journal's own five, and a reversal keeps its original's.
  * Boundary: a service over the model's repository; it writes no SQL. Rows are inserted, never updated: the model must
@@ -100,9 +101,43 @@ function extraOf(entry: { readonly extra?: object }, fields: Fields): Record<str
   return { ...entry.extra };
 }
 
-/** The floor a write keeps: the call's (`null` lifts it), else the model's default; undefined for none. */
+/**
+ * The floor a write keeps: the call's (`null` lifts it), else the model's default; undefined for none.
+ *
+ * @throws RangeError when the floor is not a safe integer: it is compared with a balance of whole units (ADR 0220).
+ */
 function floorOf(option: number | null | undefined, fields: Fields): number | undefined {
-  return option === null ? undefined : (option ?? fields.floor);
+  const floor = option === null ? undefined : (option ?? fields.floor);
+  if (floor !== undefined && !Number.isSafeInteger(floor))
+    throw new RangeError(
+      `A journal floor is a safe integer of points or minor units, not ${floor}`,
+    );
+  return floor;
+}
+
+/**
+ * A balance read as a `number`, exactly, for a floor decision.
+ *
+ * @throws RangeError when the balance is not a safe integer: the sum may already have rounded on the way out of the
+ *         repository, so a floor compared with it could be crossed by a unit; the write is refused, not guessed
+ *         (STA-2887, ADR 0220).
+ */
+function exactBalance(balance: number): bigint {
+  if (!Number.isSafeInteger(balance))
+    throw new RangeError(
+      `A journal balance of ${balance} is beyond the safe-integer limit, so a floor cannot be checked exactly`,
+    );
+  return BigInt(balance);
+}
+
+/**
+ * Whether `balance` moved by `change` ends below `floor`, compared exactly: a `number` sum rounds past 2^53, so a
+ * debit beside a large balance or net could cross a floor by a unit (STA-2887).
+ *
+ * @throws RangeError when the balance is not a safe integer (see `exactBalance`).
+ */
+function endsBelow(balance: number, change: bigint, floor: number): boolean {
+  return exactBalance(balance) + change < BigInt(floor);
 }
 
 /** A filter of the model under its own field names. */
@@ -246,7 +281,8 @@ export abstract class Journal<M extends object> extends Service {
    *
    * @param options - `floor` overrides the model's default floor for this call; `null` lifts it.
    * @returns `written` false when the pair was already applied; `belowFloor` true when the floor refused it.
-   * @throws RangeError when the amount is not a safe integer, or the currency is not an ISO 4217 code.
+   * @throws RangeError when the amount or the floor is not a safe integer, when a floored debit meets a balance that is
+   *         not one, or when the currency is not an ISO 4217 code.
    * @throws TypeError when the currency is named and the model has no currency field, or the reverse, or when `extra`
    *         names a field the model's `@Journaled({ extra })` does not list.
    * @throws LockUnavailableError when another write held the account for the whole wait.
@@ -265,7 +301,11 @@ export abstract class Journal<M extends object> extends Service {
       if ((await this.find(entry)) !== null) return NOT_WRITTEN;
       if (
         floor !== undefined &&
-        (await this.balance({ account: entry.account, currency })) + entry.amount < floor
+        endsBelow(
+          await this.balance({ account: entry.account, currency }),
+          BigInt(entry.amount),
+          floor,
+        )
       )
         return BELOW_FLOOR;
       return (await this.insertOnce(entry, fields)) ? WRITTEN : NOT_WRITTEN;
@@ -283,6 +323,7 @@ export abstract class Journal<M extends object> extends Service {
    * @param where - the account, and optionally the kind and an instant the entries' `at` must be before.
    * @param reversal - the reversals' kind, reference prefix and time; `floor` as in `append`.
    * @returns the entries reversed, each with `amount` the part of it that was reversed, in the original's sign.
+   * @throws RangeError when the floor is not a safe integer, or, with a floor, when the account's balance is not one.
    * @throws LockUnavailableError when another write held the account for the whole wait.
    */
   async reverseWhere(
@@ -326,20 +367,26 @@ export abstract class Journal<M extends object> extends Service {
               }),
             );
       const done = new Set(applied.map((row) => entryOf<M>(row, fields).reference));
-      const balances = new Map<string | undefined, number>();
+      // Kept exact: a `number` running balance rounds past 2^53 and then cut a later reversal short (STA-2887).
+      const balances = new Map<string | undefined, bigint>();
       const reversed: JournalEntry<M>[] = [];
       for (const entry of candidates) {
         const reference = reversal.referencePrefix + entry.reference;
         if (done.has(reference)) continue;
-        const full = -entry.amount;
+        const full = BigInt(-entry.amount);
         const balance =
           balances.get(entry.currency) ??
           (floor === undefined
-            ? 0
-            : // oxlint-disable-next-line no-await-in-loop -- read once per currency, before its first reversal
-              await this.balance({ account: where.account, currency: entry.currency }));
-        const amount =
-          floor === undefined || full >= 0 ? full : Math.min(0, Math.max(full, floor - balance));
+            ? 0n
+            : exactBalance(
+                // oxlint-disable-next-line no-await-in-loop -- read once per currency, before its first reversal
+                await this.balance({ account: where.account, currency: entry.currency }),
+              ));
+        const room = floor === undefined ? undefined : BigInt(floor) - balance;
+        const cut =
+          room === undefined || full >= 0n ? full : room > 0n ? 0n : full > room ? full : room;
+        // the cut lies between the reversal and zero, so it is a safe integer again
+        const amount = Number(cut);
         // oxlint-disable-next-line no-await-in-loop -- each reversal is cut against the balance the one before left
         await this.entries().insert(
           rowOf<M>(
@@ -355,7 +402,7 @@ export abstract class Journal<M extends object> extends Service {
             fields,
           ),
         );
-        balances.set(entry.currency, balance + amount);
+        balances.set(entry.currency, balance + cut);
         reversed.push({ ...entry, amount: -amount || 0 }); // `|| 0`: a cut-to-nothing reversal reports 0, never -0
       }
       return reversed;
@@ -373,7 +420,8 @@ export abstract class Journal<M extends object> extends Service {
    *         two, or are not in one currency (a model with a currency field: every line names an ISO 4217 code and they
    *         all match).
    * @throws TypeError when two lines share an (account, reference) pair.
-   * @throws RangeError when an amount is not a safe integer.
+   * @throws RangeError when an amount or a line's floor is not a safe integer, or when a floored account it lowers has a
+   *         balance that is not one.
    * @throws TypeError when a line's `extra` names a field the model's `@Journaled({ extra })` does not list.
    * @throws LockUnavailableError when another write held an account for the whole wait.
    */
@@ -381,6 +429,7 @@ export abstract class Journal<M extends object> extends Service {
     for (const line of lines) assertAmount(line.amount);
     const fields = this.fields();
     for (const line of lines) extraOf(line, fields);
+    const floors = lines.map((line) => floorOf(line.floor, fields));
     const currencies = [...new Set(lines.map((line) => currencyOf(line, fields)))];
     // Summed in BigInt: a floating-point sum of safe integers rounds once it passes 2^53, so lines off by one unit
     // beside an amount near the limit summed to zero and an unbalanced posting was written (STA-2887).
@@ -409,17 +458,22 @@ export abstract class Journal<M extends object> extends Service {
           }),
         );
         if (applied > 0) return NOT_WRITTEN;
-        const change = new Map<string, number>();
+        // Each account's net, exact: two debits of one account beside the safe-integer limit summed in `number`
+        // rounded by a unit and let the posting cross the account's floor (STA-2887).
+        const change = new Map<string, bigint>();
         for (const line of lines)
-          change.set(line.account, (change.get(line.account) ?? 0) + line.amount);
-        for (const line of lines) {
-          const floor = floorOf(line.floor, fields);
-          const net = change.get(line.account) ?? 0;
-          if (floor === undefined || net >= 0) continue;
-          // oxlint-disable-next-line no-await-in-loop -- one balance read per lowered account, on the caller's connection
+          change.set(line.account, (change.get(line.account) ?? 0n) + BigInt(line.amount));
+        for (const [index, line] of lines.entries()) {
+          const floor = floors[index];
+          const net = change.get(line.account) ?? 0n;
+          if (floor === undefined || net >= 0n) continue;
           if (
-            (await this.balance({ account: line.account, currency: line.currency })) + net <
-            floor
+            endsBelow(
+              // oxlint-disable-next-line no-await-in-loop -- one balance read per lowered account, on the caller's connection
+              await this.balance({ account: line.account, currency: line.currency }),
+              net,
+              floor,
+            )
           )
             return BELOW_FLOOR;
         }
