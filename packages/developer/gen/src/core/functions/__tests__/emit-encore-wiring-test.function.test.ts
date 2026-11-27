@@ -97,6 +97,9 @@ const FILES: readonly GeneratedFile[] = [
   },
 ];
 
+/** The suite's imports of the service's Encore files, two folders up from `.stackra/tests`. */
+const COMMERCE = "../../stackra-encore/commerce";
+
 describe(emitEncoreWiringTest, () => {
   const suite = emitEncoreWiringTest(IR, MANIFEST, FILES);
   const content = suite?.content ?? "";
@@ -109,11 +112,11 @@ describe(emitEncoreWiringTest, () => {
       'import { Subscription, Topic } from "encore.dev/pubsub";',
       'import { Service } from "encore.dev/service";',
       'import { app } from "../entry/server";',
-      'import service from "../../stackra-encore/commerce/encore.service";',
-      'import * as encore0 from "../../stackra-encore/commerce/api";',
-      'import * as encore1 from "../../stackra-encore/commerce/cron";',
-      'import * as encore2 from "../../stackra-encore/commerce/database";',
-      'import * as encore3 from "../../stackra-encore/commerce/queues";',
+      `import service from "${COMMERCE}/encore.service";`,
+      `import * as encore0 from "${COMMERCE}/api";`,
+      `import * as encore1 from "${COMMERCE}/cron";`,
+      `import * as encore2 from "${COMMERCE}/database";`,
+      `import * as encore3 from "${COMMERCE}/queues";`,
     ])
       expect(content).toContain(line);
     expect(content).not.toContain("broker-message");

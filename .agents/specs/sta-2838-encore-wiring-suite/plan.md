@@ -82,7 +82,7 @@ Encore's own router is checked when `encore test` compiles the app.
 - `resolveTool` / `toolCommand`: the `wiring` tier, outside and inside `encore test`; `insideEncoreTest` tells which.
 - `withLocalEncoreApp`: runs the outer `encore test` local-only. With the runway's app id in `encore.app`, `encore test`
   fetches the app's secrets from Encore Cloud first and stops a machine that is not logged in (found by the first run
-  on box 2); the suite needs nothing from Encore Cloud, and a local-only app gets its own local test cluster per service.
+  on a Linux build machine); the suite needs nothing from Encore Cloud, and a local-only app gets its own local test cluster per service.
 - `serviceTemplate`: the `test:wiring` script; root `turbo.jsonc`: the uncached `test:wiring` task.
 
 ## Files and folders
@@ -138,7 +138,7 @@ check that a guarded route never runs for an unauthenticated caller.
 - AC-006/P-005: `resolve-tool`, `tool-command`, `inside-encore-test`; AC-007: `service-template`.
 - AC-008/P-006: `tool-command` (the variable outside Encore, a second `encore test`, a stale marker, Encore's own code).
 - AC-009/P-007: `call-authenticator.service` (a malformed token with no `JsonWebKeys` bound).
-- Revert checks for each behaviour; a run under `encore test` on box 2 when its disk allows.
+- Revert checks for each behaviour; a run under `encore test` on a Linux build machine.
 
 ## Rollout
 

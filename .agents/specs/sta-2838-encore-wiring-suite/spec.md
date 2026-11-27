@@ -103,9 +103,9 @@ split out of STA-229 to build it.
 - 2026-11-26 → Clarified (ADR 0182 decision 3; the audit's item 14.2)
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md)
-- 2026-11-26 → Implementing (built in this branch; unit tests and revert checks green on box 2)
+- 2026-11-26 → Implementing (built in this branch; unit tests and revert checks green on a Linux build machine)
 - 2026-11-26 → Implementing (review round 1: AC-003 accepts a guard's refusal, AC-008 stops the recursion and the
-  silent pass, AC-009 makes the key source lazy; the `encore test` run, T005, waits for box 2's root disk)
+  silent pass, AC-009 makes the key source lazy; the `encore test` run, T005, waits for a build machine with disk room)
 - 2026-11-27 → Implementing (main merged in; the first run under `encore test` stopped on Encore Cloud secrets for the
   linked app id, so the outer run is local-only (AC-010); the suite loads the environment file first (AC-011); T005
-  run on box 2: the suite passes on a created app and fails when a guarded adapter is opened)
+  run on a Linux build machine: the suite passes on a created app and fails when a guarded adapter is opened)
