@@ -146,7 +146,7 @@ packages/developer/cli/src/node/functions/__tests__/run-check.function.test.ts
 packages/developer/cli/src/node/functions/__tests__/run-cli.function.test.ts
 packages/developer/cli/src/node/functions/ask-new.function.ts
 packages/developer/cli/src/node/functions/current-cli-runtime.function.ts
-packages/developer/cli/src/node/functions/legacy-command.function.ts (deleted)
+packages/developer/cli/src/node/functions/ (legacy-command.function.ts deleted)
 packages/developer/cli/src/node/functions/new-kinds.function.ts
 packages/developer/cli/src/node/functions/run-body.function.ts
 packages/developer/cli/src/node/functions/run-check.function.ts
