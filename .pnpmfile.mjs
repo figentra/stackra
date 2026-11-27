@@ -9,16 +9,25 @@
  *          A Stackra package (a `stackra` field of kind `package`, any tier but `config`, with a code entry) packs
  *          only with its `stackra.manifest.json` on disk and in `files`: a host's gen reads it under `node_modules`
  *          (STA-1362). A data-only package (no `exports`, no `main`) has no module, so gen writes none.
+ *          A package with a `files` list packs without its tests: the hook adds the `!` exclusions of
+ *          `TEST_EXCLUDES` (`__tests__`, `__fixtures__`, `*.test.*`, …) to it. Then it reads every file the tarball
+ *          would hold and refuses to pack one that is still a test file or holds a secret-shaped string (a private
+ *          key block, a JWT, a payment, cloud or Git host key: `tools/scripts/pack-content.mjs`), naming the file,
+ *          the line and the kind of string (STA-2917).
  * Boundary: rewrites the packed manifest only; the package.json on disk is unchanged. Installs are not hooked. It never
  *           generates the manifest: `stackra gen --manifests` writes it and it is committed (ADR 0294 decision 10).
+ *           Imports node built-ins and `pack-content.mjs` only, since pnpm loads this file before any install.
  * Runtime: node
  * Governing contract: ADR 0177 (PK4 release checks: publint, attw, packed-tarball smoke); ADR 0006 (`#` imports);
  *                     ADR 0453 (publishing to the Stackra registry packs through this hook); ADR 0294 (decisions 10
- *                     and 22: the committed manifest); ADR 0158 and STA-1308 (a package ships its manifest).
+ *                     and 22: the committed manifest); ADR 0158 and STA-1308 (a package ships its manifest);
+ *                     ADR 0022 and STA-2917 (tests stay in the repo).
  * Secrets: forbidden.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { packFindings, TEST_EXCLUDES } from "./tools/scripts/pack-content.mjs";
 
 /** The repo-only export condition that resolves a member to its `src` (workspace and tests only). */
 const SOURCE_CONDITION = "@stackra/source";
@@ -78,12 +87,38 @@ function hashImportsIn(dir) {
 }
 
 /**
- * The manifest to pack for the member in `dir`: `pkg` without its `imports` map and without the `@stackra/source`
- * export condition.
+ * `files` with the test exclusions added once each (`TEST_EXCLUDES`); `pkg` itself when it has no `files` list or
+ * already names every exclusion.
+ */
+function withoutTests(pkg) {
+  if (!Array.isArray(pkg.files)) return pkg;
+  const missing = TEST_EXCLUDES.filter((entry) => !pkg.files.includes(entry));
+  return missing.length === 0 ? pkg : { ...pkg, files: [...pkg.files, ...missing] };
+}
+
+/**
+ * The manifest to pack for the member in `dir`: `pkg` without its `imports` map, without the `@stackra/source`
+ * export condition and, with a `files` list, without its tests (`withoutTests`).
  * @throws when a built file in `dist` still imports a `#` specifier, which the published package could not resolve,
- *         or when a Stackra package has no `stackra.manifest.json` to ship (`requireManifest`).
+ *         when a Stackra package has no `stackra.manifest.json` to ship (`requireManifest`), or when a file the
+ *         tarball would hold is a test file or holds a secret-shaped string (`packFindings`).
  */
 function packedManifest(pkg, dir) {
+  const published = withoutTests(withoutRepoFields(pkg, dir));
+  const findings = packFindings(published, dir);
+  if (findings.length > 0)
+    throw new Error(
+      `${pkg.name}: refusing to pack a test file or a secret-shaped string (STA-2917):\n  ${findings.join("\n  ")}`,
+    );
+  return published;
+}
+
+/**
+ * `pkg` without its `imports` map and without the `@stackra/source` export condition; `pkg` itself when it has
+ * neither.
+ * @throws when a built file in `dist` still imports a `#` specifier, or a Stackra package has no manifest to ship.
+ */
+function withoutRepoFields(pkg, dir) {
   requireManifest(pkg, dir);
   const hasSource =
     pkg.exports !== undefined && JSON.stringify(pkg.exports).includes(`"${SOURCE_CONDITION}"`);
