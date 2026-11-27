@@ -314,6 +314,26 @@ describe("createConsole", () => {
     });
   });
 
+  it("falls back to the console's docs link when the error and the command give none", async () => {
+    const docs = "https://stackra.dev/troubleshooting";
+    const withDocs = (argv: string[]) =>
+      runCommandForTest({ name: "acme", version: "1.2.3", commands: COMMANDS, docs }, argv);
+
+    expect((await withDocs(["boom", "--json"])).json).toMatchObject({ error: { docs } });
+    expect((await withDocs(["boom"])).stderr).toMatch(
+      /Docs\s+https:\/\/stackra\.dev\/troubleshooting/,
+    );
+    expect((await withDocs(["nope", "--json"])).json).toMatchObject({
+      error: { code: "usage", docs },
+    });
+    expect((await withDocs(["clone", "--json"])).json).toMatchObject({
+      error: { docs: "https://stackra.dev/cli/clone" },
+    });
+    expect(((await run(["boom", "--json"])).json as { error: object }).error).not.toHaveProperty(
+      "docs",
+    );
+  });
+
   it("presents returned data when the command wrote nothing", async () => {
     const result = await run(["rows"]);
     expect(result.stdout).toMatch(/name\s+size/);

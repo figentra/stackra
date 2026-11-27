@@ -7,8 +7,8 @@ icon: "wrench"
 {/* Stackra file contract: Purpose: the customer troubleshooting page for the path from an empty folder to a running app: the machine check, the registry and installs, Node, pnpm and mise, `stackra dev` (Docker, Encore, ports), gen, the checks and Runway, and what to send when asking for help. Boundary: customer-facing documentation only; each row is what the code prints today (doctor checks, create, gen, check, runway), and the codes themselves are on /customers/error-codes. Registry answers are owned by /customers/install. Runtime: docs. Governing contract: ADR 0027 (tools pinned in mise); ADR 0121; ADR 0453 (decision 10); ADR 0294 (decision 22); ADR 0515; STA-2853. */}
 
 Most first-run failures are about the machine, not your code. Start every investigation with the machine check, then
-find what you see on this page. When a tool prints a code (such as `shape_number_kind` or `repo-checks/imports`), look
-it up on [Error codes](/customers/error-codes).
+find what you see on this page. When a tool prints a code (such as `shape_number_kind` or `repo-checks/imports`), run
+`stackra explain <code>` or look it up on [Error codes](/customers/error-codes).
 
 ## Check the machine first
 
@@ -65,9 +65,9 @@ which needs Docker for the local databases.
 
 ## Gen
 
-`stackra gen` refuses rather than writing something wrong. A refusal is two lines, the second starting with `fix:`;
-nothing is written while any refusal stands, and the command exits 1. Look the code up on
-[Error codes](/customers/error-codes#gen).
+`stackra gen` refuses rather than writing something wrong. A refusal is three lines: the code and message, then
+`fix:`, then `docs:` with the link to the code's section of [Error codes](/customers/error-codes#gen) and the
+`stackra explain <code>` command that prints it. Nothing is written while any refusal stands, and the command exits 1.
 
 | You see                                                                                                                                   | Why                                                                                 | Fix                                                                                             |
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |

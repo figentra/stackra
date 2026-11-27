@@ -3,10 +3,11 @@
  * Purpose: unit tests of `runCli` on `@stackra/console`: a legacy command runs byte-identical and exits as before
  *          (usage error 2, failure 1), `--help` and `help <command>` never run a command, an unknown command exits 2
  *          naming the closest, the version, spaced command names, `cli` in the context running another command, and the
- *          list of commands still on passthrough pinned.
+ *          list of commands still on passthrough pinned, and every error screen linked to the troubleshooting page
+ *          when nothing closer is named.
  * Boundary: test only; runs fake commands, never a tool.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5); ADR 0500 (decision 7); STA-1966.
+ * Governing contract: ADR 0022 (test placement); ADR 0282 (decisions 3 and 5); ADR 0500 (decision 7); STA-1966; STA-2891.
  */
 import { readCommand } from "@stackra/console";
 import { passthroughCommands } from "@stackra/console/testing";
@@ -15,6 +16,7 @@ import { vi } from "vitest";
 
 import { RunwayCommand } from "#node/commands/runway.command";
 import { COMMANDS } from "#node/constants/commands.constant";
+import { TROUBLESHOOTING_DOCS } from "#node/constants/troubleshooting-docs.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { captureIo } from "#node/functions/capture-io.function";
 import { cliVersion } from "#node/functions/cli-version.function";
@@ -130,6 +132,20 @@ describe("runCli", () => {
     expect(code).toBe(2);
     expect(output).toContain("ecko");
     expect(output).toContain("echo");
+  });
+
+  it("links every error to the troubleshooting page when nothing closer is named (STA-2891)", async () => {
+    const unknown = await run(["ecko"]);
+    const failed = await run(["fail"]);
+    const unknownJson = await run(["ecko", "--json"]);
+
+    expect(unknown.output).toMatch(
+      /Docs\s+https:\/\/docs\.stackra\.figentra\.com\/customers\/troubleshooting/,
+    );
+    expect(failed.output).toContain(TROUBLESHOOTING_DOCS);
+    expect(JSON.parse(unknownJson.output)).toMatchObject({
+      error: { code: "usage", docs: TROUBLESHOOTING_DOCS },
+    });
   });
 
   it("gives commands the cwd and a cli that runs another command with the same commands", async () => {

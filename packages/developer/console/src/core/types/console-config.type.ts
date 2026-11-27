@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `ConsoleConfig`, what `createConsole` takes: the binary name, version and theme, the command registry,
- *          optionally a container factory called only to dispatch a command, the `--json` shape, and whether an
- *          invocation must name a command.
+ *          optionally a container factory called only to dispatch a command, the `--json` shape, whether an
+ *          invocation must name a command, and the docs link of an error screen that names none.
  * Boundary: a type only. `commands` is an explicit list or gen's `#stackra/commands`; nothing is scanned.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-006, FR-008 and FR-013; ADR 0506 (amendment 2026-11-03).
+ * Governing contract: STA-1730 spec FR-006, FR-008 and FR-013; ADR 0506 (amendment 2026-11-03); STA-1966 spec
+ *                     FR-011 (the docs link of an error screen); STA-2891.
  */
 import type { ConsoleTheme } from "#contracts/types/console-theme.type";
 import type { CommandClass } from "#core/types/command-class.type";
@@ -37,4 +38,10 @@ export interface ConsoleConfig {
 
   /** An invocation that names no command and asks no help is a usage error (exit 2); false when absent. */
   readonly requireCommand?: boolean;
+
+  /**
+   * The docs link of every error screen (and `--json` error) whose error and command give none, such as the
+   * binary's troubleshooting page; a usage error before any command is found shows it too. No link when absent.
+   */
+  readonly docs?: string;
 }

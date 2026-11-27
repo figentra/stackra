@@ -4,12 +4,16 @@ description: "Every code stackra gen, stackra check and Runway can print: what c
 icon: "list"
 ---
 
-{/* Stackra file contract: Purpose: the customer reference of every machine code the developer tools print: gen's refusals and warnings, the rules of `stackra check` and `stackra validate`, and Runway's issue codes and errors, each with its cause and its fix. Boundary: customer-facing documentation only; the code is the source of truth and the message printed with a code is more specific than this page. apps/docs/scripts/error-codes/__tests__/error-codes.test.ts fails when a tool can print a code this page does not list, or the page lists a code no tool prints. Runtime: docs. Governing contract: ADR 0231 (snake_case machine codes); ADR 0294 (decisions 10 and 22); ADR 0282 (decision 3); ADR 0296 (enforcement); STA-2853. */}
+{/* Stackra file contract: Purpose: the customer reference of every machine code the developer tools print: gen's refusals and warnings, the rules of `stackra check` and `stackra validate`, and Runway's issue codes and errors, each with its cause and its fix. Boundary: customer-facing documentation only; the code is the source of truth and the message printed with a code is more specific than this page. apps/docs/scripts/error-codes/__tests__/error-codes.test.ts fails when a tool can print a code this page does not list, or the page lists a code no tool prints. Runtime: docs. Governing contract: ADR 0231 (snake_case machine codes); ADR 0294 (decisions 10 and 22); ADR 0282 (decision 3); ADR 0296 (enforcement); STA-2853. The rows are copied into @stackra/gen ERROR_CODES (stackra explain, the docs line of every gen finding, the MCP explain tool) by pnpm error-codes:write in apps/docs, and scripts/error-codes/__tests__/catalogue.test.ts fails when the copy and this page differ (STA-2891). */}
 
 Every Stackra tool that refuses names a code. Find the code on this page for what usually causes it and the usual
 fix. The line the tool printed is always more specific (it names your class, file or key), so read it first; this page
 explains the rule behind it. For failures that come before any code (installing, Node, the registry, Encore), see
 [Troubleshooting](/customers/troubleshooting).
+
+The same rows are in your terminal: `stackra explain <code>` prints a code's cause, fix and link to its section here
+(`--json` for the data), and the local developer MCP serves it as its `explain` tool. Every gen finding ends with a
+`docs:` line that links to its code's section.
 
 ## Gen
 

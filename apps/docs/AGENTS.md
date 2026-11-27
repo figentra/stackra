@@ -59,6 +59,11 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
 - A new gen refusal, repository check rule, check phase rule, runway issue code or runway error class adds its row in
   the same change. A code the extractor cannot follow to a literal fails the test: write it as a literal, or, for a
   rule passed through from another tool, add it to `PASSED_THROUGH_RULES` and explain it on the page.
+- The page is the one error-code catalogue (STA-2891): `pnpm error-codes:write` copies its rows (code, tool, group, the
+  group heading's site id, cause, fix) into `@stackra/gen`'s `ERROR_CODES`, which `stackra explain`, the `docs:`
+  line of every gen finding and the local MCP's `explain` tool read. After changing a row, run it and commit both;
+  `scripts/error-codes/__tests__/catalogue.test.ts` fails when the copy and the page differ. Keep the page's headings
+  plain words: the copy's links use the site's heading ids.
 
 ## Rules that fail the build
 
