@@ -90,18 +90,89 @@ The CLI (`@stackra/cli`) declares a `group` on every command and passes `COMMAND
 
 ## Files and folders
 
-- `packages/developer/console/src/contracts/types/command-list-options.type.ts` (new), `contracts/index.ts`,
-  `contracts/ports/renderer.port.ts`, `core/drivers/text-renderer.driver.ts`, `core/functions/render-list.function.ts`,
-  `core/functions/create-console.function.ts`, `core/functions/route.function.ts`, `core/types/console-config.type.ts`,
-  `core/types/route-decision.type.ts`, `core/constants/list-command.constant.ts` and `list-all-flag.constant.ts` (new),
-  `node/drivers/tab-completions.driver.ts`
-- `packages/developer/cli/src/node/constants/command-groups.constant.ts`, `command-fits.constant.ts`,
-  `types/command-group.type.ts`, `types/command-fit.type.ts`, `functions/is-core-repository.function.ts`,
-  `functions/workspace-fits.function.ts`, `functions/unlisted-command.function.ts` (new); `types/cli-command.type.ts`,
-  `functions/legacy-command.function.ts`, `functions/run-cli.function.ts`, `constants/commands.constant.ts` and every
-  command declaration (`group`, and `hidden` for the presets and plumbing), `stackra.manifest.json`
-- Docs: `packages/developer/cli/README.md`, `apps/docs/src/docs/cli.mdx`, `apps/docs/src/docs/cli.ar.mdx`,
-  `.changeset/cli-command-groups.md`
+Every file the change adds or edits (tests and the changeset aside), and the two package manifests whose scripts verify it:
+
+```text
+packages/developer/cli/package.json
+packages/developer/console/package.json
+apps/docs/src/docs/cli.ar.mdx
+apps/docs/src/docs/cli.mdx
+packages/developer/cli/README.md
+packages/developer/cli/src/node/commands/add.command.ts
+packages/developer/cli/src/node/commands/agents-check.command.ts
+packages/developer/cli/src/node/commands/agents-sync.command.ts
+packages/developer/cli/src/node/commands/any-ratchet.command.ts
+packages/developer/cli/src/node/commands/app-native-deps.command.ts
+packages/developer/cli/src/node/commands/architecture-map.command.ts
+packages/developer/cli/src/node/commands/audit-verify.command.ts
+packages/developer/cli/src/node/commands/catalogue-completeness.command.ts
+packages/developer/cli/src/node/commands/constitution.command.ts
+packages/developer/cli/src/node/commands/consumer-gate.command.ts
+packages/developer/cli/src/node/commands/create.command.ts
+packages/developer/cli/src/node/commands/cycles.command.ts
+packages/developer/cli/src/node/commands/db-migrate.command.ts
+packages/developer/cli/src/node/commands/db-rollback.command.ts
+packages/developer/cli/src/node/commands/dev-secrets-init.command.ts
+packages/developer/cli/src/node/commands/doc-standard.command.ts
+packages/developer/cli/src/node/commands/doctor.command.ts
+packages/developer/cli/src/node/commands/duplicate-exports.command.ts
+packages/developer/cli/src/node/commands/duplication.command.ts
+packages/developer/cli/src/node/commands/encore-prepare.command.ts
+packages/developer/cli/src/node/commands/ls.command.ts
+packages/developer/cli/src/node/commands/mcp-sync.command.ts
+packages/developer/cli/src/node/commands/mobile-onboard.command.ts
+packages/developer/cli/src/node/commands/ops-bootstrap-operator.command.ts
+packages/developer/cli/src/node/commands/promote.command.ts
+packages/developer/cli/src/node/commands/publish.command.ts
+packages/developer/cli/src/node/commands/row-security-declarations.command.ts
+packages/developer/cli/src/node/commands/runway.command.ts
+packages/developer/cli/src/node/commands/search-reindex.command.ts
+packages/developer/cli/src/node/commands/search-status.command.ts
+packages/developer/cli/src/node/commands/settings-apply.command.ts
+packages/developer/cli/src/node/commands/settings-diff.command.ts
+packages/developer/cli/src/node/commands/skill-licences.command.ts
+packages/developer/cli/src/node/commands/smoke.command.ts
+packages/developer/cli/src/node/commands/structure.command.ts
+packages/developer/cli/src/node/constants/command-fits.constant.ts
+packages/developer/cli/src/node/constants/command-groups.constant.ts
+packages/developer/cli/src/node/constants/commands.constant.ts
+packages/developer/cli/src/node/constants/console-command.constant.ts
+packages/developer/cli/src/node/constants/db-diff-command.constant.ts
+packages/developer/cli/src/node/constants/db-seed-command.constant.ts
+packages/developer/cli/src/node/constants/gen-command.constant.ts
+packages/developer/cli/src/node/constants/mcp-command.constant.ts
+packages/developer/cli/src/node/constants/mcp-exec-command.constant.ts
+packages/developer/cli/src/node/constants/new-command.constant.ts
+packages/developer/cli/src/node/constants/seed-pack-command.constant.ts
+packages/developer/cli/src/node/constants/testbed-command.constant.ts
+packages/developer/cli/src/node/constants/validate-command.constant.ts
+packages/developer/cli/src/node/dev-surface/constants/dev-command.constant.ts
+packages/developer/cli/src/node/eas-preflight/constants/eas-preflight-command.constant.ts
+packages/developer/cli/src/node/functions/is-core-repository.function.ts
+packages/developer/cli/src/node/functions/legacy-command.function.ts
+packages/developer/cli/src/node/functions/run-cli.function.ts
+packages/developer/cli/src/node/functions/unlisted-command.function.ts
+packages/developer/cli/src/node/functions/workspace-fits.function.ts
+packages/developer/cli/src/node/product/constants/build-command.constant.ts
+packages/developer/cli/src/node/product/constants/deploy-command.constant.ts
+packages/developer/cli/src/node/product/constants/preview-serve-command.constant.ts
+packages/developer/cli/src/node/types/cli-command.type.ts
+packages/developer/cli/src/node/types/command-fit.type.ts
+packages/developer/cli/src/node/types/command-group.type.ts
+packages/developer/cli/stackra.manifest.json
+packages/developer/console/src/contracts/index.ts
+packages/developer/console/src/contracts/ports/renderer.port.ts
+packages/developer/console/src/contracts/types/command-list-options.type.ts
+packages/developer/console/src/core/constants/list-all-flag.constant.ts
+packages/developer/console/src/core/constants/list-command.constant.ts
+packages/developer/console/src/core/drivers/text-renderer.driver.ts
+packages/developer/console/src/core/functions/create-console.function.ts
+packages/developer/console/src/core/functions/render-list.function.ts
+packages/developer/console/src/core/functions/route.function.ts
+packages/developer/console/src/core/types/console-config.type.ts
+packages/developer/console/src/core/types/route-decision.type.ts
+packages/developer/console/src/node/drivers/tab-completions.driver.ts
+```
 
 ## Data models and migrations
 
