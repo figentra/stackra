@@ -1,0 +1,75 @@
+# Stackra file contract:
+# Purpose: the Windows smoke (STA-2899). Stackra supports macOS, Linux and Windows through WSL 2; native Windows gets a
+#          doctor warning, and the two process runners (@stackra/cli runProcess, @stackra/console's
+#          NodeProcessRunnerDriver) start tools through cross-spawn so a `.cmd` shim (pnpm.cmd, node_modules/.bin/*.cmd)
+#          still starts there. On a hosted windows-latest runner this builds the CLI, runs gen, and runs the runners'
+#          tests, whose `.cmd` shim cases run only on Windows, plus the portable `clean` script under cmd.exe.
+# Boundary: checks only; nothing here deploys or writes to the repository (contents: read), and no secret is read.
+#           A Windows runner is a paid one, so ADR 0166 keeps it off push and pull request triggers: it runs nightly
+#           on main and on demand (Actions > Windows smoke > Run workflow, on any branch). The repository variable
+#           CI_WINDOWS switches the nightly run: `smoke` (the default when unset) runs it, `off` skips it; a manual run
+#           always runs. Never a required check.
+# Runtime: GitHub Actions
+# Governing contract: ADR 0166 (paid runners off per-change triggers); ADR 0027 (toolchain from mise.toml); ADR 0019
+#                     (supply-chain hardening); STA-2899.
+name: Windows smoke
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: windows-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+# ADR 0019 D2: least privilege.
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows smoke
+    runs-on: windows-latest
+    if: github.event_name == 'workflow_dispatch' || (vars.CI_WINDOWS || 'smoke') == 'smoke'
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    defaults:
+      run:
+        # Git Bash on the hosted image; the tests themselves start cmd.exe where Windows would.
+        shell: bash
+    steps:
+      # ADR 0019 D1: every action is pinned to a full commit SHA, the version in the trailing comment.
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      # ADR 0027 D2: node and pnpm from mise.toml; nothing else is needed for these members.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          version: 2026.11.4
+          install_args: node pnpm
+
+      # The root (turbo, the gen workspace task) and the two members with their dependencies. No lifecycle scripts: the
+      # root `prepare` is POSIX shell, and nothing these members build or test needs a postinstall.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts --filter=. --filter='@stackra/cli...' --filter='@stackra/console...'
+
+      # `test` waits on ^build, gen and //#gen:workspace (turbo.jsonc), so this also builds the CLI and runs gen on Windows.
+      - name: CLI process runner, tool env, clean script and supported-system check
+        run: >-
+          pnpm exec turbo run test --filter=@stackra/cli --
+          src/node/functions/__tests__/run-process.function.test.ts
+          src/node/functions/__tests__/tool-env.function.test.ts
+          src/node/functions/__tests__/clean-script.function.test.ts
+          src/node/doctor/functions/__tests__/platform-check.function.test.ts
+          src/node/doctor/functions/__tests__/doctor-checks.function.test.ts
+
+      - name: Console process runner
+        run: >-
+          pnpm exec turbo run test --filter=@stackra/console --
+          src/node/drivers/__tests__/node-process-runner.driver.test.ts

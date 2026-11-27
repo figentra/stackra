@@ -73,8 +73,9 @@ which systems Stackra supports. Audit item 24.4 of the 26 Nov production-readine
   folders under sh and cmd.exe alike, without `rm`, and treat a missing folder as no error.
 - **AC-006**: THE `stackra-console create` install and the scaffold's format step SHALL start the package manager
   through the same cross-spawn path (the process port, or cross-spawn directly).
-- **AC-007**: THE CI SHALL run the Windows cases on a hosted windows-latest runner in a job that is not required and that
-  the repository variable `CI_WINDOWS` switches (`smoke`, the default, or `off`).
+- **AC-007**: THE `Windows smoke` workflow SHALL run the Windows cases on a hosted windows-latest runner, nightly on main
+  unless the repository variable `CI_WINDOWS` is `off` (`smoke` is the default) and on demand on any branch, never on a
+  push or pull request trigger (ADR 0166) and never as a required check.
 - **AC-008**: THE docs SHALL state the supported systems (macOS, Linux, Windows through WSL 2) and how to set up WSL 2.
 
 ## Compatibility and migration
@@ -87,8 +88,8 @@ which systems Stackra supports. Audit item 24.4 of the 26 Nov production-readine
 ## Risks
 
 - The Windows cases (`.cmd` shim, cmd.exe clean) are proved only by the `Windows smoke` job; the box is Linux. The job
-  has not run green before this pull request; if it is red for a reason outside this change, set `CI_WINDOWS=off` and
-  open an issue.
+  has not run green yet: run it on this branch (Actions > Windows smoke > Run workflow) before merging; if it is red
+  for a reason outside this change, set `CI_WINDOWS=off` and open an issue.
 - On Windows `runProcess`'s timeout kills cmd.exe, not a grandchild a shim started; timeouts are used for testbed probes
   (`ssh`, an `.exe`, which needs no cmd.exe).
 
@@ -102,3 +103,5 @@ None.
 - 2026-11-27 → Planned (plan.md)
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built in this branch; awaiting the CTO's approval)
+- 2026-11-27 → Implementing (the Windows job moves from ci.yml to its own nightly and manual workflow: `stackra
+validate --repository` refuses a paid runner on a pull request trigger, ADR 0166)

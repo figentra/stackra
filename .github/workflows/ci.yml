@@ -4,10 +4,7 @@
 #          install, Linear key check, format, lint, typecheck, build, service gen (`stackra gen`, so each service's
 #          .stackra/migrations exists), committed manifests match gen (STA-2036), migration lint (Squawk), validate, env names (`runway env check`), boundaries, knip, secrets scan, agent sync),
 #          plus `Dependency Review` on pull requests. No tests: unit, integration (`test:int`) and e2e run on the box
-#          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"), except the `Windows smoke` job: the
-#          box is Linux, so the process runners' Windows cases (a `.cmd` shim started by its bare name) run on a hosted
-#          windows-latest runner, switched by the repository variable CI_WINDOWS (`smoke`, the default, or `off`;
-#          STA-2899). The job is not required. On a pull request typecheck and
+#          (owner decision 2026-11-03, STA-2064; AGENTS.md, "Tests run on the box"). On a pull request typecheck and
 #          build run for the members the change affects (turbo `--affected` against the base commit).
 #          Branch protection requires the `Quality Gate` job by name; never rename it. `deploy-staging` is a placeholder that deploys nothing.
 # Owner: release-operations
@@ -359,57 +356,6 @@ jobs:
       # JSON import attributes of the workspace packages the app bundles from source (STA-2893).
       - name: Test the mobile app
         run: pnpm exec turbo run test --filter=@figentra/mobile
-
-  # STA-2899: Stackra supports macOS, Linux and Windows through WSL 2; native Windows gets a doctor warning, and the two
-  # process runners (@stackra/cli runProcess, @stackra/console's NodeProcessRunnerDriver) start tools through cross-spawn
-  # so a `.cmd` shim (pnpm.cmd, node_modules/.bin/*.cmd) still starts there. This job keeps that true: on a hosted
-  # windows-latest runner it builds the CLI, runs gen, and runs the runners' tests, whose `.cmd` shim cases run only on
-  # Windows, plus the portable `clean` script under cmd.exe. Not required, so a red run never blocks a merge. The
-  # repository variable CI_WINDOWS switches it: `smoke` (the default when unset) runs it, `off` skips it.
-  windows:
-    name: Windows smoke
-    runs-on: windows-latest
-    if: (vars.CI_WINDOWS || 'smoke') == 'smoke'
-    timeout-minutes: 45
-    permissions:
-      contents: read
-    defaults:
-      run:
-        # Git Bash on the hosted image; the tests themselves start cmd.exe where Windows would.
-        shell: bash
-    steps:
-      - name: Checkout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          persist-credentials: false
-          submodules: false
-
-      # ADR 0027 D2: node and pnpm from mise.toml; nothing else is needed for these members.
-      - name: Toolchain (mise)
-        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
-        with:
-          version: 2026.11.4
-          install_args: node pnpm
-
-      # The root (turbo, the gen workspace task) and the two members with their dependencies. No lifecycle scripts: the
-      # root `prepare` is POSIX shell, and nothing these members build or test needs a postinstall.
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts --filter=. --filter='@stackra/cli...' --filter='@stackra/console...'
-
-      # `test` waits on ^build, gen and //#gen:workspace (turbo.jsonc), so this also builds the CLI and runs gen on Windows.
-      - name: CLI process runner, tool env, clean script and supported-system check
-        run: >-
-          pnpm exec turbo run test --filter=@stackra/cli --
-          src/node/functions/__tests__/run-process.function.test.ts
-          src/node/functions/__tests__/tool-env.function.test.ts
-          src/node/functions/__tests__/clean-script.function.test.ts
-          src/node/doctor/functions/__tests__/platform-check.function.test.ts
-          src/node/doctor/functions/__tests__/doctor-checks.function.test.ts
-
-      - name: Console process runner
-        run: >-
-          pnpm exec turbo run test --filter=@stackra/console --
-          src/node/drivers/__tests__/node-process-runner.driver.test.ts
 
   dependency-review:
     name: Dependency Review

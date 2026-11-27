@@ -11,7 +11,7 @@ Windows the `.cmd` shim run through cmd.exe with each argument escaped. `toolEnv
 one `PATH` key. `platformCheck` is the first row of `doctorChecks`, so `stackra doctor`, `stackra dev` and
 `stackra create` all name WSL 2 on native Windows. `cleanScript` writes a `clean` script with no `rm` for the members
 `stackra new` writes; the starter's four members take the same script. A `Windows smoke` CI job runs the Windows-only
-test cases on windows-latest.
+test cases on windows-latest, nightly and on demand (ADR 0166 keeps a paid runner off pull requests).
 
 ## Technical Context
 
@@ -82,13 +82,15 @@ before every other check, so the row is in the quick and fresh lists too; `which
 - `scaffold`: its `pnpm exec oxfmt` step through `crossSpawn.sync`.
 - `NodeProcessRunnerDriver` (console driver): starts the child through cross-spawn.
 - `stackra-console create`: installs through `io.process.run` (the process port).
-- `Windows smoke` (CI job): the Windows-only test cases on windows-latest, switched by `CI_WINDOWS`.
+- `Windows smoke` (workflow): the Windows-only test cases on windows-latest, nightly (switched by `CI_WINDOWS`) and
+  on demand.
 
 ## Files and folders
 
 ```text
 .changeset/windows-wsl2-process-runners.md
-.github/workflows/ci.yml
+.github/workflows/windows-smoke.yml
+.github/workflows/README.md
 pnpm-workspace.yaml
 pnpm-lock.yaml
 apps/docs/src/docs/quickstart.mdx
@@ -125,7 +127,8 @@ detail, fix? }` in the Machine group.
 - The `clean` script `stackra new` writes: `node -e "…rmSync…" dist coverage .turbo .stackra` (was `rm -rf …`).
 - `runProcess`: a `PATH` in `ToolRun.env` is now the inherited path (was ignored). No export, port, type or manifest
   changes.
-- CI: repository variable `CI_WINDOWS` (`smoke` | `off`, unset = `smoke`).
+- CI: workflow `windows-smoke.yml` (schedule, `workflow_dispatch`); repository variable `CI_WINDOWS` (`smoke` | `off`,
+  unset = `smoke`) switches the nightly run.
 
 ## Error handling
 
@@ -150,14 +153,15 @@ or personal data is read.
 - AC-004: `tool-env.function.test.ts`.
 - AC-005: `clean-script.function.test.ts` (runs the script under this system's shell, cmd.exe on Windows).
 - AC-006: `create.command.test.ts` with a scripted process runner.
-- AC-007: the `Windows smoke` job itself; actionlint and zizmor in the gate.
+- AC-007: the `Windows smoke` workflow itself; actionlint, zizmor and `stackra validate --repository`
+  (`workflow-triggers`) in the gate.
 - Revert check: each source put back to origin/main makes its test fail (run on box 2).
 
 ## Rollout
 
 A minor changeset for `@stackra/cli` and a patch for `@stackra/console`. The template takes the portable clean scripts
-and the README line in its own pull request. The `Windows smoke` job runs on this pull request; if it is red for a
-reason outside this change, set `CI_WINDOWS=off` and open an issue.
+and the README line in its own pull request. Run the `Windows smoke` workflow on this branch before merging; if it is
+red for a reason outside this change, set `CI_WINDOWS=off` and open an issue.
 
 ## Delegation and risk plan
 
