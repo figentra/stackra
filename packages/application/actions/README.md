@@ -293,14 +293,17 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
 - **Entitlements**: `entitlement: ExportsEntitlement` (or a list) on an `Action` or `Query` names the plan right a call
   needs; gen lists the call in that entitlement's `gates` and `PlanEntitlementCheckDriver` checks it. A class that is
   not an entitlement does not compile, and one that resolves to no entitlement fails gen (`entitlement_unknown`).
-- **Audit fails closed** (ADR 0212, STA-1571): outside `dev` and `test`, an action with no `AuditTrail` bound is an
+- **Audit fails closed** (ADR 0212, STA-1571, on the one reader of STA-2844): in a deployed environment (`preview`,
+  `staging`, `production`: `isDeployedEnvironment` of `@stackra/config`) an action with no `AuditTrail` bound is an
   error before any step runs, never an unaudited write. The environment is `AuditConfig.environment` (key
-  `actions.audit`), read from `STACKRA_ENVIRONMENT`: refused at boot when it is empty, and any name but `dev` or
-  `test` (`preview`, `staging`, `production`, a typo) needs a trail. Unset means `dev`, where the trail is optional;
-  on a generated Encore service the server `createApp` of `@stackra/app` sets it from where Encore runs (gen's
-  `environment.ts`), so a deployed service is never `dev` and one set to `dev` or `test` fails boot. Gen binds
-  `AuditConfig` in every service that runs an action. A query is not audited, and a container with no `AuditConfig`
-  (a hand-built test resolver) keeps the old behaviour.
+  `actions.audit`), one of `StackraEnvironment` read from `STACKRA_ENVIRONMENT` in the runtime only: a misspelt name
+  (`prod`) fails boot, and so does a value for it from the values layer (a runway `config` block). The field has no
+  default of its own: unset, and in a container that binds no `AuditConfig` (a wiring gen has not regenerated, a
+  hand-built resolver), the pipeline asks the one reader (`readEnvironment`) over the process environment, so only the
+  reader decides that a process is `dev`. On a server the `createApp` of `@stackra/app` sets the variable to the
+  reader's answer from what Encore reports (gen's `environment.ts`), so a deployed service is never `dev`, and gen
+  refuses a v2 service that runs `@stackra/app` from an authored `src/main.ts` (`authored_main_environment`). Gen binds
+  `AuditConfig` in every service that runs an action. A query is not audited.
 - **Audit**: `OutboxAuditTrailDriver` writes each audit entry as an `AuditEntryRecorded` event for the audit service.
   `OutboxListenerAuditTrailDriver` does the same for each listener delivery (`@stackra/events`' `ListenerAuditTrail`,
   key `listener:<Listener>`, the event's id as the call id, `ctx.audit` fields; STA-1715).

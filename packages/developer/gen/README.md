@@ -649,6 +649,16 @@ That reads the running environment through the one reader (`readEnvironment` of 
 `STACKRA_ENVIRONMENT` before the app boots. Every generated Encore file imports `./environment` first, then
 `./database` (`encoreSetupImports`). A v2 service with an authored `src/main.ts`, a package and an app get none.
 
+Two full-pass refusals keep a service from booting a deployment as `dev` (`checkServerEnvironment`, STA-1571):
+
+- `authored_main_environment`: a v2 service that runs `@stackra/app` from an authored `src/main.ts`. It would get no
+  `environment.ts`, so nothing hands its platform to the reader and an unset `STACKRA_ENVIRONMENT` would read as `dev`
+  there (an unbound audit trail, memory stores and dev sign-in allowed). Delete `src/main.ts` so gen writes the server
+  entry (STA-344), or drop `@stackra/app`.
+- `app_version_floor`: the installed `@stackra/app` is older than `APP_ENVIRONMENT_FLOOR` (`0.34.0`, the first release
+  whose `./server` exports `providePlatformEnvironment`), so it cannot load the `environment.ts` gen writes. The floor
+  is never above gen's own version (`generatorVersion`), since the `@stackra/*` packages are released together.
+
 ## Cross-app events (ADR 0511 decisions 11 to 19, STA-1910)
 
 - **Consumer.** A listener of an event of a service read from a contract package is registered like a sibling's

@@ -39,6 +39,8 @@
  *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
  *           A member that declares a resource has each tree read through `loader` before the manifest is built
  *           (`readResourceTrees`); with no loader it is refused as `resource_loader_missing` (STA-1947).
+ *           Every pass gets gen's own version (`generatorVersion`), so the `@stackra/app` floor never exceeds it
+ *           (STA-1571).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: the committed manifest and `stackra gen --check`); ADR 0295
  *                     (decision 5: generated files are overwritten); ADR 0261; ADR 0260 (a cycle between services is
@@ -71,6 +73,7 @@ import { compileMigrations } from "#node/functions/compile-migrations.function";
 import { discoverMember } from "#node/functions/discover-member.function";
 import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
+import { generatorVersion } from "#node/functions/generator-version.function";
 import { hasE2ePages } from "#node/functions/has-e2e-pages.function";
 import { isDocsMember } from "#node/functions/is-docs-member.function";
 import { hasIntTests } from "#node/functions/has-int-tests.function";
@@ -239,23 +242,26 @@ export async function generate(
     trees = read.trees;
     ir = { ...ir, resourceTrees: trees };
   }
+  // Gen's own version, so the @stackra/app floor never exceeds it (STA-1571); absent when gen is bundled elsewhere.
+  const version = generatorVersion();
+  const base = version === undefined ? { strict } : { strict, generatorVersion: version };
   let result = generateMember(
     ir,
     previous,
-    options.pass === undefined ? { strict } : { pass: options.pass, strict },
+    options.pass === undefined ? base : { ...base, pass: options.pass },
   );
   const partial: string[] = [];
   if (result.errors.length > 0 && !check && options.pass === undefined) {
-    const clients = generateMember(ir, previous, { pass: "clients", strict });
+    const clients = generateMember(ir, previous, { ...base, pass: "clients" });
     if (clients.errors.length === 0) partial.push(...write(root, clients.files, false));
     if (partial.length > 0) {
       ir = await discover();
-      result = generateMember(ir, previous, { strict });
+      result = generateMember(ir, previous, base);
     }
     // Still refused: the manifest alone, when only workspace services still to come stand in its way.
     const manifest =
       result.errors.length > 0
-        ? generateMember(ir, previous, { pass: "manifests", strict })
+        ? generateMember(ir, previous, { ...base, pass: "manifests" })
         : undefined;
     if (manifest?.errors.length === 0) partial.push(...write(root, manifest.files, false));
   }

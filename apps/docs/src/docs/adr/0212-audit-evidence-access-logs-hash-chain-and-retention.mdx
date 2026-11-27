@@ -50,18 +50,19 @@ stated number with no code default.
 ## Note 2026-11-26: no action unaudited outside dev and test (STA-1571)
 
 Decisions 1 and 4 hold in code: the action pipeline treats a missing `AuditTrail` the way it treats a missing
-`AccessControl`. Outside `dev` and `test` an action with no trail bound is an error before any step runs, never an
-unaudited write. The environment is `AuditConfig.environment` of `@stackra/actions` (key `actions.audit`), read from
-`STACKRA_ENVIRONMENT`: refused at boot when it is empty, and any name but `dev` or `test` (`preview`, `staging`,
-`production`, a typo) needs a trail. Unset means `dev`, where the trail is optional. A deployment does not depend on an
-operator setting it: gen writes `stackra-encore/<member>/environment.ts`, which hands Encore's `appMeta().environment`
-to `@stackra/app/server`, and the server `createApp` derives the variable from it (`runningEnvironment`). A local
-runtime (`encore run`, `encore test`, cloud `local`) is `dev` or `test`; a deployed one is its Encore environment's
-name when that is `preview`, `staging` or `production`, else `production`, `preview` or `staging` by its type, never
-`dev` or `test`; a deployed runtime set to `dev`, `test` or nothing fails boot. Unset therefore means `dev` only under
-`stackra dev`, vitest, `encore run` and `encore test`, and in a self-hosted image whose infra config leaves
-`metadata.cloud` at `local`. Gen binds `AuditConfig` in every service that runs an action. Queries are not audited by
-this step.
+`AccessControl`. In a deployed environment (`preview`, `staging`, `production`) an action with no trail bound is an
+error before any step runs, never an unaudited write. The environment comes from the one reader of ADR 0296's
+2026-11-26 amendment (STA-2844), never from a configuration value: `AuditConfig.environment` of `@stackra/actions` (key
+`actions.audit`) is one of `StackraEnvironment`, read from `STACKRA_ENVIRONMENT` in the runtime only, so a misspelt name
+fails boot and a runway `config` value for it is refused. It has no default of its own: unset, and in a container that
+binds no `AuditConfig`, the pipeline asks `readEnvironment` over the process environment. A deployment does not depend
+on an operator setting the variable: gen writes `stackra-encore/<member>/environment.ts`, which hands Encore's
+`appMeta().environment` to `providePlatformEnvironment`, so the server `createApp` boots a deployed service as
+`preview`, `staging` or `production`, never `dev`, and a self-hosted image that reports nothing fails boot. Gen refuses
+a service that runs `@stackra/app` from an authored `src/main.ts` (`authored_main_environment`), which would get no
+`environment.ts`, and an `@stackra/app` too old to load it (`app_version_floor`). Unset therefore means `dev` only
+where the reader says so: no platform at all (vitest, a developer tool) and `encore run`; `encore test` is `test`. Gen
+binds `AuditConfig` in every service that runs an action. Queries are not audited by this step.
 
 ## Supersedes and sources
 

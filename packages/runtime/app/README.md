@@ -37,7 +37,6 @@ peers, each loaded only by the entry that needs it.
 | `Contexts`                                   | `./react`   | the client contexts in graph order, with the locale and catalogues                    |
 | `registerContext`                            | `./react`   | a client package names the component of its context key                               |
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
-| `provideRuntimeEnvironment`, `runningEnvironment`, `RuntimeEnvironment` | `./server` | where the runtime runs (the generated Encore `environment.ts`); `createApp` derives `STACKRA_ENVIRONMENT` from it and refuses `dev` or `test` on a deployed runtime (STA-1571) |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
 | `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) and `drainTimeoutSeconds` (20) |

@@ -483,7 +483,8 @@
     {
       "name": "STACKRA_ENVIRONMENT",
       "kind": "config",
-      "type": "string",
+      "type": "enum",
+      "values": ["dev", "test", "preview", "staging", "production"],
       "required": false,
       "config": "actions.audit",
       "class": "AuditConfig",

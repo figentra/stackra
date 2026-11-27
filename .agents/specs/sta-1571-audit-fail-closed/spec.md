@@ -1,10 +1,10 @@
-# Feature Specification: actions, app, gen: an action fails closed when no AuditTrail is bound outside dev and test
+# Feature Specification: actions, gen: an action fails closed when no AuditTrail is bound in a deployed environment
 
 **Feature Branch**: `figentra/sta-1571-audit-fail-closed`
 
 **Created**: 2026-11-26
 
-**Status**: Tasked
+**Status**: Implementing
 
 **Tier**: feature
 
@@ -19,208 +19,221 @@
 **Analyze**: —
 
 **Input**: PR #1095. An action with no `AuditTrail` bound ran with no audit entry and no error, so a deployment that
-left the audit driver out wrote unaudited. An unset `STACKRA_ENVIRONMENT` read as `dev`, nothing on the deploy path set
-it, and Encore Cloud has no plain environment variables, so every deployed service counted as `dev`. This spec records
-the contract change the PR makes in `@stackra/actions`, `@stackra/app` and `@stackra/gen` to hold ADR 0212 decisions 1
-and 4 in code.
+left the audit driver out wrote unaudited. The CTO's verdict of 2026-11-26 sent the PR back: rebase it onto the one
+environment reader of STA-2844 (merged as #1166) and close its fail-open exceptions: an unset environment counting as
+`dev`, a container with no `AuditConfig`, a v2 service's authored `main.ts`, a self-hosted image counting as local, and
+free-string typos; and raise gen's minimum `@stackra/app`. This spec records what the reworked PR builds in
+`@stackra/actions` and `@stackra/gen` to hold ADR 0212 decisions 1 and 4 in code.
 
 ## Impact
 
 - **Apps touched**: `apps/docs` (ADR 0212 note, `customers/security.mdx`)
-- **Services touched**: none in this repository; every generated Encore service changes on its next `stackra gen`
-- **Packages touched**: `packages/application/actions` (`@stackra/actions`), `packages/runtime/app` (`@stackra/app`),
-  `packages/developer/gen` (`@stackra/gen`)
-- **Public contract change**: additive exports, plus a behaviour change that fails closed. `@stackra/actions` exports
-  `AuditConfig`, `AuditConfig$` and `AuditOptions` and lists the `actions.audit` config row and the
-  `STACKRA_ENVIRONMENT` variable in its manifest; `ActionPipeline` now throws where it used to run unaudited.
-  `@stackra/app/server` exports `provideRuntimeEnvironment`, `runningEnvironment` and the `RuntimeEnvironment` type;
-  `createApp` now rejects boot on a deployed runtime set to `dev`, `test` or empty. `@stackra/gen` writes a new
-  generated file `stackra-encore/<member>/environment.ts` and a new first import in every generated Encore file
+- **Services touched**: none in this repository; every generated service that runs an action gets the `actions.audit`
+  config row on its next `stackra gen`
+- **Packages touched**: `packages/application/actions` (`@stackra/actions`), `packages/developer/gen` (`@stackra/gen`)
+- **Public contract change**: `@stackra/actions` exports `AuditConfig`, `AuditConfig$` and `AuditOptions`, lists the
+  `actions.audit` config row and the `STACKRA_ENVIRONMENT` variable (an enum of the five Stackra environments) in its
+  manifest; `ActionPipeline` now throws where it used to run unaudited. `@stackra/gen` binds `AuditConfig` in a
+  service's pipeline ports and gains two refusals (`authored_main_environment`, `app_version_floor`) and the
+  `APP_ENVIRONMENT_FLOOR` constant. `@stackra/app` is unchanged by this PR: STA-2844's `providePlatformEnvironment`
+  replaces the `provideRuntimeEnvironment` and `runningEnvironment` the first version of #1095 added.
 - **Cross-service events**: none
 - **Tenancy and data**: none (no table, no migration; the audit entry's shape is unchanged)
-- **Security and privacy**: audit evidence becomes mandatory outside `dev` and `test` (ADR 0212 decisions 1 and 4); no
-  new personal data; the error message names the environment and the drivers to bind, no input value
+- **Security and privacy**: audit evidence becomes mandatory in every deployed environment (ADR 0212 decisions 1 and
+  4); no new personal data; the error message names the environment and the drivers to bind, no input value
 - **Secrets**: none
-- **ADR needed**: no (implements ADR 0212 decisions 1 and 4; a dated note is added to ADR 0212)
-- **New dependencies**: none (`encore.dev` is already a dependency of every generated Encore program)
-- **Deploy modes**: same in all three; a self-hosted image counts as deployed when its infra config declares a cloud
-  other than `local`
+- **ADR needed**: no (implements ADR 0212 decisions 1 and 4 on ADR 0296's 2026-11-26 amendment; a dated note is
+  added to ADR 0212)
+- **New dependencies**: none (`@stackra/config` is already a dependency of `@stackra/actions`)
+- **Deploy modes**: same in all three; a self-hosted image that reports no environment and sets no variable fails boot
+  (STA-2844's reader), so it never counts as local
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none
 - **Docs to update**: `apps/docs/src/docs/adr/0212-audit-evidence-access-logs-hash-chain-and-retention.mdx`,
   `apps/docs/src/docs/customers/security.mdx`, `packages/application/actions/README.md`,
-  `packages/runtime/app/README.md`, `packages/developer/gen/README.md`
+  `packages/developer/gen/README.md`, the changesets
 - **Lane**: full
-- **Change risk**: R2 (public contracts in three members; a security control that fails closed, so a reviewer may
-  raise it)
+- **Change risk**: R2 (public contracts in two members; a security control that fails closed, so a reviewer may raise
+  it)
 
 ## Discovery
 
 - **Current behaviour**: `ActionPipeline.audited` read `this.optional(AuditTrail)` and, with none bound, ran the
-  action and wrote nothing (SRC-001). `STACKRA_ENVIRONMENT` unset reads as `dev` everywhere it is read, and the server
-  `createApp` passed `process.env` to boot unchanged (SRC-002). Gen's Encore files imported only `./database` ahead of
-  the server app (SRC-003).
-- **Topology**: `packages/application/actions/src/` (config, constants, schema, pipeline service, manifest);
-  `packages/runtime/app/src/server/` (constant, two functions, a type, `createApp`, the barrel);
-  `packages/developer/gen/src/core/` (a new emitter, a setup-imports helper, the seven Encore emitters,
-  `pipelinePorts`, `GEN_REACHED_PORTS`, `generateMember`) and its golden fixtures (SRC-001, SRC-002, SRC-003).
-- **Dependencies**: Encore's `appMeta().environment` (`name`, `type`, `cloud`) from `encore.dev` in the generated
-  program only (SRC-004); `@stackra/config` (`Config`, `ConfigInvalidError`) and `@stackra/validation`
-  (`Schema`, `registerSchemas`).
-- **Ownership**: the Stackra framework maintainers own the three packages; the docs app owns the ADR note.
+  action and wrote nothing (SRC-001). Since STA-2844 the running environment has one reader, `readEnvironment` of
+  `@stackra/config`, and the server `createApp` boots the configuration with its answer (SRC-002). Gen writes
+  `stackra-encore/<member>/environment.ts` for a service that runs `@stackra/app` from the generated server entry, and
+  none for a v2 service with an authored `src/main.ts` (SRC-003).
+- **Topology**: `packages/application/actions/src/` (config, schema constant, options schema, pipeline service,
+  manifest); `packages/developer/gen/src/core/` (`pipelinePorts`, `GEN_REACHED_PORTS`, the new
+  `checkServerEnvironment`, `runsServerApp` and `APP_ENVIRONMENT_FLOOR`, `generateMember`, `emitEncoreEnvironment`) and
+  `src/node/` (`generate`, the new `generatorVersion`), with the pipeline-ports golden (SRC-001, SRC-003).
+- **Dependencies**: `@stackra/config` (`Config`, `ConfigInvalidError`, `readEnvironment`, `isDeployedEnvironment`,
+  `StackraEnvironment`) and `@stackra/validation` (`Schema`, `registerSchemas`) (SRC-002).
+- **Ownership**: the Stackra framework maintainers own both packages; the docs app owns the ADR note.
 - **Constraints already decided**: ADR 0212 decisions 1 (every action audited) and 4 (evidence in the same
-  transaction; fail closed); ADR 0124 and ADR 0091 (Encore stays in the generated program, never in a package);
-  ADR 0014 decision 5 (the runtime provides what it owns); ADR 0170 decision 5 (the four environments); ADR 0294
-  decisions 19 and 26 (config classes and a package's shipped `X$` schema) (SRC-005).
+  transaction; fail closed); ADR 0296's 2026-11-26 amendment (the environment comes from the runtime only, one reader);
+  ADR 0124 and ADR 0091 (Encore stays in the generated program); ADR 0294 decisions 19, 22 and 26 (config classes, a
+  refusal carries its fix, a package's shipped `X$` schema) (SRC-004).
 
 ### Sources
 
 - **SRC-001**: `packages/application/actions/src/core/services/action-pipeline.service.ts` on `origin/main`
-  (`audited`, `optional(AuditTrail)`) and on the PR head (`trail()`, `AUDIT`); supports FR-001 to FR-004
-- **SRC-002**: `packages/runtime/app/src/server/functions/create-app.function.ts` on `origin/main` and the PR head's
-  `running-environment.function.ts` and `provide-runtime-environment.function.ts`; supports FR-005 and FR-006
-- **SRC-003**: `packages/developer/gen/src/core/functions/` on the PR head: `emit-encore-environment.function.ts`,
-  `encore-setup-imports.function.ts`, `pipeline-ports.function.ts`; supports FR-007 and FR-008
-- **SRC-004**: Encore 1.58.8 run locally reports cloud `local` for `encore run` (type development) and `encore test`
-  (type test), as recorded in PR #1095's test notes; supports FR-005
-- **SRC-005**: ADR 0212 (decisions 1 and 4), ADR 0124, ADR 0091, ADR 0014, ADR 0170, ADR 0294 in
+  (`audited`, `optional(AuditTrail)`) and on the PR head (`trail()`, `environment()`); supports FR-001 to FR-005
+- **SRC-002**: `packages/foundation/config/src/core/functions/read-environment.function.ts` and
+  `packages/runtime/app/src/server/functions/create-app.function.ts` on `origin/main` (STA-2844, #1166); supports
+  FR-002, FR-003, FR-005
+- **SRC-003**: `packages/developer/gen/src/core/functions/emit-encore-environment.function.ts`,
+  `pipeline-ports.function.ts` and `generate-member.function.ts`; supports FR-006 to FR-008
+- **SRC-004**: ADR 0212 (decisions 1 and 4), ADR 0296 (amendment 2026-11-26), ADR 0124, ADR 0091, ADR 0294 in
   `apps/docs/src/docs/adr/`; covers FR-001 to FR-008
-- **SRC-006**: STA-1571 and PR #1095 (body, review notes and the four changesets)
+- **SRC-005**: STA-1571, PR #1095 and the CTO's spec verdicts of 2026-11-26 (the five fail-open exceptions and the gen
+  floor); supports FR-002 to FR-008
+- **SRC-006**: the `@stackra/app` release tags (`0.33.1` is the latest; STA-2844's minor changeset makes the next
+  release `0.34.0`, the first with `providePlatformEnvironment`); supports FR-008
 
 ## Glossary
 
-- **Deployed runtime**: a serving runtime whose `cloud` is anything but `local`.
-- **Local runtime**: `encore run` or `encore test` on a developer machine (`cloud` is `local`).
-- **Running environment**: the value of `STACKRA_ENVIRONMENT` the configuration reads.
+- **Deployed environment**: `preview`, `staging` or `production` (`isDeployedEnvironment`).
+- **The one reader**: `readEnvironment(raw, platform?)` of `@stackra/config` (STA-2844).
+- **v2 service**: a service with an authored `src/main.ts`, which gen writes no server entry or Encore environment for
+  (STA-344).
 
 ## User Scenarios & Testing
 
 ### User Story 1 - A deployment cannot write unaudited (Priority: P1)
 
-An operator deploys a generated service to Encore Cloud and forgets to bind an audit driver. The first command action
-is refused with an error that names the environment and the drivers to bind, instead of writing with no evidence.
+An operator deploys a generated service and forgets to bind an audit driver. The first command action is refused with
+an error that names the environment and the drivers to bind, instead of writing with no evidence.
 
 **Why this priority**: it is the gap ADR 0212 decisions 1 and 4 close; without it audit evidence is optional in
 production.
 
-**Independent Test**: `create-app.environment.test.ts` boots a server app on a deployed runtime with no variable and
-checks the action is refused.
+**Independent Test**: `action-pipeline.audit.test.ts` runs a command action with no trail in each deployed
+environment, from the bound config and from the runtime variable with no config bound.
 
 **Acceptance Scenarios**:
 
-1. **Given** a deployed runtime and no `AuditTrail`, **When** a command action runs, **Then** it is refused before any
-   step runs.
-2. **Given** a local runtime and no `AuditTrail`, **When** a command action runs, **Then** it runs as before.
+1. **Given** a deployed environment and no `AuditTrail`, **When** a command action runs, **Then** it is refused before
+   any step runs.
+2. **Given** `dev` or `test` and no `AuditTrail`, **When** a command action runs, **Then** it runs as before.
 
-### User Story 2 - A deployment cannot claim to be dev (Priority: P2)
+### User Story 2 - Nothing but the runtime decides the environment (Priority: P1)
 
-An operator sets `STACKRA_ENVIRONMENT=dev` on a deployed service. Boot fails with `ConfigInvalidError`.
+An operator misspells the environment (`prod`), sets it in a runway `config` block, or deploys a service whose wiring
+was not regenerated or that boots from an authored `src/main.ts`. None of these runs actions unaudited: the misspelling
+and the config value fail boot, the old wiring asks the one reader, and gen refuses the authored main.
 
-**Why this priority**: `dev` relaxes the audit check, so naming it in a deployment would reopen the gap.
+**Why this priority**: each was a way to read a deployment as `dev`, the CTO's fail-open list.
 
-**Independent Test**: `running-environment.function.test.ts` and `create-app.environment.test.ts`.
+**Independent Test**: `audit.config.test.ts`, `action-pipeline.audit.test.ts` and
+`check-server-environment.function.test.ts`.
 
 **Acceptance Scenarios**:
 
-1. **Given** a deployed runtime, **When** the variable names `dev`, `test` or nothing, **Then** boot rejects.
+1. **Given** `STACKRA_ENVIRONMENT=prod`, **When** the service boots or a command action runs, **Then** it fails with
+   `ConfigInvalidError`.
+2. **Given** a v2 service that runs `@stackra/app`, **When** gen runs, **Then** it refuses with
+   `authored_main_environment`.
 
 ### Edge Cases
 
 - **EC-01**: a query runs with no trail in production: it is answered; this step audits command actions only.
-- **EC-02**: a misspelt environment (`prod`): it is not `dev` or `test`, so a trail is required (fails closed).
-- **EC-03**: a container that binds no `AuditConfig` (a hand-built test resolver, or a service gen has not
-  regenerated): the old behaviour, no trail and no error.
-- **EC-04**: a v2 service with an authored `src/main.ts` (STA-344) gets no `environment.ts`, so unset still means
-  `dev` there; such a member is not an Encore app today.
-- **EC-05**: a self-hosted image whose infra config leaves `metadata.cloud` at `local` reads as a local runtime.
+- **EC-02**: a misspelt environment (`prod`, `Production`, `development`): refused at boot by `AuditConfig` and by the
+  reader when the pipeline asks it, never read as some environment.
+- **EC-03**: a container that binds no `AuditConfig` (a hand-built resolver, a wiring gen has not regenerated): the
+  pipeline asks the one reader over the process environment, so a deployed runtime still needs a trail.
+- **EC-04**: a v2 service with an authored `src/main.ts` that runs `@stackra/app`: gen refuses it, since no
+  `environment.ts` would hand its platform to the reader.
+- **EC-05**: a self-hosted image that reports no environment and sets no variable: the reader refuses it at boot
+  (STA-2844 AC-005), so it never counts as local.
+- **EC-06**: a process with no platform at all (vitest, a developer tool): unset reads as `dev`, as STA-2844 AC-003
+  decides; no server entry boots that way, since every generated server loads `environment.ts` first.
+- **EC-07**: an installed `@stackra/app` older than `0.34.0`: gen refuses with `app_version_floor`, never asking for a
+  newer app than gen's own version.
 
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: WHEN a command action runs with no `AuditTrail` bound and the bound `AuditConfig` names an environment
-  other than `dev` or `test` THE `ActionPipeline` SHALL throw `AuditTrail is not bound in <environment>: ...` before
-  any step runs. Sources: SRC-001, SRC-005
-- **FR-002**: WHEN no `AuditConfig` is bound, or it names `dev` or `test`, THE `ActionPipeline` SHALL run a command
-  action with no `AuditTrail` and write no entry. Sources: SRC-001
-- **FR-003**: THE `AuditConfig` (key `actions.audit`) SHALL read `environment` from `STACKRA_ENVIRONMENT` with the
-  default `dev`, and IF the value is empty THEN THE configuration SHALL refuse it at boot. Sources: SRC-001
+- **FR-001**: WHEN a command action runs with no `AuditTrail` bound in a deployed environment THE `ActionPipeline`
+  SHALL throw `AuditTrail is not bound in <environment>: ...` before any step runs. Sources: SRC-001, SRC-004
+- **FR-002**: THE `ActionPipeline` SHALL take the environment from the bound `AuditConfig` when it names one, else from
+  `readEnvironment` over the process environment, and SHALL run a command action with no `AuditTrail` only in `dev`
+  and `test`. Sources: SRC-001, SRC-002, SRC-005
+- **FR-003**: THE `AuditConfig` (key `actions.audit`) SHALL read `environment` from `STACKRA_ENVIRONMENT` as one of
+  `StackraEnvironment` with no default, and IF the value names no Stackra environment or comes from the values layer
+  THEN THE configuration SHALL refuse it at boot. Sources: SRC-002, SRC-005
 - **FR-004**: WHEN a query runs THE `ActionPipeline` SHALL answer it whether or not an `AuditTrail` is bound.
   Sources: SRC-001
-- **FR-005**: WHEN the server `createApp` boots after `provideRuntimeEnvironment` ran THE `createApp` SHALL set
-  `STACKRA_ENVIRONMENT` for the configuration to `runningEnvironment(runtime, process.env)`: the variable when set and
-  allowed; on a local runtime `dev`, or `test` for a test run; on a deployed runtime its name when that is `preview`,
-  `staging` or `production`, else `production` for type production, `preview` for type ephemeral and `staging`
-  otherwise. Sources: SRC-002, SRC-004
-- **FR-006**: IF a deployed runtime sets `STACKRA_ENVIRONMENT` to `dev`, `test` or the empty string THEN THE
-  `createApp` SHALL reject with `ConfigInvalidError`. Sources: SRC-002
-- **FR-007**: WHEN gen generates a service with a root module and no authored `src/main.ts` THE gen SHALL write
-  `stackra-encore/<member>/environment.ts`, which calls `provideRuntimeEnvironment(appMeta().environment)`, and every
-  generated Encore file of that service SHALL import `./environment` first. Sources: SRC-003
-- **FR-008**: WHEN a service declares an action or hosts a package that declares one THE gen SHALL add `AuditConfig`
+- **FR-005**: IF the runtime's `STACKRA_ENVIRONMENT` names no Stackra environment and no `AuditConfig` names one THEN
+  THE `ActionPipeline` SHALL reject a command action with `ConfigInvalidError`. Sources: SRC-002
+- **FR-006**: WHEN a service declares an action or hosts a package that declares one THE gen SHALL add `AuditConfig`
   to the service's pipeline ports. Sources: SRC-003
+- **FR-007**: IF a service runs `@stackra/app` from an authored `src/main.ts` THEN THE gen SHALL refuse it with
+  `authored_main_environment` on the full pass. Sources: SRC-003, SRC-005
+- **FR-008**: IF a service that runs `@stackra/app` has an installed `@stackra/app` older than the lower of
+  `APP_ENVIRONMENT_FLOOR` and gen's own version THEN THE gen SHALL refuse it with `app_version_floor`. Sources:
+  SRC-005, SRC-006
 
 ### Non-functional Requirements
 
-- **NFR-001**: THE change SHALL add no runtime dependency to any package. Sources: SRC-006
+- **NFR-001**: THE change SHALL add no runtime dependency to any package. Sources: SRC-005
 
 ## Acceptance criteria
 
-- **AC-001**: WHEN a command action runs with no `AuditTrail` bound and `AuditConfig.environment` is `production`, `staging`, `preview` or any name but `dev` or `test` THE `ActionPipeline` SHALL reject with `AuditTrail is not bound in <environment>` before the access check or the handler runs.
-- **AC-002**: WHEN `AuditConfig.environment` is `dev` or `test`, or no `AuditConfig` is bound, THE `ActionPipeline` SHALL run the action with no `AuditTrail`.
+- **AC-001**: WHEN a command action runs with no `AuditTrail` bound and the environment is `production`, `staging` or `preview` THE `ActionPipeline` SHALL reject with `AuditTrail is not bound in <environment>` before the access check or the handler runs.
+- **AC-002**: WHEN the bound `AuditConfig` leaves the environment unset, or no `AuditConfig` is bound, THE `ActionPipeline` SHALL take the environment from `readEnvironment` over the process environment, refusing in a deployed one and running in `dev` or `test`.
 - **AC-003**: WHEN a query runs with no `AuditTrail` bound in `production` THE `ActionPipeline` SHALL answer it.
 - **AC-004**: WHEN an `AuditTrail` is bound in `production` THE `ActionPipeline` SHALL record one entry for a success and one for a refusal.
-- **AC-005**: IF `STACKRA_ENVIRONMENT` is set to the empty string THEN THE `AuditConfig` SHALL refuse it at boot.
-- **AC-006**: WHEN a deployed runtime sets no `STACKRA_ENVIRONMENT` THE `createApp` SHALL derive `preview`, `staging` or `production`, and a command action with no `AuditTrail` SHALL be refused.
-- **AC-007**: IF a deployed runtime sets `STACKRA_ENVIRONMENT` to `dev`, `test` or the empty string THEN THE `createApp` SHALL reject boot with `ConfigInvalidError`.
-- **AC-008**: WHEN the runtime is local THE `runningEnvironment` SHALL return the variable, else `dev`, or `test` for a test run, and WHEN no runtime was provided THE `runningEnvironment` SHALL return the variable unchanged.
-- **AC-009**: WHEN gen runs for a service with a server entry THE gen SHALL write `environment.ts` and put `import "./environment";` before `import "./database";` in every Encore file, and SHALL write none for a package, an app or a service with an authored main.
-- **AC-010**: WHEN a service declares or hosts an action THE `pipelinePorts` SHALL include `AuditConfig`, and WHEN it has no action THE `pipelinePorts` SHALL not.
+- **AC-005**: IF `STACKRA_ENVIRONMENT` is `prod`, `Production`, `development` or empty, or the environment is given as a value THEN THE `AuditConfig` SHALL refuse it at boot with `ConfigInvalidError`.
+- **AC-006**: IF the runtime's `STACKRA_ENVIRONMENT` is misspelt and no `AuditConfig` is bound THEN THE `ActionPipeline` SHALL reject the action with `ConfigInvalidError` and run no handler.
+- **AC-007**: WHEN a service declares or hosts an action THE `pipelinePorts` SHALL include `AuditConfig`, and WHEN it has no action THE `pipelinePorts` SHALL not.
+- **AC-008**: IF a v2 service declares `@stackra/app` THEN THE generator SHALL refuse it with `authored_main_environment` naming `src/main.ts` and write no `environment.ts`.
+- **AC-009**: IF the installed `@stackra/app` is older than the lower of `0.34.0` and gen's own version THEN THE generator SHALL refuse with `app_version_floor`, naming the version and the floor.
 
 ## Success Criteria
 
-- **SC-001**: 0 command actions run unaudited in a generated deployment with no `AuditTrail` bound, across the
-  production, staging, preview and `prod` cases of `action-pipeline.audit.test.ts` — verified by: unit
-- **SC-002**: a deployed runtime with no variable boots and refuses the unaudited action in 1 of 1 boot test, which
-  fails on the commit before the change — verified by: unit
-- **SC-003**: all 14 services with a server entry across the 12 changed golden fixtures get an `environment.ts`, and
-  each of their generated Encore files imports `./environment` first — verified by: unit (goldens)
+- **SC-001**: 0 command actions run unaudited with no `AuditTrail` bound across the production, staging and preview
+  cases of `action-pipeline.audit.test.ts`, from the bound config and from the runtime variable alone — verified by:
+  unit
+- **SC-002**: 4 of 4 misspelt or empty names are refused by `AuditConfig`, and the misspelt runtime variable fails the
+  action with 0 handler runs — verified by: unit
+- **SC-003**: the revert check: with the pipeline change reverted, the no-config and unset-field tests of
+  `action-pipeline.audit.test.ts` fail; with `checkServerEnvironment` dropped from `generateMember`, the v2 test of
+  `generate.function.test.ts` fails — verified by: unit
 
 ## Out of scope
 
 - Auditing queries or sensitive reads (ADR 0212 decision 1's read audit stays with `@stackra/access-log`).
-- A `src/main.ts`-authored service's environment (EC-04).
-- Raising `@stackra/gen`'s dependency floor on `@stackra/app`; the changesets tell users to upgrade both.
+- The reader's own rules (STA-2844), including `dev` for a process with no platform (EC-06).
+- Binding an `AuditTrail` driver in the template and demo apps (STA-1583).
 
 ## Assumptions
 
-- Encore's `appMeta().environment.cloud` is `local` exactly for `encore run` and `encore test`, as observed on Encore
-  1.58.8 (SRC-004).
-- A container without an `AuditConfig` binding is a test resolver or an older generated wiring, and keeping its old
-  behaviour is the compatible choice.
+- Every generated server loads `environment.ts` before the server app (STA-2844 AC-008), so only a process with no
+  generated entry reaches the reader with no platform.
+- `@stackra/*` packages are released together (`fixed` in `.changeset/config.json`), so gen's own version bounds the
+  `@stackra/app` it can expect.
 
 ## Compatibility and migration
 
 - **Callers of `ActionPipeline`**: no signature change. A deployed service with no `AuditTrail` now gets an error on
-  every command action after it regenerates; before, it wrote unaudited. To upgrade: bind an `AuditTrail` driver
-  (`outbox` from `@stackra/actions`, or `@stackra/access-log`'s `postgres`), upgrade `@stackra/app` and
-  `@stackra/gen` together, run `stackra gen`.
-- **Generated code**: every Encore file of a service with a server entry gains `import "./environment";` and the new
-  `environment.ts`; `@stackra/gen` is a patch, but its output imports `provideRuntimeEnvironment` from the
-  `@stackra/app` minor, so both must be upgraded together.
-- **Operators**: set `STACKRA_ENVIRONMENT` only outside Encore; inside Encore it is derived. Setting `dev` or `test` on
-  a deployed runtime now fails boot.
-- **Older manifests**: gen links the `AuditConfig` row only when the declared `@stackra/actions` manifest lists it, so
-  an older `@stackra/actions` gets no row and keeps its old behaviour.
+  every command action; before, it wrote unaudited. To upgrade: bind an `AuditTrail` driver (`outbox` from
+  `@stackra/actions`, or `@stackra/access-log`'s `postgres`), upgrade every `@stackra/*` package together, run
+  `stackra gen`.
+- **Older wiring**: a service whose wiring binds no `AuditConfig` is no longer exempt: the pipeline reads the runtime
+  environment through the reader.
+- **Tests**: a test that runs actions with `STACKRA_ENVIRONMENT` set to a deployed name needs a trail bound.
+- **v2 services**: one that runs `@stackra/app` from an authored `src/main.ts` must convert to the generated entry
+  (delete `src/main.ts`, STA-344) or drop `@stackra/app`.
+- **Version skew**: gen refuses an `@stackra/app` older than `0.34.0` (`app_version_floor`) instead of writing an
+  `environment.ts` that fails at import.
 
 ## Risks
 
-- A deployment that relied on running without an audit driver stops serving command actions on its next regenerate;
-  the error names the drivers to bind.
-- A self-hosted image that leaves its cloud at `local` still reads as `dev` (EC-05), documented in ADR 0212's note and
-  `customers/security.mdx`.
-- Version skew between `@stackra/gen` (patch) and `@stackra/app` (minor) fails the generated build at import time,
-  which is loud, not silent.
+- A deployment that relied on running without an audit driver stops serving command actions; the error names the
+  drivers to bind.
+- A v2 service that runs `@stackra/app` stops generating until it converts; the refusal carries the fix.
 
 ## Open questions
 
@@ -228,7 +241,10 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-27: reworked onto STA-2844 per the CTO's verdict of 2026-11-26. `provideRuntimeEnvironment`,
+  `runningEnvironment` and `RuntimeEnvironment` are dropped from `@stackra/app` (the reader replaces them); the
+  `UNAUDITED_ENVIRONMENTS` list and the `dev` default are dropped from `@stackra/actions`; a container with no
+  `AuditConfig` now asks the reader; gen gains `authored_main_environment` and `app_version_floor`.
 
 ## Status history
 
@@ -236,3 +252,8 @@ None.
 - 2026-11-26 → Clarified (no open question)
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md)
+- 2026-11-27 → Clarified (the CTO's verdict of 2026-11-26: rebase onto STA-2844, close five exceptions, raise gen's
+  floor)
+- 2026-11-27 → Planned (plan.md, reworked)
+- 2026-11-27 → Tasked (tasks.md, reworked)
+- 2026-11-27 → Implementing (built in this branch; awaiting the CTO's approval)

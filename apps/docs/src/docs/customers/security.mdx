@@ -71,14 +71,14 @@ The design ([0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks),
 ## Audit evidence
 
 - Every action and data change is audited, and the evidence enters the outbox in the same transaction as the change.
-- Audit fails closed (STA-1571): outside `dev` and `test`, an action with no audit trail bound is refused with an
-  error before it runs, the same way a call with no access control is. The running environment is
-  `STACKRA_ENVIRONMENT` when it is set; on a generated service that Encore runs it is otherwise derived from where
-  Encore runs it, so a deployed service (Encore Cloud or a self-hosted image that declares its cloud) runs as
-  `preview`, `staging` or `production`, never `dev`, and one set to `dev` or `test` does not start. So a generated
-  deployment cannot write unaudited by leaving the audit driver out. An unset `STACKRA_ENVIRONMENT` means `dev`, where
-  the audit trail is optional, only on a developer machine, in tests and in a self-hosted image whose Encore
-  configuration leaves its cloud at `local`.
+- Audit fails closed (STA-1571): in a deployed environment (`preview`, `staging`, `production`), an action with no
+  audit trail bound is refused with an error before it runs, the same way a call with no access control is. One
+  reader decides the environment, from the runtime only (STA-2844): a configuration value cannot set it, a misspelt
+  name stops the service at boot, and a deployed service with no `STACKRA_ENVIRONMENT` runs as the environment its
+  platform reports, never `dev`. A self-hosted image that reports nothing must set the variable or it does not start,
+  and gen refuses a service that would boot without the generated environment file. So a generated deployment cannot
+  write unaudited by leaving the audit driver out. The audit trail is optional only in `dev` and `test`: a developer
+  machine (`encore run`), tests and developer tools.
 - `@stackra/access-log` keeps each tenant's records in a SHA-256 hash chain: a changed, removed or reordered record
   breaks verification. `stackra audit:verify` checks an exported proof bundle offline (the chain and its checkpoints).
 - Built (STA-1579): `ExportAuditAction` streams a tenant's write audit as NDJSON (chain fields included, so the

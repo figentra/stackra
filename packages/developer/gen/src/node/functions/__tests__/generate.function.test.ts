@@ -282,6 +282,19 @@ describe("generate's v2 services (authored src/main.ts, until STA-344)", () => {
       expect(existsSync(join(root, path))).toBe(false);
   });
 
+  it("refuses a v2 service that runs @stackra/app, which no generated environment.ts would serve (STA-1571)", async () => {
+    const root = exampleService(true);
+    const path = join(root, "package.json");
+    const pkg = JSON.parse(readFileSync(path, "utf8")) as { dependencies: Record<string, string> };
+    pkg.dependencies["@stackra/app"] = "workspace:*";
+    writeFileSync(path, JSON.stringify(pkg));
+    const result = await generate(root);
+    expect(result.errors.map((error) => `${error.code} ${error.file}`)).toContain(
+      "authored_main_environment src/main.ts",
+    );
+    expect(existsSync(join(root, "stackra-encore/example/environment.ts"))).toBe(false);
+  });
+
   it("reports, then deletes, a blueprint.ts left over after the last own macro is gone", async () => {
     const root = exampleService(true);
     const stale = join(root, ".stackra/gen/blueprint.ts");
