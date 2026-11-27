@@ -16,7 +16,7 @@ it, so regenerate after upgrading `@stackra/app` and `@stackra/gen` together. A 
 cron adapter calls `handlers.run(call, { shed: false })` (the new `ServerRunOptions`), since Encore never retries a
 failed CronJob invocation. An HTTP call reads its body while it holds its place, so `serveGuardedCall` bounds that read
 by the new `app.http` `bodyReadTimeoutMs` (30000; 0 turns it off) and answers a slower body 408 (`request_timeout`)
-before any guard, and the generated adapter passes it. `Bulkhead#enter` takes the caller's `AbortSignal`. The
+before any guard, and the generated adapter passes it. `Bulkhead#enter` takes the caller's `AbortSignal`. `ServerRunOptions.signal` passes the request's signal to it, and the generated HTTP adapter aborts its request when the client closes the connection, so a client that goes away while its call is queued frees the place at once and the call rejects with that reason. The
 integrations managed client aborts each attempt at the Integration's new `timeout` (30
 seconds by default, the body read included) and goes through a circuit breaker per Integration and origin (5 failures in
 a row open it for 30 seconds; `circuitBreaker` tunes it or `false` turns it off) and, with the new `concurrency` option,

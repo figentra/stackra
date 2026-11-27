@@ -23,7 +23,9 @@
  *          exists, counted on the bound `Metrics` as `app.calls.shed`, and `handlers.shed` answers it 503 with
  *          `Retry-After` (STA-1467). A queued call counts as in flight, so a drain waits for it too. A call run with
  *          `{ shed: false }` (the generated cron adapter) skips the bulkhead, since Encore never retries a failed
- *          CronJob invocation and a shed cron run would be lost.
+ *          CronJob invocation and a shed cron run would be lost. A call run with the request's `signal` (the generated
+ *          HTTP adapter) leaves the queue when the signal aborts and rejects with its reason, so a client that went
+ *          away never keeps a queue place.
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
@@ -125,7 +127,10 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
       const result =
         bulkhead === undefined || runOptions?.shed === false
           ? Promise.resolve().then(start)
-          : bulkhead.enter().then(async (release) => {
+          : bulkhead.enter(runOptions?.signal).then(async (release) => {
+              // The client went away before a place came free: its own reason, not a shed.
+              if (release === undefined && runOptions?.signal?.aborted === true)
+                throw runOptions.signal.reason;
               if (release === undefined) {
                 metrics?.counter("app.calls.shed", 1, { reason: "overloaded" });
                 throw AppOverloadedError.create({ retryAfterMs: OVERLOAD_RETRY_AFTER_MS });

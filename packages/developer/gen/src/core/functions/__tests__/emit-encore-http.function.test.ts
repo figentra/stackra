@@ -78,7 +78,21 @@ describe(emitEncoreHttp, () => {
 
   it("answers a call the app sheds or turns away while draining through app.handlers.shed (STA-1467)", () => {
     const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
-    expect(content).toContain("  }).catch((error: unknown) => app.handlers.shed(request, error));");
+    expect(content).toContain(
+      "  }, { signal: request.signal }).catch((error: unknown) => app.handlers.shed(request, error));",
+    );
+  });
+
+  it("passes the request's abort signal, aborted when the client goes away, to the bulkhead (STA-1467)", () => {
+    const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
+    for (const line of [
+      "  const gone = new AbortController();",
+      '  resp.once("close", () => {',
+      '    if (!resp.writableFinished) gone.abort(new Error("the client closed the connection"));',
+      "    signal: gone.signal,",
+      "  }, { signal: request.signal }).catch((error: unknown) => app.handlers.shed(request, error));",
+    ])
+      expect(content).toContain(line);
   });
 
   it("bounds the body read by HttpConfig.bodyReadTimeoutMs, so a slow upload never holds a shed place (STA-1467)", () => {

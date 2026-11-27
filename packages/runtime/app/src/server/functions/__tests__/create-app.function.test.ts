@@ -544,6 +544,43 @@ describe("createApp (server)", () => {
       await app.close();
     });
 
+    it("lets a queued call whose request aborts leave the queue at once, with the request's reason", async () => {
+      const app = await createApp(OrdersModule, { wiring: tight });
+      const started: string[] = [];
+      const first = gated(started, "first");
+      const running = app.handlers.run(first.call);
+      await vi.waitFor(() => expect(started).toEqual(["first"]));
+      const request = new AbortController();
+      const queued = app.handlers
+        .run(() => started.push("aborted"), { signal: request.signal })
+        .catch((error: unknown) => error);
+      const reason = new Error("client went away");
+      request.abort(reason);
+      expect(await queued).toBe(reason);
+      // the aborted call's queue place is free again: the next call waits for a place instead of being turned away
+      const second = gated(started, "second");
+      const next = app.handlers.run(second.call);
+      first.gate.finish?.();
+      await expect(running).resolves.toBe("first");
+      await vi.waitFor(() => expect(started).toEqual(["first", "second"]));
+      second.gate.finish?.();
+      await expect(next).resolves.toBe("second");
+      expect(MemoryMetricsDriver.counted).toEqual([]);
+      await app.close();
+    });
+
+    it("takes no place for a call whose request already aborted", async () => {
+      const app = await createApp(OrdersModule, { wiring: tight });
+      const request = new AbortController();
+      const reason = new Error("client went away");
+      request.abort(reason);
+      const ran = vi.fn();
+      await expect(app.handlers.run(ran, { signal: request.signal })).rejects.toBe(reason);
+      expect(ran).not.toHaveBeenCalled();
+      await expect(app.handlers.run(() => "next")).resolves.toBe("next");
+      await app.close();
+    });
+
     it("lets a failed call give its place back", async () => {
       const app = await createApp(OrdersModule, { wiring: tight });
       await expect(app.handlers.run(() => Promise.reject(new Error("boom")))).rejects.toThrow(
