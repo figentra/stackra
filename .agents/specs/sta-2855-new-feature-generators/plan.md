@@ -84,13 +84,42 @@ packages they import, and formats what it wrote with the workspace's oxfmt.
 
 ## Files and folders
 
-- `packages/developer/cli/src/node/feature-scaffold/` (new): `constants/feature-kinds.constant.ts`,
-  `constants/field-types.constant.ts`, `functions/*.function.ts` (the components above) with their tests in
-  `functions/__tests__/`, `types/feature-field.type.ts`, `feature-options.type.ts`, `feature-result.type.ts`,
-  `field-type.type.ts`, `model-facts.type.ts`, `model-names.type.ts`
-- `packages/developer/cli/src/node/constants/new-command.constant.ts` and its test
-- Docs: `packages/developer/cli/README.md`, `apps/docs/src/docs/cli.mdx`, `apps/docs/src/docs/guides/scaffolding.mdx`,
-  `.changeset/stackra-new-feature-pieces.md`
+Every file the change adds or edits (tests and the changeset aside):
+
+```text
+apps/docs/src/docs/cli.mdx
+apps/docs/src/docs/guides/scaffolding.mdx
+packages/developer/cli/README.md
+packages/developer/cli/src/node/constants/new-command.constant.ts
+packages/developer/cli/src/node/feature-scaffold/constants/feature-kinds.constant.ts
+packages/developer/cli/src/node/feature-scaffold/constants/field-types.constant.ts
+packages/developer/cli/src/node/feature-scaffold/functions/action-files.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/append-members.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/contract-header.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/decorator-names.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/derive-prefix.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/ensure-import.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/migration-files.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/model-files.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/model-names.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/next-migration-number.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/parse-fields.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/property-lines.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/query-files.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/read-model.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/resolve-member.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/sample-value.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/scaffold-feature.function.ts
+packages/developer/cli/src/node/feature-scaffold/functions/singular.function.ts
+packages/developer/cli/src/node/feature-scaffold/types/feature-field.type.ts
+packages/developer/cli/src/node/feature-scaffold/types/feature-options.type.ts
+packages/developer/cli/src/node/feature-scaffold/types/feature-result.type.ts
+packages/developer/cli/src/node/feature-scaffold/types/field-type.type.ts
+packages/developer/cli/src/node/feature-scaffold/types/model-facts.type.ts
+packages/developer/cli/src/node/feature-scaffold/types/model-names.type.ts
+```
+
+The tests sit beside them in `functions/__tests__/` and `constants/__tests__/`.
 
 ## Data models and migrations
 
