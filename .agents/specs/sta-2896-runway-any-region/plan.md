@@ -71,7 +71,11 @@ question, and rewrites the new app's root runway with `placeRegion`.
 - **P-001**: every name the old enum took resolves to the same cloud and location it stood for — Validates: FR-001, FR-002
 - **P-002**: an AWS id and a Google Cloud id never resolve to the same cloud by mistake (the dash before the number) — Validates: FR-002
 - **P-003**: a placed runway's staging and production resolve to the chosen region and pass the region checks — Validates: FR-005, FR-008
-- **P-004**: `--yes` without `--region` writes the starter's runway byte for byte — Validates: FR-009
+- **P-004**: `--yes` without `--region`, `--region` naming the starter's region and the question's default all write the starter's region as staging's and production's `region` — Validates: FR-009
+- **P-005**: for every product runway whose staging or production names no region, the finding names the three forms and never `figentra/infra` — Validates: FR-003
+- **P-006**: for every environment `region` that `resolveRegion` returns nothing for, exactly one finding is reported at `environments.<env>.region` — Validates: FR-004
+- **P-007**: an environment counts as on AWS exactly when its region resolves to the `aws` cloud — Validates: FR-006
+- **P-008**: every answer `stackra create` accepts for its region question is one `resolveRegion` resolves, and nothing else is accepted — Validates: FR-007
 
 ## Architecture overview
 
@@ -88,6 +92,10 @@ flowchart TD
 ```
 
 ## Components and responsibilities
+
+- C1 region resolution and checks (`packages/developer/runway/src/core`): what a region name stands for, and a
+  product's placement checked against it.
+- C2 `stackra create --region` (`packages/developer/cli/src/node`): asks where the app runs and places its root runway.
 
 ### C1 Region resolution and checks
 
@@ -139,6 +147,66 @@ export function starterRegion(files: ReadonlyMap<string, Uint8Array>): StarterRe
 ```
 
 **Failure modes**: an unknown `--region` throws before any file is written; a missing `runway.yaml` is left alone.
+
+## Files and folders
+
+```text
+packages/developer/runway/
+├── README.md
+├── schema/root.json
+└── src/core/
+    ├── index.ts
+    ├── __tests__/index.test.ts
+    ├── constants/
+    │   ├── region-presets.constant.ts
+    │   └── root-environment-schema.constant.ts
+    ├── enums/region-key.enum.ts
+    └── functions/
+        ├── resolve-region.function.ts
+        ├── check-environment-region.function.ts
+        ├── unused-cloud-opt-ins.function.ts
+        ├── deprecated-fields.function.ts
+        └── __tests__/
+            ├── resolve-region.function.test.ts
+            └── parse-runway-estate.function.test.ts
+packages/developer/cli/src/node/
+├── commands/
+│   ├── create.command.ts
+│   └── __tests__/create.command.test.ts
+└── create/
+    ├── functions/
+    │   ├── place-region.function.ts
+    │   ├── starter-region.function.ts
+    │   └── __tests__/place-region.test.ts
+    └── types/starter-region.type.ts
+tools/schemas/runway-root.schema.json
+apps/docs/src/docs/adr/0524-cloud-estate-aws-organization-and-gcp-projects.mdx
+apps/docs/src/docs/runway/validate.mdx
+.changeset/runway-any-provider-region.md
+.changeset/create-asks-region.md
+```
+
+## Data models and migrations
+
+`environments.<env>.region` in the root runway widens from `me | eu | ksa` to a lower-case region name; the root
+`regions` map is unchanged. No database migration: every runway that parsed before still parses.
+
+## Contracts
+
+- `@stackra/runway`: `REGION_PRESETS`; `resolveRegion(root, name): RunwayRegion | undefined`;
+  `ROOT_ENVIRONMENT_SCHEMA.region` is a string; the root JSON schema (`schema/root.json`) matches.
+- `@stackra/cli`: `stackra create --region <name>` and the question "Where do staging and production run?"; the
+  command's result carries `region`.
+
+## Error handling
+
+A name that resolves to nothing is a `runway validate` finding (`checkEnvironmentRegion`), never a throw. In
+`stackra create` an unknown `--region` throws before any file is written, and the question refuses the answer and asks
+again.
+
+## Security and tenancy
+
+No account id, project id or credential is read or written; nothing is contacted to resolve a region. No tenant data.
 
 ## Testing strategy
 

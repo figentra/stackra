@@ -106,7 +106,7 @@ staging and production in us-east-1, with its comments kept.
 1. **Given** the starter placed in `me`, **When** `stackra create app --region us-east-1` runs, **Then** staging and
    production name `region: us-east-1`, every deploy list is `[us-east-1]`, the root `regions` declares only
    `us-east-1` on aws, and nothing names me-central-1.
-2. **Given** `--yes` and no `--region`, **When** `stackra create` runs, **Then** the starter's runway is written unchanged.
+2. **Given** `--yes` and no `--region`, **When** `stackra create` runs, **Then** the starter's region is kept, named as staging's and production's `region`, and the runway passes `checkEnvironmentRegion`.
 
 ### Edge Cases
 
@@ -127,8 +127,8 @@ staging and production in us-east-1, with its comments kept.
 - **FR-005**: WHEN an environment resolves to Google Cloud and the runway has neither `providers.gcp.projects` entries nor `providers.gcp.project: true` THE check SHALL ask for a project; and WHEN an environment resolves to `me-central-1` with a t4g or m6g cache class THE check SHALL refuse it. Sources: SRC-001
 - **FR-006**: THE `unusedCloudOptIns` check SHALL count an environment as on AWS when its region resolves to aws. Sources: SRC-001
 - **FR-007**: THE `stackra create` command SHALL take `--region` and, when interactive and not given, ask "Where do staging and production run?" with the starter's region as the default, accepting only a name `resolveRegion` resolves. Sources: SRC-003, SRC-004
-- **FR-008**: WHEN the chosen region differs from the starter's THE command SHALL rewrite the root runway with `placeRegion`: staging's and production's `region`, every environment's `regions`, the root `regions` entry (dropping keys nothing lists), `targets.encore-cloud.cloud` and the deprecated `providers.aws.region`, keeping comments. Sources: SRC-002, SRC-003
-- **FR-009**: IF `--region` names no region THEN the command SHALL refuse before writing any file; WHEN `--yes` is given without `--region` THE starter's region SHALL be kept unchanged. Sources: SRC-003, SRC-004
+- **FR-008**: THE command SHALL rewrite the root runway with `placeRegion` for the chosen region, the starter's own included: staging's and production's `region`, every environment's `regions`, the root `regions` entry (dropping keys nothing lists), `targets.encore-cloud.cloud` and the deprecated `providers.aws.region`, keeping comments. Sources: SRC-002, SRC-003
+- **FR-009**: IF `--region` names no region THEN the command SHALL refuse before writing any file; WHEN `--yes` is given without `--region` THE starter's region SHALL be kept and written as staging's and production's `region`. Sources: SRC-003, SRC-004
 
 ### Non-functional Requirements
 
@@ -143,11 +143,11 @@ staging and production in us-east-1, with its comments kept.
 
 - **AC-001**: WHEN staging and production name AWS region ids THE region check SHALL report nothing.
 - **AC-002**: WHEN an environment names a Google Cloud region id and the runway names a project THE region check SHALL report nothing; without a project it SHALL report the environment.
-- **AC-003**: IF a region resolves to nothing THEN the check SHALL report `"<name>" is not a region Runway knows`.
+- **AC-003**: IF a region resolves to nothing THEN THE region check SHALL report `"<name>" is not a region Runway knows`.
 - **AC-004**: WHEN a region is missing THE message SHALL name `us-east-1` and SHALL NOT contain `figentra/infra`.
 - **AC-005**: WHEN `stackra create --region us-east-1` runs THE written runway SHALL place staging and production in `us-east-1` and pass `checkEnvironmentRegion` and `checkRegions`.
-- **AC-006**: WHEN `stackra create --yes` runs without `--region` THE written runway SHALL equal the starter's.
-- **AC-007**: IF `--region us` is given THEN the command SHALL exit 1 and write no folder.
+- **AC-006**: WHEN `stackra create --yes` runs without `--region`, or `--region` or the question's default names the starter's own region, THE written runway SHALL keep that region, name it as staging's and production's `region` and pass `checkEnvironmentRegion`.
+- **AC-007**: IF `--region us` is given THEN THE `stackra create` command SHALL exit 1 and write no folder.
 
 ## Success Criteria
 
