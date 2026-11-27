@@ -3,13 +3,14 @@
  * Purpose: `DevSecretsInitCommand`, `stackra dev secrets init [--rotate] [--from <file>]`: writes a random dev value
  *          for every required secret the workspace's running members declare to `.stackra/dev-secrets.json` (mode
  *          600), which `stackra dev` adds to each member's environment. It lists the names that need a value someone
- *          sets (a connection string, the relay's key pair) and leaves optional ones unset. An existing file only gains
+ *          sets (a connection string, the relay's key pair), apart from those the dev compose provides (the root
+ *          runway's `environments.dev.infra`: `CACHE_VALKEY_URL`, …), and leaves optional ones unset. An existing file only gains
  *          its missing names; with none missing it refuses unless `--rotate`, which regenerates every generated name.
  *          `--from` copies matching names from another repository's file, so a shared name holds one value.
  * Boundary: dev only. It prints names and counts, never a value, and nothing from sops: real values stay in
  *           `figentra/secrets` and reach deployed runtimes through runway.
  * Runtime: node
- * Governing contract: ADR 0525 (amendment of 2026-11-10); STA-2664 (item 4); STA-2679.
+ * Governing contract: ADR 0525 (amendment of 2026-11-10); STA-2664 (items 4 and 6); STA-2679.
  */
 import { randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -18,6 +19,7 @@ import { dirname, join, resolve } from "node:path";
 import { Command, Option, type CommandIo } from "@stackra/console";
 import { Str } from "@stackra/validation";
 
+import { planDevInfra } from "#node/dev-infra/functions/plan-dev-infra.function";
 import { DEV_SECRETS_FILE } from "#node/dev-secrets/constants/dev-secrets-file.constant";
 import { classifyDevSecrets } from "#node/dev-secrets/functions/classify-dev-secrets.function";
 import { declaredDevSecrets } from "#node/dev-secrets/functions/declared-dev-secrets.function";
@@ -72,11 +74,19 @@ export class DevSecretsInitCommand extends Command({
       `${DEV_SECRETS_FILE}: ${plan.generated.length} generated, ${plan.copied.length} copied`,
     );
     io.output.list([...plan.generated, ...plan.copied]);
-    if (names.needsValue.length > 0) {
+    // A name the dev compose gives needs no value here: `stackra dev` sets it when it starts the container.
+    const composed = new Set(planDevInfra(root, 0, [])?.provides ?? []);
+    const needsValue = names.needsValue.filter((name) => !composed.has(name));
+    const fromCompose = names.needsValue.filter((name) => composed.has(name));
+    if (needsValue.length > 0) {
       io.output.info(
-        `needs a value (a connection string or a key pair; set it in ${DEV_SECRETS_FILE} or let the dev compose provide it):`,
+        `needs a value (a connection string or a key pair; set it in ${DEV_SECRETS_FILE}, or declare its container under environments.dev.infra in runway.yaml):`,
       );
-      io.output.list(names.needsValue);
+      io.output.list(needsValue);
+    }
+    if (fromCompose.length > 0) {
+      io.output.info("set by stackra dev from the dev compose (environments.dev.infra):");
+      io.output.list(fromCompose);
     }
     if (names.optional.length > 0)
       io.output.info(`${names.optional.length} optional, left unset: ${names.optional.join(", ")}`);
@@ -84,7 +94,8 @@ export class DevSecretsInitCommand extends Command({
       file: DEV_SECRETS_FILE,
       generated: plan.generated,
       copied: plan.copied,
-      needsValue: names.needsValue,
+      needsValue,
+      fromCompose,
       optional: names.optional,
     };
   }
