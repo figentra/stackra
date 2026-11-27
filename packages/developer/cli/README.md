@@ -130,6 +130,19 @@ warnings never fail. A member removed since the base reads as every operation re
 break made on purpose is excused by an entry of `tools/contract/accepted-breaks.yaml` (`member`, `operation`, `id`,
 `issue`, `reason`, `added`, `expires` at most 30 days later); an expired entry excuses nothing.
 
+In a member or at the root, `stackra dev` first starts the dev compose of the root runway's `environments.dev.infra`
+(Valkey, SeaweedFS, Mailpit, ClamAV, otel-lgtm; Encore keeps its own Postgres): it writes `.stackra/dev/compose.yaml`
+(and `.stackra/dev/compose.shared.yaml` for the `perLane: false` ones, ClamAV by default) and runs
+`docker compose -f <file> up --detach --wait`, so each container is healthy before the member starts. The member's run
+gets the containers' variables (`CACHE_VALKEY_URL`, `AWS_ENDPOINT_URL_S3`, `SMTP_PORT`, …) unless the shell or
+`.stackra/dev-secrets.json` sets them. SeaweedFS's placeholder `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` pair is
+added only when the run has no AWS credential of its own (no key variable, `AWS_PROFILE`, web identity token,
+container endpoint, `~/.aws/credentials` or `~/.aws/config`): the store takes any signature, so a profile keeps signing
+for S3 and for the run's other AWS clients alike. On a host whose only credential is an instance role, an empty
+`~/.aws/config` keeps the pair out. `--infra <name>[,<name>]` also starts `when: opt-in` blocks; `--no-infra` skips
+the step. The containers keep running after `stackra dev` stops; `docker compose -f .stackra/dev/compose.yaml down`
+stops them. A member run turbo starts from the root leaves the step to the root run.
+
 `stackra dev --surface <surface>` runs at a product root (ADR 0436 decision 6, app-shells section 15 point 2). It reads
 `surfaces.<surface>` (`shell: os/console@3`, `packages`) from the root `runway.yaml`, runs `stackra gen`, writes the
 `DevSurface` descriptor to `.stackra/surfaces/<surface>/dev-surface.json`, then starts Vite with the surface's
