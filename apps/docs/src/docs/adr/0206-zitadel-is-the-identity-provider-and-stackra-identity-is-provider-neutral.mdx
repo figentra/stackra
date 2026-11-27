@@ -77,3 +77,47 @@ organisation per region, with access per merchant by IAM memberships; each merch
 merchant's own customer organisation; an Enterprise merchant's staff may be in a dedicated organisation with its own
 IdP ([0361](/adr/0361-principals-and-parties) amendment 2026-11-08). Decision 7 stays amended by 0268: ZITADEL's hosted
 login with each organisation's label policy is the branded login.
+
+## Amendment 2026-11-26: the dev issuer, accepted only under `stackra dev`
+
+**Context.** Decision 8 verifies every access token by the issuer's JWKS, and decision 4 runs a ZITADEL container
+under `stackra dev` (STA-2683, not built yet). A new app therefore answers 401 on every protected route and a
+developer cannot try a write, a permission or a tenant rule locally (STA-2795, found in the STA-2794 create proof).
+Source: STA-2795's "Done when" (owner, 2026-11-26): a documented, dev-only way to call protected routes that a deployed
+environment refuses, with a test; ZITADEL and OIDC stay the only path outside local development.
+
+**Decision.**
+
+1. **A local issuer.** `stackra dev` keeps one ES256 key pair and a seeded dev user per workspace in
+   `.stackra/dev-issuer.json` (git-ignored, mode 600) and hands each service it runs the public key set in
+   `STACKRA_DEV_ISSUER_KEYS` with `STACKRA_ENVIRONMENT=dev`. `stackra dev token` prints a dev token: a JWT issued by
+   `https://dev-issuer.stackra.invalid` for the audience `stackra-dev`, carrying the same provider-neutral claims a
+   ZITADEL token carries, so `actorOf`, the scope chain and IAM see it as a real caller.
+2. **Same checks.** `verifyCallToken` (`@stackra/app/server`), the one check behind `CallAuthenticator` and
+   `BearerTokenGuard`, verifies a dev token under the dev keys with every decision-8 check (algorithm, signature,
+   issuer, audience, expiry, leeway). The configured issuer keeps working beside it.
+3. **Never deployed.** Dev keys count only when the one environment reader (`readEnvironment` of `@stackra/config`,
+   [0296](/adr/0296-runway-v3-member-requires-and-root-topology-groups) amendment of 2026-11-26, STA-2844) answers
+   `dev`, the developer machine of [0170](/adr/0170-deployment-what-deploys-where-and-how-a-release-is-promoted)
+   decision 5. The gate never reads a configuration value: `BearerConfig` holds the dev key set only and no
+   environment, so neither a values layer nor a host override can turn dev sign-in on. A process that carries the keys
+   where the reader answers anything else (`test`, `preview`, `staging`, `production`, including a deployed platform
+   that set no variable) fails boot with `ConfigInvalidError` naming `STACKRA_DEV_ISSUER_KEYS` (`createApp` checks
+   before the generated boot runs), and so does one the reader refuses (a misspelt name, `dev` on a deployed platform,
+   a self-hosted image that reports nothing), so a deployment never answers a dev token. `CallAuthenticator` and
+   `BearerTokenGuard` ask the reader again on every call. Without the keys a dev token is checked only against the
+   real issuer, which refuses it. A private key never travels in the variable. The key set itself is runtime-only,
+   like the running environment: `STACKRA_DEV_ISSUER_KEYS` is a safety-critical variable (`SAFETY_CRITICAL_VARIABLES`
+   of `@stackra/config`), so `buildConfig` refuses `app.bearer.devKeys` from a values layer and `runway validate`
+   refuses it in a runway `config` block before a deploy; only `stackra dev` sets the variable, on the process it
+   runs.
+4. **ZITADEL stays.** Decision 4's local ZITADEL remains the full-fidelity path (sign-in pages, refresh, real
+   organisations); the dev issuer is the zero-setup one.
+
+**Enforcement.** `@stackra/app` tests: `devIssuerKeys`, `verifyCallToken`, `runningEnvironment`, `BearerConfig` (no
+environment field; the dev key set refused as a value), `CallAuthenticator`, `BearerTokenGuard` (a host override naming `environment = "dev"` on a
+production platform still refused) and `createApp` (boot refused in `test`, `preview`, `staging`, `production` and on a
+production platform with no variable); `@stackra/cli` tests: `stackra dev token`, `ensureDevIssuer`, `devIssuerEnv`
+(nothing handed under another or a misspelt environment) and the `stackra dev` run of a service; `@stackra/config`
+(`SAFETY_CRITICAL_VARIABLES` holds `STACKRA_DEV_ISSUER_KEYS`) and `@stackra/runway` (`runtimeOnlyFields` and
+`checkRuntimeOnlyConfig` refuse `app.bearer.devKeys` in a runway `config` block).

@@ -18,6 +18,7 @@ workspace root the task commands fan out through Turborepo; in a member they run
 | `stackra gen [--check]`              | derive and write `.stackra/`; `--check` fails when a committed manifest no longer matches     |
 | `stackra dev`                        | gen, then serve: Vite for the web, Expo for phones, Wrangler for Workers, Encore for services |
 | `stackra dev --surface <s> --os <c>` | a product surface in its real OS shell, with hot reload                                       |
+| `stackra dev token`                  | a dev access token that services under `stackra dev` accept, never a deployed one             |
 | `stackra build`                      | gen, then build: tsdown, Vite, `expo export`, a Wrangler dry run                              |
 | `stackra typecheck`, `test`, `lint`  | gen, then `tsc --noEmit`, vitest (or Playwright and Maestro by tier), `oxlint .`              |
 | `stackra validate`                   | the config, structure, docs, catalogue and spec phases of the quality gate                    |

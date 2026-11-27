@@ -1,18 +1,28 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `BearerConfig`: keyed `app.bearer`, built with its defaults (no issuer, no audience, 60-second
- *          leeway, one-hour key cache), the issuer and audience from the environment, a host override, and refusing
+ *          leeway, one-hour key cache, no dev keys), the issuer and audience and the dev sign-in's key set from the
+ *          environment, no running-environment field at all (neither `STACKRA_ENVIRONMENT` nor a values layer reaches
+ *          it: the dev sign-in asks the one reader, STA-2844), the dev key set refused as a value (runtime-only, like
+ *          the environment: neither a runway `config` block nor a values layer sets it), a host override, and refusing
  *          an issuer that is not a URL or a leeway above five minutes; the shipped schema's defaults equal
  *          `BearerOptions`' initializers.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19, 20 and 26); ADR 0206 (decision 8).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19, 20 and 26); ADR 0206 (decision 8); ADR 0296
+ *                     (amendment 2026-11-26); STA-2844.
  */
-import { buildConfig, ConfigInvalidError, configKey } from "@stackra/config";
+import {
+  buildConfig,
+  ConfigInvalidError,
+  configKey,
+  SAFETY_CRITICAL_VARIABLES,
+} from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
 
 import { BearerConfig as BaseBearerConfig } from "#config/bearer.config";
 import { BEARER_CONFIG_SCHEMA } from "#core/constants/bearer-config-schema.constant";
+import { DEV_ISSUER } from "#core/constants/dev-issuer.constant";
 import { BearerOptions } from "#core/schemas/bearer-options.schema";
 
 /** A host's override: a tighter leeway. */
@@ -42,6 +52,48 @@ describe("BearerConfig", () => {
     });
     expect(config.issuer).toBe("https://auth.figentra.com");
     expect(config.audience).toBe("project-1");
+  });
+
+  it("reads the dev sign-in key set from the environment, off by default", () => {
+    const config = buildConfig(BaseBearerConfig, {
+      env: { STACKRA_DEV_ISSUER_KEYS: '{"keys":[]}' },
+    });
+    expect(config.devKeys).toBe('{"keys":[]}');
+    expect(buildConfig(BaseBearerConfig).devKeys).toBe("");
+  });
+
+  it("refuses the dev key set as a value: it is runtime-only, like the running environment", () => {
+    // A value naming the set (a runway `config` block or a test's values) never reaches the field, never printed.
+    const set = '{"keys":[{"kid":"from-a-values-layer"}]}';
+    expect(SAFETY_CRITICAL_VARIABLES).toContain(DEV_ISSUER.keysVariable);
+    let refusal: unknown;
+    try {
+      buildConfig(BaseBearerConfig, { values: { devKeys: set } });
+    } catch (error) {
+      refusal = error;
+    }
+    expect(refusal).toBeInstanceOf(ConfigInvalidError);
+    expect((refusal as ConfigInvalidError).config).toBe("BearerConfig");
+    expect((refusal as ConfigInvalidError).issues).toEqual([
+      {
+        path: "devKeys",
+        message: expect.stringContaining(
+          "is safety-critical: it is read from STACKRA_DEV_ISSUER_KEYS in the runtime environment only",
+        ) as string,
+      },
+    ]);
+    expect(JSON.stringify((refusal as ConfigInvalidError).issues)).not.toContain(
+      "from-a-values-layer",
+    );
+    // The other bearer fields stay values.
+    expect(buildConfig(BaseBearerConfig, { values: { leewaySeconds: 10 } }).leewaySeconds).toBe(10);
+  });
+
+  it("holds no running environment: the dev sign-in asks the one reader, never a configuration value", () => {
+    const fromEnv = buildConfig(BaseBearerConfig, { env: { STACKRA_ENVIRONMENT: "dev" } });
+    expect(fromEnv).not.toHaveProperty("environment");
+    expect(Object.keys(BEARER_CONFIG_SCHEMA.shape)).not.toContain("environment");
+    expect(Object.keys(new BearerOptions())).not.toContain("environment");
   });
 
   it("takes a host's override", () => {

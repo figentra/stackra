@@ -146,6 +146,10 @@ describe("testbed-agent excludes", () => {
   it("leaves out the contract's rsync excludes, and keeps the repository's own folders", () => {
     const excludes = /^EXCLUDES='([^']*)'/m.exec(readFileSync(AGENT, "utf8"))?.[1]?.split(" ");
     expect(excludes).toEqual([...TESTBED_DEFAULTS.rsyncExcludes]);
+    // the workstation's dev values and dev sign-in key never reach the box (STA-2679, STA-2795)
+    expect(excludes).toEqual(
+      expect.arrayContaining([".stackra/dev-secrets.json", ".stackra/dev-issuer.json"]),
+    );
     // `pnpm validate` reads .agents (specs, hooks, rules, skills); a job without it fails.
     for (const kept of [".agents", ".github", ".flow"]) {
       expect(TESTBED_DEFAULTS.rsyncExcludes).not.toContain(kept);

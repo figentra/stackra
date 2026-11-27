@@ -18,6 +18,7 @@ icon: "terminal"
 | `stackra gen [--check]`              | يشتقّ ويكتب `.stackra/`؛ و`--check` يفشل حين لا يطابق بيان ملتزَم به الإعلانات           |
 | `stackra dev`                        | gen ثم التشغيل: Vite للويب، وExpo للهواتف، وWrangler للـWorkers، وEncore للخدمات         |
 | `stackra dev --surface <s> --os <c>` | سطح منتج في هيكل أو إس الحقيقي، مع إعادة تحميل فورية                                     |
+| `stackra dev token`                  | رمز وصول للتطوير تقبله الخدمات تحت `stackra dev` فقط، ولا تقبله أي بيئة منشورة           |
 | `stackra build`                      | gen ثم البناء: tsdown وVite و`expo export` وتشغيل Wrangler تجريبي                        |
 | `stackra typecheck`، `test`، `lint`  | gen ثم `tsc --noEmit`، وvitest (أو Playwright وMaestro بحسب الطبقة)، و`oxlint .`         |
 | `stackra validate`                   | مراحل الإعداد والبنية والتوثيق والكتالوج والمواصفة من بوابة الجودة                       |

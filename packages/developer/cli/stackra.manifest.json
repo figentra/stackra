@@ -176,6 +176,16 @@
       "entry": "node"
     },
     {
+      "name": "dev:token",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "DevTokenCommand",
+      "file": "src/node/commands/dev-token.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "doc-standard",
       "aliases": [],
       "hidden": false,

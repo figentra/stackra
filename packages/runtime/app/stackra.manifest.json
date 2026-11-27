@@ -253,6 +253,15 @@
       "field": "allowedOrigins"
     },
     {
+      "name": "STACKRA_DEV_ISSUER_KEYS",
+      "kind": "config",
+      "type": "string",
+      "required": false,
+      "config": "app.bearer",
+      "class": "BearerConfig",
+      "field": "devKeys"
+    },
+    {
       "name": "STACKRA_EDGE_SIGNING_KEYS",
       "kind": "secret",
       "type": "string",

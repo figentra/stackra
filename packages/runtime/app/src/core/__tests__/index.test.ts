@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: the shared boot (`bootApp`), the `AppWiring` token and
- *          `signEdgeRequest`, `verifyBearerToken` and `jwksKeySource` are exported, nothing else is (no `createApp`, no `Module`, `Service` or `define*`), its types resolve, and
+ *          `signEdgeRequest`, `verifyBearerToken`, `jwksKeySource` and the dev sign-in's `DEV_ISSUER`, `createDevIssuerKey`
+ *          and `mintDevToken` are exported, nothing else is (no `createApp`, no `Module`, `Service` or `define*`), its types resolve, and
  *          `RouteSession` adds `session` and `identity` to navigation's `RouteServices`.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
@@ -12,14 +13,24 @@ import type { RouteServices } from "@stackra/navigation";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 
 import * as app from "#core/index";
-import type { AppSections, BootedApp, BootOptions, RouteSession } from "#core/index";
+import type {
+  AppSections,
+  BootedApp,
+  BootOptions,
+  DevIssuerKey,
+  DevTokenClaims,
+  RouteSession,
+} from "#core/index";
 
 describe("@stackra/app", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(app).sort()).toEqual([
       "AppWiring",
+      "DEV_ISSUER",
       "bootApp",
+      "createDevIssuerKey",
       "jwksKeySource",
+      "mintDevToken",
       "signEdgeRequest",
       "verifyBearerToken",
     ]);
@@ -30,6 +41,8 @@ describe("@stackra/app", () => {
     expectTypeOf<BootedApp["container"]>().not.toBeNever();
     expectTypeOf<AppSections["contexts"]>().toEqualTypeOf<readonly string[] | undefined>();
     expectTypeOf<RouteSession["session"]>().toEqualTypeOf<SessionUser | null>();
+    expectTypeOf<DevIssuerKey["publicKey"]["kid"]>().toEqualTypeOf<string>();
+    expectTypeOf<DevTokenClaims["userId"]>().toEqualTypeOf<string>();
   });
 
   it("adds session and identity to every route context", () => {

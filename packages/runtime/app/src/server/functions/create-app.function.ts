@@ -16,30 +16,35 @@
  *          `DrainTimeoutError` with the count still running and resolves, so a hung call never keeps the shutdown
  *          hooks from running before the platform's SIGKILL (STA-2820). The configuration reads `process.env` with
  *          `STACKRA_ENVIRONMENT` set to the running environment from the one reader (`readEnvironment`), given what the
- *          platform reported to `providePlatformEnvironment`, so a configuration never sees an unset or misspelt
- *          environment and a deployment never boots as `dev` (STA-2844).
+ *          platform reported to `providePlatformEnvironment` (`runningEnvironment`), so a configuration never sees an
+ *          unset or misspelt environment and a deployment never boots as `dev` (STA-2844).
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
- *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
- *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
+ *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process; so do dev
+ *           sign-in keys (`STACKRA_DEV_ISSUER_KEYS`) when the reader's answer is not `dev` (`devIssuerKeys`, STA-2795),
+ *           checked before the generated boot runs. The outbox flush and every other shutdown step are each package's
+ *           `onApplicationShutdown`, run by `close()`.
  * Runtime: node
  * Governing contract: ADR 0295 (decisions 7 to 9); ADR 0263 (decisions 1, 5 and 12); ADR 0124; ADR 0143 as amended
  *                     by 0263 (lifecycle); ADR 0014 (decision 5: the runtime provides the connection); ADR 0260
  *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards);
  *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here);
  *                     ADR 0143 (decision 3: draining timeouts); ADR 0296 (amendment 2026-11-26: the environment comes
- *                     from the runtime only), STA-2844.
+ *                     from the runtime only), STA-2844; ADR 0206 (amendment of 2026-11-26: the dev issuer never boots
+ *                     in a deployed environment).
  */
-import { buildConfig, ENVIRONMENT_VARIABLE, readEnvironment } from "@stackra/config";
+import { buildConfig, ENVIRONMENT_VARIABLE } from "@stackra/config";
 import type { AnyClass, ModuleClass } from "@stackra/container";
 import { HealthIndicator, Tracer } from "@stackra/contracts";
 import type { TraceCarrier } from "@stackra/contracts";
 
+import { BearerConfig } from "#config/bearer.config";
 import { HttpConfig } from "#config/http.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { bootApp } from "#core/functions/boot-app.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
-import { PLATFORM_ENVIRONMENT_HOST } from "#server/constants/platform-environment-host.constant";
 import { answerProbe } from "#server/functions/answer-probe.function";
+import { devIssuerKeys } from "#server/functions/dev-issuer-keys.function";
+import { runningEnvironment } from "#server/functions/running-environment.function";
 import { AppDrainingError } from "#server/errors/app-draining.error";
 import { DrainTimeoutError } from "#server/errors/drain-timeout.error";
 import type { ServerApp } from "#server/types/server-app.type";
@@ -61,11 +66,21 @@ const DEADLINE = Symbol("drain deadline");
  * export const app = await createApp(CommerceModule, { wiring, boot });
  */
 export async function createApp(root: ModuleClass, options: ServerAppOptions): Promise<ServerApp> {
-  const environment = readEnvironment(process.env, PLATFORM_ENVIRONMENT_HOST.current);
+  const environment = runningEnvironment();
   const { container, reporter, wiring } = await bootApp(options.wiring, {
     roots: [root],
     env: { ...process.env, [ENVIRONMENT_VARIABLE]: environment },
   });
+  // Dev sign-in keys outside `stackra dev` fail boot here, judged by the reader's answer and never by a configuration
+  // value, so a deployment never answers a dev token (STA-2795).
+  if (container.has(BearerConfig)) {
+    try {
+      devIssuerKeys(container.get(BearerConfig), environment);
+    } catch (error) {
+      await container.close();
+      throw error;
+    }
+  }
   const shutdown = new AbortController();
   await options.boot?.(container, { signal: shutdown.signal });
 

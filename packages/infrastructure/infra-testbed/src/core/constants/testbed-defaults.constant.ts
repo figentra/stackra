@@ -67,6 +67,8 @@ export const TESTBED_DEFAULTS = {
     "*.secrets.local.cue",
     // `stackra dev secrets init`'s generated dev values stay on the workstation (STA-2679).
     ".stackra/dev-secrets.json",
+    // `stackra dev`'s dev sign-in key pair stays on the workstation; the box makes its own (STA-2795).
+    ".stackra/dev-issuer.json",
     ".mcp.json",
     ".turbo",
     "dist",

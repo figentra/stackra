@@ -8,7 +8,9 @@ description: "Accepted, amended by 0335, 0517 · 2026-10-22 · amended 2026-10-2
   Decision 1 makes a member runway's `config` values the last layer of configuration. That layer may no longer set a
   field mapped to a safety-critical variable (`SAFETY_CRITICAL_VARIABLES` of `@stackra/config`). The running
   environment, `STACKRA_ENVIRONMENT`, is the first such variable: a `dev` there would let a deployment keep memory
-  stores, skip its audit trail or accept dev sign-in.
+  stores, skip its audit trail or accept dev sign-in. The dev sign-in's public key set, `STACKRA_DEV_ISSUER_KEYS`
+  (`app.bearer.devKeys`, [0206](/adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral)
+  amendment of 2026-11-26), is the second: only `stackra dev` sets it.
   - **One reader.** `readEnvironment` of `@stackra/config` is the only reader of the running environment. It returns
     one of a closed list (`dev`, `test`, `preview`, `staging`, `production`) and reads only `STACKRA_ENVIRONMENT` and
     what the serving platform reports. A name outside the list fails boot. A deployed platform never runs as `dev` or
