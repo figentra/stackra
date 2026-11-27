@@ -43,7 +43,9 @@ builds on the one environment reader of STA-2844 (stackra#1166) and keeps no rea
 - **Apps touched**: none (`apps/docs` page `runway/validate.mdx` only)
 - **Services touched**: none directly; a generated service whose runway sets a `config` value gets
   `.stackra/gen/runway-config.ts` on its next `stackra gen` (its `environment.ts` comes from STA-2844)
-- **Packages touched**: `@stackra/actions`, `@stackra/runway`, `@stackra/repo-checks`, `@stackra/app`, `@stackra/gen`
+- **Packages touched**: `@stackra/actions` (packages/application/actions), `@stackra/runway`
+  (packages/developer/runway), `@stackra/repo-checks` (packages/developer/repo-checks), `@stackra/app`
+  (packages/runtime/app), `@stackra/gen` (packages/developer/gen)
 - **Public contract change**: `StoresConfig$` (`actions.stores`) gains the `environment` field, typed as
   `StackraEnvironment` of `@stackra/config` and mapped to `STACKRA_ENVIRONMENT` (default `dev`), and refuses `memory`
   for `idempotency` or `rateLimit` where `isDeployedEnvironment` is true; the actions manifest lists the new env row
