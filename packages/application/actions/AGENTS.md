@@ -45,8 +45,18 @@ Member at `packages/application/actions` (`tier:lib`), in the programming model 
   wraps the unit of work (reserve, then commit) and a successful call's audit entry is written inside it.
 - Everything after the tenancy step runs inside `CallIsolation.run(actor, scope, work, { readOnly })` when one is
   bound (ADR 0495): an action writable, a query read-only, a proposal writable. The unit of work is a savepoint of
-  that transaction, so anything that must wait for the real commit (`afterCommit` work, the idempotency
-  `complete`, the offline cap record, the read-your-writes mark) runs after `isolated(...)` returns, never inside it. A
+  that transaction, so anything that must wait for the real commit (`afterCommit` work, the `complete` of an
+  idempotency store that cannot join transactions, the offline cap record, the read-your-writes mark) runs after
+  `isolated(...)` returns, never inside it. The `complete` of a store that joins transactions (`joinsTransaction`,
+  Postgres) is the opposite: it runs inside, after the interceptors, so the kept output commits with the writes; with no
+  isolation bound the pipeline opens one `UnitOfWork` transaction around such a keyed call for the same reason. A store
+  that cannot join is `extend`ed to the replay window as the last step before the commit (`confirmed`: after the
+  interceptors inside an isolation, else last in the action's unit of work); a lost claim throws
+  `IdempotencyKeyInProgressError` there and rolls the writes back. Never move that step after the commit or drop it:
+  with the 15-minute lease (`IDEMPOTENCY_LEASE`) a Valkey or memory key would free itself after a crash that followed
+  the commit, and the retry would write twice. After a commit the key is never released: a failed completion is
+  logged (`IDEMPOTENCY_STORE_FAILED`), the caller still gets its output and the key stays held for the replay window.
+  Every store write passes the claim's `holder` token (ADR 0495 note of 2026-11-26, STA-2797). A
   write a query's refusal needs (the rate-limit usage event) waits for the read-only transaction to end. Name no
   tenant here; the port takes the `Actor` and a `ScopeRef`.
   `propose` runs the steps up to validation and meters a draft; it never reaches approval or `handle`.

@@ -62,6 +62,12 @@ Lowest first: the schema defaults, the host override, the `env` variables, runwa
 secrets. `buildConfig` validates the result with the schema's generated `X$` and freezes it. A nested object in a
 later layer replaces the earlier one whole. An environment string is coerced to the type of the value it replaces.
 
+A field mapped to a safety-critical variable (`SAFETY_CRITICAL_VARIABLES`; `STACKRA_ENVIRONMENT` is the first) is
+runtime-only: a value for it (a runway `config` block, a test's `values`) fails boot with `ConfigInvalidError` naming
+the field and the variable, and `runway validate` refuses it before a deploy. A set `STACKRA_ENVIRONMENT` must name a
+Stackra environment, so a typo fails boot instead of reading as some environment (STA-2844, ADR 0296 as amended on
+2026-11-26).
+
 ## Secrets
 
 A `@Secret` field is resolved by name through `SecretStore` and held in a non-enumerable getter: it never appears in
@@ -108,6 +114,34 @@ export const env = hydrateEnv(EnvConfig, import.meta.env, { only: "public" });
 export const serverEnv = (raw: unknown) =>
   hydrateEnv(EnvConfig, { ...import.meta.env, ...(raw as object) });
 ```
+
+## The running environment
+
+`readEnvironment(raw, platform?)` is the one reader of the environment a process runs as. Every check that `dev` or
+`test` relaxes (memory stores, an unbound audit trail, dev sign-in, a memory scanner or nonce store) asks it, and
+`isDeployedEnvironment` is the one gate for "outside dev and test", so they all agree (STA-2844).
+
+- The answer is one of `StackraEnvironment`: `dev`, `test`, `preview`, `staging`, `production`. Any other value of
+  `STACKRA_ENVIRONMENT` (`prod`, `Production`, a typo) is refused with `ConfigInvalidError`; it never reads as some
+  environment.
+- It reads only the runtime: `STACKRA_ENVIRONMENT` in `raw` and what the serving platform reports (`platform`, the
+  shape of Encore's `appMeta().environment`), never a configuration value.
+- With no platform (a developer tool, a unit test) unset is `dev`. Under `encore run` unset is `dev`; under
+  `encore test` it is `test`.
+- On a deployed platform unset is derived: `production` for type `production`, `preview` for `ephemeral`, else the
+  platform's name when it is `preview`, `staging` or `production`, else `staging`. `dev` or `test` declared there is
+  refused, and so is a value the platform's type or name contradicts.
+- A self-hosted image without infra metadata (empty name, cloud `local`) is not a developer machine: unset is refused,
+  so it fails closed instead of running as `dev`.
+
+```ts
+import { isDeployedEnvironment, readEnvironment } from "@stackra/config";
+
+if (isDeployedEnvironment(readEnvironment(process.env))) refuseMemoryDefaults();
+```
+
+A service gets the platform's report from the generated `stackra-encore/<member>/environment.ts`, which calls
+`providePlatformEnvironment` of `@stackra/app/server` before the app loads.
 
 ## Testing
 

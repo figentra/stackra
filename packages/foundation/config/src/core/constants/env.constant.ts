@@ -19,7 +19,7 @@ import type { EnvValue } from "#core/types/env-value.type";
  * The environment value parsers.
  *
  * @example
- * const environment = env.enum(["dev", "preview", "staging", "production"]).default("dev").parse(process.env.STACKRA_ENVIRONMENT);
+ * const region = env.enum(["eu", "me"]).default("me").parse(process.env.STACKRA_REGION, "STACKRA_REGION");
  * const appHost = new URL(env.url().parse(process.env.EXPO_PUBLIC_APP_ORIGIN, "EXPO_PUBLIC_APP_ORIGIN")).host;
  */
 export const env = Object.freeze({
