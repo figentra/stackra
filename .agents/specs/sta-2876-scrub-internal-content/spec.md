@@ -31,7 +31,7 @@ doctor and starter. This change scrubs everything else and adds a guard so it st
 - **Public contract change**: breaking in `@stackra/runway/node`: `pullRequestPreviewHost(product, pullRequest, zone)` takes the zone, `PULL_REQUEST_PREVIEW_SETTINGS` loses `zone`, and a pull-request `publishProduct` refuses a root runway without `environments.preview.domains.pullRequestZone` (new optional field in the root schema, the zod schema and both JSON Schema copies). Additive: `AwsTestbedOptions.keyPair` in `@stackra/infra-testbed` and the stack config `keyPair`; the reusable workflow `runway-npm.yml` gains the input `pack-check`; `linear-reconcile.mjs` gains `--extra-repos`. `TESTBED_DEFAULTS.keyPair`, `keyFile` and `awsProfile` change value.
 - **Cross-service events**: none
 - **Tenancy and data**: none
-- **Security and privacy**: removes personal data (team members' names, a personal home folder and tunnel host) and internal infrastructure names (an account id, a dev zone, a vault path) from public files and tarballs; the guard stores the denied terms only as SHA-256 hashes
+- **Security and privacy**: removes personal data (team members' names, a personal home folder and tunnel host) and internal infrastructure names (an account id, a dev zone, a vault path) from public files and tarballs; the repository holds neither the denied terms nor their hashes (a short name's hash can be recovered); the hashed list is a private policy (STA-2911)
 - **Secrets**: none (no secret is read or named; two repository variables, `TESTBED_KEY_PAIR` and `LINEAR_RECONCILE_EXTRA_REPOS`, hold non-secret names)
 - **ADR needed**: no (ADR 0291 keeps a port's reference, not its source's private paths; ADR 0453 ships what the tarball holds; ADR 0289 decision 7 gives the pull-request host's shape)
 - **New dependencies**: none
@@ -72,7 +72,7 @@ doctor and starter. This change scrubs everything else and adds a guard so it st
 
 ## Glossary
 
-- **Denied term**: an internal product, person, host or cloud account id, kept in the guard as a SHA-256 hash with its length and reason.
+- **Denied term**: an internal product, person, host or cloud account id, kept as a SHA-256 hash with its length and reason in a private policy (STA-2911), never in this repository.
 - **Personal home folder**: `/Users/<name>/` or `/home/<name>/` where the name is not a placeholder (`me`, `runner`, `ubuntu`, `<you>` …).
 - **Approval line**: a line of a spec that says `Approved by …` or `**Approver**:`; only the approver writes it.
 
@@ -147,7 +147,7 @@ Figentra's internal zone.
 ### Non-functional Requirements
 
 - **NFR-001**: THE guard SHALL read the whole repository in under 10 seconds on a CI runner (6 s measured on the build box). Sources: SRC-001
-- **NFR-002**: THE guard SHALL not publish the terms it forbids (hashes only). Sources: SRC-001
+- **NFR-002**: THE repository SHALL hold no denied term and no hash of one; the guard reads the hashed list from a private policy (STA-2911). Sources: SRC-001
 
 ### Key Entities
 
@@ -188,11 +188,17 @@ Figentra's internal zone.
 ## Amendments
 
 - 2026-11-27 · review of the branch: (1) `apply-testbed.yml` refused nothing when `TESTBED_KEY_PAIR` was unset and fell back to a default pair nobody had checked exists, so the next apply could rewrite the launch template to a missing pair; it now refuses, and the runbook lists the variable. (2) The runbook's Retire step, after the rename, told operators to delete the live `stackra-testbed` security groups; it now describes the old CI group without naming it, and the mobile-onboarding example no longer claims live store records. (3) The guard's hard-coded approval-line exemption had no issue and grew with each approval; it is removed, today's 12 lines are line entries under STA-2905, and stale line entries are reported.
+- 2026-11-27 · CTO ruling on PR #1197: (1) three ADRs (0172, 0290, 0524) kept bare `<account-id>` and `<dev-zone>`
+  placeholders, which the docs MDX build reads as unclosed tags; they are now code spans. (2) A SHA-256 of a short
+  name can be recovered from a guess, so a hash of a person's or product's name in a public file publishes the name:
+  the guard's hashed entries leave the repository and `DENIED` starts empty; STA-2911 reads them from a private
+  policy. Until that policy is read in CI, AC-003 and AC-004 hold for home folders and the entries a caller adds.
 
 ## Status history
 
 - 2026-11-27 · — → Draft · spec author · written from the branch's diff and the audit item
 - 2026-11-27 · Draft → Clarified · spec author · scope fixed by the item text (CLI and approval lines excluded)
 - 2026-11-27 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)

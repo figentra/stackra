@@ -352,6 +352,11 @@ jobs:
           pnpm exec turbo run lint typecheck build --filter=@figentra/mobile --filter=@figentra/playground
           --continue=dependencies-successful
 
+      # The gate leaves @figentra/mobile out, so its unit tests run here; among them the guard that Metro accepts the
+      # JSON import attributes of the workspace packages the app bundles from source (STA-2893).
+      - name: Test the mobile app
+        run: pnpm exec turbo run test --filter=@figentra/mobile
+
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest

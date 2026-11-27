@@ -2,17 +2,20 @@
  * Stackra file contract:
  * Purpose: `writeDevFacts(root, lane)`, the writer `readDevFacts` reads back: computes each member runway's dev
  *          facts (`environments.dev` url, port, host, https and open, the Electron dev ports, every port shifted by
- *          `lane × lanes.portStep`; the TLS files the root's `environments.dev.https` names) and writes
- *          `.stackra/dev/ports.json` under `root`.
+ *          `lane × lanes.portStep`; the TLS files the root's `environments.dev.https` names), the dev infra addresses
+ *          (the gateway's, and each dev compose container's as `devComposeOf` plans it, so a `from-port: valkey` var
+ *          resolves) and writes `.stackra/dev/ports.json` under `root`.
  * Boundary: node only; checks the document with `parseRunwayFacts` before writing, so a reader never sees a bad file.
- *           A member without a dev port is left out (it has no dev server). Infra ports are not written yet.
+ *           A member without a dev port is left out (it has no dev server). Infra blocks `devComposeOf` refuses are
+ *           left out here, since `stackra dev` reports the refusal; Encore's own Postgres has no address here.
  * Runtime: node
- * Governing contract: ADR 0296 (decision 1), ADR 0295 (decision 5); STA-2029.
+ * Governing contract: ADR 0296 (decision 1), ADR 0295 (decision 5); STA-2029; STA-2664 (item 6).
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { DEV_FACTS_PATH } from "#core/constants/dev-facts-path.constant";
+import { devComposeOf } from "#core/functions/dev-compose-of.function";
 import { parseRunwayFacts } from "#core/functions/parse-runway-facts.function";
 import type { RunwayFacts } from "#core/types/runway-facts.type";
 import { readRunways } from "#node/functions/read-runways.function";
@@ -43,6 +46,7 @@ export function writeDevFacts(root: string, lane = 0): RunwayFacts {
           {
             lanes?: { enabled?: boolean; portStep?: number };
             https?: { cert?: string; key?: string };
+            infra?: Record<string, Record<string, unknown>>;
           }
         >
       | undefined
@@ -82,9 +86,26 @@ export function writeDevFacts(root: string, lane = 0): RunwayFacts {
     ];
   });
 
+  // The gateway is `encore run`'s own port; every other address is a dev compose container's.
+  const gatewayPort = dev?.infra?.["gateway"]?.["port"];
+  const gateway = shift(typeof gatewayPort === "number" ? gatewayPort : undefined);
+  const compose = devComposeOf({
+    // Only the addresses are read here; the project name is the Compose file's.
+    project: rootRunway.project ?? "stackra",
+    infra: dev?.infra,
+    lanes: dev?.lanes,
+    lane,
+  });
+  const infra = Object.fromEntries([
+    ...(gateway === undefined
+      ? []
+      : [["gateway", { port: gateway, url: `http://localhost:${gateway}` }] as const]),
+    ...compose.services.map(({ name, port, url }) => [name, { port, url }] as const),
+  ]);
+
   const file = join(root, DEV_FACTS_PATH);
   const facts = parseRunwayFacts(
-    { version: 1, environment: "dev", lane, members: Object.fromEntries(entries) },
+    { version: 1, environment: "dev", lane, infra, members: Object.fromEntries(entries) },
     file,
   );
   mkdirSync(dirname(file), { recursive: true });

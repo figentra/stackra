@@ -67,7 +67,7 @@ alternative is named.
    certificate is needed. Tunnels use `<app>-<dev>` and staging uses `<app>-staging`. Pull-request previews use the single
    host of [0289](/adr/0289-runway-and-environments-workers-one-encore-app-previews-and-publishing) decision 7, which
    supersedes the `pr-<n>-<app>` example in the answer. Extra custom names are welcome as one-label hosts. Vanity
-   nameservers (ns1.<dev-zone>) are skipped, because they are a Business-plan feature with no benefit here.
+   nameservers (`ns1.<dev-zone>`) are skipped, because they are a Business-plan feature with no benefit here.
 3. **Tenants point at figentra.com (CF6).** The fallback origin for Cloudflare for SaaS is a production name under
    figentra.com, for example `cname.figentra.com`. The dev zone serves dev only, so dev and tenant traffic keep separate
    access and WAF rules. This amends [0175](/adr/0175-edge-domains-and-tls).
