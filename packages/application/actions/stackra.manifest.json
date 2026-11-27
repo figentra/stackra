@@ -474,6 +474,16 @@
       "config": "actions.stores",
       "class": "StoresConfig",
       "field": "valkeyUrl"
+    },
+    {
+      "name": "STACKRA_ENVIRONMENT",
+      "kind": "config",
+      "type": "enum",
+      "values": ["dev", "test", "preview", "staging", "production"],
+      "required": false,
+      "config": "actions.stores",
+      "class": "StoresConfig",
+      "field": "environment"
     }
   ],
   "services": [

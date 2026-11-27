@@ -2,12 +2,17 @@
  * Stackra file contract:
  * Purpose: unit tests of `bootApp`: each configuration class is built and bound under its base (a host override
  *          answers for both), the wiring is bound as `AppWiring`, the bound `ErrorReporter` is picked over the console
- *          fallback, the environment answers the SecretStore port, given overrides win over the built configuration, an invalid configuration fails boot, and the
- *          roots option boots only the given modules.
+ *          fallback, the environment answers the SecretStore port, given overrides win over the built configuration, an invalid configuration fails boot, a
+ *          deployed environment refuses the memory action stores (STA-2798), runway's values of the running environment
+ *          win over the defaults (ADR 0296) for the environment the one reader names, a misspelt environment or a runway
+ *          value for the runtime-only environment fails boot (STA-2844), and the roots option boots only the given
+ *          modules.
  * Boundary: test only; boots real containers over small wirings.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 and 8); ADR 0294 (decision 19).
+ * Governing contract: ADR 0022; ADR 0269; ADR 0295 (decisions 7 and 8); ADR 0294 (decision 19); ADR 0266 (decision 2);
+ *                     ADR 0296 (decision 1; amendment 2026-11-26); STA-2844; STA-2798.
  */
+import { StoresConfig } from "@stackra/actions";
 import { buildConfig, ConfigInvalidError } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
 import { Driver, Module, Service } from "@stackra/container";
@@ -26,6 +31,13 @@ class SiteI18nConfig extends I18nConfig {
 /** A config that breaks the shipped rule: the default is not a shipped locale. */
 class BrokenI18nConfig extends I18nConfig {
   override defaultLocale: Locale = Locale.Ar;
+}
+
+/** A host that keeps both action stores in Postgres. */
+class DurableStoresConfig extends StoresConfig {
+  override idempotency = "postgres" as const;
+
+  override rateLimit = "postgres" as const;
 }
 
 class MemoryErrorReporterDriver extends Driver(ErrorReporter) {
@@ -109,6 +121,76 @@ describe("bootApp", () => {
         config: [{ key: "i18n", provide: I18nConfig, override: BrokenI18nConfig }],
       }),
     ).rejects.toBeInstanceOf(ConfigInvalidError);
+  });
+
+  it("fails boot in a deployed environment that keeps the action stores in memory (STA-2798)", async () => {
+    const wiring = { member: "orders", config: [{ key: "actions.stores", provide: StoresConfig }] };
+    for (const environment of ["preview", "staging", "production"])
+      await expect(bootApp(wiring, { env: { STACKRA_ENVIRONMENT: environment } })).rejects.toThrow(
+        new RegExp(
+          `^StoresConfig is invalid: idempotency: .*${environment} refuses it.*; rateLimit: `,
+        ),
+      );
+    const dev = await bootApp(wiring, { env: {} });
+    expect(dev.container.get(StoresConfig).idempotency).toBe("memory");
+    const durable = await bootApp(
+      {
+        ...wiring,
+        config: [{ key: "actions.stores", provide: StoresConfig, override: DurableStoresConfig }],
+      },
+      { env: { STACKRA_ENVIRONMENT: "production" } },
+    );
+    expect(durable.container.get(StoresConfig).environment).toBe("production");
+  });
+
+  it("applies runway's values of the running environment, so runway selects the action stores (STA-2798)", async () => {
+    const wiring = { member: "orders", config: [{ key: "actions.stores", provide: StoresConfig }] };
+    const runway = {
+      dev: { "actions.stores": { idempotency: "valkey" } },
+      production: { "actions.stores": { idempotency: "postgres", rateLimit: "postgres" } },
+    };
+    // production with runway's durable stores boots, as `stackra db seed --env production` does
+    const deployed = await bootApp(wiring, {
+      env: { STACKRA_ENVIRONMENT: "production" },
+      runway,
+    });
+    expect(deployed.container.get(StoresConfig).idempotency).toBe("postgres");
+    expect(deployed.container.get(StoresConfig).rateLimit).toBe("postgres");
+    // unset reads as dev; an environment runway does not name gets none of another's values
+    const dev = await bootApp(wiring, { env: {}, runway });
+    expect(dev.container.get(StoresConfig).idempotency).toBe("valkey");
+    await expect(
+      bootApp(wiring, { env: { STACKRA_ENVIRONMENT: "staging" }, runway }),
+    ).rejects.toThrow(/^StoresConfig is invalid: idempotency: .*staging refuses it/);
+  });
+
+  it("names the runway environment through the one reader: a misspelt one fails boot (STA-2844)", async () => {
+    // no configuration here maps STACKRA_ENVIRONMENT, so only the reader can refuse the typo
+    const wiring = { member: "orders", config: [{ key: "i18n", provide: I18nConfig }] };
+    const runway = {
+      production: { i18n: { locales: [Locale.En, Locale.Ar], defaultLocale: Locale.Ar } },
+    };
+    for (const typo of ["prod", "Production"])
+      await expect(bootApp(wiring, { env: { STACKRA_ENVIRONMENT: typo }, runway })).rejects.toThrow(
+        /^env is invalid: STACKRA_ENVIRONMENT: is not a Stackra environment/,
+      );
+    const production = await bootApp(wiring, {
+      env: { STACKRA_ENVIRONMENT: " production " },
+      runway,
+    });
+    expect(production.container.get(I18nConfig).defaultLocale).toBe(Locale.Ar);
+  });
+
+  it("refuses a runway value that names the environment, so runway cannot make production read as dev (STA-2844)", async () => {
+    const wiring = { member: "orders", config: [{ key: "actions.stores", provide: StoresConfig }] };
+    const runway = {
+      production: { "actions.stores": { environment: "dev", idempotency: "memory" } },
+    };
+    await expect(
+      bootApp(wiring, { env: { STACKRA_ENVIRONMENT: "production" }, runway }),
+    ).rejects.toThrow(
+      /^StoresConfig is invalid: environment: is safety-critical: it is read from STACKRA_ENVIRONMENT/,
+    );
   });
 
   it("boots the given root modules", async () => {

@@ -201,6 +201,10 @@ export async function structureFindings(
         checkRunwayFiles({
           files: runwayFiles,
           read: (p) => fillTemplateTokens(p, text(p)),
+          readManifest: (p) => {
+            const manifest = maybe(p);
+            return manifest === undefined ? undefined : (JSON.parse(manifest) as unknown);
+          },
           runway,
           services: members
             .map(({ dir }) => dir)
