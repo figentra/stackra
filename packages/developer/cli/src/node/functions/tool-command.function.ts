@@ -24,6 +24,7 @@ import { join } from "node:path";
 import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
 import { watchDocsSite } from "@stackra/gen/node";
 
+import { devInfraEnv } from "#node/dev-infra/functions/dev-infra-env.function";
 import { devSecretEnv } from "#node/dev-secrets/functions/dev-secret-env.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { checkDocsLinks } from "#node/functions/check-docs-links.function";
@@ -128,9 +129,14 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
           watcher.close();
         }
       }
-      // A local run gets the workspace's generated dev values for the secrets this member declares (STA-2679).
-      if (task === "dev")
-        return runProcess({ ...tool, env: { ...tool.env, ...devSecretEnv(cwd) } }, io);
+      // A local run gets the dev compose's addresses (STA-2664), then the workspace's generated dev values for the
+      // secrets this member declares (STA-2679), which win over them. The compose sees the run's whole environment,
+      // so its placeholder AWS keys stay out when the run has a credential of its own.
+      if (task === "dev") {
+        const secrets = devSecretEnv(cwd);
+        const infra = devInfraEnv(cwd, { ...process.env, ...tool.env, ...secrets });
+        return runProcess({ ...tool, env: { ...tool.env, ...infra, ...secrets } }, io);
+      }
       return runProcess(tool, io);
     },
   };
