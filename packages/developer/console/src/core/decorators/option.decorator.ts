@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `@Option(options?)`, the field decorator that binds a command field to `--<kebab-name>` (and `-<short>`).
  * Boundary: made with `createDecorator`, so it records its options and installs no accessor; it may mark commands
- *           only. Written bare (`@Option`) when it has no options.
+ *           and shared option sets (`OptionSet`, STA-2924) only. Written bare (`@Option`) when it has no options.
  * Runtime: isomorphic
  * Governing contract: STA-1730 spec FR-002 and FR-003; ADR 0294 (decision 6).
  */
@@ -14,7 +14,7 @@ import type { OptionOptions } from "#contracts/types/option-options.type";
 const OPTION = createDecorator<OptionOptions>({
   kind: "option",
   target: DecoratorTarget.Field,
-  kinds: ["command"],
+  kinds: ["command", "option_set"],
 });
 
 /**

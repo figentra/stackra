@@ -2,11 +2,13 @@
  * Stackra file contract:
  * Purpose: `readCommand(type)`, the structure of a command class: its kind options, its `@Argument` and `@Option`
  *          fields in declaration order with their value kinds (from `@Str`, `@Int`, `@Num`, `@List`), defaults and
- *          bounds; read once per class and frozen.
+ *          bounds, then the `@Option` fields of each shared set it takes with `@Options` (each marked with its `set`);
+ *          read once per class and frozen. A flag a set shares with another option of the command is refused.
  * Boundary: reads decorator records and builds one instance with no arguments for the field initialisers; never runs
  *           `handle`. Refuses a wrong declaration with `ConsoleDeclarationError` (FR-005).
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-001 to FR-005; ADR 0294 (decisions 6 and 25); ADR 0506 (amendment 2026-11-03).
+ * Governing contract: STA-1730 spec FR-001 to FR-005; ADR 0294 (decisions 6 and 25); ADR 0506 (amendment 2026-11-03);
+ *                     STA-2924 spec FR-001 to FR-003.
  */
 import { kindOf } from "@stackra/container";
 import { Int, List, Num, Str } from "@stackra/validation";
@@ -15,11 +17,15 @@ import type { CommandOptions } from "#contracts/types/command-options.type";
 import { GLOBAL_OPTIONS } from "#core/constants/global-options.constant";
 import { Argument } from "#core/decorators/argument.decorator";
 import { Option } from "#core/decorators/option.decorator";
+import { Options } from "#core/decorators/options.decorator";
 import { ConsoleDeclarationError } from "#core/errors/console-declaration.error";
 import type { CommandClass } from "#core/types/command-class.type";
 import type { CommandField } from "#contracts/types/command-field.type";
 import type { CommandStructure } from "#contracts/types/command-structure.type";
 import type { ValueKind } from "#contracts/types/value-kind.type";
+
+/** A class whose fields carry the decorators: a command, or a shared option set. */
+type FieldHolder = abstract new (...args: never[]) => object;
 
 /** Structures already read, by class. */
 const READ = new WeakMap<CommandClass, CommandStructure>();
@@ -38,7 +44,7 @@ const kebab = (property: string) =>
   property.replaceAll(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 
 /** The field initialisers, read from an instance built with no arguments; empty when the constructor throws. */
-function defaultsOf(type: CommandClass): Readonly<Record<string, unknown>> {
+function defaultsOf(type: FieldHolder): Readonly<Record<string, unknown>> {
   try {
     return Reflect.construct(type, []) as Record<string, unknown>;
   } catch {
@@ -47,7 +53,7 @@ function defaultsOf(type: CommandClass): Readonly<Record<string, unknown>> {
 }
 
 /** The value kind and bounds of one field, from the validation decorators on it. */
-function valueOf(type: CommandClass, property: string, role: CommandField["role"]) {
+function valueOf(type: FieldHolder, property: string, role: CommandField["role"]) {
   const int = Int.members(type).get(property);
   const num = Num.members(type).get(property);
   const str = Str.members(type).get(property);
@@ -137,47 +143,58 @@ export function readCommand(type: CommandClass): CommandStructure {
   }
 
   const optionFields: CommandField[] = [];
-  for (const [key, given] of optionRecords) {
-    const property = String(key);
-    const flag = kebab(property);
-    if (RESERVED_LONG.has(flag))
-      throw new ConsoleDeclarationError(label, `--${flag} (${property}) is a global option`);
-    if (given.short !== undefined) {
-      if (!/^[A-Za-z]$/.test(given.short))
-        throw new ConsoleDeclarationError(
-          label,
-          `-${given.short} (${property}) must be one letter`,
-        );
-      if (RESERVED_SHORT.has(given.short))
-        throw new ConsoleDeclarationError(
-          label,
-          `-${given.short} (${property}) is a global option`,
-        );
-      claim(`-${given.short}`, property);
+  // The `@Option` fields of `holder` (the command, or a shared set held in the command field `set`).
+  const readOptions = (holder: FieldHolder, set?: string) => {
+    const fieldDefaults = set === undefined ? defaults : defaultsOf(holder);
+    for (const [key, given] of Option.members(holder)) {
+      const property = String(key);
+      const named = set === undefined ? property : `${set}.${property}`;
+      const flag = kebab(property);
+      if (RESERVED_LONG.has(flag))
+        throw new ConsoleDeclarationError(label, `--${flag} (${named}) is a global option`);
+      if (given.short !== undefined) {
+        if (!/^[A-Za-z]$/.test(given.short))
+          throw new ConsoleDeclarationError(label, `-${given.short} (${named}) must be one letter`);
+        if (RESERVED_SHORT.has(given.short))
+          throw new ConsoleDeclarationError(label, `-${given.short} (${named}) is a global option`);
+        claim(`-${given.short}`, named);
+      }
+      claim(flag, named);
+      // An option with choices takes one of them, so it is a string even without @Str.
+      const read = valueOf(holder, property, "option");
+      const value =
+        given.choices !== undefined && read.kind === "boolean"
+          ? { ...read, kind: "string" as const }
+          : read;
+      const initial = fieldDefaults[property];
+      optionFields.push(
+        Object.freeze({
+          property,
+          flag,
+          role: "option",
+          ...value,
+          required: false,
+          ...(initial === undefined ? {} : { default: initial }),
+          ...(given.short === undefined ? {} : { short: given.short }),
+          ...(given.description === undefined ? {} : { description: given.description }),
+          ...(given.secret === undefined ? {} : { secret: given.secret }),
+          ...(given.prompt === undefined ? {} : { prompt: given.prompt }),
+          ...(given.choices === undefined ? {} : { choices: Object.freeze([...given.choices]) }),
+          ...(set === undefined ? {} : { set }),
+        }),
+      );
     }
-    claim(flag, property);
-    // An option with choices takes one of them, so it is a string even without @Str.
-    const read = valueOf(type, property, "option");
-    const value =
-      given.choices !== undefined && read.kind === "boolean"
-        ? { ...read, kind: "string" as const }
-        : read;
-    const initial = defaults[property];
-    optionFields.push(
-      Object.freeze({
-        property,
-        flag,
-        role: "option",
-        ...value,
-        required: false,
-        ...(initial === undefined ? {} : { default: initial }),
-        ...(given.short === undefined ? {} : { short: given.short }),
-        ...(given.description === undefined ? {} : { description: given.description }),
-        ...(given.secret === undefined ? {} : { secret: given.secret }),
-        ...(given.prompt === undefined ? {} : { prompt: given.prompt }),
-        ...(given.choices === undefined ? {} : { choices: Object.freeze([...given.choices]) }),
-      }),
-    );
+  };
+  readOptions(type);
+  // Each shared set joins the options once; a flag it shares with the command or another set is refused by `claim`.
+  for (const [key, set] of Options.members(type)) {
+    const property = String(key);
+    if (optionRecords.has(key) || argumentRecords.has(key))
+      throw new ConsoleDeclarationError(
+        label,
+        `${property} holds an @Options set and is also an @Argument or @Option`,
+      );
+    readOptions(set, property);
   }
 
   if (options.passthrough && argumentFields.length + optionFields.length > 0)

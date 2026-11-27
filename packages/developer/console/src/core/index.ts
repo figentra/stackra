@@ -8,10 +8,12 @@
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision.
  */
 export { Command } from "#core/bases/command.base";
+export { OptionSet } from "#core/bases/option-set.base";
 export { EXIT_CODE } from "#core/constants/exit-code.constant";
 export { STACKRA_THEME } from "#core/constants/stackra-theme.constant";
 export { Argument } from "#core/decorators/argument.decorator";
 export { Option } from "#core/decorators/option.decorator";
+export { Options } from "#core/decorators/options.decorator";
 export { TextRendererDriver } from "#core/drivers/text-renderer.driver";
 export { CommandError } from "#core/errors/command-error.error";
 export { BreakGlassRequiredError } from "#core/errors/break-glass-required.error";
@@ -42,6 +44,7 @@ export type { ConsoleProcess } from "#core/types/console-process.type";
 export type { ConsolePrompt } from "#core/types/console-prompt.type";
 export type { ConsoleRunOptions } from "#core/types/console-run-options.type";
 export type { ConsoleTool } from "#core/types/console-tool.type";
+export type { OptionSetClass } from "#core/types/option-set-class.type";
 export type { PromptPaint } from "#core/types/prompt-paint.type";
 export type { RenderContext } from "#core/types/render-context.type";
 export type { ToolPorts } from "#core/types/tool-ports.type";

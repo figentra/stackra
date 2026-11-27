@@ -4,7 +4,7 @@
  *          flag, its role, its value kind, whether it is required, its default and its bounds.
  * Boundary: a type only; serialisable, built once per class.
  * Runtime: isomorphic
- * Governing contract: STA-1730 spec FR-002 to FR-005.
+ * Governing contract: STA-1730 spec FR-002 to FR-005; STA-2924 spec FR-001.
  */
 import type { ValueKind } from "#contracts/types/value-kind.type";
 
@@ -54,4 +54,7 @@ export interface CommandField {
 
   /** The only values it takes. */
   readonly choices?: readonly string[];
+
+  /** The command field holding the shared option set this option comes from (`@Options`), when it is shared. */
+  readonly set?: string;
 }
