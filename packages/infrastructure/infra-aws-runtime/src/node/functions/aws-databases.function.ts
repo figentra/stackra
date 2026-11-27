@@ -33,6 +33,7 @@ import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import { DATABASE_SETUP_SETTINGS } from "#node/constants/database-setup-settings.constant";
 import { RESOURCE_SECRETS_SETTINGS } from "#node/constants/resource-secrets-settings.constant";
 import { WORKLOAD_MIGRATION_PROVIDER } from "#node/constants/workload-migration-provider.constant";
+import { taskExecutionRole } from "#node/functions/task-execution-role.function";
 import type { AwsRuntimeOptions } from "#node/types/aws-runtime-options.type";
 
 /** The admin user every database is created with; services get their own roles (ADR 0238 decision 3). */
@@ -46,9 +47,6 @@ const NAME_LIMIT = 63;
 
 /** Environments whose databases are throwaway. */
 const THROWAWAY = new Set(["dev", "preview"]);
-
-/** The AWS-managed policy every task execution role carries (image pulls, log writes). */
-const EXECUTION_POLICY = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy";
 
 /** The longest ECS cluster name. */
 const CLUSTER_NAME_LIMIT = 255;
@@ -70,23 +68,7 @@ function setupShared(
 ): SetupShared {
   const prefix = resourceName([plan.project, plan.environment, "db-setup"], CLUSTER_NAME_LIMIT);
   const tags = { ...options.tags, env: plan.environment, service: "db-setup" };
-  const role = new aws.iam.Role(`${prefix}-execution`, {
-    assumeRolePolicy: JSON.stringify({
-      Version: "2012-10-17",
-      Statement: [
-        {
-          Effect: "Allow",
-          Principal: { Service: "ecs-tasks.amazonaws.com" },
-          Action: "sts:AssumeRole",
-        },
-      ],
-    }),
-    tags,
-  });
-  new aws.iam.RolePolicyAttachment(`${prefix}-execution`, {
-    role: role.name,
-    policyArn: EXECUTION_POLICY,
-  });
+  const role = taskExecutionRole(`${prefix}-execution`, tags);
   return {
     cluster: new aws.ecs.Cluster(prefix, {
       name: prefix,

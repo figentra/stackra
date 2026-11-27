@@ -33,10 +33,8 @@ import { workloadParameter } from "#core/functions/workload-parameter.function";
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import { CLOUDFLARE_IPV4_RANGES } from "#node/constants/cloudflare-ipv4-ranges.constant";
 import { WORKLOAD_MIGRATION_PROVIDER } from "#node/constants/workload-migration-provider.constant";
+import { taskExecutionRole } from "#node/functions/task-execution-role.function";
 import type { AwsRuntimeOptions } from "#node/types/aws-runtime-options.type";
-
-/** The AWS-managed policy every task execution role carries (image pulls, log writes). */
-const EXECUTION_POLICY = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy";
 
 /** ALB and target group names allow 32 characters. */
 const BALANCER_NAME_LIMIT = 32;
@@ -127,23 +125,7 @@ export function awsWorkloads(
 
   const region = aws.getRegionOutput();
   const caller = aws.getCallerIdentityOutput();
-  const executionRole = new aws.iam.Role(`${prefix}-execution`, {
-    assumeRolePolicy: JSON.stringify({
-      Version: "2012-10-17",
-      Statement: [
-        {
-          Effect: "Allow",
-          Principal: { Service: "ecs-tasks.amazonaws.com" },
-          Action: "sts:AssumeRole",
-        },
-      ],
-    }),
-    tags: baseTags,
-  });
-  new aws.iam.RolePolicyAttachment(`${prefix}-execution`, {
-    role: executionRole.name,
-    policyArn: EXECUTION_POLICY,
-  });
+  const executionRole = taskExecutionRole(`${prefix}-execution`, baseTags);
   new aws.iam.RolePolicy(`${prefix}-parameters`, {
     role: executionRole.id,
     policy: pulumi.jsonStringify({
