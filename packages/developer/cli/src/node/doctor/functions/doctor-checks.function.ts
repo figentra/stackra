@@ -34,8 +34,12 @@ import type { DoctorResult } from "#node/doctor/types/doctor-result.type";
 import type { DoctorWorkspace } from "#node/doctor/types/doctor-workspace.type";
 import { registryOrigin } from "#node/functions/registry-origin.function";
 
-/** Encore's local API and its development dashboard. */
-const ENCORE_PORTS = [4000, 9400];
+/**
+ * The gateway `encore run` serves on when the workspace names none. The development dashboard (9400) is not checked:
+ * one Encore daemon serves it for every app on the machine, so a running daemon holds it and a second product's
+ * `encore run` shares it (STA-2840).
+ */
+const ENCORE_GATEWAY = 4000;
 
 /** Below this much free disk, an install or an image pull may fail. */
 const MIN_FREE_BYTES = 5 * 1024 ** 3;
@@ -121,7 +125,10 @@ export async function doctorChecks(
     });
   }
 
-  const ports = [...(needs.has("services") ? ENCORE_PORTS : []), ...workspace.devPorts];
+  const ports = [
+    ...(needs.has("services") ? [workspace.gatewayPort ?? ENCORE_GATEWAY] : []),
+    ...workspace.devPorts,
+  ];
   const busy: number[] = [];
   for (const port of ports) if (!(await portFree(port))) busy.push(port);
   if (ports.length > 0)

@@ -3,12 +3,15 @@
  * Purpose: hold `stackra doctor`'s checks to their contract: missing mise tools, where sops finds the Google login, the AWS
  *          identity without echoing it, a report that fails only on a required check, and the machine-readiness
  *          parsers: needs by workspace (a web-only app asks for nothing more), dropped edge addresses, the Docker
- *          engine state and an available iOS simulator.
+ *          engine state and an available iOS simulator, and the dev ports a lane checks (STA-2840).
  * Boundary: pure functions on injected command output; runs no command.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (tests live in tests folders); ADR 0182 (testing strategy); STA-1952 spec User Story 0.
  */
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { test } from "@stackra/testing";
 
@@ -18,6 +21,7 @@ import { doctorExitCode } from "#node/doctor/functions/doctor-exit-code.function
 import { doctorNeeds } from "#node/doctor/functions/doctor-needs.function";
 import { droppedAddresses } from "#node/doctor/functions/dropped-addresses.function";
 import { googleCredentialsPath } from "#node/doctor/functions/google-credentials-path.function";
+import { readDoctorWorkspace } from "#node/doctor/functions/read-doctor-workspace.function";
 import { publishedDependency } from "#node/doctor/functions/published-dependency.function";
 import { missingMiseTools } from "#node/doctor/functions/missing-mise-tools.function";
 import { renderDoctor } from "#node/doctor/functions/render-doctor.function";
@@ -160,4 +164,25 @@ test("simulatorAvailable needs an available iOS device", () => {
     }),
   );
   assert.ok(!simulatorAvailable(null));
+});
+
+test("readDoctorWorkspace shifts the gateway and member dev ports by the lane", () => {
+  const root = mkdtempSync(join(tmpdir(), "doctor-lane-"));
+  writeFileSync(join(root, "pnpm-workspace.yaml"), "packages: ['services/*']\n");
+  writeFileSync(join(root, "package.json"), "{}\n");
+  writeFileSync(
+    join(root, "runway.yaml"),
+    "environments:\n  dev:\n    lanes:\n      portStep: 100\n    infra:\n      gateway:\n        port: 4100\n",
+  );
+  mkdirSync(join(root, "services", "orders"), { recursive: true });
+  writeFileSync(join(root, "services", "orders", "package.json"), '{"name":"@acme/orders"}\n');
+  writeFileSync(
+    join(root, "services", "orders", "runway.yaml"),
+    "environments:\n  dev:\n    port: 4019\n",
+  );
+  assert.deepEqual(readDoctorWorkspace(root).devPorts, [4019]);
+  assert.equal(readDoctorWorkspace(root).gatewayPort, 4100);
+  const lane3 = readDoctorWorkspace(root, root, 3);
+  assert.deepEqual(lane3.devPorts, [4319]);
+  assert.equal(lane3.gatewayPort, 4400);
 });

@@ -4,7 +4,7 @@
  *          the variables it adds to the environment.
  * Boundary: type only; `resolveTool` builds it and `runProcess` starts it without a shell.
  * Runtime: node
- * Governing contract: ADR 0295 (decision 5: tools read the configs gen writes into `.stackra/`).
+ * Governing contract: ADR 0295 (decision 5: tools read the configs gen writes into `.stackra/`); STA-2840 (`signal`).
  */
 
 /** One tool process. */
@@ -23,4 +23,7 @@ export type ToolRun = {
 
   /** How long it may run before it is stopped and answers 124; no limit when omitted. */
   readonly timeoutMs?: number;
+
+  /** Stops the tool (SIGTERM, SIGKILL 5 s later) when it aborts: a root dev run ending stops its other processes. */
+  readonly signal?: AbortSignal;
 };

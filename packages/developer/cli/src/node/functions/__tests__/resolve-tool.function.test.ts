@@ -10,7 +10,7 @@
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
@@ -162,6 +162,25 @@ describe("resolveTool", () => {
       "dist",
       "--config",
       ".stackra/wrangler.jsonc",
+    ]);
+  });
+
+  it("serves a worker on its lane's dev port from the dev facts, so Workers never share 8787", () => {
+    generated("wrangler.jsonc");
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages: []\n");
+    mkdirSync(join(root, ".stackra", "dev"), { recursive: true });
+    writeFileSync(
+      join(root, ".stackra", "dev", "ports.json"),
+      JSON.stringify({ version: 1, members: { [basename(root)]: { port: 8887 } } }),
+    );
+    expect(resolveTool("dev", member("worker"), {}).args).toEqual([
+      "dev",
+      "--config",
+      ".stackra/wrangler.jsonc",
+      "--port",
+      "8887",
+      "--inspector-port",
+      "18887",
     ]);
   });
 

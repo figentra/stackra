@@ -9,7 +9,7 @@
  *           A member without a dev port is left out (it has no dev server). Infra blocks `devComposeOf` refuses are
  *           left out here, since `stackra dev` reports the refusal; Encore's own Postgres has no address here.
  * Runtime: node
- * Governing contract: ADR 0296 (decision 1), ADR 0295 (decision 5); STA-2029; STA-2664 (item 6).
+ * Governing contract: ADR 0296 (decision 1), ADR 0295 (decision 5); STA-2029; STA-2664 (item 6); STA-2840 (the gateway port root `stackra dev` reads).
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";

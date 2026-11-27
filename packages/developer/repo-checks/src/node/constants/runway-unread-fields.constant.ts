@@ -27,7 +27,6 @@ const APP_HEALTH = /\bhealth\??\.(?:path|expects)\b/;
 
 /** The runway fields set but not read yet, with the work that reads each (STA-2001). */
 export const RUNWAY_UNREAD_FIELDS: readonly RunwayUnreadField[] = [
-  { kind: "root", path: "environments.*.lanes.from", reader: DEV, access: /\blanes\??\.from\b/ },
   {
     kind: "root",
     path: "environments.*.proxy",

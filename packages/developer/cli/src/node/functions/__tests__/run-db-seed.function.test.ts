@@ -3,10 +3,11 @@
  * Purpose: unit tests of `runDbSeed`: an unknown profile is a usage error; on production `demo`, `test` and `--again`
  *          are refused without `allowProduction`, and an allowed production run prints who ran it; a member without a
  *          seed entry has no seeders; otherwise the member is built, then its seed entry runs with the profile, module,
- *          `--again` and the actor, and a failed build stops there.
+ *          `--again` and the actor (a member with no root tsdown config, a service, builds the seed entry alone), and a
+ *          failed build stops there.
  * Boundary: test only; the member is a temp folder and the processes are replaced, so nothing is built or seeded.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0190; STA-1709.
+ * Governing contract: ADR 0022 (test placement); ADR 0190; STA-1709; STA-2840.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -75,6 +76,7 @@ describe(runDbSeed, () => {
 
   it("builds the member, then runs its seed entry with the flags and the actor", async () => {
     withSeedEntry();
+    writeFileSync(join(cwd, "tsdown.config.ts"), "");
     const { io } = captureIo();
     expect(
       await runDbSeed({
@@ -103,6 +105,31 @@ describe(runDbSeed, () => {
       ],
     ]);
     expect(vi.mocked(runProcess).mock.calls[1]?.[0].env).toEqual({ STACKRA_ENVIRONMENT: "test" });
+  });
+
+  it("builds only the seed entry of a member with no root tsdown config, as a service is", async () => {
+    withSeedEntry();
+    const { io } = captureIo();
+    expect(await runDbSeed({ cwd, profile: "demo", environment: "dev", io })).toBe(0);
+    expect(vi.mocked(runProcess).mock.calls.map(([run]) => [run.command, run.args])).toEqual([
+      [
+        "tsdown",
+        [
+          join(cwd, ".stackra", "entry", "seed.ts"),
+          "--no-config",
+          "--format",
+          "esm",
+          "--platform",
+          "node",
+          "--out-dir",
+          join(".stackra", "seed-build"),
+        ],
+      ],
+      [
+        process.execPath,
+        [join(".stackra", "seed-build", "seed.mjs"), "--profile", "demo", "--ran-by", "rana"],
+      ],
+    ]);
   });
 
   it("stops when the build fails", async () => {

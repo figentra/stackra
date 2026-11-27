@@ -4,7 +4,7 @@
  *          it holds the gateway's and each dev compose container's address, a refused block left out.
  * Boundary: test only; temporary repositories.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); STA-2029; STA-2664 (item 6).
+ * Governing contract: ADR 0022 (test placement); STA-2029; STA-2664 (item 6); STA-2840.
  */
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -80,5 +80,16 @@ describe("writeDevFacts", () => {
   it("leaves out a member without a dev port", () => {
     const root = repository("environments:\n  dev: {}\n");
     expect(writeDevFacts(root).members).toEqual({});
+  });
+
+  it("writes the gateway port root stackra dev reads, shifted by the lane; Encore's own Postgres has no address", () => {
+    const root = repository("environments:\n  dev: {}\n");
+    writeFileSync(
+      join(root, "runway.yaml"),
+      "environments:\n  dev:\n    lanes: { portStep: 100 }\n    infra:\n      gateway: { port: 4000, dashboard: 9400 }\n      postgres: { port: 5432, perLane: false }\n      otel-lgtm: { grpcPort: 4317 }\n",
+    );
+    expect(writeDevFacts(root, 2).infra).toEqual({
+      gateway: { port: 4200, url: "http://localhost:4200" },
+    });
   });
 });

@@ -27,6 +27,16 @@ workspace root the task commands fan out through Turborepo; in a member they run
 A refusal names its code, its position and the fix; nothing is written when gen refuses. `stackra validate` is what
 CI runs on every pull request; `verify` is what runs on the box before a merge counts.
 
+## Running a product locally
+
+At the root of a product with service members, `stackra dev` runs the whole product: gen on every service, one
+`encore run` of all of them as a single Encore app (under `.stackra/dev/encore`, kept in step as you edit), each
+service's dev port forwarded to that gateway, so a URL naming a member's port still answers, then `stackra db
+migrate` and `stackra db seed` on every database once the gateway answers (`--seed minimal|demo|test|none`, `demo` by
+default). Apps, packages, the docs site and the Workers under `workers/` start beside it, each on its runway dev port.
+The lane comes from `STACKRA_LANE`, else from the product's row of `environments.dev.lanes.repos`, so products side by
+side never claim the same ports.
+
 ## Products
 
 `stackra build --product` builds every surface bundle and mobile app of the root runway, and
