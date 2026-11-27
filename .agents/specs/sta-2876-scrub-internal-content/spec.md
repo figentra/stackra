@@ -61,12 +61,14 @@ doctor and starter. This change scrubs everything else and adds a guard so it st
 
 ### Sources
 
-- **SRC-001**: `git grep` of the denied terms on `origin/main` 5c174305d (FR-001 to FR-004)
+- **SRC-001**: `git grep` of the denied terms on `origin/main` 5c174305d (FR-001 to FR-004, FR-010, FR-011)
 - **SRC-002**: the 0.33.1 tarballs from the Stackra registry, read with `guard-public-content.mjs --pack` (FR-005, FR-006)
 - **SRC-003**: `.github/workflows/release.yml`, `runway-npm.yml`, `ci.yml` and `lefthook.yml` on `origin/main` (FR-005, FR-006)
 - **SRC-004**: the item text (batch 23, item 23.2), STA-2876 and STA-2790 (FR-001, FR-007)
 - **SRC-005**: `packages/developer/runway/src/node/functions/publish-pull-request.function.ts` and `pull-request-preview-host.function.ts` on `origin/main` (FR-008)
 - **SRC-006**: `packages/infrastructure/infra-testbed/src/core/constants/testbed-defaults.constant.ts` and `.github/workflows/apply-testbed.yml` on `origin/main` (FR-009)
+- **SRC-007**: `tools/scripts/linear-reconcile.mjs`, `linear-reconcile.repos.yaml`, `.github/workflows/linear-sync.yml` and `tools/scripts/guard-port.mjs` on `origin/main` (FR-010, FR-011)
+- **SRC-008**: `fflow gate ci` (ADR 0502) on this branch: it reads every changed spec against today's shape, so the specs older than it stay as they are (STA-2898) (FR-007)
 
 ## Glossary
 
@@ -136,11 +138,11 @@ Figentra's internal zone.
 - **FR-004**: THE allow list `tools/scripts/public-content.allow.json` SHALL give each exemption (a `path` or a tarball `package`) a reason and the issue that removes it. Sources: SRC-004
 - **FR-005**: WHEN `--pack <file.tgz>…` is given THE guard SHALL read every file inside each tarball, and skip a tarball whose package the allow list names. Sources: SRC-002
 - **FR-006**: THE release (`runway-npm.yml` with `pack-check`, as `release.yml` passes it) and the prerelease job SHALL pack every package they would publish and run the guard on the tarballs before the dry run, the version PR or the publish. Sources: SRC-003
-- **FR-007**: THE scrub SHALL NOT edit an approval line in `.agents/specs`, any file under `packages/developer/cli`, or an applied migration. Sources: SRC-004
+- **FR-007**: THE scrub SHALL NOT edit an approval line in `.agents/specs`, any file under `packages/developer/cli`, an applied migration, or a spec older than the ADR 0502 shape (each exempt in the allow list with its issue). Sources: SRC-004, SRC-008
 - **FR-008**: `pullRequestPreviewHost` SHALL take the zone and refuse one that is not a lowercase host name of two labels or more, and a pull-request `publishProduct` SHALL read the zone from `environments.preview.domains.pullRequestZone` and refuse a root runway without it. Sources: SRC-005
 - **FR-009**: THE testbed SHALL take its EC2 key pair from the stack (`AwsTestbedOptions.keyPair`, the Pulumi config `keyPair`, the `TESTBED_KEY_PAIR` variable in `apply-testbed.yml`), defaulting to `stackra-testbed`, and `apply-testbed.yml` SHALL derive the state bucket from the assumed account instead of naming it. Sources: SRC-006
-- **FR-010**: `linear-reconcile.mjs` SHALL read the private repos it also reconciles from `--extra-repos` (the `LINEAR_RECONCILE_EXTRA_REPOS` variable in CI), not from the public list. Sources: SRC-001
-- **FR-011**: `guard-port.mjs` SHALL take the Stackra checkout from `GUARD_PORT_STACKRA` (default `~/Projects/stackra`) and the muslin reference checkout from `GUARD_PORT_MUSLIN_REFERENCE`, refusing a muslin port without it. Sources: SRC-001
+- **FR-010**: `linear-reconcile.mjs` SHALL read the private repos it also reconciles from `--extra-repos` (the `LINEAR_RECONCILE_EXTRA_REPOS` variable in CI), not from the public list. Sources: SRC-001, SRC-007
+- **FR-011**: `guard-port.mjs` SHALL take the Stackra checkout from `GUARD_PORT_STACKRA` (default `~/Projects/stackra`) and the muslin reference checkout from `GUARD_PORT_MUSLIN_REFERENCE`, refusing a muslin port without it. Sources: SRC-001, SRC-007
 
 ### Non-functional Requirements
 
@@ -155,11 +157,13 @@ Figentra's internal zone.
 
 - **AC-001**: WHEN the guard reads this branch's tracked files THE guard SHALL report nothing.
 - **AC-002**: WHEN every published package is built, packed and read with `--pack` THE guard SHALL report nothing (119 tarballs; `@stackra/cli` exempt under STA-2790).
-- **AC-003**: IF a tracked file's path or text names a denied term or a personal home folder THEN `pnpm validate` SHALL fail.
-- **AC-004**: IF a tarball the release would publish names one THEN the release job SHALL stop before publishing.
+- **AC-003**: IF a tracked file's path or text names a denied term or a personal home folder THEN THE Quality Gate (`pnpm validate`) SHALL fail and name the file and line.
+- **AC-004**: IF a tarball the release would publish names a denied term or a personal home folder THEN THE release job SHALL stop before the dry run, the version PR or the publish.
 - **AC-005**: WHEN a pull request publishes without `pullRequestZone` THE publish SHALL be refused before any upload or write.
 - **AC-006**: WHEN a stack names `keyPair` THE launch template SHALL name that pair.
 - **AC-007**: WHEN `--extra-repos` is given THE reconcile SHALL read the public list plus those repos, each once.
+- **AC-008**: IF a muslin port runs without `GUARD_PORT_MUSLIN_REFERENCE` THEN THE `guard-port.mjs` command SHALL exit 2 and write nothing.
+- **AC-009**: WHEN the scrub is applied THE approval lines of `.agents/specs`, `packages/developer/cli`, the applied migrations and the specs older than the ADR 0502 shape SHALL be unchanged, each exempt in the allow list with its issue.
 
 ## Success Criteria
 
@@ -170,6 +174,7 @@ Figentra's internal zone.
 
 - `packages/developer/cli` (the CLI, doctor and starter): STA-2790's branch scrubs it; its allow entries go then.
 - The approval lines that name a team member (12 lines in 11 specs): only the approver changes them; listed in the pull request.
+- Eleven specs older than the ADR 0502 shape: the spec gate refuses any edit to them, so their few internal lines wait for STA-2898.
 - Applied registry migration `0003_figentra_brand.sql`: never edited once applied.
 - Republishing or deprecating the 0.33.1 tarballs: the next release ships clean ones; deprecating old versions is a registry decision.
 - Other product names that the audit did not list; a new term is one `--hash` line away.

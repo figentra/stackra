@@ -56,14 +56,14 @@ The tester keeps using the old boxes until the new pool has passed the same work
 3. **Stand up beside (owner apply).** `pulumi up` in the chosen region: image pipeline, first AMI, `heavy` min 1,
    `light` min 0. Cost from this point: about +$300 a month while both run.
 4. **Canary (tester).** `stackra testbed run` on the new pool for one day with the same jobs the tester runs on the
-   old boxes (core `pnpm verify`, the playground e2e, one integration suite, one academy-product job). Compare results and
+   old boxes (core `pnpm verify`, the playground e2e, one integration suite, one Academorix job). Compare results and
    wall time; fix and rebuild the image until equal.
 5. **Switch (tester, owner informed).** `ci-box` becomes the shim: `run` goes to the new pool first and to the old
    boxes only when the new pool is full. Raise the new minimums to the agreed counts (Q2).
 6. **Drain (owner per region).** Remove one old region's boxes from the shim's fallback list, wait until both of their
    slots are free (`status`), stop them. One region a day: us-east-1, eu-west-2, eu-central-1, then eu-west-1.
 7. **Retire (owner).** After a week stopped with no fallback use, terminate the old instances and volumes, delete the
-   `stackra-testbed` security groups in the three emptied regions, remove the shim's fallback, and remove every
+   `academorix-ci` security groups in the three emptied regions, remove the shim's fallback, and remove every
    `~/.ci-env` with its box. `put-env` is deleted from the shim.
 
 Rollback at any phase before 7: the shim's fallback list still names the old boxes; starting them is `aws ec2

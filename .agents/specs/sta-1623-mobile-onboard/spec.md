@@ -16,7 +16,7 @@
 EAS project and profiles, Apple bundle id and capabilities, EAS-managed signing, store keys by name from Infisical,
 Expo push with the FCM v1 key, `eas submit` to TestFlight and the Play internal track, the store listing in the
 release flow, and the manual first Play upload as a checklist Runway can detect. Every external call behind a port
-with a mock driver; a dry run against acme; a runbook in `apps/docs`.
+with a mock driver; a dry run against academorix; a runbook in `apps/docs`.
 
 ## What already exists (and this spec does not rebuild)
 
@@ -77,7 +77,7 @@ Steps, in order, each idempotent (a second run reports `done` and changes nothin
 1. **identity**: fill absent `identity.ios.bundleId` and `identity.android.package` from the product key (FR-002) and
    write them to `runway.yaml`; an id already there is kept (frozen at first upload, ADR 0439 decision 6).
 2. **eas-project**: find the EAS project `<owner>/<slug>` (owner from `mobile.<app>.eas.owner`, default `figentra`;
-   acme uses `acme`); create it if missing; write its id to `mobile.<app>.eas.project`.
+   academorix uses `academorix`); create it if missing; write its id to `mobile.<app>.eas.project`.
 3. **eas-profiles**: write `eas.json` build profiles `development`, `preview`, `production` (node `24.22.0` from
    `mise.toml`, never a major alone) and submit profile `production` (ASC app id, Play track `internal`) into the
    template checkout.
@@ -110,8 +110,8 @@ Steps, in order, each idempotent (a second run reports `done` and changes nothin
 
 **Acceptance Scenarios**:
 
-1. **Given** acme (live ids `app.acme.mobile`, no EAS project id yet), **When** `stackra mobile onboard
---app acme --dry-run`, **Then** identity is `done` (kept), every other step is printed with its planned call,
+1. **Given** academorix (live ids `app.academorix.mobile`, no EAS project id yet), **When** `stackra mobile onboard
+--app academorix --dry-run`, **Then** identity is `done` (kept), every other step is printed with its planned call,
    and the manual steps left for the owner are listed at the end; nothing is written or called.
 2. **Given** a product with no `identity.ios`, **When** onboard runs, **Then** `com.figentra.<product>.<app>` is written.
 3. **Given** every step already done (mock drivers), **When** onboard runs again, **Then** every step is `done` and no
@@ -138,10 +138,10 @@ production --id <build> --non-interactive` per platform and records the submissi
 
 ### Edge Cases
 
-- App key equals product key (acme/acme): the derived id drops the repeat, `com.figentra.acme`.
+- App key equals product key (academorix/academorix): the derived id drops the repeat, `com.figentra.academorix`.
 - Product or app keys with `-`: kept in the bundle id, `_` in the Android package (Android forbids `-`).
 - A white-label variant: onboarding is per variant identity later; this spec refuses `--variant` (out of scope).
-- `eas.project: ref:expo.projectId` (acme today): read through, replaced by the literal id on first write.
+- `eas.project: ref:expo.projectId` (academorix today): read through, replaced by the literal id on first write.
 
 ## Requirements _(mandatory)_
 
@@ -180,7 +180,7 @@ blocked`, with the planned call or the manual instructions; the CLI `stackra mob
 
 - **SC-001**: Tests with the mock drivers cover every step's done, planned, manual and blocked states, idempotency, the
   dry run sending nothing, and no secret value in output.
-- **SC-002**: A recorded dry run against a copy of acme's runway lists every step and every owner step.
+- **SC-002**: A recorded dry run against a copy of academorix's runway lists every step and every owner step.
 - **SC-003**: `pnpm verify` green on the tester's box.
 
 ## Owner answers (2026-10-30)
@@ -197,7 +197,7 @@ All recommended options were taken.
 - **Q3 — FCM v1 key into EAS.** `eas credentials` has no non-interactive upload. Recommended: the Expo GraphQL
   mutation eas-cli itself uses, behind `ExpoProjects` (a break shows as a failing step, not a bad release).
   Alternative: one manual `eas credentials` step per app in the runbook.
-- **Q4 — Expo account per product.** `mobile.<app>.eas.owner`, default `figentra`; acme → `acme`.
+- **Q4 — Expo account per product.** `mobile.<app>.eas.owner`, default `figentra`; academorix → `academorix`.
 - **Q5 — Google sign-in for Runway.** GitHub OIDC through workload identity federation; no key. The owner sets up the
   pool and grants it Project Creator and Firebase Admin on a Figentra organisation folder once.
 - **Q6 — generated keys.** Runway's CI job may create third-party keys (FCM service-account key, later the Wallet pass
@@ -223,7 +223,7 @@ compliance in `app.json`, privacy rows for Sentry, data residency of Sentry, Pos
 | L3   | Real drivers (per Q2/Q3)                                                                                         | L1, release-automation landed if Q2 = move |
 | L4   | `EasProviderDriver.submit`; `deployProduct` uses it; Play first-release refusal                                  | L1                                         |
 | L5   | CLI `mobile onboard`, `--mobile-only`, `--listing`; runbook; skills; ADR 0482                                    | L2, L4                                     |
-| L6   | Acme dry-run record (`SC-002`)                                                                                   | L5                                         |
+| L6   | Academorix dry-run record (`SC-002`)                                                                             | L5                                         |
 
 ## Status history
 
@@ -231,4 +231,4 @@ compliance in `app.json`, privacy rows for Sentry, data residency of Sentry, Pos
 - 2026-10-30 Clarified: owner took every recommended answer (Q1 to Q8); Google project, Firebase and Sentry added.
 - 2026-10-30 Implementing: L1 to L5 built on `figentra/sta-1623-mobile-onboard` (runway ports, real and memory drivers,
   `onboardMobile`, `eas` submit, `--mobile-only`, `stackra mobile onboard`, runbook). Tests written, not run on the Mac;
-  handed to the tester. L6 (Acme's `--check` record) waits for the root kit and the Google federation.
+  handed to the tester. L6 (academorix `--check` record) waits for the root kit and the Google federation.

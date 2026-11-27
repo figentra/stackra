@@ -27,7 +27,7 @@ all of them, and picks a slot or a region to scale. `run --json` and `status --j
   - `apps/docs` (runbook)
 - **Testing**: vitest in `src/**/__tests__/` (ADR 0022) against the Pulumi mocks the package already uses; the CLI's
   testbed functions against stubbed `aws`/`ssh` deps; all on ci-box, never the Mac
-- **Storage**: Pulumi state, one stack per region in the existing `stackra-pulumi-state-<account-id>` bucket
+- **Storage**: Pulumi state, one stack per region in the existing `stackra-pulumi-state-591473336656` bucket
 - **Runtime target**: a Pulumi program applied by CI only (ADR 0171), and a Node CLI
 
 ## Constitution Check

@@ -147,7 +147,7 @@ A product adds `workloads.zitadel`. The plan holds a Fargate task and service, s
 
 - **SC-001**: Plan and Pulumi-mock tests cover every kind, size, the cost refusal, the `uses` refusal and the secret
   names.
-- **SC-002**: A product's current runway plans the same queues, caches and buckets as before (FR-004).
+- **SC-002**: academorix's current runway plans the same queues, caches and buckets as before (FR-004).
 - **SC-003**: `pnpm verify` green on the tester's box.
 
 ## Owner questions

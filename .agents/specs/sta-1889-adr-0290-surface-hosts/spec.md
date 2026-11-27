@@ -10,10 +10,10 @@
 
 **Clarifications status**: complete
 
-**Input**: ADR 0290 makes one separate registrable domain, the dev zone, the dev and preview zone, one label deep (`<app>-<dev>`, `<app>-staging`).
+**Input**: ADR 0290 makes figentra.cloud the dev and preview zone, one label deep (`<app>-<dev>`, `<app>-staging`).
 The OS edge built from ADR 0437 serves product surfaces at `<host>.<env>.figentra.com` (production unlabelled), and pay's
 first dev deploy resolved its surfaces that way. The owner decided product surfaces follow 0437 and the live edge, and
-The dev zone stays the tunnel and dev-machine zone.
+figentra.cloud stays the tunnel and dev-machine zone.
 
 ## Impact
 
@@ -35,4 +35,4 @@ The dev zone stays the tunnel and dev-machine zone.
 
 - **FR-001** ADR 0290 carries a dated note (2026-11-01, STA-1889): product surfaces use ADR 0437's naming,
   `<host>.<env>.figentra.com` with production unlabelled, set per environment as a product runway's
-  `environments.<env>.domains.zone`; the dev zone stays the zone for tunnels and dev machines (decisions 1, 2 and 4).
+  `environments.<env>.domains.zone`; figentra.cloud stays the zone for tunnels and dev machines (decisions 1, 2 and 4).
