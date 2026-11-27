@@ -49,8 +49,8 @@ description: "Tasks for STA-669: the MediaLibrary scan gate"
 ## Phase 6: Polish
 
 - [x] T012 [P] Docs for the gate and its errors in `packages/data/media/README.md`, `packages/data/media/AGENTS.md` and `apps/docs/src/docs/adr/0222-files-and-media-storage-drivers-uploads-scanning-and-public-assets.mdx` — covers: SC-001, AC-006 — route: steward-docs — deps: T008
-- [x] T013 [P] Changeset (minor `@stackra/media`, patch `@stackra/gen`) in `.changeset/media-scan-gate.md` — covers: SC-003, AC-007 — route: steward-changesets — deps: T009
-- [x] T014 Box run: typecheck, lint, format, unit and integration tests for the touched members in `packages/data/media` — covers: SC-001, SC-002, SC-003, AC-008 — route: verify-fix — deps: T011, T012, T013
+- [x] T013 [P] Changeset (minor for @stackra/media, patch for @stackra/gen) in `.changeset/media-scan-gate.md` — covers: SC-003, AC-007 — route: steward-changesets — deps: T009
+- [x] T014 Build-machine run: typecheck, lint, format, unit and integration tests for the touched members in `packages/data/media` — covers: SC-001, SC-002, SC-003, AC-008 — route: verify-fix — deps: T011, T012, T013
 
 ## Phase 7: The CTO's changes (2026-11-26 verdict)
 

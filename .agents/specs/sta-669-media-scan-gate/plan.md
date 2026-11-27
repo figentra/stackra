@@ -127,6 +127,11 @@ packages/developer/gen/src/core/
 packages/design-system/branding/src/node/
 ├── models/__tests__/brand-assets.bucket.test.ts
 └── services/__tests__/brand-reader.service.test.ts
+packages/infrastructure/infra-aws/src/core/
+├── constants/infra-runway-schema.constant.ts
+├── functions/aws-baseline-config.function.ts
+└── functions/__tests__/aws-baseline-config.function.test.ts
+.changeset/infra-aws-guard-duty-versioning.md
 ```
 
 - `media-library.service.ts`: the gate; `media-file.type.ts`: `scan`; the three error files: the refusals

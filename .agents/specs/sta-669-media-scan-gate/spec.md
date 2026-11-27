@@ -54,7 +54,8 @@ malware-protection wiring is a tracked issue, STA-2912.
   constructor token on the next `stackra gen`)
 - **Packages touched**: packages/data/media (the gate, `MediaFile.scan`, two new errors, a widened refusal reason, the
   manifest, an integration test tier); packages/developer/gen (`PLATFORM_BINDINGS` gains the scanner token);
-  packages/design-system/branding (tests build `MediaLibrary` with a scanner)
+  packages/design-system/branding (tests build `MediaLibrary` with a scanner); packages/infrastructure/infra-aws
+  (`awsBaselineConfig` refuses `guard_duty` over an unversioned files bucket)
 - **Public contract change**: breaking for hand-built callers: `MediaLibrary`'s constructor takes `FileScanner` as a
   fourth argument; `MediaFile` gains the required `scan: ScanVerdict`; `UploadRejectedError.reason` widens with
   `malware` and `unscannable`; `temporaryUrl` becomes `async`, accepts `Pick<MediaFile, "id" | "path">` plus an optional
