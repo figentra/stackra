@@ -61,6 +61,15 @@ test("guard-public-content: every denied entry is a hash with its length and rea
   assert.ok(!source.includes("zorblax"));
 });
 
+test("guard-public-content: the guard and the allow list hold no denied term's hash, only line entries", () => {
+  // A short name's SHA-256 can be recovered by hashing guesses; the hashed list lives in a private policy (STA-2911).
+  const source = readFileSync(TOOL, "utf8");
+  assert.deepEqual(source.match(/\b[0-9a-f]{64}\b/g) ?? [], []);
+  const allow = readFileSync(new URL("../public-content.allow.yaml", import.meta.url), "utf8");
+  for (const line of allow.split("\n").filter((l) => /\b[0-9a-f]{64}\b/.test(l)))
+    assert.match(line, /^\s+lineSha256: "[0-9a-f]{64}"$/, line);
+});
+
 test("guard-public-content: a denied word is found whole and in any case, never inside another word", () => {
   assert.deepEqual(lineFindings("Ported from Zorblax's console"), ["a test product name"]);
   assert.deepEqual(lineFindings("ZORBLAX_API_KEY"), ["a test product name"]);
@@ -197,8 +206,11 @@ test("guard-public-content: a tarball is read file by file, long paths included;
   const bytes = readFileSync(file);
   assert.ok(tarballFiles(bytes).some(([name]) => name === `package/${deep}`));
   assert.deepEqual(
-    scanTarball("dirty.tgz", bytes).map(({ path, line }) => `${path}:${line}`),
-    ["dirty.tgz!package/dist/index.mjs:1", `dirty.tgz!package/${deep}:1`],
+    // Sorted: `tar` adds a folder's entries in the file system's order, which differs between machines.
+    scanTarball("dirty.tgz", bytes)
+      .map(({ path, line }) => `${path}:${line}`)
+      .sort(),
+    [`dirty.tgz!package/${deep}:1`, "dirty.tgz!package/dist/index.mjs:1"].sort(),
   );
   assert.deepEqual(scanTarball("dirty.tgz", bytes, [{ package: "@acme/dirty" }]), []);
   assert.equal(scanTarball("dirty.tgz", bytes, [{ package: "@acme/other" }]).length, 2);

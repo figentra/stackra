@@ -6,10 +6,12 @@
  *          two kinds of line: a denied term (an internal product, person, host or cloud account id) and a home folder
  *          with a real user name (`/Users/<name>/`, `/home/<name>/`). Secret-shaped strings are gitleaks' job
  *          (`.gitleaks.toml`: lefthook pre-commit and the Quality Gate's `pnpm secrets:scan`).
- * Boundary: read-only. The denied terms are stored only as SHA-256 hashes of their lower-case spelling (with their
- *           length, to skip most words unhashed), so this file does not publish what it forbids; `--hash <term>`
- *           prints the entry to add one. A word is checked whole (letters and digits), and a dotted host by each of
- *           its suffixes of two labels or more. One exemption, visible and tracked: the entries of
+ * Boundary: read-only. No denied term and no hash of one is kept in this repository: a short name's SHA-256 can be
+ *           recovered by hashing guesses, so publishing it publishes the name. The hashed list (SHA-256 of each
+ *           term's lower-case spelling, with its length and reason) is read from a private policy (STA-2911); in
+ *           this file `DENIED` starts empty, and only home folders and the allow list are checked without it.
+ *           `--hash <term>` prints the entry to add one. A word is checked whole (letters and digits), and a dotted
+ *           host by each of its suffixes of two labels or more. One exemption, visible and tracked: the entries of
  *           `public-content.allow.yaml` (a repository `path`, one line of a file by its `lineSha256`, or a tarball's
  *           `package` name), each with its reason and the issue that removes it. No line is exempt by its wording: a
  *           spec approval line that names a person is a finding like any other (role-only approvals, STA-2905), and
@@ -30,37 +32,11 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { parse as parseYaml } from "yaml";
 
-/** SHA-256 of each denied term, lower case, with its length and what it is; never the term itself. */
-export const DENIED = new Map([
-  [
-    "4fa92007b9d74eae84d5b60fc79abf801c2a202c3dcacd80bb76caa9caf32ae9",
-    { length: 10, reason: "an internal product name" },
-  ],
-  [
-    "82bfd5d79c5d89a7ba1b08f74d810136995bf1df127bb4628a52c4627abd8ca6",
-    { length: 7, reason: "an internal product name" },
-  ],
-  [
-    "b4fddab806d4f2543f1ba4326f3c1ea9bf4684d17f003ee1897a23ae840631a2",
-    { length: 6, reason: "a team member's name or user name" },
-  ],
-  [
-    "d908b42ccb44fe9f8c64ee851fa1d8872cdbeeef74d3e1141e3072c4ce25683b",
-    { length: 6, reason: "a team member's name" },
-  ],
-  [
-    "0a6e6d95821a32c68c98c65e8970fd18d7d91612ac53a02b82562baba54da825",
-    { length: 5, reason: "a team member's name" },
-  ],
-  [
-    "1842d7a9c4a12ab70ab90d8efdd090fb3d0ff5d2306d2ec55e1c4173a481b14d",
-    { length: 14, reason: "an internal host or zone" },
-  ],
-  [
-    "043e85b2d89404f78551a52f8f9ba8e0c5041fa262ec7b800b143b588bf697ac",
-    { length: 12, reason: "an internal cloud account id" },
-  ],
-]);
+/**
+ * SHA-256 of each denied term, lower case, with its length and what it is; never the term itself. Empty here: the
+ * entries live in a private policy (STA-2911), never in this public repository.
+ */
+export const DENIED = new Map();
 
 /** The lengths of the denied terms (a word of another length is never hashed), recomputed when DENIED changes. */
 let lengths = { size: -1, set: new Set() };
