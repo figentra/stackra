@@ -25,6 +25,10 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
+/** Secret shapes the logger's `redact` masks, built here so the source holds no literal token. */
+const GITHUB = `ghp_${"A".repeat(24)}`;
+const BEARER = `Bearer ${"t".repeat(20)}`;
+
 const run = {
   command: "stackra test --tier=unit",
   cwd: "services/commerce",
@@ -44,6 +48,21 @@ describe("writeToolLog", () => {
     expect(readFileSync(join(root, ".stackra/logs/last-test.log"), "utf8")).toBe(
       "$ stackra test --tier=unit\n# in services/commerce\nok\n# exit 0 after 42 ms\n",
     );
+  });
+
+  it("redacts the whole file before it writes it: output and command line", async () => {
+    await writeToolLog(
+      root,
+      "test",
+      { ...run, command: `stackra test --token=${GITHUB}` },
+      `Authorization: ${BEARER}\nfetch https://ada:${"p".repeat(12)}@db.local failed\n`,
+    );
+    const written = readFileSync(join(root, ".stackra/logs/last-test.log"), "utf8");
+    expect(written).toBe(
+      "$ stackra test --token=[redacted]\n# in services/commerce\n" +
+        "Authorization: [redacted]\nfetch https://[redacted]@db.local failed\n# exit 1 after 42 ms\n",
+    );
+    expect(written).not.toContain(GITHUB);
   });
 
   it("keeps a strange name inside the folder", async () => {

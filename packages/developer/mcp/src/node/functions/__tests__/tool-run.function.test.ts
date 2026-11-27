@@ -24,6 +24,10 @@ import { diagnosticsOf } from "#node/functions/diagnostics-of.function";
 import { runToolCommand } from "#node/functions/run-tool-command.function";
 import { toolRun } from "#node/functions/tool-run.function";
 
+/** Secret shapes the logger's `redact` masks, built here so the source holds no literal token. */
+const GITHUB = `ghp_${"A".repeat(24)}`;
+const BEARER = `Bearer ${"t".repeat(20)}`;
+
 /** A host whose runner answers `output` with `exitCode`. */
 function hostOf(output: string, exitCode = 0) {
   const run = vi.fn(async () => ({ exitCode, output }));
@@ -55,6 +59,14 @@ describe("toolRun", () => {
       output: "ok\n",
     });
     expect(result.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("redacts the output it hands the parsers and returns, and the command line", async () => {
+    const { host } = hostOf(`\u001B[31mFAIL\u001B[39m sent ${BEARER} and ${GITHUB}\n`, 1);
+    const { result, output } = await toolRun(host, "/repo", ["test", `--token=${GITHUB}`]);
+    expect(output).toBe("FAIL sent [redacted] and [redacted]\n");
+    expect(result.output).toBe(output);
+    expect(result.command).toBe("stackra test --token=[redacted]");
   });
 
   it("keeps the tail of a long output and hands the parsers all of it", async () => {
@@ -96,6 +108,15 @@ describe("runToolCommand", () => {
     const code = await runToolCommand(io, host, args, options);
     return { code, data };
   }
+
+  it("never writes or returns a secret: the log file and the result's tail are redacted", async () => {
+    const { data } = await runWith(`connect ${BEARER}\nleaked ${GITHUB}\n`, 1, ["test"]);
+    const log = readFileSync(join(root, ".stackra/logs/last-test.log"), "utf8");
+    expect(log).toContain("connect [redacted]\nleaked [redacted]\n");
+    expect(JSON.stringify(data)).not.toContain(GITHUB);
+    expect(JSON.stringify(data)).not.toContain(BEARER);
+    expect(log).not.toContain(GITHUB);
+  });
 
   it("writes the full log, names it, and lists the findings counted, errors first", async () => {
     const warning: Diagnostic = { phase: "lint", severity: "warning", file: "a.ts", message: "w" };

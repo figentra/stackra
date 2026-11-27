@@ -38,6 +38,9 @@ result shapes. The codes and links line up with the `stackra explain` error cata
 - `packages/developer/console/AGENTS.md` ("a public type a CLI author names goes in `src/contracts/types/`") and
   `packages/foundation/contracts/AGENTS.md` (zero dependencies, foundation vocabulary only)
 - ADR 0282 decision 5 (the local MCP runs gen, validate and verify and explains failures)
+- FR-001 to FR-006: the sources above and the branch's diff against `figentra/sta-2873-dev-mcp-tools`
+- FR-007: the code review of 2026-11-27 (the log file and the tail pass `@stackra/logger`'s `redact`, as the dev
+  log does)
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
@@ -52,12 +55,14 @@ result shapes. The codes and links line up with the `stackra explain` error cata
   `report`).
 - **Cross-service events**: none
 - **Tenancy and data**: none. Local developer tooling only (ADR 0155).
-- **Security and privacy**: the log holds the same output the tool result's tail already carries, already redacted by
-  the CLI's runner, in the ignored `.stackra/` folder; a tool name cannot leave `.stackra/logs/`. The docs lookup runs
+- **Security and privacy**: the log and the result's tail are passed through `@stackra/logger`'s `redact` (secret
+  shapes: bearer tokens, JWTs, API keys, URL credentials) before they are written or returned: `toolRun` redacts the
+  output and the command line, and `writeToolLog` redacts the whole file again as it writes it. The log stays in the
+  ignored `.stackra/` folder; a tool name cannot leave `.stackra/logs/`. The docs lookup runs
   only `stackra explain`, which writes nothing.
 - **Secrets**: none
 - **ADR needed**: no (implements ADR 0282 decision 5 as written)
-- **New dependencies**: none
+- **New dependencies**: `@stackra/logger` (workspace, for `redact`) in `@stackra/mcp`
 - **Deploy modes**: same in all three (developer tooling; not deployed)
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none
@@ -146,7 +151,7 @@ output.
 
 ### Functional Requirements
 
-- **FR-001**: `@stackra/console/contracts` SHALL export `Diagnostic` (`phase`, `code?`, `severity`, `file?`, `line?`,
+- **FR-001** (example-only): `@stackra/console/contracts` SHALL export `Diagnostic` (`phase`, `code?`, `severity`, `file?`, `line?`,
   `column?`, `message`, `fix?`, `docsUrl?`) and `DiagnosticReport` (`ok`, `diagnostics`), and `@stackra/mcp` SHALL use
   them and declare no finding shape of its own.
 - **FR-002**: EVERY local tool call SHALL answer `structuredContent` `{ ok, diagnostics, data?, error? }`, with the
@@ -160,6 +165,9 @@ output.
 - **FR-006**: A diagnostic's `code` SHALL be what `stackra explain` takes (a check finding `<tool>/<rule>`), and its
   `docsUrl` the link gen printed or the one `stackra explain <code> --json` gives, looked up once per code; no link SHALL
   be invented for a code the catalogue does not list.
+- **FR-007**: THE runner tools SHALL pass a run's output and command line through `@stackra/logger`'s `redact` before
+  the parsers read it, the log is written or the tail is returned, and `writeToolLog` SHALL redact the whole file as it
+  writes it.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
@@ -169,6 +177,8 @@ output.
 - **AC-003**: WHEN a run fails without a readable finding THE tool SHALL answer `command_failed` (FR-004).
 - **AC-004**: WHEN a runner tool runs THE log SHALL hold the full output and the result SHALL name it (FR-005).
 - **AC-005**: WHEN a diagnostic's code is in the catalogue THE result SHALL carry its `stackra explain` link (FR-006).
+- **AC-006**: WHEN a run prints a secret shape THE log file and the tool result SHALL hold the mask in its place
+  (FR-007).
 
 ## Success Criteria _(mandatory)_
 
@@ -176,7 +186,7 @@ output.
 - **SC-002**: `serve-local-mcp.function.test.ts` proves AC-002 to AC-005 over stdio and fails when the lifting, the
   log, the docs lookup or the member path is reverted — verified by: unit
 - **SC-003**: the parser, `checkDiagnostics`, `testDiagnostics`, `runToolCommand`, `toolResult`, `explainDocs` and
-  `writeToolLog` tests prove FR-003 to FR-006 — verified by: unit
+  `writeToolLog` tests prove FR-003 to FR-007 — verified by: unit
 - **SC-004**: the two packages' tests, typecheck, oxlint and oxfmt pass, and `fflow gate ci` passes — verified by: manual
 
 ## Compatibility and migration

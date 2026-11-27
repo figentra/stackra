@@ -29,7 +29,7 @@ every tool result, adds the command's error as a diagnostic and links each code 
 | Law                                   | Result | Note                                                                                    |
 | ------------------------------------- | ------ | --------------------------------------------------------------------------------------- |
 | Boundaries (tier direction, ADR 0003) | PASS   | `@stackra/mcp` → `@stackra/console` (already a dependency); no new edge                 |
-| Secrets (ADR 0009)                    | PASS   | the log holds the already-redacted output the result tail carries                       |
+| Secrets (ADR 0009)                    | PASS   | log and tail pass `@stackra/logger`'s `redact` before they are written or returned      |
 | Security                              | PASS   | the log name is sanitised into `.stackra/logs/`; the lookup runs read-only `explain`    |
 | HTTP and events                       | N/A    | no route, header or event changes                                                       |
 | Tenancy                               | N/A    | local developer tooling, never a tenant tool (ADR 0155)                                 |
@@ -51,14 +51,12 @@ every tool result, adds the command's error as a diagnostic and links each code 
 
 ## Correctness properties
 
-- **P-001**: for every tool call, `structuredContent` has `ok` (exit code 0 and the document not `ok: false`) and a
-  `diagnostics` array, and `data` never holds `diagnostics` — Validates: FR-002
+- **P-001**: for every tool call, `structuredContent` has `ok` (exit code 0 and the document not `ok: false`) and a `diagnostics` array, and `data` never holds `diagnostics` — Validates: FR-002
 - **P-002**: for every runner tool run in a member, every relative `file` starts with the member's path — Validates: FR-003
 - **P-003**: for every failed run, `diagnostics` holds at least one error — Validates: FR-004
-- **P-004**: for every runner tool run with a writable root, `.stackra/logs/last-<tool>.log` ends with the run's exit
-  line and holds its full output — Validates: FR-005
-- **P-005**: for every distinct code without a link in one result, `stackra explain` is asked at most once per server,
-  and a diagnostic gets a `docsUrl` only from a printed link or a successful explain document — Validates: FR-006
+- **P-004**: for every runner tool run with a writable root, `.stackra/logs/last-<tool>.log` ends with the run's exit line and holds its full output — Validates: FR-005
+- **P-005**: for every distinct code without a link in one result, `stackra explain` is asked at most once per server, and a diagnostic gets a `docsUrl` only from a printed link or a successful explain document — Validates: FR-006
+- **P-006**: for every run output holding a secret shape, neither the log file nor the tool result holds it — Validates: FR-007
 
 ## Architecture overview
 
@@ -97,6 +95,7 @@ packages/developer/console/src/contracts/
 packages/developer/mcp/
 ├── AGENTS.md
 ├── README.md
+├── package.json
 ├── stackra.manifest.json
 └── src/node/
     ├── index.ts
@@ -120,6 +119,7 @@ packages/developer/mcp/
     │   ├── serve-local-mcp.function.ts
     │   ├── test-diagnostics.function.ts
     │   ├── tool-result.function.ts
+    │   ├── tool-run.function.ts
     │   ├── write-tool-log.function.ts
     │   └── __tests__/
     │       ├── explain-docs.function.test.ts
@@ -158,7 +158,8 @@ A command's error document becomes one diagnostic beside the unchanged `error`. 
 ## Security and tenancy
 
 The log is written only under `<root>/.stackra/logs/`, its name reduced to word characters and `-`. It holds the same
-output the result already returns, redacted by the CLI's runner. The lookup passes the code as one argv item to
+output the result returns; `toolRun` passes that output and the command line through `@stackra/logger`'s `redact`,
+and `writeToolLog` redacts the whole file again as it writes it. The lookup passes the code as one argv item to
 `stackra explain`, a read-only command.
 
 ## Testing strategy
