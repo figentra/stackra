@@ -9,7 +9,7 @@
 
 /** One ingress rule, in the order cloudflared matches them. */
 export type TunnelIngressRule = {
-  /** `console-akouta.figentra.cloud`; absent on the catch-all. */
+  /** `console-dana.dev.example`; absent on the catch-all. */
   readonly hostname?: string;
   /** `http://localhost:5173`, or `http_status:404` for the catch-all. */
   readonly service: string;

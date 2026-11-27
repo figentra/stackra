@@ -73,7 +73,7 @@ function readFlows(root: string): GraphFlow[] {
  * Writes `<root>/stackra.graph.json` and returns the graph.
  *
  * @param root - the repo root.
- * @param repo - the repo key, the graph's layer (`os`, `commerce`, `stackra`, `mezzora`).
+ * @param repo - the repo key, the graph's layer (`os`, `commerce`, `stackra`, `bistro`).
  * @throws Error when a graph or flow file is not valid.
  * @example
  * writeRepoGraph("/work/os", "os").nodes.map((node) => node.id); // ["os.billing", "os.identity", ...]

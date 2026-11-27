@@ -15,11 +15,11 @@ const BUNDLE = { modulepreload: ["console.a1b2.js", "chunks/orders.c3d4.js"] };
 describe("modulepreloadOf", () => {
   it("lists the shell entry, then the bundle's entry and static chunks", () => {
     expect(
-      modulepreloadOf("/shell/console/3.2.0/entry.js", "/b/mezzora/console/1.4.0/", BUNDLE),
+      modulepreloadOf("/shell/console/3.2.0/entry.js", "/b/bistro/console/1.4.0/", BUNDLE),
     ).toEqual([
       "/shell/console/3.2.0/entry.js",
-      "/b/mezzora/console/1.4.0/console.a1b2.js",
-      "/b/mezzora/console/1.4.0/chunks/orders.c3d4.js",
+      "/b/bistro/console/1.4.0/console.a1b2.js",
+      "/b/bistro/console/1.4.0/chunks/orders.c3d4.js",
     ]);
   });
 
@@ -28,7 +28,7 @@ describe("modulepreloadOf", () => {
   });
 
   it("refuses a base that is not a folder", () => {
-    expect(() => modulepreloadOf("/shell.js", "/b/mezzora/console/1.4.0", BUNDLE)).toThrow(
+    expect(() => modulepreloadOf("/shell.js", "/b/bistro/console/1.4.0", BUNDLE)).toThrow(
       RangeError,
     );
   });

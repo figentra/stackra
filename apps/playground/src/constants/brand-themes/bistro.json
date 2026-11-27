@@ -2,9 +2,9 @@
   "format": "stackra.theme-diff/2",
   "tokenSet": 1,
   "base": "stackra",
-  "name": "mezzora",
+  "name": "bistro",
   "changes": {
-    "name": "mezzora",
+    "name": "bistro",
     "colors": {
       "background": {
         "light": "oklch(0.972 0.008 90)",

@@ -19,7 +19,7 @@ import type { SlotFill } from "#core/types/slot-fill.type";
  *
  * @throws RangeError when the surface is not the slot's.
  * @example
- * export const MezzoraBrandPanel = fillSlot(SignInBrandPanel, BrandPanel, { surface: "console" });
+ * export const BistroBrandPanel = fillSlot(SignInBrandPanel, BrandPanel, { surface: "console" });
  */
 export function fillSlot<P extends object>(
   slot: Slot<P>,

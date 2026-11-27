@@ -17,9 +17,9 @@ describe("bundleSurfaces", () => {
     const root = parseRunway("root", {
       ...PRODUCT_ROOT,
       surfaces: {
-        till: { shell: "os/console@3", packages: ["@mezzora/till-ui"], host: "till.mezzora" },
+        till: { shell: "os/console@3", packages: ["@bistro/till-ui"], host: "till.bistro" },
         ...PRODUCT_ROOT.surfaces,
-        kiosk: { shell: "os/console@3", packages: [], host: "kiosk.mezzora" },
+        kiosk: { shell: "os/console@3", packages: [], host: "kiosk.bistro" },
       },
     });
 

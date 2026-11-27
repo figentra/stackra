@@ -21,8 +21,8 @@ import type { TunnelIngressRule } from "#core/types/tunnel-ingress-rule.type";
  *                 with a port, sorted, when absent).
  * @throws CloudflareConfigInvalidError when an exposed member has no dev port, or its host is not one DNS label.
  * @example
- * tunnelIngress({ label: "akouta", zone: "figentra.cloud", ports: { console: 5173 } });
- * // [{ hostname: "console-akouta.figentra.cloud", service: "http://localhost:5173" }, { service: "http_status:404" }]
+ * tunnelIngress({ label: "dana", zone: "dev.example", ports: { console: 5173 } });
+ * // [{ hostname: "console-dana.dev.example", service: "http://localhost:5173" }, { service: "http_status:404" }]
  */
 export function tunnelIngress(tunnel: {
   readonly label: string;

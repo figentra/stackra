@@ -243,7 +243,7 @@ wait and our registry does not need npmjs.
     retried with the same tarball, never rebuilt.
 17. **`npm.figentra.com` is retired.** The npflared Worker `npm-registry` gives up the `npm.stackra.figentra.com` name
     before `stackra-registry` takes it, and keeps serving only `npm.figentra.com`. Its remaining consumers
-    (`@figentra/cli` and Academorix) move to this registry: a package that still has a consumer is republished from
+    (`@figentra/cli` and the academy product) move to this registry: a package that still has a consumer is republished from
     its source through a release workflow (its tarball is not copied, because only CI publishes), under the
     `internal` row of decision 10. When the last consumer has moved, `npm.figentra.com` answers 410 Gone for 30 days;
     then the owner deletes the `npm-registry` Worker, its R2 bucket and its DNS record (through Pulumi once the zone is

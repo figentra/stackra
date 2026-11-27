@@ -202,7 +202,7 @@ catalogs:
     "@react-router/dev": 7.18.4
     # Uploads hidden source maps to Sentry; reads SENTRY_AUTH_TOKEN itself.
     "@sentry/vite-plugin": 5.4.1
-  # Expo SDK 57 app (apps/mobile). Pins match academorix/apps/mobile; react stays on 19.2.3 because
+  # Expo SDK 57 app (apps/mobile). Pins match the first product's mobile app; react stays on 19.2.3 because
   # react-native 0.86 renders with that exact renderer version. Bump with `expo install --check`.
   mobile:
     expo: 57.0.30

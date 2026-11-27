@@ -117,7 +117,7 @@ file without the four contract fields and no export without TSDoc.
 
 ### Functional Requirements
 
-Ported surface (source: `/Users/akouta/Projects/figentra/packages/os/foundation/support`, README and `src/*/index.ts`):
+Ported surface (source: `figentra/packages/os/foundation/support`, README and `src/*/index.ts`):
 
 - **FR-001**: The package SHALL ship as `@stackra/support` in `packages/foundation/support` with no root (`.`) entry
   and one subpath entry per concern: `./str`, `./arr`, `./time`, `./async`, `./pipeline`, `./object`, as the source

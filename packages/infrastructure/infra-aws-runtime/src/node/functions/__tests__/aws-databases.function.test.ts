@@ -33,7 +33,7 @@ function database(environment: string, engine: "rds" | "aurora", multiAz: boolea
   return {
     key: "resources.main-db",
     resource: "main-db",
-    name: `academorix-${environment}-main-db`,
+    name: `academy-${environment}-main-db`,
     engine,
     version: engine === "rds" ? "18" : "18.3",
     instanceClass: multiAz ? "db.r7g.large" : "db.t4g.micro",
@@ -50,7 +50,7 @@ function database(environment: string, engine: "rds" | "aurora", multiAz: boolea
 /** A plan of `environment` holding `databases`. */
 function plan(environment: "dev" | "production", databases: DatabasePlan[]): RuntimePlan {
   return {
-    project: "academorix",
+    project: "academy",
     environment,
     queues: [],
     caches: [],
@@ -123,7 +123,7 @@ beforeAll(async () => {
 describe("awsDatabases", () => {
   // @covers sta-1640:FR-007
   it("declares a private, encrypted, throwaway dev RDS database open only to the runtime", () => {
-    const instance = resource("Instance", "academorix-dev-main-db").inputs;
+    const instance = resource("Instance", "academy-dev-main-db").inputs;
     expect(instance).toMatchObject({
       engine: "postgres",
       engineVersion: "18",
@@ -135,7 +135,7 @@ describe("awsDatabases", () => {
       deletionProtection: false,
       skipFinalSnapshot: true,
     });
-    const group = resource("SecurityGroup", "academorix-dev-main-db").inputs;
+    const group = resource("SecurityGroup", "academy-dev-main-db").inputs;
     expect(group["ingress"]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ fromPort: 5432, securityGroups: ["sg-runtime"] }),
@@ -145,23 +145,23 @@ describe("awsDatabases", () => {
 
   // @covers sta-1640:FR-007
   it("declares a protected production Aurora cluster with two instances", () => {
-    expect(resource("Cluster", "academorix-production-main-db").inputs).toMatchObject({
+    expect(resource("Cluster", "academy-production-main-db").inputs).toMatchObject({
       engine: "aurora-postgresql",
       deletionProtection: true,
-      finalSnapshotIdentifier: "academorix-production-main-db-final",
+      finalSnapshotIdentifier: "academy-production-main-db-final",
     });
-    expect(resource("ClusterInstance", "academorix-production-main-db-1").inputs).toMatchObject({
+    expect(resource("ClusterInstance", "academy-production-main-db-1").inputs).toMatchObject({
       instanceClass: "db.r7g.large",
     });
   });
 
   // @covers sta-1640:FR-007
   it("puts RDS Proxy with TLS in front and returns its endpoint", () => {
-    expect(resource("Proxy", "academorix-dev-main-db-proxy").inputs).toMatchObject({
+    expect(resource("Proxy", "academy-dev-main-db-proxy").inputs).toMatchObject({
       engineFamily: "POSTGRESQL",
       requireTls: true,
     });
-    expect(endpoint).toBe("academorix-dev-main-db-proxy.proxy.mock");
+    expect(endpoint).toBe("academy-dev-main-db-proxy.proxy.mock");
   });
 
   it("preloads pg_stat_statements through a parameter group of the engine's family", () => {
@@ -174,21 +174,19 @@ describe("awsDatabases", () => {
         },
       ],
     };
-    expect(resource("ParameterGroup", "academorix-dev-main-db").inputs).toMatchObject({
+    expect(resource("ParameterGroup", "academy-dev-main-db").inputs).toMatchObject({
       family: "postgres18",
       ...preload,
     });
-    expect(resource("Instance", "academorix-dev-main-db").inputs).toMatchObject({
-      parameterGroupName: "academorix-dev-main-db",
+    expect(resource("Instance", "academy-dev-main-db").inputs).toMatchObject({
+      parameterGroupName: "academy-dev-main-db",
     });
-    expect(resource("ClusterParameterGroup", "academorix-production-main-db").inputs).toMatchObject(
-      {
-        family: "aurora-postgresql18",
-        ...preload,
-      },
-    );
-    expect(resource("Cluster", "academorix-production-main-db").inputs).toMatchObject({
-      dbClusterParameterGroupName: "academorix-production-main-db",
+    expect(resource("ClusterParameterGroup", "academy-production-main-db").inputs).toMatchObject({
+      family: "aurora-postgresql18",
+      ...preload,
+    });
+    expect(resource("Cluster", "academy-production-main-db").inputs).toMatchObject({
+      dbClusterParameterGroupName: "academy-production-main-db",
     });
   });
 

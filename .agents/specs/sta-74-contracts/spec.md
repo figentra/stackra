@@ -34,7 +34,7 @@
 
 ## Source and port action
 
-Ported from `/Users/akouta/Projects/figentra/packages/os/foundation/contracts` (`@figentra-os/contracts` 0.1.0, UNLICENSED,
+Ported from `figentra/packages/os/foundation/contracts` (`@figentra-os/contracts` 0.1.0, UNLICENSED,
 seven modules, about 1,300 lines, one `.` entry). Action: **port + adapt** (ADR 0084 D2; owner Round 8 F1), relicensed MIT on
 port (ADR 0024, 0084).
 
