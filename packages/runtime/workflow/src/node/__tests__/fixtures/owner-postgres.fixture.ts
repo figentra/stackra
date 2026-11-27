@@ -3,7 +3,8 @@
  * Purpose: the integration fixture of the workflow journal's row security on the testbed's Postgres: a fresh database
  *          per test file with the workflow migrations applied (all, or the first few so a test can seed rows first and
  *          apply the rest), a NOBYPASSRLS service role of its own that the engine connects as (the shape a deployed
- *          service has: every transaction the journal opens, `requiresNew` ones included, is that role's), a unit of
+ *          service has: every transaction the journal opens, `requiresNew` ones included, is that role's; its pool
+ *          capped on request, so a test can see every connection a unit used), a unit of
  *          work as that role in one owner (`asService`), and a `CallIsolation` that sets `app.tenant_id` from the
  *          actor (`OwnerIsolation`), as the tenancy driver does, putting the enclosing owner back after a nested unit.
  * Boundary: test only; used by the `.int` files, skipped without `TESTBED_POSTGRES_HOST` (user `postgres`, a
@@ -90,12 +91,16 @@ export interface OwnerPostgres {
 }
 
 /**
- * A fresh database with the first `through` workflow migrations applied (all by default) and, when all are, served.
+ * A fresh database with the first `through` workflow migrations applied (all by default) and, when all are, served;
+ * `options.pool` caps the service role's pool (the driver's default when absent).
  *
  * @example
  * const postgres = await ownerPostgres();
  */
-export async function ownerPostgres(through: number = MIGRATIONS.length): Promise<OwnerPostgres> {
+export async function ownerPostgres(
+  through: number = MIGRATIONS.length,
+  options: { readonly pool?: number } = {},
+): Promise<OwnerPostgres> {
   const name = `workflow_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
   const role = `svc_${name}`;
   const admin = await PostgresDatabaseDriver.connect({ url: urlOf("postgres"), entities: [] });
@@ -129,7 +134,11 @@ export async function ownerPostgres(through: number = MIGRATIONS.length): Promis
     ])
       // raw-sql: the fixture's grants, as a superuser
       await em().execute(statement);
-    service = await PostgresDatabaseDriver.connect({ url: urlOf(name, role), entities: [] });
+    service = await PostgresDatabaseDriver.connect({
+      url: urlOf(name, role),
+      entities: [],
+      ...(options.pool === undefined ? {} : { pool: { max: options.pool } }),
+    });
   };
   for (const migration of workflowMigrations().slice(0, through)) await apply(migration);
   if (through === MIGRATIONS.length) await serve();

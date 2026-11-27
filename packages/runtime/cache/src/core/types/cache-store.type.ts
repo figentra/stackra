@@ -23,6 +23,13 @@ export interface CacheStore {
   /** Stores `text` under `key`, kept at least for `ttl` (a lifetime above zero). */
   write: (key: string, text: string, ttl: Duration) => Promise<void>;
 
+  /**
+   * Stores `text` under `key`, kept exactly `ttl`, only when the store keeps nothing there, in one atomic step (Valkey
+   * `SET NX`, a Postgres upsert that replaces only a dead row); answers whether it stored. Absent when the store has no
+   * atomic set-if-absent (the storage area, Workers KV).
+   */
+  create?: (key: string, text: string, ttl: Duration) => Promise<boolean>;
+
   /** Removes `key`; nothing happens when it is not stored. */
   delete: (key: string) => Promise<void>;
 

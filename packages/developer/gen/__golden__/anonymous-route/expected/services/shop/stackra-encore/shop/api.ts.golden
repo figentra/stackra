@@ -6,6 +6,7 @@
  *           the anonymous actor, only where the call lists it, are decided in answerCall, never here.
  * Runtime: node
  */
+import "./environment";
 import "./database";
 import { CancelOrderAction } from "#node/actions/cancel-order.action";
 import { CancelOrderInput } from "#node/schemas/cancel-order-input.schema";

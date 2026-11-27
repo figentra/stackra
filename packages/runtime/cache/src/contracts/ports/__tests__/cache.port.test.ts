@@ -2,8 +2,8 @@
  * Stackra file contract:
  * Purpose: unit and type tests of the `Cache` port: an abstract class that extends `Port`, carries the port brand, is
  *          implemented by `Driver(Cache)`, takes only a `CacheKey`, a `Duration` and the put and remember options
- *          (tags, stale window, lock), and is a container token a test
- *          can override.
+ *          (tags, stale window, lock), rejects `add` by default for a driver with no atomic set-if-absent, and is a
+ *          container token a test can override.
  * Boundary: test only; the driver here is a test-local map driver with no expiry.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0305 (rule 32); ADR 0294
@@ -81,6 +81,14 @@ describe("Cache", () => {
     const view = cache.remember(KEY, Duration.minutes(10), async () => ({ id: "prd_1" }));
     expectTypeOf(view).toEqualTypeOf<Promise<{ id: string }>>();
     await expect(view).resolves.toEqual({ id: "prd_1" });
+  });
+
+  it("rejects add by default, naming the driver, so a store with no set-if-absent never fakes one", async () => {
+    const cache: Cache = new MapCacheDriver();
+    await expect(cache.add(KEY, 1, Duration.minutes(1))).rejects.toThrow(
+      new TypeError("MapCacheDriver does not support add"),
+    );
+    expectTypeOf<ReturnType<Cache["add"]>>().toEqualTypeOf<Promise<boolean>>();
   });
 
   it("is a container token", async () => {
