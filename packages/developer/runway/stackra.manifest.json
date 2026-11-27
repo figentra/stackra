@@ -299,6 +299,26 @@
       "entry": "node"
     },
     {
+      "name": "image:publish",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "RunwayImagePublishCommand",
+      "file": "src/node/commands/runway-image-publish.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "image:verify",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "RunwayImageVerifyCommand",
+      "file": "src/node/commands/runway-image-verify.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "plan",
       "aliases": [],
       "hidden": false,

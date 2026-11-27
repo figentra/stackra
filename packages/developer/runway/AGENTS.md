@@ -52,6 +52,11 @@ and only parses and prints; the work stays in the functions it calls.
   member's `publishConfig`; the release workflow passes it to `runway-npm.yml` as its `registry` input.
 - Provider settings are runway data (`targets.<destination>`, `environments.<env>.encore|mobile`, a dedicated
   deployment's own blocks); a provider never hard-codes a branch, channel or profile.
+- The image step (`publishImage`, `verifyImage`, ADR 0174, STA-609) runs `encore build docker` only from the deploy
+  and release workflow `runway-image.yml` (ADR 0168 decision 2), never in a gate. It signs and verifies a digest, never
+  a tag; a base not pinned by digest and a key file are refused; a keyless verify always pins the caller's ref (main
+  unless named) and a KMS signature never reaches the public Rekor log; settings live in `IMAGE_SUPPLY_CHAIN_SETTINGS`
+  and tool versions only in the workflow. Agents never push or sign a real image; tests use fake command runners.
 - Event fan-out is gen's (`.stackra/encore/<member>/events.ts` and a relay service's `relay.ts`), never a runway key:
   do not add per-service subscriber lists to a runway; document topology effects in the README's fan-out section.
 - `providers.tools` (the per-region self-hosted tools stack, ADR 0444) stays an open provider block here;

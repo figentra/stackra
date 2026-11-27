@@ -520,6 +520,8 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 | `runway secrets decrypt --scope <s> [--dir <d>] [--names A,B]` | One figentra/secrets scope (ADR 0525), decrypted with the job's own Cloud KMS identity from the ciphertext `.github/actions/secrets-decrypt` downloads, masked and exported into `GITHUB_ENV`; names only on output, and it refuses to run without `GITHUB_ENV` | 0; throws on a bad scope, a missing name or a refused key |
 | `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, the `names:` of a `secrets-decrypt` step) has a sops scope (`products/<project>/<dev\|staging\|production>`; a preview reads dev's); a raw read of an undeclared name warns. Names only, no login | 1 on an error |
 | `runway env check --values --env <env>` | CI only: each declared name of `<env>`, read from the job's environment after `secrets-decrypt`, checked against its rules; prints names, the scope, pass or the broken rule and a SHA-256 prefix, never a value | 1 on an error |
+| `runway image:publish --image <registry>/<path> --base <image>@sha256:<d> --sha <sha> [--arch] [--key <kms>] [--signing-config <f>] [--trusted-root <f>] [--repository o/r] [--ref <ref>] [--out <d>]` | CI only (a deploy or release job, ADR 0168 decision 2): builds the generated Encore app as one image from its deploy commit, Trivy gate before the push, push, syft CycloneDX SBOM, cosign signature and SBOM attestation of the digest (keyless, or a KMS key with no transparency log), verify, and the record `runway-image-<name>.json` ([The image step](#the-image-step)); keyless, a job whose `GITHUB_REF` is not `--ref` (default `refs/heads/main`) is refused first | 0; 1 when a step refuses the image; 2 on a usage error |
+| `runway image:verify <image>@sha256:<d> [--key <kms>] [--repository o/r] [--ref <ref>] [--identity <re>] [--trusted-root <f>]` | The check a deploy runs before it uses an image: the cosign signature and the CycloneDX attestation against the KMS key (log check skipped unless `--trusted-root`) or the keyless signer called from `--ref` (default `refs/heads/main`); a tag is refused | 0; 1 when refused |
 | `runway env orphans <env> [--dir <d>]` | CI only: warns on each name in `<env>`'s sops scope (its ciphertext file names under `<d>`, default `.secrets`) that no code declares; decrypts nothing | 0 |
 
 Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never
@@ -527,6 +529,43 @@ by a flag or `GITHUB_ACTIONS`; a deploy job needs `permissions: id-token: write`
 `encore-cloud`, `cloudflare-workers`, `eas` or `mintlify`; `validate` refuses any other (owner decision O8, 2026-11-04).
 A docs app ships through `mintlify` until its site moves to Fumadocs (ADR 0514). The self-hosted site is then
 `docs: cloudflare-workers`, with the docs app as a `targets.cloudflare-workers.members` entry of `kind: docs`.
+
+## The image step
+
+A self-hosted deploy (AWS ECS, Compose, on-prem) runs one image of the product's generated Encore app, made by
+`publishImage` (`runway image:publish`) in a deploy or release job only ([ADR 0168](https://docs.stackra.figentra.com/adr/0168-runway-public-reusable-workflows-build-order-and-runway-yaml)
+decision 2), through the reusable `runway-image.yml` workflow. In order, each step a refusal
+(`RunwayImageRejectedError`, naming the step) that stops the rest ([ADR 0174](https://docs.stackra.figentra.com/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)
+decisions 1 and 2):
+
+1. **Build.** `encore build docker --skip-config --base <base> --arch <arch> <image>:<sha>-<arch>` in the deploy commit's tree
+   (`encoreDeployTree`, the tree Encore Cloud builds), with the installed `node_modules` linked in. The base must be
+   pinned by digest; no infra config is baked in, so one digest is promoted through every environment. The tag carries
+   the architecture, so an arm64 run never moves the amd64 tag; no multi-arch index is built yet (STA-2907).
+2. **Scan.** `trivy image` on the local image: a critical vulnerability with a released fix fails before anything is
+   pushed.
+3. **Push**, then the digest the registry answered: everything after it names `<image>@sha256:<digest>`, never a tag.
+4. **SBOM.** `syft` writes `sbom-<name>.cdx.json` (CycloneDX JSON).
+5. **Sign** and **attest**: `cosign sign` and `cosign attest --type cyclonedx` of the digest, keyless with the job's
+   GitHub OIDC identity, or with a KMS key (`awskms://`, `gcpkms://`, `azurekms://`, `hashivault://`) for an
+   air-gapped signer; a key file is refused. A KMS signature is signed with a Sigstore signing config that names no
+   transparency log or timestamp authority (`IMAGE_SUPPLY_CHAIN_SETTINGS.kmsOffline`, written to a temporary folder),
+   so it needs no Sigstore service and nothing reaches the public Rekor log, unless `signingConfig` names a private
+   Sigstore. A keyless signature, by contrast, publishes the caller repository, its ref, the commit SHA, the workflow
+   run URL and the repository's visibility to the public Rekor log; a private repository that must not disclose them
+   signs with a KMS key or its own Sigstore.
+6. **Verify** (`verifyImage`, also `runway image:verify`): `cosign verify` and `cosign verify-attestation`. Keyless, the
+   certificate must name Runway's `runway-image.yml` called by a commit, a `runway-v<n>` tag or Stackra's main
+   (`IMAGE_SUPPLY_CHAIN_SETTINGS.signerIdentity`), GitHub's issuer, the caller repository and the caller's ref
+   (`callerRef`, default `refs/heads/main`): a workflow on another branch of the caller could call a copy of the
+   workflow with the gate removed, so its signature is refused. With a KMS key the log check is skipped (no entry was
+   written) unless `trustedRoot` names the private Sigstore that holds it.
+
+The record `runway-image-<name>.json` (`runway.image/v1`: image, tag, digest, reference, source and deploy commits,
+base, architecture, SBOM file, signing) and the SBOM are the workflow's `runway-image-<arch>` artifact; its
+`reference` output is what the caller's deploy pins. A deploy job runs `stackra runway image:verify <reference>`
+before it rolls the image out. The tools are pinned in the workflow (`mise exec`): Trivy 0.76.1, syft 1.57.0, cosign
+3.1.4, encore 1.58.8.
 
 ## Deploy, promote and roll back
 

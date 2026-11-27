@@ -62,12 +62,66 @@ amendment of 2026-11-03). Never edit the generated entries: change the runway an
 
 Each provider is a `workflow_call` workflow in `.github/workflows/`. Its job takes its GitHub environment from an input, so the environment's protection, its OIDC subject and GitHub's deployment record apply to every deploy. Each job decrypts the `figentra/secrets` scopes it needs with the shared `secrets-decrypt` action, signed in to Google Cloud as itself through GitHub OIDC, and takes only the names it uses from each. figentra/infra's `estate/secret-callers.mjs` grants each caller workflow, in its environment, its scopes; a job with no row is refused at the decrypt ([Secrets](/runbooks/secrets#reading-in-ci)).
 
-| Provider                        | Caller here                            | Does                                                                                                                        |
-| ------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `runway-cloudflare-workers.yml` | `deploy-static.yml`, `deploy-docs.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt |
-| `runway-npm.yml`                | `release.yml`                          | Trivy scan of the lockfile, version PR or trusted publish with provenance, a cosign-signed SBOM on each new release         |
+| Provider                        | Caller here                            | Does                                                                                                                                                                                                              |
+| ------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runway-cloudflare-workers.yml` | `deploy-static.yml`, `deploy-docs.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt                                                                                       |
+| `runway-npm.yml`                | `release.yml`                          | Trivy scan of the lockfile, version PR or trusted publish with provenance, a cosign-signed SBOM on each new release                                                                                               |
+| `runway-image.yml`              | a self-hosted deploy or release job    | refuses a commit that is not on main, builds and gens, `encore build docker`, Trivy image gate before the push, push, syft SBOM, cosign signature and SBOM attestation of the digest, verify; outputs `reference` |
 
 npm checks the calling workflow, not the reusable one, so each package's trusted publisher names `release.yml`.
+
+### Deploy images
+
+A self-hosted deploy (AWS ECS, Compose, on-prem) runs an image `runway-image.yml` made ([0174](/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)
+decisions 1 and 2, STA-609). The caller passes the image repository (ECR in the shared account, or GHCR for a public
+repository), the base image pinned by digest, its environment and, for ECR, the role ARN the job assumes over GitHub
+OIDC. The job grants `contents: read`, `id-token: write` (the keyless signature and the ECR sign-in) and, for GHCR,
+`packages: write`. A critical vulnerability with a released fix fails the job before anything is pushed. The signature
+is keyless unless `kms-key` names a KMS key (air-gapped installs). Each architecture is its own call and its own tag,
+`<image>:<sha>-<arch>`, so an arm64 run never moves the amd64 tag; the tag is only a label, and the digest is what is
+signed and pinned. No multi-arch index is built yet (STA-2907). The deploy job pins the `reference` output
+(`<image>@sha256:<digest>`) and checks it first:
+
+```bash
+stackra runway image:verify "$REFERENCE" --repository <owner>/<repo>
+```
+
+A keyless verify pins the caller's ref as well as its repository: the job that signed must have run on
+`refs/heads/main` (the certificate's GitHub workflow ref). A workflow pushed to any other branch could call a copy of
+`runway-image.yml` with the main-only check and the Trivy gate removed, and its certificate would still name Runway's
+workflow and the caller repository, so its signature is refused. The signer must be `runway-image.yml` called by a full
+commit, a `runway-v<n>` tag or Stackra's main, never another branch. A caller that signs from another ref passes
+`--ref <full ref>` to the image step and to every verify; to pin one released commit exactly, pass `--identity` with that
+commit. Anyone can check a published image the same way with cosign alone:
+
+```bash
+cosign verify-attestation --type cyclonedx \
+  --certificate-identity-regexp '^https://github\.com/stackra-inc/stackra/\.github/workflows/runway-image\.yml@(?:[0-9a-f]{40}|refs/tags/runway-v[0-9]+|refs/heads/main)$' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-github-workflow-repository <owner>/<repo> \
+  --certificate-github-workflow-ref refs/heads/main <image>@sha256:<digest>
+```
+
+**What keyless signing makes public.** A keyless signature is logged in the public Rekor transparency log, and its
+certificate names the caller repository, its ref, the commit SHA, the workflow run URL and whether the repository is
+public or private, beside the image digest. Anyone can read the entry, and it cannot be removed. A private repository
+that must not disclose these signs with a KMS key (`kms-key`, `--key`, below) or with its own Sigstore
+(`--signing-config` and `--trusted-root`).
+
+**Air-gapped (KMS key).** A KMS signature writes no transparency-log entry and uses no timestamp authority: the image
+step signs with a Sigstore signing config that names no service, so signing reaches only the KMS and the registry, and
+no image digest or public key goes to the public Rekor log. The verifier at the site needs the registry, the KMS key's
+public half through its own KMS role (or `hashivault://` against its Vault), and nothing from Sigstore:
+
+```bash
+stackra runway image:verify "$REFERENCE" --key awskms:///alias/<key>
+# the same with cosign alone
+cosign verify-attestation --type cyclonedx --key awskms:///alias/<key> --insecure-ignore-tlog=true <image>@sha256:<digest>
+```
+
+A site that runs its own Sigstore passes its signing config to the image step (`--signing-config`) and its trusted
+root to both the step and the verify (`--trusted-root`); the log entry is then written to its Rekor and checked. A
+verifier with no network that checks a keyless image passes the public trusted root fetched ahead (`--trusted-root`).
 
 ### Calling a provider from another repository
 
@@ -201,16 +255,19 @@ tell the owner.
 
 ## What is not built yet
 
-| Item                                                                               | Waits for                                          |
-| ---------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Encore deploy spike and its ADR (STA-136)                                          | gen emitting the Encore app (STA-59)               |
-| `encore-cloud` provider and a staging deploy on every merge (STA-608)              | STA-136                                            |
-| Images, Trivy image scan, syft SBOM, cosign image signing, Compose smoke (STA-609) | gen and STA-136                                    |
-| Generated CI pipelines (STA-256)                                                   | gen                                                |
-| The sync itself (STA-606)                                                          | gen, STA-136, STA-17                               |
-| `stackra validate`, `stackra deploy`, `stackra promote` (STA-607)                  | the CLI branch landing                             |
-| Snapshot `next` releases (STA-209)                                                 | the first publish                                  |
-| The R2 Turbo cache Worker (STA-604)                                                | nothing; it uses the `cloudflare-workers` provider |
+| Item                                                                                             | Waits for                                          |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| Encore deploy spike and its ADR (STA-136)                                                        | gen emitting the Encore app (STA-59)               |
+| `encore-cloud` provider and a staging deploy on every merge (STA-608)                            | STA-136                                            |
+| Compose smoke test of each release image (STA-2909, ADR 0289 decision 8)                         | a Compose deployable and the self-hosted deploy    |
+| A self-hosted deploy driver that pins and verifies the image (STA-2910)                          | nothing; it builds on the image step (STA-609)     |
+| A signed multi-arch image index over the per-architecture images (STA-2907, ADR 0174 decision 1) | nothing; it builds on the image step (STA-609)     |
+| Signed OCI image tarballs for on-prem and air-gapped installs (STA-2908, ADR 0174 decision 1)    | nothing; it builds on the image step (STA-609)     |
+| Generated CI pipelines (STA-256)                                                                 | gen                                                |
+| The sync itself (STA-606)                                                                        | gen, STA-136, STA-17                               |
+| `stackra validate`, `stackra deploy`, `stackra promote` (STA-607)                                | the CLI branch landing                             |
+| Snapshot `next` releases (STA-209)                                                               | the first publish                                  |
+| The R2 Turbo cache Worker (STA-604)                                                              | nothing; it uses the `cloudflare-workers` provider |
 
 ## Owner steps
 
