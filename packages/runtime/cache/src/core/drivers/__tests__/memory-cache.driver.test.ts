@@ -4,8 +4,9 @@
  *          `remember` (one load for concurrent calls, nothing stored on rejection or a synchronous throw), `forget` of a
  *          key and every key it covers (the template's every-locale forget), a covered load in flight not stored, a
  *          `put` winning over a load in flight, namespace isolation, the least-recently-read bound (which also drops
- *          an evicted entry from its tags), `forgetTag`, a stale entry served while it reloads, and loads reported to
- *          the metrics port.
+ *          an evicted entry from its tags), `forgetTag`, a stale entry served while it reloads, loads reported to
+ *          the metrics port, and `add`: one winner of concurrent adds, an exact lifetime under jitter, a stale entry
+ *          counted as kept, and a load in flight not stored over an added value.
  * Boundary: test only; builds `CacheConfig` through `buildConfig` as the runtime does, with a settable clock and a
  *           settable namespace.
  * Runtime: node (vitest)
@@ -45,7 +46,10 @@ class Product {}
 class Category {}
 
 /** A driver bounded at `maxEntries`, with its clock, namespace and counting metrics. */
-function setup(maxEntries = 100): {
+function setup(
+  maxEntries = 100,
+  jitter = 0,
+): {
   cache: MemoryCacheDriver;
   clock: ManualClock;
   namespace: SettableCacheNamespace;
@@ -55,7 +59,7 @@ function setup(maxEntries = 100): {
   const namespace = new SettableCacheNamespace();
   const metrics = new CountingCacheMetricsDriver();
   const cache = new MemoryCacheDriver(
-    buildConfig(CacheConfig, { values: { maxEntries } }),
+    buildConfig(CacheConfig, { values: { maxEntries, jitter } }),
     namespace,
     clock,
     metrics,
@@ -258,5 +262,48 @@ describe("MemoryCacheDriver", () => {
     await cache.remember(key, TEN_MINUTES, () => 1);
     await cache.remember(key, TEN_MINUTES, () => 1);
     expect(metrics.snapshot().get("Product")).toMatchObject({ hits: 1, misses: 1, loads: 1 });
+  });
+
+  it("adds only where nothing is kept: of concurrent adds of one key exactly one wins", async () => {
+    const { cache } = setup();
+    const key = CacheKey.of(Product, "req-1");
+    const answers = await Promise.all([1, 2, 3, 4].map((n) => cache.add(key, n, TEN_MINUTES)));
+    expect(answers.filter(Boolean)).toHaveLength(1);
+    await expect(cache.get(key)).resolves.toBe(answers.indexOf(true) + 1);
+    await expect(cache.add(CacheKey.of(Product, "req-2"), 1, TEN_MINUTES)).resolves.toBe(true);
+  });
+
+  it("keeps an added value for exactly its lifetime, never shortened by the jitter", async () => {
+    const { cache, clock } = setup(100, 0.9);
+    const key = CacheKey.of(Product, "req-1");
+    await expect(cache.add(key, true, TEN_MINUTES)).resolves.toBe(true);
+    clock.time += Duration.toMilliseconds(TEN_MINUTES) - 1;
+    await expect(cache.add(key, true, TEN_MINUTES)).resolves.toBe(false);
+    await expect(cache.get(key)).resolves.toBe(true);
+    clock.time += 1;
+    await expect(cache.add(key, "again", TEN_MINUTES)).resolves.toBe(true);
+    await expect(cache.get(key)).resolves.toBe("again");
+  });
+
+  it("counts an entry kept for its stale window as kept, and stores nothing for a zero lifetime", async () => {
+    const { cache, clock } = setup();
+    const key = CacheKey.of(Product, "prd_1");
+    await cache.remember(key, TEN_MINUTES, () => "view", { stale: TEN_MINUTES });
+    clock.time += Duration.toMilliseconds(TEN_MINUTES);
+    await expect(cache.add(key, "other", TEN_MINUTES)).resolves.toBe(false);
+    const fresh = CacheKey.of(Product, "prd_2");
+    await expect(cache.add(fresh, 1, Duration.seconds(0))).resolves.toBe(false);
+    await expect(cache.get(fresh)).resolves.toBeUndefined();
+  });
+
+  it("keeps an added value over a load in flight for the same key", async () => {
+    const { cache } = setup();
+    const key = CacheKey.of(Product, "prd_1");
+    const load = deferred<string>();
+    const remembered = cache.remember(key, TEN_MINUTES, () => load.promise);
+    await expect(cache.add(key, "added", TEN_MINUTES)).resolves.toBe(true);
+    load.resolve("loaded");
+    await expect(remembered).resolves.toBe("loaded");
+    await expect(cache.get(key)).resolves.toBe("added");
   });
 });

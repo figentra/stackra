@@ -22,6 +22,7 @@ describe("@stackra/csp", () => {
       "cspHeaderName",
       "frameAncestorOrigin",
       "frameAncestorsEntry",
+      "narrowHtmlPolicy",
       "sanitizeHtml",
       "securityHeaders",
     ]);
