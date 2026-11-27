@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `PACKAGE_NAME_SCHEMA`, a scoped npm package name (`@figentra/mezzora-console-ui`), for the packages a
+ * Purpose: `PACKAGE_NAME_SCHEMA`, a scoped npm package name (`@figentra/bistro-console-ui`), for the packages a
  *          surface or mobile app loads and the package an ops contribution comes from.
  * Boundary: internal; the surfaces, contribution and mobile schemas compose it. Shape only.
  * Runtime: isomorphic

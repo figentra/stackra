@@ -29,7 +29,7 @@ class RecordingVault extends VaultWriter {
 }
 
 const PLAN: RuntimePlan = {
-  project: "academorix",
+  project: "academy",
   environment: "production",
   queues: [],
   caches: [],
@@ -38,7 +38,7 @@ const PLAN: RuntimePlan = {
     {
       key: "resources.main-db",
       resource: "main-db",
-      name: "academorix-production-main-db",
+      name: "academy-production-main-db",
       engine: "rds",
       version: "18",
       instanceClass: "db.r7g.large",

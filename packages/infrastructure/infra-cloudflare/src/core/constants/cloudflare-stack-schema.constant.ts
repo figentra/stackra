@@ -25,7 +25,7 @@ const VALUE = z.union([z.string().min(1), z.number(), z.boolean()]);
 /** The core stack's Cloudflare config, defaults applied. */
 export const CLOUDFLARE_STACK_SCHEMA = z
   .strictObject({
-    /** The zone dev tunnels and the dev Access application live on (figentra.cloud, ADR 0290 decision 1). */
+    /** The zone dev tunnels and the dev Access application live on (dev.example, ADR 0290 decision 1). */
     devZone: HOSTNAME_SCHEMA.optional(),
     zones: z.record(HOSTNAME_SCHEMA, ZONE_OPTIONS_SCHEMA).default({}),
     /** R2 bucket name → its lifecycle; the Turborepo cache expires after 7 days (ADR 0026). */
@@ -46,7 +46,7 @@ export const CLOUDFLARE_STACK_SCHEMA = z
           .default("24h"),
         /** Production operator surfaces behind Access, such as `api.figentra.com/platform` (ADR 0290 decision 11). */
         operatorUris: z.array(z.string().min(1)).default([]),
-        /** Callback and webhook paths that skip Access, such as `*.figentra.cloud/api/auth/callback`. */
+        /** Callback and webhook paths that skip Access, such as `*.dev.example/api/auth/callback`. */
         bypass: z.array(z.string().min(1)).default([]),
         /** Machine names that get an Access service token (ADR 0290 decision 6). */
         serviceTokens: z.array(DNS_LABEL_SCHEMA).default([]),
@@ -63,7 +63,7 @@ export const CLOUDFLARE_STACK_SCHEMA = z
         members: z.record(
           DNS_LABEL_SCHEMA,
           z.strictObject({
-            /** The custom domains and routes the Worker answers on, such as `console.figentra.cloud`. */
+            /** The custom domains and routes the Worker answers on, such as `console.dev.example`. */
             hostnames: z.array(z.string().min(1)).default([]),
           }),
         ),

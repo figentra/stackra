@@ -5,7 +5,7 @@
  *          `groups: false` for the first apply (image pipeline only, before the first AMI exists).
  * Boundary: a type only.
  * Runtime: node
- * Governing contract: ADR 0484 (decisions 2, 3, 8, 9).
+ * Governing contract: ADR 0484 (decisions 2, 3, 8, 9); STA-2876 (the key pair is a stack setting).
  */
 /** The account-specific inputs of `awsTestbed` that the plan does not carry. */
 export type AwsTestbedOptions = {
@@ -31,4 +31,9 @@ export type AwsTestbedOptions = {
    * Absent, the roles have none.
    */
   readonly permissionsBoundary?: string;
+  /**
+   * The EC2 key pair the launch template names (`TESTBED_DEFAULTS.keyPair` when absent). The pair must exist in every
+   * region the stack runs in; `stackra testbed` connects with its private key file.
+   */
+  readonly keyPair?: string;
 };

@@ -15,7 +15,7 @@ import { zoneOf } from "#core/functions/zone-of.function";
  * The route patterns by zone, hand-authored ones first, generated ones sorted and deduplicated.
  *
  * @example
- * edgeRoutes(root, { "figentra.com": [] }, ["figentra.com"]); // { "figentra.com": ["app.mezzora.figentra.com/*"] }
+ * edgeRoutes(root, { "figentra.com": [] }, ["figentra.com"]); // { "figentra.com": ["app.bistro.figentra.com/*"] }
  */
 export function edgeRoutes(
   root: RootRunway,

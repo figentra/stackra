@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `checkPorts`: lane 0 alone without a table; the redundancy challenge's own collision (lane
  *          10's otel UI on lane 0's gateway) named with both owners; a member port against infra; a `perLane: false`
- *          port shared by every lane; a port pushed past 65535; and the full D1 table through academorix (index 7).
+ *          port shared by every lane; a port pushed past 65535; and the full D1 table through academy (index 7).
  * Boundary: test only; builds root and member runways through `parseRunway`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); STA-863; redundancy challenge item 5; D1 (repository index).
@@ -18,10 +18,10 @@ const D1 = {
   commerce: 1,
   organza: 2,
   jute: 3,
-  mezzora: 4,
+  bistro: 4,
   velora: 5,
   juristra: 6,
-  academorix: 7,
+  academy: 7,
 };
 
 /** A root runway whose dev environment has the given infra and lanes. */
@@ -107,7 +107,7 @@ describe("checkPorts", () => {
     expect(issues).toEqual([expect.objectContaining({ code: "port_out_of_range", port: 65_600 })]);
   });
 
-  it("walks every lane of the D1 table through academorix", () => {
+  it("walks every lane of the D1 table through academy", () => {
     const issues = checkPorts(root({ gateway: { port: 4000 } }, { portStep: 100, repos: D1 }), {
       console: app({ port: 11_900 }),
     });
@@ -118,7 +118,7 @@ describe("checkPorts", () => {
         port: 11_900,
         owners: [
           "os worktree 0 (lane 0) console.port",
-          "academorix worktree 9 (lane 79) infra.gateway.port",
+          "academy worktree 9 (lane 79) infra.gateway.port",
         ],
       }),
     ]);

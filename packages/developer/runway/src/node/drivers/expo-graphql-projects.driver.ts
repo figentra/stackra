@@ -62,7 +62,7 @@ function list(value: unknown): Node[] {
  *
  * @example
  * const expo = new ExpoGraphqlProjectsDriver();
- * await expo.findProject("figentra", "academorix-academorix");
+ * await expo.findProject("figentra", "academy-academy");
  */
 export class ExpoGraphqlProjectsDriver extends Driver(ExpoProjects) {
   /** The job's environment; a test replaces it. */

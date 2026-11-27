@@ -16,18 +16,16 @@ const ports = { web: 5174, console: 5173 };
 
 describe("tunnelIngress", () => {
   it("exposes every member with a dev port, then the catch-all", () => {
-    expect(tunnelIngress({ label: "akouta", zone: "figentra.cloud", ports })).toEqual([
-      { hostname: "console-akouta.figentra.cloud", service: "http://localhost:5173" },
-      { hostname: "web-akouta.figentra.cloud", service: "http://localhost:5174" },
+    expect(tunnelIngress({ label: "dana", zone: "dev.example", ports })).toEqual([
+      { hostname: "console-dana.dev.example", service: "http://localhost:5173" },
+      { hostname: "web-dana.dev.example", service: "http://localhost:5174" },
       { service: "http_status:404" },
     ]);
   });
 
   it("exposes only the named members, in their order", () => {
-    expect(
-      tunnelIngress({ label: "box", zone: "figentra.cloud", ports, members: ["web"] }),
-    ).toEqual([
-      { hostname: "web-box.figentra.cloud", service: "http://localhost:5174" },
+    expect(tunnelIngress({ label: "box", zone: "dev.example", ports, members: ["web"] })).toEqual([
+      { hostname: "web-box.dev.example", service: "http://localhost:5174" },
       { service: "http_status:404" },
     ]);
   });
@@ -36,7 +34,7 @@ describe("tunnelIngress", () => {
     const issues = thrownIssues(() =>
       tunnelIngress({
         label: "a".repeat(60),
-        zone: "figentra.cloud",
+        zone: "dev.example",
         ports,
         members: ["docs", "web"],
       }),

@@ -201,7 +201,7 @@ export const SignInBrandPanel = defineSlot<BrandPanelProps>({
   key: "auth.sign_in.brand_panel",
   surface: "console",
 });
-export const MezzoraBrandPanel = fillSlot(SignInBrandPanel, BrandPanel, { surface: "console" });
+export const BistroBrandPanel = fillSlot(SignInBrandPanel, BrandPanel, { surface: "console" });
 ```
 
 `cardinality` is `one` (default: the fill replaces the shell's default) or `many`. TypeScript checks the component's

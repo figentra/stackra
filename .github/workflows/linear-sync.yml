@@ -59,7 +59,8 @@ jobs:
         run: pnpm install --frozen-lockfile --filter .
 
       # Read-only, scoped to the repos the reconcile reads (tools/scripts/linear-reconcile.repos.yaml; keep the two lists
-      # in step), never the whole org; revoked when the job ends.
+      # in step, plus the LINEAR_RECONCILE_EXTRA_REPOS variable: the private repos this public file does not name,
+      # comma-separated, STA-2876), never the whole org; revoked when the job ends.
       - name: App token
         id: bot
         continue-on-error: true
@@ -85,9 +86,8 @@ jobs:
             commerce
             organza
             velora
-            academorix
             jute
-            mezzora
+            ${{ vars.LINEAR_RECONCILE_EXTRA_REPOS }}
           permission-contents: read
           permission-pull-requests: read
 
@@ -98,4 +98,5 @@ jobs:
           LINEAR_AGENT_CLIENT_SECRET: ${{ secrets.LINEAR_AGENT_CLIENT_SECRET }}
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
           DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
-        run: node tools/scripts/linear-reconcile.mjs ${DRY_RUN:+"$DRY_RUN"}
+          EXTRA_REPOS: ${{ vars.LINEAR_RECONCILE_EXTRA_REPOS }}
+        run: node tools/scripts/linear-reconcile.mjs ${DRY_RUN:+"$DRY_RUN"} ${EXTRA_REPOS:+--extra-repos "$EXTRA_REPOS"}

@@ -184,7 +184,7 @@ the issue date), which BR-KSA-15 requires. The AEAT fingerprint examples and ZAT
 - Tax computation and document numbering: OS invoicing, pricing and `@stackra/database` sequences.
 - Pack loading and verification (`@stackra/market-packs`; this package only binds `FiscalPackSource` over it), device
   pairing (`@stackra/devices`) and PDF rendering (`@stackra/documents`, which binds `HybridPdf`).
-- Guest-check splitting (Mezzora guest checks) and the scheduling of `pollSubmitted` (the host's cron or workflow).
+- Guest-check splitting (Bistro guest checks) and the scheduling of `pollSubmitted` (the host's cron or workflow).
 
 ## Tasks
 

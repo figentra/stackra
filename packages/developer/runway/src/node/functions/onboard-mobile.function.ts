@@ -40,7 +40,7 @@ type Platform = "ios" | "android";
  *
  * @throws RunwayInvalidError when the app is not in the root runway's `mobile`.
  * @example
- * const result = await onboardMobile({ repository: ".", app: "academorix", dryRun: true, ...memoryPorts });
+ * const result = await onboardMobile({ repository: ".", app: "academy", dryRun: true, ...memoryPorts });
  * result.steps.filter((step) => step.state === "manual");
  */
 export async function onboardMobile(request: MobileOnboardRequest): Promise<MobileOnboard> {

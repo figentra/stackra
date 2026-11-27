@@ -31,11 +31,11 @@ const BASE = {
 const ENTRY: MobileApp = {
   template: "os/mobile@3",
   identity: {
-    name: { en: "Mezzora Staff", ar: "ميزورا" },
-    ios: { bundleId: "com.figentra.mezzora.staff" },
-    android: { package: "com.figentra.mezzora.staff" },
-    scheme: "mezzora-staff",
-    links: ["console.mezzora.figentra.com"],
+    name: { en: "Bistro Staff", ar: "بيسترو" },
+    ios: { bundleId: "com.figentra.bistro.staff" },
+    android: { package: "com.figentra.bistro.staff" },
+    scheme: "bistro-staff",
+    links: ["console.bistro.figentra.com"],
   },
   capabilities: ["push"],
   tablet: true,
@@ -54,7 +54,7 @@ const CAPABILITIES: MobileCapabilityConfig = {
 /** The `ios` block of `entry`'s config. */
 function iosOf(entry: MobileApp): Record<string, unknown> {
   return expoConfigOf(BASE, {
-    project: "mezzora",
+    project: "bistro",
     app: "staff",
     entry,
     capabilities: CAPABILITIES,
@@ -64,34 +64,34 @@ function iosOf(entry: MobileApp): Record<string, unknown> {
 describe("expoConfigOf", () => {
   it("writes the runway identity and strips the disabled capabilities", () => {
     const config = expoConfigOf(BASE, {
-      project: "mezzora",
+      project: "bistro",
       app: "staff",
       entry: ENTRY,
       capabilities: CAPABILITIES,
     });
     expect(config).toEqual({
-      name: "Mezzora Staff",
-      slug: "mezzora-staff",
+      name: "Bistro Staff",
+      slug: "bistro-staff",
       version: "1.0.0",
-      scheme: "mezzora-staff",
+      scheme: "bistro-staff",
       runtimeVersion: "os-mobile-3",
       updates: { url: "https://u.expo.dev/0f8c2b1e-5d3a-4c7b-9e21-6a4d8f0b3c57" },
       plugins: ["expo-router", "expo-notifications"],
       ios: {
-        bundleIdentifier: "com.figentra.mezzora.staff",
+        bundleIdentifier: "com.figentra.bistro.staff",
         supportsTablet: true,
-        associatedDomains: ["applinks:console.mezzora.figentra.com"],
+        associatedDomains: ["applinks:console.bistro.figentra.com"],
         infoPlist: { ITSAppUsesNonExemptEncryption: false },
         entitlements: { "aps-environment": "production" },
       },
       android: {
-        package: "com.figentra.mezzora.staff",
+        package: "com.figentra.bistro.staff",
         blockedPermissions: ["android.permission.RECORD_AUDIO", "android.permission.CAMERA"],
         intentFilters: [
           {
             action: "VIEW",
             autoVerify: true,
-            data: [{ scheme: "https", host: "console.mezzora.figentra.com" }],
+            data: [{ scheme: "https", host: "console.bistro.figentra.com" }],
             category: ["BROWSABLE", "DEFAULT"],
           },
         ],
@@ -130,7 +130,7 @@ describe("expoConfigOf", () => {
     expect(config["slug"]).toBe("commerce-shopper");
     expect((config["ios"] as Record<string, unknown>)["bundleIdentifier"]).toBe("com.acme.shop");
     expect((config["android"] as Record<string, unknown>)["package"]).toBe(
-      "com.figentra.mezzora.staff",
+      "com.figentra.bistro.staff",
     );
   });
 

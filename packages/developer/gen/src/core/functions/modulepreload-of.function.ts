@@ -14,12 +14,12 @@ import type { ExtensionBundleManifest } from "#core/types/extension-bundle-manif
  * The modulepreload URLs of a shell and a product bundle, without duplicates.
  *
  * @param shellEntry - the shell record's `entry` URL.
- * @param bundleBase - the URL of the bundle's folder, ending in `/` (`https://assets…/mezzora/console/1.4.0/`).
+ * @param bundleBase - the URL of the bundle's folder, ending in `/` (`https://assets…/bistro/console/1.4.0/`).
  * @param bundle - the bundle's `bundle.manifest.json`.
  * @throws RangeError when `bundleBase` does not end in `/`.
  * @example
- * modulepreloadOf("/shell/console/3.2.0/entry.js", "/b/mezzora/console/1.4.0/", manifest);
- * // ["/shell/console/3.2.0/entry.js", "/b/mezzora/console/1.4.0/console.a1b2.js", "/b/mezzora/console/1.4.0/chunks/x.js"]
+ * modulepreloadOf("/shell/console/3.2.0/entry.js", "/b/bistro/console/1.4.0/", manifest);
+ * // ["/shell/console/3.2.0/entry.js", "/b/bistro/console/1.4.0/console.a1b2.js", "/b/bistro/console/1.4.0/chunks/x.js"]
  */
 export function modulepreloadOf(
   shellEntry: string,

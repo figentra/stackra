@@ -24,7 +24,7 @@ moved that package to `figentra/stackra-pro` as the internal-only `@stackra-pro/
 HeroUI answered in writing. Under sections 8 and 9 of its licence terms, HeroUI Pro and HeroUI Native Pro may not be
 redistributed in Stackra in any form, and HeroUI offers no OEM licence. Wrapping the components, keeping the source
 private, installing through revocable tokens or asking each customer to hold their own licence does not change that.
-End-user applications, such as Figentra OS and Academorix, may still use Pro within Figentra's plan, because they are
+End-user applications, such as Figentra OS and the academy product, may still use Pro within Figentra's plan, because they are
 apps Figentra builds and runs, not a framework other people build on.
 
 Stackra is a framework that other people build on ([0023](/adr/0023-stackra-is-a-framework)), so every Pro path left in
@@ -42,7 +42,7 @@ it is a redistribution path.
    ([0291](/adr/0291-porting-provenance-and-the-third-party-reading-rule) applies).
 3. **No Pro tooling in this repository.** No HeroUI Pro MCP server, no `heroui-pro login` install path and no
    HeroUI CI/CD token or `HEROUI_PERSONAL_TOKEN` are configured here. The free HeroUI MCP servers stay.
-4. **End-user products are outside this rule.** A Figentra product app (Figentra OS, Academorix) may use HeroUI Pro
+4. **End-user products are outside this rule.** A Figentra product app (Figentra OS, the academy product) may use HeroUI Pro
    within Figentra's plan. It imports Pro directly in the app and installs it with the product repository's own token,
    never through a Stackra package.
 5. **Uniwind Pro is unaffected.** [0310](/adr/0310-stackra-ui-pro-private-heroui-pro-wrappers) decision 11 (Uniwind

@@ -1827,10 +1827,10 @@ const SLOT_SOURCES: Readonly<Record<string, string>> = {
     'export const BrandPanel = defineSlot<BrandPanelProps>({ key: "auth.sign_in.brand_panel", surface: "console" });',
     "",
   ].join("\n"),
-  "src/core/fills/mezzora-brand.fill.ts": [
+  "src/core/fills/bistro-brand.fill.ts": [
     'import { fillSlot } from "@stackra/panel";',
     'import { BrandPanel } from "#core/slots/brand-panel.slot";',
-    'export const MezzoraBrand = fillSlot(BrandPanel, (props) => props.brand, { surface: "console" });',
+    'export const BistroBrand = fillSlot(BrandPanel, (props) => props.brand, { surface: "console" });',
     "",
   ].join("\n"),
   "src/core/fills/loose.fill.ts": [
@@ -1865,9 +1865,9 @@ describe("createSourceReader on shell slots and fills", async () => {
   });
 
   it("reads a fill's slot by its import, its surface and the slot's props", () => {
-    expect(fills.map((fill) => fill.name)).toEqual(["MezzoraBrand"]);
+    expect(fills.map((fill) => fill.name)).toEqual(["BistroBrand"]);
     expect(fills[0]).toMatchObject({
-      file: "src/core/fills/mezzora-brand.fill.ts",
+      file: "src/core/fills/bistro-brand.fill.ts",
       slot: { name: "BrandPanel", from: "#core/slots/brand-panel.slot" },
       surface: "console",
     });
