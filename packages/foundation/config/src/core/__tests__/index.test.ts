@@ -4,7 +4,7 @@
  *          (`Config`, `Secret`, `env`, `hydrateEnv`), the registry row's layering, key derivation, and error, and the
  *          running environment's one reader (`readEnvironment`, STA-2844) are exported, nothing else is
  *          (`MigrationRunner` left for @stackra/contracts), and the public types resolve, `BuildFacts`, `PublicPart`
- *          and `PlatformEnvironment` among them.
+ *          and `PlatformEnvironment` among them, and the secret store reload and its configs (STA-258).
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -24,8 +24,11 @@ import type {
   EnvDerivations,
   EnvMap,
   EnvValue,
+  LoadableSecretStore,
   PlatformEnvironment,
   PublicPart,
+  SecretReload,
+  SecretReloadOptions,
   StackraEnvironment,
 } from "#core/index";
 
@@ -39,10 +42,16 @@ describe("@stackra/config", () => {
       "ConfigInvalidError",
       "ENVIRONMENT_VARIABLE",
       "EphemeralSignerDriver",
+      "GcpSecretManagerConfig",
+      "GcpSecretManagerConfig$",
+      "GcpSecretManagerOptions",
       "KmsSignerDriver",
       "MemorySecretStoreDriver",
       "SAFETY_CRITICAL_VARIABLES",
       "Secret",
+      "SecretFilesConfig",
+      "SecretFilesConfig$",
+      "SecretFilesOptions",
       "SecretsConfig",
       "SecretsConfig$",
       "SecretsOptions",
@@ -56,6 +65,7 @@ describe("@stackra/config", () => {
       "hydrateEnv",
       "isDeployedEnvironment",
       "readEnvironment",
+      "scheduleSecretReload",
     ]);
     expect("MigrationRunner" in config).toBe(false);
   });
@@ -94,5 +104,8 @@ describe("@stackra/config", () => {
       "dev" | "test" | "preview" | "staging" | "production"
     >();
     expectTypeOf(config.readEnvironment).returns.toEqualTypeOf<StackraEnvironment>();
+    expectTypeOf<LoadableSecretStore["load"]>().returns.toEqualTypeOf<Promise<void>>();
+    expectTypeOf(config.scheduleSecretReload).returns.toEqualTypeOf<SecretReload>();
+    expectTypeOf<SecretReloadOptions["everySeconds"]>().toEqualTypeOf<number>();
   });
 });

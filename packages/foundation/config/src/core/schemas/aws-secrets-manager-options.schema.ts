@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: `AwsSecretsManagerOptions`, the shape of `AwsSecretsManagerConfig`: the AWS region and the secrets the
- *          `aws-secrets-manager` store reads at load.
+ * Purpose: `AwsSecretsManagerOptions`, the shape of `AwsSecretsManagerConfig`: the AWS region, the secrets the
+ *          `aws-secrets-manager` store reads at load, and how long one request may take.
  * Boundary: a shape class; it registers this package's own schema (`AWS_SECRETS_MANAGER_CONFIG_SCHEMA`) for itself
  *           when the module loads. No credential: the driver uses the runtime's AWS credential chain (the task or
  *           instance role), so no key is configured anywhere. Which secrets a deployment reads is data (runway), never
@@ -9,7 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0173 (secrets by name); ADR 0146 as amended; ADR 0294 (decisions 19 and 26).
  */
-import { registerSchemas, Schema } from "@stackra/validation";
+import { Int, registerSchemas, Schema } from "@stackra/validation";
 
 import { AWS_SECRETS_MANAGER_CONFIG_SCHEMA } from "#core/constants/aws-secrets-manager-config-schema.constant";
 
@@ -23,6 +23,16 @@ import { AWS_SECRETS_MANAGER_CONFIG_SCHEMA } from "#core/constants/aws-secrets-m
  * }
  */
 export class AwsSecretsManagerOptions extends Schema {
+  /**
+   * Milliseconds one `BatchGetSecretValue` request may take before it fails (100 to 60,000); the SDK's own default is
+   * no limit, so a dropped connection would hang the load.
+   */
+  @Int({
+    min: 100,
+    max: 60_000,
+  })
+  timeoutMs = 10_000;
+
   /** The region the secrets live in (`me-central-1`); the store refuses to load while it is empty. */
   region = "";
 

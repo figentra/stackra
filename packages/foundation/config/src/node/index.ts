@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: Stand-in barrel: the `./node` entry of @stackra/config (the AWS Secrets Manager secret store and the AWS SDK KMS client) until
+ * Purpose: Stand-in barrel: the `./node` entry of @stackra/config (the AWS Secrets Manager, Google Secret Manager and file
+ *          secret stores, and the AWS SDK KMS client) until
  *          `stackra gen` writes the entry barrels (STA-339).
  * Boundary: names each re-export and declares nothing. Server only: the driver loads the AWS SDK, an optional peer a
  *           host installs when it binds this driver.
@@ -10,3 +11,5 @@
  */
 export { AwsSdkKmsClientDriver } from "#node/drivers/aws-sdk-kms-client.driver";
 export { AwsSecretsManagerSecretStoreDriver } from "#node/drivers/aws-secrets-manager-secret-store.driver";
+export { FileSecretStoreDriver } from "#node/drivers/file-secret-store.driver";
+export { GcpSecretManagerSecretStoreDriver } from "#node/drivers/gcp-secret-manager-secret-store.driver";

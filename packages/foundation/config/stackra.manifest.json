@@ -62,7 +62,7 @@
     {
       "port": "SecretStore",
       "key": "config.SecretStore",
-      "candidates": ["memory", "aws_secrets_manager"],
+      "candidates": ["memory", "aws_secrets_manager", "file", "gcp_secret_manager"],
       "classes": {
         "memory": {
           "class": "MemorySecretStoreDriver",
@@ -75,6 +75,30 @@
             {
               "class": {
                 "name": "AwsSecretsManagerConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        },
+        "file": {
+          "class": "FileSecretStoreDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "SecretFilesConfig",
+                "from": "@stackra/config"
+              }
+            }
+          ]
+        },
+        "gcp_secret_manager": {
+          "class": "GcpSecretManagerSecretStoreDriver",
+          "from": "@stackra/config/node",
+          "deps": [
+            {
+              "class": {
+                "name": "GcpSecretManagerConfig",
                 "from": "@stackra/config"
               }
             }
@@ -118,6 +142,16 @@
     {
       "key": "config.aws_secrets_manager",
       "class": "AwsSecretsManagerConfig",
+      "from": "@stackra/config"
+    },
+    {
+      "key": "config.gcp_secret_manager",
+      "class": "GcpSecretManagerConfig",
+      "from": "@stackra/config"
+    },
+    {
+      "key": "config.secret_files",
+      "class": "SecretFilesConfig",
       "from": "@stackra/config"
     },
     {

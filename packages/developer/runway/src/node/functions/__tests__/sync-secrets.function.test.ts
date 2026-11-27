@@ -52,8 +52,23 @@ const RUNWAYS: DeployRunways = {
   ],
 };
 
-/** A runner that records every call and the encore.app of an Encore write's working directory. */
-function recorder(): {
+/** `text` in a terminal's green. */
+const green = (text: string) => `\u001b[32m${text}\u001b[0m`;
+
+/** The overview table `encore secret list` prints (its marks coloured, as on a terminal), one row per name. */
+function listing(rows: readonly string[]): string {
+  return [
+    "Secret Key   Production   Development   Local   Preview   Specific Envs",
+    ...rows.map((row) => row.replaceAll("\u2713", green("\u2713"))),
+    "",
+  ].join("\n");
+}
+
+/**
+ * A runner that records every call and the encore.app of an Encore write's working directory; `encore secret list`
+ * answers `list` (a string, or an error to throw).
+ */
+function recorder(list: string | Error = listing([])): {
   readonly run: CommandRunner;
   readonly calls: {
     readonly command: string;
@@ -75,6 +90,10 @@ function recorder(): {
       ...(options.input === undefined ? {} : { input: options.input }),
       ...(app === undefined ? {} : { app }),
     });
+    if (command === "encore" && args[0] === "secret" && args[1] === "list") {
+      if (list instanceof Error) throw list;
+      return list;
+    }
     return "";
   };
   return { run, calls };
@@ -193,6 +212,296 @@ describe("secretSyncPlan gateway", () => {
     });
     const gatewayCall = calls.find((call) => call.args.includes("GATEWAY_VISITOR_SIGNING_KEY"));
     expect(gatewayCall?.input).toBe("canary-gateway-5d1e");
+  });
+});
+
+/** The runways with one service whose code declares SENTRY_DSN optional (`required: false`). */
+const WITH_OPTIONAL: DeployRunways = {
+  root: RUNWAYS.root,
+  members: [
+    {
+      member: "api",
+      folder: "services",
+      env: [
+        { name: "STRIPE_SECRET_KEY", kind: "secret", required: true },
+        { name: "SENTRY_DSN", kind: "secret", required: false },
+      ],
+      runway: {},
+    },
+  ],
+};
+
+/** Syncs WITH_OPTIONAL into staging-eu with no SENTRY_DSN in the scope; answers the calls and the lines. */
+async function syncWithout(list: string | Error) {
+  const { run, calls } = recorder(list);
+  const lines: string[] = [];
+  await syncSecrets({
+    environment: "staging",
+    runways: WITH_OPTIONAL,
+    repository: repository(true),
+    dryRun: false,
+    log: (line) => lines.push(line),
+    run,
+    ci: true,
+    env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+  });
+  const writes = calls.filter(({ args }) => args[1] === "set").map(({ args }) => args.at(-1));
+  return { writes, lines };
+}
+
+describe("placeholders (STA-258)", () => {
+  it("lists a member's optional names as its placeholders", () => {
+    expect(secretSyncPlan("staging", WITH_OPTIONAL)).toEqual([
+      {
+        member: "api",
+        folder: "services/api",
+        names: ["SENTRY_DSN", "STRIPE_SECRET_KEY"],
+        placeholders: ["SENTRY_DSN"],
+        scope: "products/acme/staging",
+        writer: "encore",
+      },
+    ]);
+  });
+
+  it("reads an absent or empty optional name as an empty placeholder, never a required one", async () => {
+    for (const env of [
+      { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+      { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, SENTRY_DSN: "" },
+    ]) {
+      const values = await readMemberSecrets({
+        environment: "staging",
+        member: "api",
+        runways: WITH_OPTIONAL,
+        ci: true,
+        env,
+      });
+      expect(values.get("SENTRY_DSN")).toBe("");
+      expect(values.get("STRIPE_SECRET_KEY")).toBe(CANARIES.STRIPE_SECRET_KEY);
+    }
+    expect(
+      await rejection(
+        readMemberSecrets({
+          environment: "staging",
+          member: "api",
+          runways: WITH_OPTIONAL,
+          ci: true,
+          env: { SENTRY_DSN: "canary-sentry" },
+        }),
+      ),
+    ).toMatch(/lacks api's STRIPE_SECRET_KEY:/);
+  });
+
+  it("writes an absent optional name into Encore as an empty placeholder when Encore holds none, and says so", async () => {
+    // STRIPE_SECRET_KEY is held; SENTRY_DSN only for another environment, so staging-eu holds no value for it.
+    const { run, calls } = recorder(
+      listing([
+        "STRIPE_SECRET_KEY   \u2713   \u2713   \u2717   \u2717",
+        "SENTRY_DSN   \u2717   \u2717   \u2717   \u2717   production",
+      ]),
+    );
+    const lines: string[] = [];
+    await syncSecrets({
+      environment: "staging",
+      runways: WITH_OPTIONAL,
+      repository: repository(true),
+      dryRun: false,
+      log: (line) => lines.push(line),
+      run,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+    });
+    expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+      { name: "list", input: undefined },
+      { name: "SENTRY_DSN", input: "" },
+      { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
+    ]);
+    expect(lines).toContain(
+      "encore staging-eu ← sops products/acme/staging: SENTRY_DSN (optional), STRIPE_SECRET_KEY (services/api)",
+    );
+    expect(lines).toContain(
+      "set SENTRY_DSN in encore staging-eu as an empty placeholder (optional, no value in the scope)",
+    );
+    expect(lines).toContain("set STRIPE_SECRET_KEY in encore staging-eu");
+    expectNoValue(lines.join("\n"));
+  });
+
+  it("never empties a value Encore already holds for an absent optional name", async () => {
+    // Set by hand for an environment type, for staging-eu itself, or both: each keeps its value.
+    for (const row of [
+      "SENTRY_DSN   \u2713   \u2717   \u2717   \u2717",
+      "SENTRY_DSN   \u2717   \u2713   \u2717   \u2717",
+      "SENTRY_DSN   \u2717   \u2717   \u2717   \u2717   production,staging-eu",
+    ]) {
+      const { writes, lines } = await syncWithout(listing([row]));
+      expect(writes).toEqual(["STRIPE_SECRET_KEY"]);
+      expect(lines).toContain(
+        "kept SENTRY_DSN in encore staging-eu: optional, no value in the scope, and Encore already holds one",
+      );
+      expectNoValue(lines.join("\n"));
+    }
+  });
+
+  it("writes no placeholder when encore secret list cannot be read or is not the table", async () => {
+    for (const list of [new Error("encore secret list failed"), "not logged in\n"]) {
+      const { writes, lines } = await syncWithout(list);
+      expect(writes).toEqual(["STRIPE_SECRET_KEY"]);
+      expect(lines).toContain(
+        "left SENTRY_DSN in encore staging-eu as it is: optional, no value in the scope, and encore secret list could not be read",
+      );
+    }
+  });
+
+  it("leaves an optional config name the scope lacks unset, never empty, so its default applies", async () => {
+    const withDefault: DeployRunways = {
+      root: RUNWAYS.root,
+      members: [
+        {
+          member: "api",
+          folder: "services",
+          env: [
+            { name: "STRIPE_SECRET_KEY", kind: "secret", required: true },
+            { name: "API_TIMEOUT", kind: "config", required: false },
+          ],
+          runway: {},
+        },
+      ],
+    };
+    expect(secretSyncPlan("staging", withDefault)).toEqual([
+      {
+        member: "api",
+        folder: "services/api",
+        names: ["API_TIMEOUT", "STRIPE_SECRET_KEY"],
+        defaults: ["API_TIMEOUT"],
+        scope: "products/acme/staging",
+        writer: "encore",
+      },
+    ]);
+    for (const env of [
+      { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+      { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, API_TIMEOUT: "" },
+    ]) {
+      const values = await readMemberSecrets({
+        environment: "staging",
+        member: "api",
+        runways: withDefault,
+        ci: true,
+        env,
+      });
+      expect([...values.keys()]).toEqual(["STRIPE_SECRET_KEY"]);
+    }
+    // A value in the scope is synced like any other.
+    const held = await readMemberSecrets({
+      environment: "staging",
+      member: "api",
+      runways: withDefault,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, API_TIMEOUT: "30" },
+    });
+    expect(held.get("API_TIMEOUT")).toBe("30");
+
+    const { run, calls } = recorder(new Error("must not be asked"));
+    const lines: string[] = [];
+    await syncSecrets({
+      environment: "staging",
+      runways: withDefault,
+      repository: repository(true),
+      dryRun: false,
+      log: (line) => lines.push(line),
+      run,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+    });
+    expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+      { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
+    ]);
+    expect(lines).toContain(
+      "encore staging-eu ← sops products/acme/staging: API_TIMEOUT (optional, has a default), STRIPE_SECRET_KEY (services/api)",
+    );
+    expect(lines).toContain(
+      "left API_TIMEOUT in encore staging-eu as it is: optional config with no value in the scope, so its default applies",
+    );
+    expectNoValue(lines.join("\n"));
+  });
+
+  it("never empties a name one service reads as optional config with a default, though another's is an optional secret", async () => {
+    // api declares API_TIMEOUT as an optional secret (an empty placeholder), billing as optional config with a default.
+    // Encore secrets are app-wide, so an empty write for api would override billing's default.
+    const shared: DeployRunways = {
+      root: RUNWAYS.root,
+      members: [
+        {
+          member: "api",
+          folder: "services",
+          env: [
+            { name: "STRIPE_SECRET_KEY", kind: "secret", required: true },
+            { name: "API_TIMEOUT", kind: "secret", required: false },
+          ],
+          runway: {},
+        },
+        {
+          member: "billing",
+          folder: "services",
+          env: [{ name: "API_TIMEOUT", kind: "config", required: false }],
+          runway: {},
+        },
+      ],
+    };
+    for (const members of [shared.members, shared.members.toReversed()]) {
+      // Encore holds no value for it, so the old sync wrote "" over billing's default.
+      const { run, calls } = recorder(listing([]));
+      const lines: string[] = [];
+      await syncSecrets({
+        environment: "staging",
+        runways: { root: shared.root, members },
+        repository: repository(true),
+        dryRun: false,
+        log: (line) => lines.push(line),
+        run,
+        ci: true,
+        env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+      });
+      expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+        { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
+      ]);
+      expect(lines).toContain(
+        "left API_TIMEOUT in encore staging-eu as it is: optional config with no value in the scope, so its default applies",
+      );
+      expectNoValue(lines.join("\n"));
+    }
+    // A value in the scope is still written for both.
+    const { run, calls } = recorder(new Error("must not be asked"));
+    await syncSecrets({
+      environment: "staging",
+      runways: shared,
+      repository: repository(true),
+      dryRun: false,
+      log: () => undefined,
+      run,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, API_TIMEOUT: "30" },
+    });
+    expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+      { name: "API_TIMEOUT", input: "30" },
+      { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
+    ]);
+  });
+
+  it("asks Encore nothing when every value is in the scope", async () => {
+    const { run, calls } = recorder(new Error("must not be asked"));
+    await syncSecrets({
+      environment: "staging",
+      runways: WITH_OPTIONAL,
+      repository: repository(true),
+      dryRun: false,
+      log: () => undefined,
+      run,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, SENTRY_DSN: "canary-sentry" },
+    });
+    expect(calls.map(({ args }) => args.slice(0, 2).join(" "))).toEqual([
+      "secret set",
+      "secret set",
+    ]);
   });
 });
 

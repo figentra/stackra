@@ -5,7 +5,8 @@
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults; they equal `SecretsOptions`' initializers (tested). A driver name only, never a value.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173.
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173; ADR 0371 (amendment
+ *                     2026-11-27).
  */
 import { z } from "zod";
 

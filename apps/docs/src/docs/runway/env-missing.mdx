@@ -1,0 +1,68 @@
+---
+title: "runway env missing"
+description: "Fails a deploy whose sops scope lacks a secret the deploy syncs, before anything is decrypted."
+---
+
+Fails a deploy whose sops scope lacks a secret the deploy syncs, before anything is decrypted.
+
+```bash
+stackra runway env missing <environment> [--dir <dir>]
+```
+
+| Argument or option | Kind     | Meaning                                                        |
+| ------------------ | -------- | -------------------------------------------------------------- |
+| `environment`      | argument | dev, preview, staging or production.                           |
+| `--dir`            | option   | The folder holding the scope's ciphertext; default `.secrets`. |
+
+## What it does
+
+Takes the names a deploy of the environment syncs: each member's runway `secrets`, the `secret` and `config` names its
+committed manifest declares for that environment, and the generated gateway's. It compares them with the file names of
+the scope's ciphertext (`<dir>/products/<project>/<env>/<NAME>.enc.yaml`). It decrypts nothing and reads no value.
+
+A name only code declares, with `required: false` everywhere (an optional `@Secret` or config field), may be absent.
+For an optional `@Secret`, `runway secrets sync` writes an empty placeholder, so Encore still provisions the service,
+unless `encore secret list` shows Encore already holds a value for it in that environment, which it keeps. An optional
+config field has a default in its class, and an empty value would override it, so the sync leaves that name unset and
+the default applies. Any other name the scope lacks fails the run. A member no runtime takes secrets from is not
+checked.
+
+## What it prints
+
+One error per required name the scope lacks, and one warning per optional one, each with its member folder; or that the
+scope holds every required secret.
+
+## Exit codes
+
+| Code | Means                                                                           |
+| ---- | ------------------------------------------------------------------------------- |
+| 0    | The scope holds every required name; optional absent names only warn.           |
+| 1    | A required name is missing, outside a proved CI job, or the ciphertext is gone. |
+
+## Where it runs
+
+Only in a CI job its GitHub OIDC token proves. `runway secrets decrypt`, which the secrets-decrypt action runs, makes
+the same check first whenever it decrypts a product scope (`products/<project>/<env>`) of the checked-out repository,
+for every runway environment of that scope, and exits 1 before it decrypts anything; a deploy needs no input for it.
+Run `env missing` on its own to check one environment.
+
+## Examples
+
+```bash
+stackra runway env missing staging --dir .secrets
+```
+
+```yaml
+# The check runs inside the decrypt of a product scope; nothing to add.
+- uses: stackra-inc/stackra/.github/actions/secrets-decrypt@<sha>
+  with:
+    scope: products/acme/staging
+```
+
+## See also
+
+[env orphans](/runway/env-orphans) (the mirror: names in the scope nothing declares),
+[0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical),
+[0371](/adr/0371-secret-store-drivers-which-deploy-mode-binds-which-and-how-the-bootstrap-credential-arrives)
+(amendment of 2026-11-27) and [the runway runbook](/runbooks/runway). `runway <command>` is a deprecated alias of
+`stackra runway <command>` and goes in the next minor release ([0529](/adr/0529-naming-product-keys-and-one-figentra-cli)).

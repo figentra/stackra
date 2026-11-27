@@ -24,9 +24,19 @@ export interface DeployPlan {
   }[];
   /** The CI secret names the deploy jobs read. */
   readonly ci: readonly string[];
-  /** The member secret and var names a deploy syncs into the runtimes (names only). */
+  /**
+   * The member secret and var names a deploy syncs into the runtimes (names only). A secret is `optional` when only
+   * code declares it and every declaration is `required: false`, so the environment may lack it (STA-258):
+   * `placeholder` for an optional secret, which the sync then writes empty so the runtime still provisions, and
+   * `default` when a `config` row declares it, which the sync then leaves unset so its config default applies.
+   */
   readonly sync: readonly (
-    | { readonly member: string; readonly kind: "secret"; readonly name: string }
+    | {
+        readonly member: string;
+        readonly kind: "secret";
+        readonly name: string;
+        readonly optional?: "placeholder" | "default";
+      }
     | { readonly member: string; readonly kind: "var"; readonly name: string }
   )[];
 }

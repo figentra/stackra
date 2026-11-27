@@ -3,7 +3,10 @@
 #          itself (direct Workload Identity Federation through figentra/infra's `callers` provider, no service account),
 #          copies one scope's ciphertext (`<NAME>.enc.yaml` under the flat prefix `<scope with . for />/`, published
 #          by figentra/secrets' sync.yml) from the private bucket, and runs `runway secrets decrypt`, which decrypts
-#          each file with Cloud KMS in memory and exports the values, masked, into the job's environment.
+#          each file with Cloud KMS in memory and exports the values, masked, into the job's environment. For a
+#          product scope (`products/<project>/<env>`) of the checked-out repository, `runway secrets decrypt` first
+#          compares the downloaded file names with the names that environment's deploy syncs and fails the job on a
+#          required one the scope lacks, before anything is decrypted or deployed; no input turns it on (STA-258).
 # Boundary: no GitHub token and no stored credential: figentra/infra grants the job's principal
 #           (`<repo>.<environment>.<workflow repo>.<workflow file>`, main only outside ci/build) a viewer condition on
 #           its scope's prefix and decrypt on its scope's key (estate/secret-callers.mjs). Values are never echoed; the

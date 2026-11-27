@@ -29,12 +29,25 @@ describe("SecretsConfig", () => {
     expect({ ...new SecretsOptions() }).toEqual(SECRETS_CONFIG_SCHEMA.parse({}));
   });
 
-  it("picks the SecretStore driver: memory by default, aws_secrets_manager by config, nothing else", () => {
+  it("picks the SecretStore driver: memory by default, a deployment's store by config, nothing else", () => {
     expect(buildConfig(SecretsConfig).store).toBe("memory");
-    expect(buildConfig(SecretsConfig, { values: { store: "aws_secrets_manager" } }).store).toBe(
-      "aws_secrets_manager",
-    );
+    for (const store of ["aws_secrets_manager", "gcp_secret_manager", "file"] as const)
+      expect(buildConfig(SecretsConfig, { values: { store } }).store).toBe(store);
     expect(SECRETS_CONFIG_SCHEMA.safeParse({ store: "vault" }).success).toBe(false);
+  });
+
+  it("has no reload interval field until boot reads one (STA-2804)", () => {
+    expect(Object.keys(buildConfig(SecretsConfig))).not.toContain("reloadSeconds");
+    expect(Object.keys(SECRETS_CONFIG_SCHEMA.shape)).toEqual(["store"]);
+  });
+
+  it("lists every driver name in the committed manifest's candidates", () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../../../stackra.manifest.json", import.meta.url), "utf8"),
+    ) as { drivers: { key: string; candidates: string[] }[] };
+    expect(
+      manifest.drivers.find((driver) => driver.key === "config.SecretStore")?.candidates.toSorted(),
+    ).toEqual(["aws_secrets_manager", "file", "gcp_secret_manager", "memory"]);
   });
 
   it("selects the SecretStore driver, so the committed manifest names it as the selector", () => {

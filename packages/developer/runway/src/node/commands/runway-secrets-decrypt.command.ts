@@ -3,7 +3,9 @@
  * Purpose: `RunwaySecretsDecryptCommand`, `runway secrets decrypt --scope <scope> [--dir <dir>] [--names A,B]`
  *          (`runway secrets:decrypt`): one figentra/secrets scope's values, decrypted with the job's own Cloud KMS
  *          identity from the ciphertext the shared action downloaded (`decryptScope`), masked and exported into the
- *          job's `GITHUB_ENV` (`exportToGithubEnv`) for the steps after it.
+ *          job's `GITHUB_ENV` (`exportToGithubEnv`) for the steps after it. A product environment's scope is checked
+ *          first (`scopeMissing`, STA-258): when the checked-out repository's runway names that product and the scope
+ *          lacks a required secret its deploy syncs, it prints the names and exits 1 before decrypting anything.
  * Boundary: prints names and a count, never a value; refuses to run where there is no `GITHUB_ENV`. Which job may
  *           decrypt a scope is Cloud KMS's, pinned per repository, environment and workflow by figentra/infra.
  * Runtime: node
@@ -15,6 +17,7 @@ import { Str } from "@stackra/validation";
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { decryptScope } from "#node/functions/decrypt-scope.function";
 import { exportToGithubEnv } from "#node/functions/export-to-github-env.function";
+import { scopeMissing } from "#node/functions/scope-missing.function";
 
 /** Decrypts one scope into the job's environment. */
 export class RunwaySecretsDecryptCommand extends Command({
@@ -45,6 +48,9 @@ export class RunwaySecretsDecryptCommand extends Command({
   /** The decrypt; a test replaces it. */
   decrypt: typeof decryptScope = decryptScope;
 
+  /** The names check of a product scope; a test replaces it. */
+  missing: typeof scopeMissing = scopeMissing;
+
   /** The export; a test replaces it. */
   export: typeof exportToGithubEnv = exportToGithubEnv;
 
@@ -52,7 +58,8 @@ export class RunwaySecretsDecryptCommand extends Command({
   env: Readonly<Record<string, string | undefined>> = process.env;
 
   /**
-   * Decrypts, masks and exports; resolves with 0.
+   * Checks a product scope's names, then decrypts, masks and exports; resolves with 0, or 1 when the scope lacks a
+   * required secret (nothing is decrypted then).
    *
    * @throws RunwayUnresolvedError without `--scope` or `GITHUB_ENV`, or when the scope cannot be decrypted.
    */
@@ -67,11 +74,24 @@ export class RunwaySecretsDecryptCommand extends Command({
       ?.split(",")
       .map((name) => name.trim())
       .filter((name) => name !== "");
-    const values = await this.decrypt({
-      dir: this.dir.startsWith("/") ? this.dir : `${io.cwd}/${this.dir}`,
-      scope: this.scope,
-      names,
-    });
+    const dir = this.dir.startsWith("/") ? this.dir : `${io.cwd}/${this.dir}`;
+    // Names only, before any decrypt: the scope must hold every required secret the product's deploy syncs.
+    const check = await this.missing({ cwd: io.cwd, scope: this.scope, dir });
+    if (check !== null) {
+      for (const { level, name, where, message } of check.findings) {
+        const line = `${name} (${where}) ${message}`;
+        if (level === "error") io.output.error(line);
+        else io.output.warn(line);
+      }
+      const errors = check.findings.filter((finding) => finding.level === "error").length;
+      if (errors > 0) {
+        io.output.error(
+          `${this.scope}: ${errors} required secret(s) missing for ${check.environments.join(", ")}; nothing decrypted`,
+        );
+        return 1;
+      }
+    }
+    const values = await this.decrypt({ dir, scope: this.scope, names });
     const exported = this.export(values, { envFile });
     io.output.success(`${this.scope}: ${exported.length} exported (${exported.join(", ")})`);
     return 0;

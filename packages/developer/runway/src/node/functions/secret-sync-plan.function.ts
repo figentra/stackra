@@ -7,7 +7,8 @@
  *          API gateway (ADR 0237), which is part of the Encore app, so they are one more Encore entry, `gateway`,
  *          whenever a service member makes an Encore app.
  * Boundary: pure; names only, never a value. The names and the scope are `deployPlan`'s `sync` and `secretScope`
- *           (ADR 0525); a member that declares no secret is left out.
+ *           (ADR 0525), and an entry's `placeholders` and `defaults` are the names the plan marks optional
+ *           `placeholder` and `default` (STA-258); a member that declares no secret is left out.
  * Runtime: node
  * Governing contract: ADR 0525; ADR 0284 (Workers members); STA-606; STA-2009 (EAS).
  */
@@ -17,6 +18,23 @@ import type { SecretSyncEntry } from "#node/types/secret-sync-entry.type";
 
 /** The plan entry of the generated API gateway's secrets; it belongs to no member (ADR 0237). */
 const GATEWAY_SECRETS_MEMBER = "gateway";
+
+/** The optional names among a member's sync entries: its `placeholders` and `defaults`, each when there is one. */
+function optionalOf(
+  own: readonly { readonly name: string; readonly optional?: "placeholder" | "default" }[],
+): { readonly placeholders?: readonly string[]; readonly defaults?: readonly string[] } {
+  const named = (optional: "placeholder" | "default"): readonly string[] =>
+    own
+      .filter((entry) => entry.optional === optional)
+      .map((entry) => entry.name)
+      .toSorted();
+  const placeholders = named("placeholder");
+  const defaults = named("default");
+  return {
+    ...(placeholders.length === 0 ? {} : { placeholders }),
+    ...(defaults.length === 0 ? {} : { defaults }),
+  };
+}
 
 /** The writer of a member's secrets, from its member root and whether the root runway ships it as a mobile app. */
 function writerOf(
@@ -40,13 +58,17 @@ function writerOf(
 export function secretSyncPlan(environment: string, runways: DeployRunways): SecretSyncEntry[] {
   const { sync, secretScope } = deployPlan(environment, runways);
   const entries: SecretSyncEntry[] = runways.members.flatMap(({ member, folder }) => {
-    const own = sync.filter((entry) => entry.member === member && entry.kind === "secret");
+    const own = sync.filter(
+      (entry): entry is Extract<(typeof sync)[number], { kind: "secret" }> =>
+        entry.member === member && entry.kind === "secret",
+    );
     if (own.length === 0) return [];
     return [
       {
         member,
         folder: folder === undefined ? member : `${folder}/${member}`,
         names: own.map((entry) => entry.name).toSorted(),
+        ...optionalOf(own),
         scope: secretScope,
         writer: writerOf(folder, member, runways),
       },

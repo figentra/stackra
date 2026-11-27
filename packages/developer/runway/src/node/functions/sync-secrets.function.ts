@@ -7,9 +7,15 @@
  *          Encore Cloud environment with `encore secret set --env <env> <NAME>`, the value on stdin. A Worker's secrets
  *          are the Workers provider's to set at deploy, a mobile app's wait for STA-2009, and other apps take none.
  * Boundary: names only in every line and every error; a value goes only to the runner's stdin. Every value is read
- *           before anything is written, so a missing name fails the sync with nothing changed. Encore secrets are
+ *           before anything is written, so a missing name fails the sync with nothing changed. An optional name the
+ *           scope lacks is written as an empty placeholder, so Encore still provisions the service, only when
+ *           `encore secret list` shows Encore holds no value for it in the environment (`encoreHeldSecrets`); a value
+ *           set by hand is kept, and when the listing cannot be read no placeholder is written; an optional config
+ *           name the scope lacks is never written, so its config default applies (STA-258). Encore secrets are
  *           app-wide, and the job's environment holds one value per name, so two services that name one secret share
- *           it. The Encore environment is `environments.<env>.encore.environment`, else the runway environment's own name. The
+ *           it: a name any service reads as optional config with a default is never written empty, even when another
+ *           service declares it an optional secret, so that placeholder never overrides the default. The Encore
+ *           environment is `environments.<env>.encore.environment`, else the runway environment's own name. The
  *           writes run in a temporary folder holding only `encore.app` with the root runway's `providers.encore.app`, so
  *           they reach the app whatever the generated layout (a service member's `stackra-encore`, or the deploy
  *           commit's root, STA-2193). Writes run only in CI
@@ -23,6 +29,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
+import { encoreHeldSecrets } from "#node/functions/encore-held-secrets.function";
 import { readMemberSecrets } from "#node/functions/read-member-secrets.function";
 import { runProgram } from "#node/functions/run-program.function";
 import { secretSyncPlan } from "#node/functions/secret-sync-plan.function";
@@ -30,9 +37,19 @@ import type { CommandRunner } from "#node/types/command-runner.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
 import type { SecretSyncEntry } from "#node/types/secret-sync-entry.type";
 
-/** The names-only line of one member's secrets. */
+/** The names-only line of one member's secrets; optional secrets and optional config names are marked. */
 function lineOf(entry: SecretSyncEntry, encoreEnvironment: string): string {
-  const names = entry.names.join(", ");
+  const placeholders = new Set(entry.placeholders ?? []);
+  const defaults = new Set(entry.defaults ?? []);
+  const names = entry.names
+    .map((name) =>
+      placeholders.has(name)
+        ? `${name} (optional)`
+        : defaults.has(name)
+          ? `${name} (optional, has a default)`
+          : name,
+    )
+    .join(", ");
   if (entry.writer === "encore")
     return `encore ${encoreEnvironment} ← sops ${entry.scope ?? "(no project, no scope)"}: ${names} (${entry.folder})`;
   if (entry.writer === "cloudflare-workers")
@@ -91,6 +108,11 @@ export async function syncSecrets(input: {
     });
     for (const [name, value] of read) values.set(name, value);
   }
+  // An optional config name with no value in the scope is left as it is in Encore: an empty value would override
+  // its default. Secrets are app-wide, so that holds when another service declares the name an optional secret too.
+  const defaulted = new Set(services.flatMap((entry) => entry.defaults ?? []));
+  const unset = [...defaulted].filter((name) => (values.get(name) ?? "") === "").toSorted();
+  for (const name of unset) values.delete(name);
   const app = runways.root.providers.encore?.app;
   if (app === undefined)
     throw new RunwayUnresolvedError(
@@ -100,7 +122,32 @@ export async function syncSecrets(input: {
   const cwd = mkdtempSync(join(tmpdir(), "runway-encore-secrets-"));
   writeFileSync(join(cwd, "encore.app"), `${JSON.stringify({ id: app, lang: "typescript" })}\n`);
   try {
+    // An empty value is an optional name the scope lacks: ask Encore first, so a value it holds is never emptied.
+    const empty = [...values].some(([, value]) => value === "");
+    let held: ReadonlySet<string> | null = new Set();
+    if (empty) {
+      try {
+        held = encoreHeldSecrets(
+          await run("encore", ["secret", "list"], { cwd }),
+          encoreEnvironment,
+        );
+      } catch {
+        held = null;
+      }
+    }
+    for (const name of unset)
+      log(
+        `left ${name} in encore ${encoreEnvironment} as it is: optional config with no value in the scope, so its default applies`,
+      );
     for (const [name, value] of values) {
+      if (value === "" && (held === null || held.has(name))) {
+        log(
+          held === null
+            ? `left ${name} in encore ${encoreEnvironment} as it is: optional, no value in the scope, and encore secret list could not be read`
+            : `kept ${name} in encore ${encoreEnvironment}: optional, no value in the scope, and Encore already holds one`,
+        );
+        continue;
+      }
       try {
         await run("encore", ["secret", "set", "--env", encoreEnvironment, name], {
           cwd,
@@ -112,7 +159,11 @@ export async function syncSecrets(input: {
           `encore secret set ${name} in ${encoreEnvironment} failed: check the job's Encore login and that ${encoreEnvironment} is an environment of the app`,
         );
       }
-      log(`set ${name} in encore ${encoreEnvironment}`);
+      log(
+        value === ""
+          ? `set ${name} in encore ${encoreEnvironment} as an empty placeholder (optional, no value in the scope)`
+          : `set ${name} in encore ${encoreEnvironment}`,
+      );
     }
   } finally {
     rmSync(cwd, { recursive: true, force: true });

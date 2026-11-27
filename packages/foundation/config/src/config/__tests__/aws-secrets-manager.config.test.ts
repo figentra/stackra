@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `AwsSecretsManagerConfig`, its shape and `AWS_SECRETS_MANAGER_CONFIG_SCHEMA`: keyed
- *          `config.aws_secrets_manager`, built with the shipped defaults (equal to the initializers), taking a region
- *          and ids, and refusing an empty id.
+ *          `config.aws_secrets_manager`, built with the shipped defaults (equal to the initializers), taking a region,
+ *          ids and a request timeout, and refusing an empty id or a timeout outside 100 to 60,000 ms.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decisions 19, 20 and 26).
@@ -26,11 +26,17 @@ describe("AwsSecretsManagerConfig", () => {
     );
   });
 
-  it("takes a region and ids and refuses an empty id", () => {
+  it("takes a region, ids and a timeout, and refuses an empty id or a timeout out of range", () => {
     const config = buildConfig(AwsSecretsManagerConfig, {
-      values: { region: "me-central-1", secretIds: ["app/prod"] },
+      values: { region: "me-central-1", secretIds: ["app/prod"], timeoutMs: 2000 },
     });
     expect(config.secretIds).toEqual(["app/prod"]);
+    expect(config.timeoutMs).toBe(2000);
+    expect(buildConfig(AwsSecretsManagerConfig, { values: {} }).timeoutMs).toBe(10_000);
+    for (const timeoutMs of [50, 60_001, 1.5])
+      expect(() => buildConfig(AwsSecretsManagerConfig, { values: { timeoutMs } })).toThrow(
+        ConfigInvalidError,
+      );
     expect(() => buildConfig(AwsSecretsManagerConfig, { values: { secretIds: [""] } })).toThrow(
       ConfigInvalidError,
     );
