@@ -29,14 +29,17 @@ import {
 import { sqliteD1 } from "#src/__tests__/fixtures/sqlite-d1.fixture";
 import { makeTarball } from "#src/__tests__/fixtures/tarball.fixture";
 
-export const HOST = "npm.stackra.figentra.com";
+/** The main host (REGISTRY_HOST, ADR 0025) and the second Custom Domain the registry keeps answering on (STA-2892). */
+export const HOST = "npm.figentra.com";
+export const ALIAS_HOST = "npm.stackra.figentra.com";
 export const ISSUER = "https://token.actions.githubusercontent.com";
 export const NOW = new Date("2026-10-27T12:00:00.000Z");
 
 /** The settings of the tests, the wrangler.jsonc defaults. */
 export const SETTINGS: RegistrySettings = {
   host: HOST,
-  oidcAudiences: [`npm:${HOST}`],
+  hosts: [HOST, ALIAS_HOST],
+  oidcAudiences: [`npm:${HOST}`, `npm:${ALIAS_HOST}`],
   readOnly: false,
   maxTarballBytes: 52_428_800,
   maxUnpackedBytes: 104_857_600,
@@ -55,7 +58,8 @@ export const SETTINGS: RegistrySettings = {
 
 /** The `vars` of wrangler.jsonc as the Worker receives them: what `readSettings` parses into `SETTINGS`. */
 export const ENV_VARS = {
-  REGISTRY_HOST: "npm.stackra.figentra.com",
+  REGISTRY_HOST: "npm.figentra.com",
+  REGISTRY_ALIAS_HOSTS: '["npm.stackra.figentra.com"]',
   REGISTRY_MAX_TARBALL_BYTES: 52_428_800,
   REGISTRY_MAX_UNPACKED_BYTES: 104_857_600,
   REGISTRY_PUBLISH_TOKEN_SECONDS: 900,
@@ -253,17 +257,17 @@ export async function createTestRegistry(settings: Partial<RegistrySettings> = {
     return `${unsigned}.${toBase64Url(new Uint8Array(signature))}`;
   };
 
-  /** One request to the registry. */
+  /** One request to the registry, on `init.host` (the main host when unset). */
   const request = (
     path: string,
-    init: { method?: string; token?: string; body?: unknown; accept?: string } = {},
+    init: { method?: string; token?: string; body?: unknown; accept?: string; host?: string } = {},
   ): Promise<Response> => {
     const headers = new Headers();
     if (init.token !== undefined) headers.set("authorization", `Bearer ${init.token}`);
     if (init.accept !== undefined) headers.set("accept", init.accept);
     if (init.body !== undefined) headers.set("content-type", "application/json");
     return handleRequest(
-      new Request(`https://${HOST}${path}`, {
+      new Request(`https://${init.host ?? HOST}${path}`, {
         method: init.method ?? "GET",
         headers,
         ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),

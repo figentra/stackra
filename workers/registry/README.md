@@ -2,7 +2,8 @@
 
 # @figentra/worker-registry
 
-The Stackra registry: one Cloudflare Worker (`stackra-registry`) at `https://npm.stackra.figentra.com/` that serves
+The Stackra registry: one Cloudflare Worker (`stackra-registry`) at `https://npm.figentra.com/` (ADR 0025), also
+answering on `https://npm.stackra.figentra.com/`, permanently (STA-2892), that serves
 every `@stackra/*` and `@stackra-pro/*` item (packages, skills, agents, MCP servers and plugins) over the subset of the
 npm registry protocol that npm, pnpm and Yarn need
 ([ADR 0453](../../apps/docs/src/docs/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine.mdx)).
@@ -11,10 +12,14 @@ R2 holds the bytes, D1 the truth, KV the caches. It never proxies an upstream.
 ## Consumers
 
 ```ini
-@stackra:registry=https://npm.stackra.figentra.com/
-@stackra-pro:registry=https://npm.stackra.figentra.com/
-//npm.stackra.figentra.com/:_authToken=${STACKRA_LICENCE_TOKEN}
+@stackra:registry=https://npm.figentra.com/
+@stackra-pro:registry=https://npm.figentra.com/
+//npm.figentra.com/:_authToken=${STACKRA_LICENCE_TOKEN}
 ```
+
+An `.npmrc` or lockfile that names `npm.stackra.figentra.com` keeps working: package metadata read on a host names its
+tarballs and attestations on that same host (`src/http/answer-host.ts`), and each host keeps its own cached packument. A
+request on a host the Worker does not list gets URLs on the main host.
 
 `@stackra` reads need no token (a token sent is ignored). `@stackra-pro` reads need a licence token whose licence is
 active, inside its dates plus the grace days, with a grant covering the name: no or unknown token is 401, anything
@@ -147,7 +152,8 @@ Every limit is a Worker var in `wrangler.jsonc` (`src/settings/read-settings.ts`
 
 | Var                               | ADR setting                    | Default                                       |
 | --------------------------------- | ------------------------------ | --------------------------------------------- |
-| `REGISTRY_HOST`                   | —                              | `npm.stackra.figentra.com`                    |
+| `REGISTRY_HOST`                   | —                              | `npm.figentra.com` (the main host)            |
+| `REGISTRY_ALIAS_HOSTS`            | —                              | `["npm.stackra.figentra.com"]`                |
 | `REGISTRY_MAX_TARBALL_BYTES`      | `registry.maxTarballBytes`     | 52428800 (50 MiB)                             |
 | `REGISTRY_MAX_UNPACKED_BYTES`     | —                              | 104857600 (gzip bomb guard)                   |
 | `REGISTRY_PUBLISH_TOKEN_SECONDS`  | `registry.publishTokenSeconds` | 900                                           |
@@ -303,8 +309,9 @@ and retries `/-/ping` and `/-/npm/v1/keys` for up to ten minutes until each answ
 the signing key is readable). Check by hand too:
 
 ```sh
-curl -fsS https://npm.stackra.figentra.com/-/ping
-curl -fsS https://npm.stackra.figentra.com/-/npm/v1/keys   # keytype ecdsa-sha2-nistp256, keyid SHA256:…
+curl -fsS https://npm.figentra.com/-/ping
+curl -fsS https://npm.figentra.com/-/npm/v1/keys   # keytype ecdsa-sha2-nistp256, keyid SHA256:…
+curl -fsS https://npm.stackra.figentra.com/-/ping   # the second host answers the same
 ```
 
 ### 5. Dry run, then publish `next`
@@ -325,11 +332,11 @@ add `@stackra/coding-standard` to `packages` and run the prerelease again: both 
 
 ```sh
 mkdir /tmp/stackra-next && cd /tmp/stackra-next
-printf '@stackra:registry=https://npm.stackra.figentra.com/\n' > .npmrc
+printf '@stackra:registry=https://npm.figentra.com/\n' > .npmrc
 pnpm init
 pnpm add -D @stackra/oxlint-config@next @stackra/typescript-config@next @stackra/vitest-config@next \
   @stackra/tsdown-config@next @stackra/commitlint-config@next
-pnpm view @stackra/oxlint-config dist-tags --registry https://npm.stackra.figentra.com/
+pnpm view @stackra/oxlint-config dist-tags --registry https://npm.figentra.com/
 ```
 
 Every package installs at `0.1.0-next.<n>`, `latest` is absent (no 0.1.0 yet), and `npm audit signatures` in that

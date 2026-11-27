@@ -37,10 +37,33 @@ const retired = (env: RegistryEnv): RetiredKey[] => {
   });
 };
 
-/** The OIDC audiences var: a JSON array of strings, or `npm:<host>` when unset or empty. */
-const audiences = (env: RegistryEnv, host: string): string[] => {
+/** A lower-case DNS host name with no port, such as `npm.figentra.com`. */
+const HOSTNAME =
+  /^(?=.{1,253}$)[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?)+$/;
+
+/**
+ * The alias hosts var: a JSON array of the other host names the Worker answers on (its second Custom Domains), none
+ * when unset or empty. Each is a lower-case host name, listed once, and never the main host.
+ */
+const aliasHosts = (env: RegistryEnv, host: string): string[] => {
+  const raw = env.REGISTRY_ALIAS_HOSTS;
+  if (raw === undefined || raw === "") return [];
+  const list: unknown = JSON.parse(String(raw));
+  if (
+    !Array.isArray(list) ||
+    !list.every((alias) => typeof alias === "string" && HOSTNAME.test(alias)) ||
+    new Set([host, ...list]).size !== list.length + 1
+  )
+    throw new RangeError(
+      "REGISTRY_ALIAS_HOSTS must be a JSON array of distinct lower-case host names other than REGISTRY_HOST",
+    );
+  return list as string[];
+};
+
+/** The OIDC audiences var: a JSON array of strings, or `npm:<host>` for every served host when unset or empty. */
+const audiences = (env: RegistryEnv, hosts: readonly string[]): string[] => {
   const raw = env.REGISTRY_OIDC_AUDIENCES;
-  if (raw === undefined || raw === "") return [`npm:${host}`];
+  if (raw === undefined || raw === "") return hosts.map((host) => `npm:${host}`);
   const list: unknown = JSON.parse(String(raw));
   if (
     !Array.isArray(list) ||
@@ -61,9 +84,12 @@ const audiences = (env: RegistryEnv, host: string): string[] => {
 export function readSettings(env: RegistryEnv): RegistrySettings {
   const expires = env.REGISTRY_SIGNING_KEY_EXPIRES;
   const host = text(env, "HOST");
+  if (!HOSTNAME.test(host)) throw new RangeError("REGISTRY_HOST must be a lower-case host name");
+  const hosts = [host, ...aliasHosts(env, host)];
   return {
     host,
-    oidcAudiences: audiences(env, host),
+    hosts,
+    oidcAudiences: audiences(env, hosts),
     readOnly: env.REGISTRY_READ_ONLY === "true",
     maxTarballBytes: count(env, "MAX_TARBALL_BYTES"),
     maxUnpackedBytes: count(env, "MAX_UNPACKED_BYTES"),

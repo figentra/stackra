@@ -21,7 +21,8 @@ export async function packumentBody(
   name: string,
   abbreviated: boolean,
 ): Promise<string | null> {
-  const key = packumentKey(name, abbreviated);
+  // Per host: the body names its tarballs on the host it was rendered for (STA-2892).
+  const key = packumentKey(name, abbreviated, deps.settings.host);
   const cached = await deps.cache.get(key);
   if (cached !== null) return cached;
   const pkg = await deps.store.package(name);

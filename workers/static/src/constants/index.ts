@@ -12,3 +12,4 @@ export { SCHEMAS_DIR } from "./schemas-dir.constant";
 export { SCHEMAS_PATH } from "./schemas-path.constant";
 export { STACKRA_WORDMARK_SVG } from "./stackra-wordmark-svg.constant";
 export { STATIC_HOST } from "./static-host.constant";
+export { STATIC_HOSTS } from "./static-hosts.constant";

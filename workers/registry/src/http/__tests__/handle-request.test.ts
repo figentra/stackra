@@ -177,7 +177,7 @@ describe("handleRequest", () => {
       const packument = await body(await registry.request("/@stackra%2fcore"));
       expect(packument["dist-tags"]).toEqual({ latest: "0.1.0" });
       const dist = packument.versions["0.1.0"].dist;
-      expect(dist.tarball).toBe("https://npm.stackra.figentra.com/@stackra/core/-/core-0.1.0.tgz");
+      expect(dist.tarball).toBe("https://npm.figentra.com/@stackra/core/-/core-0.1.0.tgz");
       expect(dist.integrity).toMatch(/^sha512-/);
       expect(dist.attestations.provenance.predicateType).toBe("https://slsa.dev/provenance/v1");
 
@@ -342,9 +342,11 @@ describe("handleRequest", () => {
 
     it("keeps the rendered packument in KV and drops it on change", async () => {
       await registry.request("/@stackra/core");
-      expect(registry.cache.values.has("packument:full:@stackra/core")).toBe(true);
+      expect(registry.cache.values.has("packument:full:npm.figentra.com:@stackra/core")).toBe(true);
       await registry.publish({ ...CORE, version: "0.2.0" });
-      expect(registry.cache.values.has("packument:full:@stackra/core")).toBe(false);
+      expect(registry.cache.values.has("packument:full:npm.figentra.com:@stackra/core")).toBe(
+        false,
+      );
       const packument = await body(await registry.request("/@stackra/core"));
       expect(Object.keys(packument.versions)).toEqual(["0.1.0", "0.2.0"]);
     });

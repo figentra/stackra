@@ -75,9 +75,9 @@ pull request. It calls `runway-cloudflare-workers.yml`, whose steps are:
    over GitHub OIDC (ADR 0525);
 3. `stackra deploy --env production --kind web --member turbo-cache`, Runway's `cloudflare-workers` provider, reading
    the `turbo-cache` entry of the root `runway.yaml`: it refuses an empty `TURBO_TOKEN` by name before anything ships,
-   builds, deploys with the commit as the message (which also attaches the Custom Domain `turbo.stackra.figentra.com`,
-   `routes` in `wrangler.jsonc`), sets `TURBO_CACHE_TOKEN` from `TURBO_TOKEN` through `wrangler secret bulk` on stdin,
-   then retries `GET https://turbo.stackra.figentra.com/v8/artifacts/status` with the bearer until it answers 2xx, ten
+   builds, deploys with the commit as the message (which also attaches the Custom Domains `turbo.figentra.com` and
+   `turbo.stackra.figentra.com`, runway.yaml's `customDomains` rendered as `routes`), sets `TURBO_CACHE_TOKEN` from `TURBO_TOKEN` through `wrangler secret bulk` on stdin,
+   then retries `GET /v8/artifacts/status` on each host with the bearer until it answers 2xx from the new version, ten
    minutes at most (a new Custom Domain needs a few minutes for its certificate).
 
 Identity: the job runs in the GitHub environment `static`, whose OIDC subject `figentra/infra` already grants the
@@ -99,7 +99,7 @@ The owner's only steps; everything else is the workflow's.
    | `TURBO_TOKEN`                      | the first value                      |
    | `TURBO_REMOTE_CACHE_SIGNATURE_KEY` | the second value                     |
    | `TURBO_TEAM`                       | `figentra`                           |
-   | `TURBO_API`                        | `https://turbo.stackra.figentra.com` |
+   | `TURBO_API`                        | `https://turbo.figentra.com`         |
 
    `CLOUDFLARE_API_TOKEN` is already there (the static and docs deploys use it); it needs the Workers Scripts, Workers
    Custom Domains (zone `figentra.com`) and R2 edit permissions.
@@ -121,7 +121,7 @@ Decrypted from the sops scope `ci/build/turbo` over OIDC (ADR 0026 decision 2, S
 
 | Variable                           | Value                                                              |
 | ---------------------------------- | ------------------------------------------------------------------ |
-| `TURBO_API`                        | `https://turbo.stackra.figentra.com`, no trailing slash            |
+| `TURBO_API`                        | `https://turbo.figentra.com` (or the stackra host), no trailing /  |
 | `TURBO_TOKEN`                      | the same value as the Worker secret `TURBO_CACHE_TOKEN`            |
 | `TURBO_TEAM`                       | the team key, letters, digits, `_` or `-` (for example `figentra`) |
 | `TURBO_REMOTE_CACHE_SIGNATURE_KEY` | the HMAC key turbo signs artifacts with (`signature: true`)        |

@@ -99,10 +99,7 @@ test("the rename list, the catalog pin and the registry line apply; binary files
   assert.match(workspace, /"@stackra\/cli": 0\.5\.1/);
   assert.match(workspace, /"@stackra\/gen": 0\.5\.1/);
   assert.doesNotMatch(workspace, /overrides/);
-  assert.match(
-    read(files, ".npmrc"),
-    /^@stackra:registry=https:\/\/npm\.stackra\.figentra\.com\/\n/,
-  );
+  assert.match(read(files, ".npmrc"), /^@stackra:registry=https:\/\/npm\.figentra\.com\/\n/);
   assert.deepEqual(
     files.get("services/example/assets/logo.png"),
     new Uint8Array([137, 80, 78, 71, 0, 1, 2]),
@@ -123,7 +120,7 @@ test("tarballs become pnpm overrides; an existing .npmrc keeps its lines", () =>
   );
   assert.equal(
     read(files, ".npmrc"),
-    "@figentra:registry=https://npm.stackra.figentra.com/\n@stackra:registry=https://npm.stackra.figentra.com/\n",
+    "@figentra:registry=https://npm.stackra.figentra.com/\n@stackra:registry=https://npm.figentra.com/\n",
   );
 });
 

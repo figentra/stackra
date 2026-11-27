@@ -51,6 +51,6 @@ export async function writeDistTag(
       version: target,
     });
   }
-  await forgetPackument(deps.cache, name);
+  await forgetPackument(deps.cache, deps.settings.hosts, name);
   return json({ ok: true }, 201);
 }

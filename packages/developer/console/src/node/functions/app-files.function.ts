@@ -10,8 +10,8 @@
 import { APP_VERSIONS } from "#node/constants/app-versions.constant";
 import type { AppSpec } from "#node/types/app-spec.type";
 
-/** The Stackra registry (ADR 0453). */
-const REGISTRY = "https://npm.stackra.figentra.com/";
+/** The Stackra registry's main host (ADR 0025, ADR 0453, STA-2892). */
+const REGISTRY = "https://npm.figentra.com/";
 
 /**
  * The extension the generated app's own relative imports name: it compiles with NodeNext and

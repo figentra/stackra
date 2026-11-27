@@ -13,6 +13,8 @@ export interface ParsedSchema {
    * `https://static.stackra.figentra.com/schemas/runway/app.json`); plan-site.ts nests it under each alias tree.
    */
   name: string;
+  /** The host the `$id` names, one of `STATIC_HOSTS`; every published copy keeps it (ADR 0284 decision 3). */
+  host: string;
   /** The schema's `title`, or its `$id` path when it has none; listed in `/schemas/index.json`. */
   title: string;
   /** The parsed JSON document; plan-site.ts rewrites its `$id` for every copy it publishes. */

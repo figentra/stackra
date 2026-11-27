@@ -7,7 +7,7 @@
  * Runtime: node
  * Governing contract: ADR 0284 (hosted static files, decisions 2 to 4).
  */
-import { SCHEMAS_PATH, STATIC_HOST } from "#src/constants";
+import { SCHEMAS_PATH, STATIC_HOST, STATIC_HOSTS } from "#src/constants";
 import type {
   ParsedSchema,
   SchemaIndexEntry,
@@ -22,12 +22,13 @@ import { renderHeaders } from "./render-headers";
 import { renderPage } from "./render-page";
 
 /**
- * Serialise a schema for one published path, with `$id` rewritten to that path's own URL. JSON Schema resolves
+ * Serialise a schema for one published path, with `$id` rewritten to that path's own URL on the host its `$id` names
+ * (ADR 0284 decision 3 as amended: both hosts serve the same files; a copy keeps its host). JSON Schema resolves
  * relative `$ref`s against `$id`, so a copy under `/schemas/1.4.0/` must name itself, or its references would
  * silently resolve against the moving latest version.
  */
 function publish(schema: ParsedSchema, path: string): string {
-  return `${JSON.stringify({ ...schema.document, $id: `https://${STATIC_HOST}${path}` }, null, 2)}\n`;
+  return `${JSON.stringify({ ...schema.document, $id: `https://${schema.host}${path}` }, null, 2)}\n`;
 }
 
 /**
@@ -71,7 +72,7 @@ export function planSite(
   for (const schema of latest.map(parseSchema)) {
     addSchema(schema, "");
     addSchema(schema, "/latest");
-    index.push({ id: `https://${STATIC_HOST}${SCHEMAS_PATH}${schema.name}`, title: schema.title });
+    index.push({ id: `https://${schema.host}${SCHEMAS_PATH}${schema.name}`, title: schema.title });
   }
 
   const majors = new Set<string>();
@@ -89,7 +90,7 @@ export function planSite(
   const releaseVersions = newestFirst.map((release) => release.version);
   add(
     `${SCHEMAS_PATH}/index.json`,
-    `${JSON.stringify({ host: STATIC_HOST, schemas: index, releases: releaseVersions }, null, 2)}\n`,
+    `${JSON.stringify({ host: STATIC_HOST, hosts: STATIC_HOSTS, schemas: index, releases: releaseVersions }, null, 2)}\n`,
   );
   // One page for people: `/` serves index.html, and wrangler.jsonc's `404-page` serves 404.html for any unknown path.
   const page = renderPage();

@@ -32,7 +32,7 @@ prove them. This repository is its monorepo, on pnpm and Turborepo.
   same authorisation as a human caller, and a write tool needs a named human approver. The repository is built with
   AI agents too, under the rules in [`AGENTS.md`](AGENTS.md).
 
-Packages publish only to the Stackra registry (`https://npm.stackra.figentra.com/`,
+Packages publish only to the Stackra registry (`https://npm.figentra.com/`,
 [ADR 0453](apps/docs/src/docs/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine.mdx)),
 never npmjs. The plan is the [roadmap](apps/docs/src/docs/roadmap.mdx).
 
@@ -43,7 +43,7 @@ never npmjs. The plan is the [roadmap](apps/docs/src/docs/roadmap.mdx).
 | `apps/`                      | `@figentra/console`, `@figentra/mobile`, `@figentra/playground` and `@figentra/docs`    |
 | `packages/<category>/<name>` | the `@stackra/<name>` libraries; `packages/tooling/` holds the config presets           |
 | `services/`                  | `@figentra/service-<name>` reference services, plain TypeScript                         |
-| `workers/`                   | `@figentra/worker-<name>` Cloudflare Workers (`static`, static.stackra.figentra.com)    |
+| `workers/`                   | `@figentra/worker-<name>` Cloudflare Workers (`static`, static.figentra.com)            |
 | `tools/`                     | the repository scripts and the templates `pnpm new` renders                             |
 | `.agents/`                   | every AI artifact (rules, agents, hooks, skills) and the Figentra Flow specs (`specs/`) |
 | `.flow/`                     | the Figentra Flow install: the constitution, `lock.json` and this README's data         |
@@ -75,7 +75,7 @@ Where things live (path: what it holds, tier tag):
 - `packages/<category>/<name>`: `@stackra/<name>`, flat inside one category: foundation, application, communication, connectors, cross-cutting, data, developer, experience, runtime, security, state (`tier:lib`)
 - `packages/tooling/*`: `@stackra/{typescript,oxlint,vitest,tsdown,commitlint}-config`, exactly five presets (ADR 0300) (`tier:config`)
 - `services/<name>`: `@figentra/service-<name>` — one member per service (`example`, `health`); root module `src/<key>.module.ts` (ADR 0294) (`tier:service`)
-- `workers/<name>`: `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.stackra.figentra.com), `wrangler.jsonc`, ADR 0284 (`tier:app`)
+- `workers/<name>`: `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.figentra.com), `wrangler.jsonc`, ADR 0284 (`tier:app`)
 - `tools/scripts`: repo helpers (Linear, bots, spec gates, runway); the checks and `pnpm new` are `stackra` commands, templates in `tools/scaffold`
 - `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc`: agent hooks and config
 - `.notes`: private owner-only submodule (`git submodule update --init .notes`); CI and agents never need it; never reference its contents from public docs
@@ -104,7 +104,7 @@ Reserve an ADR number before writing the ADR: `pnpm adr:reserve <slug> --issue S
 Done = `pnpm verify` green on the box after the merge (format, lint, typecheck, test, build, validate, boundaries, knip; "Tests run
 later" below). Conventional commits.
 
-Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.stackra.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
+Scope: every package is `@stackra/*` (free) or `@stackra-pro/*` (Pro, ADR 0461), never renamed and never another npm scope; publishing goes only to the Stackra registry (`https://npm.figentra.com/`, ADR 0453) from `.github/workflows/release.yml`, never npmjs or Keygen.
 
 Deploys (owner decision 2026-10-28, ADR 0468): agents develop and deploy end to end. Dev and staging deploys and
 prereleases run without the owner; production (a deploy, promote, rollback or package release) runs in CI and waits on
