@@ -45,6 +45,7 @@ const ITEM = /^([a-z0-9][a-z0-9-]*)(?:@(.+))?$/;
 /** Installs a registry item. */
 export class AddCommand extends Command({
   name: "add",
+  group: "Create",
   description: "Install a registry item: a skill, agent, MCP server, plugin or package",
   bin: true,
 }) {

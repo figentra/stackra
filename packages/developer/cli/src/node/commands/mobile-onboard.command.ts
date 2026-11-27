@@ -26,6 +26,7 @@ const STATUS: Readonly<Record<string, CheckStatus>> = {
 /** Onboards a product's mobile app. */
 export class MobileOnboardCommand extends Command({
   name: "mobile:onboard",
+  group: "Deploy",
   description:
     "Onboard a product's mobile app: ids, EAS project, Apple bundle id, Google project and Firebase, Sentry, signing, push, stores",
   bin: true,

@@ -13,6 +13,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 /** The `stackra preview serve` command definition. */
 export const PREVIEW_SERVE_COMMAND: CliCommand = {
   name: "preview serve",
+  group: "Deploy",
   summary:
     "Serve a built web surface on 127.0.0.1 as the edge would: the shell, the bundle and an API proxy",
   usage:

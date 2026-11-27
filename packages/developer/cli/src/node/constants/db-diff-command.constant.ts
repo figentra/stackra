@@ -20,6 +20,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 /** `stackra db diff`. */
 export const DB_DIFF_COMMAND: CliCommand = {
   name: "db diff",
+  group: "Database",
   summary: "Compare the member's models with the schema its migrations build (no database needed)",
   usage: "stackra db diff [--json]",
   options: { json: { type: "boolean" } },

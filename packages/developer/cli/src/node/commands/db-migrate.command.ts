@@ -19,6 +19,7 @@ import { loadDatabaseRunner } from "#node/functions/load-database-runner.functio
 /** Applies the member's pending migrations. */
 export class DbMigrateCommand extends Command({
   name: "db:migrate",
+  group: "Database",
   description: "Apply the member's pending migrations in order (the release step)",
   bin: true,
 }) {

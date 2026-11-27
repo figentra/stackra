@@ -29,6 +29,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 /** The `stackra gen` command definition. */
 export const GEN_COMMAND: CliCommand = {
   name: "gen",
+  group: "Develop",
   summary:
     "Generate the manifest, schemas, wiring and entries (--check: fail when stale; --manifests: manifests only)",
   usage: "stackra gen [--check] [--manifests] [--backend tsgo|ts6]",

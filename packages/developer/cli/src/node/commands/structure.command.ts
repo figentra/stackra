@@ -19,6 +19,7 @@ import { writeStructureDoc } from "#node/structure/functions/write-structure-doc
 /** Prints or writes the repository structure standards page. */
 export class StructureCommand extends Command({
   name: "structure",
+  group: "Repository",
   description: "Print the repository structure standards page, or --write-docs to write it",
   bin: true,
 }) {

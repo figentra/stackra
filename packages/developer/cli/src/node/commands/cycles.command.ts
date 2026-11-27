@@ -16,6 +16,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Fails on any workspace package cycle. */
 export class CyclesCommand extends Command({
   name: "cycles",
+  group: "Repository",
   description:
     "Fail on any workspace package cycle (dependencies, dev, peer, optional), printing its path",
   bin: true,

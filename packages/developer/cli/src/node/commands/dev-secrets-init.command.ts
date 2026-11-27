@@ -31,6 +31,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Writes the workspace's generated dev secret values. */
 export class DevSecretsInitCommand extends Command({
   name: "dev:secrets:init",
+  group: "Develop",
   description:
     "Generate dev values for the secrets the workspace declares (.stackra/dev-secrets.json)",
   bin: true,

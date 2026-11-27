@@ -27,6 +27,11 @@ workspace root the task commands fan out through Turborepo; in a member they run
 A refusal names its code, its position and the fix; nothing is written when gen refuses. `stackra validate` is what
 CI runs on every pull request; `verify` is what runs on the box before a merge counts.
 
+`stackra` alone lists the commands under Create, Develop, Inspect, Database, Quality and Deploy. It shows only what
+your workspace uses: the search commands appear once a member uses `@stackra/search`, smoke once the root runway has
+surfaces or a mobile app, and the Stackra repository's own checks only in that repository. Every command still runs by
+name; `stackra list --all` lists them all.
+
 ## Products
 
 `stackra build --product` builds every surface bundle and mobile app of the root runway, and

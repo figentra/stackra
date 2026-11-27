@@ -19,6 +19,7 @@ import { loadDatabaseRunner } from "#node/functions/load-database-runner.functio
 /** Reverts the last migration batch. */
 export class DbRollbackCommand extends Command({
   name: "db:rollback",
+  group: "Database",
   description: "Revert the last migration batch (dev, preview and test databases only)",
   bin: true,
 }) {

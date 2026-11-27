@@ -16,6 +16,8 @@ import { reportFindings } from "#node/functions/report-findings.function";
 /** Fails when `.mcp.json` drifted from `.mcp.yaml`. */
 export class AgentsCheckCommand extends Command({
   name: "agents:check",
+  group: "Quality",
+  hidden: true,
   description: "Fail when .mcp.json drifted from .mcp.yaml",
   bin: true,
 }) {

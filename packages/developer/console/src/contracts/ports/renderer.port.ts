@@ -13,6 +13,7 @@ import { Port } from "@stackra/contracts";
 
 import type { ChecklistSpec } from "#contracts/types/checklist-spec.type";
 import type { ChecklistSummary } from "#contracts/types/checklist-summary.type";
+import type { CommandListOptions } from "#contracts/types/command-list-options.type";
 import type { CommandStructure } from "#contracts/types/command-structure.type";
 import type { LiveHandle } from "#contracts/types/live-handle.type";
 import type { LiveView } from "#contracts/types/live-view.type";
@@ -74,8 +75,12 @@ export abstract class Renderer extends Port {
   /** A command's help, run as `binary`. */
   abstract help(structure: CommandStructure, binary: string): void;
 
-  /** The visible commands under their headings, run as `binary`. */
-  abstract commandList(structures: readonly CommandStructure[], binary: string): void;
+  /** The visible commands under their headings, run as `binary`, drawn as `options` says. */
+  abstract commandList(
+    structures: readonly CommandStructure[],
+    binary: string,
+    options?: CommandListOptions,
+  ): void;
 
   /** Runs `work` and writes its outcome line; on failure, the last 20 lines of the error's `detail`, then rethrows. */
   abstract task<T>(label: string, work: () => Promise<T> | T): Promise<T>;

@@ -25,6 +25,7 @@ const show = (value: unknown): string => (value === undefined ? "(unset)" : JSON
 /** Shows what a settings pack would change at a scope node. */
 export class SettingsDiffCommand extends Command({
   name: "settings:diff",
+  group: "Inspect",
   description: "Show what a settings pack would change at a scope node",
   bin: true,
 }) {

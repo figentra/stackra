@@ -14,6 +14,8 @@ import { syncMcpConfig } from "@stackra/mcp/node";
 /** Writes the project's generated agent files. */
 export class AgentsSyncCommand extends Command({
   name: "agents:sync",
+  group: "Develop",
+  hidden: true,
   description: "Write the project's generated agent files (.mcp.json)",
   bin: true,
 }) {

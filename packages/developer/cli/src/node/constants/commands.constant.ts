@@ -8,7 +8,9 @@
  *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the consumer gate (`consumer-gate`, ADR 0500), the local MCP and agent-file commands,
  *          the registry item commands (add, publish; ADR 0453), and the repository commands moved from
  *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs
- *          and `validate --repository`).
+ *          and `validate --repository`). Each names its `stackra list` heading (`COMMAND_GROUPS`); the check presets
+ *          and the commands a script, hook or agent client runs (mcp, mcp exec, mcp sync, agents sync and check) are
+ *          hidden from the list and still run by name (STA-2872).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db seed` runs the member's seeders (STA-1709) and
  *           `stackra db diff` compares models with the migrations (STA-1808); `db structure` and `db diff --write`
@@ -17,7 +19,7 @@
  *           (ADR 0529 decision 4, STA-2214).
  * Runtime: node
  * Governing contract: ADR 0282 (decisions 3 and 4); ADR 0083; registry v3.1 (cli ships thin, then grows); ADR 0506;
- *                     STA-1966.
+ *                     STA-1966; STA-2872 spec FR-001 and FR-002.
  */
 import { CONSOLE_COMMAND } from "#node/constants/console-command.constant";
 import { DB_DIFF_COMMAND } from "#node/constants/db-diff-command.constant";
@@ -81,29 +83,55 @@ export const COMMANDS: CliCommands = [
   CONSOLE_COMMAND,
   DEV_COMMAND,
   BUILD_COMMAND,
-  toolCommand("start", "Generate, then preview an app's web build"),
-  toolCommand("typecheck", "Generate, then type-check the member"),
-  toolCommand("test", "Generate, then run the member's tests (--tier unit, int or e2e)"),
-  toolCommand("lint", "Lint the member with oxlint"),
-  checkCommand(
-    "check",
-    "Run the quality gate: config, format, spelling, secrets, structure, docs, lint, gen, …",
-  ),
+  { ...toolCommand("start", "Generate, then preview an app's web build"), group: "Develop" },
+  { ...toolCommand("typecheck", "Generate, then type-check the member"), group: "Quality" },
+  {
+    ...toolCommand("test", "Generate, then run the member's tests (--tier unit, int or e2e)"),
+    group: "Quality",
+  },
+  { ...toolCommand("lint", "Lint the member with oxlint"), group: "Quality" },
+  {
+    ...checkCommand(
+      "check",
+      "Run the quality gate (config, format, secrets, docs, lint, gen, …); validate, verify, code:check, code:fix are presets",
+    ),
+    group: "Quality",
+  },
   VALIDATE_COMMAND,
-  checkCommand("verify", "Run every check phase, tests included (`stackra check --with-tests`)", {
-    withTests: true,
-  }),
-  checkCommand("code:check", "Check formatting and lint (`stackra check --only format,lint`)", {
-    only: ["format", "lint"],
-  }),
-  checkCommand(
-    "code:fix",
-    "Format and apply lint fixes (`stackra check --only format,lint --fix`)",
-    {
-      only: ["format", "lint"],
-      fix: true,
-    },
-  ),
+  {
+    ...checkCommand(
+      "verify",
+      "Run every check phase, tests included (`stackra check --with-tests`)",
+      {
+        withTests: true,
+      },
+    ),
+    group: "Quality",
+    hidden: true,
+  },
+  {
+    ...checkCommand(
+      "code:check",
+      "Check formatting and lint (`stackra check --only format,lint`)",
+      {
+        only: ["format", "lint"],
+      },
+    ),
+    group: "Quality",
+    hidden: true,
+  },
+  {
+    ...checkCommand(
+      "code:fix",
+      "Format and apply lint fixes (`stackra check --only format,lint --fix`)",
+      {
+        only: ["format", "lint"],
+        fix: true,
+      },
+    ),
+    group: "Quality",
+    hidden: true,
+  },
   DbMigrateCommand,
   DbRollbackCommand,
   DevSecretsInitCommand,

@@ -18,6 +18,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Fails when a package has more `no-explicit-any` disables than its baseline. */
 export class AnyRatchetCommand extends Command({
   name: "any-ratchet",
+  group: "Repository",
   description: "Fail when a package has more no-explicit-any disable comments than its baseline",
   bin: true,
 }) {

@@ -24,6 +24,7 @@ import { settingsScope } from "#node/functions/settings-scope.function";
 /** Queues a search reindex job. */
 export class SearchReindexCommand extends Command({
   name: "search:reindex",
+  group: "Database",
   description: "Queue a search reindex job (resumable), optionally partial (--since) or semantic",
   bin: true,
 }) {

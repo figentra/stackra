@@ -19,6 +19,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Fails when one exported name is declared in two packages. */
 export class DuplicateExportsCommand extends Command({
   name: "duplicate-exports",
+  group: "Repository",
   description: "Fail when one exported name is declared in two packages' src/",
   bin: true,
 }) {

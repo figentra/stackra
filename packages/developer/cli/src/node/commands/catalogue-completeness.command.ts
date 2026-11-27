@@ -18,6 +18,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Checks every lang catalogue against English. */
 export class CatalogueCompletenessCommand extends Command({
   name: "catalogue-completeness",
+  group: "Repository",
   description: "Check every lang catalogue has English's keys and placeholders (ADR 0403)",
   bin: true,
 }) {

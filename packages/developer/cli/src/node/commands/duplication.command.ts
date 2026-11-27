@@ -28,6 +28,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Holds each member's `src/` duplication to its baseline. */
 export class DuplicationCommand extends Command({
   name: "duplication",
+  group: "Repository",
   description:
     "Fail when a member's src/ duplication rises above its baseline; --update rewrites it",
   bin: true,

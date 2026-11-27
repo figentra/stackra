@@ -21,6 +21,7 @@ import { workspaceMembers } from "#node/functions/workspace-members.function";
 /** Lists the identities committed manifests lock. */
 export class LsCommand extends Command({
   name: "ls",
+  group: "Inspect",
   description: "List the identities a committed manifest locks (actions, events, permissions, …)",
   bin: true,
 }) {

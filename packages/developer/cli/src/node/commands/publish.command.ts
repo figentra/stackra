@@ -22,6 +22,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Checks the member, then publishes it to the Stackra registry. */
 export class PublishCommand extends Command({
   name: "publish",
+  group: "Deploy",
   description: "Check the member's stackra.kind and name, then publish it to the Stackra registry",
   bin: true,
 }) {

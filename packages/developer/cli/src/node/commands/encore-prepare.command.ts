@@ -17,6 +17,7 @@ import { workspaceRoot } from "#node/functions/workspace-root.function";
 /** Prepares a service for Encore. */
 export class EncorePrepareCommand extends Command({
   name: "encore:prepare",
+  group: "Develop",
   description:
     "Pin encore.dev and write tsconfig paths from imports, so Encore builds this service",
   bin: true,
