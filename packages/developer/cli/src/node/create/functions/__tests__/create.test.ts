@@ -1,12 +1,13 @@
 /**
  * Stackra file contract:
- * Purpose: hold `stackra create`'s pure parts to their contract: a profile writes only its paths and overlays, the
+ * Purpose: hold `stackra create`'s pure parts to their contract: a profile writes only its paths and overlays, less
+ *          its `exclude` globs, the
  *          rename list and the catalog pin apply, the starter's own files never reach the app, a malformed manifest or
  *          an unknown profile is refused; the gen tree groups by member and kind; a starter's files describe the
  *          doctor workspace of the app they make.
  * Boundary: pure functions on in-memory files; runs no command.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0515; STA-1952 spec FR-006, FR-007, FR-010 and FR-015.
+ * Governing contract: ADR 0022; ADR 0515; STA-1952 spec FR-006, FR-007, FR-010 and FR-015; STA-2859.
  */
 import assert from "node:assert/strict";
 import { gzipSync } from "node:zlib";
@@ -127,11 +128,56 @@ test("tarballs become pnpm overrides; an existing .npmrc keeps its lines", () =>
   );
 });
 
+test("a profile's exclude globs keep matching files out, dot paths included; an overlay still wins", () => {
+  const manifest = MANIFEST.replace(
+    'include: ["**"]\n',
+    'include: ["**"]\n    exclude: [".github/workflows/fflow-*.yml", "apps/docs/**", "runway.yaml"]\n',
+  ).replace(
+    "    overlay:\n",
+    '    exclude: [".github/workflows/fflow-*.yml", "runway.yaml"]\n    overlay:\n',
+  );
+  const files = starter({
+    "stackra.starter.yaml": manifest,
+    ".github/workflows/fflow-approve.yml": "on: workflow_dispatch\n",
+    ".github/workflows/fflow-baseline.yml": "on: push\n",
+  });
+  const full = starterFiles(files, { ...options, profile: "full" });
+  assert.equal(full.has(".github/workflows/fflow-approve.yml"), false);
+  assert.equal(full.has(".github/workflows/fflow-baseline.yml"), false);
+  assert.equal(full.has(".github/workflows/ci.yml"), true);
+  assert.equal(full.has("apps/docs/package.json"), false);
+  assert.equal(full.has("runway.yaml"), false);
+  assert.equal(full.has("services/example/package.json"), true);
+  // The minimal profile excludes runway.yaml too, yet its overlay writes the profile's own.
+  const minimal = starterFiles(files, options);
+  assert.match(read(minimal, "runway.yaml"), /key: demoapp/);
+  assert.equal(minimal.has(".github/workflows/fflow-approve.yml"), false);
+  // Without exclude, the same globs take every workflow, as before.
+  const plain = starterFiles(starter({ ".github/workflows/fflow-approve.yml": "on: push\n" }), {
+    ...options,
+    profile: "full",
+  });
+  assert.equal(plain.has(".github/workflows/fflow-approve.yml"), true);
+});
+
 test("a malformed manifest, an unknown profile and a missing overlay are refused", () => {
   assert.throws(() => starterFiles(new Map(), options), /has no stackra\.starter\.yaml/);
   assert.throws(
     () => starterFiles(starter({ "stackra.starter.yaml": "version: 2\n" }), options),
     /not a version 1 starter manifest/,
+  );
+  assert.throws(
+    () =>
+      starterFiles(
+        starter({
+          "stackra.starter.yaml": MANIFEST.replace(
+            'include: ["**"]',
+            'include: ["**"]\n    exclude: x',
+          ),
+        }),
+        options,
+      ),
+    /not a version 1 starter manifest \(rename, profiles\.<name>\.include, optional exclude\)/,
   );
   assert.throws(
     () => starterFiles(starter(), { ...options, profile: "tiny" }),

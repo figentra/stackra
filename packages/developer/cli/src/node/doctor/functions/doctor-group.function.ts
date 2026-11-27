@@ -20,7 +20,7 @@ const GROUPS: Readonly<Record<string, DoctorGroup>> = {
   "pnpm install done": "Repo",
   "agents:check clean": "Repo",
   ".mcp.json present": "Repo",
-  "figentra/secrets clone": "Repo",
+  "secrets checkout": "Repo",
   "@stackra registry readable": "Registries",
   "@figentra registry readable": "Registries",
   "GitHub CLI signed in": "Accounts",

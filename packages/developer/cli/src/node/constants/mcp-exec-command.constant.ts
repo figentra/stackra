@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `MCP_EXEC_COMMAND`, `stackra mcp exec -- <argv>`: starts an MCP server with its secrets. A `$NAME` in
- *          `argv` is decrypted by `sops exec-env` from the `agents` scope of the local figentra/secrets clone
+ *          `argv` is decrypted by `sops exec-env` from the `agents` scope of the local secrets checkout
  *          (`$STACKRA_SECRETS_DIR`, default `~/.stackra/secrets`) and expanded by the server's own shell; a command
  *          naming no secret starts unchanged. Exits with the server's exit code.
  * Boundary: no value passes through this process, its output or its arguments.

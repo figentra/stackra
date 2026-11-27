@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `googleCredentialsPath(env, home)`, where the Google Application Default Credentials that sops decrypts
- *          figentra/secrets with live: `GOOGLE_APPLICATION_CREDENTIALS`, else `application_default_credentials.json`
+ *          a secrets checkout with live: `GOOGLE_APPLICATION_CREDENTIALS`, else `application_default_credentials.json`
  *          in the gcloud config folder (`CLOUDSDK_CONFIG`, default `~/.config/gcloud`). `stackra doctor` checks the
  *          file exists; it never opens it.
  * Boundary: pure; reads no file.

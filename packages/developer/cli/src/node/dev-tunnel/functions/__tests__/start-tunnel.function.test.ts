@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `startTunnel`: it refuses without the token, hands the token to `cloudflared` only in its
+ * Purpose: unit tests of `startTunnel`: it refuses without the token (advice that names no one organisation's
+ *          repository or script), hands the token to `cloudflared` only in its
  *          environment and never on argv, removes it from the caller's environment, stops the child once, and reports
  *          an early exit without stopping anything else.
  * Boundary: test only; an injected spawn returns a fake child, so no `cloudflared` runs.
@@ -45,8 +46,16 @@ describe("startTunnel", () => {
     const { spawnProcess, calls } = fakeSpawn();
     expect(() => startTunnel({ PATH: "/bin" }, io, spawnProcess)).toThrow(CliUsageError);
     expect(() => startTunnel({ CLOUDFLARE_TUNNEL_TOKEN: "" }, io, spawnProcess)).toThrow(
-      /CLOUDFLARE_TUNNEL_TOKEN.*secrets-exec\.mjs --names CLOUDFLARE_TUNNEL_TOKEN -- stackra dev --tunnel/,
+      /CLOUDFLARE_TUNNEL_TOKEN in the environment.*sops exec-env tunnel\.enc\.yaml 'stackra dev --tunnel'/,
     );
+    // The advice is for any machine: no Figentra repository, script or path.
+    let message = "";
+    try {
+      startTunnel({}, io, spawnProcess);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).not.toMatch(/figentra|secrets-exec|~\/\.stackra\/secrets/i);
     expect(calls).toHaveLength(0);
   });
 
