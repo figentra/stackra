@@ -3,12 +3,14 @@
  * Purpose: `emitConsoleEntry`, a member's console entry (`.stackra/entry/console.ts`): it builds the console of the
  *          member from `#stackra/commands` with `createConsole({ name, version, commands, container })` and runs the
  *          arguments after the script, setting the process exit code from the run (ADR 0506 decision 6).
- * Boundary: pure; no logic in the entry. The container factory boots the member's generated wiring through `bootApp`,
+ * Boundary: pure; no logic in the entry. The container factory boots the member's generated wiring through `bootApp`
+ *           (with `#stackra/runway-config` when gen writes one, so runway's values of the command's environment apply),
  *           and runs only when a command is dispatched, so `--help`, the list and `--version` need no database or
  *           network (FR-010). A server's `#stackra/registrations` load first, so entities and models are registered.
  *           No entry for a package (it runs in its host) or for a member with no commands.
  * Runtime: node
- * Governing contract: ADR 0506 (decision 6); ADR 0295 (generated entries); STA-1731 spec FR-008 and FR-010.
+ * Governing contract: ADR 0506 (decision 6); ADR 0295 (generated entries); STA-1731 spec FR-008 and FR-010; ADR 0296
+ *                     (decision 1); STA-2798.
  */
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -29,6 +31,8 @@ export function emitConsoleEntry(
   if (ir.layout === "package" || !generated.includes(".stackra/gen/commands.ts")) return undefined;
   const wired = generated.includes(".stackra/gen/wiring.ts");
   const registrations = generated.includes(".stackra/gen/registrations.ts");
+  // Runway's config values per environment, applied by bootApp for the command's STACKRA_ENVIRONMENT (STA-2798).
+  const runway = wired && generated.includes(".stackra/gen/runway-config.ts");
   return {
     path: ".stackra/entry/console.ts",
     content: [
@@ -46,6 +50,7 @@ export function emitConsoleEntry(
       'import { createConsole } from "@stackra/console";',
       'import { nodePorts } from "@stackra/console/node";',
       'import { COMMANDS } from "#stackra/commands";',
+      ...(runway ? ['import { runwayConfig } from "#stackra/runway-config";'] : []),
       ...(wired ? ['import { wiring } from "#stackra/wiring";'] : []),
       "",
       "const app = createConsole({",
@@ -53,7 +58,9 @@ export function emitConsoleEntry(
       `  version: ${JSON.stringify(ir.version)},`,
       "  commands: COMMANDS,",
       ...(wired
-        ? ["  container: async () => (await bootApp(wiring, { env: process.env })).container,"]
+        ? [
+            `  container: async () => (await bootApp(wiring, { env: process.env${runway ? ", runway: runwayConfig" : ""} })).container,`,
+          ]
         : []),
       "});",
       "",

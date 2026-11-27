@@ -114,6 +114,7 @@ import { emitResources } from "#core/functions/emit-resources.function";
 import { emitPackageRoutes } from "#core/functions/emit-package-routes.function";
 import { emitRoutes } from "#core/functions/emit-routes.function";
 import { emitRuntimeEntries } from "#core/functions/emit-runtime-entries.function";
+import { emitRunwayConfig } from "#core/functions/emit-runway-config.function";
 import { emitSchemas } from "#core/functions/emit-schemas.function";
 import { emitExpoConfig } from "#core/functions/emit-expo-config.function";
 import { emitSdks } from "#core/functions/emit-sdks.function";
@@ -302,6 +303,8 @@ export function generateMember(
     // The cross-app relay (STA-1910): a consumer's inbox route and key table, a producer's relay configuration.
     [".stackra/gen/inbox.ts", emitInbox(ir)],
     [".stackra/gen/events-relay.ts", emitEventsRelay(ir)],
+    // Runway's config values per environment, which the entries hand bootApp (ADR 0296, STA-2798).
+    [".stackra/gen/runway-config.ts", emitRunwayConfig(ir)],
     [".stackra/gen/prefixes.ts", emitPrefixes(manifest)],
     [".stackra/gen/i18n.ts", emitI18n(ir)?.content],
     [".stackra/gen/client-tools.ts", clientTools.content],

@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the duplicate dev port check (`checkPorts`, STA-863), the dev compose plan (`devComposeOf`, `DEV_INFRA_KINDS`, STA-2664), the requirement driver check (`checkRequires`, STA-2049), the runtime-only config check (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, STA-2844), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the dev compose plan (`devComposeOf`, `DEV_INFRA_KINDS`, STA-2664), the requirement driver check (`checkRequires`, STA-2049), the durable action store check (`checkActionStores`, STA-2798), the runtime-only config check (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, STA-2844), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
@@ -47,6 +47,7 @@ export { RunwayLockedError } from "#core/errors/runway-locked.error";
 export { RunwaySmokeFailedError } from "#core/errors/runway-smoke-failed.error";
 export { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 export { baseUrlOf } from "#core/functions/base-url-of.function";
+export { checkActionStores } from "#core/functions/check-action-stores.function";
 export { checkPlacement } from "#core/functions/check-placement.function";
 export { checkDestinations } from "#core/functions/check-destinations.function";
 export { checkEnvironmentRegion } from "#core/functions/check-environment-region.function";
