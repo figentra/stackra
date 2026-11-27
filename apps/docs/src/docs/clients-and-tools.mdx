@@ -63,9 +63,11 @@ declared and who runs the call after the last vote is on [Approvals](/build/appr
 
 Inside a repository, `stackra mcp` serves a local MCP over stdio for an assistant: `app_info`, `manifest`, `routes`
 and `ls` read the repository's facts, committed manifests and HTTP routes, and `new`, `gen`, `validate`, `check`,
-`verify`, `test`, `typecheck` and `lint` run the CLI's own commands through its gates and answer with structured
-results (failing tests, diagnostics by file and line). A tool that writes is refused in a deployed environment,
-and when no environment is set; `stackra mcp` sets `dev` itself. Its
+`verify`, `test`, `typecheck` and `lint` run the CLI's own commands through its gates. Every tool answers
+`{ ok, diagnostics }`: each failing test, type error, lint finding, gen refusal or check finding is one diagnostic
+with its phase, code, severity, file, line, column, message, fix and docs link, the code being one `stackra explain`
+takes. The full log of a tool's last run, redacted, is in `.stackra/logs/last-<tool>.log`. A tool that writes is
+refused in a deployed environment, and when no environment is set; `stackra mcp` sets `dev` itself. Its
 configuration is `.mcp.yaml`, rendered to `.mcp.json` by `stackra mcp sync`; a server that needs a secret is started
 with `stackra mcp exec --`, which hands the value to the process without anyone reading it
 ([ADR 0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)).

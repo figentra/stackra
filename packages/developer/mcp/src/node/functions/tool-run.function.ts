@@ -1,15 +1,21 @@
 /**
  * Stackra file contract:
  * Purpose: `toolRun(host, root, args, member?)`, one `stackra` command run for a tool: through the host's CLI
- *          runner, in the repository root or one member's folder, timed, with its output stripped of colour codes and
- *          cut to the tail when it is long.
+ *          runner, in the repository root or one member's folder, timed, with its output stripped of colour codes,
+ *          redacted with `@stackra/logger`'s `redact` (secret shapes: bearer tokens, JWTs, API keys, URL
+ *          credentials) and cut to the tail when it is long.
  * Boundary: runs only through `host.run`, so the CLI's commands and gates apply; never spawns anything itself.
- *           Returns the full output beside the result, for the parsers, and keeps only the tail in the result.
+ *           Returns the full output beside the result, for the parsers and the log, and keeps only the tail in the
+ *           result; both are redacted here, before anything reads, writes or returns them, and so is the command
+ *           line.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5: writes go through the same commands and gates as the CLI); STA-2873.
+ * Governing contract: ADR 0282 (decision 5: writes go through the same commands and gates as the CLI); ADR 0147
+ *                     (decision 1: redaction with secret detection); STA-2873; STA-2886.
  */
 import { join } from "node:path";
 import { stripVTControlCharacters } from "node:util";
+
+import { redact } from "@stackra/logger";
 
 import type { DevToolHost } from "#core/ports/dev-tool-host.port";
 import { OUTPUT_LIMIT } from "#node/constants/output-limit.constant";
@@ -37,12 +43,13 @@ export async function toolRun(
     args,
     member === undefined ? undefined : { cwd: join(root, member.dir) },
   );
-  const output = stripVTControlCharacters(outcome.output);
+  // Redacted once, here: the parsers, the log file and the result's tail all read this text.
+  const output = redact(stripVTControlCharacters(outcome.output)) as string;
   const cut = output.length - OUTPUT_LIMIT;
   return {
     output,
     result: {
-      command: ["stackra", ...args].join(" "),
+      command: redact(["stackra", ...args].join(" ")) as string,
       cwd: member?.dir ?? ".",
       exitCode: outcome.exitCode,
       ok: outcome.exitCode === 0,

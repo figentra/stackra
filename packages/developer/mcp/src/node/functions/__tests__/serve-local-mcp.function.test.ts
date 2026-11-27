@@ -5,15 +5,19 @@
  *          `tools/list` page; `manifest`, `app_info` and `routes` read the repository, and a section, kind or member a
  *          tool does not have is refused naming the ones there are; `new`, `gen`, `validate`, `check`, `verify`,
  *          `test`, `typecheck` and `lint` run through the given CLI runner (the CLI's gates), in a member's folder when
- *          named, with structured results; a bad input is a tool error and nothing runs; a writing tool is refused on a
- *          deployed target while a read-only one still answers; an Encore call is forwarded unprefixed; the server
+ *          named; every tool answers `{ ok, diagnostics, data?, error? }`: each finding (a failed test, a type error,
+ *          a lint finding, a gen refusal, a check finding) one `Diagnostic` with its phase, code, file from the
+ *          repository root and line, a listed code linked through `stackra explain`, and the full log at
+ *          `.stackra/logs/last-<tool>.log`; a bad input is a tool error and nothing runs; a writing tool is refused on a
+ *          deployed target, as one `deployed_target` diagnostic, while a read-only one still answers; an Encore call is forwarded unprefixed; the server
  *          resolves when the client disconnects; a host tool replaces the built-in of its name.
  * Boundary: test only; in-memory streams, a fake runner, a fake Encore peer and a throwaway repository in the OS temp
  *           directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 5 and enforcement); R-29; STA-2873.
+ * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 5 and enforcement); R-29; STA-2873;
+ *                     STA-2886.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
@@ -102,10 +106,27 @@ type Called = {
   readonly isError: boolean;
   readonly structuredContent: {
     readonly ok: boolean;
+    readonly diagnostics: readonly Record<string, unknown>[];
     readonly data?: Record<string, unknown> & readonly unknown[];
     readonly error?: { readonly code?: string; readonly message: string; readonly fix?: string };
   };
 };
+
+/** The reference entry `stackra explain shape_number_kind` links. */
+const SHAPES_DOCS = "https://docs.stackra.figentra.com/customers/error-codes#shapes-and-fields";
+
+/** What `stackra explain <code> --json` answers: the shapes entry for `shape_number_kind`, else an unknown code. */
+const explained = (code: string | undefined) =>
+  code === "shape_number_kind"
+    ? { exitCode: 0, output: `${JSON.stringify({ ok: true, data: { docs: SHAPES_DOCS } })}\n` }
+    : {
+        exitCode: 2,
+        output: '{"ok":false,"error":{"code":"usage","message":"unknown error code"}}\n',
+      };
+
+/** The runner calls other than the `explain` lookups. */
+const commandCalls = (run: ReturnType<typeof vi.fn<StackraRunner>>) =>
+  run.mock.calls.filter(([args]) => args[0] !== "explain");
 
 /** Calls `name` with `args`. */
 const call = async (client: McpPeer, name: string, args: unknown = {}): Promise<Called> =>
@@ -202,6 +223,7 @@ describe("serveLocalMcp", () => {
 
     const all = await call(client, "manifest");
     expect(all.isError).toBe(false);
+    expect(all.structuredContent).toMatchObject({ ok: true, diagnostics: [] });
     expect(all.structuredContent.data).toEqual([
       expect.objectContaining({ member: "web" }),
       expect.objectContaining({ member: "commerce" }),
@@ -224,6 +246,14 @@ describe("serveLocalMcp", () => {
       message: 'No manifest has a "settings" section',
       fix: "name one of: actions, events, kind, member, package, routes, version",
     });
+    expect(unknownSection.structuredContent.diagnostics).toEqual([
+      expect.objectContaining({
+        phase: "manifest",
+        severity: "error",
+        message: 'No manifest has a "settings" section',
+        fix: "name one of: actions, events, kind, member, package, routes, version",
+      }),
+    ]);
 
     const unknownMember = await call(client, "manifest", { member: "billing" });
     expect(unknownMember.isError).toBe(true);
@@ -345,6 +375,7 @@ describe("serveLocalMcp", () => {
 
   it("runs new, gen, validate and verify through the CLI runner with structured results", async () => {
     const run = vi.fn<StackraRunner>(async (args) => {
+      if (args[0] === "explain") return explained(args[1]);
       if (args[0] === "verify")
         return {
           exitCode: 1,
@@ -397,38 +428,56 @@ describe("serveLocalMcp", () => {
 
     const generated = await call(client, "gen", { check: true, member: "commerce" });
     expect(generated.isError).toBe(true);
-    expect(generated.structuredContent).toMatchObject({
+    expect(generated.structuredContent).toEqual({
       ok: false,
-      data: {
+      diagnostics: [
+        {
+          phase: "gen",
+          file: "services/commerce/src/a.ts",
+          line: 4,
+          column: 3,
+          severity: "error",
+          code: "shape_number_kind",
+          message: "Orders: a number needs a kind",
+          fix: "use @Int",
+          docsUrl: SHAPES_DOCS,
+        },
+      ],
+      data: expect.objectContaining({
         command: "stackra gen --check",
         cwd: "services/commerce",
         exitCode: 1,
+        log: ".stackra/logs/last-gen.log",
         errors: 1,
         warnings: 0,
-        diagnostics: [
-          {
-            file: "src/a.ts",
-            line: 4,
-            column: 3,
-            severity: "error",
-            code: "shape_number_kind",
-            message: "Orders: a number needs a kind",
-            fix: "use @Int",
-          },
-        ],
+      }),
+    });
+    expect(generated.structuredContent.data).not.toHaveProperty("diagnostics");
+
+    expect((await call(client, "validate")).structuredContent).toMatchObject({
+      ok: true,
+      diagnostics: [],
+    });
+    const verified = await call(client, "verify", { keepGoing: true });
+    expect(verified.isError).toBe(true);
+    expect(verified.structuredContent).toMatchObject({
+      ok: false,
+      diagnostics: [
+        { phase: "lint", code: "eslint(no-debugger)", file: "a.ts", line: 3, severity: "error" },
+        { phase: "docs", code: "contract", file: "b.ts", severity: "warning" },
+      ],
+      data: {
+        command: "stackra verify --format=json --keep-going",
+        report: true,
+        counts: { lint: { errors: 1, warnings: 0 }, docs: { errors: 0, warnings: 1 } },
       },
     });
 
-    expect((await call(client, "validate")).isError).toBe(false);
-    const verified = await call(client, "verify", { keepGoing: true });
-    expect(verified.isError).toBe(true);
-    expect(verified.structuredContent.data).toMatchObject({
-      command: "stackra verify --format=json --keep-going",
-      findings: [{ phase: "lint", path: "a.ts" }, { phase: "docs" }],
-      counts: { lint: { errors: 1, warnings: 0 }, docs: { errors: 0, warnings: 1 } },
-    });
-
-    expect(run.mock.calls).toEqual([
+    // Each distinct code is looked up once through `stackra explain`; only a listed one gets a link.
+    expect(
+      run.mock.calls.filter(([args]) => args[0] === "explain").map(([args]) => args[1]),
+    ).toEqual(["shape_number_kind", "eslint(no-debugger)", "contract"]);
+    expect(commandCalls(run)).toEqual([
       [
         [
           "new",
@@ -462,17 +511,30 @@ describe("serveLocalMcp", () => {
       lint: "\n  ! eslint(no-debugger): `debugger` statement is not allowed\n   ,-[src/c.ts:3:1]\n",
       check: "[]\n",
     };
-    const run = vi.fn<StackraRunner>(async (args) => ({
-      exitCode: args[0] === "check" || args[0] === "lint" ? 0 : 1,
-      output: outputs[args[0] ?? ""] ?? "",
-    }));
+    const run = vi.fn<StackraRunner>(async (args) =>
+      args[0] === "explain"
+        ? explained(args[1])
+        : {
+            exitCode: args[0] === "check" || args[0] === "lint" ? 0 : 1,
+            output: outputs[args[0] ?? ""] ?? "",
+          },
+    );
     const { client, disconnect } = start(run);
 
     const tested = await call(client, "test", { member: "commerce", tier: "int" });
     expect(tested.isError).toBe(true);
+    expect(tested.structuredContent.diagnostics).toEqual([
+      {
+        phase: "test",
+        severity: "error",
+        file: "services/commerce/src/a.test.ts",
+        message: "orders > cancels: AssertionError: expected 1 to be 2",
+      },
+    ]);
     expect(tested.structuredContent.data).toMatchObject({
       command: "stackra test --tier=int",
       cwd: "services/commerce",
+      log: ".stackra/logs/last-test.log",
       tests: {
         files: { passed: 2, failed: 1, skipped: 0 },
         tests: { passed: 9, failed: 1, skipped: 1, todo: 0 },
@@ -486,33 +548,56 @@ describe("serveLocalMcp", () => {
       },
     });
 
+    // The full output is on disk; the result names it.
+    expect(readFileSync(join(root, ".stackra/logs/last-test.log"), "utf8")).toBe(
+      `$ stackra test --tier=int\n# in services/commerce\n${outputs["test"]}\n` +
+        `# exit 1 after ${String(tested.structuredContent.data?.["durationMs"])} ms\n`,
+    );
+
     const typed = await call(client, "typecheck", { member: "commerce" });
-    expect(typed.structuredContent.data).toMatchObject({
-      errors: 1,
-      diagnostics: [{ file: "src/a.ts", line: 2, column: 14, code: "TS2322", severity: "error" }],
+    expect(typed.structuredContent).toMatchObject({
+      ok: false,
+      diagnostics: [
+        {
+          phase: "typecheck",
+          file: "services/commerce/src/a.ts",
+          line: 2,
+          column: 14,
+          code: "TS2322",
+          severity: "error",
+        },
+      ],
+      data: { errors: 1, log: ".stackra/logs/last-typecheck.log" },
     });
 
     const linted = await call(client, "lint");
     expect(linted.isError).toBe(false);
-    expect(linted.structuredContent.data).toMatchObject({
-      cwd: ".",
-      errors: 0,
-      warnings: 1,
+    expect(linted.structuredContent).toMatchObject({
+      ok: true,
       diagnostics: [
-        { file: "src/c.ts", line: 3, code: "eslint(no-debugger)", severity: "warning" },
+        {
+          phase: "lint",
+          file: "src/c.ts",
+          line: 3,
+          code: "eslint(no-debugger)",
+          severity: "warning",
+        },
       ],
+      data: { cwd: ".", errors: 0, warnings: 1 },
     });
 
     const checked = await call(client, "check", { only: ["format", "lint"], withTests: true });
     expect(checked.structuredContent).toMatchObject({
       ok: true,
+      diagnostics: [],
       data: {
         command: "stackra check --format=json --only=format,lint --with-tests",
-        findings: [],
+        report: true,
+        counts: {},
       },
     });
 
-    expect(run.mock.calls.map(([args, at]) => [args, at?.cwd])).toEqual([
+    expect(commandCalls(run).map(([args, at]) => [args, at?.cwd])).toEqual([
       [["test", "--tier=int"], join(root, "services/commerce")],
       [["typecheck"], join(root, "services/commerce")],
       [["lint"], undefined],
@@ -536,6 +621,9 @@ describe("serveLocalMcp", () => {
       const refused = await call(client, name, args);
       expect(refused.isError, `${name} ${JSON.stringify(args)}`).toBe(true);
       expect(refused.structuredContent.ok).toBe(false);
+      expect(refused.structuredContent.diagnostics).toEqual([
+        expect.objectContaining({ phase: name, severity: "error", code: expect.any(String) }),
+      ]);
     }
     await expect(client.request("tools/call", { name: "deploy" })).rejects.toMatchObject({
       code: -32_602,
@@ -556,6 +644,19 @@ describe("serveLocalMcp", () => {
       isError: true,
       structuredContent: {
         ok: false,
+        diagnostics: [
+          {
+            phase: "gen",
+            code: "deployed_target",
+            severity: "error",
+            message:
+              "gen writes, and the server runs in production (STACKRA_ENVIRONMENT): " +
+              "the local developer MCP only writes in dev or test",
+            fix:
+              "run it from a local checkout through `stackra mcp` or `stackra dev` (they set " +
+              "STACKRA_ENVIRONMENT=dev), or through the deploy path for that environment",
+          },
+        ],
         error: {
           code: "deployed_target",
           message:

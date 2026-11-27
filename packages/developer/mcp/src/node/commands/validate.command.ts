@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: `ValidateCommand`, the `validate` tool of the local MCP: runs `stackra validate` (the config, structure,
  *          docs, catalogue and spec checks) and returns the run with its output.
- * Boundary: runs through the CLI runner only; reads the checkout and writes nothing.
+ * Boundary: runs through the CLI runner only; reads the checkout and writes nothing but the tool's log.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5: run validate and explain failures); ADR 0129; STA-2873.
+ * Governing contract: ADR 0282 (decision 5: run validate and explain failures); ADR 0129; STA-2873; STA-2886.
  */
 import { Command, type CommandIo } from "@stackra/console";
 

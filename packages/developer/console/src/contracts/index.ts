@@ -35,6 +35,8 @@ export type { CommandField } from "#contracts/types/command-field.type";
 export type { CommandOptions } from "#contracts/types/command-options.type";
 export type { CompletionCandidate } from "#contracts/types/completion-candidate.type";
 export type { CommandStructure } from "#contracts/types/command-structure.type";
+export type { Diagnostic } from "#contracts/types/diagnostic.type";
+export type { DiagnosticReport } from "#contracts/types/diagnostic-report.type";
 export type { ConsoleSignal } from "#contracts/types/console-signal.type";
 export type { ConsoleTheme } from "#contracts/types/console-theme.type";
 export type { ThemeColours } from "#contracts/types/theme-colours.type";

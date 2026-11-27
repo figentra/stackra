@@ -4667,6 +4667,9 @@ importers:
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/logger':
+        specifier: workspace:*
+        version: link:../../foundation/logger
       '@stackra/repo-checks':
         specifier: workspace:*
         version: link:../repo-checks

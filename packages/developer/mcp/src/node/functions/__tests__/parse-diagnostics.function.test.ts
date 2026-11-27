@@ -2,14 +2,17 @@
  * Stackra file contract:
  * Purpose: unit tests of `parseDiagnostics`: TypeScript's plain and pretty diagnostics, oxlint's findings in its
  *          piped (ASCII) and terminal (Unicode) reporters with the place on the next line, a Turborepo prefix, and one
- *          report per repeated finding; text with none gives none.
+ *          report per repeated finding, each a `Diagnostic` of the given phase; text with none gives none.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); STA-2873.
+ * Governing contract: ADR 0022 (test placement); STA-2873; STA-2886.
  */
 import { describe, expect, it } from "@stackra/testing";
 
 import { parseDiagnostics } from "#node/functions/parse-diagnostics.function";
+
+/** The phase each finding is reported under. */
+const PHASE = "typecheck";
 
 describe("parseDiagnostics", () => {
   it("reads tsc diagnostics, plain and pretty, after a task prefix", () => {
@@ -19,8 +22,9 @@ describe("parseDiagnostics", () => {
       "src/c.ts(2,14): error TS2322: Type 'string' is not assignable to type 'number'.",
       "Found 2 errors.",
     ].join("\n");
-    expect(parseDiagnostics(output)).toEqual([
+    expect(parseDiagnostics(output, PHASE)).toEqual([
       {
+        phase: PHASE,
         file: "src/c.ts",
         line: 2,
         column: 14,
@@ -29,6 +33,7 @@ describe("parseDiagnostics", () => {
         message: "Type 'string' is not assignable to type 'number'.",
       },
       {
+        phase: PHASE,
         file: "src/d.ts",
         line: 7,
         column: 1,
@@ -54,8 +59,9 @@ describe("parseDiagnostics", () => {
       "   ╭─[src/g.ts:9:2]",
       "Found 2 warnings and 2 errors.",
     ].join("\n");
-    expect(parseDiagnostics(output)).toEqual([
+    expect(parseDiagnostics(output, PHASE)).toEqual([
       {
+        phase: PHASE,
         file: "src/c.ts",
         line: 1,
         column: 7,
@@ -64,6 +70,7 @@ describe("parseDiagnostics", () => {
         message: "Variable 'unused' is declared but never used.",
       },
       {
+        phase: PHASE,
         file: "src/e.ts",
         line: 4,
         column: 12,
@@ -72,6 +79,7 @@ describe("parseDiagnostics", () => {
         message: "Unexpected any.",
       },
       {
+        phase: PHASE,
         file: "src/f.ts",
         line: 3,
         column: 1,
@@ -80,6 +88,7 @@ describe("parseDiagnostics", () => {
         message: "`debugger` statement is not allowed",
       },
       {
+        phase: PHASE,
         file: "src/g.ts",
         line: 9,
         column: 2,
@@ -92,7 +101,7 @@ describe("parseDiagnostics", () => {
 
   it("finds nothing in output without diagnostics", () => {
     expect(
-      parseDiagnostics("Finished in 38ms on 1 file with 96 rules using 16 threads.\n"),
+      parseDiagnostics("Finished in 38ms on 1 file with 96 rules using 16 threads.\n", PHASE),
     ).toEqual([]);
   });
 });

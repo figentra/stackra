@@ -3,9 +3,9 @@
  * Purpose: `VerifyCommand`, the `verify` tool of the local MCP: runs `stackra verify --format=json` (every check
  *          phase, tests included), optionally over the changed files only or past a failed phase, and returns the run
  *          with its findings and their counts by phase and severity.
- * Boundary: runs through the CLI runner only and never fixes. `findings` is null when the run printed no report.
+ * Boundary: runs through the CLI runner only and never fixes. `report` is false when the run printed no report.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5: run verify and explain failures); STA-2873.
+ * Governing contract: ADR 0282 (decision 5: run verify and explain failures); STA-2873; STA-2886.
  */
 import { Command, Option, type CommandIo } from "@stackra/console";
 
