@@ -102,11 +102,12 @@ trailing line break, reads only SCREAMING_SNAKE files (so Kubernetes' `..data` i
 
 `scheduleSecretReload(store, { everySeconds, onError, onReload })` reloads a loading store every `everySeconds` (0: only
 on `reloadNow()`, a rotation signal such as `SIGHUP`), one reload at a time, with an unref'd timer.
-`SecretsConfig.reloadSeconds` is the interval a deployment sets (default 0). A failed reload goes to `onError` and the
-store keeps answering from its last good copy. A reload reaches code that reads `SecretStore.get` on each use (the edge
+The host that binds a loading store picks the interval; `SecretsConfig` has no interval field yet, because nothing at
+boot would read it. A failed reload goes to `onError` and the store keeps answering from its last good copy. A reload reaches code that reads `SecretStore.get` on each use (the edge
 signing keys' `secrets` driver); a `@Secret` configuration field is resolved when its configuration is built, so it
-changes on the next boot. `bootApp` still binds the environment store; binding and scheduling the configured store at
-boot is STA-2804.
+changes on the next boot. `bootApp` still binds the environment store, so an app booted by the framework does not use these
+drivers or reload yet: binding and scheduling the configured store at boot, and its interval setting, is STA-2804, which
+waits for a CTO ruling on the reload policy.
 
 ```ts
 const store = new GcpSecretManagerSecretStoreDriver(gcpConfig);

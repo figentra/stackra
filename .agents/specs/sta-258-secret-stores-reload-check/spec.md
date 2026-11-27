@@ -27,8 +27,8 @@ each environment's set, with empty placeholders allowed so provisioning does not
 
 - **Apps touched**: apps/docs (ADR 0371 amendment, the `runway env missing` page, the secrets and runway runbooks, the docs nav)
 - **Services touched**: none
-- **Packages touched**: packages/foundation/config (two drivers, two configs, `scheduleSecretReload`, `SecretsConfig.reloadSeconds`, the barrels, the manifest), packages/developer/runway (`runway env missing`, optional names in the plan and placeholders in the sync), `.github/actions/secrets-decrypt` (a `check-environment` input)
-- **Public contract change**: additive: `GcpSecretManagerSecretStoreDriver` and `FileSecretStoreDriver` from `@stackra/config/node`; `GcpSecretManagerConfig`, `GcpSecretManagerConfig$`, `GcpSecretManagerOptions`, `SecretFilesConfig`, `SecretFilesConfig$`, `SecretFilesOptions`, `scheduleSecretReload` and the types `LoadableSecretStore`, `SecretReload`, `SecretReloadOptions` from `@stackra/config`; driver names `gcp_secret_manager` and `file` (`config.SecretStore`); config keys `config.gcp_secret_manager`, `config.secret_files` and `config.secrets.reloadSeconds`; `@stackra/runway`'s `runway env missing` command, `SecretSyncEntry.placeholders`, the `optional` flag on a plan's secret sync entry and `required` on a member's env rows; the action input `check-environment`. No existing member changes its signature or default.
+- **Packages touched**: packages/foundation/config (two drivers, two configs, `scheduleSecretReload`, the barrels, the manifest), packages/developer/runway (`runway env missing`, the same check inside `runway secrets decrypt` for a product scope, optional names in the plan, placeholders in the sync only where Encore holds no value), `.github/actions/secrets-decrypt` (header only)
+- **Public contract change**: additive: `GcpSecretManagerSecretStoreDriver` and `FileSecretStoreDriver` from `@stackra/config/node`; `GcpSecretManagerConfig`, `GcpSecretManagerConfig$`, `GcpSecretManagerOptions`, `SecretFilesConfig`, `SecretFilesConfig$`, `SecretFilesOptions`, `scheduleSecretReload` and the types `LoadableSecretStore`, `SecretReload`, `SecretReloadOptions` from `@stackra/config`; driver names `gcp_secret_manager` and `file` (`config.SecretStore`); config keys `config.gcp_secret_manager` and `config.secret_files`; `@stackra/runway`'s `runway env missing` command, `SecretSyncEntry.placeholders`, the `optional` flag on a plan's secret sync entry and `required` on a member's env rows; `runway secrets decrypt` exits 1 before decrypting a product scope of the checked-out repository that lacks a required secret. No existing member changes its signature or default. `SecretsConfig` gains no reload interval field: nothing at boot would read it until STA-2804.
 - **Cross-service events**: none
 - **Tenancy and data**: none (no table, no tenant data; secrets are deployment-wide)
 - **Security and privacy**: values are read only in a store's `load()`, kept in a private map and never listed, logged or put in an error; the Google driver never quotes a response body (a parse error could) and uses the runtime's own service-account token, never a key; the `file` driver accepts SCREAMING_SNAKE names only, so a configured name cannot leave its folder; the names check reads ciphertext file names and decrypts nothing
@@ -81,17 +81,19 @@ each environment's set, with empty placeholders allowed so provisioning does not
 
 ### User Story 1 - A deploy names a missing secret before it touches anything (Priority: P1)
 
-A deploy job downloads the environment's ciphertext and, with `check-environment`, runs `runway env missing <env>`. A
+A deploy job downloads the environment's ciphertext and runs `runway secrets decrypt`, which first runs the names check
+for every environment of a product scope of the checked-out repository (`runway env missing <env>` runs it on its own). A
 required name the scope lacks fails the job with the name and member; nothing is decrypted or deployed.
 
 **Why this priority**: the field report's 61 hand-made secrets; the deploy failed only once Encore provisioned.
 
-**Independent Test**: `env-missing.function.test.ts` and `runway-env-missing.command.test.ts`.
+**Independent Test**: `env-missing.function.test.ts`, `runway-env-missing.command.test.ts`, `scope-missing.function.test.ts` and `runway-secrets-decrypt.command.test.ts`.
 
 **Acceptance Scenarios**:
 
 1. **Given** a scope lacking a required synced name, **When** the check runs, **Then** it exits 1 naming it.
-2. **Given** a scope lacking only an optional name, **When** the check runs, **Then** it warns and exits 0, and the sync writes the name empty.
+2. **Given** a scope lacking only an optional name, **When** the check runs, **Then** it warns and exits 0, and the sync writes the name empty only where Encore holds no value for it.
+3. **Given** an optional name the scope lacks and a value set by hand in Encore, **When** the sync runs, **Then** it issues no `encore secret set` for it.
 
 ### User Story 2 - A rotated secret reaches a running process (Priority: P2)
 
@@ -130,18 +132,18 @@ reads the secrets its platform mounts as files.
 
 ### Functional Requirements
 
-- **FR-001**: THE `SecretStore` port SHALL have a `gcp_secret_manager` driver that reads each configured id's `latest` or pinned version with the metadata server's token, eight at a time, through the location's regional endpoint when `location` is set. Sources: SRC-004
-- **FR-002**: THE `SecretStore` port SHALL have a `file` driver that reads one file per secret from an absolute folder, every SCREAMING_SNAKE regular file or only `names`, dropping one trailing line break and refusing a file over 64 KiB. Sources: SRC-004
+- **FR-001** (example-only): THE `SecretStore` port SHALL have a `gcp_secret_manager` driver that reads each configured id's `latest` or pinned version with the metadata server's token, eight at a time, through the location's regional endpoint when `location` is set. Sources: SRC-004
+- **FR-002** (example-only): THE `SecretStore` port SHALL have a `file` driver that reads one file per secret from an absolute folder, every SCREAMING_SNAKE regular file or only `names`, dropping one trailing line break and refusing a file over 64 KiB. Sources: SRC-004
 - **FR-003**: WHEN a loading driver's read fails THE driver SHALL reject naming steps, ids and statuses only, and SHALL keep the copy of its last good load. Sources: SRC-001
-- **FR-004**: THE AWS and Google drivers SHALL split a JSON-object secret into its string members with one shared function. Sources: SRC-001
+- **FR-004** (example-only): THE AWS and Google drivers SHALL split a JSON-object secret into its string members with one shared function. Sources: SRC-001
 - **FR-005**: `scheduleSecretReload` SHALL reload a loading store every `everySeconds` (0: none) and on `reloadNow()`, one reload at a time, with an unref'd timer, and report a failed reload to `onError`. Sources: SRC-005
-- **FR-006**: `SecretsConfig` SHALL accept `gcp_secret_manager` and `file` as `store` and a `reloadSeconds` from 0 to 86400 (default 0). Sources: SRC-001
+- **FR-006** (example-only): `SecretsConfig` SHALL accept `gcp_secret_manager` and `file` as `store`, and SHALL NOT carry a reload interval until boot reads one (STA-2804). Sources: SRC-001, SRC-005
 - **FR-007**: `deployPlan` SHALL mark a synced secret `optional` only when code alone declares it and every declaration is `required: false`. Sources: SRC-002
 - **FR-008**: `runway env missing <env>` SHALL error on each required synced name the scope's ciphertext lacks and warn on an optional one, reading file names only, in a proved CI job. Sources: SRC-002, SRC-003
 - **FR-009**: `secretSyncPlan` SHALL list a member's optional names as `placeholders`. Sources: SRC-002
 - **FR-010**: `readMemberSecrets` SHALL read an absent or empty placeholder as an empty string and still fail on a required one. Sources: SRC-002
-- **FR-011**: `runway secrets sync` SHALL write a placeholder the scope lacks into Encore as an empty value and say so by name. Sources: SRC-002
-- **FR-012**: THE secrets-decrypt action SHALL run `runway env missing` before the decrypt when `check-environment` is set. Sources: SRC-003
+- **FR-011**: `runway secrets sync` SHALL write a placeholder the scope lacks into Encore as an empty value only when `encore secret list` shows Encore holds no value for it in the environment, SHALL keep a value Encore holds, SHALL write no placeholder when the listing cannot be read, and SHALL say so by name. Sources: SRC-002
+- **FR-012**: `runway secrets decrypt` SHALL, for a product scope of the checked-out repository, run the names check for every runway environment of that scope before it decrypts anything, and exit 1 naming each required secret the scope lacks; it SHALL check nothing for any other scope. Sources: SRC-003
 
 ### Non-functional Requirements
 
@@ -156,7 +158,11 @@ reads the secrets its platform mounts as files.
 ## Acceptance criteria
 
 - **AC-001**: WHEN the scope lacks a required synced name THE `runway env missing` run SHALL exit 1 naming it and its member.
-- **AC-002**: WHEN the scope lacks only optional names THE run SHALL exit 0 with a warning per name, and the sync SHALL write each empty.
+- **AC-002**: WHEN the scope lacks only optional names THE run SHALL exit 0 with a warning per name, and the sync SHALL write each empty only where Encore holds no value for it.
+- **AC-007**: WHEN a product scope lacks a required synced name THE `runway secrets decrypt` run SHALL exit 1 with nothing decrypted.
+- **AC-008**: WHEN a loaded secret is a JSON object THE AWS and Google stores SHALL answer one secret per string member.
+- **AC-009**: WHEN only code declares a name and every declaration is `required: false` THE plan SHALL mark it optional and the sync entry SHALL list it as a placeholder.
+- **AC-010**: THE shipped `SecretsConfig$` SHALL hold `store` only.
 - **AC-003**: WHEN a loading store reloads after a rotation THE store SHALL answer the new value; WHEN the reload fails THE store SHALL answer the old one.
 - **AC-004**: THE Google driver SHALL read through the regional endpoint with the metadata token and fail closed without one.
 - **AC-005**: THE `file` driver SHALL follow a Kubernetes Secret volume's atomic swap on reload.
@@ -171,7 +177,7 @@ reads the secrets its platform mounts as files.
 
 - Binding the configured store in `bootApp` and scheduling its reload there (STA-2804, waits for the CTO's reload-policy ruling).
 - Re-resolving a `@Secret` configuration field after boot (configurations are validated and frozen, ADR 0146).
-- Moving product deploy workflows onto `check-environment` (each repository pins the action; it follows the next runway release).
+- Bumping the template's pinned secrets-decrypt action (it pins a core commit; it follows the release that carries this check).
 
 ## Assumptions
 
@@ -180,7 +186,10 @@ reads the secrets its platform mounts as files.
 
 ## Amendments
 
-None.
+- 2026-11-27 · review: the sync no longer empties a value set by hand in Encore (FR-011); the names check runs inside
+  `runway secrets decrypt` for every product deploy instead of behind the opt-in `check-environment` input, which is
+  removed (FR-012, AC-007); `SecretsConfig.reloadSeconds` is removed because nothing reads it until STA-2804 binds the
+  store at boot (FR-006). STA-258 stays open for that runtime half.
 
 ## Status history
 
@@ -189,3 +198,4 @@ None.
 - 2026-11-27 → Planned (plan.md)
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)
+- 2026-11-27 → Implementing (review findings addressed: T016 to T018)

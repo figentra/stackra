@@ -5,7 +5,7 @@
  *          read from the scope's ciphertext file names. A required one fails the run (exit 1); an optional one is a
  *          warning, since the sync writes an empty placeholder.
  * Boundary: CI only (its GitHub OIDC token proves the job); prints names, members and the scope, never a value, and
- *           decrypts nothing. The secrets-decrypt action runs it when its `check-environment` input is set.
+ *           decrypts nothing. `runway secrets decrypt` runs the same check on a product scope (`scopeMissing`).
  * Runtime: node
  * Governing contract: ADR 0525; ADR 0371 (amendment 2026-11-27); ADR 0173 (amendment 2026-11-04, decision 4);
  *                     STA-258.

@@ -36,11 +36,9 @@ describe("SecretsConfig", () => {
     expect(SECRETS_CONFIG_SCHEMA.safeParse({ store: "vault" }).success).toBe(false);
   });
 
-  it("reloads never by default, and takes whole seconds up to a day", () => {
-    expect(buildConfig(SecretsConfig).reloadSeconds).toBe(0);
-    expect(buildConfig(SecretsConfig, { values: { reloadSeconds: 300 } }).reloadSeconds).toBe(300);
-    for (const reloadSeconds of [-1, 1.5, 86_401])
-      expect(SECRETS_CONFIG_SCHEMA.safeParse({ reloadSeconds }).success).toBe(false);
+  it("has no reload interval field until boot reads one (STA-2804)", () => {
+    expect(Object.keys(buildConfig(SecretsConfig))).not.toContain("reloadSeconds");
+    expect(Object.keys(SECRETS_CONFIG_SCHEMA.shape)).toEqual(["store"]);
   });
 
   it("lists every driver name in the committed manifest's candidates", () => {

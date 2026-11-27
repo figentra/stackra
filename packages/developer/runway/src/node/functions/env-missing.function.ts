@@ -5,7 +5,7 @@
  *          declares, and the generated gateway's) that the environment's sops scope (`products/<project>/<env>`, ADR
  *          0525) does not hold, checked before anything is decrypted or deployed. A required name the scope lacks is an
  *          error; an optional one (`required: false` in code, in no runway list) is a warning, since the sync writes it
- *          as an empty placeholder. A name is its ciphertext file's name (`<dir>/<scope>/<NAME>.enc.yaml`).
+ *          as an empty placeholder unless Encore already holds a value. A name is its ciphertext file's name (`<dir>/<scope>/<NAME>.enc.yaml`).
  * Boundary: CI only (`prepareEnvRead` proves the job), like `envOrphans`, its mirror; reads file names only, never a
  *           value, and decrypts nothing. A member no runtime takes secrets from (writer `none`) is not checked.
  * Runtime: node
@@ -61,7 +61,7 @@ export async function envMissing(
               level: "warning",
               name,
               where: entry.folder,
-              message: `is not in ${scope}: it is optional, so the sync writes an empty placeholder`,
+              message: `is not in ${scope}: it is optional, so the sync writes an empty placeholder unless Encore already holds a value`,
             }
           : {
               level: "error",

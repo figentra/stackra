@@ -10,5 +10,7 @@ per-request `timeoutMs`; no key and no SDK. It also adds `FileSecretStoreDriver`
 `config.secret_files`), which reads one file per secret from the folder a platform mounts (a Kubernetes Secret volume,
 Docker or Compose secrets), for on-premises and air-gapped installs. Every loading driver, AWS included, swaps its copy
 only when every read succeeded. `scheduleSecretReload(store, { everySeconds, onError })` reloads a loading store on an
-interval and on `reloadNow()`, one reload at a time, keeping the last good values when a reload fails;
-`SecretsConfig.reloadSeconds` (default 0) is its interval. `bootApp` still binds the environment store (STA-2804).
+interval and on `reloadNow()`, one reload at a time, keeping the last good values when a reload fails. This is the
+library half only: `bootApp` still binds the environment store, so no app booted by the framework uses these drivers or
+reloads until STA-2804 binds the configured store at boot and adds its interval setting (it waits for a CTO ruling on
+the reload policy); a host that wants it now binds and schedules a loading store itself.

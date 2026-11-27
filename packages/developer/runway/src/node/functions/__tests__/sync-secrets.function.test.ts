@@ -52,8 +52,23 @@ const RUNWAYS: DeployRunways = {
   ],
 };
 
-/** A runner that records every call and the encore.app of an Encore write's working directory. */
-function recorder(): {
+/** `text` in a terminal's green. */
+const green = (text: string) => `\u001b[32m${text}\u001b[0m`;
+
+/** The overview table `encore secret list` prints (its marks coloured, as on a terminal), one row per name. */
+function listing(rows: readonly string[]): string {
+  return [
+    "Secret Key   Production   Development   Local   Preview   Specific Envs",
+    ...rows.map((row) => row.replaceAll("\u2713", green("\u2713"))),
+    "",
+  ].join("\n");
+}
+
+/**
+ * A runner that records every call and the encore.app of an Encore write's working directory; `encore secret list`
+ * answers `list` (a string, or an error to throw).
+ */
+function recorder(list: string | Error = listing([])): {
   readonly run: CommandRunner;
   readonly calls: {
     readonly command: string;
@@ -75,6 +90,10 @@ function recorder(): {
       ...(options.input === undefined ? {} : { input: options.input }),
       ...(app === undefined ? {} : { app }),
     });
+    if (command === "encore" && args[0] === "secret" && args[1] === "list") {
+      if (list instanceof Error) throw list;
+      return list;
+    }
     return "";
   };
   return { run, calls };
@@ -212,6 +231,24 @@ const WITH_OPTIONAL: DeployRunways = {
   ],
 };
 
+/** Syncs WITH_OPTIONAL into staging-eu with no SENTRY_DSN in the scope; answers the calls and the lines. */
+async function syncWithout(list: string | Error) {
+  const { run, calls } = recorder(list);
+  const lines: string[] = [];
+  await syncSecrets({
+    environment: "staging",
+    runways: WITH_OPTIONAL,
+    repository: repository(true),
+    dryRun: false,
+    log: (line) => lines.push(line),
+    run,
+    ci: true,
+    env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+  });
+  const writes = calls.filter(({ args }) => args[1] === "set").map(({ args }) => args.at(-1));
+  return { writes, lines };
+}
+
 describe("placeholders (STA-258)", () => {
   it("lists a member's optional names as its placeholders", () => {
     expect(secretSyncPlan("staging", WITH_OPTIONAL)).toEqual([
@@ -254,8 +291,14 @@ describe("placeholders (STA-258)", () => {
     ).toMatch(/lacks api's STRIPE_SECRET_KEY:/);
   });
 
-  it("writes an absent optional name into Encore as an empty placeholder, and says so", async () => {
-    const { run, calls } = recorder();
+  it("writes an absent optional name into Encore as an empty placeholder when Encore holds none, and says so", async () => {
+    // STRIPE_SECRET_KEY is held; SENTRY_DSN only for another environment, so staging-eu holds no value for it.
+    const { run, calls } = recorder(
+      listing([
+        "STRIPE_SECRET_KEY   \u2713   \u2713   \u2717   \u2717",
+        "SENTRY_DSN   \u2717   \u2717   \u2717   \u2717   production",
+      ]),
+    );
     const lines: string[] = [];
     await syncSecrets({
       environment: "staging",
@@ -268,6 +311,7 @@ describe("placeholders (STA-258)", () => {
       env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
     });
     expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+      { name: "list", input: undefined },
       { name: "SENTRY_DSN", input: "" },
       { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
     ]);
@@ -279,6 +323,50 @@ describe("placeholders (STA-258)", () => {
     );
     expect(lines).toContain("set STRIPE_SECRET_KEY in encore staging-eu");
     expectNoValue(lines.join("\n"));
+  });
+
+  it("never empties a value Encore already holds for an absent optional name", async () => {
+    // Set by hand for an environment type, for staging-eu itself, or both: each keeps its value.
+    for (const row of [
+      "SENTRY_DSN   \u2713   \u2717   \u2717   \u2717",
+      "SENTRY_DSN   \u2717   \u2713   \u2717   \u2717",
+      "SENTRY_DSN   \u2717   \u2717   \u2717   \u2717   production,staging-eu",
+    ]) {
+      const { writes, lines } = await syncWithout(listing([row]));
+      expect(writes).toEqual(["STRIPE_SECRET_KEY"]);
+      expect(lines).toContain(
+        "kept SENTRY_DSN in encore staging-eu: optional, no value in the scope, and Encore already holds one",
+      );
+      expectNoValue(lines.join("\n"));
+    }
+  });
+
+  it("writes no placeholder when encore secret list cannot be read or is not the table", async () => {
+    for (const list of [new Error("encore secret list failed"), "not logged in\n"]) {
+      const { writes, lines } = await syncWithout(list);
+      expect(writes).toEqual(["STRIPE_SECRET_KEY"]);
+      expect(lines).toContain(
+        "left SENTRY_DSN in encore staging-eu as it is: optional, no value in the scope, and encore secret list could not be read",
+      );
+    }
+  });
+
+  it("asks Encore nothing when every value is in the scope", async () => {
+    const { run, calls } = recorder(new Error("must not be asked"));
+    await syncSecrets({
+      environment: "staging",
+      runways: WITH_OPTIONAL,
+      repository: repository(true),
+      dryRun: false,
+      log: () => undefined,
+      run,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, SENTRY_DSN: "canary-sentry" },
+    });
+    expect(calls.map(({ args }) => args.slice(0, 2).join(" "))).toEqual([
+      "secret set",
+      "secret set",
+    ]);
   });
 });
 

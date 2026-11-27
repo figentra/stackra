@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `SecretReloadOptions`, how often `scheduleSecretReload` reloads a store and who hears a failed reload.
- * Boundary: a type only. `everySeconds` is `SecretsConfig.reloadSeconds` in a deployment (0: no interval).
+ * Boundary: a type only. The host that binds a loading store chooses `everySeconds` (0: no interval); no config field
+ *           sets it until STA-2804 binds and schedules the store at boot.
  * Runtime: isomorphic
  * Governing contract: ADR 0371 (decision 4, amendment 2026-11-27, STA-258).
  */
