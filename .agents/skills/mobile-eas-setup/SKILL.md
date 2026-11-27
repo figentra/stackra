@@ -37,7 +37,7 @@ and the mobile job writes `eas.json` at each build. Do not hand-write a product'
    secret. Licence tokens (Uniwind Pro, when installed) are **secret** variables in every environment, or
    installs silently get stubs.
 8. **`.easignore`** replaces `.gitignore` entirely for uploads: copy `.gitignore`, then add `.claude/`, `.agents/`,
-   `.notes/`, agent worktrees, `apps/docs`, `apps/console`, and every `node_modules`. Keep `packages/**` the app needs.
+   agent worktrees, `apps/docs`, `apps/console`, and every `node_modules`. Keep `packages/**` the app needs.
    Without it a monorepo upload can reach tens of gigabytes.
 9. pnpm in EAS needs `babel-preset-expo` as a devDependency of the app.
 

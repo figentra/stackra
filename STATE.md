@@ -82,7 +82,6 @@ no product feature lands here. It is built by AI agent lanes (as the `stackra-bo
 | `.agents/`                    | rules, agents, hooks, skills and Flow specs (`specs/`, 331 folders)           |
 | `.flow/`                      | Figentra Flow install: generated constitution, `lock.json`, `overrides/`      |
 | `.github/workflows/`          | 18 workflows (CI, release, deploys, runway, testbed, observability)           |
-| `.notes`                      | private submodule; never needed by CI or agents                               |
 
 Authoritative documents, in order:
 

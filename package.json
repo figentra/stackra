@@ -85,8 +85,6 @@
     "encore": "1.58.8",
     "layout": {
       "allow": {
-        ".gitmodules": "the private .notes submodule",
-        ".notes": "the private owner-only notes submodule",
         "THIRD_PARTY_NOTICES.md": "the notices of code the published packages carry",
         "TRADEMARKS.md": "the Stackra trademark policy of the public framework",
         "apps": "the published docs site and the console and mobile reference apps (ADR 0526 d2, d3)"

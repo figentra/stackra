@@ -72,7 +72,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+          submodules: false # core has no submodules; stackra validate refuses an undeclared one (STA-2918)
 
       # ADR 0027 D2: toolchains come from mise.toml (node, pnpm, gitleaks, shfmt and the supply-chain checks), not
       # setup actions.

@@ -78,7 +78,6 @@ Where things live (path: what it holds, tier tag):
 - `workers/<name>`: `@figentra/worker-<name>` — Cloudflare Worker members (`static`: `stackra-static`, static.stackra.figentra.com), `wrangler.jsonc`, ADR 0284 (`tier:app`)
 - `tools/scripts`: repo helpers (Linear, bots, spec gates, runway); the checks and `pnpm new` are `stackra` commands, templates in `tools/scaffold`
 - `.agents/hooks`, `.claude/settings.json`, `opencode.jsonc`: agent hooks and config
-- `.notes`: private owner-only submodule (`git submodule update --init .notes`); CI and agents never need it; never reference its contents from public docs
 
 Rules every member follows (`pnpm validate` enforces them):
 
