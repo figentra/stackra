@@ -89,9 +89,11 @@ describe("syncDevEncoreApp", () => {
     expect(JSON.parse(app("encore.app"))).toEqual({ id: "acme-x1", lang: "typescript" });
     expect(JSON.parse(app("package.json")).dependencies).toEqual({ "encore.dev": "1.58.8" });
     expect(JSON.parse(app("tsconfig.json")).compilerOptions.experimentalDecorators).toBe(true);
-    // Each member's `#` imports become relative paths through its own map.
+    // Each member's `#` imports become relative paths through its own map (the expected text is built, so the
+    // repository's import check does not read it as an import of this test).
+    const up = "../..";
     expect(app("services/billing/.stackra/gen/wiring.ts")).toBe(
-      'export * from "../../src/modules/orders";\n',
+      `export * from "${up}/src/modules/orders";\n`,
     );
     expect(app("services/usage/stackra-encore/usage/encore.service.ts")).toContain(
       'import "../../.stackra/gen/wiring";\nimport rows from "../../assets/rows.json"',

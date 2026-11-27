@@ -1748,7 +1748,7 @@
             },
             "from": {
               "type": "string",
-              "description": "Not read yet (Runway plan PR 8, STA-2001). Environment variable holding the lane number.",
+              "description": "Environment variable holding the lane number (`STACKRA_LANE` when unset; read by `devLane`).",
               "examples": ["STACKRA_LANE"]
             },
             "repos": {
