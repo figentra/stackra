@@ -459,6 +459,10 @@
     "runway.WorkerPreset": {
       "type": "string",
       "enum": ["public-site", "api", "internal-tool", "cache", "edge"]
+    },
+    "runway.WorkerVersionProof": {
+      "type": "string",
+      "enum": ["header", "route"]
     }
   }
 }

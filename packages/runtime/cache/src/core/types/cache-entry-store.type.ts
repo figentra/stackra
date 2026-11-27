@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `CacheEntryStore`, what `storedCache` runs over: entries by key, named sets of keys (the keys carrying each
- *          tag, and without `keys` the keys under each covering key), and the keys under a prefix when it can list them.
+ *          tag, and without `keys` the keys under each covering key), and the keys under a prefix when it can list them, and an atomic
+ *          set-if-absent when it has one (`create`).
  * Boundary: a type only, internal to the package. `textEntryStore` makes one from an outside `CacheStore` (entries as
  *           JSON text); `memoryEntryStore` keeps entries by reference with the LRU bound. Keys and set names arrive
  *           behind the namespace. A set may keep a member whose entry is gone.
@@ -19,6 +20,12 @@ export interface CacheEntryStore {
 
   /** Stores `entry` under `key`, kept at least `ttl`. */
   write: (key: string, entry: CacheEntry, ttl: Duration) => Promise<void>;
+
+  /**
+   * Stores `entry` under `key`, kept exactly `ttl`, only when nothing is kept there, atomically; answers whether it
+   * stored. Absent when the store has no atomic set-if-absent, and then `Cache.add` rejects.
+   */
+  create?: (key: string, entry: CacheEntry, ttl: Duration) => Promise<boolean>;
 
   /** Removes `key`; nothing happens when it is not stored. */
   delete: (key: string) => Promise<void>;
