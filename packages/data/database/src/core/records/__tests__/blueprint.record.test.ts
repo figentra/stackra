@@ -3,7 +3,8 @@
  * Purpose: behaviour tests of the blueprint's expand and contract steps on a real Postgres engine (PGlite): a column
  *          rename's sync trigger keeps both names equal for a release that writes either, its finish refuses while a
  *          row is not backfilled (also as an owner role that forced row security would show no row) and then drops the
- *          old column; a dropped column waits for its release gate, a retried deploy of that release included; a named
+ *          old column; a dropped column waits for its release gate, a retried deploy of that release included, and a
+ *          later release while the run that applied the step it waits for never finished; a named
  *          check added to an existing table holds new rows at once and its validation scans the old ones; an
  *          exclusion constraint refuses an overlapping booking (STA-1406).
  * Boundary: test only; each test applies compiled migrations to a fresh in-memory PGlite as the runner would (a
@@ -32,10 +33,17 @@ function compiled(up: (schema: SchemaBuilder) => void): CompiledMigration {
   return compileMigration(TestMigration, { schema: "shop", createsSchema: false });
 }
 
-/** Applies `migration` to `pg` step by step, as the runner does, as `role` when one is named. */
+/** The runner's gate settings of each database's current run, as `migrate` writes them at the head of a file. */
+const runs = new WeakMap<PGlite, string>();
+
+/**
+ * Applies `migration` to `pg` step by step, as the runner does (its gate settings transaction-local at the head of
+ * each transactional step), as `role` when one is named.
+ */
 async function apply(pg: PGlite, migration: CompiledMigration, role?: string): Promise<void> {
   for (const step of migration.steps) {
     const sql =
+      (runs.get(pg) ?? "") +
       (role === undefined ? "" : `set local role ${role};\n`) +
       step.sql.map((statement) => `${statement};\n`).join("");
     if (step.transactional) await pg.transaction((tx) => tx.exec(sql));
@@ -142,25 +150,34 @@ describe("BlueprintRecord expand and contract on Postgres", () => {
       }),
     );
     await pg.exec(
-      "create table schema_migrations_history (version bigint primary key, name text not null, checksum text not null, applied_at timestamptz not null default now(), release_id text); insert into schema_migrations_history (version, name, checksum, release_id) values (1, '0001_shop_0001_create_orders', 'x', 'v1'), (2, '0002_shop_0002_stop_reading_note', 'y', 'v2');",
+      "create table schema_migrations_history (version bigint primary key, name text not null, checksum text not null, applied_at timestamptz not null default now(), release_id text); insert into schema_migrations_history (version, name, checksum, release_id) values (1, '0001_shop_0001_create_orders', 'x', 'v1'), (2, '0002_shop_0002_stop_reading_note', 'y', 'v2'); create table schema_migrations_releases (release_id text primary key, through_version bigint not null, finished_at timestamptz not null default now()); insert into schema_migrations_releases (release_id, through_version) values ('v1', 1);",
     );
     /** The settings of a run that started at version `from` and applies `release`. */
     const run = (from: number, release: string) =>
-      pg.exec(
-        `select set_config('stackra.migrate_from_version', '${from}', false), set_config('stackra.migrate_release', '${release}', false)`,
+      runs.set(
+        pg,
+        `select set_config('stackra.migrate_from_version', '${from}', true), set_config('stackra.migrate_release', '${release}', true);\n`,
       );
     // release v2 started at version 1 and applied the release the drop waits for itself
-    await run(1, "v2");
+    run(1, "v2");
     await expect(apply(pg, drop)).rejects.toThrow(
       /shop\.orders drop column note is a contract step after shop\.0002_stop_reading_note, which release v2 applies/,
     );
     expect(await rows(pg, "select note from shop.orders order by id")).toHaveLength(2);
     // the same deploy retried starts past it, while v1 may still be serving: still refused
-    await run(2, "v2");
+    run(2, "v2");
     await expect(apply(pg, drop)).rejects.toThrow(/which release v2 applies/);
     expect(await rows(pg, "select note from shop.orders order by id")).toHaveLength(2);
-    // the next release
-    await run(2, "v3");
+    // the next release, while v2's run never finished (its code never went live, so v1 may still be serving)
+    run(2, "v3");
+    await expect(apply(pg, drop)).rejects.toThrow(
+      /shop\.orders drop column note is a contract step after shop\.0002_stop_reading_note, which release v2 applied, and no migrate run of a release holding it has finished since/,
+    );
+    expect(await rows(pg, "select note from shop.orders order by id")).toHaveLength(2);
+    // v2's run finished: the next release drops the column
+    await pg.exec(
+      "insert into schema_migrations_releases (release_id, through_version) values ('v2', 2)",
+    );
     await apply(pg, drop);
     expect(await rows(pg, "select * from shop.orders order by id")).toEqual([
       { id: "a" },

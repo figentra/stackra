@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `MIGRATE_FROM_VERSION_SETTING`, the session setting `stackra db migrate` sets in a forward-only environment
- *          to the `schema_migrations` version the run started from, which a contract step's release gate reads to tell
+ * Purpose: `MIGRATE_FROM_VERSION_SETTING`, the custom setting `stackra db migrate` sets in a forward-only environment,
+ *          in the transaction of each transactional file (never session-level, ADR 0495 decision 3), to the
+ *          `schema_migrations` version the run started from, which a contract step's release gate reads to tell
  *          a fresh database (`0`, nothing to protect) and to know it runs under the runner; the release it compares is
  *          `MIGRATE_RELEASE_SETTING`.
  * Boundary: a literal shared by the runner (`migrate`) and the compiler (`releaseGateSql`), so the two never disagree.
@@ -9,7 +10,7 @@
  *           applies, where the gate does not hold.
  * Runtime: isomorphic
  * Governing contract: ADR 0159 (decision 3: destructive steps deferred to a later release; the 2026-10-24 note:
- *                     `stackra db migrate` is the release step).
+ *                     `stackra db migrate` is the release step); ADR 0495 (decision 3).
  */
 
 /** The custom setting holding the version a `stackra db migrate` run started from. */

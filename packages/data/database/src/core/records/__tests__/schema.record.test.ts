@@ -3,7 +3,8 @@
  * Purpose: behaviour tests of the schema builder's table steps on a real Postgres engine (PGlite): a renamed table stays
  *          readable and writable under its old name through a view that keeps the caller's row-level security, its
  *          finish drops the view behind the release gate, a dropped table waits for its gate (a retried deploy of the
- *          release that applied the step it waits for, or a run naming no release, is refused), and `requireBackfill`
+ *          release that applied the step it waits for, a run naming no release, and a later release while no run of a
+ *          release holding that step has finished, are refused), and `requireBackfill`
  *          refuses while a row is pending, passes on a database with none, and refuses a role that row-level security
  *          would filter, or that lacks SELECT on the table, instead of counting the rows it can see (STA-1406).
  * Boundary: test only; each test applies compiled migrations to a fresh in-memory PGlite as the runner would, and plays
@@ -30,10 +31,17 @@ function compiled(up: (schema: SchemaBuilder) => void): CompiledMigration {
   return compileMigration(TestMigration, { schema: "shop" });
 }
 
-/** Applies `migration` to `pg` step by step, as the runner does, as `role` when one is named. */
+/** The runner's gate settings of each database's current run, as `migrate` writes them at the head of a file. */
+const runs = new WeakMap<PGlite, string>();
+
+/**
+ * Applies `migration` to `pg` step by step, as the runner does (its gate settings transaction-local at the head of
+ * each transactional step), as `role` when one is named.
+ */
 async function apply(pg: PGlite, migration: CompiledMigration, role?: string): Promise<void> {
   for (const step of migration.steps) {
     const sql =
+      (runs.get(pg) ?? "") +
       (role === undefined ? "" : `set local role ${role};\n`) +
       step.sql.map((statement) => `${statement};\n`).join("");
     if (step.transactional) await pg.transaction((tx) => tx.exec(sql));
@@ -55,19 +63,27 @@ async function ledger(
   release?: string,
 ): Promise<void> {
   await pg.exec(
-    "create table schema_migrations_history (version bigint primary key, name text not null, checksum text not null, applied_at timestamptz not null default now(), release_id text)",
+    "create table schema_migrations_history (version bigint primary key, name text not null, checksum text not null, applied_at timestamptz not null default now(), release_id text); create table schema_migrations_releases (release_id text primary key, through_version bigint not null, finished_at timestamptz not null default now())",
   );
   for (const [index, [name, applier]] of applied.entries())
     await pg.exec(
       `insert into schema_migrations_history (version, name, checksum, release_id) values (${index + 1}, '${name}', 'x', ${applier === null ? "null" : `'${applier}'`})`,
     );
-  await run(pg, from, release);
+  run(pg, from, release);
+}
+
+/** Records `release`'s run as finished, holding the files up to version `through`. */
+async function finished(pg: PGlite, release: string, through: number): Promise<void> {
+  await pg.exec(
+    `insert into schema_migrations_releases (release_id, through_version) values ('${release}', ${through})`,
+  );
 }
 
 /** The settings of a run that started at version `from` and applies `release` (none when absent). */
-async function run(pg: PGlite, from: number, release?: string): Promise<void> {
-  await pg.exec(
-    `select set_config('stackra.migrate_from_version', '${from}', false), set_config('stackra.migrate_release', '${release ?? ""}', false)`,
+function run(pg: PGlite, from: number, release?: string): void {
+  runs.set(
+    pg,
+    `select set_config('stackra.migrate_from_version', '${from}', true), set_config('stackra.migrate_release', '${release ?? ""}', true);\n`,
   );
 }
 
@@ -141,12 +157,20 @@ describe("SchemaRecord table steps on Postgres", () => {
     );
     expect(await rows(pg, "select count(*)::int as n from shop.customer")).toEqual([{ n: 2 }]);
     // the same deploy retried starts past the rename, and is still the release that applied it
-    await run(pg, 2, "v2");
+    run(pg, 2, "v2");
     await expect(apply(pg, finish)).rejects.toThrow(/which release v2 applies/);
     expect(await rows(pg, "select to_regclass('shop.customer') is not null as view")).toEqual([
       { view: true },
     ]);
-    await run(pg, 2, "v3");
+    run(pg, 2, "v3");
+    // v2's run never finished, so v1 may still read the old name
+    await expect(apply(pg, finish)).rejects.toThrow(
+      /which release v2 applied, and no migrate run of a release holding it has finished since/,
+    );
+    // a finished run of an older release that never held the rename does not count
+    await finished(pg, "v1", 1);
+    await expect(apply(pg, finish)).rejects.toThrow(/no migrate run of a release holding it/);
+    await finished(pg, "v2", 2);
     await apply(pg, finish);
     expect(await rows(pg, "select to_regclass('shop.customer') as view")).toEqual([{ view: null }]);
     expect(await rows(pg, "select count(*)::int as n from shop.customers")).toEqual([{ n: 2 }]);
@@ -166,9 +190,10 @@ describe("SchemaRecord table steps on Postgres", () => {
       "insert into schema_migrations_history (version, name, checksum, release_id) values (2, '0002_shop_0002_stop_using_customer_1', 'x', 'v2')",
     );
     // a run that names no release cannot be told from the one that applied it
-    await run(pg, 2);
+    run(pg, 2);
     await expect(apply(pg, drop)).rejects.toThrow(/this run names no release/);
-    await run(pg, 2, "v3");
+    run(pg, 2, "v3");
+    await finished(pg, "v2", 2);
     await apply(pg, drop);
     expect(await rows(pg, "select to_regclass('shop.customer') as t")).toEqual([{ t: null }]);
   });
@@ -196,7 +221,8 @@ describe("SchemaRecord table steps on Postgres", () => {
     await apply(unledgered, drop);
     const rollbackEnvironment = await scopedRows();
     await ledger(rollbackEnvironment, [["0001_shop_0001_create_customer", "v1"]], 1);
-    await rollbackEnvironment.exec("select set_config('stackra.migrate_from_version', '', false)");
+    // a rollback environment's run sets no gate setting
+    runs.delete(rollbackEnvironment);
     await apply(rollbackEnvironment, drop);
   });
 

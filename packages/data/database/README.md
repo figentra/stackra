@@ -253,7 +253,14 @@ schema.drop("order_drafts", { after: "orders.0007_rename_note" });
   test, `stackra db migrate` refuses a run that names no release before any change whenever the database already has
   applied files: a file recorded with no release could not be told from the release a retry names, so the retry
   would pass the drop while the release before still serves. Give every deploy its own id: one reused across deploys
-  holds the step until it changes. The gate passes on a fresh database, on dev, preview
+  holds the step until it changes. A release counts as serving only once its `stackra db migrate` run finished: a
+  named forward-only run that applies every pending file records its release in `schema_migrations_releases`, with the
+  last file version it holds, and the gate passes only when a release other than this run's, holding `after`, finished
+  its run after `after` was applied. So when the run that applied `after` failed (its code never went live, the
+  release before it still serves), every later release is refused until one holding `after` finishes without the
+  contract step. A run that would apply `after` and the contract step together is refused before any change on a
+  database with applied files (`migrate` reads the gate's `-- stackra:contract-after=<id>` line): ship the contract
+  step in a later release. The gate passes on a fresh database, on dev, preview
   and test, and wherever Encore's runner or a test applies the files (no `schema_migrations_history`).
 - **Column rename.** `t.renameColumn(from, to, { type })` adds `to` (`.nullable()` with its comment: no default, no
   generation, not NOT NULL, refused otherwise, since a filled `to` hides the rows still to copy) and the trigger
@@ -330,7 +337,10 @@ checksum, applied_at, release_id)` records each applied file's SHA-256 and the r
   `stackra.migrate_release` to its release (`--release`, else `STACKRA_RELEASE`: letters, digits and `. _ + / -`),
   which the release gate of every contract step reads (see "Dropping and renaming"). There a run with files to apply
   must name its release once the database has an applied file, and is refused before any change otherwise; only a
-  fresh database records files with no release.
+  fresh database records files with no release. There a run is also refused before any change when a pending
+  contract step waits for a migration the same run applies, and a named run that applies every pending file records
+  its release as finished in `schema_migrations_releases(release_id, through_version, finished_at)`; a failed run
+  records nothing.
 
 ## Scope isolation
 

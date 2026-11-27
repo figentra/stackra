@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: `openMigrationSession(cwd, run)`, the connection `migrate` and `rollback` share: one Postgres session holding
  *          the runner's advisory lock, with the lock and statement timeouts set, the `schema_migrations(version, dirty)`
- *          table and the `schema_migrations_history` ledger (with its `release_id` column) ensured, and the member's
- *          compiled files read; closed (and
- *          the lock released) when `run` ends.
+ *          table, the `schema_migrations_history` ledger (with its `release_id` column) and the
+ *          `schema_migrations_releases` table (each release whose run finished) ensured, and the member's compiled files
+ *          read; closed (and the lock released) when `run` ends.
  * Boundary: the only runner file that connects. The connection string is `directDatabaseUrl()` (`DATABASE_DIRECT_URL`,
  *           past the pooling proxy, else `DATABASE_URL`), never an argument (ADR 0473 decision 3). One pooled connection, so the session settings and the
  *           session-level advisory lock hold; a second runner (another pod or job) waits on the lock instead of
@@ -63,6 +63,11 @@ export async function openMigrationSession<T>(
     // the release each step was applied under (null before the runner recorded it), which a release gate compares
     await connection.execute(
       "alter table schema_migrations_history add column if not exists release_id text",
+    );
+    // each release whose `stackra db migrate` run finished, and the last file version it held, which a release gate
+    // reads so a release whose run failed (its code never live) does not count as serving
+    await connection.execute(
+      "create table if not exists schema_migrations_releases (release_id text not null primary key, through_version bigint not null, finished_at timestamptz not null default now())",
     );
     return await run({
       files,

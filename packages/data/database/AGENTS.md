@@ -141,7 +141,11 @@ VALID` plus its own `VALIDATE CONSTRAINT` step (`ColumnRecord.validateSql`); nev
   `MIGRATE_RELEASE_SETTING`, which only `migrate` sets, and only outside `ROLLBACK_ENVIRONMENTS`; keep them in step. It
   compares releases, never runs, and fails closed when a run names none: a retried deploy is the same release.
   `migrate` refuses a forward-only run naming no release on a database with applied files, before any change, so no
-  history row but a fresh database's or a pre-ledger one has `release_id` null (the gate counts null as older). A
+  history row but a fresh database's or a pre-ledger one has `release_id` null (the gate counts null as older). The
+  gate also needs a finished run (`schema_migrations_releases`, written by `migrate` only after every pending file
+  applied, with the last file version the release holds) of another release holding `after`, so a failed run's release
+  never counts as serving; `migrate` refuses, before any change, a contract step whose `after` is pending in the same
+  run, reading the gate's `CONTRACT_AFTER_MARKER` line (`contractAfterIds`). Keep the marker the gate's second line. A
   rename's expand (`t.renameColumn`, `schema.rename`) leaves the old name working (the `trg_` sync trigger, the
   `security_invoker` view); never drop either outside its finish step. A renamed column's new name has no default,
   generation or NOT NULL (`BlueprintRecord` refuses them): a filled `to` hides the rows the copy has not reached. A drop or relaxing step carries a squawk ignore with its reason (lint lines never change a checksum).
