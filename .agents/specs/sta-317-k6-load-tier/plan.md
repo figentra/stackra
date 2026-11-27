@@ -64,6 +64,10 @@ two on Postgres. `load.yml` runs them weekly; `runbooks/capacity.mdx` records wh
   parallelism off, `maxConcurrency` 1, `retry` 0 — Validates: AC-005, AC-007
 - **P-008**: the three soaks pass under k6 1.3.0 and Postgres on a Linux build machine and write their reports — Validates: AC-008,
   AC-009, AC-010, AC-012
+- **P-009**: the `load.yml` rate step passes 7 and 100 and fails 0, 1.5, abc, -5, 1e3 and a trailing space, writing
+  nothing to the job environment for those — Validates: AC-013
+- **P-010**: the `load.yml` report step passes with all five reports and fails naming each one missing or empty —
+  Validates: AC-014
 
 ## Architecture overview
 

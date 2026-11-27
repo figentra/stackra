@@ -92,8 +92,12 @@ measured it.
   under ADR 0221's 5 s at p95; and a backlog test SHALL measure the drain rate of the one relay a service runs.
 - **AC-011**: THE `load.yml` workflow SHALL run the load tier weekly and on demand (duration and rate as inputs passed as
   environment values), with k6 pinned and a throwaway Postgres, and SHALL upload the reports; it SHALL hold no secret.
-- **AC-012**: THE capacity runbook SHALL record the numbers measured on a named machine, what each covers, what limits
-  them, and how to remeasure.
+- **AC-012**: THE capacity runbook SHALL record the numbers measured on one machine described by its size and load
+  (never a host, machine or container name), what each covers, what limits them, and how to remeasure.
+- **AC-013**: IF a manual run sets a rate that is not a whole number of iterations a second THEN THE workflow SHALL fail
+  before it installs anything and write nothing of the input to the job environment.
+- **AC-014**: IF a run ends without one of the five load reports THEN THE workflow SHALL fail and name each missing
+  report (actions.pipeline, queue.soak, queue.ceiling, outbox.relay, outbox.ceiling).
 
 ## Compatibility and migration
 
@@ -103,8 +107,9 @@ measured it.
 
 ## Risks
 
-- Numbers measured on one machine are that machine's: the runbook names it, and the soaks assert correctness (exactly
-  once, nothing left) with generous ceilings, never a throughput figure, so a slower runner still passes.
+- Numbers measured on one machine are that machine's: the runbook describes it (size and load, never its name), and
+  the soaks assert correctness (exactly once, nothing left) with generous ceilings, never a throughput figure, so a
+  slower runner still passes.
 - A hosted runner is noisy: the weekly run is advisory, never a required check.
 - The soaks found a real limit: the queue's reservation (`queue.reserve_job`) costs time in proportion to the jobs
   waiting, so its drain rate falls from about 160 to 67 a second as the backlog grows from 3,000 to 20,000, and 100 jobs
@@ -117,4 +122,5 @@ measured it.
 
 - 2026-11-26 · — → Draft · Claude (builder) · STA-317 and audit item 14.3
 - 2026-11-26 · Draft → Clarified · Claude (builder) · scope from ADR 0182 decisions 1 and 4 (no open question)
-- 2026-11-26 · Clarified → Implementing · Claude (builder) · plan and tasks; built in this branch on a Linux build machine
+- 2026-11-26 · Clarified → Implementing · Claude (builder) · plan and tasks; built in this branch
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27

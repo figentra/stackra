@@ -1,6 +1,6 @@
 ---
 title: "Capacity: what the load tier measured"
-description: "The throughput and lag the action pipeline, the queue and the outbox relay held under k6 on a named machine, what limits each, how to plan with the numbers, and how to measure them again."
+description: "The throughput and lag the action pipeline, the queue and the outbox relay held under k6 on one described machine, what limits each, how to plan with the numbers, and how to measure them again."
 icon: "gauge"
 ---
 
@@ -126,8 +126,10 @@ Each test writes `<STACKRA_LOAD_REPORT_DIR>/<name>.json`: `actions.pipeline`, `q
 on its side and the drain figures. Record the machine and its load average beside them, since the numbers mean nothing
 without the machine.
 
-From GitHub, run the **Load** workflow (`load.yml`) by hand with a duration and, optionally, a rate. It also runs every
+From GitHub, run the **Load** workflow (`load.yml`) by hand with a duration and, optionally, a rate (a whole number of
+iterations a second; anything else stops the run). The run fails when any of the five reports is missing, since a load
+test without k6 or Postgres skips rather than fails. It also runs every
 Monday at 03:17 UTC with a ten-minute soak per test. Download the `load-reports` artifact and compare it with the tables
-above. A hosted runner is slower and noisier than that build machine, so the weekly run is advisory and never a required check.
+above. A hosted runner is slower and noisier than the build machine described above, so the weekly run is advisory and never a required check.
 
 When a change moves a number for good, run the soaks again and update the tables on this page in the same pull request.
