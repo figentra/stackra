@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
+import { vi } from "vitest";
 
 import { COMMANDS } from "#node/constants/commands.constant";
 import { DEV_COMMAND } from "#node/dev-surface/constants/dev-command.constant";
@@ -52,6 +53,23 @@ describe("DEV_COMMAND", () => {
       }
     } finally {
       if (saved !== undefined) process.env["CLOUDFLARE_TUNNEL_TOKEN"] = saved;
+    }
+  });
+
+  it("sets STACKRA_ENVIRONMENT=dev when it is unset or empty, and keeps a value that is set", async () => {
+    try {
+      for (const [given, expected] of [
+        [undefined, "dev"],
+        ["", "dev"],
+        ["test", "test"],
+      ] as const) {
+        vi.stubEnv("STACKRA_ENVIRONMENT", given);
+        // A usage error still runs after the environment is set, and starts nothing.
+        expect(await runCli(["dev", "--os", "../os"], captureIo().io, { cwd: root })).toBe(2);
+        expect(process.env["STACKRA_ENVIRONMENT"]).toBe(expected);
+      }
+    } finally {
+      vi.unstubAllEnvs();
     }
   });
 

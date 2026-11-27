@@ -42,10 +42,20 @@ describe("readMembers", () => {
     mkdirSync(join(root, "apps", "empty"));
 
     expect(readMembers(root)).toEqual([
-      { path: "apps/web" },
-      { path: "packages/data/search", packageName: "@acme/search", manifest: { member: "search" } },
-      { path: "services/commerce", manifest: { member: "commerce" } },
-      { path: "workers/edge", packageName: "@acme/edge" },
+      { name: undefined, dir: "apps/web", path: join(root, "apps/web") },
+      {
+        name: "@acme/search",
+        dir: "packages/data/search",
+        path: join(root, "packages/data/search"),
+        manifest: { member: "search" },
+      },
+      {
+        name: undefined,
+        dir: "services/commerce",
+        path: join(root, "services/commerce"),
+        manifest: { member: "commerce" },
+      },
+      { name: "@acme/edge", dir: "workers/edge", path: join(root, "workers/edge") },
     ]);
   });
 
@@ -66,7 +76,7 @@ describe("resolveMember", () => {
       "services/commerce",
       "./services/commerce/",
     ])
-      expect(resolveMember(root, given).path).toBe("services/commerce");
+      expect(resolveMember(root, given).dir).toBe("services/commerce");
     expect(() => resolveMember(root, "billing")).toThrow(
       expect.objectContaining({
         message: 'No member named "billing"',

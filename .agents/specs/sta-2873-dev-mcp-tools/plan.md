@@ -52,13 +52,14 @@ A writing tool is refused on a deployed target (`deployedTarget`). The Encore li
 
 - **P-001**: the set of `new` kinds offered equals the set `stackra new` names, and the `check` phases offered equal `CHECK_PHASES` in order — Validates: FR-002
 - **P-002**: every property of a runner tool is a flag of the CLI command it runs, except `member`, `kind` and `name` — Validates: FR-002
-- **P-003**: for every call of a tool that is not read-only with a non-local environment, no runner call happens and the result is `deployed_target` — Validates: FR-008
+- **P-003**: for every call of a tool that is not read-only with a non-local or unset environment, no runner call happens and the result is `deployed_target` — Validates: FR-008
 - **P-004**: for every chain of `tools/list` pages, the served Encore tools are the concatenation of every page up to a repeated or absent cursor — Validates: FR-009
 - **P-005**: a read-only tool resolves to `destructive: false, idempotent: true`; `tool: true` to `false, true, false` (readOnly, destructive, idempotent) — Validates: FR-007
 - **P-006**: the tools `tools/list` serves are exactly the `toolsOf` tools of `DEV_TOOL_COMMANDS` then the host's (a host tool replacing a built-in of its name), then the Encore tools — Validates: FR-001, FR-004
 - **P-007**: for every set of manifests and every section name `s`, `manifest` answers when some manifest holds `s` and refuses naming the held sections otherwise — Validates: FR-003
 - **P-008**: for every runner tool call, the data holds `command`, `cwd`, `exitCode`, `ok` equal to `exitCode === 0`, `durationMs` and an output no longer than the limit plus its cut notice, and `isError` equals `!ok` — Validates: FR-005
 - **P-009**: for every member named by key, package name or folder, the runner runs in `<root>/<member path>`, and with no member in the root — Validates: FR-006
+- **P-010**: for every value of `STACKRA_ENVIRONMENT` given to `stackra mcp` or `stackra dev`, the command runs with `dev` when it is unset or empty and with the given value otherwise — Validates: FR-010
 
 ## Architecture overview
 
@@ -96,6 +97,9 @@ packages/developer/cli/src/node/
 ├── constants/
 │   ├── mcp-command.constant.ts
 │   └── __tests__/mcp-command.constant.test.ts
+├── dev-surface/constants/
+│   ├── dev-command.constant.ts
+│   └── __tests__/dev-command.constant.test.ts
 ├── functions/run-cli.function.ts
 └── types/cli-context.type.ts
 packages/developer/console/src/
@@ -170,12 +174,13 @@ packages/developer/mcp/
         └── types/
             ├── diagnostic.type.ts
             ├── local-tool.type.ts
+            ├── manifest-member.type.ts
             ├── serve-local-mcp-options.type.ts
             ├── stackra-runner.type.ts
             ├── test-summary.type.ts
             ├── tool-run-result.type.ts
             ├── upstream-tool.type.ts
-            └── workspace-member.type.ts
+            └── workspace-member.type.ts (deleted)
 pnpm-lock.yaml
 ```
 
@@ -219,7 +224,7 @@ passed as an argv array, every option as `--flag=value`. `new` does not offer `-
 - AC-006: "answers the handshake and lists the built-in tools in order with their hints", `tools-of` hint test.
 - Revert checks: each guarded behaviour mutated in turn makes its test fail (kinds, phases, guard, paging, hints,
   section check, member folder).
-- Manual: the built `stackra mcp` driven over stdio in this repository on box 2.
+- Manual: the built `stackra mcp` driven over stdio in this repository on Linux.
 
 ## Rollout
 

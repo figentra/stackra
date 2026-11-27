@@ -82,9 +82,11 @@ so a write passes the CLI's own commands and gates; the CLI passes its command c
 Each result carries the command line, where it ran, the exit code, the time and the tail of the output, plus what the
 tool reads from it.
 
-A tool that is not read-only is refused, before it runs, when the server runs in a deployed environment
-(`STACKRA_ENVIRONMENT` other than `dev` or `test`) or the call names one (`env` or `environment`): the result is the
-error `deployed_target`. A proxied Encore tool counts as writing unless Encore marks it `readOnlyHint`. The Encore app
+A tool that is not read-only is refused, before it runs, unless the server runs in `dev` or `test`: an unset or empty
+`STACKRA_ENVIRONMENT` is not local (fail closed), and neither is a call that names another environment (`env` or
+`environment`). The result is the error `deployed_target`. `stackra mcp` and `stackra dev` set
+`STACKRA_ENVIRONMENT=dev` themselves when it is unset and keep a value that is set; a host calling `serveLocalMcp`
+passes `env` with it. A proxied Encore tool counts as writing unless Encore marks it `readOnlyHint`. The Encore app
 id is the root runway's `providers.encore.app`; when there is none, or Encore does not answer within ten seconds, the
 local tools still work.
 

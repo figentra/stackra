@@ -38,6 +38,8 @@ STA-2796.
 - ADR 0282 decision 5 (local mode shares one core with the CLI; writes go through the CLI's commands and gates), R-29
   (proxy the local Encore tools), the MCP specification's tool annotations and `tools/list` pagination
 - FR-001 to FR-009: the branch's diff against `main` and its tests
+- FR-010: the code review of 2026-11-27 (fail closed: an unset `STACKRA_ENVIRONMENT` is not local; `stackra dev` and
+  the MCP launcher set `dev` explicitly)
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
@@ -56,8 +58,10 @@ idempotent? }`; `CommandStructure.tool` and `ConsoleTool` carry `destructive` an
   `LOCAL_TOOLS` was internal.
 - **Cross-service events**: none
 - **Tenancy and data**: none. Local developer tooling only; never a tenant MCP tool (ADR 0155).
-- **Security and privacy**: a writing tool is refused before it runs when `STACKRA_ENVIRONMENT` or the call names an
-  environment other than `dev` or `test`; a proxied Encore tool counts as writing unless Encore marks it read-only.
+- **Security and privacy**: fail closed. A writing tool is refused before it runs unless `STACKRA_ENVIRONMENT` says
+  `dev` or `test`: an unset or empty value is not local, and neither is a call naming another environment.
+  `stackra mcp` and `stackra dev` set `STACKRA_ENVIRONMENT=dev` explicitly when it is unset; a value that is set is
+  kept. A proxied Encore tool counts as writing unless Encore marks it read-only.
   `app_info` reports provider names only, never provider settings, ids or secret references. Output is capped.
 - **Secrets**: none
 - **ADR needed**: no (implements ADR 0282 decision 5 and R-29 as written)
@@ -81,7 +85,7 @@ idempotent? }`; `CommandStructure.tool` and `ConsoleTool` carry `destructive` an
 - **Host tools**: tool commands the host passes (`@stackra/cli` passes `doctor` and `ls`); one with a built-in's name
   replaces it.
 - **Hints**: the MCP tool annotations `readOnlyHint`, `destructiveHint` and `idempotentHint`.
-- **Deployed target**: an environment name other than `dev` or `test` (`LOCAL_ENVIRONMENTS`).
+- **Deployed target**: an environment name other than `dev` or `test` (`LOCAL_ENVIRONMENTS`), or no name at all.
 - **Member**: a folder under `apps/`, `packages/<category>/`, `services/` or `workers/` with a `package.json` or a
   committed `stackra.manifest.json`.
 
@@ -149,6 +153,9 @@ output, failing and passing; and the real `stackra mcp` against this repository.
 2. **Given** a local server, **When** a call names `environment: "staging"`, **Then** the write is refused.
 3. **Given** a proxied Encore tool without `readOnlyHint`, **When** it is called on a deployed target, **Then** it is
    refused; a read-only one passes.
+4. **Given** no `STACKRA_ENVIRONMENT` (unset or empty), **When** a writing tool is called on `serveLocalMcp`, **Then**
+   it is refused with `deployed_target`; **Given** `stackra mcp` or `stackra dev` started with it unset, **Then** they
+   run with `STACKRA_ENVIRONMENT=dev`, and with it set they keep the value.
 
 ---
 
@@ -190,9 +197,11 @@ output, failing and passing; and the real `stackra mcp` against this repository.
 - **FR-007**: EVERY listed tool SHALL carry `readOnlyHint`, and a writing tool also `destructiveHint` and
   `idempotentHint`; `CommandOptions.tool` SHALL take `destructive` and `idempotent`, `tool: true` resolving to the MCP
   defaults (writes, destructive, not idempotent).
-- **FR-008**: IF a tool that is not read-only is called while `STACKRA_ENVIRONMENT`, or the call's `env` /
-  `environment`, names an environment other than `dev` or `test` THEN THE server SHALL refuse it with
-  `deployed_target` before it runs.
+- **FR-008**: IF a tool that is not read-only is called while `STACKRA_ENVIRONMENT` is unset, empty or names an
+  environment other than `dev` or `test`, or the call's `env` / `environment` names such an environment, THEN THE
+  server SHALL refuse it with `deployed_target` before it runs (fail closed: unset is never local).
+- **FR-010**: `stackra mcp` and `stackra dev` SHALL set `STACKRA_ENVIRONMENT=dev` explicitly when it is unset or empty,
+  and SHALL keep a value that is set; `app_info` SHALL report an unset environment as `name: null, deployed: true`.
 - **FR-009**: THE server SHALL list the Encore tools across every `tools/list` page, following `nextCursor`, and stop
   at a repeated cursor or after 100 pages.
 
@@ -205,6 +214,10 @@ output, failing and passing; and the real `stackra mcp` against this repository.
 - **AC-003**: WHEN `test`, `typecheck`, `lint` or `check` is called over stdio THE server SHALL answer structured
   results for a failing and a passing run (FR-005, FR-006).
 - **AC-004**: WHEN a writing tool is called on a deployed target THE server SHALL refuse it before it runs (FR-008).
+- **AC-008**: WHEN a writing tool is called and the server has no environment name THE server SHALL refuse it before
+  it runs (FR-008).
+- **AC-007**: WHEN `stackra mcp` or `stackra dev` starts THE command SHALL run with `STACKRA_ENVIRONMENT=dev` if it is
+  unset or empty and keep the value that is set otherwise (FR-010).
 - **AC-005**: WHEN Encore pages its tool list THE server SHALL serve every page (FR-009).
 - **AC-006**: WHEN a client lists the tools THE server SHALL give each tool its `readOnlyHint`, and each writing
   tool its `destructiveHint` and `idempotentHint` (FR-007).
@@ -217,6 +230,8 @@ output, failing and passing; and the real `stackra mcp` against this repository.
   paging, the member folder or the section check is reverted — verified by: unit
 - **SC-003**: the parser, `listUpstreamTools`, `deployedTarget`, `toolRun` and `toolsOf` tests prove FR-005, FR-007,
   FR-008 and FR-009 — verified by: unit
+- **SC-006**: `mcp-command.constant.test.ts` and `dev-command.constant.test.ts` (`@stackra/cli`) prove AC-007 for the
+  unset and the set case — verified by: unit
 - **SC-004**: the real `stackra mcp` answers `tools/list`, `app_info`, `routes`, `manifest`, `new`, `ls`, `test`,
   `typecheck` and `lint` over stdio in this repository on Linux — verified by: manual
 - **SC-005**: the three packages' tests, typecheck, oxlint and oxfmt pass — verified by: manual
@@ -229,6 +244,10 @@ output, failing and passing; and the real `stackra mcp` against this repository.
 - Command results are now the `--json` document (`structuredContent`) with the text as JSON; clients that read the
   plain text still get it inside `data.output`.
 - `@stackra/console` hosts that declared `tool: true` get `destructiveHint: true` (the MCP default it always meant).
+- A host that calls `serveLocalMcp` without `STACKRA_ENVIRONMENT` now has its writing tools refused
+  (`deployed_target`); it sets `env: { STACKRA_ENVIRONMENT: "dev" }` to write locally. `stackra mcp` and `stackra dev`
+  do that themselves when nothing is set. `app_info` reports an unset environment as `name: null, deployed: true`
+  instead of `dev`.
 
 ## Risks
 
@@ -236,8 +255,10 @@ output, failing and passing; and the real `stackra mcp` against this repository.
   output tail is always in the result, and `tests` / `findings` say `null` rather than inventing zero).
 - **R-2**: The CLI passthrough commands are being ported (batch DX1); the `MCP_COMMAND` wiring changed here by two
   lines and may need a rebase.
-- **R-3**: A product that runs `stackra mcp` in a deployed environment without `STACKRA_ENVIRONMENT` set is treated as
-  local; runway sets it in every deployed runtime.
+- **R-3**: An unset `STACKRA_ENVIRONMENT` is never local: `serveLocalMcp` refuses writes then. The `stackra mcp`
+  launcher declares `dev` when nothing is set, so a deployed runtime that runs `stackra mcp` without the variable is
+  declared local by that launcher; runway sets the variable in every deployed runtime, and a value that is set is
+  never overridden.
 
 ## Out of scope
 

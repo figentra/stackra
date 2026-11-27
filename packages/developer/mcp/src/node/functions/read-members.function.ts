@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `readMembers(root)`, every member folder under the repository root (`apps/*`, `packages/<category>/*`,
  *          `services/*`, `workers/*`) that holds a `package.json` or a `stackra.manifest.json`, in path order, each
- *          with its package name and its committed manifest when it has them.
+ *          a `@stackra/repo-checks` `WorkspaceMember` (package name, folder, absolute folder) with its committed
+ *          manifest when it has one.
  * Boundary: reads files only; never writes. A member without a manifest (not generated yet) is listed without one.
  * Runtime: node
  * Governing contract: ADR 0294 (rule R10: the committed manifest is the contract); ADR 0282 (decision 5: inspect the
@@ -13,7 +14,7 @@ import { join } from "node:path";
 
 import type { StackraManifest } from "@stackra/contracts";
 
-import type { WorkspaceMember } from "#node/types/workspace-member.type";
+import type { ManifestMember } from "#node/types/manifest-member.type";
 
 /** The sub-folders of `folder` (relative to `root`), sorted; none when it is missing. */
 const folders = (root: string, folder: string): string[] =>
@@ -37,7 +38,7 @@ const json = (file: string): unknown =>
  * @example
  * readMembers(process.cwd()).flatMap((member) => member.manifest?.actions ?? []);
  */
-export function readMembers(root: string): WorkspaceMember[] {
+export function readMembers(root: string): ManifestMember[] {
   return [
     ...folders(root, "apps"),
     ...folders(root, "packages").flatMap((category) => folders(root, category)),
@@ -49,8 +50,9 @@ export function readMembers(root: string): WorkspaceMember[] {
     if (manifest === undefined && pkg === undefined) return [];
     return [
       {
-        path,
-        ...(typeof pkg?.name === "string" ? { packageName: pkg.name } : {}),
+        name: typeof pkg?.name === "string" ? pkg.name : undefined,
+        dir: path,
+        path: join(root, path),
         ...(manifest === undefined ? {} : { manifest }),
       },
     ];

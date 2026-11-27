@@ -11,9 +11,9 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { parseTestOutput } from "#node/functions/parse-test-output.function";
 
-/** Vitest 5's report of one failing test and one file with no suite, as printed on box 2. */
+/** Vitest 5's report of one failing test and one file with no suite, as Vitest prints it. */
 const VITEST = `
- RUN  v5.0.5 /work/fx
+ RUN  v5.0.5 /repo
 
  ❯ src/b.test.ts (0 test)
  ❯ src/a.test.ts (3 tests | 1 failed | 1 skipped) 11ms
@@ -25,7 +25,7 @@ const VITEST = `
 ⎯⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
 
  FAIL  src/b.test.ts [ src/b.test.ts ]
-Error: No test suite found in file /work/fx/src/b.test.ts
+Error: No test suite found in file /repo/src/b.test.ts
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
 
 ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
@@ -46,7 +46,7 @@ describe("parseTestOutput", () => {
       failures: [
         {
           file: "src/b.test.ts",
-          message: "Error: No test suite found in file /work/fx/src/b.test.ts",
+          message: "Error: No test suite found in file /repo/src/b.test.ts",
         },
         {
           file: "src/a.test.ts",

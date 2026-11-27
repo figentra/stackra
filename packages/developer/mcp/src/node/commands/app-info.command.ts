@@ -20,7 +20,7 @@ import { readRunway } from "@stackra/runway/node";
 import { LOCAL_ENVIRONMENTS } from "#node/constants/local-environments.constant";
 import { readMembers } from "#node/functions/read-members.function";
 import type { DevToolHost } from "#core/ports/dev-tool-host.port";
-import type { WorkspaceMember } from "#node/types/workspace-member.type";
+import type { ManifestMember } from "#node/types/manifest-member.type";
 
 /** The dev facts file `stackra dev` writes, from the root. */
 const DEV_FACTS = ".stackra/dev/ports.json";
@@ -43,10 +43,10 @@ function readJson(file: string): Record<string, unknown> | undefined {
 }
 
 /** The kind of a member, from its manifest and folder. */
-function kindOf(member: WorkspaceMember): string {
-  if (member.manifest?.kind === "app" || member.path.startsWith("apps/")) return "app";
-  if (member.path.startsWith("services/")) return "service";
-  if (member.path.startsWith("workers/")) return "worker";
+function kindOf(member: ManifestMember): string {
+  if (member.manifest?.kind === "app" || member.dir.startsWith("apps/")) return "app";
+  if (member.dir.startsWith("services/")) return "service";
+  if (member.dir.startsWith("workers/")) return "worker";
   return "package";
 }
 
@@ -81,7 +81,8 @@ export class AppInfoCommand extends Command({
   handle(io: CommandIo): Record<string, unknown> {
     const root = io.cwd;
     const pkg = readJson(join(root, "package.json"));
-    const environment = this.host?.environment()["STACKRA_ENVIRONMENT"] || "dev";
+    // Unset is not local (fail closed): the name is null and the server counts as deployed.
+    const environment = this.host?.environment()["STACKRA_ENVIRONMENT"] || null;
     const facts = readJson(join(root, DEV_FACTS));
     return {
       root,
@@ -94,12 +95,15 @@ export class AppInfoCommand extends Command({
               packageManager: pkg["packageManager"] ?? null,
             },
       node: process.version,
-      environment: { name: environment, deployed: !LOCAL_ENVIRONMENTS.includes(environment) },
+      environment: {
+        name: environment,
+        deployed: environment === null || !LOCAL_ENVIRONMENTS.includes(environment),
+      },
       runway: this.runway(root),
       members: readMembers(root).map((member) => ({
         member: member.manifest?.member ?? null,
-        package: member.packageName ?? member.manifest?.package ?? null,
-        path: member.path,
+        package: member.name ?? member.manifest?.package ?? null,
+        path: member.dir,
         kind: kindOf(member),
         version: member.manifest?.version ?? null,
         ...(member.manifest?.area === undefined ? {} : { area: member.manifest.area }),

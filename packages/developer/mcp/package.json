@@ -80,6 +80,7 @@
   "dependencies": {
     "@stackra/console": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/repo-checks": "workspace:*",
     "@stackra/runway": "workspace:*",
     "@stackra/validation": "workspace:*",
     "yaml": "catalog:",

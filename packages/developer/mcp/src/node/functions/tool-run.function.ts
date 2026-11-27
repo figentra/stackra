@@ -14,7 +14,7 @@ import { stripVTControlCharacters } from "node:util";
 import type { DevToolHost } from "#core/ports/dev-tool-host.port";
 import { OUTPUT_LIMIT } from "#node/constants/output-limit.constant";
 import type { ToolRunResult } from "#node/types/tool-run-result.type";
-import type { WorkspaceMember } from "#node/types/workspace-member.type";
+import type { ManifestMember } from "#node/types/manifest-member.type";
 
 /**
  * Runs `stackra <args>` and resolves with its structured result and its full plain output.
@@ -30,12 +30,12 @@ export async function toolRun(
   host: DevToolHost,
   root: string,
   args: readonly string[],
-  member?: WorkspaceMember,
+  member?: ManifestMember,
 ): Promise<{ readonly result: ToolRunResult; readonly output: string }> {
   const started = performance.now();
   const outcome = await host.run(
     args,
-    member === undefined ? undefined : { cwd: join(root, member.path) },
+    member === undefined ? undefined : { cwd: join(root, member.dir) },
   );
   const output = stripVTControlCharacters(outcome.output);
   const cut = output.length - OUTPUT_LIMIT;
@@ -43,7 +43,7 @@ export async function toolRun(
     output,
     result: {
       command: ["stackra", ...args].join(" "),
-      cwd: member?.path ?? ".",
+      cwd: member?.dir ?? ".",
       exitCode: outcome.exitCode,
       ok: outcome.exitCode === 0,
       durationMs: Math.round(performance.now() - started),

@@ -8,8 +8,8 @@
  *          prefix across every `tools/list` page. Each tool is listed with its MCP hints (read-only, destructive,
  *          idempotent). Resolves when the client disconnects.
  * Boundary: every write runs through the given `StackraRunner`, the CLI's own commands and gates; this file writes
- *           nothing itself. A tool that is not read-only is refused, before it runs, when the server runs in a deployed
- *           environment or the call names one (`deployedTarget`). A tool's input is checked by its command, and a bad
+ *           nothing itself. A tool that is not read-only is refused, before it runs, unless the server says it runs
+ *           in dev or test (an unset `STACKRA_ENVIRONMENT` refuses) and the call names no other (`deployedTarget`). A tool's input is checked by its command, and a bad
  *           input is a tool error the assistant can correct; an unknown tool is a protocol error. The hosted mode of
  *           ADR 0282 is a separate deployment, not this server.
  * Runtime: node
@@ -51,7 +51,9 @@ const refusal = (name: string, reason: string) => {
     error: {
       code: "deployed_target",
       message: `${name} writes, and ${reason}: the local developer MCP only writes in dev or test`,
-      fix: "run it from a local checkout, or through the deploy path for that environment",
+      fix:
+        "run it from a local checkout through `stackra mcp` or `stackra dev` (they set STACKRA_ENVIRONMENT=dev), " +
+        "or through the deploy path for that environment",
     },
   };
   return {

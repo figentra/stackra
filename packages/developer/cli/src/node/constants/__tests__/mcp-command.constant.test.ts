@@ -12,7 +12,7 @@
  */
 import { readCommand, toolsOf, type CommandClass } from "@stackra/console";
 import { DEV_TOOL_COMMANDS, serveLocalMcp } from "@stackra/mcp/node";
-import { describe, expect, it } from "@stackra/testing";
+import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { CHECK_PHASES } from "#node/constants/check-phases.constant";
@@ -93,6 +93,37 @@ describe("MCP_COMMAND", () => {
     // A tool that names a member runs the CLI in that member's folder.
     await options?.run?.(["test"], { cwd: "/repo/services/commerce" });
     expect(cli.mock.calls[1]?.[2]).toEqual({ cwd: "/repo/services/commerce" });
+  });
+});
+
+/** The environment `stackra mcp` serves with, given the process's `STACKRA_ENVIRONMENT`. */
+const served = async (value: string | undefined) => {
+  vi.stubEnv("STACKRA_ENVIRONMENT", value);
+  await MCP_COMMAND.run({
+    cwd: "/repo",
+    io: captureIo().io,
+    values: {},
+    positionals: [],
+    rest: [],
+    cli: vi.fn(),
+  });
+  return vi.mocked(serveLocalMcp).mock.calls.at(-1)?.[0].env?.["STACKRA_ENVIRONMENT"];
+};
+
+describe("MCP_COMMAND's environment", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.mocked(serveLocalMcp).mockClear();
+  });
+
+  it("sets STACKRA_ENVIRONMENT=dev explicitly when it is unset or empty", async () => {
+    expect(await served(undefined)).toBe("dev");
+    expect(await served("")).toBe("dev");
+  });
+
+  it("passes a set STACKRA_ENVIRONMENT through, so a deployed one still refuses writes", async () => {
+    expect(await served("production")).toBe("production");
+    expect(await served("test")).toBe("test");
   });
 });
 
