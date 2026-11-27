@@ -21,6 +21,7 @@
  */
 import { npmMetadataFor, turboTagsFor } from "@stackra/repo-checks/node";
 
+import { cleanScript } from "#node/functions/clean-script.function";
 import { serviceExampleModule } from "#node/functions/service-example-module.function";
 import type { TemplateFile } from "#node/types/template-file.type";
 import type { TemplateOptions } from "#node/types/template-options.type";
@@ -122,7 +123,7 @@ export function serviceTemplate(options: TemplateOptions): readonly TemplateFile
       ...(data && { "test:int": "stackra test --tier int" }),
       format: "oxfmt --write .",
       "format:check": "oxfmt --check .",
-      clean: "rm -rf dist coverage .turbo .stackra",
+      clean: cleanScript(["dist", "coverage", ".turbo", ".stackra"]),
     },
     // Gen refuses an undeclared generated dependency: the server entry (`.stackra/entry/server.ts`) imports
     // `@stackra/app` and the Encore app (`stackra-encore/<member>/http.ts`) imports `@stackra/container`.

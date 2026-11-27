@@ -2,19 +2,30 @@
  * Stackra file contract:
  * Purpose: unit tests of `runProcess`: piped output reaches the io, the exit code is returned, arguments are not
  *          shell-parsed, a missing program resolves 127, `node_modules/.bin` above the directory is on `PATH`, and a
- *          process past its `timeoutMs` is stopped and resolves 124 while one that ends first keeps its code.
+ *          process past its `timeoutMs` is stopped and resolves 124 while one that ends first keeps its code. Every
+ *          tool starts through cross-spawn with one `PATH` key; on Windows a `.cmd` shim in `node_modules/.bin`
+ *          starts by its bare name with its arguments intact (the Windows smoke job runs that case).
  * Boundary: test only; starts `node` and throwaway scripts in the OS temp directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5).
+ * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); STA-2899.
  */
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import crossSpawn from "cross-spawn";
+import { vi } from "vitest";
+
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { captureIo } from "#node/functions/capture-io.function";
 import { runProcess } from "#node/functions/run-process.function";
+
+// The real cross-spawn behind a spy, so a test can see that every tool goes through it.
+vi.mock("cross-spawn", async (importOriginal) => {
+  const actual = (await importOriginal<{ default: typeof crossSpawn }>()).default;
+  return { default: vi.fn(actual) };
+});
 
 let root: string;
 
@@ -75,6 +86,35 @@ describe("runProcess", () => {
       expect(await runProcess({ command: "true", args: [], cwd: root, timeoutMs: 5000 }, io)).toBe(
         0,
       );
+    },
+  );
+
+  it("starts the tool through cross-spawn, with one PATH key", async () => {
+    vi.mocked(crossSpawn).mockClear();
+    const { io } = captureIo();
+    await runProcess({ command: process.execPath, args: ["-e", ""], cwd: root }, io);
+    expect(crossSpawn).toHaveBeenCalledTimes(1);
+    const [command, args, options] = vi.mocked(crossSpawn).mock.calls[0] ?? [];
+    expect(command).toBe(process.execPath);
+    expect(args).toEqual(["-e", ""]);
+    expect(Object.keys(options?.env ?? {}).filter((key) => /^path$/iu.test(key))).toEqual(["PATH"]);
+  });
+
+  it.runIf(process.platform === "win32")(
+    "starts a .cmd shim in node_modules/.bin by its bare name, arguments intact",
+    async () => {
+      const bin = join(root, "node_modules", ".bin");
+      mkdirSync(bin, { recursive: true });
+      writeFileSync(
+        join(bin, "echo-args.js"),
+        "process.stdout.write(JSON.stringify(process.argv.slice(2)))",
+      );
+      // The shape of the shim pnpm and npm write: node on the script beside it, every argument passed on.
+      writeFileSync(join(bin, "stackra-echo.cmd"), '@node "%~dp0\\echo-args.js" %*\r\n');
+      const args = ["two words", "a&b|c", 'say "hi"'];
+      const { io, output } = captureIo();
+      expect(await runProcess({ command: "stackra-echo", args, cwd: root }, io)).toBe(0);
+      expect(JSON.parse(output())).toEqual(args);
     },
   );
 

@@ -1,10 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: proves `create` writes the app into a new folder from flags without prompting, asks its questions when
- *          interactive, refuses a folder that is not empty, and returns what it wrote under --json.
- * Boundary: unit test on temporary folders, always with `--no-install` (installing is the f4 verification).
+ *          interactive, refuses a folder that is not empty, returns what it wrote under --json, and installs through
+ *          the process port (the cross-spawn runner, so `pnpm.cmd` starts on Windows).
+ * Boundary: unit test on temporary folders, with `--no-install` or a scripted process runner (installing for real is
+ *           the f4 verification).
  * Runtime: node
- * Governing contract: STA-1730 spec FR-029 and FR-030; ADR 0022 (test placement).
+ * Governing contract: STA-1730 spec FR-029 and FR-030; ADR 0022 (test placement); STA-2899.
  */
 // @covers sta-1730:FR-029 sta-1730:FR-030
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -12,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { CreateCommand } from "#node/commands/create.command";
+import { MemoryProcessRunnerDriver } from "#testing/drivers/memory-process-runner.driver";
 import { runCommandForTest } from "#testing/functions/run-command-for-test.function";
 
 const scratch = () => mkdtempSync(join(tmpdir(), "sta-1730-create-"));
@@ -40,6 +43,18 @@ describe("CreateCommand", () => {
       acme: "./dist/main.js",
     });
     expect(existsSync(join(target, "src/commands/__tests__/greet.command.test.ts"))).toBe(true);
+  });
+
+  it("installs with the package manager through the process port, in the new folder", async () => {
+    const target = join(scratch(), "installed");
+    const runner = new MemoryProcessRunnerDriver().on("pnpm install");
+    const result = await runCommandForTest(
+      [CreateCommand],
+      ["create", target, "--name", "x", "--bin", "x", "--accent", "#000000", "--json"],
+      { process: runner },
+    );
+    expect(result.exitCode).toBe(0);
+    expect(runner.calls.map((call) => [call.line, call.cwd])).toEqual([["pnpm install", target]]);
   });
 
   it("asks for the name, the binary and the accent when interactive", async () => {

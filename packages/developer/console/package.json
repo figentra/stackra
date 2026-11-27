@@ -111,6 +111,7 @@
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
     "@stackra/validation": "workspace:*",
+    "cross-spawn": "catalog:",
     "ink": "catalog:",
     "react": "catalog:frontend"
   },
@@ -118,6 +119,7 @@
     "@stackra/tsdown-config": "workspace:*",
     "@stackra/typescript-config": "workspace:*",
     "@stackra/vitest-config": "workspace:*",
+    "@types/cross-spawn": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:frontend",
     "@vitest/coverage-v8": "catalog:quality",

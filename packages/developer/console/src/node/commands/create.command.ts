@@ -3,15 +3,14 @@
  * Purpose: `CreateCommand`, `stackra-console create <directory>` (the `laravel new` of Stackra): shows the banner,
  *          asks for the app name, binary and accent (or takes `--name`, `--bin`, `--accent`), refuses a folder that is
  *          not empty, writes a standalone console app, and installs it unless `--no-install`.
- * Boundary: writes only inside `<directory>`; runs the package manager there. `--tarballs <dir>` installs the
+ * Boundary: writes only inside `<directory>`; runs the package manager there through the process port (cross-spawn
+ *           in the node runner, so `pnpm.cmd` starts on Windows; STA-2899). `--tarballs <dir>` installs the
  *           `@stackra/*` packages from packed tarballs (verification before a release). Never writes a token.
  * Runtime: node
  * Governing contract: STA-1730 spec FR-029 to FR-031.
  */
-import { execFile } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
-import { promisify } from "node:util";
 
 import { Str } from "@stackra/validation";
 
@@ -123,7 +122,7 @@ export class CreateCommand extends Command({
     });
     if (this.install)
       await io.output.task(`Installing with ${this.pm}`, () =>
-        promisify(execFile)(this.pm, ["install"], { cwd: directory, maxBuffer: 16 * 1024 * 1024 }),
+        io.process.run(this.pm, ["install"], { cwd: directory }),
       );
     io.output.note(
       [

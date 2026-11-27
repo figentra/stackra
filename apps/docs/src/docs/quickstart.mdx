@@ -4,6 +4,31 @@ description: "From a clean machine to a running console and docs site."
 icon: "rocket"
 ---
 
+## Supported systems
+
+Stackra runs on **macOS**, **Linux** and **Windows through WSL 2**. `stackra doctor`, and the machine check
+`stackra create` runs first, open with a "supported system" line: it warns on native Windows and on WSL 1, and names the
+fix.
+
+### Windows: use WSL 2
+
+Native Windows is not supported: the toolchain (mise, Docker, Encore, the git hooks) and the generated scripts assume a
+Unix shell. Inside WSL 2 everything runs as it does on Linux.
+
+1. In PowerShell, run `wsl --install` (it installs Ubuntu on WSL 2), then restart and open the Ubuntu terminal.
+2. Install [mise](https://mise.jdx.dev) there, and Docker Desktop with its WSL 2 integration turned on (or Docker Engine
+   inside the distribution).
+3. Keep your apps in the Linux file system (`~/code/my-app`), not under `/mnt/c`: file watching and installs are far
+   slower across the Windows boundary.
+
+A distribution still on WSL 1 converts with `wsl --set-version <distribution> 2`.
+
+The CLI still starts tools the Windows way when run natively (a `.cmd` shim such as `pnpm.cmd` starts by its bare name,
+and the `clean` scripts `stackra new` writes need no `rm`); a Windows CI job runs those cases. That is a safety net,
+not support: use WSL 2.
+
+## From a clean machine
+
 <Steps>
   <Step title="Install the toolchain">
     `mise.toml` pins Node, pnpm, gitleaks, sops, age, uv and Maestro. With [mise](https://mise.jdx.dev) installed:

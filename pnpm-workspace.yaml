@@ -31,6 +31,11 @@ catalog:
   # @figentra-oss scope (.npmrc). It replaces tools/scripts' spec-gate, spec-trace, spec-parse, spec-linear and
   # speckit-sync, which remain as thin shims for the hooks, setup-plan.sh and the docs that name them.
   "@figentra-oss/flow": 0.11.0
+  # Starts a child process the same way on every system (@stackra/cli runProcess, @stackra/console's process
+  # runner): on Windows it resolves a `.cmd` shim (pnpm.cmd, node_modules/.bin/*.cmd) and escapes each argument for
+  # cmd.exe; elsewhere it is child_process.spawn. MIT. Bump the pair together (STA-2899).
+  cross-spawn: 7.0.6
+  "@types/cross-spawn": 6.0.6
   # YAML reader for repo-owned config (.agents/models.yaml, .mcp.yaml) read by tools/scripts.
   yaml: 2.9.1
   # HTTP client for tools/scripts' GitHub and Linear calls: an Agent with a 30 s connect timeout (STA-302).
