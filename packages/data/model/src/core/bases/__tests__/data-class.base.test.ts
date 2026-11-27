@@ -8,7 +8,7 @@
  * Governing contract: ADR 0022 (test placement); ADR 0341 (decisions 1 to 3); ADR 0540 (decisions 1 and 2).
  */
 import type { DataClassEffects } from "@stackra/contracts";
-import { DATA_CLASSIFICATION_EFFECTS } from "@stackra/contracts";
+import { BUILT_IN_DATA_CLASSES, DATA_CLASSIFICATION_EFFECTS } from "@stackra/contracts";
 import { kindOf } from "@stackra/container";
 import { describe, expect, it } from "@stackra/testing";
 
@@ -72,6 +72,11 @@ describe(DataClass, () => {
       key: "credential",
       ...DATA_CLASSIFICATION_EFFECTS.credential,
     });
+  });
+
+  it("ships each built-in class exactly as its row of the contracts table gen reads (ADR 0540 decision 7)", () => {
+    expect(CredentialDataClass.dataClass).toEqual(BUILT_IN_DATA_CLASSES.CredentialDataClass);
+    expect(PrivilegedDataClass.dataClass).toEqual(BUILT_IN_DATA_CLASSES.PrivilegedDataClass);
   });
 
   it("refuses a key that is not snake_case", () => {

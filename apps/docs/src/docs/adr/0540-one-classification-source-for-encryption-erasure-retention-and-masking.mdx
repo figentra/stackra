@@ -66,7 +66,10 @@ effects" per class that were never listed for encryption, erasure, retention or 
    then the model's classified fields whose class's `erasure` is not `keep`, each with that method. A listed field list
    stays authoritative (a personal field on the row may belong to another person), but no listed method may be weaker
    than its field's class, and a credential is never listed (0494 rule 4). The erasure workflow refuses a weaker method
-   (`looserErasureFields`), and gen refuses it at build time.
+   (`looserErasureFields`), and gen refuses it at build time. Erasure fails closed: a declaration that ends with no
+   field (it lists none, or an empty list, and no class of its model derives one) would erase nothing and still let the
+   receipt report the subject erased, so gen refuses it (`personal_data_no_fields`) and the erasure workflow refuses to
+   start while one is registered (`emptyPersonalDataDeclarations`).
 
 6. **Who reads each keeping effect.** Gen reads `encrypt` (the field must be named by `HasEncryptedFields`, with
    `subject` for `subject_sealed`), `retention` (the model declares `Retention`) and `erasure` (each `PersonalData`
@@ -77,6 +80,18 @@ effects" per class that were never listed for encryption, erasure, retention or 
    `@Classify` class alone (a sealed field with only `@Classify` would be logged and exported in clear once decrypted).
    Moving those readers onto the table is a later change; until then `@Classify` adds to `@Classified`, never replaces
    it, on a field that holds personal or secret data.
+
+7. **Built-in classes are recognised by package.** A published package carries a class's declaration (`.d.ts`), not the
+   `DataClass({...})` call gen reads a product class's effects from, so gen could not see the effects of
+   `@Classify(CredentialDataClass)` in a product. Gen resolves the `@Classify` argument through the type checker to its
+   class declaration (an alias or a re-export resolves to the original) and, when that declaration belongs to the
+   `@stackra/model` package and its name is a key of `BUILT_IN_DATA_CLASSES` in `@stackra/contracts`, takes the class's
+   key and effects from that table. The package is read from the declaration's own `package.json`, never from the import
+   text. Recognising by a symbol (a brand property on the class) was the alternative: it is rejected because a product
+   class could carry the same brand and claim a built-in's effects, and a brand is a type-level value gen would have to
+   read out of a `.d.ts`, while a declaration's package is fixed by where it is installed. A same-named class in any
+   other package is a product class, read from its own `DataClass({...})` call or, when gen cannot read it, counted
+   only through its `@Classified` code. `@stackra/model`'s tests hold each built-in class equal to its row.
 
 ## Consequences
 
@@ -102,9 +117,13 @@ effects" per class that were never listed for encryption, erasure, retention or 
   `checkDataClasses` (`data_class_effects_missing`, `data_class_looser_than_classified`,
   `classified_model_without_retention`) and `checkPersonalData` (`personal_data_field_unknown`,
   `personal_data_credential_field`, `personal_data_looser_than_class`, `personal_data_shred_unsealed`,
-  `personal_data_anonymise_not_nullable`).
+  `personal_data_anonymise_not_nullable`, `personal_data_no_fields`); the source reader takes a built-in class's
+  effects from `BUILT_IN_DATA_CLASSES` by package (`src/node/functions/__tests__/create-source-reader.function.test.ts`).
 - `@stackra/privacy` `EraseSubjectWorkflow` refuses a declared method weaker than its field's class before any row is
-  touched (`src/node/workflows/__tests__/erase-subject.workflow.test.ts`).
+  touched, and refuses to start while a declaration resolves to no field
+  (`src/node/workflows/__tests__/erase-subject.workflow.test.ts`).
+- `@stackra/contracts` fixes the built-in classes' rows (`src/core/constants/__tests__/built-in-data-classes.constant.test.ts`);
+  `@stackra/model` holds `CredentialDataClass` and `PrivilegedDataClass` equal to them.
 - planned: the masked-copy job applying `maskOf` (gap gov15) and the seeded `data-class` records of 0380.
 
 ## Supersedes and sources

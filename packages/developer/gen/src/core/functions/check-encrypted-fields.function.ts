@@ -94,7 +94,7 @@ export function checkEncryptedFields(ir: MemberIR): GenError[] {
         });
       else if (read !== undefined && read.classified === undefined)
         // `@Classify` alone is not enough: the readers that keep a value out of logs and exports (`redact` of
-        // @stackra/logger, the panel export, `changeCaptureOf`) read only `@Classified` (ADR 0540, decision 4).
+        // @stackra/logger, the panel export, `changeCaptureOf`) read only `@Classified` (ADR 0540, decision 6).
         errors.push({
           ...at,
           code: "encrypted_field_unclassified",

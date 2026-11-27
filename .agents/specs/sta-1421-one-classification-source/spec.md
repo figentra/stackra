@@ -61,6 +61,8 @@ merge into one `DataClass` declaration.
 - **AC-009**: WHEN gen checks an own model, THE gen full pass SHALL refuse a `@Classify` class that leaves an effect out (`data_class_effects_missing`), one looser than the field's `@Classified` class (`data_class_looser_than_classified`), and a model holding a field whose class's `retention` is `required` that declares no `Retention` (`classified_model_without_retention`).
 - **AC-010**: WHEN gen reads a class extending `PersonalData` of `@stackra/privacy`, THE gen source reader SHALL read it as the `personal_data` kind with its constant `model`, `subject` and `fields`, and, for an own model, THE gen full pass SHALL refuse `personal_data_field_unknown`, `personal_data_credential_field`, `personal_data_looser_than_class`, `personal_data_shred_unsealed` and `personal_data_anonymise_not_nullable`, checking a declaration without `fields` on the fields its model's classes derive.
 - **AC-011**: IF an encrypted field carries no `@Classified` class, THEN THE gen full pass SHALL refuse it (`encrypted_field_unclassified`), also when it carries a `@Classify` class, since the log redaction, the panel export and `changeCaptureOf` read only `@Classified` (review finding: accepting `@Classify` alone would let a decrypted sealed value reach a log line or an export in clear).
+- **AC-012**: IF a `PersonalData` declaration of an own model lists no fields (or an empty list) and no class of its model derives an erasing field, THEN THE gen full pass SHALL refuse it (`personal_data_no_fields`), and THE `EraseSubjectWorkflow` SHALL refuse to start while such a declaration is registered, before any row is touched or any salt destroyed.
+- **AC-013**: WHEN a `@Classify` argument resolves, through the type checker, to a class declared in the `@stackra/model` package and named in `BUILT_IN_DATA_CLASSES`, THE gen source reader SHALL take that class's key and effects from `BUILT_IN_DATA_CLASSES`; a same-named class of any other package SHALL NOT be read as built-in.
 
 ## Compatibility and migration
 
@@ -72,13 +74,27 @@ merge into one `DataClass` declaration.
 
 ## Risks
 
+- `personal_data_no_fields` refuses a declaration that resolves to no field; it erased nothing before and still let the
+  receipt report the subject erased, so this moves a silent gap to build time (and to a refusal of the erasure itself).
 - `personal_data_anonymise_not_nullable` refuses a declaration that anonymises a field typed without `| null`; such a declaration failed at erasure time before (the column refuses null), so this moves the failure to build time.
 - Gen reads a `@Classify` class's effects only from source it can see (own classes, or a package class whose `DataClass({...})` call it reads); a class it cannot read counts only through its `@Classified` code.
 - The seeded `data-class` records and a tenant's tightening (ADR 0380 decisions 1 and 6) are not built; the table is code.
 
 ## Open questions
 
-None.
+None. The CTO's question "how are built-in classes recognised, by symbol or by package" is decided below.
+
+## Decisions
+
+- **D-1 (CTO review, 2026-11-27): built-in classes are recognised by package.** Gen resolves a `@Classify` argument
+  through the type checker to its class declaration (an alias or a re-export resolves to the original) and treats it as
+  built-in only when that declaration belongs to the `@stackra/model` package (read from the declaration's own
+  `package.json`, never from the import text) and its name is a key of `BUILT_IN_DATA_CLASSES` in `@stackra/contracts`.
+  Its effects then come from that table, because a published `.d.ts` carries no `DataClass({...})` call. Recognising by
+  symbol (a brand property on the class) is rejected: any product class could carry the brand and claim a built-in's
+  effects, and a brand is a type-level value gen would have to read out of a `.d.ts`; a declaration's package is fixed
+  by where it is installed. `@stackra/model`'s tests hold `CredentialDataClass` and `PrivilegedDataClass` equal to
+  their rows. ADR 0540 records this as decision 7 and stays Proposed.
 
 ## Status history
 
@@ -87,3 +103,4 @@ None.
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing (built in the same branch; CTO approval of ADR 0540 pending)
 - 2026-11-26 → Implementing (review fix: AC-011 reversed, `encrypted_field_unclassified` requires `@Classified` again)
+- 2026-11-27 → Implementing (CTO review fixes, approval still pending: `personal_data_no_fields` in gen and the erasure, built-in classes recognised by package, AC-012, AC-013, D-1, T009; ADR 0540 stays Proposed)

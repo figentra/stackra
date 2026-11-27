@@ -88,6 +88,8 @@ describe("@stackra/contracts", () => {
       "AssuranceLevel",
       "AwsKmsKeyProviderDriver",
       "AwsKmsSignerDriver",
+      "BUILT_IN_DATA_CLASSES",
+      "BUILT_IN_DATA_CLASS_PACKAGE",
       "Backoff",
       "Clock",
       "DATA_CLASSIFICATION_EFFECTS",

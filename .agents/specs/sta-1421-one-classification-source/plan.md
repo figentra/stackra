@@ -88,6 +88,7 @@ packages/foundation/contracts/src/core/index.ts
 packages/foundation/contracts/src/core/types/data-class-effects.type.ts
 packages/foundation/contracts/src/core/constants/data-classification-effects.constant.ts
 packages/foundation/contracts/src/core/constants/data-class-effect-ranks.constant.ts
+packages/foundation/contracts/src/core/constants/{built-in-data-classes,built-in-data-class-package}.constant.ts
 packages/foundation/contracts/src/core/functions/loosened-effects.function.ts
 packages/foundation/contracts/src/core/functions/strictest-effects.function.ts
 packages/data/model/{README.md,AGENTS.md}
@@ -100,12 +101,13 @@ packages/data/model/src/core/functions/{built-in-data-class,field-data-classes,m
 packages/security/privacy/{README.md,AGENTS.md}
 packages/security/privacy/src/contracts/types/personal-data-options.type.ts
 packages/security/privacy/src/core/bases/personal-data.base.ts
-packages/security/privacy/src/core/functions/{personal-data-declarations,looser-erasure-fields}.function.ts
+packages/security/privacy/src/core/functions/{personal-data-declarations,looser-erasure-fields,empty-personal-data-declarations}.function.ts
 packages/security/privacy/src/node/workflows/erase-subject.workflow.ts
 packages/developer/gen/{README.md,AGENTS.md}
 packages/developer/gen/src/core/functions/{field-data-class-of,check-data-classes,check-personal-data,check-encrypted-fields,generate-member}.function.ts
 packages/developer/gen/src/core/constants/kind-files.constant.ts
 packages/developer/gen/src/node/constants/kind-bases.constant.ts
+packages/developer/gen/src/node/functions/create-source-reader.function.ts
 apps/docs/adr/numbers.yaml
 packages/data/model/stackra.manifest.json
 packages/data/model/src/core/enums/{ai-audience,export-label,search-snippet,support-access}.enum.ts
@@ -149,6 +151,10 @@ of each effect. It reads no row, adds no secret and changes no tenant boundary.
 - AC-008, AC-011: `check-encrypted-fields.function.test.ts` (gen).
 - AC-009: `check-data-classes.function.test.ts` (gen, with the full `generateMember` pass).
 - AC-010: `check-personal-data.function.test.ts` and `create-source-reader.function.test.ts` ("personal-data declarations") (gen).
+- AC-012: `check-personal-data.function.test.ts` (gen), `empty-personal-data-declarations.function.test.ts` and
+  `erase-subject.workflow.test.ts` (privacy).
+- AC-013: `create-source-reader.function.test.ts` ("built-in data classes") (gen), `built-in-data-classes.constant.test.ts`
+  (contracts), `data-class.base.test.ts` (model).
 
 ## Rollout
 

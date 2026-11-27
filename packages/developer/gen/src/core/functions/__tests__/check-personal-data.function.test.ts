@@ -3,7 +3,8 @@
  * Purpose: unit tests of `checkPersonalData`: a declaration that meets its model passes; an unknown field, a credential
  *          field, a method weaker than the field's class, a shred outside the subject's sealing and an anonymise on a
  *          field that cannot hold null are refused; a declaration that lists no fields is checked on the fields its
- *          model's classes derive; another package's model is left to its own gen.
+ *          model's classes derive, and refused (`personal_data_no_fields`) when none derive and none are listed;
+ *          another package's model is left to its own gen.
  * Boundary: test only; pure IR in, refusals out.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0540 (decision 5); ADR 0494 (rule 4); data-layer gap gov2.
@@ -78,6 +79,52 @@ describe(checkPersonalData, () => {
       "personal_data_anonymise_not_nullable PatientPersonalData.ward",
       "personal_data_shred_unsealed PatientPersonalData.note",
     ]);
+  });
+
+  it("refuses a declaration left with no field: none listed and none derived, or an empty list", () => {
+    const LOG = model("AuditLine");
+    const LOG_SHAPE = shapeOf(LOG, [field("userId"), field("token", "credential"), field("room")]);
+    const noFields = (fields?: Readonly<Record<string, string>>) =>
+      checkPersonalData(irOf([LOG, personalData("AuditLine", "userId", fields)], [LOG_SHAPE])).map(
+        (error) => `${error.code} ${error.subject}`,
+      );
+    // only a credential (kept) and an unclassified field: no class derives an erasing field
+    expect(noFields()).toEqual(["personal_data_no_fields AuditLinePersonalData"]);
+    expect(noFields({})).toEqual(["personal_data_no_fields AuditLinePersonalData"]);
+    expect(refused("userId", {})).toEqual(["personal_data_no_fields PatientPersonalData"]);
+  });
+
+  it("derives the fields of a built-in @Classify class gen read by package (ADR 0540 decision 7)", () => {
+    const CONNECTION = model(
+      "Connection",
+      [],
+      [
+        classify("accessToken", {
+          key: "credential",
+          ai: "never",
+          support: "hidden",
+          search: "no_snippet",
+          export: "excluded",
+          encrypt: "sealed",
+          erasure: "keep",
+          retention: "none",
+          mask: "null",
+        }),
+        classify("email", { ...CLINICAL_NOTE, key: "contact", erasure: "anonymise" }),
+      ],
+    );
+    const SHAPE_C = shapeOf(CONNECTION, [field("userId"), field("accessToken"), field("email")]);
+    // the credential is kept out, the contact field derives an anonymise: one field, no refusal
+    expect(
+      checkPersonalData(irOf([CONNECTION, personalData("Connection", "userId")], [SHAPE_C])),
+    ).toEqual([]);
+    // with only the credential classified, nothing is derived
+    const ONLY_SECRET = model("Connection", [], CONNECTION.facets.slice(0, 1));
+    expect(
+      checkPersonalData(irOf([ONLY_SECRET, personalData("Connection", "userId")], [SHAPE_C])).map(
+        (error) => error.code,
+      ),
+    ).toEqual(["personal_data_no_fields"]);
   });
 
   it("leaves a declaration of a model the member does not own to that model's gen", () => {

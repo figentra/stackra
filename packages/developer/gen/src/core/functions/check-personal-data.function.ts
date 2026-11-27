@@ -5,13 +5,15 @@
  *          (`personal_data_field_unknown`), a credential field (`personal_data_credential_field`: a provider secret
  *          goes with its record, never with a subject, ADR 0494), a method weaker than the field's data class
  *          (`personal_data_looser_than_class`), a shredded field not sealed under the declaration's subject key
- *          (`personal_data_shred_unsealed`, the rule `unsealedShredFields` applies at runtime), and an anonymised
- *          field that cannot hold null (`personal_data_anonymise_not_nullable`: erasure writes null).
+ *          (`personal_data_shred_unsealed`, the rule `unsealedShredFields` applies at runtime), an anonymised
+ *          field that cannot hold null (`personal_data_anonymise_not_nullable`: erasure writes null), and a declaration
+ *          left with no field at all (`personal_data_no_fields`: it lists none, or an empty list, and no class gen can
+ *          read derives one), which would erase nothing while the receipt reports the subject erased.
  * Boundary: pure, over the IR: declarations of the member's own models only (a package's model is checked by its own
  *           gen). A declaration that lists no fields is checked on the fields its model's classes derive (every
  *           classified field whose class erases, with that method), as @stackra/privacy derives them.
  * Runtime: isomorphic
- * Governing contract: ADR 0540 (decision 5); ADR 0189 (decision 2); ADR 0494 (rule 4); data-layer gap gov2.
+ * Governing contract: ADR 0540 (decisions 5 and 7); ADR 0189 (decision 2); ADR 0494 (rule 4); data-layer gap gov2.
  */
 import { DATA_CLASS_EFFECT_RANKS } from "@stackra/contracts";
 
@@ -51,6 +53,21 @@ export function checkPersonalData(ir: MemberIR): GenError[] {
               : [[field.name, erasure] as [string, string]];
           })
         : Object.entries(listed).map(([field, method]) => [field, String(method)]);
+    if (fields.length === 0) {
+      errors.push({
+        file: declaration.file,
+        line: 0,
+        column: 0,
+        subject: declaration.name,
+        code: "personal_data_no_fields",
+        message:
+          listed === undefined
+            ? `${declaration.name} lists no fields and no field of ${model.name} has a data class gen can read that erases it, so erasing a subject would touch nothing here and the receipt would still report it erased`
+            : `${declaration.name} lists an empty field list, so erasing a subject would touch nothing in ${model.name} and the receipt would still report it erased`,
+        fix: `list ${model.name}'s personal fields with their erasure methods in ${declaration.name}'s fields, or classify them (@Classified or @Classify) with a class whose erasure is not keep`,
+      });
+      continue;
+    }
     const trait = model.traits.find((use) => use.name === "HasEncryptedFields");
     const keyed = trait?.args[0] as { readonly subject?: unknown } | undefined;
     const sealed =

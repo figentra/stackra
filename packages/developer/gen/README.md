@@ -176,7 +176,11 @@ bounded retention without `Retention` (`classified_model_without_retention`). `c
 (`personal_data_credential_field`), a method weaker than the field's class (`personal_data_looser_than_class`), a shred
 the model does not seal under the declaration's subject (`personal_data_shred_unsealed`) and an anonymise on a field
 that cannot hold null (`personal_data_anonymise_not_nullable`); a declaration without `fields` is checked on the
-fields its model's classes derive.
+fields its model's classes derive, and one left with no field at all (none listed, or an empty list, and none
+derived) is refused (`personal_data_no_fields`), since erasure would touch nothing while the receipt says erased. A
+`@Classify` argument that resolves to a built-in class of `@stackra/model` (`CredentialDataClass`,
+`PrivilegedDataClass`) is recognised by package and takes its effects from `BUILT_IN_DATA_CLASSES` of
+`@stackra/contracts`, since a published `.d.ts` does not carry its `DataClass({...})` call (ADR 0540 decision 7).
 
 The model encryption path (`checkEncryptedFields`, full pass only, stackra-262): `encrypted_field_unknown` (a
 `HasEncryptedFields` field the model does not declare), `encrypted_field_unclassified` (an encrypted field without

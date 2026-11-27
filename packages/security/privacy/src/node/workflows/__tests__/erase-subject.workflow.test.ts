@@ -5,7 +5,7 @@
  *          `redact` nulls the declared fields in held outbox messages naming the subject and the receipt counts them;
  *          `receipt` records `SubjectErased` and, when asked, the `ServiceAcked` erasure ack; `output` is the receipt;
  *          a shredded field that is not subject-sealed, or a declared method weaker than its field's data class,
- *          refuses the erasure before any row is touched.
+ *          refuses the erasure before any row is touched, and so does a declaration that resolves to no field.
  * Boundary: test only; the steps are called directly in order with a hand-built run and step context, the memory
  *           store, the salt fake, the memory outbox and a hold registry connected through `connectHoldRegistry`.
  * Runtime: node (vitest)
@@ -60,6 +60,12 @@ class Note extends Model.with(HasEncryptedFields("body")) {
 
   body!: string;
 }
+
+/** Lists no fields, and `Note` classifies none: it would erase nothing. */
+class EmptyNotePersonalData extends PersonalData({
+  model: () => Note,
+  subject: "userId",
+}) {}
 
 /** Wrongly shreds the scope-sealed body. */
 class NotePersonalData extends PersonalData({
@@ -312,6 +318,19 @@ describe("EraseSubjectWorkflow", () => {
 
     await expect(runAll(workflow, { erasureId: "era_1", subject: SUBJECT })).rejects.toThrow(
       /legal\.case_file\.summary \(anonymise below delete\)/,
+    );
+    expect(store.all(Customer)).toHaveLength(2);
+    expect(salts.calls("destroy")).toEqual([]);
+  });
+
+  it("refuses to erase anything while a declaration resolves to no field (personal_data_no_fields)", async () => {
+    registerPersonalData("crm", [CustomerPersonalData, EmptyNotePersonalData]);
+    const store = seeded();
+    const salts = SubjectSaltStoreFake.holding([SUBJECT]);
+    const workflow = new EraseSubjectWorkflow(store, salts, new MemoryOutboxDriver());
+
+    await expect(runAll(workflow, { erasureId: "era_1", subject: SUBJECT })).rejects.toThrow(
+      /erases no field.*EmptyNotePersonalData/,
     );
     expect(store.all(Customer)).toHaveLength(2);
     expect(salts.calls("destroy")).toEqual([]);

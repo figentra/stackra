@@ -13,7 +13,8 @@
  *           not undone, so no step has an undo. Started only by `EraseSubjectAction` through `ctx.run`. Before touching
  *           anything, `erase` refuses when a declared `Shred` field is not sealed under the subject's key
  *           (`unsealedShredFields`): destroying the salt would leave it readable and the receipt would be false; and
- *           when a declared method is weaker than its field's data class (`looserErasureFields`).
+ *           when a declared method is weaker than its field's data class (`looserErasureFields`); and when a declaration
+ *           resolves to no field (`emptyPersonalDataDeclarations`), which would erase nothing and still issue a receipt.
  * Runtime: node
  * Governing contract: ADR 0189 (decisions 2 and 4); ADR 0134 (legal holds); ADR 0212 (crypto-shredding); ADR 0210
  *                     (decision 6: `ServiceAcked`); ADR 0294 (decisions 16 and 18); ADR 0151; STA-1312; STA-1375; gap
@@ -36,6 +37,7 @@ import type { PersonalDataStore } from "#contracts/ports/personal-data-store.por
 import type { SubjectSaltStore } from "#contracts/ports/subject-salt-store.port";
 import type { ErasedRecords } from "#contracts/types/erased-records.type";
 import { SubjectErased } from "#core/events/subject-erased.event";
+import { emptyPersonalDataDeclarations } from "#core/functions/empty-personal-data-declarations.function";
 import { looserErasureFields } from "#core/functions/looser-erasure-fields.function";
 import { personalDataDeclarations } from "#core/functions/personal-data-declarations.function";
 import { unsealedShredFields } from "#node/functions/unsealed-shred-fields.function";
@@ -106,6 +108,12 @@ export class EraseSubjectWorkflow extends Workflow<EraseSubjectInput>({ timeout:
    * @throws TypeError, before any row is touched, when a shredded field is not sealed under the subject's key.
    */
   async erase(run: Run<this>): Promise<Erased> {
+    const empty = emptyPersonalDataDeclarations();
+    if (empty.length > 0)
+      throw new TypeError(
+        `A PersonalData declaration erases no field, so the receipt would be false: ${empty.join(", ")}. ` +
+          "List its fields with their methods, or classify them with a class whose erasure is not keep (personal_data_no_fields)",
+      );
     const declarations = personalDataDeclarations();
     const unsealed = declarations.flatMap(unsealedShredFields);
     if (unsealed.length > 0)

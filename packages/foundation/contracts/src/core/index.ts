@@ -9,6 +9,8 @@
 export { Enum } from "#core/bases/enum.base";
 export { Port } from "#core/bases/port.base";
 export { AUDIT_HOT_RETENTION } from "#core/constants/audit-hot-retention.constant";
+export { BUILT_IN_DATA_CLASS_PACKAGE } from "#core/constants/built-in-data-class-package.constant";
+export { BUILT_IN_DATA_CLASSES } from "#core/constants/built-in-data-classes.constant";
 export { DATA_CLASS_EFFECT_RANKS } from "#core/constants/data-class-effect-ranks.constant";
 export { DATA_CLASSIFICATION_EFFECTS } from "#core/constants/data-classification-effects.constant";
 export { Duration } from "#core/constants/duration.constant";

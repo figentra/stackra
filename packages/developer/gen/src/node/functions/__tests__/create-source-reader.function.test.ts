@@ -48,6 +48,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { BUILT_IN_DATA_CLASSES } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { createSourceReader } from "#node/functions/create-source-reader.function";
@@ -1804,6 +1805,73 @@ describe("createSourceReader on data classes", async () => {
     );
     expect(note).toBe("clinical_note");
     expect(refund).toBe("financial");
+  });
+});
+
+/**
+ * A model whose fields carry @stackra/model's built-in classes (one through an alias) and a same-named class of another
+ * package, which is a product class gen cannot read (ADR 0540 decision 7: built-in classes are recognised by package).
+ */
+const BUILT_IN_CLASS_SOURCES: Readonly<Record<string, string>> = {
+  ...DATA_CLASS_SOURCES,
+  "node_modules/@stackra/model/index.d.ts": [
+    DATA_CLASS_SOURCES["node_modules/@stackra/model/index.d.ts"] ?? "",
+    "declare const CredentialDataClass_base: abstract new () => object;",
+    "export declare class CredentialDataClass extends CredentialDataClass_base {}",
+    "declare const PrivilegedDataClass_base: abstract new () => object;",
+    "export declare class PrivilegedDataClass extends PrivilegedDataClass_base {}",
+    "",
+  ].join("\n"),
+  "node_modules/@acme/lookalike/package.json": JSON.stringify({
+    name: "@acme/lookalike",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@acme/lookalike/index.d.ts": [
+    "declare const CredentialDataClass_base: abstract new () => object;",
+    "export declare class CredentialDataClass extends CredentialDataClass_base {}",
+    "",
+  ].join("\n"),
+  "src/node/models/connection.model.ts": [
+    'import { Classify, CredentialDataClass as Secret, HasPublicId, Model, PrivilegedDataClass } from "@stackra/model";',
+    'import { CredentialDataClass as Lookalike } from "@acme/lookalike";',
+    "",
+    'export class Connection extends Model.with(HasPublicId("con")) {',
+    "  @Classify(Secret)",
+    "  accessToken!: string;",
+    "",
+    "  @Classify(PrivilegedDataClass)",
+    "  advice!: string;",
+    "",
+    "  @Classify(Lookalike)",
+    "  note!: string;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on built-in data classes", async () => {
+  const root = writeFixtureMember("built-in-data-classes", BUILT_IN_CLASS_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+  const facetOf = (member: string) =>
+    classes
+      .find((declared) => declared.name === "Connection")
+      ?.facets.find((candidate) => candidate.name === "Classify" && candidate.member === member);
+
+  it("takes a @stackra/model built-in class's effects from the contracts table, through an alias", () => {
+    expect(facetOf("accessToken")?.options).toMatchObject({
+      dataClass: BUILT_IN_DATA_CLASSES.CredentialDataClass,
+    });
+    expect(facetOf("advice")?.options).toMatchObject({
+      dataClass: BUILT_IN_DATA_CLASSES.PrivilegedDataClass,
+    });
+  });
+
+  it("never takes a built-in's effects for a same-named class of another package", () => {
+    expect(facetOf("note")).toBeDefined();
+    expect(facetOf("note")?.options).not.toHaveProperty("dataClass");
   });
 });
 

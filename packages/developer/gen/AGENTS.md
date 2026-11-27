@@ -331,8 +331,10 @@ The gen refusals of the 2026-10-27 coverage audit, section 4. Each carries its f
   `data_class_looser_than_classified`, `classified_model_without_retention`. `checkPersonalData` (core, full pass only)
   reads `PersonalData` classes (kind `personal_data`, `<model>.personal-data.ts`) of own models:
   `personal_data_field_unknown`, `personal_data_credential_field`, `personal_data_looser_than_class`,
-  `personal_data_shred_unsealed`, `personal_data_anonymise_not_nullable`; a declaration without `fields` is checked on
-  the fields its model's classes derive. A package's model is left to its own gen.
+  `personal_data_shred_unsealed`, `personal_data_anonymise_not_nullable`, `personal_data_no_fields` (no field listed
+  or derived); a declaration without `fields` is checked on the fields its model's classes derive. A package's model
+  is left to its own gen. A built-in class of `@stackra/model` is recognised by package (the declaration the checker
+  resolves to, never the import text) and read from `BUILT_IN_DATA_CLASSES`; never restate its effects in gen.
 - `checkSemanticSearch` (core, full pass only, STA-1251): `searchable_semantic_ai_never`, a `semantic: true`
   `@Searchable` text path that ends at a field whose `@Classify` facet's `options.dataClass.ai` is `never`. The reader
   fills `options.dataClass` from the `DataClass({...})` from `@stackra/*` the class's chain extends (`dataClassOf`).
