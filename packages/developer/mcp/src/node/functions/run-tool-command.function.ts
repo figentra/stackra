@@ -74,7 +74,7 @@ export async function runToolCommand(
   const found = read.map((diagnostic) =>
     member === undefined || diagnostic.file === undefined || isAbsolute(diagnostic.file)
       ? diagnostic
-      : { ...diagnostic, file: posix.join(member.path, diagnostic.file) },
+      : { ...diagnostic, file: posix.join(member.dir, diagnostic.file) },
   );
   if (!result.ok && !found.some((diagnostic) => diagnostic.severity === "error")) {
     const printed = lastLine(output);

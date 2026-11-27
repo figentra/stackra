@@ -23,7 +23,7 @@
  *                     are sent), STA-1477; STA-2794.
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -57,7 +57,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
     path: `${encoreServiceFolder(ir.member)}/http.ts`,
     content: [
       header,
-      ...encoreDatabaseImport(ir),
+      ...encoreSetupImports(ir),
       'import { Readable } from "node:stream";',
       'import type { IncomingMessage, ServerResponse } from "node:http";',
       "",

@@ -118,6 +118,19 @@ eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change),
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
 run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
 
+In a member or at the root, `stackra dev` first starts the dev compose of the root runway's `environments.dev.infra`
+(Valkey, SeaweedFS, Mailpit, ClamAV, otel-lgtm; Encore keeps its own Postgres): it writes `.stackra/dev/compose.yaml`
+(and `.stackra/dev/compose.shared.yaml` for the `perLane: false` ones, ClamAV by default) and runs
+`docker compose -f <file> up --detach --wait`, so each container is healthy before the member starts. The member's run
+gets the containers' variables (`CACHE_VALKEY_URL`, `AWS_ENDPOINT_URL_S3`, `SMTP_PORT`, …) unless the shell or
+`.stackra/dev-secrets.json` sets them. SeaweedFS's placeholder `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` pair is
+added only when the run has no AWS credential of its own (no key variable, `AWS_PROFILE`, web identity token,
+container endpoint, `~/.aws/credentials` or `~/.aws/config`): the store takes any signature, so a profile keeps signing
+for S3 and for the run's other AWS clients alike. On a host whose only credential is an instance role, an empty
+`~/.aws/config` keeps the pair out. `--infra <name>[,<name>]` also starts `when: opt-in` blocks; `--no-infra` skips
+the step. The containers keep running after `stackra dev` stops; `docker compose -f .stackra/dev/compose.yaml down`
+stops them. A member run turbo starts from the root leaves the step to the root run.
+
 `stackra dev --surface <surface>` runs at a product root (ADR 0436 decision 6, app-shells section 15 point 2). It reads
 `surfaces.<surface>` (`shell: os/console@3`, `packages`) from the root `runway.yaml`, runs `stackra gen`, writes the
 `DevSurface` descriptor to `.stackra/surfaces/<surface>/dev-surface.json`, then starts Vite with the surface's
@@ -291,8 +304,11 @@ in-memory PGlite through the member's own `@stackra/database/node`, and compares
 nullability), indexes and foreign keys with what the models declare: each many-to-many relation's pivot table (its
 two keys, the owner's `tenant_id` and their foreign keys) and a `@Searchable` model's `search_text` and
 `search_filters` included, its vectors and rebuild shadows tolerated (search columns on another table are undeclared),
-and a partial index's predicate compared as Postgres rewrites it (`in` as `= ANY`, `like` as `~~`, casts dropped). One
-line per difference,
+a partial index's predicate compared as Postgres rewrites it (`in` as `= ANY`, `like` as `~~`, casts dropped), and each
+model's traits giving the columns and indexes their migration macros write (`HasTree`'s `varchar(33)` `parent_id`,
+`ltree` `tree_path`, either nullable, and GiST index; `HasMetadata`'s jsonb bag, its GIN index optional; `Versioned`'s
+integer `version`; `Partitioned`'s optional BRIN index), so a trait's column on a table whose model lacks the trait is
+undeclared. One line per difference,
 `<module>  <table>  <kind>  <subject>  <expected>  <actual>`; `--json` prints the same as an array. Exit 0 when they
 agree, 1 on a difference, 2 when a migration does not compile or replay, or `@stackra/database` or PGlite
 (`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) is not installed in the member. Only the member's own modules

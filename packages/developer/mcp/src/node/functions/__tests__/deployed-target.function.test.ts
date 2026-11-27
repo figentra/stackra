@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `deployedTarget`: a server in a deployed environment refuses, whatever the call says; a
- *          local server refuses a call naming a deployed environment (`env` or `environment`), and lets dev, test and
- *          calls without one through.
+ *          server with no `STACKRA_ENVIRONMENT` (unset or empty) refuses too (fail closed); a dev or test server
+ *          refuses a call naming a deployed environment (`env` or `environment`), and lets local calls through.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 5); STA-2873.
@@ -19,8 +19,16 @@ describe("deployedTarget", () => {
       );
   });
 
+  it("refuses everything on a server whose environment is unset or empty", () => {
+    for (const env of [{}, { STACKRA_ENVIRONMENT: undefined }, { STACKRA_ENVIRONMENT: "" }])
+      for (const input of [undefined, {}, { env: "dev" }])
+        expect(deployedTarget(env, input)).toBe(
+          "the server's STACKRA_ENVIRONMENT is unset, so it may be a deployed runtime",
+        );
+  });
+
   it("refuses a local call that names a deployed environment", () => {
-    expect(deployedTarget({}, { env: "production" })).toBe(
+    expect(deployedTarget({ STACKRA_ENVIRONMENT: "test" }, { env: "production" })).toBe(
       "the call names the production environment (env)",
     );
     expect(deployedTarget({ STACKRA_ENVIRONMENT: "dev" }, { environment: "staging" })).toBe(
@@ -28,9 +36,9 @@ describe("deployedTarget", () => {
     );
   });
 
-  it("lets local calls through", () => {
-    expect(deployedTarget({}, undefined)).toBeUndefined();
-    expect(deployedTarget({ STACKRA_ENVIRONMENT: "" }, {})).toBeUndefined();
+  it("lets local calls through on a dev or test server", () => {
+    expect(deployedTarget({ STACKRA_ENVIRONMENT: "dev" }, undefined)).toBeUndefined();
+    expect(deployedTarget({ STACKRA_ENVIRONMENT: "dev" }, {})).toBeUndefined();
     expect(
       deployedTarget({ STACKRA_ENVIRONMENT: "test" }, { env: "dev", environment: "" }),
     ).toBeUndefined();

@@ -92,11 +92,14 @@ the last line it printed. `code` is what `stackra explain` takes (a check findin
 without a link gets the one `stackra explain <code> --json` gives, through the same runner, once per code; a code the
 error-code reference does not list gets no link. The full plain output of each tool's last run is in
 `.stackra/logs/last-<tool>.log`, and `data.log` names it, so an assistant reads the list first and the log only when it
-needs more.
+needs more. The output is passed through `@stackra/logger`'s `redact` (bearer tokens, JWTs, API keys, URL credentials)
+before the parsers read it, before the log is written and before the tail is returned.
 
-A tool that is not read-only is refused, before it runs, when the server runs in a deployed environment
-(`STACKRA_ENVIRONMENT` other than `dev` or `test`) or the call names one (`env` or `environment`): the result is the
-error `deployed_target`, as one diagnostic. A proxied Encore tool counts as writing unless Encore marks it `readOnlyHint`. The Encore app
+A tool that is not read-only is refused, before it runs, unless the server runs in `dev` or `test`: an unset or empty
+`STACKRA_ENVIRONMENT` is not local (fail closed), and neither is a call that names another environment (`env` or
+`environment`). The result is the error `deployed_target`, as one diagnostic. `stackra mcp` and `stackra dev` set
+`STACKRA_ENVIRONMENT=dev` themselves when it is unset and keep a value that is set; a host calling `serveLocalMcp`
+passes `env` with it. A proxied Encore tool counts as writing unless Encore marks it `readOnlyHint`. The Encore app
 id is the root runway's `providers.encore.app`; when there is none, or Encore does not answer within ten seconds, the
 local tools still work.
 

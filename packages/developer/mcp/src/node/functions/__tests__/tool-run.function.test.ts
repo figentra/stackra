@@ -41,7 +41,9 @@ describe("toolRun", () => {
   it("runs in the member's folder and strips colour codes", async () => {
     const { host, run } = hostOf("\u001B[32mok\u001B[39m\n", 0);
     const { result, output } = await toolRun(host, "/repo", ["lint"], {
-      path: "services/commerce",
+      name: "@acme/commerce",
+      dir: "services/commerce",
+      path: "/repo/services/commerce",
     });
     expect(run).toHaveBeenCalledWith(["lint"], { cwd: join("/repo", "services/commerce") });
     expect(output).toBe("ok\n");

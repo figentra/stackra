@@ -94,7 +94,8 @@ function start(
     run,
     encore: options.encore ?? null,
     tools: options.tools ?? [],
-    env: options.env ?? {},
+    // A local server unless the test says otherwise; `{}` is a server with no environment.
+    env: options.env ?? { STACKRA_ENVIRONMENT: "dev" },
   });
   const client = connectMcp(toClient, toServer);
   return { client, served, disconnect: () => toServer.end() };
@@ -651,7 +652,9 @@ describe("serveLocalMcp", () => {
             message:
               "gen writes, and the server runs in production (STACKRA_ENVIRONMENT): " +
               "the local developer MCP only writes in dev or test",
-            fix: "run it from a local checkout, or through the deploy path for that environment",
+            fix:
+              "run it from a local checkout through `stackra mcp` or `stackra dev` (they set " +
+              "STACKRA_ENVIRONMENT=dev), or through the deploy path for that environment",
           },
         ],
         error: {
@@ -693,6 +696,38 @@ describe("serveLocalMcp", () => {
     });
     expect(invoke).toHaveBeenCalledTimes(1);
     local.disconnect();
+  });
+
+  it("refuses every writing tool when STACKRA_ENVIRONMENT is unset, and still answers a read-only one", async () => {
+    const run = vi.fn<StackraRunner>(async () => ({ exitCode: 0, output: "" }));
+    const unset = start(run, { env: {} });
+    for (const name of ["gen", "new", "test", "lint"])
+      expect(await call(unset.client, name, { kind: "package", name: "x" })).toMatchObject({
+        isError: true,
+        structuredContent: {
+          ok: false,
+          error: {
+            code: "deployed_target",
+            message: expect.stringContaining(
+              "the server's STACKRA_ENVIRONMENT is unset, so it may be a deployed runtime",
+            ),
+            fix: expect.stringContaining("STACKRA_ENVIRONMENT=dev"),
+          },
+        },
+      });
+    expect((await call(unset.client, "manifest", { member: "web" })).isError).toBe(false);
+    // app_info names no environment and counts the server as deployed.
+    expect((await call(unset.client, "app_info")).structuredContent.data).toMatchObject({
+      environment: { name: null, deployed: true },
+    });
+    expect(run).not.toHaveBeenCalled();
+    unset.disconnect();
+
+    // The same call on a server that says dev runs.
+    const dev = start(run, { env: { STACKRA_ENVIRONMENT: "dev" } });
+    expect((await call(dev.client, "gen")).isError).toBe(false);
+    expect(run).toHaveBeenCalledTimes(1);
+    dev.disconnect();
   });
 
   it("proxies every page of Encore tools under encore_, forwards calls unprefixed, and guards its writes", async () => {

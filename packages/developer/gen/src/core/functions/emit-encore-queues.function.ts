@@ -19,7 +19,7 @@ import { camelCase, kebabCase } from "@stackra/support";
 
 import { BROKER_MESSAGE_IMPORT } from "#core/constants/broker-message-import.constant";
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import { jobQueues } from "#core/functions/job-queues.function";
@@ -56,7 +56,7 @@ export function emitEncoreQueues(
     path: `${encoreServiceFolder(ir.member)}/queues.ts`,
     content: [
       header,
-      ...encoreDatabaseImport(ir),
+      ...encoreSetupImports(ir),
       'import { registerBrokerTopics } from "@stackra/queue";',
       'import type { QueuedJob } from "@stackra/queue/contracts";',
       'import { QueueWorkerService } from "@stackra/queue/node";',

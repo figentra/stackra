@@ -111,6 +111,7 @@ describe("@stackra/runway/node", () => {
       "runMobileJob",
       "runProgram",
       "runScreenshotCapture",
+      "runtimeOnlyFieldsOf",
       "screenshotCaptureJob",
       "secretSyncPlan",
       "shellReleaseOf",

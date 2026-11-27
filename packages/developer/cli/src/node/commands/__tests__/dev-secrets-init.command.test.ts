@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `DevSecretsInitCommand` on the console: it writes the generated values with mode 600 and
  *          prints names, never a value; it lists the names that need a value; a second run with nothing missing is
- *          refused with exit 2; `--rotate` regenerates; `--from` copies a shared name.
+ *          refused with exit 2; `--rotate` regenerates; `--from` copies a shared name; a name the dev compose provides
+ *          is listed as the compose's, not as needing a value.
  * Boundary: test only; the workspace root is a temporary folder and the declared rows are a stand-in.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0525 (amendment of 2026-11-10); STA-2679.
+ * Governing contract: ADR 0022 (test placement); ADR 0525 (amendment of 2026-11-10); STA-2679; STA-2664 (item 6).
  */
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -80,6 +81,7 @@ describe("DevSecretsInitCommand", () => {
         generated: ["SESSION_SECRET"],
         copied: [],
         needsValue: ["DATABASE_URL", "STACKRA_EVENTS_SIGNING_KEY"],
+        fromCompose: [],
         optional: [],
       },
     });
@@ -99,6 +101,23 @@ describe("DevSecretsInitCommand", () => {
     );
     expect(rotated.exitCode).toBe(0);
     expect(file()["SESSION_SECRET"]).not.toBe(first);
+  });
+
+  it("lists a name the dev compose provides as the compose's, not as needing a value", async () => {
+    vi.mocked(declaredDevSecrets).mockReturnValue([
+      row("SESSION_SECRET"),
+      row("DATABASE_URL"),
+      row("CACHE_VALKEY_URL", "cache"),
+    ]);
+    writeFileSync(
+      join(root, "runway.yaml"),
+      `version: 3\nproject: acme\nenvironments:\n  dev:\n    infra:\n      valkey: { image: "valkey/valkey:8.1@sha256:${"a".repeat(64)}", port: 6379 }\n`,
+    );
+    const result = await runCommandForTest([DevSecretsInitCommand], ["dev:secrets:init", "--json"]);
+    expect(result.json).toMatchObject({
+      ok: true,
+      data: { needsValue: ["DATABASE_URL"], fromCompose: ["CACHE_VALKEY_URL"] },
+    });
   });
 
   it("copies a shared name from --from", async () => {

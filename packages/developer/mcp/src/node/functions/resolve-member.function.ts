@@ -10,7 +10,7 @@
 import { CommandError } from "@stackra/console";
 
 import { readMembers } from "#node/functions/read-members.function";
-import type { WorkspaceMember } from "#node/types/workspace-member.type";
+import type { ManifestMember } from "#node/types/manifest-member.type";
 
 /**
  * The member `given` names.
@@ -19,17 +19,16 @@ import type { WorkspaceMember } from "#node/types/workspace-member.type";
  * @param given - a manifest key, a package name or a folder from the root.
  * @throws CommandError when no member answers to `given`.
  * @example
- * resolveMember("/repo", "commerce").path; // "services/commerce"
+ * resolveMember("/repo", "commerce").dir; // "services/commerce"
  */
-export function resolveMember(root: string, given: string): WorkspaceMember {
+export function resolveMember(root: string, given: string): ManifestMember {
   const path = given.replaceAll("\\", "/").replace(/^\.\//, "").replace(/\/+$/, "");
   const members = readMembers(root);
   const found = members.find(
-    (member) =>
-      member.path === path || member.packageName === given || member.manifest?.member === given,
+    (member) => member.dir === path || member.name === given || member.manifest?.member === given,
   );
   if (found !== undefined) return found;
   throw new CommandError(`No member named ${JSON.stringify(given)}`, {
-    fix: `name one of: ${members.map((member) => member.manifest?.member ?? member.path).join(", ")}`,
+    fix: `name one of: ${members.map((member) => member.manifest?.member ?? member.dir).join(", ")}`,
   });
 }
