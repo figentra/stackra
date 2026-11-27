@@ -6,13 +6,14 @@
  * Boundary: standard output carries the MCP protocol only; command output is captured and returned as tool results.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 5: local mode shares one core with the CLI); R-29 (proxy the local Encore
- *                     tools).
+ *                     tools); STA-2891 (the `explain` tool).
  */
 import { toolsOf } from "@stackra/console";
 import { NodeProcessRunnerDriver } from "@stackra/console/node";
 import { serveLocalMcp } from "@stackra/mcp/node";
 
 import { DoctorCommand } from "#node/commands/doctor.command";
+import { ExplainCommand } from "#node/commands/explain.command";
 import { captureIo } from "#node/functions/capture-io.function";
 import { cliVersion } from "#node/functions/cli-version.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -28,7 +29,7 @@ export const MCP_COMMAND: CliCommand = {
       root: cwd,
       // A converted command is served from its own definition; the rest stay on LOCAL_TOOLS until they are converted.
       tools: toolsOf(
-        { name: "stackra", version: cliVersion(), commands: [DoctorCommand] },
+        { name: "stackra", version: cliVersion(), commands: [DoctorCommand, ExplainCommand] },
         { cwd, process: () => new NodeProcessRunnerDriver() },
       ),
       run: async (args) => {

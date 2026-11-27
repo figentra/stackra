@@ -7,7 +7,7 @@
  *          command, the settings pack commands, the search reindex and status commands, the offline audit check, the operator bootstrap (`ops
  *          bootstrap-operator`, STA-1586), ls, the testbed (`testbed <verb>`, ADR 0484), the consumer gate (`consumer-gate`, ADR 0500), the local MCP and agent-file commands,
  *          the registry item commands (add, publish; ADR 0453), and the repository commands moved from
- *          `tools/scripts` (doctor, eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs
+ *          `tools/scripts` (doctor, explain (an error code, STA-2891), eas-preflight, structure, architecture-map, the single checks `pnpm validate` runs
  *          and `validate --repository`).
  * Boundary: data only. Figentra-internal operations (Linear, bot identities, merge, the secrets inbox, delegation)
  *           are never added here (ADR 0282 decision 4); `stackra db seed` runs the member's seeders (STA-1709) and
@@ -54,6 +54,7 @@ import { DevSecretsInitCommand } from "#node/commands/dev-secrets-init.command";
 import { DocStandardCommand } from "#node/commands/doc-standard.command";
 import { DoctorCommand } from "#node/commands/doctor.command";
 import { DuplicateExportsCommand } from "#node/commands/duplicate-exports.command";
+import { ExplainCommand } from "#node/commands/explain.command";
 import { DuplicationCommand } from "#node/commands/duplication.command";
 import { LsCommand } from "#node/commands/ls.command";
 import { McpSyncCommand } from "#node/commands/mcp-sync.command";
@@ -133,6 +134,7 @@ export const COMMANDS: CliCommands = [
   AddCommand,
   PublishCommand,
   DoctorCommand,
+  ExplainCommand,
   EAS_PREFLIGHT_COMMAND,
   StructureCommand,
   ArchitectureMapCommand,

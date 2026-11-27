@@ -33,6 +33,7 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "test": "vitest run",
+    "error-codes:write": "node scripts/error-codes/write-catalogue.ts",
     "clean": "rm -rf .stackra .turbo .wrangler"
   },
   "dependencies": {

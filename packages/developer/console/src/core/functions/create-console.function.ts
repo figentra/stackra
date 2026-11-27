@@ -104,7 +104,9 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
       },
     });
     const painter = createPainter(mode.depth, theme.accent);
-    const finish = (code: number, error?: unknown, docs?: string): number => {
+    const finish = (code: number, error?: unknown, commandDocs?: string): number => {
+      // The error's own link wins (problemOf), then the command's, then the console's.
+      const docs = commandDocs ?? config.docs;
       if (bare) {
         // An explicit `null` is data; only a run that gave none falls back to the rows.
         const value = data === undefined ? rows : data;

@@ -226,6 +226,16 @@
       "entry": "node"
     },
     {
+      "name": "explain",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "ExplainCommand",
+      "file": "src/node/commands/explain.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "ls",
       "aliases": [],
       "hidden": false,

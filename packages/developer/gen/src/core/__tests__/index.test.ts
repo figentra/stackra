@@ -16,6 +16,7 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import * as gen from "#core/index";
 import type {
   EntityIR,
+  ErrorCodeEntry,
   GenError,
   GeneratedFile,
   MemberIR,
@@ -35,6 +36,8 @@ describe("@stackra/gen", () => {
       "DocsConfig",
       "EFFECT_TAGS",
       "ENCORE_SERVICES_DIR",
+      "ERROR_CODES",
+      "ERROR_CODES_PAGE",
       "GENERATED_NOTICE",
       "GRAPH_NOTICE",
       "INTEGRATION_ROLES",
@@ -93,6 +96,8 @@ describe("@stackra/gen", () => {
       "emitUiFacade",
       "emitWebhooks",
       "emitWiring",
+      "errorCodeDocs",
+      "errorCodeEntry",
       "eventName",
       "expectedSchema",
       "folderKey",
@@ -138,6 +143,7 @@ describe("@stackra/gen", () => {
       .returns.toHaveProperty("manifest")
       .toEqualTypeOf<StackraManifest>();
     expectTypeOf<MemberIR["errors"]>().toEqualTypeOf<readonly GenError[]>();
+    expectTypeOf(gen.ERROR_CODES).toEqualTypeOf<readonly ErrorCodeEntry[]>();
     expectTypeOf<Extract<TypeDesc, { kind: "public_id" }>["prefix"]>().toEqualTypeOf<string>();
     expectTypeOf<ShapeIR["entity"]>().toEqualTypeOf<EntityIR | undefined>();
     expectTypeOf<EntityIR["relations"]>().toEqualTypeOf<readonly RelationIR[]>();

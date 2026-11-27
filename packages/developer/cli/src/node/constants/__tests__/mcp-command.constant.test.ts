@@ -38,8 +38,11 @@ describe("MCP_COMMAND", () => {
     const options = vi.mocked(serveLocalMcp).mock.calls[0]?.[0];
     expect(options?.version).toBe(cliVersion());
     expect(options?.root).toBe("/repo");
-    // doctor is served from its own command definition, read-only.
-    expect(options?.tools?.map((tool) => [tool.name, tool.readOnly])).toEqual([["doctor", true]]);
+    // doctor and explain are served from their own command definitions, read-only.
+    expect(options?.tools?.map((tool) => [tool.name, tool.readOnly])).toEqual([
+      ["doctor", true],
+      ["explain", true],
+    ]);
     expect(await options?.run?.(["gen", "--check"])).toEqual({ exitCode: 3, output: "checked\n" });
     expect(cli.mock.calls[0]?.[0]).toEqual(["gen", "--check"]);
     expect(cli.mock.calls[0]?.[1].inherit).toBe(false);

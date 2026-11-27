@@ -3,17 +3,19 @@
  * Purpose: `runCli(args, io, options?)`, the command core of `stackra`: a `@stackra/console` run (ADR 0506) over the
  *          commands: native console command classes as they are, each `CliCommand` as a passthrough `legacyCommand`.
  *          The console routes (help, `help <command>`, unknown names with the closest, `completion`), renders errors
- *          and exits 0 success, 1 failure, 2 usage. The binary and the local MCP both call it, so a person and an
+ *          (each with a docs link: the error's, the command's, else the troubleshooting page) and exits 0 success, 1
+ *          failure, 2 usage. The binary and the local MCP both call it, so a person and an
  *          assistant pass the same commands and gates.
  * Boundary: never exits the process and never throws; every error is written to `io.err` and becomes an exit code.
  *           `io.inherit` false (the MCP, a pipe) counts as no terminal, so nothing prompts or animates.
  * Runtime: node
- * Governing contract: ADR 0282 (decisions 3 and 5); ADR 0083 (the `stackra` binary); ADR 0506; STA-1966.
+ * Governing contract: ADR 0282 (decisions 3 and 5); ADR 0083 (the `stackra` binary); ADR 0506; STA-1966; STA-2891.
  */
 import { createConsole } from "@stackra/console";
 import { nodePorts } from "@stackra/console/node";
 
 import { COMMANDS } from "#node/constants/commands.constant";
+import { TROUBLESHOOTING_DOCS } from "#node/constants/troubleshooting-docs.constant";
 import { cliVersion } from "#node/functions/cli-version.function";
 import { legacyCommand } from "#node/functions/legacy-command.function";
 import type { CliCommand } from "#node/types/cli-command.type";
@@ -42,6 +44,7 @@ export async function runCli(
   return createConsole({
     name: "stackra",
     version: cliVersion(),
+    docs: TROUBLESHOOTING_DOCS,
     commands: commands.map((command) =>
       typeof command === "function"
         ? command
