@@ -73,6 +73,10 @@ function writeService(name: string, tenancy: boolean): string {
     dependencies: Record<string, string>;
   };
   pkg.dependencies["encore.dev"] = "1.58.8";
+  // Since @stackra/app depends on @stackra/cache, gen wires the cache contributions and wants the service to declare
+  // what they import; the service template does not declare them yet, which is not what this test is about.
+  for (const dependency of ["@stackra/cache", "@stackra/config", "@stackra/storage"])
+    pkg.dependencies[dependency] = "catalog:stackra";
   if (tenancy) pkg.dependencies["@stackra/tenancy"] = "catalog:stackra";
   files[`services/${name}/package.json`] = `${JSON.stringify(pkg, null, 2)}\n`;
   for (const [path, content] of Object.entries(files)) {
