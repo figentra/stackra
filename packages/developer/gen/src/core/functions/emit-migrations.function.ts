@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `emitMigrations`, the migration target: one `.stackra/migrations/<seq>_<module>_<NNNN>_<stem>.up.sql` per
  *          compiled step, in the order `orderMigrations` gives, with its `.down.sql` inverse when the step has one. A
- *          migration of several steps numbers them `_1`, `_2`, … so the runner reverts them as one batch. A step the
+ *          migration of several steps numbers them `_1`, `_2`, … (`migrationStepNames`) so the runner reverts them as
+ *          one batch. A step the
  *          runner must not wrap in a transaction opens with `-- stackra:transactional=false`.
  * Boundary: pure: ordered units in, files out. The sequence is global and dense from 0001, so the file names change
  *           when a migration is inserted before others; that only happens before the migration is applied anywhere
@@ -13,6 +14,7 @@
  */
 import { GENERATED_NOTICE } from "#core/constants/generated-notice.constant";
 import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
+import { migrationStepNames } from "#core/functions/migration-step-names.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
 import type { MigrationUnit } from "#core/types/migration-unit.type";
 
@@ -32,12 +34,10 @@ const body = (statements: readonly string[]): string =>
  */
 export function emitMigrations(ordered: readonly MigrationUnit[]): GeneratedFile[] {
   const files: GeneratedFile[] = [];
-  let sequence = 0;
-  for (const unit of ordered) {
-    const stem = unit.id.replace(".", "_");
+  const names = migrationStepNames(ordered);
+  for (const [position, unit] of ordered.entries()) {
     for (const [index, step] of unit.steps.entries()) {
-      sequence += 1;
-      const name = `${String(sequence).padStart(4, "0")}_${stem}${unit.steps.length > 1 ? `_${index + 1}` : ""}`;
+      const name = names[position]?.[index] ?? "";
       const notice = `-- ${GENERATED_NOTICE}; from ${unit.id} (${unit.file})\n`;
       const header = step.transactional ? notice : `${NON_TRANSACTIONAL}\n${notice}`;
       files.push({ path: `${MIGRATIONS_DIR}/${name}.up.sql`, content: header + body(step.sql) });
