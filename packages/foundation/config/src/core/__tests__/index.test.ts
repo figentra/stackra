@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/config`
- *          (`Config`, `Secret`, `env`, `hydrateEnv`) and the registry row's layering, key derivation, and error
- *          are exported, nothing else is (`MigrationRunner` left for @stackra/contracts), and the public types
- *          resolve, `BuildFacts` and `PublicPart` among them.
+ *          (`Config`, `Secret`, `env`, `hydrateEnv`), the registry row's layering, key derivation, and error, and the
+ *          running environment's one reader (`readEnvironment`, STA-2844) are exported, nothing else is
+ *          (`MigrationRunner` left for @stackra/contracts), and the public types resolve, `BuildFacts`, `PublicPart`
+ *          and `PlatformEnvironment` among them.
  * Boundary: test only; imports the stand-in barrel through its `#core` alias.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decision 15).
@@ -23,7 +24,9 @@ import type {
   EnvDerivations,
   EnvMap,
   EnvValue,
+  PlatformEnvironment,
   PublicPart,
+  StackraEnvironment,
 } from "#core/index";
 
 describe("@stackra/config", () => {
@@ -34,9 +37,11 @@ describe("@stackra/config", () => {
       "AwsSecretsManagerOptions",
       "Config",
       "ConfigInvalidError",
+      "ENVIRONMENT_VARIABLE",
       "EphemeralSignerDriver",
       "KmsSignerDriver",
       "MemorySecretStoreDriver",
+      "SAFETY_CRITICAL_VARIABLES",
       "Secret",
       "SecretsConfig",
       "SecretsConfig$",
@@ -44,10 +49,13 @@ describe("@stackra/config", () => {
       "SignerConfig",
       "SignerConfig$",
       "SignerOptions",
+      "StackraEnvironment",
       "buildConfig",
       "configKey",
       "env",
       "hydrateEnv",
+      "isDeployedEnvironment",
+      "readEnvironment",
     ]);
     expect("MigrationRunner" in config).toBe(false);
   });
@@ -81,5 +89,10 @@ describe("@stackra/config", () => {
     expectTypeOf<BuildFacts["isDevelopment"]>().toEqualTypeOf<boolean>();
     expectTypeOf<ConfigIssue["path"]>().toEqualTypeOf<string>();
     expectTypeOf<EnvValue<string>["parse"]>().returns.toEqualTypeOf<string>();
+    expectTypeOf<PlatformEnvironment["cloud"]>().toEqualTypeOf<string>();
+    expectTypeOf<StackraEnvironment>().toEqualTypeOf<
+      "dev" | "test" | "preview" | "staging" | "production"
+    >();
+    expectTypeOf(config.readEnvironment).returns.toEqualTypeOf<StackraEnvironment>();
   });
 });

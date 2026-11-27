@@ -181,6 +181,7 @@ describe("@stackra/database", () => {
       "AppendOnlySubscriber",
       "AppendOnlyWriteError",
       "CacheInvalidationService",
+      "ConnectionPoolExhaustedError",
       "ConstraintViolatedError",
       "Count",
       "CrudService",

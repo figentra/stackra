@@ -8,6 +8,9 @@
 #          version PR's squash merge; every other run (opening the version PR, a push with nothing new, a dry run) runs
 #          in `release-pr`, which has no reviewer and which the registry never accepts a publish from.
 #          An agent merges the version PR through `pnpm pr:merge` like any PR (ADR 0119 D7 retired by ADR 0468).
+#          `latest` moves only after tools/scripts/consumer-smoke.mjs made an app with `stackra create` from the registry
+#          as a clean consumer, unless runway.yaml `release.npm.promoteLatestAfter` says `immediate` (STA-2874); the
+#          `gate` job reads that value and passes it on.
 #          The registry's trusted publisher row names THIS file, `refs/heads/main` and the `release` environment.
 #          A second path, workflow_dispatch with `prerelease` on main (owner decision D8, stackra-212): the `prerelease`
 #          job publishes only the `packages` filter (default: the five *-config presets) at `<base>-<dist_tag>.<run
@@ -82,13 +85,17 @@ jobs:
       contents: read # read .changeset at the pushed commit
     outputs:
       environment: ${{ steps.pick.outputs.environment }}
+      promote-latest-after: ${{ steps.policy.outputs.promote-latest-after }}
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
           submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
-          sparse-checkout: .changeset
+          sparse-checkout: |
+            .changeset
+            runway.yaml
+          sparse-checkout-cone-mode: false
 
       - name: Pick the environment
         id: pick
@@ -104,6 +111,22 @@ jobs:
           fi
           echo "::notice title=Release gate::${pending} pending changesets, environment ${environment}"
           echo "environment=${environment}" >> "$GITHUB_OUTPUT"
+
+      # STA-2874: when `latest` moves is the root runway's `release.npm.promoteLatestAfter` (consumer-smoke when unset).
+      # yq is on the runner image; a value runway-npm.yml would not accept stops the release here.
+      - name: Read the promotion policy
+        id: policy
+        run: |
+          policy="$(yq '.release.npm.promoteLatestAfter // "consumer-smoke"' runway.yaml)"
+          case "$policy" in
+            consumer-smoke | immediate) ;;
+            *)
+              echo "::error title=Release gate::runway.yaml release.npm.promoteLatestAfter is '${policy}', not consumer-smoke or immediate"
+              exit 1
+              ;;
+          esac
+          echo "::notice title=Release gate::latest moves after: ${policy}"
+          echo "promote-latest-after=${policy}" >> "$GITHUB_OUTPUT"
 
   release:
     name: Release
@@ -125,6 +148,10 @@ jobs:
       dry-run: ${{ inputs.dry_run == true }}
       # The one place the registry is set: runway.yaml `providers.npm.registry` (ADR 0453).
       registry: https://npm.stackra.figentra.com/
+      # STA-2874: runway.yaml `release.npm.promoteLatestAfter`, read by the gate; with consumer-smoke, `latest` moves
+      # only after a new app made from the registry alone installs, generates, type-checks, tests and commits.
+      promote-latest-after: ${{ needs.gate.outputs.promote-latest-after }}
+      consumer-smoke: node tools/scripts/consumer-smoke.mjs
     secrets:
       app-id: ${{ secrets.STACKRA_BOT_APP_ID }}
       app-private-key: ${{ secrets.STACKRA_BOT_PRIVATE_KEY }}

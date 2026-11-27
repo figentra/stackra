@@ -7,8 +7,13 @@
  *          @stackra/iam). A version already on the registry counts only with the content packed here (its `dist.integrity`);
  *          the registry's answers are read three ways (present, absent, unavailable). Every version goes out under the
  *          holding tag and `latest` moves only after the dependency closure holds on the registry (STA-2778: 0.33.1 left
- *          @stackra/cli on `latest` pinning eight versions that answered 404).
- * Boundary: the two scripts are cut out of the workflow text and run as written; `curl` is a stand-in registry (status
+ *          @stackra/cli on `latest` pinning eight versions that answered 404), and with `promote-latest-after:
+ *          consumer-smoke` only after the caller's clean-consumer command passed (STA-2874): the release job then moves
+ *          no tag and leaves the moves for the `consumer-smoke` job (its script, `registry-smoke.sh`) and the `promote`
+ *          job (`registry-promote.sh`), and the smoke never runs in the job that holds the OIDC request token or the App
+ *          token. The fixture runs `immediate` unless a test asks for the smoke, so the tests before STA-2874 keep their
+ *          meaning.
+ * Boundary: the scripts are cut out of the workflow text and run as written; `curl` is a stand-in registry (status
  *           codes, version documents with an integrity, packuments with their dist-tags, dist-tag writes, timeouts) and
  *           `pnpm publish` records the tarball and the tag it was given.
  *           Every other `pnpm` command is the real one. The children the script starts (curl, pnpm, node, git) read the
@@ -50,6 +55,17 @@ function heredoc(file, tag) {
 
 const PLAN_SCRIPT = heredoc("registry-plan.mjs", "MJS");
 const PUBLISH_SCRIPT = heredoc("registry-publish.sh", "SH");
+const SMOKE_SCRIPT = heredoc("registry-smoke.sh", "SH");
+const PROMOTE_SCRIPT = heredoc("registry-promote.sh", "SH");
+
+/** A job of runway-npm.yml, from its id line to the next job's. */
+function job(id) {
+  const start = WORKFLOW.indexOf(`\n  ${id}:\n`);
+  assert.notEqual(start, -1, `runway-npm.yml has no job ${id}`);
+  const rest = WORKFLOW.slice(start + 1);
+  const next = rest.slice(1).search(/\n {2}[a-z][a-z-]*:\n/);
+  return next === -1 ? rest : rest.slice(0, next + 1);
+}
 
 /** The sha512 integrity of a file, as a registry writes `dist.integrity`. */
 const integrityOf = (file) =>
@@ -336,6 +352,8 @@ function fixture(packages) {
   }
   writeFileSync(join(root, "registry-plan.mjs"), PLAN_SCRIPT);
   writeFileSync(join(root, "registry-publish.sh"), PUBLISH_SCRIPT);
+  writeFileSync(join(root, "registry-smoke.sh"), SMOKE_SCRIPT);
+  writeFileSync(join(root, "registry-promote.sh"), PROMOTE_SCRIPT);
   const tools = realTools();
   const git = (...args) => execFileSync(tools.git, args, { cwd: root, stdio: "ignore" });
   git("init", "-q");
@@ -363,6 +381,7 @@ function fixture(packages) {
     ACTIONS_ID_TOKEN_REQUEST_TOKEN: "request-token",
     ACTIONS_ID_TOKEN_REQUEST_URL: "https://actions.test/token?api=1",
     PUBLISH_RETRY_DELAY: "0",
+    PROMOTE_LATEST_AFTER: "immediate",
     GIT_AUTHOR_NAME: "t",
     GIT_AUTHOR_EMAIL: "t@t",
     GIT_COMMITTER_NAME: "t",
@@ -449,12 +468,28 @@ function fixture(packages) {
         integrity ?? integrityOf(join(dir, tarball)),
       );
     },
-    /** Run the script; `extraEnv` adds to its environment and `input` is its standard input. */
+    /** The release job's promotion plan (STA-2874): its folder, the moves and their sha256, or null when none. */
+    promotion() {
+      const dir = join(root, "registry-promotion");
+      if (!existsSync(join(dir, "moves.tsv"))) return null;
+      const moves = readFileSync(join(dir, "moves.tsv"));
+      return {
+        dir,
+        moves: moves.toString("utf8").trim().split("\n"),
+        release: readFileSync(join(dir, "release.tsv"), "utf8").trim().split("\n"),
+        sha256: createHash("sha256").update(moves).digest("hex"),
+      };
+    },
+    /**
+     * Run a script; `extraEnv` adds to its environment and `input` is its standard input. `script` is the release job's
+     * `registry-publish.sh` unless named: `registry-smoke.sh` (the consumer-smoke job) or `registry-promote.sh` (promote).
+     */
     run({
       extraEnv = {},
       input = "standard input that no child of the script may swallow\n",
+      script = "registry-publish.sh",
     } = {}) {
-      const result = spawnSync("bash", [join(root, "registry-publish.sh")], {
+      const result = spawnSync("bash", [join(root, script)], {
         cwd: root,
         env: { ...env, ...extraEnv },
         encoding: "utf8",
@@ -1606,4 +1641,336 @@ test("the dry run walks the closure too and stops on a gap, with nothing publish
     );
     assert.deepEqual(result.distTags, []);
   });
+});
+
+/**
+ * A consumer smoke for the fixture (STA-2874): a bash script that records what it was given (its environment, its
+ * working folder, its HOME's contents and the release file) under `<root>/smoke-<n>`, appends `smoke` to the shims'
+ * event log, and exits `status`. It names its paths literally: the script's environment does not reach it.
+ */
+function smoke(run, status = 0) {
+  const script = join(run.root, "smoke.sh");
+  writeFileSync(
+    script,
+    [
+      "set -u",
+      `n=$(ls -d "${run.root}"/smoke-* 2>/dev/null | wc -l)`,
+      `out="${run.root}/smoke-$((n + 1))"`,
+      'mkdir -p "$out"',
+      'env | sort > "$out/env"',
+      'pwd > "$out/cwd"',
+      'ls -A "$HOME" > "$out/home"',
+      'cat "$RUNWAY_RELEASE" > "$out/release"',
+      `echo smoke >> "${run.state}/events.log"`,
+      `exit ${status}`,
+      "",
+    ].join("\n"),
+  );
+  return `bash ${script}`;
+}
+
+/** What each smoke run recorded, oldest first. */
+function smokeRuns(run) {
+  const runs = [];
+  for (let n = 1; existsSync(join(run.root, `smoke-${n}`)); n++) {
+    const read = (file) => readFileSync(join(run.root, `smoke-${n}`, file), "utf8");
+    runs.push({
+      env: Object.fromEntries(
+        read("env")
+          .trim()
+          .split("\n")
+          .map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]),
+      ),
+      cwd: read("cwd").trim(),
+      home: read("home").trim(),
+      release: read("release").trim().split("\n"),
+    });
+  }
+  return runs;
+}
+
+/** The release job with the smoke: publish, and leave the moves for the consumer-smoke and promote jobs. */
+const deferred = (run, command) =>
+  run.run({ extraEnv: { PROMOTE_LATEST_AFTER: "consumer-smoke", CONSUMER_SMOKE: command } });
+
+/** The consumer-smoke job's script, with the job's command, and anything `extraEnv` adds to the step's environment. */
+const smokeJob = (run, command, extraEnv = {}) =>
+  run.run({ script: "registry-smoke.sh", extraEnv: { CONSUMER_SMOKE: command, ...extraEnv } });
+
+/** The promote job's script with the release job's sha256 output (or `sha256`). */
+const promoteJob = (run, sha256 = run.promotion()?.sha256 ?? "") =>
+  run.run({ script: "registry-promote.sh", extraEnv: { PROMOTION_SHA256: sha256 } });
+
+test("with consumer-smoke, the release job moves no dist-tag, runs no smoke and leaves the moves for the next jobs", () => {
+  withFixture(CHAIN, (run) => {
+    const result = deferred(run, smoke(run));
+    assert.equal(result.status, 0, result.output);
+    assert.deepEqual([...result.published].sort(), ["@t/a", "@t/b", "@t/c", "@t/z"]);
+    assert.deepEqual(result.distTags, [], "no dist-tag moves in the job that holds the tokens");
+    assert.equal(smokeRuns(run).length, 0, "the smoke never runs in the release job");
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { "release-pending": "1.0.0" });
+    const promotion = run.promotion();
+    assert.deepEqual([...promotion.moves].sort(), [
+      "@t/a\t1.0.0\tlatest\tdrop",
+      "@t/b\t1.0.0\tlatest\tdrop",
+      "@t/c\t1.0.0\tlatest\tdrop",
+      "@t/z\t1.0.0\tlatest\tdrop",
+    ]);
+    assert.deepEqual([...promotion.release].sort(), [
+      "@t/a\t1.0.0",
+      "@t/b\t1.0.0",
+      "@t/c\t1.0.0",
+      "@t/z\t1.0.0",
+    ]);
+    assert.match(result.output, /4 moves wait for the consumer-smoke job/);
+  });
+});
+
+test("the release job's script cannot start the smoke: it holds no env -i and never runs the command", () => {
+  assert.doesNotMatch(PUBLISH_SCRIPT, /\$CONSUMER_SMOKE"/);
+  assert.doesNotMatch(PUBLISH_SCRIPT, /\benv -i\b/);
+  assert.match(SMOKE_SCRIPT, /bash -c "\$CONSUMER_SMOKE"/);
+});
+
+test("the smoke job runs the command as a clean consumer: only PATH, LANG, an empty new HOME, the release and registry", () => {
+  withFixture(CHAIN, (run) => {
+    const command = smoke(run);
+    assert.equal(deferred(run, command).status, 0);
+    const result = smokeJob(run, command, {
+      GITHUB_TOKEN: "read-only-token",
+      CI: "true",
+      GITHUB_ACTIONS: "true",
+    });
+    assert.equal(result.status, 0, result.output);
+    const [{ env, cwd, home, release }] = smokeRuns(run);
+    assert.deepEqual(
+      Object.keys(env)
+        .filter((key) => !["_", "PWD", "SHLVL", "OLDPWD"].includes(key))
+        .sort(),
+      ["HOME", "LANG", "PATH", "RUNWAY_REGISTRY", "RUNWAY_RELEASE"],
+    );
+    assert.equal(env.RUNWAY_REGISTRY, REGISTRY);
+    assert.notEqual(env.HOME, process.env.HOME);
+    assert.equal(home, "", "HOME starts empty: no .npmrc, no cache, no store");
+    assert.equal(cwd, run.root);
+    assert.deepEqual(release.sort(), ["@t/a\t1.0.0", "@t/b\t1.0.0", "@t/c\t1.0.0", "@t/z\t1.0.0"]);
+    assert.match(result.output, /Consumer smoke passed; the promote job moves the dist-tags/);
+  });
+});
+
+test("after a passing smoke the promote job moves the release job's dist-tags: last publish < smoke < first move", () => {
+  withFixture(CHAIN, (run) => {
+    const command = smoke(run);
+    assert.equal(deferred(run, command).status, 0);
+    assert.equal(smokeJob(run, command).status, 0);
+    const result = promoteJob(run);
+    assert.equal(result.status, 0, result.output);
+    const lastPublish = result.order.findLastIndex((line) => line.startsWith("publish "));
+    const smokeAt = result.order.indexOf("smoke");
+    const firstMove = result.order.findIndex((line) => line.startsWith("PUT "));
+    assert.ok(lastPublish < smokeAt && smokeAt < firstMove, result.order.join("\n"));
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+    assert.match(
+      result.output,
+      /Dist-tags: 4 moved after the consumer smoke; release-pending dropped/,
+    );
+    for (const line of result.argv)
+      assert.ok(!line.includes("publish-token") && !line.includes("request-token"), line);
+  });
+});
+
+test("a failed smoke fails its job with every version under release-pending; a re-run that passes lets promote move latest", () => {
+  withFixture(CHAIN, (run) => {
+    assert.equal(deferred(run, smoke(run, 1)).status, 0);
+    const failed = smokeJob(run, smoke(run, 1));
+    assert.equal(failed.status, 1);
+    assert.match(
+      failed.output,
+      /Consumer smoke failed::a clean consumer could not use this release/,
+    );
+    assert.match(failed.output, /latest has not moved/);
+    assert.deepEqual(failed.distTags, []);
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { "release-pending": "1.0.0" });
+    // Re-run the failed jobs: the smoke again, then promote; nothing is published again.
+    assert.equal(smokeJob(run, smoke(run)).status, 0);
+    const promoted = promoteJob(run);
+    assert.equal(promoted.status, 0, promoted.output);
+    assert.equal(smokeRuns(run).length, 2);
+    assert.equal(promoted.published.length, 4, "nothing is published twice");
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+  });
+});
+
+test("the promote job moves nothing when the plan is not the release job's, has no sha256, or holds a bad line", () => {
+  withFixture(CHAIN, (run) => {
+    assert.equal(deferred(run, smoke(run)).status, 0);
+    const { dir, sha256 } = run.promotion();
+    const moves = join(dir, "moves.tsv");
+    const original = readFileSync(moves, "utf8");
+    // Another plan under the artifact's name (a downgrade of latest): its sha256 is not the release job's output.
+    writeFileSync(moves, original.replaceAll("1.0.0", "0.9.0"));
+    const forged = promoteJob(run, sha256);
+    assert.equal(forged.status, 1);
+    assert.match(forged.output, /not the one the release job wrote/);
+    writeFileSync(moves, original);
+    for (const missing of ["", "not-a-digest"]) {
+      const result = promoteJob(run, missing);
+      assert.equal(result.status, 1);
+      assert.match(result.output, /no sha256 from the release job/);
+    }
+    // A line that is not name, version, tag, drop stops before any tag moves, even with a matching digest.
+    writeFileSync(moves, `${original}@t/a\t1.0.0\tlatest;rm\tdrop\n`);
+    const bad = promoteJob(run, createHash("sha256").update(readFileSync(moves)).digest("hex"));
+    assert.equal(bad.status, 1);
+    assert.match(bad.output, /is not name, version, tag, drop/);
+    assert.deepEqual(bad.distTags, []);
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { "release-pending": "1.0.0" });
+  });
+});
+
+test("the smoke job stops without a release list or a command", () => {
+  withFixture(CHAIN, (run) => {
+    const none = smokeJob(run, smoke(run));
+    assert.equal(none.status, 1);
+    assert.match(none.output, /the release job left no release list/);
+    assert.equal(deferred(run, smoke(run)).status, 0);
+    const empty = smokeJob(run, "");
+    assert.equal(empty.status, 1);
+    assert.match(empty.output, /no consumer-smoke command is set/);
+    assert.equal(smokeRuns(run).length, 0);
+  });
+});
+
+test("the workflow runs the smoke in a job with no credential, and promotes in the release environment after it", () => {
+  const smokeJobText = job("consumer-smoke");
+  assert.match(smokeJobText, /needs: release\n/);
+  assert.match(smokeJobText, /if: needs\.release\.outputs\.promotion-due == 'true'\n/);
+  assert.match(smokeJobText, /permissions:\n {6}contents: read #/);
+  assert.doesNotMatch(
+    smokeJobText,
+    /environment:|id-token|secrets\.|steps\.bot|app-id|private-key/,
+  );
+  assert.match(smokeJobText, /persist-credentials: false/);
+  assert.match(smokeJobText, /cache: false/);
+  assert.match(smokeJobText, /bash "\$RUNNER_TEMP\/registry-smoke\.sh"/);
+
+  const promote = job("promote");
+  assert.match(promote, /needs: \[release, consumer-smoke\]/);
+  assert.match(
+    promote,
+    /if: needs\.release\.outputs\.promotion-due == 'true' && needs\.consumer-smoke\.result == 'success'\n/,
+  );
+  assert.match(promote, /environment: \$\{\{ inputs\.environment \}\}/);
+  assert.match(promote, /permissions:\n {6}id-token: write #[^\n]*\n {4}steps:/);
+  assert.doesNotMatch(promote, /actions\/checkout|mise-action|CONSUMER_SMOKE|secrets\./);
+  assert.match(promote, /PROMOTION_SHA256: \$\{\{ needs\.release\.outputs\.promotion-sha256 \}\}/);
+
+  const release = job("release");
+  assert.match(release, /promotion-sha256: \$\{\{ steps\.promotion\.outputs\.sha256 \}\}/);
+  assert.match(release, /sha256sum "\$dir\/moves\.tsv"/);
+  assert.match(release, /name: registry-promotion\n/);
+  assert.doesNotMatch(release, /registry-smoke\.sh/);
+});
+
+test("immediate moves the dist-tags once the closure holds and runs no smoke", () => {
+  withFixture(CHAIN, (run) => {
+    const result = run.run({
+      extraEnv: { PROMOTE_LATEST_AFTER: "immediate", CONSUMER_SMOKE: smoke(run, 1) },
+    });
+    assert.equal(result.status, 0, result.output);
+    assert.equal(smokeRuns(run).length, 0);
+    for (const name of ["a", "b", "c", "z"])
+      assert.deepEqual(run.tagsOf(name), { latest: "1.0.0" });
+  });
+});
+
+test("immediate leaves no promotion plan, so neither later job runs", () => {
+  withFixture(CHAIN, (run) => {
+    const result = run.run({ extraEnv: { PROMOTE_LATEST_AFTER: "immediate" } });
+    assert.equal(result.status, 0, result.output);
+    assert.equal(run.promotion(), null);
+  });
+});
+
+test("a run with no dist-tag to move leaves no promotion plan, so no smoke runs", () => {
+  withFixture(CHAIN, (run) => {
+    const command = smoke(run);
+    const first = deferred(run, command);
+    assert.equal(first.status, 0, first.output);
+    assert.equal(smokeJob(run, command).status, 0);
+    assert.equal(promoteJob(run).status, 0);
+    rmSync(run.promotion().dir, { recursive: true });
+    const again = deferred(run, command);
+    assert.equal(again.status, 0, again.output);
+    assert.deepEqual(again.published, first.published, "nothing new was published");
+    assert.equal(run.promotion(), null, "the second run had nothing to move");
+    assert.match(again.output, /Dist-tags: 0 moved after the closure check/);
+  });
+});
+
+test("consumer-smoke without a command, unset or empty, and an unknown mode stop the run before anything is packed or published", () => {
+  for (const extraEnv of [
+    { PROMOTE_LATEST_AFTER: "consumer-smoke" },
+    { PROMOTE_LATEST_AFTER: "consumer-smoke", CONSUMER_SMOKE: "" },
+    { PROMOTE_LATEST_AFTER: "", CONSUMER_SMOKE: "" },
+    { PROMOTE_LATEST_AFTER: "later", CONSUMER_SMOKE: "true" },
+  ])
+    withFixture(CHAIN, (run) => {
+      const result = run.run({ extraEnv });
+      assert.equal(result.status, 1, JSON.stringify(extraEnv));
+      assert.deepEqual(result.published, []);
+      assert.doesNotMatch(result.output, /Preflight:/);
+      assert.match(
+        result.output,
+        extraEnv.PROMOTE_LATEST_AFTER === "later"
+          ? /promote-latest-after must be consumer-smoke or immediate, not 'later'/
+          : /no consumer-smoke command is set/,
+      );
+    });
+});
+
+test("the dry run says when latest would move and runs no smoke", () => {
+  withFixture(CHAIN, (run) => {
+    const command = smoke(run);
+    const result = run.run({
+      extraEnv: {
+        DRY_RUN: "true",
+        PROMOTE_LATEST_AFTER: "consumer-smoke",
+        CONSUMER_SMOKE: command,
+      },
+    });
+    assert.equal(result.status, 0, result.output);
+    assert.equal(smokeRuns(run).length, 0);
+    assert.ok(
+      result.output.includes(
+        `Dry run: latest would move only after the consumer-smoke job passed: ${command}`,
+      ),
+      result.output,
+    );
+    const immediate = run.run({ extraEnv: { DRY_RUN: "true", PROMOTE_LATEST_AFTER: "immediate" } });
+    assert.match(immediate.output, /latest would move once the closure held on the registry/);
+  });
+});
+
+test("the workflow declares both inputs, consumer-smoke by default, and hands them to the script through the environment", () => {
+  assert.match(
+    WORKFLOW,
+    /promote-latest-after:\n {8}description: >-[\s\S]*?type: string\n {8}default: consumer-smoke\n/,
+  );
+  assert.match(
+    WORKFLOW,
+    /consumer-smoke:\n {8}description: >-[\s\S]*?type: string\n {8}default: ""\n/,
+  );
+  assert.equal(
+    WORKFLOW.match(/PROMOTE_LATEST_AFTER: \$\{\{ inputs\.promote-latest-after \}\}/g)?.length,
+    2,
+  );
+  assert.equal(WORKFLOW.match(/CONSUMER_SMOKE: \$\{\{ inputs\.consumer-smoke \}\}/g)?.length, 3);
+  for (const script of [PUBLISH_SCRIPT, SMOKE_SCRIPT, PROMOTE_SCRIPT])
+    assert.doesNotMatch(script, /\$\{\{/);
 });

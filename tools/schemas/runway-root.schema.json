@@ -1095,6 +1095,17 @@
             "minLength": 1
           }
         },
+        "npm": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The package release (runway-npm.yml, STA-2874). The caller of runway-npm.yml reads it and passes it on.",
+          "properties": {
+            "promoteLatestAfter": {
+              "enum": ["consumer-smoke", "immediate"],
+              "description": "When `latest` (and every other dist-tag) moves to a new release. `consumer-smoke` (the default when unset): only after the caller's clean-consumer smoke passed against the release on the registry; until then every version stays under `release-pending`. `immediate`: as soon as the release's dependency closure holds on the registry."
+            }
+          }
+        },
         "promote": {
           "type": "object",
           "additionalProperties": false,
@@ -1726,10 +1737,10 @@
         },
         "infra": {
           "type": "object",
-          "description": "Dev only: the containers `stackra dev` brings (gateway, postgres, valkey, minio, zitadel, mailpit, otel-lgtm). A driver set to `memory` in every service removes its container.",
+          "description": "Dev only: what `stackra dev` runs beside the code. `gateway` and `postgres` are Encore's own (`encore run` starts them); every other block is a container of the dev compose (`.stackra/dev/compose.yaml`), by its `kind` (the block name when absent): valkey, seaweedfs, mailpit, clamav, otel-lgtm, or any image that spells `containerPorts`. Each port is the host port, written here, moved by lane unless `perLane: false`; `when: opt-in` starts only with `stackra dev --infra <name>`.",
           "additionalProperties": {
             "type": "object",
-            "description": "One container: image, ports and when it starts."
+            "description": "One container: `image` (pinned by digest), its host ports, `perLane`, `when` (always or opt-in) and, by kind, `buckets` (seaweedfs) or `containerPorts`, `scheme`, `command` and `environment` (any other image)."
           }
         },
         "lanes": {

@@ -1,0 +1,69 @@
+{
+  "name": "@stackra/starter",
+  "version": "0.33.1",
+  "private": false,
+  "description": "The starter `stackra create` writes: the stackra-template at a pinned commit, packed as dist/template.tgz and released in the @stackra/* fixed group, so every CLI version has a starter of its own version.",
+  "keywords": [
+    "create",
+    "developer",
+    "scaffold",
+    "stackra",
+    "starter",
+    "template"
+  ],
+  "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/starter#readme",
+  "bugs": {
+    "url": "https://github.com/figentra/stackra/issues"
+  },
+  "license": "MIT",
+  "author": "Figentra (https://figentra.com)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/figentra/stackra.git",
+    "directory": "packages/developer/starter"
+  },
+  "files": [
+    "dist/template.tgz",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "node scripts/build-starter.mjs",
+    "template:bump": "node scripts/build-starter.mjs --bump",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "clean": "rm -rf dist coverage .turbo"
+  },
+  "devDependencies": {
+    "@stackra/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "oxfmt": "catalog:quality",
+    "oxlint": "catalog:quality",
+    "vitest": "catalog:quality"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "stackra": {
+    "kind": "package",
+    "tier": "lib",
+    "category": "developer",
+    "runtimes": [
+      "node"
+    ],
+    "summary": "Read by `stackra create` at the CLI's own version; never installed into a workspace. Move the template commit with `pnpm --filter @stackra/starter template:bump`.",
+    "template": {
+      "repository": "https://github.com/stackra-inc/stackra-template.git",
+      "commit": "d78a4fa8d52865e4cdaa22333d8d19934eddcf46"
+    }
+  }
+}

@@ -11,9 +11,9 @@ import type { EDGE_DRIVERS } from "#core/constants/edge-drivers.constant";
 
 declare module "@stackra/container" {
   interface DriverRegistry {
-    /** The driver names of `EdgeSigningKeys` (`memory`, `env`). */
+    /** The driver names of `EdgeSigningKeys` (`memory`, `env`, `secrets`). */
     "app.EdgeSigningKeys": (typeof EDGE_DRIVERS.keys)[number];
-    /** The driver names of `EdgeNonceStore` (`memory`). */
+    /** The driver names of `EdgeNonceStore` (`memory`, `cache`). */
     "app.EdgeNonceStore": (typeof EDGE_DRIVERS.nonces)[number];
   }
 }

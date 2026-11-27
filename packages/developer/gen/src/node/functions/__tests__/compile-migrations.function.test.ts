@@ -8,10 +8,16 @@
  *          check (`migration_import_forbidden` for a value, a type-only and a dynamic import, before the file is
  *          loaded), and the merged `Blueprint` augmentation of an own macro, through which a TypeScript program accepts
  *          the call and rejects a wrong argument, and `module_key_collision` for an own module with migrations whose
- *          key a made-up declared package's migrations need (STA-2161).
+ *          key a made-up declared package's migrations need (STA-2161); the migration lock (STA-2160): the lock
+ *          it returns, a locked migration changed or gone refused, a new one added after the lock passing, a locked
+ *          migration a newer rule would refuse still compiling with a `migration_rule_frozen` warning, and every rule
+ *          applying to an unlocked one; and the ADR 0159 classes it returns with a `migration_banned` refusal for a
+ *          data write unless the lock names its migration, and an empty classification for a service with no
+ *          migration (STA-2866).
  * Boundary: test only; writes under the OS temp folder and removes it. No workspace dependency is used.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305.
+ * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305; ADR 0159 decision 3 (STA-2866);
+ *                     STA-2160.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -24,6 +30,7 @@ import type * as TypeScript from "typescript6";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { compileMigrations } from "#node/functions/compile-migrations.function";
+import { migrationSha256 } from "#node/functions/migration-sha256.function";
 
 /** The roots written by this file. */
 const roots: string[] = [];
@@ -54,11 +61,14 @@ const BASE: Readonly<Record<string, string>> = {
     "    blueprint[stem.charAt(0).toLowerCase() + stem.slice(1)] = (...args) => new M().apply(blueprint, ...args);",
     "  }",
     "  const tables = [];",
-    "  new type().up({ create: (table, define) => { tables.push(table); define(blueprint); } });",
-    "  return {",
-    "    after: type.after ?? [],",
-    "    steps: tables.map((table) => ({ sql: ['create table ' + table], transactional: true, inverse: false })),",
-    "  };",
+    "  const raws = [];",
+    "  new type().up({",
+    "    create: (table, define) => { tables.push(table); define(blueprint); },",
+    "    sql: (statement) => { raws.push(statement); },",
+    "  });",
+    "  const steps = tables.map((table) => ({ sql: ['create table ' + table], transactional: true, inverse: false }));",
+    "  if (raws.length > 0) steps.push({ sql: raws, transactional: true, inverse: false });",
+    "  return { after: type.after ?? [], steps };",
     "};",
     "",
   ].join("\n"),
@@ -349,5 +359,213 @@ describe("compileMigrations", () => {
   it("writes no blueprint file when the service has no own macro", async () => {
     const { files } = await compileMigrations(host(), serviceIr(["shop"]));
     expect(files.some((file) => file.path.endsWith("blueprint.ts"))).toBe(false);
+  });
+
+  /** Each migration takes the highest class of its statements; runway reads the document gen writes from it. */
+  it("returns the ADR 0159 class of every migration (STA-2866)", async () => {
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-drop-note.migration.ts":
+        migration("DropNote", 'schema.sql("alter table ai.agents drop column note");'),
+    });
+    const { safety, errors } = await compileMigrations(root, serviceIr(["shop"]));
+    expect(errors).toEqual([]);
+    expect(
+      safety?.migrations.map((row) => [row.id, row.class, row.destructive, row.files]),
+    ).toEqual([
+      ["tenancy.0001_create_tenants", "additive", false, ["0001_tenancy_0001_create_tenants"]],
+      ["ai.0001_create_agents", "additive", false, ["0002_ai_0001_create_agents"]],
+      ["ai.0002_drop_note", "contract", true, ["0003_ai_0002_drop_note"]],
+    ]);
+  });
+
+  /** "No migration" is a classification too, so runway can tell it from a checkout where gen has not run. */
+  it("returns an empty classification for a service with no migration (STA-2866)", async () => {
+    const { files, errors, safety } = await compileMigrations(host(), {
+      ...serviceIr([]),
+      packages: [],
+    });
+    expect([files, errors]).toEqual([[], []]);
+    expect(safety).toEqual({ schema: "stackra.migration-safety/v1", migrations: [] });
+  });
+
+  /** A data write is a queue job, never a migration: refused, and no file is written. */
+  it("refuses a migration that writes data with migration_banned (STA-2866)", async () => {
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts": migration(
+        "Backfill",
+        'schema.sql("update ai.agents set note = 1");',
+      ),
+    });
+    const { files, errors } = await compileMigrations(root, serviceIr(["shop"]));
+    expect(files).toEqual([]);
+    expect(errors.map((error) => [error.code, error.file, error.subject])).toEqual([
+      [
+        "migration_banned",
+        "@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts",
+        "ai.0002_backfill step 1 statement 1",
+      ],
+    ]);
+  });
+
+  /** A migration the committed lock names may already be applied: its banned statement is classified, not refused. */
+  it("classifies a banned statement in a locked migration instead of refusing it (STA-2866)", async () => {
+    const { lock } = await compileMigrations(host(), serviceIr(["shop"]));
+    const backfill = {
+      id: "ai.0002_backfill",
+      sha256: migrationSha256({
+        after: [],
+        steps: [{ sql: ["update ai.agents set note = 1"], transactional: true, inverse: false }],
+      }),
+    };
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts": migration(
+        "Backfill",
+        'schema.sql("update ai.agents set note = 1");',
+      ),
+    });
+    const { files, errors, safety } = await compileMigrations(root, serviceIr(["shop"]), {
+      locked: [...(lock ?? []), backfill],
+    });
+    expect(errors).toEqual([]);
+    expect(files.length).toBeGreaterThan(0);
+    expect(safety?.migrations.at(-1)).toMatchObject({
+      id: "ai.0002_backfill",
+      class: "banned",
+      destructive: true,
+    });
+  });
+});
+
+/**
+ * The fake `@stackra/database` of a later version that adds an authoring rule: a table whose name starts with
+ * `legacy_` is refused, or, for a frozen migration, reported in `warnings` while it compiles as before.
+ */
+const RULED_DATABASE = [
+  "export class Macro {}",
+  "export const compileMigration = (type, options) => {",
+  "  const tables = [];",
+  "  new type().up({ create: (table) => { tables.push(table); } });",
+  "  const broken = tables.filter((table) => table.startsWith('legacy_')).map((table) => table + ': a newer rule');",
+  "  if (broken.length > 0 && options.frozen !== true) throw new TypeError(broken[0]);",
+  "  return {",
+  "    after: type.after ?? [],",
+  "    steps: tables.map((table) => ({ sql: ['create table ' + table], transactional: true, inverse: false })),",
+  "    ...(options.frozen === true ? { warnings: broken } : {}),",
+  "  };",
+  "};",
+  "",
+].join("\n");
+
+/** The member's own `shop` migration that creates `table`. */
+const ownShop = (table: string): Record<string, string> => ({
+  "src/modules/shop/database/migrations/0001-create-shops.migration.ts": migration(
+    "CreateShops",
+    `schema.create("${table}", () => {});`,
+  ),
+});
+
+describe("compileMigrations under the migration lock (STA-2160)", () => {
+  it("returns the lock: each migration's id and SHA-256, in apply order", async () => {
+    const { lock, errors } = await compileMigrations(host(ownShop("shops")), serviceIr(["shop"]));
+    expect(errors).toEqual([]);
+    expect(lock?.map((entry) => entry.id)).toEqual([
+      "tenancy.0001_create_tenants",
+      "ai.0001_create_agents",
+      "shop.0001_create_shops",
+    ]);
+    for (const entry of lock ?? []) expect(entry.sha256).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("passes the lock it wrote, and keeps passing it when a new migration is added after", async () => {
+    const root = host(ownShop("shops"));
+    const first = await compileMigrations(root, serviceIr(["shop"]));
+    const again = await compileMigrations(root, serviceIr(["shop"]), { locked: first.lock ?? [] });
+    expect(again.errors).toEqual([]);
+    expect(again.lock).toEqual(first.lock);
+
+    const grown = host({
+      ...ownShop("shops"),
+      "src/modules/shop/database/migrations/0002-create-carts.migration.ts": migration(
+        "CreateCarts",
+        'schema.create("carts", () => {});',
+      ),
+    });
+    const next = await compileMigrations(grown, serviceIr(["shop"]), { locked: first.lock ?? [] });
+    expect(next.errors).toEqual([]);
+    expect(next.lock?.slice(0, 3)).toEqual(first.lock);
+    expect(next.lock?.at(-1)?.id).toBe("shop.0002_create_carts");
+  });
+
+  it("refuses a locked migration whose source changed, and writes nothing", async () => {
+    const { lock } = await compileMigrations(host(ownShop("shops")), serviceIr(["shop"]));
+    const edited = await compileMigrations(host(ownShop("stores")), serviceIr(["shop"]), {
+      locked: lock ?? [],
+    });
+    expect(edited.files).toEqual([]);
+    expect(edited.lock).toBeUndefined();
+    expect(edited.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["migration_locked_changed", "shop.0001_create_shops"],
+    ]);
+  });
+
+  it("refuses a locked migration that is gone", async () => {
+    const { lock } = await compileMigrations(host(ownShop("shops")), serviceIr(["shop"]));
+    const gone = await compileMigrations(host(), serviceIr(["shop"]), { locked: lock ?? [] });
+    expect(gone.files).toEqual([]);
+    expect(gone.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["migration_locked_missing", "shop.0001_create_shops"],
+    ]);
+  });
+
+  it("refuses a lock whose migrations are all gone", async () => {
+    const root = mkdtempSync(join(tmpdir(), "stackra-compile-migrations-"));
+    roots.push(root);
+    writeFileSync(join(root, "package.json"), '{"name":"@acme/shop","type":"module"}');
+    const { errors, files } = await compileMigrations(
+      root,
+      { ...serviceIr(["shop"]), packages: [] },
+      { locked: [{ id: "shop.0001_create_shops", sha256: "1".repeat(64) }] },
+    );
+    expect(files).toEqual([]);
+    expect(errors.map((error) => error.code)).toEqual(["migration_locked_missing"]);
+  });
+
+  it("still compiles a locked migration a newer rule would refuse, with a warning and the same lock", async () => {
+    // Locked under a database version without the rule.
+    const { lock, files } = await compileMigrations(
+      host(ownShop("legacy_shops")),
+      serviceIr(["shop"]),
+    );
+    const root = host({
+      ...ownShop("legacy_shops"),
+      "node_modules/@stackra/database/index.js": RULED_DATABASE,
+    });
+    const frozen = await compileMigrations(root, serviceIr(["shop"]), { locked: lock ?? [] });
+    expect(frozen.errors).toEqual([]);
+    expect(frozen.lock).toEqual(lock);
+    expect(frozen.files.map((file) => file.content)).toEqual(files.map((file) => file.content));
+    expect(frozen.warnings).toEqual([
+      expect.objectContaining({
+        code: "migration_rule_frozen",
+        severity: "warning",
+        subject: "shop.0001_create_shops",
+      }),
+    ]);
+    expect(frozen.warnings?.[0]?.message).toContain("legacy_shops: a newer rule");
+  });
+
+  it("applies every rule to a migration the lock does not name", async () => {
+    const root = host({
+      ...ownShop("legacy_shops"),
+      "node_modules/@stackra/database/index.js": RULED_DATABASE,
+    });
+    const { lock } = await compileMigrations(host(), serviceIr(["shop"]));
+    const unlocked = await compileMigrations(root, serviceIr(["shop"]), { locked: lock ?? [] });
+    expect(unlocked.files).toEqual([]);
+    expect(unlocked.warnings).toEqual([]);
+    expect(unlocked.errors.map((error) => [error.code, error.subject])).toEqual([
+      ["migration_compile_failed", "shop.0001_create_shops"],
+    ]);
+    expect(unlocked.errors[0]?.message).toContain("legacy_shops: a newer rule");
   });
 });

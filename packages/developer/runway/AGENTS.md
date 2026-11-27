@@ -41,8 +41,18 @@ and only parses and prints; the work stays in the functions it calls.
   `eas build`, `eas update` or a push of a docs deploy branch: tests use fake command runners; a real run is the deploy workflow's (ADR 0352 d6).
 - The `mintlify` provider publishes a docs app's generated `.stackra/site/` to `targets.mintlify.branch`; it reads
   no Mintlify key (the GitHub app deploys the branch) and never pushes `src/` (ADR 0002 amendment, STA-1316).
+- The `cloudflare-workers` provider never smokes by override a version outside the current deployment (Cloudflare routes
+  such a request to the version serving): it stages the new version at 0% first, and every smoke step asserts the
+  answering version is the one under test (`servedVersionProblem`; `x-stackra-version` or `/-/version`, STA-2786).
+  Never drop that assertion or make a status-only smoke pass a step. Only `verify` may accept an answer naming no
+  version (a version older than the proof), and only when Cloudflare's deployment shows the recorded version at 100%.
+  Only a 100% step's deployment message is a bare SHA (`current` reads it); core `rollback()` rolls back every target
+  before it throws.
 - `providers.npm.registry` is the one registry setting (ADR 0453): never hard-code a registry URL in code or a
   member's `publishConfig`; the release workflow passes it to `runway-npm.yml` as its `registry` input.
+- `release.npm.promoteLatestAfter` (`consumer-smoke` | `immediate`) is read by the caller of `runway-npm.yml` (core's
+  `release.yml` gate), not by this package: keep the zod constant, `tools/schemas/runway-root.schema.json` and
+  `schema/root.json` in step (STA-2874).
 - Provider settings are runway data (`targets.<destination>`, `environments.<env>.encore|mobile`, a dedicated
   deployment's own blocks); a provider never hard-codes a branch, channel or profile.
 - Event fan-out is gen's (`.stackra/encore/<member>/events.ts` and a relay service's `relay.ts`), never a runway key:

@@ -3,7 +3,8 @@
  * Purpose: unit tests of `serveRegistry`: a Worker with no signing key, an empty one, an unreadable one or a missing var
  *          answers every route (the health check included) 503 `registry_misconfigured` and logs the cause without the
  *          key, instead of failing with an unhandled error; a configured one serves the registry, serves it again after
- *          a refused request, and imports the signer again when the key changes.
+ *          a refused request, and imports the signer again when the key changes. Every answer, a 503 included, names
+ *          the running version in `x-stackra-version` (the deploy smoke's proof, STA-2786).
  * Boundary: test only; the Worker's bindings are the fakes of `src/__tests__/fixtures`, the signing keys are fresh
  *           ECDSA P-256 keys, no network. The signer is cached per isolate, so the case with the cache still empty runs
  *           first.
@@ -119,6 +120,22 @@ describe("serveRegistry", () => {
     expect(await response.json()).toEqual({});
     expect(await advertisedKeyId(env)).not.toBe("");
     expect(logged).not.toHaveBeenCalled();
+  });
+
+  it("names the running version on every answer, a misconfigured 503 included", async () => {
+    const version = "dc8dcd28-271b-4367-9840-6c244f84cb40";
+    const env = envOf({ REGISTRY_SIGNING_KEY: newPem(), CF_VERSION_METADATA: { id: version } });
+    for (const path of ["/-/ping", "/-/npm/v1/keys", "/@stackra/absent"]) {
+      const response = await serve(env, path);
+      expect(response.headers.get("x-stackra-version")).toBe(version);
+    }
+    const broken = await serve(envOf({ CF_VERSION_METADATA: { id: version } }));
+    expect(broken.status).toBe(503);
+    expect(broken.headers.get("x-stackra-version")).toBe(version);
+    // Without the binding (a local run), no header is invented.
+    expect(
+      (await serve(envOf({ REGISTRY_SIGNING_KEY: newPem() }))).headers.has("x-stackra-version"),
+    ).toBe(false);
   });
 
   it("imports the signer again when the key changes, and keeps it while the key stays", async () => {
