@@ -121,7 +121,7 @@
             },
             "region": {
               "type": "string",
-              "description": "Deprecated: use `environments.<env>.region` (ADR 0524); `runway validate` warns for one release. The one region (ADR 0186).",
+              "description": "Deprecated: use `environments.<env>.region` (any provider region id, or a preset; ADR 0524); `runway validate` warns for one release. The one region (ADR 0186).",
               "examples": ["me-central-1"]
             },
             "accounts": {
@@ -1931,8 +1931,10 @@
           "$ref": "#/$defs/topology"
         },
         "region": {
-          "enum": ["me", "eu", "ksa"],
-          "description": "The tenant region this environment lives in (OS 0001): `me` (AWS me-central-1), `eu` (AWS eu-central-1) or `ksa` (GCP me-central2). Required on staging and production of a product runway (`runway validate`). figentra/infra places the environment in that region of the product's one account (`ref:aws.account`, ADR 0524). Distinct from `regions`, the deploy order across the root `regions` entries."
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+          "description": "The region this environment runs in: an AWS or Google Cloud region id (`us-east-1`, `ap-south-1`, `europe-west1`), a key of the root `regions`, or a named preset: `me` (AWS me-central-1), `eu` (AWS eu-central-1) or `ksa` (GCP me-central2), Figentra's tenant regions (OS 0001). Required on staging and production of a product runway; `runway validate` refuses a name that is none of these (ADR 0524, amended 2026-11-27). Distinct from `regions`, the deploy order across the root `regions` entries.",
+          "examples": ["us-east-1", "europe-west1", "me"]
         },
         "regions": {
           "type": "array",

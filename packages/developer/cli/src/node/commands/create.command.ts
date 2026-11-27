@@ -4,25 +4,32 @@
  *          new` of Stackra: shows the banner, refuses a folder that is not empty, asks the name, npm scope, edition
  *          and package manager (each also a flag; `--yes` takes every default; without a terminal nothing is asked),
  *          fetches the starter (`@stackra/starter` from the Stackra registry at the CLI's version, or `--starter
- *          <dir|tgz>`), runs the doctor for what the profile needs, writes the profile's files under the chosen
+ *          <dir|tgz>`), asks where staging and production run (`--region`: any AWS or Google Cloud region id, a key
+ *          of the starter's `regions`, or a preset me, eu or ksa; the default is the starter's) and places the
+ *          root runway there (`placeRegion`, for every answer, the starter's own too: staging and production must name
+ *          their `region` for `runway validate`), runs the doctor for what the profile needs, writes the profile's files under the chosen
  *          names, installs, runs `stackra gen` and shows what it wrote as a tree, each step a task, type-checks and tests, makes the
  *          first commit and prints the next steps.
  * Boundary: writes only inside `<directory>` and runs pnpm, gen and git there. The starter tarball is checked
  *           against the registry's SHA-512 integrity; `STACKRA_LICENCE_TOKEN` is checked for presence only and sent
  *           only to the registry origin. A failed step stops the run, keeps the folder and names the step.
  * Runtime: node
- * Governing contract: ADR 0515; STA-1952 spec User Story 1, FR-001 to FR-013; STA-1730 (the console create flow).
+ * Governing contract: ADR 0515; STA-1952 spec User Story 1, FR-001 to FR-013; STA-1730 (the console create flow);
+ *                     ADR 0524 (amendment 2026-11-27, STA-2896: the app's own region).
  */
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
 import { Argument, Command, Option, type CommandIo } from "@stackra/console";
 import { tarballSpecs } from "@stackra/console/node";
+import { resolveRegion } from "@stackra/runway";
 import { Str } from "@stackra/validation";
 
 import { genTree } from "#node/create/functions/gen-tree.function";
+import { placeRegion } from "#node/create/functions/place-region.function";
 import { readStarter } from "#node/create/functions/read-starter.function";
 import { starterFiles } from "#node/create/functions/starter-files.function";
+import { starterRegion } from "#node/create/functions/starter-region.function";
 import { starterTarball } from "#node/create/functions/starter-tarball.function";
 import { starterWorkspace } from "#node/create/functions/starter-workspace.function";
 import { doctorChecks } from "#node/doctor/functions/doctor-checks.function";
@@ -39,6 +46,10 @@ const SCOPE = /^@[a-z0-9][a-z0-9-._~]*$/;
 
 /** The published starter. */
 const STARTER = "@stackra/starter";
+
+/** The forms a region takes, for the question and the refusal. */
+const REGION_FORMS =
+  "an AWS or Google Cloud region id (us-east-1, ap-south-1, europe-west1), or a preset (me, eu, ksa)";
 
 /** Creates a new Stackra app. */
 export class CreateCommand extends Command({
@@ -70,6 +81,14 @@ export class CreateCommand extends Command({
   @Option({ description: "The package manager; pnpm (the workspace uses pnpm catalogs)" })
   @Str({ pattern: /^pnpm$/ })
   pm?: string;
+
+  /** Where staging and production run. */
+  @Option({
+    description:
+      "Where staging and production run: an AWS or Google Cloud region id (us-east-1, europe-west1) or a preset (me, eu, ksa); default: the starter's",
+  })
+  @Str({ pattern: /^[a-z][a-z0-9-]*[a-z0-9]$/ })
+  region?: string;
 
   /** The starter profile. */
   @Option({ description: "The starter profile: minimal (a console and one service) or full" })
@@ -184,6 +203,29 @@ export class CreateCommand extends Command({
         ? {}
         : { tarballs: tarballSpecs(resolve(cwd, this.tarballs)) }),
     });
+    const placed = starterRegion(files);
+    // The question's default, `--yes` and a run without a terminal all take the same region.
+    const regionDefault = placed.name ?? "us-east-1";
+    const region = await ask(this.region, regionDefault, () =>
+      io.prompt.text({
+        message: `Where do staging and production run? ${REGION_FORMS}`,
+        default: regionDefault,
+        validate: (value) =>
+          resolveRegion(placed, value) === undefined ? `Name ${REGION_FORMS}` : undefined,
+        option: "region",
+      }),
+    );
+    // Placed even when the answer is the starter's own region: a starter may list it only in `regions`, and
+    // `checkEnvironmentRegion` refuses a staging or production that names no `region` (STA-2896 review).
+    const resolved = resolveRegion(placed, region);
+    if (resolved === undefined)
+      throw new Error(`--region ${region} is not a region Runway knows: name ${REGION_FORMS}`);
+    const runway = files.get("runway.yaml");
+    if (runway !== undefined)
+      files.set(
+        "runway.yaml",
+        new TextEncoder().encode(placeRegion(new TextDecoder().decode(runway), resolved)),
+      );
 
     if (this.doctor) {
       const results = await io.output.task("Checking the machine", () =>
@@ -252,7 +294,16 @@ export class CreateCommand extends Command({
       "info",
       "Next",
     );
-    return { directory, name, scope, edition, profile: this.profile, files: files.size, generated };
+    return {
+      directory,
+      name,
+      scope,
+      edition,
+      region,
+      profile: this.profile,
+      files: files.size,
+      generated,
+    };
   }
 
   /** The starter: `--starter`, else the registry's at the CLI's version, else its latest. */

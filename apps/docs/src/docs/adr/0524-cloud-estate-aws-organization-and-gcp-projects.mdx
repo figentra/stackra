@@ -1,6 +1,6 @@
 ---
 title: "0524 — Cloud estate: one AWS Organization and a GCP project per product"
-description: "Accepted, amended 2026-11-06 (one AWS account per product); D4 superseded by 0525 · 2026-11-05"
+description: "Accepted, amended 2026-11-06 (one AWS account per product) and 2026-11-27 (an environment's region is any provider region, proposed); D4 superseded by 0525 · 2026-11-05"
 ---
 
 {/* Stackra file contract. Purpose: ADR 0524, the owner's decisions of 2026-11-05 on the cloud and secrets estate: an AWS Organization under a new management account with one account per product (amended 2026-11-06) and the existing account as tooling, people through Identity Center; GCP under an Organization on figentra.com with one project per product and region and Encore Cloud running KSA there with ENCORE_ROLES; Encore with one app per product linked to the account of each environment; Infisical on the Free plan with four machine identities (superseded by ADR 0525); and the dated `figentra-agents` IAM user exception. Boundary: decision text only; the inventory, target and migration plan live in stackra-notes `plans/infra-structure-2026-11-05/`, and every cloud change there is the owner's. Runtime: documentation. Governing contract: ADR template; ADR 0172, 0173, 0186, 0289, 0354, 0371, 0401, 0435, 0468, 0484, 0512, 0516, 0517, 0523. */}
@@ -204,6 +204,34 @@ planned:
   target.
 - Nothing checks D5's end date automatically: the plan's P11 and the owner's to-do carry it.
 
+## Amendment 2026-11-27 (proposed): an environment's region is any provider region
+
+**Status**: proposed (STA-2896), for the CTO's approval; the runway change it describes is built on
+`figentra/sta-2896-runway-any-region`.
+
+Runway took only `me`, `eu` and `ksa` for `environments.<env>.region`, and `runway validate` told a team without one that
+"figentra/infra places it there". That is true for a Figentra product and meaningless for a team that builds on Stackra
+outside the Figentra estate: a team in the US, India or APAC could not say where its staging or production runs.
+
+- **`region` takes any provider region.** It names an AWS region id (`us-east-1`, `ap-south-1`), a Google Cloud one
+  (`europe-west1`, `asia-south1`), or a key of the root `regions`, which wins over a preset of the same name.
+  `resolveRegion` in `@stackra/runway` resolves the name to a cloud and location; `runway validate` refuses a name that
+  resolves to nothing.
+- **`me`, `eu` and `ksa` stay as named presets** (`REGION_PRESETS`: AWS me-central-1, AWS eu-central-1, GCP
+  me-central2). A Figentra product keeps naming them, and OS ADR 0001 still governs which tenant regions Figentra runs;
+  a new preset still needs an OS 0001 amendment. figentra/infra places only Figentra products, through the
+  `providers.aws.account` and `providers.gcp.project` opt-ins, which stay Figentra's furniture on request.
+- **The checks follow the resolved cloud and location, not the preset name.** Any Google Cloud environment needs a
+  project (`providers.gcp.projects`, or `providers.gcp.project: true` for figentra/infra to vend one); the ElastiCache
+  t4g and m6g refusal applies to `me-central-1` by location; the unused AWS account warning counts every AWS
+  environment.
+- **`stackra create` asks** where staging and production run (`--region`), and writes the answer into the new app's
+  root runway: each environment's `region` and `regions`, the root `regions` entry, `targets.encore-cloud.cloud`, and
+  the deprecated `providers.aws.region` while it remains. `--yes` keeps the starter's region and still writes it as
+  staging's and production's `region`, so the new app passes `runway validate`.
+
+Decisions 1 to 3 and 5 are unchanged: Figentra's own estate is still one AWS account and one GCP project per product.
+
 ## Supersedes and sources
 
 Supersedes: none. D4 is superseded by [0525](/adr/0525-secrets-sops-and-cloud-kms-replace-infisical).
@@ -224,4 +252,4 @@ Sources:
 - stackra-notes `plans/infra-structure-2026-11-05/` (TARGET, MIGRATION, KEEP-REMOVE);
 - `plans/infisical-2026-11-04/PLAN.md`;
 - Infisical's pricing page, and Encore's pricing and own-cloud documentation, read 2026-11-05;
-- Linear STA-2115.
+- Linear STA-2115; STA-2896 (the 2026-11-27 amendment).

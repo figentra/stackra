@@ -1,18 +1,20 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the estate fields figentra/infra reads from the root runway (ADR 0524): an environment's
- *          `region` is one of me, eu and ksa; `providers.aws.budgets.monthlyUsd` defaults to 300 beside the open
+ *          `region` is any lower-case region name (a provider id, a `regions` key or a preset); `providers.aws.budgets.monthlyUsd` defaults to 300 beside the open
  *          thresholds; `providers.cloudflare.records` takes non-Worker DNS records under a declared zone, refuses an MX
  *          without a priority, a proxied TXT and a name under no zone; `providers.aws.account` and
  *          `providers.gcp.project` are opt-ins that default to false, and `providers.gcp.apis` takes only unique
- *          `*.googleapis.com` names. `checkEnvironmentRegion` asks a product's staging and production for a region,
- *          asks a ksa environment for the GCP project, and skips a runway without `product`; `deprecatedFields` names
+ *          `*.googleapis.com` names. `checkEnvironmentRegion` asks a product's staging and production for a region
+ *          without naming figentra/infra, takes an AWS or Google Cloud region id or a `regions` key, refuses a name that
+ *          resolves to nothing, asks any Google Cloud environment for a project, follows the UAE cache rule by location,
+ *          and skips a runway without `product`; `deprecatedFields` names
  *          `providers.aws.region`, `providers.aws.accounts`, an environment's `cloud`, `providers.infisical` and
  *          `secrets.defaultPath`; `unusedCloudOptIns` names an
- *          AWS account no me or eu environment uses.
+ *          AWS account no environment on AWS (a preset or an AWS region id) uses.
  * Boundary: test only; plain objects through `parseRunway` and the three checks.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0524; STA-2104.
+ * Governing contract: ADR 0022 (test placement); ADR 0524 (amendment 2026-11-27, STA-2896); STA-2104.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -59,6 +61,25 @@ const ksa = (gcp: Record<string, unknown>) =>
     providers: { gcp },
   });
 
+/** A product whose staging and production run in the named regions, with `gcp` as its GCP provider block. */
+const anywhere = (staging: string, production: string, gcp?: Record<string, unknown>) =>
+  parseRunway(
+    "root",
+    root({
+      environments: { staging: { region: staging }, production: { region: production } },
+      ...(gcp === undefined ? {} : { providers: { gcp } }),
+    }),
+  );
+
+/** A product whose staging runs a t4g cache in `region`. */
+const at = (region: string) =>
+  root({
+    environments: {
+      staging: { region, shared: { cache: { mode: "nodes", class: "cache.t4g.small" } } },
+      production: { region: "us-east-1" },
+    },
+  });
+
 /** A product whose staging runs a `cls` cache node class in me. */
 const cache = (cls: string) =>
   root({
@@ -69,11 +90,14 @@ const cache = (cls: string) =>
   });
 
 describe("the root runway's estate fields", () => {
-  it("takes a region key per environment and refuses another", () => {
+  it("takes any region name per environment and refuses a malformed one", () => {
     expect(parseRunway("root", root()).environments.staging?.region).toBe("me");
-    expect(pathsOf(root({ environments: { staging: { region: "us" } } }))).toEqual([
-      "environments.staging.region",
-    ]);
+    const us = root({ environments: { staging: { region: "us-east-1" } } });
+    expect(parseRunway("root", us).environments.staging?.region).toBe("us-east-1");
+    for (const region of ["US-East-1", "us_east_1", "-us", "us-", ""])
+      expect(pathsOf(root({ environments: { staging: { region } } }))).toEqual([
+        "environments.staging.region",
+      ]);
   });
 
   it("defaults the monthly budget to 300 and keeps the thresholds", () => {
@@ -144,10 +168,15 @@ describe("checkEnvironmentRegion", () => {
 
   it("names each product environment without a region, and skips a runway without product", () => {
     const missing = root({ environments: { staging: {}, production: {} } });
-    expect(checkEnvironmentRegion(parseRunway("root", missing)).map(({ path }) => path)).toEqual([
+    const issues = checkEnvironmentRegion(parseRunway("root", missing));
+    expect(issues.map(({ path }) => path)).toEqual([
       "environments.staging.region",
       "environments.production.region",
     ]);
+    for (const { message } of issues) {
+      expect(message).toContain("us-east-1");
+      expect(message).not.toContain("figentra/infra");
+    }
     const { product: _product, ...core } = missing;
     expect(checkEnvironmentRegion(parseRunway("root", core))).toEqual([]);
   });
@@ -158,6 +187,36 @@ describe("checkEnvironmentRegion", () => {
     ]);
     expect(checkEnvironmentRegion(parseRunway("root", ksa({ project: true })))).toEqual([]);
   });
+
+  it("passes any AWS region id, and a Google Cloud one with the team's own project", () => {
+    expect(checkEnvironmentRegion(anywhere("us-east-1", "ap-south-1"))).toEqual([]);
+    expect(
+      checkEnvironmentRegion(anywhere("us-east-1", "europe-west1")).map(({ path }) => path),
+    ).toEqual(["environments.production.region"]);
+    expect(
+      checkEnvironmentRegion(
+        anywhere("asia-southeast1", "europe-west1", { projects: { production: "acme-prod" } }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("resolves a key the root declares in `regions`, and names a region that resolves to nothing", () => {
+    const declared = root({
+      regions: { us: { cloud: "aws", location: "us-west-2" } },
+      environments: { staging: { region: "us" }, production: { region: "us" } },
+    });
+    expect(checkEnvironmentRegion(parseRunway("root", declared))).toEqual([]);
+    const unknown = root({
+      environments: { staging: { region: "us" }, preview: { region: "eastus" }, production: {} },
+    });
+    const issues = checkEnvironmentRegion(parseRunway("root", unknown));
+    expect(issues.map(({ path }) => path)).toEqual([
+      "environments.production.region",
+      "environments.staging.region",
+      "environments.preview.region",
+    ]);
+    expect(issues[1]?.message).toContain('"us" is not a region');
+  });
 });
 
 describe("checkEnvironmentRegion and the UAE cache", () => {
@@ -166,6 +225,13 @@ describe("checkEnvironmentRegion and the UAE cache", () => {
       checkEnvironmentRegion(parseRunway("root", cache("cache.t4g.small"))).map(({ path }) => path),
     ).toEqual(["environments.staging.shared.cache.class"]);
     expect(checkEnvironmentRegion(parseRunway("root", cache("cache.m7g.large")))).toEqual([]);
+  });
+
+  it("follows the location, not the preset name", () => {
+    expect(
+      checkEnvironmentRegion(parseRunway("root", at("me-central-1"))).map(({ path }) => path),
+    ).toEqual(["environments.staging.shared.cache.class"]);
+    expect(checkEnvironmentRegion(parseRunway("root", at("us-east-1")))).toEqual([]);
   });
 });
 
@@ -254,7 +320,7 @@ describe("deprecatedFields", () => {
 });
 
 describe("unusedCloudOptIns", () => {
-  it("names an AWS account no me or eu environment uses", () => {
+  it("names an AWS account no environment on AWS uses", () => {
     const ksaOnly = root({
       environments: { staging: { region: "ksa" }, production: { region: "ksa" } },
       providers: { aws: { account: true }, gcp: { project: true } },
@@ -265,5 +331,17 @@ describe("unusedCloudOptIns", () => {
     expect(
       unusedCloudOptIns(parseRunway("root", root({ providers: { aws: { account: true } } }))),
     ).toEqual([]);
+    const onAwsId = root({
+      environments: { staging: { region: "europe-west1" }, production: { region: "us-east-1" } },
+      providers: { aws: { account: true } },
+    });
+    expect(unusedCloudOptIns(parseRunway("root", onAwsId))).toEqual([]);
+    const onGcpId = root({
+      environments: { staging: { region: "europe-west1" }, production: { region: "us-central1" } },
+      providers: { aws: { account: true } },
+    });
+    expect(unusedCloudOptIns(parseRunway("root", onGcpId)).map(({ path }) => path)).toEqual([
+      "providers.aws.account",
+    ]);
   });
 });
