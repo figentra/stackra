@@ -6,7 +6,7 @@
 
 **Status**: Implementing
 
-**Tier**: feature
+**Tier**: big
 
 **Approver**: leader
 
@@ -41,17 +41,22 @@ version)`, falling back to `latest`)
 
 - **Apps touched**: none
 - **Services touched**: none
-- **Packages touched**: starter (new: `packages/developer/starter`, `@stackra/starter`); cli (`starterTarball` reads
-  the nested archive); runway (`release.npm.promoteLatestAfter` in the root schema)
+- **Packages touched**: `packages/developer/starter` (new, `@stackra/starter`); `packages/developer/cli`
+  (`starterTarball` reads the nested archive); `packages/developer/runway` (`release.npm.promoteLatestAfter` in the
+  root schema)
 - **Public contract change**: a new published package `@stackra/starter` (manifest only: `dist/template.tgz`, no
   entry point); the root runway schema (`tools/schemas/runway-root.schema.json`, `@stackra/runway/schema/root.json`,
   `RELEASE_SECTION_SCHEMA`) gains `release.npm.promoteLatestAfter: "consumer-smoke" | "immediate"`; the reusable
   workflow `runway-npm.yml` gains the inputs `promote-latest-after` (default `consumer-smoke`) and `consumer-smoke`
 - **Cross-service events**: none
 - **Tenancy and data**: none
-- **Security and privacy**: the smoke runs downloaded code inside the release job, so it runs under `env -i`: no OIDC
-  request token, publish token, App token, CI or GitHub variable reaches it, and its HOME is new and empty. The starter
-  build fetches one public commit by id and needs no token
+- **Security and privacy**: the smoke runs downloaded code (the CLI, the template's dependency tree, Encore), so it
+  never runs in a job that holds a credential. `env -i` only clears a child's own variables: its ancestors' environment
+  (the App token, the OIDC request token) stays readable to a same-uid process, and hosted runners give sudo. So the
+  release job moves no tag in `consumer-smoke` mode; the `consumer-smoke` job runs on its own runner with no
+  environment, no `id-token`, no secret, no App token, a read-only `GITHUB_TOKEN` and no cache; the `promote` job (the
+  `release` environment, `id-token` only) checks out and installs nothing and moves only the moves whose sha256 the
+  release job gave as a job output. The starter build fetches one public commit by id and needs no token
 - **Secrets**: none
 - **ADR needed**: no new ADR; ADR 0515 decision 3 ("packed from the Stackra template by its release workflow") and its
   Consequences ("then the template's catalog bump, then `@stackra/starter`") must read "packed by core's release from
@@ -81,12 +86,23 @@ files. The same commit packs to the same bytes. `template:bump [--commit <id>]` 
 
 **The gate.** In `runway-npm.yml`'s registry script, `promote-latest-after` is checked before anything is packed: it
 must be `consumer-smoke` (then `consumer-smoke` must be set) or `immediate`. After the final registry closure check and
-the move list, if the mode is `consumer-smoke` and some move sets a tag, the script runs the `consumer-smoke` command
-from the repository root as
-`env -i PATH LANG=C.UTF-8 HOME=<new empty dir> RUNWAY_REGISTRY=<registry> RUNWAY_RELEASE=<name TAB version file>`.
-A non-zero exit stops the run with no dist-tag moved (`Consumer smoke failed`); every version stays under
-`release-pending`. A re-run runs the smoke again while moves are due; a run with nothing to move runs none. The dry
-run names when `latest` would move and runs no smoke.
+the move list, if the mode is `consumer-smoke` and some move sets a tag, the release job moves no tag: it writes the
+moves and the release's `<name> TAB <version>` list to `registry-promotion`, uploads them as an artifact and gives the
+moves' sha256 and `promotion-due` as job outputs. Three jobs follow from there:
+
+- `release` (the `release` environment, `id-token`, the App token): publishes under `release-pending`, checks the
+  closure, writes the moves. With `immediate`, or with no move that sets a tag, it moves the tags itself as before.
+- `consumer-smoke` (`needs: release`, only when `promotion-due`): its own runner, no environment, `permissions:
+contents: read`, no secret, no cache. It runs the command from the repository root as
+  `env -i PATH LANG=C.UTF-8 HOME=<new empty dir> RUNWAY_REGISTRY=<registry> RUNWAY_RELEASE=<release list>`, for a
+  clean consumer (no npm settings, no CI variable). A non-zero exit fails the job (`Consumer smoke failed`): every
+  version stays under `release-pending`.
+- `promote` (`needs: [release, consumer-smoke]`, only when the smoke succeeded; the `release` environment, `id-token:
+write` only): downloads the moves, refuses them unless their sha256 equals the release job's output and every line
+  is a name, a version, a tag or `-`, and `drop` or `-`, then exchanges an ID token per package and moves the tags.
+
+Re-running the failed jobs runs the smoke again and then `promote`; a new run with the moves still due writes them
+again. The dry run names when `latest` would move and runs no smoke.
 
 **The caller.** `release.yml`'s gate reads `runway.yaml` `release.npm.promoteLatestAfter` with yq (`consumer-smoke`
 when unset; any other value stops the release) and passes it with `consumer-smoke: node tools/scripts/consumer-smoke.mjs`.
@@ -103,7 +119,10 @@ the tool folders, HOME, LANG and a git identity, and then requires the app's `ca
 ## Compatibility and migration
 
 - `runway-npm.yml`'s default is `consumer-smoke`, which needs a command: a caller that passes neither input now stops
-  before publishing. Core's `release.yml` is the only caller in this repository and passes both; another caller passes
+  before publishing. With `consumer-smoke` the `promote` job names the caller's `environment` input, because the
+  registry's publisher row names that environment: its required reviewer approves `promote` as well, after the smoke
+  is green, so a release with the smoke asks for two approvals (publish, then promote) until the registry has a row
+  for a reviewer-free promotion environment (the CTO's call, ADR 0468). Core's `release.yml` is the only caller in this repository and passes both; another caller passes
   `promote-latest-after: immediate` to keep the STA-2778 behaviour.
 - `@stackra/cli`: additive (a new starter layout read; the old ones still read). Patch changeset.
 - `@stackra/runway`: an optional new key. Minor changeset. `@stackra/starter`: new, minor (the fixed group moves
@@ -119,8 +138,10 @@ the tool folders, HOME, LANG and a git identity, and then requires the app's `ca
   set `immediate` in `runway.yaml` to release without it.
 - The pin is a moving responsibility: a stale template commit can break a new app. The smoke catches it before
   `latest` moves; the fix is `template:bump` and a new release.
-- The smoke adds a full create (install, gen, type-check, test) to the release job; the timeout goes from 60 to 90
-  minutes.
+- The smoke is a full create (install, gen, type-check, test) on its own runner, with a 60-minute limit; the release
+  job keeps its 60 minutes.
+- The `promote` job reads an artifact the `consumer-smoke` job could, in theory, replace (its runner holds the run's
+  artifact token). The release job's sha256 output is what makes that harmless: a replaced plan moves nothing.
 - `create` still falls back to `latest`'s starter when its own version has none; the smoke checks the version is
   served, so a release never relies on that fallback.
 
@@ -129,19 +150,21 @@ the tool folders, HOME, LANG and a git identity, and then requires the app's `ca
 - **AC-001**: THE workspace SHALL hold a public `@stackra/starter` member, versioned in the `@stackra/*` fixed group,
   whose packed tarball carries `dist/template.tgz` with every tracked file of the pinned template commit, `.npmrc` and
   `.gitignore` files included.
-- **AC-002**: IF the pin is not a full commit id or an https git URL, the commit is not served, or the commit holds a
-  symlink, a submodule, no `stackra.starter.yaml` or a file `git archive` leaves out, THEN THE build SHALL fail and
-  write nothing.
+- **AC-002**: WHEN the build reads a refused pin or commit THE build SHALL fail and write nothing: a pin that is not
+  a full commit id or not an https git URL, a commit the repository does not serve, and a commit that holds a symlink,
+  a submodule, no `stackra.starter.yaml` or a file `git archive` leaves out.
 - **AC-003**: WHEN the same commit is built twice THE archives SHALL be byte-identical.
 - **AC-004**: WHEN `stackra create` reads a starter holding `dist/template.tgz` THE CLI SHALL return that archive's
   files whole, and SHALL refuse a nested path that climbs out.
 - **AC-005**: THE root runway schema SHALL accept `release.npm.promoteLatestAfter` as `consumer-smoke` or `immediate`
   and refuse any other value or key.
-- **AC-006**: WHILE `promote-latest-after` is `consumer-smoke` THE registry script SHALL move no dist-tag until the
-  `consumer-smoke` command has exited 0 after the last publish and the registry closure check.
-- **AC-007**: IF the smoke fails THEN THE run SHALL stop with no dist-tag moved and every version under
-  `release-pending`; a re-run SHALL run it again.
-- **AC-008**: THE smoke SHALL run with only PATH, LANG, a new empty HOME, RUNWAY_REGISTRY and RUNWAY_RELEASE.
+- **AC-006**: WHILE `promote-latest-after` is `consumer-smoke` THE release job SHALL move no dist-tag that sets a
+  tag, and THE `promote` job SHALL move them only after the `consumer-smoke` job succeeded, after the last publish
+  and the registry closure check.
+- **AC-007**: IF the smoke fails THEN THE run SHALL end with no dist-tag moved and every version under
+  `release-pending`; re-running the failed jobs SHALL run the smoke again before `promote`.
+- **AC-008**: THE smoke SHALL run in a job with no environment, no `id-token` permission, no secret, no App token and
+  no cache, with only PATH, LANG, a new empty HOME, RUNWAY_REGISTRY and RUNWAY_RELEASE in its environment.
 - **AC-009**: IF the mode is `consumer-smoke` with no command, or neither mode, THEN THE run SHALL stop before anything
   is packed or published; WHEN the mode is `immediate` no smoke SHALL run; WHEN nothing is due to move no smoke SHALL
   run; THE dry run SHALL say when `latest` would move and run none.
@@ -151,6 +174,9 @@ the tool folders, HOME, LANG and a git identity, and then requires the app's `ca
   a stopped Docker or a HOME with `.npmrc`.
 - **AC-011**: THE release workflow SHALL pass `runway.yaml` `release.npm.promoteLatestAfter` (default
   `consumer-smoke`) and `node tools/scripts/consumer-smoke.mjs` to `runway-npm.yml`, and SHALL stop on any other value.
+- **AC-012**: IF the plan `promote` reads is refused THEN THE `promote` job SHALL move no dist-tag: a plan whose sha256
+  is not the release job's output, a missing sha256, or a line that is not a name, a version, a tag or `-`, and
+  `drop` or `-`.
 
 ## Open questions
 
@@ -162,3 +188,7 @@ None for the build. ADR 0515's text (stackra#1129) needs the decision-3 wording 
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md; built in the same branch)
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2874 session) · T001-T006 built and tested on box 2
+- 2026-11-27 · Implementing → Implementing · Claude (STA-2874 session) · review fixes: tier raised to big (a new
+  package); the smoke moved out of the release job into its own `consumer-smoke` job, with a `promote` job after it
+  (T007, AC-012); the starter's vitest config tracked; the design sections written from what was built. The Clarified
+  and Planned approvals of a big spec are the leader's (ADR 0502); none is written here.
