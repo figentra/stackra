@@ -15,4 +15,5 @@ checked with no input to set. An optional config name (a `config` row with `requ
 default) is never a placeholder, since an empty value would override that default: `deployPlan` marks it
 `optional: "default"` (an optional secret is `optional: "placeholder"`), `secretSyncPlan` lists it in the entry's
 `defaults`, `readMemberSecrets` leaves it out when the scope lacks it or holds it empty, and the sync leaves it unset in
-Encore and says so.
+Encore and says so, also when another service declares the same name an optional secret (Encore secrets are
+app-wide, so its empty placeholder would override the default).

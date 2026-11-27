@@ -13,7 +13,9 @@
  *           set by hand is kept, and when the listing cannot be read no placeholder is written; an optional config
  *           name the scope lacks is never written, so its config default applies (STA-258). Encore secrets are
  *           app-wide, and the job's environment holds one value per name, so two services that name one secret share
- *           it. The Encore environment is `environments.<env>.encore.environment`, else the runway environment's own name. The
+ *           it: a name any service reads as optional config with a default is never written empty, even when another
+ *           service declares it an optional secret, so that placeholder never overrides the default. The Encore
+ *           environment is `environments.<env>.encore.environment`, else the runway environment's own name. The
  *           writes run in a temporary folder holding only `encore.app` with the root runway's `providers.encore.app`, so
  *           they reach the app whatever the generated layout (a service member's `stackra-encore`, or the deploy
  *           commit's root, STA-2193). Writes run only in CI
@@ -106,10 +108,11 @@ export async function syncSecrets(input: {
     });
     for (const [name, value] of read) values.set(name, value);
   }
-  // An optional config name no service read is left as it is in Encore: an empty value would override its default.
-  const unset = [...new Set(services.flatMap((entry) => entry.defaults ?? []))]
-    .filter((name) => !values.has(name))
-    .toSorted();
+  // An optional config name with no value in the scope is left as it is in Encore: an empty value would override
+  // its default. Secrets are app-wide, so that holds when another service declares the name an optional secret too.
+  const defaulted = new Set(services.flatMap((entry) => entry.defaults ?? []));
+  const unset = [...defaulted].filter((name) => (values.get(name) ?? "") === "").toSorted();
+  for (const name of unset) values.delete(name);
   const app = runways.root.providers.encore?.app;
   if (app === undefined)
     throw new RunwayUnresolvedError(

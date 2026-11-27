@@ -423,6 +423,69 @@ describe("placeholders (STA-258)", () => {
     expectNoValue(lines.join("\n"));
   });
 
+  it("never empties a name one service reads as optional config with a default, though another's is an optional secret", async () => {
+    // api declares API_TIMEOUT as an optional secret (an empty placeholder), billing as optional config with a default.
+    // Encore secrets are app-wide, so an empty write for api would override billing's default.
+    const shared: DeployRunways = {
+      root: RUNWAYS.root,
+      members: [
+        {
+          member: "api",
+          folder: "services",
+          env: [
+            { name: "STRIPE_SECRET_KEY", kind: "secret", required: true },
+            { name: "API_TIMEOUT", kind: "secret", required: false },
+          ],
+          runway: {},
+        },
+        {
+          member: "billing",
+          folder: "services",
+          env: [{ name: "API_TIMEOUT", kind: "config", required: false }],
+          runway: {},
+        },
+      ],
+    };
+    for (const members of [shared.members, shared.members.toReversed()]) {
+      // Encore holds no value for it, so the old sync wrote "" over billing's default.
+      const { run, calls } = recorder(listing([]));
+      const lines: string[] = [];
+      await syncSecrets({
+        environment: "staging",
+        runways: { root: shared.root, members },
+        repository: repository(true),
+        dryRun: false,
+        log: (line) => lines.push(line),
+        run,
+        ci: true,
+        env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+      });
+      expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+        { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
+      ]);
+      expect(lines).toContain(
+        "left API_TIMEOUT in encore staging-eu as it is: optional config with no value in the scope, so its default applies",
+      );
+      expectNoValue(lines.join("\n"));
+    }
+    // A value in the scope is still written for both.
+    const { run, calls } = recorder(new Error("must not be asked"));
+    await syncSecrets({
+      environment: "staging",
+      runways: shared,
+      repository: repository(true),
+      dryRun: false,
+      log: () => undefined,
+      run,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, API_TIMEOUT: "30" },
+    });
+    expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+      { name: "API_TIMEOUT", input: "30" },
+      { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
+    ]);
+  });
+
   it("asks Encore nothing when every value is in the scope", async () => {
     const { run, calls } = recorder(new Error("must not be asked"));
     await syncSecrets({
