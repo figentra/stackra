@@ -137,7 +137,12 @@ describe("devComposeOf", () => {
   it("makes SeaweedFS buckets at start, waits for the last, and points the S3 SDK at it", () => {
     const result = plan({ seaweedfs: { ...SEAWEED, buckets: ["acme-files", "acme-media"] } });
     const service = result.lane?.services["seaweedfs"];
-    expect(service?.command).toEqual(["mini", "-dir=/data", "-bucket=acme-files,acme-media"]);
+    expect(service?.command).toEqual([
+      "mini",
+      "-dir=/data",
+      "-master.telemetry=false",
+      "-bucket=acme-files,acme-media",
+    ]);
     expect(service?.volumes).toEqual(["seaweedfs-data:/data"]);
     expect(service?.healthcheck?.test).toEqual([
       "CMD",
@@ -166,9 +171,17 @@ describe("devComposeOf", () => {
     expect(idle.fallbackCredentials).toEqual([]);
   });
 
+  it("runs SeaweedFS with its telemetry off, with or without buckets", () => {
+    for (const block of [SEAWEED, { ...SEAWEED, buckets: ["acme-files"] }]) {
+      const command = plan({ seaweedfs: block }).lane?.services["seaweedfs"]?.command ?? [];
+      expect(command).toContain("-master.telemetry=false");
+      expect(command.some((part) => /telemetry=true|telemetry\.url/.test(part))).toBe(false);
+    }
+  });
+
   it("waits for SeaweedFS's own health when no bucket is named", () => {
     const service = plan({ seaweedfs: SEAWEED }).lane?.services["seaweedfs"];
-    expect(service?.command).toEqual(["mini", "-dir=/data"]);
+    expect(service?.command).toEqual(["mini", "-dir=/data", "-master.telemetry=false"]);
     expect(service?.healthcheck?.test).toEqual([
       "CMD",
       "wget",

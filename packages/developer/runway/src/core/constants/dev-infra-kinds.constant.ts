@@ -8,11 +8,14 @@
  *          `postgres` are Encore's own (`encore run` starts them), so they are not here.
  * Boundary: data only. Images are not here: the root runway pins each by digest (`image`), the one place a version is
  *           written. SeaweedFS rather than MinIO: MinIO publishes no community image any more. Every container runs
- *           without a credential, published on 127.0.0.1 only. The SeaweedFS store has no identity configured, so it
- *           accepts any signature (checked for PutObject, GetObject and a presigned GET on 2026-11-26): the AWS
- *           credential a developer already has signs for it, and its placeholder pair (`fallbackCredentials`, no
- *           secret) is given only to a run with none, never over a profile the other AWS clients need. The health checks are the images' own commands (`valkey-cli`, `weed`'s
- *           `wget`, `/mailpit readyz`, `clamdcheck.sh`), checked against the pinned images on 2026-11-26.
+ *           without a credential, published on 127.0.0.1 only. SeaweedFS runs with its telemetry off
+ *           (`-master.telemetry=false`, the `weed mini` spelling of `-telemetry=false`), so a dev run reports nothing to
+ *           telemetry.seaweedfs.com. The SeaweedFS store has no identity configured, so it accepts any signature
+ *           (checked for PutObject, GetObject and a presigned GET on 2026-11-26): the AWS credential a developer
+ *           already has signs for it, and its placeholder pair (`fallbackCredentials`, no secret) is given only to a
+ *           run with none, never over a profile the other AWS clients need. The health checks are the images' own
+ *           commands (`valkey-cli`, `weed`'s `wget`, `/mailpit readyz`, `clamdcheck.sh`), checked against the pinned
+ *           images on 2026-11-26.
  * Runtime: isomorphic
  * Governing contract: ADR 0199 (decision 3: `stackra dev` runs a small compose file); ADR 0222 (decision 1: an
  *                     S3-compatible disk); ADR 0184 (OTLP everywhere); ADR 0296 (decision 1); STA-2664 (item 6).
@@ -49,7 +52,8 @@ export const DEV_INFRA_KINDS: Readonly<Record<string, DevInfraKind>> = {
     primary: "port",
     scheme: "http",
     perLane: true,
-    command: ["mini", "-dir=/data"],
+    // `-master.telemetry=false`: `weed mini` otherwise reports anonymous cluster statistics to telemetry.seaweedfs.com.
+    command: ["mini", "-dir=/data", "-master.telemetry=false"],
     volume: "/data",
     healthcheck: {
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8333/healthz"],

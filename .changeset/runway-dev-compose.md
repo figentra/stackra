@@ -10,4 +10,5 @@ It returns the variables a member needs to reach them (`*_VALKEY_URL`, `AWS_ENDP
 `OTEL_EXPORTER_OTLP_ENDPOINT`), with SeaweedFS's placeholder AWS key pair apart as `fallbackCredentials` (never a
 global variable over a developer's own credential), and refuses a missing image or port, an unknown kind, a bad bucket or two blocks giving
 one variable. `writeDevFacts` now writes the gateway's and each container's address into `.stackra/dev/ports.json`,
-so a `from-port: valkey` var resolves (STA-2664).
+so a `from-port: valkey` var resolves (STA-2664). SeaweedFS runs
+with its telemetry off (`-master.telemetry=false`).

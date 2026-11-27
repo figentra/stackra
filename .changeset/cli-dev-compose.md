@@ -10,3 +10,7 @@ otel-lgtm are healthy before `encore run`. The member's run gets their variables
 its own (key variables, `AWS_PROFILE`, a web identity, `~/.aws/credentials` or `~/.aws/config`). `--infra <name>[,<name>]` adds `when: opt-in` blocks and `--no-infra` skips the
 step; `stackra dev secrets init` lists the names the dev compose provides apart from those that need a value
 (STA-2664).
+
+Compatibility: a root runway that already lists containers under `environments.dev.infra` now has `stackra dev` start
+them with Docker (member and root runs) and stop when Docker cannot; pass `--no-infra` to skip the step. A runway with
+only `gateway` and `postgres` runs no Docker, as before.

@@ -42,7 +42,7 @@ proof.
 - `packages/data/filesystem/src/node/drivers/s3-file-system.driver.ts` (the S3 disk reads the AWS default credential
   chain and `AWS_ENDPOINT_URL_S3`), `packages/runtime/cache/src/node/drivers/valkey-cache.driver.ts`
 - `weed mini -h` of `chrislusf/seaweedfs:4.45` (`-bucket`, no identity by default), the pinned images' health commands
-- The review of 2026-11-26 on this branch (global AWS keys; the unproven S3 write path) and its proof on box 2
+- The review of 2026-11-26 on this branch (global AWS keys; the unproven S3 write path) and its real-container proof
 - Linear STA-2664; the readiness audit, batch 13 item 13.1
 
 ## Impact
@@ -60,7 +60,9 @@ proof.
 - **Security and privacy**: containers are published on the loopback interface only; no credential is planned or
   written. The SeaweedFS store has no identity configured and accepts any signature, so its placeholder AWS key pair
   is not a secret, and it is given only to a run with no AWS credential of its own: a developer's profile, SSO or key
-  variables are never shadowed for the run's other AWS clients. The state file holds a lane and names only
+  variables are never shadowed for the run's other AWS clients. The state file (`.stackra/dev/infra.json`) holds the
+  lane and the names of the opt-in blocks started, never a value, credential or address. SeaweedFS runs with its
+  telemetry off (`-master.telemetry=false`), so a dev run reports nothing to telemetry.seaweedfs.com.
 - **Secrets**: none
 - **ADR needed**: no; implements ADR 0199 decision 3 within ADR 0296 decision 1 (lanes) and ADR 0170 (a port is written
   once)
@@ -103,17 +105,34 @@ proof.
   variables.
 - **AC-016**: WHEN the dev compose provides a name THE dev secrets init SHALL list it as the compose's, not as needing
   a value.
-- **AC-017**: WHEN the generated Compose file runs in `stackra-demo` THE real drivers SHALL reach it with only the
+- **AC-017**: WHEN the generated Compose file runs in a Linux container with Docker THE real drivers SHALL reach it with only the
   variables `devInfraEnv` gives: `ValkeyCacheDriver`, `S3FileSystemDriver` (endpoint `null`) and an SMTP client, both
   for a developer with no AWS credential and for one with a default profile.
+- **AC-018**: WHEN the plan has a SeaweedFS block THE plan SHALL run `weed mini` with `-master.telemetry=false`, with or
+  without buckets.
 
 ## Success Criteria
 
 - **SC-001**: the runway and CLI unit tests for AC-001 to AC-016 pass, and each behaviour test fails with its change
   reverted — verified by: unit
-- **SC-002**: AC-017 on box 2: PutObject, GetObject, HeadObject, ListObjectsV2, a presigned GET, a presigned PUT and
+- **SC-002**: AC-017 in a Linux container with Docker: PutObject, GetObject, HeadObject, ListObjectsV2, a presigned GET, a presigned PUT and
   DeleteObject through the S3 disk, a cache put, get and forget through Valkey, and a mail in the Mailpit inbox —
   verified by: manual (proof log in the pull request)
+
+## Compatibility and migration
+
+- A root runway that already lists containers under `environments.dev.infra` (for example `valkey`, `seaweedfs`,
+  `mailpit`, `clamav` or `otel-lgtm` with an `image`) now has `stackra dev` start them with Docker before the tool, in a
+  member and at the root, and stop the run if Docker cannot start them. Before this change the block was read only for
+  its ports. A developer without Docker, or who runs those services another way, passes `--no-infra` to skip the step;
+  a block marked `when: opt-in` starts only when named by `--infra <name>`.
+- A runway that declares only Encore's own blocks (`gateway`, `postgres`) runs no Docker and behaves as before.
+- The member's run now gets the compose's variables (`*_VALKEY_URL`, `AWS_ENDPOINT_URL_S3`, `SMTP_HOST`, `SMTP_PORT`,
+  `OTEL_EXPORTER_OTLP_ENDPOINT`) unless the shell or the dev-secrets file already sets them; a value a developer set
+  keeps winning.
+- A run with no AWS credential source of its own gets SeaweedFS's placeholder AWS key pair; a run with one keeps it.
+- `stackra dev secrets init` lists the names the compose provides as the compose's, no longer as needing a value.
+- The dev facts file gains `infra` entries; its schema already allowed the field.
 
 ## Out of scope
 
@@ -129,12 +148,16 @@ proof.
 - Developer machines have Docker with the compose plugin when they declare a container (`stackra doctor`).
 - `turbo` sets `TURBO_HASH` in every task it runs, so a member run started by the root run skips the step.
 - SeaweedFS needs 1 % of its data disk free to write; on a fuller disk its volume server refuses every write (a PUT
-  hangs), which is what the first review probe on box 2 met.
+  hangs), which is what the first review probe met on a test machine whose disk was full.
 
 ## Status history
 
 - 2026-11-26 · — → Draft · Stackra readiness lane (Claude) · from STA-2664 item 6 and audit item 13.1
-- 2026-11-26 · Draft → Implementing · Stackra readiness lane (Claude) · built on box 2; awaiting the approver's line
+- 2026-11-26 · Draft → Implementing · Stackra readiness lane (Claude) · built and proven in a Linux container; awaiting the approver's line
 - 2026-11-26 · Implementing → Implementing · Stackra readiness lane (Claude) · review fixes: the placeholder AWS pair
   only without an AWS credential source (AC-011, AC-012); the AC-017 proof with both credential cases; the design moved
   to plan.md (ADR 0502)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
+- 2026-11-27 · Implementing → Implementing · Stackra readiness lane (Claude) · CTO conditions: the Compatibility and
+  migration section (existing infra blocks now start Docker; `--no-infra`), the Security sentence finished, SeaweedFS
+  telemetry off (AC-018), no internal machine names

@@ -15,7 +15,7 @@ lane and opt-ins, and lays the containers' variables under the dev-secrets value
 
 - **Language**: TypeScript (ESM)
 - **Members**: `packages/developer/runway`, `packages/developer/cli` (developer)
-- **Testing**: vitest in `src/**/__tests__/`; a real-container proof in box 2's `stackra-demo`
+- **Testing**: vitest in `src/**/__tests__/`; a real-container proof in a Linux container with Docker
 - **Storage**: none (generated files under `.stackra/dev/`)
 - **Runtime target**: the developer machine (Docker with the compose plugin)
 
@@ -159,8 +159,7 @@ host. Tenancy: none, dev only.
   `has-aws-credential-source.function.test.ts`, and `tool-command.function.test.ts` (the dev-secrets file names a
   profile).
 - AC-009: `dev-command.constant.test.ts`. AC-016: `dev-secrets-init.command.test.ts`.
-- AC-017: the real-container proof in box 2's `stackra-demo` (log `/work/stackra-b2/wt/sta-2664.proof/sc002-proof.log`,
-  attached to the pull request).
+- AC-017: the real-container proof in a Linux container with Docker (its log attached to the pull request).
 - Each behaviour test fails with its change reverted (the revert log is in the proof folder).
 
 ## Rollout
@@ -172,7 +171,7 @@ release; the generated files are dev only.
 ## Known risks
 
 - SeaweedFS refuses writes on a data disk with less than 1 % free; the PUT hangs rather than fails. The first review
-  probe met it on box 2, whose root disk was full.
+  probe met it on a test machine whose root disk was full.
 - An instance role alone is not seen as an AWS credential source (see Security and tenancy).
 
 ## Delegation and risk plan
