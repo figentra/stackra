@@ -10,13 +10,13 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { zoneOf } from "#core/functions/zone-of.function";
 
-const zones = ["figentra.com", "eu.figentra.com", "figentra.cloud"];
+const zones = ["figentra.com", "eu.figentra.com", "dev.example"];
 
 describe("zoneOf", () => {
   it("picks the longest zone holding the host", () => {
     expect(zoneOf("api.eu.figentra.com", zones)).toBe("eu.figentra.com");
     expect(zoneOf("api.figentra.com", zones)).toBe("figentra.com");
-    expect(zoneOf("figentra.cloud", zones)).toBe("figentra.cloud");
+    expect(zoneOf("dev.example", zones)).toBe("dev.example");
   });
 
   it("matches no foreign or look-alike host", () => {

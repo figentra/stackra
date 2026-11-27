@@ -32,7 +32,7 @@ const APPS = {
  *
  * @example
  * const firebase = new FirebaseManagementDriver();
- * await firebase.hasFirebase("academorix");
+ * await firebase.hasFirebase("academy");
  */
 export class FirebaseManagementDriver extends Driver(Firebase) {
   /** The job's environment; a test replaces it. */

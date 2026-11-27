@@ -16,7 +16,7 @@ import { Firebase } from "#core/ports/firebase.port";
  *
  * @example
  * const firebase = new MemoryFirebaseDriver();
- * firebase.projects.add("academorix");
+ * firebase.projects.add("academy");
  */
 export class MemoryFirebaseDriver extends Driver(Firebase) {
   /** Google projects with Firebase on. */

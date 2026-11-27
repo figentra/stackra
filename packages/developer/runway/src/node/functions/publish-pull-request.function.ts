@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `publishPullRequest(request, pullRequest)`, `publishProduct`'s path for one pull request's preview: uploads
- *          the console bundle, then writes the one `host:<product>-pr-<n>.figentra.cloud` row and the console's
+ *          the console bundle, then writes the one `host:<product>-pr-<n>.<zone>` row and the console's
  *          `release:<product>:console:pr-<n>` row, both with a 7-day expiry. There is no canary (a preview has no
  *          tenants to judge against), no app-link file and no ops review; the router Worker reads these rows.
  * Boundary: every check runs before the first upload or write, including the guard that refuses a host row another
  *           product already holds. The bundle's asset keys are versioned by commit, so a
  *           pull request never overwrites another's bundle. The shared `preview` environment's rows are untouched.
  * Runtime: node
- * Governing contract: ADR 0289 (decision 7, the 2026-11-01 note; STA-1907); ADR 0437 (the KV copy); ADR 0170 (decision 7).
+ * Governing contract: ADR 0289 (decision 7, the 2026-11-01 note; STA-1907); ADR 0437 (the KV copy); ADR 0170 (decision 7);
+ *                     STA-2876 (the zone is `environments.preview.domains.pullRequestZone`).
  */
 import { join } from "node:path";
 
@@ -36,7 +37,7 @@ import type { ProductPublishResult } from "#node/types/product-publish-result.ty
  * What the preview publish uploaded and wrote.
  *
  * @throws RunwayInvalidError before any upload or write when the environment is not `preview`, the number is not a
- *         pull request's, the product or the region is unknown, another product holds the host, the console ships no bundle or its target is not served.
+ *         pull request's, the product, the region or the pull-request zone is unknown, another product holds the host, the console ships no bundle or its target is not served.
  * @example
  * await publishProduct({ repository: ".", environment: "preview", pullRequest: 412, kv, assets, served: ["console@3"] });
  */
@@ -48,6 +49,7 @@ export async function publishPullRequest(
   const root = readRunway(join(request.repository, "runway.yaml"), "root");
   const product = root.product?.key;
   const region = request.region ?? root.environments.preview?.regions?.[0];
+  const zone = root.environments.preview?.domains?.pullRequestZone;
   const issues: RunwayIssue[] = [];
   if (product === undefined)
     issues.push({ path: "product.key", message: "Name the product the preview belongs to" });
@@ -63,15 +65,21 @@ export async function publishPullRequest(
       path: "environments.preview.regions",
       message: "Name the region the preview's API calls go to",
     });
+  if (zone === undefined)
+    issues.push({
+      path: "environments.preview.domains.pullRequestZone",
+      message:
+        "Name the zone a pull request's preview host lives in, a separate domain from production",
+    });
   if (!bundleSurfaces(root).includes(surface))
     issues.push({
       path: `surfaces.${surface}`,
       message: `A pull-request preview serves the ${surface} surface, and it ships no bundle`,
     });
-  if (issues.length > 0 || product === undefined || region === undefined)
+  if (issues.length > 0 || product === undefined || region === undefined || zone === undefined)
     throw new RunwayInvalidError("runway.yaml", issues);
 
-  const host = pullRequestPreviewHost(product, pullRequest);
+  const host = pullRequestPreviewHost(product, pullRequest, zone);
   // The host row is shared ground: refuse one another product holds, rather than take its preview over.
   const existing = await request.kv.read(`${EdgeKvPrefix.Host}:${host}`);
   const owner = existing === null ? undefined : (JSON.parse(existing) as EdgeHostRow).product;

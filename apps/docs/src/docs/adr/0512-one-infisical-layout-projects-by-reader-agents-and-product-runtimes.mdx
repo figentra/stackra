@@ -61,11 +61,11 @@ The owner chose a hybrid of the two.
    | `agents`    | `dev`                    | `/agents`                                              | people and agents through `.infisical.yaml`; no CI identity                   |
    | `<product>` | `dev`, `staging`, `prod` | `/runtime/<member>`, `/runtime/<resource>`, `/ci`      | runway sync, and a 0371 bootstrap identity per environment and member         |
 
-   There is one product project for each product: `academorix`, `billing`, `commerce`, `invoicing`, `juristra`, `jute`,
-   `mezzora`, `organza`, `pay`, `tamo`, `velora` and `os`. Slugs shorter than five characters get a `-product` suffix,
+   There is one product project for each product: `billing`, `commerce`, `invoicing`, `juristra`, `jute`,
+   `organza`, `pay`, `tamo`, `velora` and `os`. Slugs shorter than five characters get a `-product` suffix,
    such as `os-product`. The plan allows three environments, so runway's `preview` maps to `dev`. The registry issuer
-   token lives in `os` `/runtime/licensing`, the service that reads it. The legacy Academorix project is
-   `academorix-legacy`, archived. `stackra` is retired once its last values have moved.
+   token lives in `os` `/runtime/licensing`, the service that reads it. The academy product's legacy project is
+   `the first product's legacy repository`, archived. `stackra` is retired once its last values have moved.
 
 2. **Only build tokens in `ci-build`.** A pull request can reach `ci-build`, so it holds no credential that can
    write or deploy.
@@ -99,7 +99,7 @@ The owner chose a hybrid of the two.
 
 - **Each identity reads one project, and each value has one copy,** so a rotation is one edit.
 - **The owner moves the values once:** `/agents` to `agents`, and the store, release and observability
-  names to `ci-deploy`. Then they delete the stackra and Academorix copies. The Academorix project is
+  names to `ci-deploy`. Then they delete the Stackra and academy-product copies. The academy product project is
   archived.
 - **Product runtime projects are created at a product's first runtime secret,** together with runway sync (STA-606).
 - **Enforcement:**

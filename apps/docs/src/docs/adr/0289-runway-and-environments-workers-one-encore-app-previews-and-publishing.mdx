@@ -19,17 +19,17 @@ generated runtime folder is named `.stackra/runtime`.
 </Note>
 
 <Note>
-  2026-11-09 (leader decision, STA-1907 review): decision 7's host becomes `<product>-pr-<n>.figentra.cloud`.
+  2026-11-09 (leader decision, STA-1907 review): decision 7's host becomes `<product>-pr-<n>.<dev-zone>`.
   Products now live in their own repositories, and each one numbers its pull requests from 1, so `pay#412` and
-  `commerce#412` would both have written `host:pr-412.figentra.cloud`, and the second would silently take over the
+  `commerce#412` would both have written `host:pr-412.<dev-zone>`, and the second would silently take over the
   first's preview. Putting the product key in the one label keeps every preview apart, and it still sits one label under
-  the zone, so the `*.figentra.cloud` wildcard certificate covers it. The publish also refuses to replace a host row
+  the zone, so the `*.<dev-zone>` wildcard certificate covers it. The publish also refuses to replace a host row
   that another product holds. The release row stays `release:<product>:console:pr-<n>`.
 </Note>
 
 <Note>
   2026-11-01 (owner decision, STA-1908): decision 7 stands for per-pull-request previews, which keep
-  `pr-<n>.figentra.cloud`. A separate registrable domain keeps preview cookies and storage apart
+  `pr-<n>.<dev-zone>`. A separate registrable domain keeps preview cookies and storage apart
   from figentra.com production, and one label under one zone takes one wildcard certificate, which a
   deep name such as `pr-<n>.console.pay.preview.figentra.com` would not. The shared `preview`
   environment keeps [0437](/adr/0437-the-edge-worker-its-kv-copy-and-the-server-checks)'s naming
@@ -106,8 +106,8 @@ and the first publish. This record applies those answers. The static Worker's na
 
 ### Previews
 
-7. **One host for Figentra OS pull-request previews (RW8, owner's choice).** A preview lives under one host, `pr-<n>.figentra.cloud`. Previews are for Figentra OS only; Stackra has no previews, as decision 7 of 0170 says.
-   A preview router Worker on figentra.cloud serves it. It proxies `/api/*` to the Encore Cloud preview URL for that pull
+7. **One host for Figentra OS pull-request previews (RW8, owner's choice).** A preview lives under one host, `pr-<n>.<dev-zone>`. Previews are for Figentra OS only; Stackra has no previews, as decision 7 of 0170 says.
+   A preview router Worker on the dev zone serves it. It proxies `/api/*` to the Encore Cloud preview URL for that pull
    request, and it serves the console preview at `/`. Mobile preview builds use an EAS Update channel named `pr-<n>`, pointed
    at the same host. Previews last 7 days and use synthetic data only. The alternative weighed was a backend preview plus a
    console Worker at a separate `pr-<n>-console` name, which the owner did not choose. This amends decision 7 of 0170 for the Figentra OS previews that 0170 allows; its 7-day TTL and synthetic-data rules are unchanged.

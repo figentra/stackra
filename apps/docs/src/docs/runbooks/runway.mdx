@@ -62,10 +62,10 @@ amendment of 2026-11-03). Never edit the generated entries: change the runway an
 
 Each provider is a `workflow_call` workflow in `.github/workflows/`. Its job takes its GitHub environment from an input, so the environment's protection, its OIDC subject and GitHub's deployment record apply to every deploy. Each job decrypts the `figentra/secrets` scopes it needs with the shared `secrets-decrypt` action, signed in to Google Cloud as itself through GitHub OIDC, and takes only the names it uses from each. figentra/infra's `estate/secret-callers.mjs` grants each caller workflow, in its environment, its scopes; a job with no row is refused at the decrypt ([Secrets](/runbooks/secrets#reading-in-ci)).
 
-| Provider                        | Caller here                            | Does                                                                                                                        |
-| ------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `runway-cloudflare-workers.yml` | `deploy-static.yml`, `deploy-docs.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt |
-| `runway-npm.yml`                | `release.yml`                          | Trivy scan of the lockfile, version PR or trusted publish with provenance, a cosign-signed SBOM on each new release         |
+| Provider                        | Caller here                            | Does                                                                                                                                                              |
+| ------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runway-cloudflare-workers.yml` | `deploy-static.yml`, `deploy-docs.yml` | refuses a commit that is not on main, tests and builds the member, `wrangler deploy`, smoke test with readiness per attempt                                       |
+| `runway-npm.yml`                | `release.yml`                          | Trivy scan of the lockfile, the caller's `pack-check` over every tarball, version PR or trusted publish with provenance, a cosign-signed SBOM on each new release |
 
 npm checks the calling workflow, not the reusable one, so each package's trusted publisher names `release.yml`.
 

@@ -24,7 +24,7 @@ description: "Proposed · 2026-10-26"
 
 ## Context
 
-Every Figentra product (the OS, the commerce product and its editions, the legal product, Academorix after its rewrite)
+Every Figentra product (the OS, the commerce product and its editions, the legal product, the academy product after its rewrite)
 was set to carry its own console, landing site and mobile app copied from the template. Seven copies of one console
 means seven deploys, seven security perimeters and seven places to fix one bug, while the screens themselves are
 already server-driven: panels are declared by modules
@@ -129,7 +129,7 @@ check, first-paint and offline rules, a health-gated canary and a hardened ops c
   behaviour asks the OS for a slot or a setting.
 - Commerce's `apps/console` and `apps/web` become packages (`@figentra/commerce-console-ui`,
   `@figentra/commerce-storefront-ui`); its till and shopper apps stay as templates. Commerce keeps its current
-  `apps/console` running until a shell can load its bundle. Academorix moves onto the shells during its OS rewrite,
+  `apps/console` running until a shell can load its bundle. The academy product moves onto the shells during its OS rewrite,
   not before (the owner's no-infra-refactor decision of 2026-10-21).
 - The work starts with one thin slice end to end: the edge Worker with hand-written KV rows, the console shell and one
   Commerce bundle loaded through the import map. The registry, the projector, edge rendering and canaries follow;

@@ -15,7 +15,7 @@ import { VaultWriter } from "#core/ports/vault-writer.port";
  *
  * @example
  * const vault = new MemoryVaultWriterDriver();
- * vault.names; // ["prod:/ci/store/academorix/FCM_SERVICE_ACCOUNT_JSON"]
+ * vault.names; // ["prod:/ci/store/academy/FCM_SERVICE_ACCOUNT_JSON"]
  */
 export class MemoryVaultWriterDriver extends Driver(VaultWriter) {
   /** `<path>/<name>` of every write, in order. */

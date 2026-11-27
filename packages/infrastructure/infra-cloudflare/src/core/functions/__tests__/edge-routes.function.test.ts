@@ -16,13 +16,13 @@ const ROOT = {
     production: { domains: { zone: "figentra.com" } },
     staging: { domains: { zone: "figentra.com" } },
   },
-  surfaces: { web: { host: "app.mezzora", hosts: [{ host: "mezzora.com." }] } },
+  surfaces: { web: { host: "app.bistro", hosts: [{ host: "bistro.example." }] } },
 } as unknown as RootRunway;
 
 describe("edgeRoutes", () => {
   it("adds one route per host under a zone, once, after the hand-written ones", () => {
     expect(edgeRoutes(ROOT, { "figentra.com": ["x.figentra.com/*"] }, ["figentra.com"])).toEqual({
-      "figentra.com": ["x.figentra.com/*", "app.mezzora.figentra.com/*"],
+      "figentra.com": ["x.figentra.com/*", "app.bistro.figentra.com/*"],
     });
   });
 });

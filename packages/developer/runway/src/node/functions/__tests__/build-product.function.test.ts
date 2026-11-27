@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the product build and deploy test set (`buildProduct`, `deployProduct`) on two products with no app members:
- *          the template PR's root runway and academorix's (three surfaces, a portal preset, one mobile app with three
+ *          the template PR's root runway and academy's (three surfaces, a portal preset, one mobile app with three
  *          packages). A dry run plans the bundles, writes each app's config with only its capability flags and its
  *          packages built in, and records the EAS builds; a real build runs the bundler against the shell's import
  *          map and writes the bundle manifest; a flag the line does not offer is refused; the deploy publishes the
@@ -26,8 +26,8 @@ import { runProgram } from "#node/functions/run-program.function";
 import type { SurfaceBundler } from "#node/types/surface-bundler.type";
 
 import {
-  ACADEMORIX_PACKAGES,
-  ACADEMORIX_RUNWAY,
+  ACADEMY_PACKAGES,
+  ACADEMY_RUNWAY,
   put,
   TEMPLATE_RUNWAY,
   writeLines,
@@ -216,22 +216,22 @@ describe("buildProduct", () => {
     expect(existsSync(join(product, ".stackra/mobile"))).toBe(false);
   });
 
-  it("refuses academorix's wallet flag, which the line does not offer", async () => {
+  it("refuses academy's wallet flag, which the line does not offer", async () => {
     writeProduct(
       product,
-      ACADEMORIX_RUNWAY("push, camera, scanner, wallet, kiosk, tap-to-pay, bluetooth"),
-      ACADEMORIX_PACKAGES,
+      ACADEMY_RUNWAY("push, camera, scanner, wallet, kiosk, tap-to-pay, bluetooth"),
+      ACADEMY_PACKAGES,
     );
     await expect(
       buildProduct({ repository: product, scope: "@example", os, sha: SHA, dryRun: true }),
     ).rejects.toThrow(/offers no capability wallet/);
   });
 
-  it("dry-runs academorix: three surfaces, the portal preset, one app with three packages", async () => {
+  it("dry-runs academy: three surfaces, the portal preset, one app with three packages", async () => {
     writeProduct(
       product,
-      ACADEMORIX_RUNWAY("push, camera, scanner, kiosk, tap-to-pay, bluetooth"),
-      ACADEMORIX_PACKAGES,
+      ACADEMY_RUNWAY("push, camera, scanner, kiosk, tap-to-pay, bluetooth"),
+      ACADEMY_PACKAGES,
     );
     const build = await buildProduct({
       repository: product,
@@ -244,12 +244,12 @@ describe("buildProduct", () => {
     expect(build.surfaces["portal"]).toMatchObject({
       shell: { line: "os/console@3", package: "@example/os-console" },
       preset: "portal",
-      packages: ["@figentra/academorix-family-ui"],
-      hosts: ["family.v2.academorix"],
+      packages: ["@figentra/academy-family-ui"],
+      hosts: ["family.v2.academy"],
     });
     expect(build.surfaces["console"]?.packages).toHaveLength(2);
-    expect(Object.keys(build.mobile["academorix"]?.packages ?? {})).toHaveLength(3);
-    const app = read(".stackra/mobile/academorix/app.json").expo;
+    expect(Object.keys(build.mobile["academy"]?.packages ?? {})).toHaveLength(3);
+    const app = read(".stackra/mobile/academy/app.json").expo;
     expect(app.extra.capabilities).toEqual([
       "push",
       "camera",
@@ -263,7 +263,7 @@ describe("buildProduct", () => {
       "android.permission.ACCESS_FINE_LOCATION",
       "com.google.android.gms.permission.AD_ID",
     ]);
-    expect(read(".stackra/mobile/academorix/package.json").expo.autolinking.exclude).toEqual([
+    expect(read(".stackra/mobile/academy/package.json").expo.autolinking.exclude).toEqual([
       "expo-location",
     ]);
   });
