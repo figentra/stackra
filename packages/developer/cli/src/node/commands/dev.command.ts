@@ -23,9 +23,9 @@ export class DevCommand extends Command({
   bin: true,
   examples: [
     "stackra dev",
-    "stackra dev --surface console --os ../figentra-os",
-    "stackra dev --mobile field --os ../figentra-os --device <udid>",
-    "stackra dev --product --os ../figentra-os --tunnel",
+    "stackra dev --surface console --os ../template",
+    "stackra dev --mobile field --os ../template --device <udid>",
+    "stackra dev --product --os ../template --tunnel",
   ],
 }) {
   /** The body it runs, unchanged; every option the body reads is a field here. */
@@ -50,8 +50,8 @@ export class DevCommand extends Command({
   @Option({ description: "Run every surface and mobile app of the root runway at once" })
   product = false;
 
-  /** The OS checkout. */
-  @Option({ description: "The Figentra OS checkout the shells and templates come from" })
+  /** The template checkout. */
+  @Option({ description: "The template checkout the shells and app templates come from" })
   @Str
   os?: string;
 

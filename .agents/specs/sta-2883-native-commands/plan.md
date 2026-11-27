@@ -212,7 +212,7 @@ caller's input. The check data carries the findings the text already printed, no
 --repository --json`) and `run-check.function.test.ts` (the report, whatever the format); fail with
   `run-check.function.ts` and `validate-command.constant.ts` without `context.report`.
 - FR-005, FR-007: `run-body.function.test.ts` (byte-identical writes, the usage hint, the three `--json` data sources).
-- The built binary on box 2: a pseudo-terminal run of `stackra new`, a refusal without one, `gen --check --json` on a
+- The built binary on a Linux build host: a pseudo-terminal run of `stackra new`, a refusal without one, `gen --check --json` on a
   real member and `check --only config --json`; then the `@stackra/cli` tests, typecheck, oxlint, oxfmt and `gen
 --check`.
 

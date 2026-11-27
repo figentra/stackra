@@ -20,7 +20,7 @@ export class BuildCommand extends Command({
   description: BUILD_COMMAND.summary,
   group: "Develop",
   bin: true,
-  examples: ["stackra build", "stackra build --product --dry-run --os ../figentra-os"],
+  examples: ["stackra build", "stackra build --product --dry-run --os ../template"],
 }) {
   /** The body it runs, unchanged; every option the body reads is a field here. */
   static readonly body: CliCommand = BUILD_COMMAND;
@@ -42,8 +42,8 @@ export class BuildCommand extends Command({
   @Option({ description: "With --product: build the web surfaces, not the mobile apps" })
   surfacesOnly = false;
 
-  /** The OS checkout. */
-  @Option({ description: "With --product: the Figentra OS checkout the shells come from" })
+  /** The template checkout. */
+  @Option({ description: "With --product: the template checkout the shells come from" })
   @Str
   os?: string;
 

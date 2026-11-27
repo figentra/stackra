@@ -167,6 +167,8 @@ summary), and writes the member.
 - **AC-005**: IF a command is registered as passthrough (other than `runway`) THEN THE run-cli test SHALL fail.
 - **AC-006**: WHEN `stackra check --json` (or `validate`, `verify`, `code:check`, `code:fix`) runs THE CLI SHALL report
   `{ phases, findings }`: each phase's status, finding and fixable counts and duration, and every finding.
+- **AC-007**: WHEN `stackra dev --help` or `stackra build --help` runs THE CLI SHALL describe `--os` as a template
+  checkout, and the help of both SHALL name no Figentra product or repository.
 
 ## Success Criteria _(mandatory)_
 
@@ -214,6 +216,8 @@ None.
 - 2026-11-26 · review of the branch: `check --json` returned only the captured text lines, though the README and the
   check classes promised the phases and findings. Added AC-006, P-008 and T010: `runCheck` reports `{ phases,
 findings }` and `validate --repository` `{ findings: [{ dir, text }] }`; FR-005 names the check commands.
+- 2026-11-27 · CTO review condition: the `--os` help of `dev` and `build` is neutral ("the template checkout"), and
+  their examples use `../template`, so the public help names no Figentra product. Added AC-007 and T011.
 
 ## Status history
 

@@ -274,6 +274,21 @@ describe("COMMANDS", () => {
     );
   });
 
+  // @covers sta-2883:FR-001
+  it("describes --os of dev and build as a template checkout, with no Figentra names in their help", () => {
+    for (const name of ["dev", "build"]) {
+      const structure = structures.find((found) => found.name === name);
+      const os = structure?.options.find((option) => option.property === "os");
+      expect(os?.description, name).toMatch(/template checkout/);
+      const help = [
+        structure?.description ?? "",
+        ...(structure?.examples ?? []),
+        ...(structure?.options ?? []).map((option) => option.description ?? ""),
+      ].join("\n");
+      expect(help, name).not.toMatch(/figentra/i);
+    }
+  });
+
   it("holds no Figentra-internal operation", () => {
     for (const internal of ["linear", "bot", "merge", "secrets", "delegate", "spend"]) {
       expect(names.some((name) => name.split(":")[0] === internal)).toBe(false);

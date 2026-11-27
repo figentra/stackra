@@ -38,3 +38,7 @@ description: "Tasks for STA-2883: the day-one stackra commands are native consol
 
 - [x] T008 Document the commands in `packages/developer/cli/README.md`, `apps/docs/src/docs/cli.mdx`, `apps/docs/src/docs/cli.ar.mdx` and `.changeset/cli-native-commands.md` — covers: SC-001, SC-002, AC-001, AC-003, AC-006 — route: steward-docs — deps: T007, T010
 - [x] T009 Run the `@stackra/cli` tests, typecheck, oxlint, oxfmt, `gen --check`, the revert checks and the built-binary proof, in `packages/developer/cli/package.json` — covers: SC-001, SC-002, SC-003, AC-001, AC-002, AC-003, AC-004, AC-005, AC-006 — route: verify-fix — deps: T008
+
+## Phase 7: Review conditions
+
+- [x] T011 Test first, then make the `--os` help of `packages/developer/cli/src/node/commands/dev.command.ts` and `packages/developer/cli/src/node/commands/build.command.ts` neutral (a template checkout, examples on `../template`), proved in `packages/developer/cli/src/node/constants/__tests__/commands.constant.test.ts` — covers: FR-001, AC-007 — route: package
