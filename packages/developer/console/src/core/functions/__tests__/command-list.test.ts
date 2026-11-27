@@ -3,7 +3,7 @@
  * Purpose: proves the command list through the kernel: headings in `ConsoleConfig.groups` order (the rest
  *          alphabetically), commands `ConsoleConfig.unlisted` names left out of the list, its `--json` data and tab
  *          completion while still running by name, the `list --all` hint, the built-in `list` and `list --all` (hidden
- *          commands included), a usage error for anything else after `list`, and a registered `list` command winning.
+ *          commands included, their `--json` rows keeping the real `hidden` value), a usage error for anything else after `list`, and a registered `list` command winning.
  * Boundary: unit test in-process; no terminal.
  * Runtime: node
  * Governing contract: STA-2872 spec FR-001 to FR-003; ADR 0022.
@@ -112,6 +112,21 @@ describe("the command list", () => {
     expect(listed(json.stdout)).toEqual(
       ["about", "cycles", "db:migrate", "make:model", "plumbing", "serve", "zebra"].toSorted(),
     );
+  });
+
+  it("keeps each command's real `hidden` value in the `list --all --json` data", async () => {
+    const json = await runCommandForTest(config({ unlisted }), ["list", "--all", "--json"]);
+    const rows = (JSON.parse(json.stdout) as { data: { name: string; hidden: boolean }[] }).data;
+    const hidden = Object.fromEntries(rows.map((row) => [row.name, row.hidden]));
+    expect(hidden).toEqual({
+      about: false,
+      cycles: false,
+      "db:migrate": false,
+      "make:model": false,
+      plumbing: true,
+      serve: false,
+      zebra: false,
+    });
   });
 
   it("refuses an argument or another option after `list` with exit 2", async () => {

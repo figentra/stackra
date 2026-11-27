@@ -107,7 +107,9 @@ shows the rest.
 
 **Acceptance Scenarios**:
 
-1. **Given** a root runway with surfaces and a mobile app, **Then** smoke, preview serve and mobile onboard are listed.
+1. **Given** a root runway with surfaces and a mobile app, **Then** smoke, preview serve, mobile onboard and the
+   mobile build checks (`eas-preflight` under Deploy, `app-native-deps` under Quality) are listed; without a mobile app
+   the two checks are not.
 2. **Given** a member that depends on `@stackra/search`, `@stackra/settings` and `@stackra/audit`, and a `seed-packs/`
    folder, **Then** their commands are listed.
 3. **Given** the core repository, **Then** every group is listed, Repository included.
@@ -145,6 +147,10 @@ shows the rest.
 - **AC-004**: WHILE a command is unlisted or hidden THE CLI SHALL still run it by name.
 - **AC-005**: WHERE the workspace builds `@stackra/cli` THE CLI SHALL list the Repository group.
 - **AC-006**: IF a command is added without a group THEN THE commands test SHALL fail.
+- **AC-007**: WHEN `list --all --json` runs THE console SHALL keep each command's real `hidden` value in the data, while
+  the text list draws every row.
+- **AC-008**: WHERE the workspace has a mobile app THE CLI SHALL list `eas-preflight` under Deploy and
+  `app-native-deps` under Quality.
 
 ## Success Criteria _(mandatory)_
 
@@ -152,6 +158,9 @@ shows the rest.
   `run-cli.function.ts` reverted; `command-list.test.ts` and `route.function.test.ts` prove FR-001 to FR-003 in the
   console and fail with its list code reverted — verified by: unit
 - **SC-002**: `commands.constant.test.ts` proves AC-006, the Repository set and the hidden set — verified by: unit
+- **SC-004**: `command-list.test.ts` ("keeps each command's real `hidden` value in the `list --all --json` data") proves
+  AC-007; `commands.constant.test.ts` ("puts the mobile build checks where an app team with a mobile app sees them")
+  and `unlisted-command.function.test.ts` (the product with surfaces and an app) prove AC-008 — verified by: unit
 - **SC-003**: the `@stackra/console` and `@stackra/cli` tests, typecheck, oxlint and oxfmt pass — verified by: manual
 
 ## Compatibility and migration
@@ -185,12 +194,15 @@ None.
 
 ## Amendments
 
-None.
+- 2026-11-27 · CTO review conditions: `list --all --json` keeps each command's real `hidden` value (only the text list
+  draws hidden rows), and `eas-preflight` (Deploy) and `app-native-deps` (Quality) leave the Repository group for the
+  `mobile` fit, so app teams with a mobile app see them (AC-007, AC-008).
 
 ## Status history
 
 - 2026-11-26 · — → Draft · Claude (STA-2872 session) · created from audit item DX1.1
 - 2026-11-26 · Draft → Clarified · Claude (STA-2872 session) · groups, hiding rules and the 25-command target settled
 - 2026-11-26 · Clarified → Planned · Claude (STA-2872 session) · plan.md
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 · Planned → Tasked · Claude (STA-2872 session) · tasks.md
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2872 session) · T001 to T010 on the branch

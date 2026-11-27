@@ -145,7 +145,8 @@ The list is kept short for the workspace it runs in (STA-2872):
 - **Repository** holds the core repository's own checks (structure, cycles, duplication, doc-standard, the testbed,
   the consumer gate, …). They are listed only in the workspace that builds `@stackra/cli`.
 - **Fits** (`COMMAND_FITS`): a command that acts on something only some workspaces have is listed only there. Smoke
-  needs a product's surfaces or mobile app, preview serve web surfaces, mobile onboard a mobile app, seed-pack a
+  needs a product's surfaces or mobile app, preview serve web surfaces, mobile onboard, `eas-preflight` (Deploy)
+  and `app-native-deps` (Quality) a mobile app, seed-pack a
   `seed-packs/` folder, and the search, settings, audit and operator commands the package whose data they touch.
 - **Hidden**: the check presets (`validate`, `verify`, `code:check`, `code:fix`; `check` names them) and what a script,
   hook or agent client runs (`mcp`, `mcp exec`, `mcp sync`, `agents sync`, `agents check`).
@@ -328,8 +329,11 @@ in-memory PGlite through the member's own `@stackra/database/node`, and compares
 nullability), indexes and foreign keys with what the models declare: each many-to-many relation's pivot table (its
 two keys, the owner's `tenant_id` and their foreign keys) and a `@Searchable` model's `search_text` and
 `search_filters` included, its vectors and rebuild shadows tolerated (search columns on another table are undeclared),
-and a partial index's predicate compared as Postgres rewrites it (`in` as `= ANY`, `like` as `~~`, casts dropped). One
-line per difference,
+a partial index's predicate compared as Postgres rewrites it (`in` as `= ANY`, `like` as `~~`, casts dropped), and each
+model's traits giving the columns and indexes their migration macros write (`HasTree`'s `varchar(33)` `parent_id`,
+`ltree` `tree_path`, either nullable, and GiST index; `HasMetadata`'s jsonb bag, its GIN index optional; `Versioned`'s
+integer `version`; `Partitioned`'s optional BRIN index), so a trait's column on a table whose model lacks the trait is
+undeclared. One line per difference,
 `<module>  <table>  <kind>  <subject>  <expected>  <actual>`; `--json` prints the same as an array. Exit 0 when they
 agree, 1 on a difference, 2 when a migration does not compile or replay, or `@stackra/database` or PGlite
 (`@electric-sql/pglite`, `@electric-sql/pglite-pgvector`) is not installed in the member. Only the member's own modules

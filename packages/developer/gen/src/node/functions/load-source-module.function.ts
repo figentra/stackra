@@ -1,7 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: `loadSourceModule(root, path)`, imports a TypeScript source file for gen. A file outside `node_modules` (the
- *          member's own, or a workspace package linked there) loads directly, since Node 24 strips its types. A file
+ *          member's own, or a workspace package linked there) loads directly, since Node 24 strips its types, under a
+ *          URL that names its content, so a process that loads it again after an edit gets the edited module and not
+ *          the one it cached (the migration lock judges what is on disk, STA-2160). A file
  *          under `node_modules` (a package installed from the registry, which ships `src/`) is one Node refuses to
  *          strip, so its types are stripped here into `<root>/.stackra/cache/sources/` and that copy loads instead.
  * Boundary: reads the file and writes one cache copy beside the member's other generated files; the copy resolves its
@@ -9,7 +11,7 @@
  *           Relative imports in such a file do not resolve from the copy (a package migration imports only
  *           `@stackra/database`, ADR 0159).
  * Runtime: node
- * Governing contract: ADR 0159 (decision 2: a migration imports only @stackra/database); ADR 0421.
+ * Governing contract: ADR 0159 (decision 2: a migration imports only @stackra/database); ADR 0421; STA-2160.
  */
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
@@ -28,8 +30,11 @@ export async function loadSourceModule(
   path: string,
 ): Promise<Record<string, unknown>> {
   const real = realpathSync(path);
+  // The URL names the content, so a second load in one process reads an edited file anew (STA-2160).
   if (!real.split(sep).includes("node_modules") || !real.endsWith(".ts"))
-    return (await import(pathToFileURL(real).href)) as Record<string, unknown>;
+    return (await import(
+      `${pathToFileURL(real).href}?v=${createHash("sha256").update(readFileSync(real)).digest("hex").slice(0, 16)}`
+    )) as Record<string, unknown>;
   const code = stripTypeScriptTypes(readFileSync(real, "utf8"), { mode: "strip" });
   const digest = createHash("sha256").update(real).update(code).digest("hex").slice(0, 16);
   const dir = join(root, ".stackra", "cache", "sources");

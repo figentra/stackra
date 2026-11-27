@@ -4,10 +4,13 @@
  *          (`{ value, expiresAt }`, plus `staleUntil` when it has a stale window), and stored text that is not an
  *          entry read as absent.
  * Boundary: internal to the package; the storage, Valkey and Workers drivers wrap their store with it. Stored text is
- *           untrusted: anything without a numeric `expiresAt` (and a numeric `staleUntil` when present) is absent.
+ *           untrusted: anything without a numeric `expiresAt` (and a numeric `staleUntil` when present) is absent. A
+ *           store's atomic `create` passes through with the entry as text; a store without one gives none.
  * Runtime: isomorphic
  * Governing contract: ADR 0150 (decisions 1, 2 and 4).
  */
+import type { Duration } from "@stackra/contracts";
+
 import type { CacheEntry } from "#core/types/cache-entry.type";
 import type { CacheEntryStore } from "#core/types/cache-entry-store.type";
 import type { CacheStore } from "#core/types/cache-store.type";
@@ -32,9 +35,15 @@ function entryOf(text: string): CacheEntry | undefined {
  * this.cache = storedCache(textEntryStore(store), namespace, clock, settings);
  */
 export function textEntryStore(store: CacheStore): CacheEntryStore {
-  const { keys } = store;
+  const { keys, create } = store;
   return {
     ...(keys === undefined ? {} : { keys }),
+    ...(create === undefined
+      ? {}
+      : {
+          create: (key: string, entry: CacheEntry, ttl: Duration) =>
+            create(key, JSON.stringify(entry), ttl),
+        }),
     read: async (key) => {
       const text = await store.read(key);
       return text === undefined ? undefined : entryOf(text);

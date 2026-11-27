@@ -18,7 +18,7 @@ import type { CliCommand } from "#node/types/cli-command.type";
 export class EasPreflightCommand extends Command({
   name: "eas-preflight",
   description: EAS_PREFLIGHT_COMMAND.summary,
-  group: "Repository",
+  group: "Deploy",
   bin: true,
   examples: [
     "stackra eas-preflight check --platform ios",

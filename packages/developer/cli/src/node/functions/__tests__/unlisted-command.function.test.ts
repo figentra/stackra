@@ -148,14 +148,23 @@ describe("the stackra list in an app", () => {
 });
 
 describe("the stackra list by what the workspace uses", () => {
-  it("lists smoke, preview serve and mobile onboarding for a product with surfaces and an app", async () => {
+  it("lists smoke, preview serve, mobile onboarding and the mobile build checks for a product with surfaces and an app", async () => {
     minimalApp();
+    const before = await listed();
+    expect(before).not.toEqual(expect.arrayContaining(["eas-preflight"]));
+    expect(before).not.toEqual(expect.arrayContaining(["app-native-deps"]));
     write(
       "runway.yaml",
       "version: 3\nproject: acme-platform\nsurfaces:\n  landing:\n    kind: web\nmobile:\n  app:\n    bundle: com.acme\n",
     );
     expect(await listed()).toEqual(
-      expect.arrayContaining(["smoke", "preview:serve", "mobile:onboard"]),
+      expect.arrayContaining([
+        "smoke",
+        "preview:serve",
+        "mobile:onboard",
+        "eas-preflight",
+        "app-native-deps",
+      ]),
     );
   });
 

@@ -1,12 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `MigrationUnit`, one compiled migration as the migration target orders and writes it: its id, whose it is
- *          (a declared package's or the member's own), the file it came from, the ids it runs after and its compiled
- *          steps (the shape `@stackra/database`'s `compileMigration` returns).
+ *          (a declared package's or the member's own), the file it came from, the ids it runs after, its compiled
+ *          steps (the shape `@stackra/database`'s `compileMigration` returns) and the SHA-256 its lock holds.
  * Boundary: a type only, structural so the pure entry needs no `@stackra/database` import. Filled by
  *           `compileMigrations` (node), read by `orderMigrations` and `emitMigrations`.
  * Runtime: isomorphic
- * Governing contract: ADR 0159 (decisions 1 to 3, as amended 2026-10-23 and 2026-10-24).
+ * Governing contract: ADR 0159 (decisions 1 to 3, as amended 2026-10-23 and 2026-10-24); STA-2160 (the lock).
  */
 
 /** One compiled migration. */
@@ -32,4 +32,7 @@ export interface MigrationUnit {
     readonly transactional: boolean;
     readonly inverse: readonly string[] | false;
   }[];
+
+  /** The SHA-256 of its `after` ids and steps (`migrationSha256`), set by `compileMigrations` for the lock. */
+  readonly sha256?: string;
 }

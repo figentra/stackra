@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `createConsole(config)`, a console: the registry is read and checked once (declarations, duplicate
  *          names), and `run(argv, ports)` routes the invocation to one intent, decides the mode, lists (headings in
- *          `config.groups` order, without the hidden commands and those `config.unlisted` names unless `list --all`),
+ *          `config.groups` order, without the hidden commands and those `config.unlisted` names unless `list --all`,
+ *          whose `--json` rows keep their real `hidden` value),
  *          helps, versions or dispatches, renders a failure as an error screen or a `--json` error (or, with
  *          `json: "bare"`, the data alone on stdout and everything else on stderr), and resolves with the exit code.
  * Boundary: no module's commands live here; they come in `config.commands`. Writes only to `ports`; the container
@@ -140,10 +141,10 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
     }
     if (intent.kind === "list") {
       // `list --all` shows every command; otherwise the hidden ones and those this run leaves out are not listed.
+      // The `--json` data keeps each command's real `hidden` value, so a script can still tell the hidden ones apart.
       const visible = [...new Set(registry.values())]
         .map((row) => row.structure)
-        .map((structure) => (intent.all ? { ...structure, hidden: false } : structure))
-        .filter((structure) => !structure.hidden && (intent.all || !unlisted(structure)));
+        .filter((structure) => intent.all || (!structure.hidden && !unlisted(structure)));
       data = visible;
       if (!mode.json) {
         // The banner carries the name and version on a terminal; a pipe gets them as a plain line.
@@ -152,7 +153,13 @@ export function createConsole(config: ConsoleConfig): ConsoleApp {
           renderer.about();
           renderer.line();
         }
-        renderer.commandList(visible, config.name, {
+        // The text list draws only rows not marked hidden, so `list --all` hands it every row as shown.
+        const drawn = intent.all
+          ? visible.map((structure) =>
+              structure.hidden ? { ...structure, hidden: false } : structure,
+            )
+          : visible;
+        renderer.commandList(drawn, config.name, {
           order: config.groups ?? [],
           more: new Set(registry.values()).size - visible.length,
         });
