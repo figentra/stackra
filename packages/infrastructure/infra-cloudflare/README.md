@@ -55,7 +55,7 @@ providers:
     accountId: ref:cloudflare.accountId
     zones:
       figentra.com: ref:cloudflare.zones.com
-      figentra.cloud: ref:cloudflare.zones.cloud
+      dev.example: ref:cloudflare.zones.cloud
 edge:
   proxy: all # A, AAAA and CNAME records are proxied unless they opt out
   waf: managed # the plan's managed ruleset
@@ -77,7 +77,7 @@ yet. Ids and names only: no token or secret ever sits here.
 ```yaml
 config:
   figentra-infra:infra-cloudflare:
-    devZone: figentra.cloud # ADR 0290 decision 1
+    devZone: dev.example # ADR 0290 decision 1
     zones:
       figentra.com:
         plan: free # ADR 0290 decision 13; pro after the first public API
@@ -91,20 +91,20 @@ config:
         workers:
           static.stackra.figentra.com:
             service: stackra-static # ADR 0284 decision 9
-      figentra.cloud:
+      dev.example:
         edge: false # dev traffic keeps its own rules (ADR 0290 decision 3)
     buckets:
       turbo-cache:
         expireDays: 7 # matches turbo's cacheMaxAge (ADR 0026)
     tunnels:
-      akouta: {} # every member with a dev port
+      dana: {} # every member with a dev port
       box:
         members: [console]
     access:
       githubOrganization: figentra
       identityProviderId: ref:cloudflare.access.github
       operatorUris: [api.figentra.com/platform]
-      bypass: ["*.figentra.cloud/api/auth/callback"]
+      bypass: ["*.dev.example/api/auth/callback"]
       serviceTokens: [box]
 ```
 

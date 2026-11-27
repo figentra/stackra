@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `resolveHost(name, zone)`, the DNS name a surface or app-link host resolves to in an environment: relative to
- *          the environment's `domains.zone` (`console.mezzora` → `console.mezzora.figentra.com`, D9) unless it already
- *          ends in that zone or ends in `.` (a product's own domain, `mezzora.com.`).
+ *          the environment's `domains.zone` (`console.bistro` → `console.bistro.figentra.com`, D9) unless it already
+ *          ends in that zone or ends in `.` (a product's own domain, `bistro.example.`).
  * Boundary: pure; `undefined` when a relative name has no zone or the result is not a lower-case DNS name of two labels
  *           or more. Shared by `platformRows` and `checkHosts` (STA-1796), so both read a host the same way.
  * Runtime: isomorphic
@@ -17,8 +17,8 @@ const HOSTNAME =
  * The host `name` resolves to under `zone`, or `undefined` when it cannot.
  *
  * @example
- * resolveHost("console.mezzora", "figentra.com"); // "console.mezzora.figentra.com"
- * resolveHost("mezzora.com.", undefined); // "mezzora.com"
+ * resolveHost("console.bistro", "figentra.com"); // "console.bistro.figentra.com"
+ * resolveHost("bistro.example.", undefined); // "bistro.example"
  */
 export function resolveHost(name: string, zone: string | undefined): string | undefined {
   const host = name.endsWith(".")

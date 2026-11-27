@@ -63,7 +63,7 @@ function fill(
 function member(fills: readonly SlotFillIR[], extra: Partial<MemberIR> = {}): MemberIR {
   return {
     member: "console_ui",
-    package: "@mezzora/console-ui",
+    package: "@bistro/console-ui",
     version: "1.0.0",
     layout: "package",
     modules: [],
@@ -169,7 +169,7 @@ describe("buildManifest slot sections", () => {
       {
         key: "shell.header",
         name: "Header",
-        from: "@mezzora/console-ui",
+        from: "@bistro/console-ui",
         surface: "console",
         cardinality: "one",
         props: {},
@@ -179,7 +179,7 @@ describe("buildManifest slot sections", () => {
       {
         slot: "auth.sign_in.brand_panel",
         name: "brand",
-        from: "@mezzora/console-ui",
+        from: "@bistro/console-ui",
         surface: "console",
         props: PROPS,
       },

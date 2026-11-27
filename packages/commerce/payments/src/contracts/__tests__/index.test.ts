@@ -59,7 +59,7 @@ describe("@stackra/payments/contracts", () => {
   });
 
   it("types the four connection modes", () => {
-    expectTypeOf<"legacy-connected-account:academorix">().toExtend<PaymentConnectionMode>();
+    expectTypeOf<"legacy-connected-account:academy">().toExtend<PaymentConnectionMode>();
     expectTypeOf<"own-key">().toExtend<PaymentConnectionMode>();
   });
 });

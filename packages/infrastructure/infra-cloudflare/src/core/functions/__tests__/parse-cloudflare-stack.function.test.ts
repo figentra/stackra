@@ -22,7 +22,7 @@ describe("parseCloudflareStack", () => {
 
   it("reads a full config and fills the defaults", () => {
     const stack = parseCloudflareStack({
-      devZone: "figentra.cloud",
+      devZone: "dev.example",
       zones: {
         "figentra.com": {
           plan: "pro",
@@ -33,10 +33,10 @@ describe("parseCloudflareStack", () => {
           },
           workers: { "static.stackra.figentra.com": { service: "stackra-static" } },
         },
-        "figentra.cloud": { edge: false },
+        "dev.example": { edge: false },
       },
       buckets: { "turbo-cache": { expireDays: 7 } },
-      tunnels: { akouta: { members: ["console"] }, box: {} },
+      tunnels: { dana: { members: ["console"] }, box: {} },
       access: {
         githubOrganization: "figentra",
         identityProviderId: "ref:cloudflare.access.github",
@@ -47,7 +47,7 @@ describe("parseCloudflareStack", () => {
     expect(stack.zones["figentra.com"]?.plan).toBe("pro");
     expect(stack.zones["figentra.com"]?.edge).toBe(true);
     expect(stack.zones["figentra.com"]?.records["docs"]?.ttl).toBe(1);
-    expect(stack.zones["figentra.cloud"]).toEqual({
+    expect(stack.zones["dev.example"]).toEqual({
       plan: "free",
       edge: false,
       records: {},
@@ -55,7 +55,7 @@ describe("parseCloudflareStack", () => {
       regional: {},
     });
     expect(stack.buckets).toEqual({ "turbo-cache": { expireDays: 7 } });
-    expect(stack.tunnels).toEqual({ akouta: { members: ["console"] }, box: {} });
+    expect(stack.tunnels).toEqual({ dana: { members: ["console"] }, box: {} });
     expect(stack.access).toEqual({
       githubOrganization: "figentra",
       identityProviderId: "ref:cloudflare.access.github",
@@ -70,7 +70,7 @@ describe("parseCloudflareStack", () => {
     const issues = thrownIssues(() =>
       parseCloudflareStack(
         {
-          tunnels: { akouta: {} },
+          tunnels: { dana: {} },
           zones: {
             "figentra.com": {
               records: { bad: { type: "A", name: "Not A Name", content: "192.0.2.1" } },
@@ -90,7 +90,7 @@ describe("parseCloudflareStack", () => {
   it("checks the dev zone and the zone of each host once the shape is valid", () => {
     const issues = thrownIssues(() =>
       parseCloudflareStack({
-        tunnels: { akouta: {} },
+        tunnels: { dana: {} },
         zones: {
           "figentra.com": {
             workers: { "static.example.org": { service: "stackra-static" } },

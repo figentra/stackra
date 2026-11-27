@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the pull-request path of `publishProduct` (`publishPullRequest`) and of
- *          `pullRequestPreviewHost`: one `<product>-pr-<n>.figentra.cloud` host row and one `release:…:pr-<n>` row, both with a
+ *          `pullRequestPreviewHost`: one `<product>-pr-<n>.dev.example` host row and one `release:…:pr-<n>` row, both with a
  *          7-day expiry, no canary, no app-link file; a wrong environment, a bad number, an unserved target and a
  *          missing bundle, a missing product and a host another product holds are refused before any upload or write.
  * Boundary: test only; temporary folder, fake command runner, in-memory KV writer.
@@ -21,12 +21,15 @@ import { publishProduct } from "#node/functions/publish-product.function";
 import { pullRequestPreviewHost } from "#node/functions/pull-request-preview-host.function";
 import type { ProductPublishRequest } from "#node/types/product-publish-request.type";
 
-const BASE = "https://assets.test/mezzora/console/abc123def456/";
+const BASE = "https://assets.test/bistro/console/abc123def456/";
 const SEVEN_DAYS = 604_800;
 
 let repository: string;
 let uploads: number;
 let kv: MemoryEdgeKv;
+
+/** The product's pull-request zone, as its root runway names it. */
+const ZONE = "dev.example";
 
 /** A preview publish of pull request 412. */
 function request(extra: Partial<ProductPublishRequest> = {}): ProductPublishRequest {
@@ -53,7 +56,10 @@ beforeEach(() => {
     join(repository, "runway.yaml"),
     JSON.stringify({
       ...PRODUCT_ROOT,
-      environments: { ...PRODUCT_ROOT.environments, preview: { regions: ["me-central"] } },
+      environments: {
+        ...PRODUCT_ROOT.environments,
+        preview: { regions: ["me-central"], domains: { pullRequestZone: ZONE } },
+      },
     }),
   );
 });
@@ -63,18 +69,36 @@ afterEach(() => {
 });
 
 describe("pullRequestPreviewHost", () => {
-  it("is one label under figentra.cloud, named by the product", () => {
-    expect(pullRequestPreviewHost("mezzora", 412)).toBe("mezzora-pr-412.figentra.cloud");
+  it("is one label under the product's zone, named by the product", () => {
+    expect(pullRequestPreviewHost("bistro", 412, ZONE)).toBe("bistro-pr-412.dev.example");
+    expect(pullRequestPreviewHost("bistro", 412, "preview.acme.test")).toBe(
+      "bistro-pr-412.preview.acme.test",
+    );
   });
 
   it("gives two products' pull requests of the same number two hosts", () => {
-    expect(pullRequestPreviewHost("pay", 412)).not.toBe(pullRequestPreviewHost("commerce", 412));
+    expect(pullRequestPreviewHost("pay", 412, ZONE)).not.toBe(
+      pullRequestPreviewHost("commerce", 412, ZONE),
+    );
   });
 
   it("refuses a number that is not a pull request's, and a product that is not a DNS label", () => {
-    expect(() => pullRequestPreviewHost("mezzora", 0)).toThrow(TypeError);
-    expect(() => pullRequestPreviewHost("mezzora", 1.5)).toThrow(TypeError);
-    expect(() => pullRequestPreviewHost("Mezzora.app", 412)).toThrow(TypeError);
+    expect(() => pullRequestPreviewHost("bistro", 0, ZONE)).toThrow(TypeError);
+    expect(() => pullRequestPreviewHost("bistro", 1.5, ZONE)).toThrow(TypeError);
+    expect(() => pullRequestPreviewHost("Bistro.app", 412, ZONE)).toThrow(TypeError);
+  });
+
+  it("refuses a zone that is not a lowercase host name of two labels or more", () => {
+    for (const zone of [
+      "",
+      "example",
+      ".example",
+      "Preview.Example",
+      "a..example",
+      "-a.example",
+      "a.example.",
+    ])
+      expect(() => pullRequestPreviewHost("bistro", 412, zone), zone).toThrow(TypeError);
   });
 });
 
@@ -83,22 +107,22 @@ describe("publishProduct for a pull request", () => {
     writeBundle(repository, "console", "abc123def456");
     const result = await publishProduct(request());
 
-    expect(result.host).toBe("mezzora-pr-412.figentra.cloud");
+    expect(result.host).toBe("bistro-pr-412.dev.example");
     expect(result.canaries).toEqual({});
     expect(result.written).toEqual([
-      "release:mezzora:console:pr-412",
-      "host:mezzora-pr-412.figentra.cloud",
+      "release:bistro:console:pr-412",
+      "host:bistro-pr-412.dev.example",
     ]);
-    expect(kv.json("host:mezzora-pr-412.figentra.cloud")).toEqual({
-      product: "mezzora",
+    expect(kv.json("host:bistro-pr-412.dev.example")).toEqual({
+      product: "bistro",
       surface: "console",
       region: "me-central",
       status: "active",
       realm: "tenant",
-      canonical: "mezzora-pr-412.figentra.cloud",
+      canonical: "bistro-pr-412.dev.example",
       pullRequest: 412,
     });
-    expect(kv.json("release:mezzora:console:pr-412")).toEqual({
+    expect(kv.json("release:bistro:console:pr-412")).toEqual({
       version: "abc123def456",
       url: `${BASE}entry-abc.js`,
       base: BASE,
@@ -107,7 +131,7 @@ describe("publishProduct for a pull request", () => {
       css: [`${BASE}style-123.css`],
     });
     expect(kv.calls.map((call) => call[3])).toEqual([SEVEN_DAYS, SEVEN_DAYS]);
-    expect(kv.rows.has("release:mezzora:console")).toBe(false);
+    expect(kv.rows.has("release:bistro:console")).toBe(false);
   });
 
   it("refuses another environment, before any upload or write", async () => {
@@ -121,7 +145,7 @@ describe("publishProduct for a pull request", () => {
 
   it("refuses a host another product's preview holds, before any upload or write", async () => {
     writeBundle(repository, "console", "abc123def456");
-    kv.rows.set("host:mezzora-pr-412.figentra.cloud", JSON.stringify({ product: "pay" }));
+    kv.rows.set("host:bistro-pr-412.dev.example", JSON.stringify({ product: "pay" }));
     await expect(publishProduct(request())).rejects.toBeInstanceOf(RunwayInvalidError);
     expect(uploads).toBe(0);
     expect(kv.calls).toEqual([]);
@@ -129,9 +153,27 @@ describe("publishProduct for a pull request", () => {
 
   it("replaces its own product's host row on the next push", async () => {
     writeBundle(repository, "console", "abc123def456");
-    kv.rows.set("host:mezzora-pr-412.figentra.cloud", JSON.stringify({ product: "mezzora" }));
+    kv.rows.set("host:bistro-pr-412.dev.example", JSON.stringify({ product: "bistro" }));
     const result = await publishProduct(request());
-    expect(result.written).toContain("host:mezzora-pr-412.figentra.cloud");
+    expect(result.written).toContain("host:bistro-pr-412.dev.example");
+  });
+
+  it("refuses a runway with no pull-request zone, before any upload or write", async () => {
+    writeBundle(repository, "console", "abc123def456");
+    writeFileSync(
+      join(repository, "runway.yaml"),
+      JSON.stringify({
+        ...PRODUCT_ROOT,
+        environments: { ...PRODUCT_ROOT.environments, preview: { regions: ["me-central"] } },
+      }),
+    );
+    const refusal = await publishProduct(request()).catch((error: unknown) => error);
+    expect(refusal).toBeInstanceOf(RunwayInvalidError);
+    expect((refusal as RunwayInvalidError).issues.map((issue) => issue.path)).toEqual([
+      "environments.preview.domains.pullRequestZone",
+    ]);
+    expect(uploads).toBe(0);
+    expect(kv.calls).toEqual([]);
   });
 
   it("refuses a runway with no product, before any upload or write", async () => {
@@ -143,7 +185,10 @@ describe("publishProduct for a pull request", () => {
       join(repository, "runway.yaml"),
       JSON.stringify({
         ...rest,
-        environments: { ...PRODUCT_ROOT.environments, preview: { regions: ["me-central"] } },
+        environments: {
+          ...PRODUCT_ROOT.environments,
+          preview: { regions: ["me-central"], domains: { pullRequestZone: ZONE } },
+        },
       }),
     );
     await expect(publishProduct(request())).rejects.toBeInstanceOf(RunwayInvalidError);

@@ -14,10 +14,10 @@ import { edgeKvKey } from "#core/functions/edge-kv-key.function";
 describe("edgeKvKey", () => {
   it("builds each key family", () => {
     expect(edgeKvKey("host", "shop.acme.example")).toBe("host:shop.acme.example");
-    expect(edgeKvKey("boot", "mezzora", "console", "scp_01J")).toBe("boot:mezzora:console:scp_01J");
+    expect(edgeKvKey("boot", "bistro", "console", "scp_01J")).toBe("boot:bistro:console:scp_01J");
     expect(edgeKvKey("shell", "console", "3")).toBe("shell:console:3");
-    expect(edgeKvKey("release", "mezzora", "console")).toBe("release:mezzora:console");
-    expect(edgeKvKey("canary", "mezzora", "console")).toBe("canary:mezzora:console");
+    expect(edgeKvKey("release", "bistro", "console")).toBe("release:bistro:console");
+    expect(edgeKvKey("canary", "bistro", "console")).toBe("canary:bistro:console");
     expect(edgeKvKey("wellknown", "shop.acme.example", "assetlinks.json")).toBe(
       "wellknown:shop.acme.example:assetlinks.json",
     );
@@ -25,7 +25,7 @@ describe("edgeKvKey", () => {
 
   it("refuses an empty part or one holding a colon", () => {
     expect(
-      thrownIssues(() => edgeKvKey("release", "mezzora", "")).map((issue) => issue.path),
+      thrownIssues(() => edgeKvKey("release", "bistro", "")).map((issue) => issue.path),
     ).toEqual(["release.1"]);
     expect(thrownIssues(() => edgeKvKey("host", "a:b")).map((issue) => issue.path)).toEqual([
       "host.0",

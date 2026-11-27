@@ -28,9 +28,9 @@ describe("loginDirectoryWorker", () => {
     const directory = loginDirectoryWorker({
       accountId: "acc-1",
       script: "figentra-login-directory",
-      zoneIds: { "mezzora.com": "zone-mz", "organza.com": "zone-oz" },
+      zoneIds: { "bistro.example": "zone-mz", "organza.com": "zone-oz" },
       routes: {
-        "mezzora.com": ["login.mezzora.com/directory"],
+        "bistro.example": ["login.bistro.example/directory"],
         "organza.com": ["login.organza.com/directory"],
       },
     });
@@ -45,9 +45,9 @@ describe("loginDirectoryWorker", () => {
       },
     });
     expect(inputsByName(declared, "cloudflare:index/workersRoute:WorkersRoute")).toEqual({
-      "figentra-login-directory-mezzora.com-route-0": {
+      "figentra-login-directory-bistro.example-route-0": {
         zoneId: "zone-mz",
-        pattern: "login.mezzora.com/directory",
+        pattern: "login.bistro.example/directory",
         script: "figentra-login-directory",
       },
       "figentra-login-directory-organza.com-route-0": {

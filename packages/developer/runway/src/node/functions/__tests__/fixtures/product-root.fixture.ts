@@ -14,24 +14,24 @@ import { join } from "node:path";
 /** A product root runway document. */
 export const PRODUCT_ROOT = {
   version: 3,
-  project: "mezzora",
-  product: { key: "mezzora" },
+  project: "bistro",
+  product: { key: "bistro" },
   surfaces: {
-    console: { shell: "os/console@3", packages: ["@mezzora/console-ui"], host: "console.mezzora" },
+    console: { shell: "os/console@3", packages: ["@bistro/console-ui"], host: "console.bistro" },
     landing: {
       shell: "os/landing@1",
       content: "assets/landing",
-      hosts: [{ host: "mezzora", canonical: true }, { host: "mezzora.com." }],
+      hosts: [{ host: "bistro", canonical: true }, { host: "bistro.example." }],
     },
-    ops: { contributes: "@mezzora/ops-ui" },
+    ops: { contributes: "@bistro/ops-ui" },
   },
   mobile: {
     staff: {
       template: "os/mobile@3",
       identity: {
-        ios: { bundleId: "com.figentra.mezzora.staff", team: "figentra" },
-        android: { package: "com.figentra.mezzora.staff" },
-        links: ["console.mezzora.figentra.com"],
+        ios: { bundleId: "com.figentra.bistro.staff", team: "figentra" },
+        android: { package: "com.figentra.bistro.staff" },
+        links: ["console.bistro.figentra.com"],
       },
     },
   },
@@ -55,7 +55,7 @@ export function writeBundle(
   writeFileSync(
     join(folder, "bundle.manifest.json"),
     JSON.stringify({
-      package: "@mezzora/console-ui",
+      package: "@bistro/console-ui",
       surface,
       targets: `${surface}@3`,
       version,
@@ -74,12 +74,12 @@ export function writeOpsBundle(repository: string, version: string): void {
   mkdirSync(folder, { recursive: true });
   writeFileSync(
     join(folder, "ops.contributions.json"),
-    JSON.stringify({ product: "mezzora", contributes: { package: "@mezzora/ops-ui" } }),
+    JSON.stringify({ product: "bistro", contributes: { package: "@bistro/ops-ui" } }),
   );
   writeFileSync(
     join(folder, "bundle.manifest.json"),
     JSON.stringify({
-      package: "mezzora",
+      package: "bistro",
       surface: "ops",
       targets: "ops@1",
       version,

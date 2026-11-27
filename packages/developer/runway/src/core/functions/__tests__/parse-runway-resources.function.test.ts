@@ -22,7 +22,7 @@ const DIGEST = `ghcr.io/zitadel/zitadel@sha256:${"a".repeat(64)}`;
 function root(extra: Record<string, unknown>): unknown {
   return {
     version: 3,
-    project: "academorix",
+    project: "academy",
     environments: { dev: { limits: { monthly: 150 } } },
     resources: {
       "main-db": { kind: "postgres", engine: "rds", version: "17", size: { production: "large" } },

@@ -2,6 +2,8 @@
 # Purpose: the GitHub repos `linear-reconcile.mjs` reads merged and open PRs and main commits from (STA-1822). A repo
 #          the token cannot read is reported in the run summary and skipped. `--repos a,b` overrides the list.
 #          Proposed home once the command moves to `figentra linear reconcile` (ADR 0500): Flow's `tracker.repos`.
+#          A public file: it names no private product repo. Those come from `--extra-repos a,b`, which CI fills from
+#          the `LINEAR_RECONCILE_EXTRA_REPOS` repository variable (STA-2876).
 # Owner: release-operations · Secrets: forbidden
 org: figentra
 repos:
@@ -21,6 +23,4 @@ repos:
   - commerce
   - organza
   - velora
-  - academorix
   - jute
-  - mezzora

@@ -77,8 +77,8 @@ describe("smokePreview", () => {
       templateDir: "template",
     });
     expect(web.checked).toEqual([
-      { target: "web", name: "console", url: "https://console.mezzora.preview.figentra.com/" },
-      { target: "web", name: "landing", url: "https://mezzora.preview.figentra.com/" },
+      { target: "web", name: "console", url: "https://console.bistro.preview.figentra.com/" },
+      { target: "web", name: "landing", url: "https://bistro.preview.figentra.com/" },
     ]);
     expect(mobile.checked).toEqual([
       {

@@ -15,7 +15,7 @@ import { SentryProjects } from "#core/ports/sentry-projects.port";
  *
  * @example
  * const sentry = new MemorySentryProjectsDriver();
- * sentry.projects.set("figentra/academorix-academorix", "https://key@o1.ingest.sentry.io/1");
+ * sentry.projects.set("figentra/academy-academy", "https://key@o1.ingest.sentry.io/1");
  */
 export class MemorySentryProjectsDriver extends Driver(SentryProjects) {
   /** DSNs by `<org>/<slug>`. */

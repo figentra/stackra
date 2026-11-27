@@ -26,7 +26,7 @@ beforeEach(async () => {
 
 /** The Access config of a stack with `access`. */
 const accessOf = (access: Record<string, unknown>) => {
-  const parsed = parseCloudflareStack({ devZone: "figentra.cloud", access }).access;
+  const parsed = parseCloudflareStack({ devZone: "dev.example", access }).access;
   if (parsed === undefined) throw new Error("Expected an Access config");
   return parsed;
 };
@@ -53,13 +53,13 @@ describe("accessGate", () => {
       accessGate({
         accountId: "acc-1",
         project: "figentra",
-        devZone: "figentra.cloud",
+        devZone: "dev.example",
         identityProviderId: "idp-1",
         access: accessOf({
           githubOrganization: "figentra",
           identityProviderId: "idp-1",
           operatorUris: ["api.figentra.com/platform"],
-          bypass: ["*.figentra.cloud/api/auth/callback"],
+          bypass: ["*.dev.example/api/auth/callback"],
           serviceTokens: ["box"],
         }),
       }),
@@ -100,9 +100,9 @@ describe("accessGate", () => {
     expect(
       inputsOf("cloudflare:index/zeroTrustAccessApplication:ZeroTrustAccessApplication"),
     ).toEqual({
-      "access-dev": application("dev", "*.figentra.cloud", guarded),
+      "access-dev": application("dev", "*.dev.example", guarded),
       "access-operator": application("operator", "api.figentra.com/platform", guarded),
-      "access-bypass": application("bypass", "*.figentra.cloud/api/auth/callback", [
+      "access-bypass": application("bypass", "*.dev.example/api/auth/callback", [
         { id: "access-bypass-id", precedence: 1 },
       ]),
     });
@@ -112,7 +112,7 @@ describe("accessGate", () => {
     const gate = accessGate({
       accountId: "acc-1",
       project: "figentra",
-      devZone: "figentra.cloud",
+      devZone: "dev.example",
       identityProviderId: "idp-1",
       access: accessOf({
         githubOrganization: "figentra",

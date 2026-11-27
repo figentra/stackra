@@ -21,8 +21,8 @@ describe("modeOf", () => {
     expect(modeOf(gateway())).toBe("own-key");
     for (const mode of ["oauth-standard", "own-key", "connected-account"])
       expect(modeOf(gateway(mode))).toBe(mode);
-    expect(modeOf(gateway("legacy-connected-account:academorix"))).toBe(
-      "legacy-connected-account:academorix",
+    expect(modeOf(gateway("legacy-connected-account:academy"))).toBe(
+      "legacy-connected-account:academy",
     );
   });
 
