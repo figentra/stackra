@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `starterFiles(files, options)`, the files of a new app from a starter's files: the chosen profile's
  *          included paths with its overlays, the rename list applied to every text file, catalog `stackra` pinned to
- *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line in `.npmrc`.
+ *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line in `.npmrc`
+ *          (with `options.registry`, every scope line the starter maps to the default host moves to that registry).
  *          `stackra.starter.yaml`, `starter/` and `pnpm-lock.yaml` are never written: the install resolves fresh.
  *          Nor is `.infisical.yaml`: it binds the template's own Infisical project, never the app's (STA-2027).
  * Boundary: pure; returns the files and writes nothing. Refuses a manifest that does not match `StarterManifest`, an
@@ -14,6 +15,7 @@ import { matchesGlob } from "node:path";
 
 import { isMap, parse, parseDocument } from "yaml";
 
+import { REGISTRY_ORIGIN_DEFAULT } from "#node/constants/registry-origin-default.constant";
 import { STACKRA_REGISTRY_NPMRC } from "#node/constants/stackra-registry-npmrc.constant";
 import type { StarterManifest } from "#node/create/types/starter-manifest.type";
 import type { StarterOptions } from "#node/create/types/starter-options.type";
@@ -83,6 +85,19 @@ function pinWorkspace(source: string, options: StarterOptions): string {
   return document.toString();
 }
 
+/** The default registry origin as a pattern, with or without its final `/`. */
+const DEFAULT_ORIGIN = `${REGISTRY_ORIGIN_DEFAULT.replace(/\/$/, "").replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?`;
+
+/** A scope line of `.npmrc` that maps a scope to the default Stackra registry. */
+const DEFAULT_SCOPE_LINE = new RegExp(
+  `^([ \\t]*@[^:\\s]+:registry[ \\t]*=[ \\t]*)${DEFAULT_ORIGIN}[ \\t]*$`,
+  "gm",
+);
+
+/** `.npmrc` with every scope the starter maps to the default Stackra registry mapped to `registry` instead. */
+const moveRegistry = (npmrc: string, registry: string): string =>
+  npmrc.replace(DEFAULT_SCOPE_LINE, (_, head: string) => `${head}${registry}`);
+
 /**
  * The files of the app.
  *
@@ -130,13 +145,15 @@ export function starterFiles(
     if (path === "pnpm-workspace.yaml") body = pinWorkspace(body, options);
     out.set(path, encoder.encode(body));
   }
-  const npmrc = out.has(".npmrc") ? (text(out.get(".npmrc") ?? new Uint8Array()) ?? "") : "";
-  if (!npmrc.includes("@stackra:registry="))
-    out.set(
-      ".npmrc",
-      encoder.encode(
-        `${npmrc}${npmrc === "" || npmrc.endsWith("\n") ? "" : "\n"}${STACKRA_REGISTRY_NPMRC}`,
-      ),
-    );
+  const own = out.has(".npmrc") ? (text(out.get(".npmrc") ?? new Uint8Array()) ?? "") : "";
+  const npmrc = options.registry === undefined ? own : moveRegistry(own, options.registry);
+  const line =
+    options.registry === undefined
+      ? STACKRA_REGISTRY_NPMRC
+      : `@stackra:registry=${options.registry}\n`;
+  const mapped = npmrc.includes("@stackra:registry=")
+    ? npmrc
+    : `${npmrc}${npmrc === "" || npmrc.endsWith("\n") ? "" : "\n"}${line}`;
+  if (mapped !== own) out.set(".npmrc", encoder.encode(mapped));
   return out;
 }

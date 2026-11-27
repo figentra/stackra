@@ -78,6 +78,20 @@ test("dependencies replaced by Accepted ADRs are forbidden", () => {
   }
 });
 
+test("the npm create initializer is the one unscoped member (ADR 0199, amendment of 2026-11-27)", () => {
+  assert.equal(expectedName("packages/developer/create-stackra"), "create-stackra");
+  assert.deepEqual(
+    checkMember({
+      ...ok,
+      dir: "packages/developer/create-stackra",
+      pkg: { ...ok.pkg, name: "create-stackra" },
+    }).filter((m) => m.startsWith("package name")),
+    [],
+  );
+  // Any other folder keeps its scope, a create-* name included.
+  assert.equal(expectedName("packages/developer/create-other"), "@stackra/create-other");
+});
+
 test("no member is in the @stackra-pro scope: the Pro wrapper moved to figentra/stackra-pro (ADR 0461)", () => {
   assert.equal(expectedName("packages/design-system/ui-pro"), "@stackra/ui-pro");
   assert.equal(expectedName("packages/design-system/ui"), "@stackra/ui");

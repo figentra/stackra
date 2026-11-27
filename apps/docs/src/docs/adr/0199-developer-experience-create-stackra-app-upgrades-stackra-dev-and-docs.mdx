@@ -1,7 +1,13 @@
 ---
 title: "0199 — Developer experience: create-stackra-app, upgrades, stackra dev, docs and the agent kit"
-description: "Accepted, amended by 0268, 0282, 0290 · 2026-10-20"
+description: "Accepted, amended by 0268, 0282, 0290 and the amendment of 2026-11-27 · 2026-10-20"
 ---
+
+<Note>
+  Amended 2026-11-27 (below): the one-command scaffold is the npm initializer `create-stackra`, run as
+  `npm create stackra@latest <folder>`; `create-stackra-app` was never built. It maps the `@stackra` scope for one run
+  and hands over to `stackra create` in `@stackra/cli`.
+</Note>
 
 <Note>
   Amended by [0290](/adr/0290-dev-environment-and-cloudflare-services) (decisions 4 and 7): `stackra
@@ -46,6 +52,30 @@ A new developer needs one command to start, one command to upgrade, and a dev lo
 ## Enforcement
 
 planned — `stackra upgrade` is tested against the codemod fixtures; the dev compose file is checked by the smoke test in CI.
+
+## Amendment 2026-11-27: the initializer is `create-stackra`
+
+Decision 1 named the one-command scaffold `create-stackra-app`. No such package was built: the scaffold is
+`stackra create` in `@stackra/cli`. A clean machine still could not reach it with one command, because `@stackra/*`
+lives only on the Stackra registry ([0453](/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine)),
+`npx @stackra/cli` and `npm create stackra` both answered 404 from npmjs, and pointing npm's whole registry at the
+Stackra registry breaks every other package, since that registry never proxies npmjs (0453 decision 4).
+
+1. **The name is `create-stackra`.** `npm create stackra` (and `pnpm create`, `yarn create`) runs the npmjs package
+   `create-stackra`, so the initializer carries that name, unscoped: a scoped name cannot be reached that way. It is
+   the member `packages/developer/create-stackra`, the only unscoped member (`UNSCOPED_PACKAGES` in
+   `@stackra/repo-checks`).
+2. **It maps the scope, not the registry, and only hands over.** It runs
+   `npx --yes --@stackra:registry=<origin> @stackra/cli@<cli> create <arguments>` with `STACKRA_REGISTRY=<origin>`,
+   where the origin is `--registry`, else `STACKRA_REGISTRY`, else the Stackra registry. It writes no file and no npm
+   setting, has no dependency, and asks nothing: every question, check and file belongs to `stackra create`, which
+   writes the same origin into the new app's `.npmrc`.
+3. **The documented install line** is `npm create stackra@latest <folder>`. Until the package is on npmjs, the same
+   run is `npx -y --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create <folder>`.
+4. **Publishing waits on the owner.** The npmjs name `create-stackra` is to be claimed by the owner, and publishing it
+   to npmjs is an exception to 0453's "only the Stackra registry", which the owner rules on. Until both, the member
+   stays `"private": true`, so the release workflow (which publishes every non-private member to the Stackra
+   registry, which takes scoped names only) leaves it out. Tracked in STA-2897.
 
 ## Supersedes and sources
 

@@ -1,11 +1,14 @@
 /**
  * Stackra file contract:
  * Purpose: `expectedName(dir)`, the npm name a member's placement implies: packages @stackra/<name>, apps @figentra/<dir>,
- *          services @figentra/service-<dir>, workers @figentra/worker-<dir>.
+ *          services @figentra/service-<dir>, workers @figentra/worker-<dir>; a folder in `UNSCOPED_PACKAGES` its
+ *          unscoped name (the `npm create` initializer).
  * Boundary: pure.
  * Runtime: node
- * Governing contract: ADR 0284 (workers); ADR 0461 (no `@stackra-pro` member here).
+ * Governing contract: ADR 0284 (workers); ADR 0461 (no `@stackra-pro` member here); ADR 0199 (amendment of
+ *                     2026-11-27: `create-stackra`).
  */
+import { UNSCOPED_PACKAGES } from "#node/constants/unscoped-packages.constant";
 
 /**
  * The npm name the member at `dir` must carry, or null when its placement implies none.
@@ -15,6 +18,8 @@
  * expectedName("services/notes"); // "@figentra/service-notes"
  */
 export function expectedName(dir: string): string | null {
+  const unscoped = UNSCOPED_PACKAGES[dir];
+  if (unscoped !== undefined) return unscoped;
   const base = dir.split("/").at(-1) ?? "";
   if (dir.startsWith("apps/")) return `@figentra/${base}`;
   if (dir.startsWith("services/")) return `@figentra/service-${base}`;

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `StarterOptions`, what `starterFiles` turns a starter into an app with: the profile, the names and the
- *          `@stackra/*` version (and, for a pre-release check, the packed tarballs that override it).
+ *          `@stackra/*` version, the registry (and, for a pre-release check, the packed tarballs that override it).
  * Boundary: type only.
  * Runtime: node
  * Governing contract: ADR 0515; STA-1952 spec FR-006 and FR-007.
@@ -20,6 +20,13 @@ export type StarterOptions = {
 
   /** The exact `@stackra/*` version catalog `stackra` is pinned to: the running CLI's. */
   readonly stackraVersion: string;
+
+  /**
+   * The Stackra registry origin the app installs from (`registryOrigin`: `--registry`, `STACKRA_REGISTRY`, the
+   * default), ending in `/`. Written as the `@stackra` scope line of `.npmrc`, and every scope line the starter maps
+   * to the default registry moves to it. Undefined keeps the default.
+   */
+  readonly registry?: string;
 
   /** Package name to a `file:` tarball spec, written as pnpm overrides. */
   readonly tarballs?: Readonly<Record<string, string>>;

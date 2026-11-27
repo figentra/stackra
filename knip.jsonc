@@ -82,6 +82,12 @@
       "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}", "src/node/stackra-console.ts"],
       "project": ["src/**/*.{ts,tsx}"],
     },
+    // create-stackra: src/node/create-stackra.ts is the source of the `create-stackra` bin, which tsdown builds by name
+    // (STA-2897).
+    "packages/developer/create-stackra": {
+      "entry": ["stackra.config.ts", "vitest.config.ts", "src/node/create-stackra.ts"],
+      "project": ["src/**/*.ts"],
+    },
     // vite-plugin ships CSS that knip compiles (Tailwind), so its project includes it.
     "packages/developer/vite-plugin": {
       "entry": ["stackra.config.ts", ".stackra/**/*.{ts,tsx}"],

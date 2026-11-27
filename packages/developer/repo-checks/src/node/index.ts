@@ -35,6 +35,7 @@ export { OPTIONAL_ENTRY_NAMES } from "#node/constants/optional-entry-names.const
 export { PACKAGE_FOLDERS } from "#node/constants/package-folders.constant";
 export { PRO_DEPENDENCIES } from "#node/constants/pro-dependencies.constant";
 export { PRO_SCOPE } from "#node/constants/pro-scope.constant";
+export { UNSCOPED_PACKAGES } from "#node/constants/unscoped-packages.constant";
 export { WRANGLER_OPERATIONAL_BASELINE } from "#node/constants/wrangler-operational-baseline.constant";
 export { WRANGLER_OPERATIONAL_KEYS } from "#node/constants/wrangler-operational-keys.constant";
 export { RAW_SQL_BASELINE } from "#node/constants/raw-sql-baseline.constant";
