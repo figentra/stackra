@@ -5,7 +5,7 @@
  *          account ownership and sharing follow promotion order; static egress addresses and the jurisdiction come
  *          from the runway; backups that would leave an environment region's jurisdiction are refused; every missing
  *          input is reported with its path; an upload origin that is not https fails; a runway `media.disk` is
- *          ignored (ADR 0465).
+ *          ignored (ADR 0465); the `guard_duty` scanner over a files bucket with versioning off is refused (STA-669).
  * Boundary: test only; roots are built through `parseRunway`, so each is a valid root runway.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0171, 0172, 0186, 0289, 0353, 0402.
@@ -196,6 +196,36 @@ describe("awsBaselineConfig", () => {
     });
 
     expect(awsBaselineConfig(root, "staging").files).toBeNull();
+  });
+
+  it("refuses the guard_duty scanner over a files bucket with versioning off, and takes it with versioning on", () => {
+    const scanned = (versioning: boolean | undefined) =>
+      templateRoot((draft) => {
+        const staging = at(draft, "environments", "staging");
+        staging.shared = versioning === undefined ? {} : { buckets: { versioning } };
+        at(staging, "defaults", "service").config = {
+          filesystem: { disk: "s3" },
+          media: { scanner: "guard_duty" },
+        };
+      });
+
+    expect(() => awsBaselineConfig(scanned(false), "staging")).toThrow(
+      /guard_duty scanner pins GuardDuty's verdict to an object version/,
+    );
+    expect(pathsOf(() => awsBaselineConfig(scanned(false), "staging"))).toEqual([
+      "environments.staging.shared.buckets.versioning",
+    ]);
+    expect(awsBaselineConfig(scanned(true), "staging").files?.versioning).toBe(true);
+    expect(awsBaselineConfig(scanned(undefined), "staging").files?.versioning).toBe(true);
+    const clamav = templateRoot((draft) => {
+      const staging = at(draft, "environments", "staging");
+      staging.shared = { buckets: { versioning: false } };
+      at(staging, "defaults", "service").config = {
+        filesystem: { disk: "s3" },
+        media: { scanner: "clamav" },
+      };
+    });
+    expect(awsBaselineConfig(clamav, "staging").files?.versioning).toBe(false);
   });
 
   it("reports every missing input with its path", () => {

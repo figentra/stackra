@@ -2,10 +2,12 @@
  * Stackra file contract:
  * Purpose: `MemoryFileScannerDriver`, the `memory` driver of `FileScanner`: finds the EICAR anti-malware test file and
  *          calls everything else clean, so tests and a local stack exercise the infected path without a real scanner.
- * Boundary: it detects nothing but the standard EICAR test string; never the scanner of a deployed environment
- *           (runway sets `media.scanner` there).
+ * Boundary: it detects nothing but the standard EICAR test string, so it is never the scanner of a deployed
+ *           environment: `MediaConfig` refuses `media.scanner: memory` at boot when the running environment (the one
+ *           reader of @stackra/config, from `STACKRA_ENVIRONMENT` in the runtime) is `preview`, `staging` or
+ *           `production` (STA-669).
  * Runtime: isomorphic
- * Governing contract: ADR 0266 (memory drivers first); ADR 0222.
+ * Governing contract: ADR 0266 (memory drivers first; decision 2: never in a deployment); ADR 0222; STA-2844; STA-669.
  */
 import { Driver } from "@stackra/container";
 

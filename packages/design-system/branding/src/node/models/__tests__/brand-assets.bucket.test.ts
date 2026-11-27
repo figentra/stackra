@@ -16,6 +16,7 @@ import {
   MediaConfig,
   MediaLibrary,
   MediaType,
+  MemoryFileScannerDriver,
   UploadRejectedError,
 } from "@stackra/media";
 import { describe, expect, it } from "@stackra/testing";
@@ -56,7 +57,12 @@ describe("BrandAssetsBucket", () => {
       buildConfig(FilesystemConfig, { values: { url: "https://cdn.test" } }),
       clock,
     );
-    const media = new MediaLibrary(disk, buildConfig(MediaConfig), clock);
+    const media = new MediaLibrary(
+      disk,
+      buildConfig(MediaConfig),
+      clock,
+      new MemoryFileScannerDriver(),
+    );
     await expect(
       media.createUpload(BrandAssetsBucket, { mediaType: MediaType.Pdf, size: 8 }),
     ).rejects.toBeInstanceOf(UploadRejectedError);

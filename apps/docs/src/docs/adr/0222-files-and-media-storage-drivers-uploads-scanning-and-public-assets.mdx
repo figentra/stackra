@@ -28,7 +28,12 @@ description: "Accepted · 2026-10-20"
 
 ## Enforcement
 
-planned — the scan gate is a state check before a file URL is issued; the key layout is checked by the storage tests.
+The scan gate is enforced in `@stackra/media` (STA-669): `MediaLibrary.claim` and `store` place a file at a served path
+(`public/`, `private/`) only after the `FileScanner` (`media.scanner`) called it `clean` while it waited under
+`uploads/`; an infected or unscannable file is deleted and refused, a pending verdict keeps it unplaced and is
+retryable; `temporaryUrl` links only a record whose `scan` is `clean` and scans a record without one first. Tested in
+`packages/data/media/src/core/services/__tests__/media-library.service.test.ts` ("MediaLibrary scan gate"), proven
+against a real clamd. Planned: the scan of tus uploads, and the key layout checked by the storage tests.
 
 ## Supersedes and sources
 

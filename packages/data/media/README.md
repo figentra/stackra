@@ -29,10 +29,11 @@ on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/vali
 | `.`           | `Bucket`                                                                                                               | the kind base of a `models/<name>.bucket.ts` declaration                               |
 | `.`           | `BucketVisibility`, `MediaType`, `ImageFormat`                                                                         | who reads a bucket; accepted types (IANA codes); variant formats                       |
 | `.`           | `Upload`                                                                                                               | the token an action input takes instead of bytes; `Upload.schema` is its wire schema   |
-| `.`           | `MediaLibrary`                                                                                                         | `createUpload`, `claim`, `temporaryUrl`                                                |
+| `.`           | `MediaLibrary`                                                                                                         | `createUpload`, `claim`, `store`, `temporaryUrl`, behind the malware scan gate         |
 | `.`           | `MediaConfig`, `MediaConfig$`, `MediaOptions`                                                                          | key `media`: `uploader`, `uploadExpiresIn`, `uploadEndpoint`, `scanner`, `ocr`, `c2pa` |
 | `.`           | `Uploader`, `MemoryUploaderDriver`, `HttpUploaderDriver`                                                               | the client side of an upload                                                           |
 | `.`           | `UploadBucketMismatchError`, `UploadExpiredError`, `UploadIncompleteError`, `UploadRejectedError`, `UploadFailedError` | the refusals                                                                           |
+| `.`           | `ScanPendingError`, `FileBlockedError`                                                                                 | the scan gate's refusals: not decided yet (retry); not clean (never linked)            |
 | `.`           | `registerBuckets`                                                                                                      | how gen's entry hands over the derived bucket keys                                     |
 | `./contracts` | `ImageTransformer`, `ImageTransform`, `ImageLayer`, `TextExtractor`, `ExtractedText`                                   | the processing ports and the types they speak                                          |
 | `./contracts` | `ContentCredentials`, `ContentCredential`                                                                              | the C2PA port and the claim it signs                                                   |
@@ -73,9 +74,12 @@ The bytes never pass through a service.
 4. The action calls `media.claim(input.image, ProductImagesBucket)`. The claim reads the record and what the store
    received, then refuses in this order: no record (`UploadIncompleteError`), another bucket
    (`UploadBucketMismatchError`), past its expiry (`UploadExpiredError`), no file (`UploadIncompleteError`), and a type
-   or size the bucket does not take (`UploadRejectedError`, after deleting the file and its record). Otherwise it moves
-   the file to `<visibility>/<bucket key as folders>/<id>.<subtype>` with `FileSystem.move`, deletes the record and
-   returns `{ id, bucket, path, url, mediaType, size }`. A second claim of the same token finds no record.
+   or size the bucket does not take (`UploadRejectedError`, after deleting the file and its record). Then the
+   `FileScanner` scans the file where it waits under `uploads/` (see the scan gate below). Only a clean file is
+   placed: the claim writes the bytes it checked and scanned to `<visibility>/<bucket key as folders>/<id>.<subtype>`
+   (so a second `PUT` through the signed URL during the scan never reaches it), deletes the upload and its record, and
+   returns `{ id, bucket, path, url, mediaType, size, scan: "clean" }`. A second claim of the same token finds no
+   record.
 
 The local and Electron disks cannot sign uploads, so `createUpload` refuses there (`TypeError`); use the memory disk in
 development and tests. An Encore bucket signs no header, so the type the claim checks is the one the client sent.
@@ -93,7 +97,35 @@ An input field typed `Upload<ProductImagesBucket>` is gen's `upload` shape kind.
 names one: `useUpload({ bucket: "catalogue.product_images" })`.
 
 A public file is served by the CDN in front of the bucket. A private file's `url` is its address, which the CDN must not
-serve: allow only `public/*` there. Read a private file through `media.temporaryUrl(file, Duration.minutes(5))`.
+serve: allow only `public/*` there, and never `uploads/*`, where files wait for their scan. Read a private file through
+`media.temporaryUrl(file, Duration.minutes(5))`.
+
+### The scan gate (ADR 0222)
+
+An unscanned file is never served. `claim` and `store` place a file at its bucket path (`public/…`, `private/…`) only
+after the scanner configured as `media.scanner` called it `clean` while it waited under `uploads/`, which nothing
+serves:
+
+| Verdict             | `claim`                                                               | `store`                                                                                                     |
+| ------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `clean`             | places it, returns `scan: "clean"`                                    | writes it (with `retainUntil`), returns `scan: "clean"`                                                     |
+| `infected`          | deletes it and its record, `UploadRejectedError` reason `malware`     | deletes it, `UploadRejectedError` reason `malware`                                                          |
+| `failed`            | deletes it and its record, `UploadRejectedError` reason `unscannable` | deletes it, `UploadRejectedError` reason `unscannable`                                                      |
+| `pending`           | keeps it, `ScanPendingError` (retryable): claim the same token again  | keeps it as an upload into the bucket, `ScanPendingError { upload }`: `claim({ id: upload }, bucket)` later |
+| scanner unreachable | keeps it and rethrows                                                 | deletes it and rethrows                                                                                     |
+
+`pending` is GuardDuty's answer before it has tagged the object, so with `guard_duty` a claim that comes straight after
+the upload, and every `store`, can see it; retry after a few seconds (a queue job's backoff does). `guard_duty` also
+answers `pending` when the key was written again under the claim (a second `PUT` through the still-valid signed URL):
+its clean tag then belongs to other bytes than the ones the claim read, so nothing is placed, and the next claim reads
+the object anew and places it once GuardDuty has tagged those bytes. A `store` that waits
+keeps its `retainUntil` in the upload record, and the claim writes the file with it. The upload still expires after
+`uploadExpiresIn`.
+
+Record the `MediaFile` with its `scan`. `temporaryUrl` links a record whose `scan` is `clean`; a record without one
+(stored before the gate) is scanned first and linked only when clean, else `ScanPendingError` or `FileBlockedError`
+(`malware`, `unscannable`), and the file stays where it is for the owning service to quarantine. The refusals name the
+upload id and the reason, never the threat or the file.
 
 ## Image variants
 
@@ -116,7 +148,7 @@ config:
   media:
     uploader: http # memory | http (an app's setting)
     uploadExpiresIn: PT1H # at most seven days
-    scanner: guard_duty # memory | clamav | guard_duty
+    scanner: guard_duty # memory | clamav | guard_duty; memory only in dev and test
     clamav: { host: clamd.internal, port: 3310, maxBytes: 26214400 } # the clamav scanner only
     ocr: # the paddle_ocr text extractor only; the service in this region
       endpoint: http://ocr.ksa.internal/ocr
@@ -132,6 +164,13 @@ config:
       region: auto
       endpoint: https://<account>.r2.cloudflarestorage.com
 ```
+
+`memory` is the default scanner and finds only the EICAR test file, so a deployed environment refuses it:
+when the running environment (`STACKRA_ENVIRONMENT`, read from the runtime only by `readEnvironment` of
+@stackra/config, or settled by the generated Encore `environment.ts`) is `preview`, `staging` or `production`, boot
+fails with `ConfigInvalidError` on `scanner` until runway sets `config.media.scanner` to `guard_duty` or `clamav` for
+that environment. `MediaConfig.environment` is that variable and nothing else: a runway or test value for it fails boot
+(STA-2844).
 
 No credential value is configuration. The disks use their SDK's default chain (see `@stackra/filesystem`). The C2PA certificate chain and
 its private key (PEM) are the secrets `MEDIA_C2PA_SIGNING_CERTIFICATE` and `MEDIA_C2PA_SIGNING_KEY`, read blind from the
@@ -150,8 +189,15 @@ removes uploads nobody claimed and their records.
 
 ## Scanning and processing
 
-`FileScanner` (`./contracts`) scans a stored upload before the files service hands it out: `guard_duty` reads the
-`GuardDutyMalwareScanStatus` tag GuardDuty Malware Protection writes on the object (no tag yet is `pending`),
+`FileScanner` (`./contracts`) scans every file before `MediaLibrary` places or links it (the scan gate above):
+`guard_duty` reads the
+`GuardDutyMalwareScanStatus` tag GuardDuty Malware Protection writes on the object (no tag yet is `pending`), pinned
+to the object version it heads: the tag of that version, and for a clean tag that version read back and compared with
+the bytes the library holds, so a clean tag on other bytes is `pending`, never `clean`. It requires a versioned bucket:
+an object with no version is refused (a `TypeError` naming `filesystem.s3.bucket`; the claim keeps the upload), and
+`awsBaselineConfig` of @stackra/infra-aws refuses `guard_duty` over `shared.buckets.versioning: false`. Its role needs
+`s3:GetObject`, `s3:GetObjectVersion` and `s3:GetObjectVersionTagging`; turning GuardDuty Malware Protection on for the
+bucket is tracked as STA-2912,
 `clamav` streams the bytes to clamd (`INSTREAM`) where GuardDuty is not offered (GCP Dammam, a local stack), and
 `memory` finds only the EICAR test file. Verdicts are `clean`, `infected`, `pending` and `failed`.
 
@@ -203,7 +249,9 @@ const foreign = await fakeUpload(app, null, { mediaType: MediaType.Png }); // re
 
 A service that injects `MediaLibrary` gets it bound over the memory `FileSystem` disk under `.useDrivers("memory")`
 (STA-1297); it declares `@stackra/filesystem` beside `@stackra/media`, since media stores on its disk. Gen's
-`PLATFORM_BINDINGS` row binds it with `deps: [FileSystem, MediaConfig, Clock]` (ADR 0465).
+`PLATFORM_BINDINGS` row binds it with `deps: [FileSystem, MediaConfig, Clock, FileScanner]` (ADR 0465, STA-669): the
+memory scanner under `.useDrivers("memory")`, the one `media.scanner` names otherwise. Upload the EICAR test string to
+test the infected path.
 
 `fakeUpload` goes through `createUpload` and the memory disk's `receive`, so the bucket's rules apply as in production.
 In a browser test, the `memory` uploader returns a fresh token for every file and records it in `uploads`.

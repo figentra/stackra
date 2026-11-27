@@ -19,6 +19,8 @@ export { MemoryUploaderDriver } from "#core/drivers/memory-uploader.driver";
 export { BucketVisibility } from "#core/enums/bucket-visibility.enum";
 export { ImageFormat } from "#core/enums/image-format.enum";
 export { MediaType } from "#core/enums/media-type.enum";
+export { FileBlockedError } from "#core/errors/file-blocked.error";
+export { ScanPendingError } from "#core/errors/scan-pending.error";
 export { UploadBucketMismatchError } from "#core/errors/upload-bucket-mismatch.error";
 export { UploadExpiredError } from "#core/errors/upload-expired.error";
 export { UploadFailedError } from "#core/errors/upload-failed.error";

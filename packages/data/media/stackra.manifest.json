@@ -60,6 +60,20 @@
   ],
   "errors": [
     {
+      "code": "file_blocked",
+      "kind": "failed_precondition",
+      "category": "precondition_failed",
+      "module": "media",
+      "class": "FileBlockedError"
+    },
+    {
+      "code": "scan_pending",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "media",
+      "class": "ScanPendingError"
+    },
+    {
       "code": "upload_bucket_mismatch",
       "kind": "validation",
       "category": "validation",
@@ -251,6 +265,16 @@
       "config": "media",
       "class": "MediaConfig",
       "field": "c2paSigningKey"
+    },
+    {
+      "name": "STACKRA_ENVIRONMENT",
+      "kind": "config",
+      "type": "enum",
+      "values": ["dev", "test", "preview", "staging", "production"],
+      "required": false,
+      "config": "media",
+      "class": "MediaConfig",
+      "field": "environment"
     }
   ],
   "services": [
@@ -274,6 +298,12 @@
           "class": {
             "name": "Clock",
             "from": "@stackra/contracts"
+          }
+        },
+        {
+          "class": {
+            "name": "FileScanner",
+            "from": "@stackra/media/contracts"
           }
         }
       ]

@@ -23,6 +23,7 @@ import {
   BucketVisibility,
   MediaLibrary,
   MediaType,
+  MemoryFileScannerDriver,
   UploadBucketMismatchError,
   UploadRejectedError,
 } from "#core/index";
@@ -49,7 +50,12 @@ async function compile(disk?: FileSystem) {
     buildConfig(FilesystemConfig, { values: { url: "https://cdn.test" } }),
     clock,
   );
-  const media = new MediaLibrary(memory, buildConfig(MediaConfig), clock);
+  const media = new MediaLibrary(
+    memory,
+    buildConfig(MediaConfig),
+    clock,
+    new MemoryFileScannerDriver(),
+  );
   const container = await Container.create([], {
     overrides: new Map<Token, object>([
       [FileSystem, disk ?? memory],

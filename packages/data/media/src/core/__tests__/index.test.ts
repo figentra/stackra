@@ -25,6 +25,7 @@ describe("@stackra/media", () => {
     expect(Object.keys(core).sort()).toEqual([
       "Bucket",
       "BucketVisibility",
+      "FileBlockedError",
       "HttpUploaderDriver",
       "ImageFormat",
       "MediaConfig",
@@ -34,6 +35,7 @@ describe("@stackra/media", () => {
       "MediaType",
       "MemoryFileScannerDriver",
       "MemoryUploaderDriver",
+      "ScanPendingError",
       "Upload",
       "UploadBucketMismatchError",
       "UploadExpiredError",
@@ -51,6 +53,7 @@ describe("@stackra/media", () => {
     expectTypeOf<ImageVariantOptions["width"]>().toEqualTypeOf<number>();
     expectTypeOf<ImageVariant["url"]>().toEqualTypeOf<string>();
     expectTypeOf<MediaFile["mediaType"]>().toEqualTypeOf<core.MediaType>();
+    expectTypeOf<MediaFile["scan"]>().toEqualTypeOf<"clean" | "infected" | "pending" | "failed">();
     expectTypeOf<PendingUpload["upload"]>().toEqualTypeOf<core.Upload>();
   });
 });

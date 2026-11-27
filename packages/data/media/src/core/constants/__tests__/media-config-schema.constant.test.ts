@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `MEDIA_CONFIG_SCHEMA` (`MediaConfig$`): full defaults from `{}` with no `disk` (ADR 0465),
- *          only this package's driver names, an upload lifetime above zero and at most seven days (either duration form, stored canonical), and the OCR and C2PA settings.
+ *          only this package's driver names, an upload lifetime above zero and at most seven days (either duration form, stored canonical), and the OCR and C2PA settings;
+ *          the `memory` scanner refused in a deployed environment and kept in `dev` and `test` (STA-669).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 26).
@@ -32,6 +33,7 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
       },
       c2paSigningCertificate: "",
       c2paSigningKey: "",
+      environment: "dev",
     });
   });
 
@@ -55,6 +57,28 @@ describe("MEDIA_CONFIG_SCHEMA", () => {
     expect(MEDIA_CONFIG_SCHEMA.parse({ uploadExpiresIn: "1h" }).uploadExpiresIn).toBe("PT1H");
     for (const lifetime of ["PT0S", "P8D", "8d", "an hour", 3600])
       expect(MEDIA_CONFIG_SCHEMA.safeParse({ uploadExpiresIn: lifetime }).success).toBe(false);
+  });
+
+  it.each(["preview", "staging", "production"])(
+    "refuses the memory scanner in %s, naming the field",
+    (environment) => {
+      const result = MEDIA_CONFIG_SCHEMA.safeParse({ environment });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues.map(({ path }) => path)).toEqual([["scanner"]]);
+      expect(result.error?.issues[0]?.message).toContain(`${environment} refuses it`);
+    },
+  );
+
+  it.each(["dev", "test"])("keeps the memory scanner in %s", (environment) => {
+    expect(MEDIA_CONFIG_SCHEMA.parse({ environment }).scanner).toBe("memory");
+  });
+
+  it("keeps a real scanner in production and refuses a name outside the closed list", () => {
+    for (const scanner of ["clamav", "guard_duty"])
+      expect(MEDIA_CONFIG_SCHEMA.parse({ environment: "production", scanner }).scanner).toBe(
+        scanner,
+      );
+    expect(MEDIA_CONFIG_SCHEMA.safeParse({ environment: "prod" }).success).toBe(false);
   });
 
   it("refuses an empty endpoint", () => {
