@@ -612,6 +612,51 @@ test("checkRunwayFiles: schema issues name file and path; placement issues name 
   );
 });
 
+test("checkRunwayFiles: a config block that sets a runtime-only field names the file and its path (STA-2844)", () => {
+  const files: Record<string, string> = {
+    "runway.yaml": "version: 3\nproject: acme\n",
+    "services/commerce/runway.yaml": "version: 3\nenvironments: {}\n",
+  };
+  const fields = [
+    { config: "outbox.relay_inbox", field: "environment", variable: "STACKRA_ENVIRONMENT" },
+  ];
+  const seen: unknown[][] = [];
+  const { runway } = stubRunway();
+  const input = {
+    files: Object.keys(files),
+    read: (p: string) => files[p] ?? "",
+    runway: {
+      ...runway,
+      checkRuntimeOnlyConfig(document: unknown, given: readonly unknown[]) {
+        seen.push([document, given]);
+        return (document as { readonly project?: string }).project === undefined
+          ? [
+              {
+                path: "environments.dev.config.outbox.relay_inbox.environment",
+                message: "is runtime-only",
+              },
+            ]
+          : [];
+      },
+    },
+    services: ["commerce"],
+  };
+  assert.deepEqual(checkRunwayFiles({ ...input, runtimeOnly: fields }), [
+    "services/commerce/runway.yaml: environments.dev.config.outbox.relay_inbox.environment: is runtime-only",
+  ]);
+  assert.deepEqual(
+    seen.map(([, given]) => given),
+    [fields, fields],
+  );
+  // Without the repository's fields the check still runs, with none.
+  seen.length = 0;
+  checkRunwayFiles(input);
+  assert.deepEqual(
+    seen.map(([, given]) => given),
+    [[], []],
+  );
+});
+
 test("checkRunwayFiles: a misplaced file, invalid YAML and a repeated key are one finding each; other errors throw", () => {
   const files: Record<string, string> = {
     "packages/developer/runway/runway.yaml": "version: 3\n",

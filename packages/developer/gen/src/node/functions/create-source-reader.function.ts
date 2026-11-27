@@ -5,7 +5,7 @@
  *          package class), its options as constants (a class thunk, `counts: () => Till`, as its class), its partner from the heritage type argument (`Point["slot"]`
  *          included; the value argument of `Driver(Port)`, `Widget.place` and `ModelAddition(Base)`, ADR 0336), its constructor tokens, facets, `handle` signature (a `ReplicaPage` output from a `@stackra/*`
  *          package reads as `replica`, ADR 0338; a listener's parameter is its event class, one from
- *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, the workflows it starts (`ctx.run(XWorkflow, ...)`, ADR 0101), a query's caller reads (`ctx.actor`, ...; STA-1445), statics and traits; each shape's fields from the declared
+ *          `#stackra/clients/<service>` by its import, or `EventEnvelope` from `@stackra/outbox` as a relay), refusals, the workflows it starts (`ctx.run(XWorkflow, ...)`, ADR 0101), a query's caller reads (`ctx.actor`, ...; STA-1445), statics and traits (an object argument keeps its constant properties, STA-1408); each shape's fields from the declared
  *          type node first and the checker second, with rules and constant defaults; each model's entity facts
  *          (`[OptionalProps]` keys, relations with their target, inverse and options, getters); each `Enum.of` in
  *          source order; each file's exports; and the services any own file (tests included) imports from
@@ -645,6 +645,24 @@ export function createSourceReader(
     if (name === undefined || host.kind(name) !== "ComputedPropertyName") return nameOf(name);
     const key = constant(name.expression, self);
     return typeof key === "string" ? key : undefined;
+  };
+
+  /**
+   * A trait argument as a constant, or null when it is not one; an object literal keeps its constant properties, so
+   * `Partitioned({ by: "at", retain: Duration.days(400) })` still gives gen its `by` (STA-1408).
+   */
+  const traitArgument = (value: TsNode): unknown => {
+    const evaluated = constant(value);
+    if (!hasNonConstant(evaluated)) return evaluated;
+    if (host.kind(value) !== "ObjectLiteralExpression") return null;
+    const entries: [string, unknown][] = [];
+    for (const property of value.properties ?? []) {
+      if (host.kind(property) !== "PropertyAssignment") continue;
+      const key = keyOf(property.name);
+      const each = constant(property.initializer);
+      if (key !== undefined && !hasNonConstant(each)) entries.push([key, each]);
+    }
+    return Object.fromEntries(entries);
   };
 
   /** A class, a static of a class, a literal-typed name, or a `const` holding a regular expression literal. */
@@ -2862,10 +2880,7 @@ export function createSourceReader(
             host.kind(argument) === "CallExpression"
               ? {
                   name: argument.expression === undefined ? "" : host.text(argument.expression),
-                  args: (argument.arguments ?? []).map((value) => {
-                    const evaluated = constant(value);
-                    return hasNonConstant(evaluated) ? null : evaluated;
-                  }),
+                  args: (argument.arguments ?? []).map((value) => traitArgument(value)),
                 }
               : { name: host.text(argument), args: [] },
           )
