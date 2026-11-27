@@ -32,6 +32,13 @@
       "class": "AppDrainingError"
     },
     {
+      "code": "app_overloaded",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "app",
+      "class": "AppOverloadedError"
+    },
+    {
       "code": "bearer_token_invalid",
       "kind": "unauthenticated",
       "category": "unauthenticated",

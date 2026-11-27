@@ -7,12 +7,14 @@
  *          (`tick(undefined, { crons: false })`).
  * Boundary: pure; reads the manifest's actions, the hosted packages' included. Written only for a service that has a
  *           cron action or runs `@stackra/scheduler`. Each endpoint is internal (`expose: false`) and reaches the
- *           member through `app.handlers.run`, so a drain waits for it. Encore runs one invocation of a CronJob at a
- *           time, so `fire` takes no lock. This is the one place outside the Encore target that names `encore.dev`.
+ *           member through `app.handlers.run`, so a drain waits for it, with `{ shed: false }`: Encore never retries
+ *           a failed CronJob invocation and `fire` moves no watermark, so a run the load-shedding bulkhead turned away
+ *           would be lost (STA-1467). Encore runs one invocation of a CronJob at a time, so `fire` takes no lock.
+ *           This is the one place outside the Encore target that names `encore.dev`.
  * Runtime: isomorphic
  * Governing contract: ADR 0148 (decisions 4 and 6); ADR 0266 (decision 4.6: the Encore CronJob in SaaS); ADR 0091 and
  *                     0124 (Encore is generated); ADR 0295 (decision 8: the adapters reach the member through
- *                     `handlers`).
+ *                     `handlers`); STA-1467 (cron runs skip load shedding).
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { camelCase } from "@stackra/support";
@@ -76,9 +78,13 @@ export function emitEncoreCronJobs(
     return [
       `/** Runs ${title} on its schedule. */`,
       `export const ${endpoint} = api({ expose: false }, async (): Promise<void> => {`,
-      `  await app.handlers.run(async (container) => {`,
-      `    await ${call};`,
-      "  });",
+      "  await app.handlers.run(",
+      "    async (container) => {",
+      `      await ${call};`,
+      "    },",
+      "    // Never shed: Encore does not retry a failed CronJob invocation, so a run turned away would be lost.",
+      "    { shed: false },",
+      "  );",
       "});",
       "",
       `export const ${endpoint}Job = new CronJob(${JSON.stringify(id)}, {`,

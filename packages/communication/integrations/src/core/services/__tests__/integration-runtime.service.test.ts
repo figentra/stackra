@@ -4,15 +4,18 @@
  *          reused until it nears expiry; an authorization code connection's expired token is refreshed once and an
  *          unrotated refresh token kept; revocation posts the refresh token and forgets the tokens; a JWT bearer
  *          integration trades a signed assertion (scope, audience, no client credentials) for a cached token; one
- *          integration instance is built per class with this runtime.
+ *          integration instance is built per class with this runtime; each Integration and origin gets one circuit
+ *          breaker (5 failures, 30 s by default, its own when stated, none when turned off) shared by every connection,
+ *          one per connection when it keys the circuit `by` credential, and a bulkhead when it states `concurrency`
+ *          (STA-1467).
  * Boundary: test only; `fetch` is stubbed per URL, the clock is a mutable stand-in and the buckets are the memory driver
  *           of `@stackra/actions`.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 6, 7, 12 and 20).
+ * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 6, 7, 12, 13 and 20); STA-1467.
  */
 import { MemoryRateLimitStoreDriver } from "@stackra/actions";
 import { SecretStore } from "@stackra/config/contracts";
-import { Clock } from "@stackra/contracts";
+import { Clock, Duration } from "@stackra/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -21,6 +24,7 @@ import { Integration } from "#core/bases/integration.base";
 import { AuthType } from "#core/enums/auth-type.enum";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
 import { IntegrationCategory } from "#core/enums/integration-category.enum";
+import { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import { encodeBase64 } from "#core/functions/encode-base64.function";
 import { hydrateConnection } from "#core/functions/hydrate-connection.function";
@@ -246,5 +250,168 @@ describe("IntegrationRuntime", () => {
     expect(new Headers(callsTo("api.google")[1]?.[1].headers).get("authorization")).toBe(
       "Bearer ya29",
     );
+  });
+});
+
+/** A runtime with no secrets, an in-memory rate-limit store and `clock`. */
+const runtimeOf = (clock = new MovableClock()) =>
+  new IntegrationRuntime(new EmptySecretStore(), new MemoryRateLimitStoreDriver(), clock);
+
+describe("IntegrationRuntime circuit breakers and bulkheads (STA-1467)", () => {
+  /** The common description of the guarded integrations: no auth, no retries. */
+  const PLAIN = {
+    category: IntegrationCategory.Other,
+    levels: [ConnectionLevel.Scope],
+    auth: { type: AuthType.None },
+    retry: { attempts: 1 },
+  } as const;
+
+  class StatusIntegration extends Integration({
+    ...PLAIN,
+    provider: "status",
+    baseUrl: "https://{host}",
+  }) {
+    host = "eu.status.example";
+  }
+
+  class OpenIntegration extends Integration({
+    ...PLAIN,
+    provider: "open",
+    baseUrl: "https://api.open.example",
+    circuitBreaker: false,
+  }) {}
+
+  class TunedIntegration extends Integration({
+    ...PLAIN,
+    provider: "tuned",
+    baseUrl: "https://api.tuned.example",
+    circuitBreaker: { failureThreshold: 2, cooldown: Duration.seconds(5) },
+    concurrency: { limit: 1 },
+  }) {}
+
+  class RegionConnection extends Connection<StatusIntegration> {
+    host?: string;
+
+    async check(): Promise<ConnectedAccount> {
+      return ConnectedAccount.create({ id: "status" });
+    }
+  }
+
+  /** The client of `connection id` on `host`, through `runtime`. */
+  function regionClient(runtime: IntegrationRuntime, id: `conn_${string}`, host: string) {
+    const integration = runtime.integration(StatusIntegration);
+    return hydrateConnection(RegionConnection, { id, fields: { host }, secrets: {} }, (built) =>
+      runtime.client(integration, built),
+    ).api;
+  }
+
+  it("opens one circuit per origin after 5 failures in a row by default, shared by every connection", async () => {
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const clock = new MovableClock();
+    const runtime = runtimeOf(clock);
+    for (const id of [
+      "conn_00000000000000000000000001",
+      "conn_00000000000000000000000002",
+      "conn_00000000000000000000000003",
+      "conn_00000000000000000000000004",
+      "conn_00000000000000000000000005",
+    ] as const)
+      await expect(
+        regionClient(runtime, id, "eu.status.example").get("/health"),
+      ).rejects.toMatchObject({ status: 503 });
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    await expect(
+      regionClient(runtime, "conn_00000000000000000000000006", "eu.status.example").get("/health"),
+    ).rejects.toMatchObject({ reason: "circuit_open", retryAfterMs: 30_000 });
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    // Another origin of the same Integration (another region) keeps its own circuit.
+    await expect(
+      regionClient(runtime, "conn_00000000000000000000000007", "us.status.example").get("/health"),
+    ).rejects.toMatchObject({ status: 503 });
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+    // After the cooldown one trial call goes; it works, so the circuit closes.
+    clock.at += 30_000;
+    fetchMock.mockImplementation(async () => new Response('{"ok":true}', { status: 200 }));
+    await expect(
+      regionClient(runtime, "conn_00000000000000000000000001", "eu.status.example").get("/health"),
+    ).resolves.toEqual({ ok: true });
+  });
+
+  it("keeps one circuit per connection for an Integration that keys it by credential", async () => {
+    class AccountIntegration extends Integration({
+      ...PLAIN,
+      provider: "account",
+      baseUrl: "https://api.account.example",
+      circuitBreaker: { failureThreshold: 1, by: RateLimitScope.Credential },
+    }) {}
+    class AccountConnection extends Connection<AccountIntegration> {
+      async check(): Promise<ConnectedAccount> {
+        return ConnectedAccount.create({ id: "account" });
+      }
+    }
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const runtime = runtimeOf();
+    const integration = runtime.integration(AccountIntegration);
+    const clientOf = (id: `conn_${string}`) =>
+      hydrateConnection(AccountConnection, { id, fields: {}, secrets: {} }, (built) =>
+        runtime.client(integration, built),
+      ).api;
+    const failing = clientOf("conn_00000000000000000000000001");
+    await expect(failing.get("/health")).rejects.toMatchObject({ status: 503 });
+    await expect(failing.get("/health")).rejects.toMatchObject({ reason: "circuit_open" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // Another tenant's connection, and the platform's own credentials, are not shed by the first one's failures.
+    fetchMock.mockImplementation(async () => new Response('{"ok":true}', { status: 200 }));
+    await expect(clientOf("conn_00000000000000000000000002").get("/health")).resolves.toEqual({
+      ok: true,
+    });
+    await expect(runtime.client(integration).get("/health")).resolves.toEqual({ ok: true });
+    // The same connection through a new client still finds its own open circuit.
+    await expect(clientOf("conn_00000000000000000000000001").get("/health")).rejects.toMatchObject({
+      reason: "circuit_open",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps no circuit for an Integration that turns it off", async () => {
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const runtime = runtimeOf();
+    const api = runtime.client(runtime.integration(OpenIntegration));
+    for (let call = 0; call < 7; call += 1)
+      await expect(api.get("/health")).rejects.toMatchObject({ status: 503 });
+    expect(fetchMock).toHaveBeenCalledTimes(7);
+  });
+
+  it("takes an Integration's own threshold and cooldown, and its concurrency bulkhead", async () => {
+    const gate: { answer?: (response: Response) => void } = {};
+    const fetchMock = vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          gate.answer = resolve;
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const clock = new MovableClock();
+    const runtime = runtimeOf(clock);
+    const integration = runtime.integration(TunedIntegration);
+    const slow = runtime.client(integration).get("/health");
+    await vi.waitFor(() => expect(gate.answer).toBeDefined());
+    await expect(runtime.client(integration).get("/health")).rejects.toMatchObject({
+      reason: "bulkhead_full",
+    });
+    gate.answer?.(new Response("{}", { status: 500 }));
+    await expect(slow).rejects.toMatchObject({ status: 500 });
+    fetchMock.mockImplementation(async () => new Response("{}", { status: 500 }));
+    await expect(runtime.client(integration).get("/health")).rejects.toMatchObject({
+      status: 500,
+    });
+    await expect(runtime.client(integration).get("/health")).rejects.toMatchObject({
+      reason: "circuit_open",
+      retryAfterMs: 5000,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

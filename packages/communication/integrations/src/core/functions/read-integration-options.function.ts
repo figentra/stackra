@@ -4,13 +4,14 @@
  *          two snake_case parts when given (STA-1739), a provider code,
  *          a known category, known levels, a complete `auth` for its type, an http(s) base URL (or an https one with
  *          placeholders, or one `{field}` that is the whole URL), lowercase extra headers and OAuth token headers, known roles and connector kinds, well-formed
- *          rate limits, retries, health schedule and webhooks. It returns the options to record, `multiple` defaulted.
+ *          rate limits, retries, timeout, circuit breaker, concurrency bulkhead, health schedule and webhooks. It returns the options to record, `multiple` defaulted.
  * Boundary: internal. A mistake here is the author's, so it throws a `TypeError` or `RangeError` on import, never a
  *           refusal. Placeholders are not resolved here: gen fails one that names no field
  *           (`integration_placeholder_unknown`), and the managed client refuses it at call time (https, or http only on an `.internal` host).
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 1, 6, 9, 10, 13 to 15); ADR 0305 (rule 2); STA-793 (headers, token placement);
- *                     owner D10 2026-10-28 (stackra-223): the lengths are `Duration`s.
+ *                     owner D10 2026-10-28 (stackra-223): the lengths are `Duration`s; STA-1467 (`timeout`,
+ *                     `circuitBreaker`, `concurrency`).
  */
 import { backoffDelay, Duration, Enum } from "@stackra/contracts";
 
@@ -251,6 +252,32 @@ export function readIntegrationOptions(
   // a bad curve, jitter or multiplier throws its RangeError here, not on the first retry
   if (options.retry !== undefined)
     backoffDelay({ base: Duration.seconds(1), max: Duration.seconds(1), ...options.retry }, 1);
+  checkDuration(options.timeout, true);
+  if (options.circuitBreaker !== undefined && options.circuitBreaker !== false) {
+    ensure(
+      typeof options.circuitBreaker === "object" &&
+        options.circuitBreaker !== null &&
+        (options.circuitBreaker.failureThreshold === undefined ||
+          isCount(options.circuitBreaker.failureThreshold)) &&
+        (options.circuitBreaker.by === undefined ||
+          Enum.values(RateLimitScope).includes(options.circuitBreaker.by)),
+      "circuitBreaker",
+      "needs false, or a failureThreshold from 1, a cooldown and a RateLimitScope",
+    );
+    checkDuration(options.circuitBreaker.cooldown, true);
+  }
+  if (options.concurrency !== undefined) {
+    ensure(
+      typeof options.concurrency === "object" &&
+        options.concurrency !== null &&
+        isCount(options.concurrency.limit) &&
+        (options.concurrency.queue === undefined ||
+          (Number.isInteger(options.concurrency.queue) && options.concurrency.queue >= 0)),
+      "concurrency",
+      "needs a limit from 1 and a queue from 0",
+    );
+    checkDuration(options.concurrency.maxWait);
+  }
   if (options.health !== undefined) {
     checkDuration(options.health.every, true);
     ensure(

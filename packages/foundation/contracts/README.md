@@ -26,6 +26,8 @@ package may import it; it imports nothing.
 | `ActorKind`, `ApiArea`, `DataClassification`, `HttpMethod`, `Realm`, `SortDirection`, `Target`, `Tone`, `MigrationRunner`, `HealthStatus` | enums     | the platform's closed sets                                                                                |
 | `AssuranceLevel`, `MeterKind`, `Rounding`                                                                                                 | enums     | step-up levels; usage meter kinds; the one rounding vocabulary (money, support)                           |
 | `RetryPolicy`, `Backoff`, `Jitter`, `RetryOn`, `backoffDelay(policy, attempt)`                                                            | retry     | the one retry shape and backoff formula (stackra-223)                                                     |
+| `Bulkhead`, `BulkheadOptions`                                                                                                             | value     | at most `limit` calls at once, `queue` more waiting `maxWaitMs`; `enter()` gives a release or turns away  |
+| `CircuitBreaker`, `CircuitBreakerOptions`, `CircuitTicket`, `CircuitState`                                                                | value     | opens after failures in a row, refuses for a cooldown, half opens for trial calls (STA-1467)              |
 | `Clock`, `Logger`, `IdentityResolver`, `PrincipalDirectory`                                                                               | ports     | inject by type; drivers live in container, logger and identity                                            |
 | `HealthIndicator`, `KeyProvider`, `FieldCipher`, `Signer`                                                                                 | ports     | a probed dependency; data keys; seal and open a field; sign; drivers below                                |
 | `Actor`, `PublicId<P>`, `Branded<T, B>`, `Email`, `Url`, `Json`, `VerifiedPrincipal`, `HealthReport`, `DataKey`                           | types     | the caller, ids and value types the shape compiler knows                                                  |
@@ -42,6 +44,24 @@ package may import it; it imports nothing.
 `Interval` string. A retrying package keeps its own `base` and `max` defaults as a frozen constant and passes them to
 `backoffDelay`; the curve is capped at `max` before the jitter (`Jitter.Equal` keeps the upper half, `Jitter.Added`
 adds up to half again).
+
+`Bulkhead` and `CircuitBreaker` are the two in-memory guards a caller puts around a dependency (STA-1467). Neither
+throws while running: `bulkhead.enter(signal?)` resolves with a release function or `undefined` (turned away, or the
+caller's signal aborted, which also takes a waiter out of the queue at once), and
+`breaker.admit(now)` returns a `CircuitTicket` or `undefined` (open, with `retryAfterMs(now)` saying how long), so the
+caller raises its own refusal. The server `createApp` of `@stackra/app` sheds load with a `Bulkhead`; the managed client
+of `@stackra/integrations` keeps a `CircuitBreaker` (and, when asked, a `Bulkhead`) per provider origin.
+
+```ts
+const ticket = breaker.admit(clock.now().getTime());
+if (ticket === undefined)
+  throw ProviderUnavailableError.create({ provider, retryAfterMs: breaker.retryAfterMs(clock.now().getTime()) });
+const answer = await send().catch((error: unknown) => {
+  ticket.fail(clock.now().getTime());
+  throw error;
+});
+ticket.succeed();
+```
 
 ## Data classification and principals
 

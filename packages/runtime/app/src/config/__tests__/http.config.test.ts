@@ -2,7 +2,10 @@
  * Stackra file contract:
  * Purpose: unit tests of `HttpConfig`: keyed `app.http`, built with a 1 MiB body cap and a 20-second drain deadline,
  *          a host override of each, a zero cap and a drain deadline outside 1 to 600 seconds refused; the shipped
- *          schema's defaults equal `HttpOptions`' initializers.
+ *          schema's defaults equal `HttpOptions`' initializers; the load-shedding bulkhead defaults to 1024 calls at once,
+ *          1024 queued and a 5-second wait, takes a host's override (0 turns it off) and refuses values out of range;
+ *          the body read deadline defaults to 30 seconds, takes a host's override (0 turns it off) and refuses values out
+ *          of range (STA-1467).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19, 20 and 26); ADR 0237 (STA-2577 note); ADR
@@ -52,6 +55,58 @@ describe("HttpConfig", () => {
   it.each([0, 601, 1.5])("refuses a drain deadline of %s seconds", (seconds) => {
     class OutOfRangeHttpConfig extends BaseHttpConfig {
       override drainTimeoutSeconds = seconds;
+    }
+    expect(() => buildConfig(OutOfRangeHttpConfig)).toThrow(ConfigInvalidError);
+  });
+
+  it("sheds load past 1024 calls at once, 1024 queued and a 5-second wait by default", () => {
+    const { maxConcurrentCalls, maxQueuedCalls, maxQueueWaitMs } = buildConfig(BaseHttpConfig);
+    expect({ maxConcurrentCalls, maxQueuedCalls, maxQueueWaitMs }).toEqual({
+      maxConcurrentCalls: 1024,
+      maxQueuedCalls: 1024,
+      maxQueueWaitMs: 5000,
+    });
+  });
+
+  it("takes a host's bulkhead, and 0 calls at once to turn shedding off", () => {
+    class HttpConfig extends BaseHttpConfig {
+      override maxConcurrentCalls = 0;
+
+      override maxQueuedCalls = 0;
+
+      override maxQueueWaitMs = 0;
+    }
+    const { maxConcurrentCalls, maxQueuedCalls, maxQueueWaitMs } = buildConfig(HttpConfig);
+    expect([maxConcurrentCalls, maxQueuedCalls, maxQueueWaitMs]).toEqual([0, 0, 0]);
+  });
+
+  it.each([
+    ["maxConcurrentCalls", -1],
+    ["maxConcurrentCalls", 1.5],
+    ["maxQueuedCalls", 1_000_001],
+    ["maxQueueWaitMs", 60_001],
+  ] as const)("refuses %s = %s", (field, value) => {
+    class OutOfRangeHttpConfig extends BaseHttpConfig {
+      override maxConcurrentCalls = field === "maxConcurrentCalls" ? value : 1024;
+
+      override maxQueuedCalls = field === "maxQueuedCalls" ? value : 1024;
+
+      override maxQueueWaitMs = field === "maxQueueWaitMs" ? value : 5000;
+    }
+    expect(() => buildConfig(OutOfRangeHttpConfig)).toThrow(ConfigInvalidError);
+  });
+
+  it("bounds a body read at 30 seconds by default, and takes a host's deadline or 0 to turn it off", () => {
+    expect(buildConfig(BaseHttpConfig).bodyReadTimeoutMs).toBe(30_000);
+    class HttpConfig extends BaseHttpConfig {
+      override bodyReadTimeoutMs = 0;
+    }
+    expect(buildConfig(HttpConfig).bodyReadTimeoutMs).toBe(0);
+  });
+
+  it.each([-1, 2.5, 600_001])("refuses a body read deadline of %s ms", (ms) => {
+    class OutOfRangeHttpConfig extends BaseHttpConfig {
+      override bodyReadTimeoutMs = ms;
     }
     expect(() => buildConfig(OutOfRangeHttpConfig)).toThrow(ConfigInvalidError);
   });

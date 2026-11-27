@@ -1,12 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `HttpOptions`, the shape of `HttpConfig`: the largest request body, in bytes, a generated HTTP adapter
- *          reads before any guard runs (a larger one is answered 413), and the drain deadline, in seconds: how long a
- *          stopping server waits for its calls in flight before it shuts down anyway.
+ *          reads before any guard runs (a larger one is answered 413), the drain deadline, in seconds: how long a
+ *          stopping server waits for its calls in flight before it shuts down anyway, and the load-shedding bulkhead:
+ *          how many calls run at once, how many more may queue and for how long, before a call is answered 503
+ *          (`AppOverloadedError`), and how long a request body may take to arrive (a slower one is answered 408, so a
+ *          slow upload never holds a bulkhead place for long).
  * Boundary: a shape class; it registers this package's own schema (`HTTP_CONFIG_SCHEMA`) when the module loads.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 19 and 26); ADR 0237 (STA-2577 note: raw adapters); ADR 0143 (decision 3:
- *                     draining timeouts).
+ *                     draining timeouts); ADR 0140 (`Unavailable` is 503); STA-1467 (load shedding).
  */
 import { Int, registerSchemas, Schema } from "@stackra/validation";
 
@@ -37,6 +40,47 @@ export class HttpOptions extends Schema {
     max: 600,
   })
   drainTimeoutSeconds = 20;
+
+  /**
+   * How many calls one instance runs at once; a call past it queues (0 to 1,000,000; 1024 by default). 0 turns load
+   * shedding off: every call runs at once, however many there are.
+   */
+  @Int({
+    min: 0,
+    max: 1_000_000,
+  })
+  maxConcurrentCalls = 1024;
+
+  /**
+   * How many calls may wait for a place once `maxConcurrentCalls` run; a call past it is answered 503 at once (0 to
+   * 1,000,000; 1024 by default).
+   */
+  @Int({
+    min: 0,
+    max: 1_000_000,
+  })
+  maxQueuedCalls = 1024;
+
+  /**
+   * How long a queued call waits for a place before it is answered 503, in milliseconds (0 to 60,000; 5000 by
+   * default, so a burst rides out and a sustained overload answers fast instead of timing out at the gateway).
+   */
+  @Int({
+    min: 0,
+    max: 60_000,
+  })
+  maxQueueWaitMs = 5000;
+
+  /**
+   * How long a generated HTTP adapter waits for a request body to arrive in full, in milliseconds, once the call holds
+   * its bulkhead place; a body slower than that is answered 408 (`request_timeout`) before any guard runs (0 to
+   * 600,000; 30,000 by default). 0 turns the deadline off, leaving slow uploads to the gateway's own body timeout.
+   */
+  @Int({
+    min: 0,
+    max: 600_000,
+  })
+  bodyReadTimeoutMs = 30_000;
 }
 
 registerSchemas([[HttpOptions, HTTP_CONFIG_SCHEMA]]);

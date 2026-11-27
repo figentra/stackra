@@ -16,9 +16,13 @@ import { app } from "../../.stackra/entry/server";
 
 /** Runs Stored per-scope schedules on its schedule. */
 export const schedulerSchedules = api({ expose: false }, async (): Promise<void> => {
-  await app.handlers.run(async (container) => {
-    await container.get(SchedulerService).tick(undefined, { crons: false });
-  });
+  await app.handlers.run(
+    async (container) => {
+      await container.get(SchedulerService).tick(undefined, { crons: false });
+    },
+    // Never shed: Encore does not retry a failed CronJob invocation, so a run turned away would be lost.
+    { shed: false },
+  );
 });
 
 export const schedulerSchedulesJob = new CronJob("scheduler-schedules", {

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./server` entry: `createApp` (the template's service entries import it),
- *          the `Controller` kind, the `RequestGuard` extension point, `AppDrainingError`, `DrainTimeoutError` (what the
+ *          the `Controller` kind, the `RequestGuard` extension point, `AppDrainingError`, `AppOverloadedError` (load shedding, STA-1467), `DrainTimeoutError` (what the
  *          drain deadline reports) and the edge-header guard
  *          with its key and nonce drivers (memory, `env`, `secrets`, `cache`) and refusal, the bearer-token guard with its config, key drivers, refusal and
  *          `VerifiedToken`, `CallAuthenticator` (the generated auth handler's check), `ServiceClientSessionDriver`
@@ -22,6 +22,7 @@ describe("@stackra/app/server", () => {
   it("exports exactly its values", () => {
     expect(Object.keys(server).sort()).toEqual([
       "AppDrainingError",
+      "AppOverloadedError",
       "BearerConfig",
       "BearerTokenGuard",
       "BearerTokenInvalidError",

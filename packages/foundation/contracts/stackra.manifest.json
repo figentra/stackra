@@ -50,6 +50,10 @@
       "type": "string",
       "enum": ["exponential", "linear", "fixed"]
     },
+    "contracts.CircuitState": {
+      "type": "string",
+      "enum": ["closed", "open", "half_open"]
+    },
     "contracts.DataClassification": {
       "type": "string",
       "enum": ["personal", "financial", "health", "pseudonymous", "regulated", "credential"]

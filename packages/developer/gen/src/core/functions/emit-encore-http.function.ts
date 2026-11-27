@@ -4,14 +4,17 @@
  *          handle)`, which every generated raw endpoint answers through, and `answerCall(req, resp, call)`, the bridge
  *          of every action, query and controller endpoint: Node's request becomes a Fetch `Request` with a streamed
  *          body (`nodeBodyStream`, never `Readable.toWeb`, which crashes on Encore's raw request, STA-2794),
- *          `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes`, runs the guards
+ *          `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes` and within
+ *          `HttpConfig.bodyReadTimeoutMs` (408 past it, so a slow upload never holds a load-shedding place, STA-1467), runs the guards
  *          over the exact bytes, authenticates through `CallAuthenticator` and runs the call, and the answer is written
  *          to the `ServerResponse` (STA-2577), its body piped as it is produced, so a server-sent-events answer streams. It answers an `OPTIONS` preflight with 204
  *          and `corsHeaders(request, CorsConfig)`, and adds the same CORS headers to every other answer, with
  *          `Cache-Control: private, no-store` where `apiCacheControl` forces it (ADR 0325 rule 22), inside
  *          `app.handlers.run` so a drain waits for it. When the service declares `@stackra/errors`, a
  *          `RateLimitedError` thrown by `handle` answers 429 with its envelope and `rateLimitHeaders` (`Retry-After`,
- *          `RateLimit-*`).
+ *          `RateLimit-*`). A call `app.handlers.run` turns away before it starts (the instance sheds load, or it
+ *          drains) is answered by `app.handlers.shed`: 503 with its envelope, `Retry-After` and the CORS headers
+ *          (STA-1467).
  * Boundary: pure; written only for a service that declares `@stackra/app` (the wiring then binds `CorsConfig` as
  *           `app.cors`). The adapter never decides an origin itself: `corsHeaders` echoes only an allowed one and
  *           `OriginGuard` refuses the request. `Vary: Origin` is appended to what the handler set, never replacing it.
@@ -20,7 +23,7 @@
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order); ADR 0325 (rule 22: the gateway marks signed-in answers); ADR 0295
  *                     (decision 8: the adapters reach the member through `handlers`); ADR 0091 and 0124 (Encore is
  *                     generated); STA-1374 (stackra-216); STA-1385; ADR 0217 (decision 2: the `RateLimit-*` headers
- *                     are sent), STA-1477; STA-2794.
+ *                     are sent), STA-1477; STA-2794; ADR 0140 and STA-1467 (load shedding answers 503).
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
@@ -84,7 +87,9 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "/**",
       " * Answers one request: an `OPTIONS` preflight with 204 and the CORS headers, any other with `handle`'s answer and",
       ` * the CORS headers${errors ? " (a rate-limited refusal as 429 with its back-off headers)" : ""}; \`private, no-store\` when the`,
-      " * request is signed in or the answer sets a cookie (ADR 0325 r22).",
+      " * request is signed in or the answer sets a cookie (ADR 0325 r22). A call the app turns away before it starts",
+      " * (overloaded or draining) is answered 503 by `app.handlers.shed`; one whose request aborts while it waits for a",
+      " * place leaves the queue at once.",
       " */",
       "export function answerHttp(",
       "  request: Request,",
@@ -112,7 +117,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "    const cacheControl = apiCacheControl(request, response);",
       '    if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
       "    return response;",
-      "  });",
+      "  }, { signal: request.signal }).catch((error: unknown) => app.handlers.shed(request, error));",
       "}",
       "",
       "/** What an endpoint states: its route, whether anonymous callers may reach it, its action, and the call it runs. */",
@@ -140,9 +145,16 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  for (const [name, value] of Object.entries(req.headers))",
       '    if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(", ") : value);',
       '  const method = req.method ?? "GET";',
+      "  // A client that goes away before the answer aborts the request, so a call still waiting for a load-shedding",
+      "  // place leaves the queue instead of holding it (STA-1467).",
+      "  const gone = new AbortController();",
+      '  resp.once("close", () => {',
+      '    if (!resp.writableFinished) gone.abort(new Error("the client closed the connection"));',
+      "  });",
       '  const request = new Request(new URL(req.url ?? "/", "http://encore"), {',
       "    method,",
       "    headers,",
+      "    signal: gone.signal,",
       "    // Never `Readable.toWeb(req)`: its end-of-stream cleanup calls `req.req.removeListener`, and Encore's raw request",
       "    // keeps its native request, no emitter, in `req` (STA-2794).",
       '    ...(method === "GET" || method === "HEAD" ? {} : { body: nodeBodyStream(req), duplex: "half" }),',
@@ -156,6 +168,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "      input: call.input,",
       "      raw: call.raw === true,",
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
+      "      bodyReadTimeoutMs: container.get(HttpConfig).bodyReadTimeoutMs,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
       "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",

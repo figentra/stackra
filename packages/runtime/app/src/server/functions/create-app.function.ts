@@ -17,7 +17,15 @@
  *          hooks from running before the platform's SIGKILL (STA-2820). The configuration reads `process.env` with
  *          `STACKRA_ENVIRONMENT` set to the running environment from the one reader (`readEnvironment`), given what the
  *          platform reported to `providePlatformEnvironment`, so a configuration never sees an unset or misspelt
- *          environment and a deployment never boots as `dev` (STA-2844).
+ *          environment and a deployment never boots as `dev` (STA-2844). `handlers.run` sheds load through a
+ *          `Bulkhead` sized by `HttpConfig` (`maxConcurrentCalls` at once, `maxQueuedCalls` waiting at most
+ *          `maxQueueWaitMs`): a call it turns away is refused with `AppOverloadedError` before its request container
+ *          exists, counted on the bound `Metrics` as `app.calls.shed`, and `handlers.shed` answers it 503 with
+ *          `Retry-After` (STA-1467). A queued call counts as in flight, so a drain waits for it too. A call run with
+ *          `{ shed: false }` (the generated cron adapter) skips the bulkhead, since Encore never retries a failed
+ *          CronJob invocation and a shed cron run would be lost. A call run with the request's `signal` (the generated
+ *          HTTP adapter) leaves the queue when the signal aborts and rejects with its reason, so a client that went
+ *          away never keeps a queue place.
  * Boundary: no HTTP server of its own: Encore (generated into `stackra-encore`) serves, and reaches the member only
  *           through `handlers`. A boot error rejects, so the entry's top-level await fails the process. The outbox
  *           flush and every other shutdown step are each package's `onApplicationShutdown`, run by `close()`.
@@ -27,20 +35,26 @@
  *                     (decision 4: subscribers and relays receive once boot connects them); ADR 0457 (request guards);
  *                     ADR 0473 (the migrate and seed CLIs connect with `directDatabaseUrl`, never through here);
  *                     ADR 0143 (decision 3: draining timeouts); ADR 0296 (amendment 2026-11-26: the environment comes
- *                     from the runtime only), STA-2844.
+ *                     from the runtime only), STA-2844; ADR 0140 (`Unavailable` is 503 and retryable), STA-1467
+ *                     (load shedding).
  */
 import { buildConfig, ENVIRONMENT_VARIABLE, readEnvironment } from "@stackra/config";
 import type { AnyClass, ModuleClass } from "@stackra/container";
-import { HealthIndicator, Tracer } from "@stackra/contracts";
+import { Bulkhead, HealthIndicator, Metrics, Tracer } from "@stackra/contracts";
 import type { TraceCarrier } from "@stackra/contracts";
+import { isRefusal } from "@stackra/errors";
 
+import { CorsConfig } from "#config/cors.config";
 import { HttpConfig } from "#config/http.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { bootApp } from "#core/functions/boot-app.function";
 import { RequestGuard } from "#server/bases/request-guard.base";
+import { OVERLOAD_RETRY_AFTER_MS } from "#server/constants/overload-retry-after.constant";
 import { PLATFORM_ENVIRONMENT_HOST } from "#server/constants/platform-environment-host.constant";
 import { answerProbe } from "#server/functions/answer-probe.function";
+import { corsHeaders } from "#server/functions/cors-headers.function";
 import { AppDrainingError } from "#server/errors/app-draining.error";
+import { AppOverloadedError } from "#server/errors/app-overloaded.error";
 import { DrainTimeoutError } from "#server/errors/drain-timeout.error";
 import type { ServerApp } from "#server/types/server-app.type";
 import type { ServerAppOptions } from "#server/types/server-app-options.type";
@@ -75,9 +89,22 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
       byKind.set(binding.kind, [...(byKind.get(binding.kind) ?? []), binding.provide]);
 
   const tracer = container.has(Tracer) ? container.get(Tracer) : undefined;
-  const { drainTimeoutSeconds } = container.has(HttpConfig)
+  const metrics = container.has(Metrics) ? container.get(Metrics) : undefined;
+  const cors = container.has(CorsConfig) ? container.get(CorsConfig) : undefined;
+  const { drainTimeoutSeconds, maxConcurrentCalls, maxQueuedCalls, maxQueueWaitMs } = container.has(
+    HttpConfig,
+  )
     ? container.get(HttpConfig)
     : buildConfig(HttpConfig);
+  // The load-shedding compartment of every call; none when a host turned shedding off.
+  const bulkhead =
+    maxConcurrentCalls > 0
+      ? new Bulkhead({
+          limit: maxConcurrentCalls,
+          queue: maxQueuedCalls,
+          maxWaitMs: maxQueueWaitMs,
+        })
+      : undefined;
   // The trace carrier of each call, by its request container, which `guard` receives.
   const carriers = new WeakMap<object, TraceCarrier>();
 
@@ -87,15 +114,33 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
 
   const handlers: ServerHandlers = {
     byKind,
-    run(call) {
+    run(call, runOptions) {
       if (draining !== undefined) return Promise.reject(AppDrainingError.create());
-      const result = Promise.resolve().then(() => {
+      const start = () => {
         const scoped = container.forRequest();
         if (tracer === undefined) return call(scoped);
         const carrier: TraceCarrier = {};
         carriers.set(scoped, carrier);
         return tracer.continueTrace(carrier, () => Promise.resolve().then(() => call(scoped)));
-      });
+      };
+      // A cron run skips the bulkhead: Encore never retries a failed CronJob invocation, so a shed run is lost.
+      const result =
+        bulkhead === undefined || runOptions?.shed === false
+          ? Promise.resolve().then(start)
+          : bulkhead.enter(runOptions?.signal).then(async (release) => {
+              // The client went away before a place came free: its own reason, not a shed.
+              if (release === undefined && runOptions?.signal?.aborted === true)
+                throw runOptions.signal.reason;
+              if (release === undefined) {
+                metrics?.counter("app.calls.shed", 1, { reason: "overloaded" });
+                throw AppOverloadedError.create({ retryAfterMs: OVERLOAD_RETRY_AFTER_MS });
+              }
+              try {
+                return await start();
+              } finally {
+                release();
+              }
+            });
       // A settled marker, so drain waits for the call without seeing its rejection.
       const settled = result.then(
         () => undefined,
@@ -116,6 +161,15 @@ export async function createApp(root: ModuleClass, options: ServerAppOptions): P
       const requestId = request.headers.get(EdgeHeader.RequestId);
       if (traceparent !== null) carrier.traceparent = traceparent;
       if (requestId !== null) carrier.requestId = requestId;
+    },
+    async shed(request, error) {
+      if (!isRefusal(error, AppOverloadedError) && !isRefusal(error, AppDrainingError)) throw error;
+      const headers = cors === undefined ? new Headers() : corsHeaders(request, cors);
+      headers.set("cache-control", "no-store");
+      const retryAfterMs = "retryAfterMs" in error ? error.retryAfterMs : undefined;
+      if (retryAfterMs !== undefined)
+        headers.set("retry-after", String(Math.max(0, Math.ceil(retryAfterMs / 1000))));
+      return Response.json(error.toEnvelope(), { status: 503, headers });
     },
   };
 

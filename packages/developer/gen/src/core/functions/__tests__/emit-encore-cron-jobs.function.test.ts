@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `emitEncoreCronJobs`: a service with a cron action gets one CronJob firing its locked key on
  *          its schedule and the stored schedules' minute tick, each with an internal endpoint run through the server
- *          app's handlers; no file for a package, an app or a service that schedules nothing.
+ *          app's handlers outside its load-shedding bulkhead; no file for a package, an app or a service that schedules nothing.
  * Boundary: test only; runs on the IR fixtures and the manifests built from them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0148 (decisions 4 and 6); ADR 0266 (decision 4.6).
@@ -33,13 +33,30 @@ describe("emitEncoreCronJobs", () => {
       ].join("\n"),
     );
     expect(content).toContain(
-      '    await container.get(SchedulerService).fire("billing.invoice.send_reminders@1");',
+      '      await container.get(SchedulerService).fire("billing.invoice.send_reminders@1");',
     );
     expect(content).toContain('new CronJob("scheduler-schedules", {');
     expect(content).toContain(
-      "    await container.get(SchedulerService).tick(undefined, { crons: false });",
+      "      await container.get(SchedulerService).tick(undefined, { crons: false });",
     );
     expect(content).toContain("api({ expose: false }");
+  });
+
+  it("runs every CronJob outside the load-shedding bulkhead, since Encore never retries one (STA-1467)", () => {
+    const content =
+      emitEncoreCronJobs(BILLING_IR, buildManifest(BILLING_IR).manifest)?.content ?? "";
+    const runs = content.split("await app.handlers.run(").slice(1);
+    expect(runs).toHaveLength(2);
+    for (const run of runs)
+      expect(run.slice(0, run.indexOf("\n  );"))).toContain("{ shed: false },");
+    expect(content).toContain(
+      [
+        "  await app.handlers.run(",
+        "    async (container) => {",
+        '      await container.get(SchedulerService).fire("billing.invoice.send_reminders@1");',
+        "    },",
+      ].join("\n"),
+    );
   });
 
   it("loads the running environment, then the Encore database, ahead of the server app (STA-2844)", () => {
