@@ -40,6 +40,10 @@ usual registry.
     @stackra:registry=https://npm.stackra.figentra.com/
     ```
 
+    Without it, `@stackra/*` installs from the public npm registry, where anyone can publish under that name. `stackra
+    doctor` fails a project whose package-manager config leaves `@stackra` (or `@stackra-pro`) unmapped or mapped to a
+    public registry and prints the line to add; `stackra create` writes the line and refuses to install without it.
+
   </Step>
   <Step title="Install">
     ```bash

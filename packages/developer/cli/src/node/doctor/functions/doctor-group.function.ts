@@ -23,6 +23,8 @@ const GROUPS: Readonly<Record<string, DoctorGroup>> = {
   "figentra/secrets clone": "Repo",
   "@stackra registry readable": "Registries",
   "@figentra registry readable": "Registries",
+  "@stackra scope mapped": "Registries",
+  "@stackra-pro scope mapped": "Registries",
   "GitHub CLI signed in": "Accounts",
   "Google login for sops": "Accounts",
   "aws bedrock profile": "Accounts",

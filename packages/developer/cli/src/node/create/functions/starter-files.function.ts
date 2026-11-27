@@ -2,21 +2,25 @@
  * Stackra file contract:
  * Purpose: `starterFiles(files, options)`, the files of a new app from a starter's files: the chosen profile's
  *          included paths with its overlays, the rename list applied to every text file, catalog `stackra` pinned to
- *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line in `.npmrc`.
+ *          the CLI's exact version (and packed tarballs as pnpm overrides), the Stackra registry line of each Stackra
+ *          scope (`@stackra`, `@stackra-pro`) in `.npmrc` when the starter's own `.npmrc` does not map it.
  *          `stackra.starter.yaml`, `starter/` and `pnpm-lock.yaml` are never written: the install resolves fresh.
  *          Nor is `.infisical.yaml`: it binds the template's own Infisical project, never the app's (STA-2027).
  * Boundary: pure; returns the files and writes nothing. Refuses a manifest that does not match `StarterManifest`, an
- *           unknown profile, and an overlay whose source is missing.
+ *           unknown profile, an overlay whose source is missing, and a starter `.npmrc` that maps a Stackra scope to a
+ *           public registry (`isPublicNpmRegistry`: anyone can publish `@stackra/*` there).
  * Runtime: node
- * Governing contract: ADR 0515 (decisions 3 to 5); ADR 0453 (decision 10); STA-1952 spec FR-006 and FR-007.
+ * Governing contract: ADR 0515 (decisions 3 to 5); ADR 0453 (decisions 4 and 10); STA-1952 spec FR-006 and FR-007.
  */
 import { matchesGlob } from "node:path";
 
 import { isMap, parse, parseDocument } from "yaml";
 
-import { STACKRA_REGISTRY_NPMRC } from "#node/constants/stackra-registry-npmrc.constant";
+import { ITEM_SCOPES } from "#node/constants/item-scopes.constant";
+import { REGISTRY_ORIGIN_DEFAULT } from "#node/constants/registry-origin-default.constant";
 import type { StarterManifest } from "#node/create/types/starter-manifest.type";
 import type { StarterOptions } from "#node/create/types/starter-options.type";
+import { isPublicNpmRegistry } from "#node/functions/public-npm-registry.function";
 
 /** The starter manifest's path. */
 const MANIFEST = "stackra.starter.yaml";
@@ -88,7 +92,8 @@ function pinWorkspace(source: string, options: StarterOptions): string {
  *
  * @param files - the starter's files by POSIX path.
  * @param options - the profile, the names and the `@stackra/*` version.
- * @throws Error when the manifest is malformed, the profile unknown or an overlay source missing.
+ * @throws Error when the manifest is malformed, the profile unknown, an overlay source missing or a Stackra scope
+ *         mapped to a public registry.
  * @example
  * starterFiles(readStarter("./template"), { profile: "minimal", name: "acme", scope: "@acme", stackraVersion: "0.5.1" });
  */
@@ -130,13 +135,16 @@ export function starterFiles(
     if (path === "pnpm-workspace.yaml") body = pinWorkspace(body, options);
     out.set(path, encoder.encode(body));
   }
-  const npmrc = out.has(".npmrc") ? (text(out.get(".npmrc") ?? new Uint8Array()) ?? "") : "";
-  if (!npmrc.includes("@stackra:registry="))
-    out.set(
-      ".npmrc",
-      encoder.encode(
-        `${npmrc}${npmrc === "" || npmrc.endsWith("\n") ? "" : "\n"}${STACKRA_REGISTRY_NPMRC}`,
-      ),
-    );
+  let npmrc = out.has(".npmrc") ? (text(out.get(".npmrc") ?? new Uint8Array()) ?? "") : "";
+  for (const scope of ITEM_SCOPES) {
+    const mapped = new RegExp(`^\\s*${scope}:registry\\s*=\\s*(\\S+)\\s*$`, "m").exec(npmrc)?.[1];
+    if (mapped !== undefined && isPublicNpmRegistry(mapped))
+      throw new Error(
+        `the starter's .npmrc maps ${scope} to ${mapped}, a public registry; Stackra packages never come from there (ADR 0453)`,
+      );
+    if (mapped === undefined)
+      npmrc = `${npmrc}${npmrc === "" || npmrc.endsWith("\n") ? "" : "\n"}${scope}:registry=${REGISTRY_ORIGIN_DEFAULT}\n`;
+  }
+  out.set(".npmrc", encoder.encode(npmrc));
   return out;
 }
