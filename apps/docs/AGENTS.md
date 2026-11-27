@@ -19,6 +19,8 @@ Fumadocs documentation site (ADR 0514): gen writes it into `.stackra/site/`, Rea
   `src/assets/`, snippets in `src/snippets/`, the site configuration in `src/config/docs.config.ts` (a `DocsConfig`
   subclass from `@stackra/gen`). Member files (`README.md`, `AGENTS.md`, `package.json`, `stackra.config.ts`,
   `tsconfig.json`) and scripts (`scripts/`) stay outside `src/`.
+- The Worker's one script, `worker/main.ts`, only answers `/-/version` (the running version id, for the deploy smoke's
+  proof, ADR 0536); everything else is the static site. Its tests sit in `worker/__tests__/`.
 - `src/docs/customers/` is the buyer-facing tab: plain, accurate, no invented promise. A term the owner has not
   decided (support levels, EOL dates, how to buy) stays a marked placeholder (`Owner to supply (STA-n)`).
   `customers/packages.mdx` is a snapshot of every package's `package.json` (`stackra.summary`, `exports`): update its

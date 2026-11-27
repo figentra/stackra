@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `StoredCacheDriver`, the base every `Cache` driver of this package extends: it builds `storedCache` over the
- *          `CacheEntryStore` its subclass passes and answers the six port methods from it.
+ *          `CacheEntryStore` its subclass passes and answers the port methods from it; `add` falls back to the port's rejecting
+ *          default when the store has no atomic `create`.
  * Boundary: abstract and internal to the package: a driver is a subclass whose own constructor takes the dependencies
  *           (gen reads them there) and passes its store, namespace, clock and settings to `super`. It holds no store of
  *           its own. A subclass names its port as the type argument (`extends StoredCacheDriver<Cache>`): gen reads a
@@ -74,6 +75,16 @@ export abstract class StoredCacheDriver<P extends Cache> extends Driver(Cache) {
     options?: CacheRememberOptions,
   ): Promise<T> {
     return this.cache.remember(key, ttl, load, options);
+  }
+
+  /**
+   * Stores `value` under `key` for exactly `ttl` only when nothing is kept there, atomically; rejects when the store
+   * has no atomic set-if-absent.
+   */
+  override add<T>(key: CacheKey, value: T, ttl: Duration): Promise<boolean> {
+    return this.cache.add === undefined
+      ? super.add(key, value, ttl)
+      : this.cache.add(key, value, ttl);
   }
 
   /** Drops `key` and every key it covers; a covered load in flight answers its callers but is not stored. */

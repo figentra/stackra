@@ -1,7 +1,29 @@
 ---
 title: "0296 — Runway v3: member requires and root topology groups"
-description: "Accepted, amended by 0335, 0517 · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417)"
+description: "Accepted, amended by 0335, 0517 · 2026-10-22 · amended 2026-10-23 (STA-349) · amended 2026-10-24 (STA-417) · amended 2026-11-26 (STA-2844)"
 ---
+
+<Note>
+  Amended 2026-11-26 (STA-2844, owner's go through the CTO): **safety-critical keys come from the runtime only.**
+  Decision 1 makes a member runway's `config` values the last layer of configuration. That layer may no longer set a
+  field mapped to a safety-critical variable (`SAFETY_CRITICAL_VARIABLES` of `@stackra/config`). The running
+  environment, `STACKRA_ENVIRONMENT`, is the first such variable: a `dev` there would let a deployment keep memory
+  stores, skip its audit trail or accept dev sign-in.
+  - **One reader.** `readEnvironment` of `@stackra/config` is the only reader of the running environment. It returns
+    one of a closed list (`dev`, `test`, `preview`, `staging`, `production`) and reads only `STACKRA_ENVIRONMENT` and
+    what the serving platform reports. A name outside the list fails boot. A deployed platform never runs as `dev` or
+    `test`. Unset on a deployment is derived from the platform, and a self-hosted image that reports nothing fails
+    closed instead of running as `dev`. Every check that `dev` or `test` relaxes asks this reader
+    (`isDeployedEnvironment`).
+  - **Refused twice.** `buildConfig` refuses a value for a runtime-only field at boot. `runway validate` and
+    `stackra validate --repository` refuse it in a runway `config` block before a deploy, reading the fields from the
+    `env` rows of the manifests the file configures.
+  - **Encore.** A deployed Encore service cannot set the variable. The generated `environment.ts` hands Encore's
+    `appMeta().environment` to `providePlatformEnvironment` of `@stackra/app/server` before the app loads.
+
+The other decisions stand.
+
+</Note>
 
 <Note>
   Amended 2026-11-02 (owner, STA-1965) by [0517](/adr/0517-where-services-and-their-resources-run).
