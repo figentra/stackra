@@ -126,19 +126,26 @@ for the short form); the `Interval` string is gone (stackra-223). `retry` is the
 A slow or failing provider is contained (STA-1467). Each attempt is aborted at the Integration's `timeout` (30 s by
 default, the body read included) and counts as no answer. The runtime keeps one `CircuitBreaker` per Integration and
 origin, shared by every connection in the instance: 5 attempts in a row with no answer, a timeout, 408 or a 5xx open it
-(a 4xx is an answer and a 429 says nothing), and for 30 s every call is refused without being sent, as
-`ProviderUnavailableError` with `reason: "circuit_open"` and `retryAfterMs`; then one trial call goes and its outcome
-closes or reopens it. `circuitBreaker: { failureThreshold, cooldown }` tunes it and `false` turns it off.
-`concurrency: { limit, queue, maxWait }` adds a bulkhead on the same key: past it a call is refused at once with
-`reason: "bulkhead_full"`. A call whose last attempt timed out carries `reason: "timeout"`; a caller's own abort is
-rethrown as it was.
+(a 4xx is an answer and a 429 says nothing; an answer counts only once its body arrived, so headers followed by a
+stall are a failure), and for 30 s every call is refused without being sent, as `ProviderUnavailableError` with
+`reason: "circuit_open"` and `retryAfterMs`; then one trial call goes and its outcome closes or reopens it.
+`circuitBreaker: { failureThreshold, cooldown }` tunes it and `false` turns it off.
+
+Sharing the circuit across connections is right for a provider outage, which is everyone's, but it also means one
+tenant's failing calls (a payload that makes the provider answer 500) shed every tenant's calls on that instance until
+the cooldown. For a provider whose failures follow the account (a tenant's own server, a per-account shard), say
+`circuitBreaker: { by: RateLimitScope.Credential }`: each connection, and the platform's own credentials, then gets its
+own circuit on each origin. `concurrency: { limit, queue, maxWait }` adds a bulkhead per Integration and origin: past
+it a call is refused at once with `reason: "bulkhead_full"`, and a caller that aborts while queued leaves the queue
+with its own reason. A call whose last attempt timed out carries `reason: "timeout"`; a caller's own abort is rethrown
+as it was.
 
 ```ts
 Integration({
   provider: "resend",
   // ...
   timeout: Duration.seconds(10),
-  circuitBreaker: { failureThreshold: 3, cooldown: Duration.seconds(20) },
+  circuitBreaker: { failureThreshold: 3, cooldown: Duration.seconds(20), by: RateLimitScope.Credential },
   concurrency: { limit: 20 },
 });
 ```

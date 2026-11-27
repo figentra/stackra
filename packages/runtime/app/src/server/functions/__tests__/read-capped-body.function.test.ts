@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `readCappedBody`: a body within the cap is returned whole, one past it is
- *          undefined after reading no more than needed, no body is empty bytes.
+ *          undefined after reading no more than needed, no body is empty bytes, and an aborted signal (the body read
+ *          deadline) rejects the read even while a chunk is still awaited (STA-1467).
  * Boundary: test only; plain web streams.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0237 (STA-2577 note).
+ * Governing contract: ADR 0022 (test placement); ADR 0237 (STA-2577 note); STA-1467.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -37,5 +38,26 @@ describe(readCappedBody, () => {
 
   it("returns empty bytes for no body", async () => {
     expect((await readCappedBody(null, 10))?.byteLength).toBe(0);
+  });
+
+  it("rejects with the signal's reason once it aborts while a chunk is still awaited", async () => {
+    const stalled = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(4));
+      },
+    });
+    const deadline = new AbortController();
+    const read = readCappedBody(stalled, 1024, deadline.signal);
+    deadline.abort(new Error("too slow"));
+    await expect(read).rejects.toThrow("too slow");
+  });
+
+  it("rejects at once for a signal that already aborted, and reads a whole body under one that did not", async () => {
+    await expect(
+      readCappedBody(stream(1, 1).body, 10, AbortSignal.abort(new Error("gone"))),
+    ).rejects.toThrow("gone");
+    expect(
+      (await readCappedBody(stream(2, 5).body, 10, new AbortController().signal))?.byteLength,
+    ).toBe(10);
   });
 });

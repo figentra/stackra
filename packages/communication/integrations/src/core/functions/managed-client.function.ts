@@ -15,7 +15,9 @@
  *           retries on no answer, 408, 429 or 5xx; a `POST` or `PATCH` only with an idempotency key the provider
  *           deduplicates on. Each attempt is aborted at the Integration's `timeout` (30 s by default, the body read
  *           included) and goes through the circuit breaker and bulkhead the runtime keeps for its origin (`guardsOf`):
- *           an open circuit or a full bulkhead refuses it without sending (STA-1467). A 4xx is `ProviderRefusedError`;
+ *           an open circuit or a full bulkhead refuses it without sending (STA-1467); an answer counts as one for the
+ *           circuit only once its body is read, so a provider that sends headers and then stalls opens it too, and a
+ *           caller that gives up while queued for the bulkhead leaves the queue at once. A 4xx is `ProviderRefusedError`;
  *           spent retries, a bucket full past the longest wait, an open circuit or a full bulkhead are
  *           `ProviderUnavailableError`, with a `reason` when the client itself gave up. No credential, token or response body is ever put in an error: the
  *           provider's code is scrubbed against the call's credentials (the connection's and the Integration's
@@ -29,6 +31,7 @@
 import { Secret } from "@stackra/config";
 import type { AnyClass } from "@stackra/container";
 import { backoffDelay, Duration } from "@stackra/contracts";
+import type { CircuitTicket } from "@stackra/contracts";
 
 import type { Connection } from "#core/bases/connection.base";
 import { AuthType } from "#core/enums/auth-type.enum";
@@ -60,12 +63,15 @@ const TIMEOUT = Duration.seconds(30);
 
 /**
  * One attempt as sent: its answer (undefined when nothing came back), the error when nothing did, whether the
- * Integration's `timeout` cut it short, and `finish`, which disarms its timer and frees its bulkhead place (idempotent).
+ * Integration's `timeout` cut it short, its circuit ticket (settled already for a failure or a 429, reported by the body
+ * read otherwise), and `finish`, which disarms its timer, frees its bulkhead place and frees a trial place the read
+ * did not report (idempotent).
  */
 interface Attempt {
   readonly response: Response | undefined;
   readonly failure: unknown;
   readonly timedOut: () => boolean;
+  readonly ticket: CircuitTicket | undefined;
   readonly finish: () => void;
 }
 
@@ -246,8 +252,10 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   /**
    * Sends one attempt through the circuit breaker and bulkhead of its origin, aborted at the Integration's `timeout`
    * or by the caller's signal, and reports its outcome to the breaker: no answer, a timeout, 408 or a 5xx is a
-   * failure, a 429 says nothing about the provider's health, anything else is an answer. `finish` disarms the timer and
-   * gives the bulkhead place back once the answer's body is read (or dropped), so the timeout also bounds the read.
+   * failure, a 429 says nothing about the provider's health, and any other answer is left to `readBody`, which counts
+   * it as one only once its body arrived. `finish` disarms the timer and gives the bulkhead place back once the
+   * answer's body is read (or dropped), so the timeout also bounds the read. A caller that aborts while the attempt
+   * waits for a bulkhead place leaves the queue at once.
    *
    * @throws ProviderUnavailableError without sending when the circuit is open (`circuit_open`) or the bulkhead and its
    *         queue are full (`bulkhead_full`), carrying the status of `previous`, the attempt before it.
@@ -271,9 +279,11 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
         reason: "circuit_open",
         retryAfterMs: breaker.retryAfterMs(clock.now().getTime()),
       });
-    const release = bulkhead === undefined ? undefined : await bulkhead.enter();
+    const release = bulkhead === undefined ? undefined : await bulkhead.enter(caller);
     if (bulkhead !== undefined && release === undefined) {
       ticket?.release();
+      // A caller that gave up while queued gets its own reason, not a refusal.
+      caller?.throwIfAborted();
       throw ProviderUnavailableError.create({ provider, ...status, reason: "bulkhead_full" });
     }
     const controller = new AbortController();
@@ -294,21 +304,24 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
       clearTimeout(timer);
       caller?.removeEventListener("abort", onAbort);
       release?.();
+      // An answer dropped unread (the caller gave up) says nothing about the provider: free its trial place.
+      ticket?.release();
     };
     try {
       const response = await fetch(url, { ...init, signal: controller.signal });
       if (response.status === 408 || response.status >= 500) ticket?.fail(clock.now().getTime());
       else if (response.status === 429) ticket?.release();
-      else ticket?.succeed();
-      return { response, failure: undefined, timedOut: () => timedOut, finish };
+      return { response, failure: undefined, timedOut: () => timedOut, ticket, finish };
     } catch (error) {
-      finish();
+      // Settle the ticket before `finish`, which frees an unsettled one without counting it.
       if (caller?.aborted === true) {
         ticket?.release();
+        finish();
         throw error;
       }
       ticket?.fail(clock.now().getTime());
-      return { response: undefined, failure: error, timedOut: () => timedOut, finish };
+      finish();
+      return { response: undefined, failure: error, timedOut: () => timedOut, ticket, finish };
     }
   }
 
@@ -372,8 +385,9 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   }
 
   /**
-   * Reads an answer's body; a read the timeout cut short, or a connection dropped mid-answer, is
-   * `ProviderUnavailableError`, and a read the caller aborted throws the caller's reason.
+   * Reads an answer's body and reports the attempt to the circuit: a body that arrived is an answer; a read the timeout
+   * cut short, or a connection dropped mid-answer, is a failure and `ProviderUnavailableError`; a read the caller
+   * aborted counts as neither and throws the caller's reason.
    */
   async function readBody<T>(
     outcome: Attempt,
@@ -381,9 +395,12 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     read: () => Promise<T>,
   ): Promise<T> {
     try {
-      return await read();
+      const body = await read();
+      outcome.ticket?.succeed();
+      return body;
     } catch (error) {
       if (caller?.aborted === true) throw error;
+      outcome.ticket?.fail(clock.now().getTime());
       throw ProviderUnavailableError.create(
         {
           provider,

@@ -3,7 +3,8 @@
  * Purpose: unit tests of `readIntegrationOptions` for `baseUrl`: a literal http(s) URL and an https template are
  *          accepted, a single `{field}` that is the whole URL is accepted, and an http template is refused; a written
  *          `key` of two snake_case parts is kept, any other is refused (STA-1739); Basic auth needs a user name and
- *          takes an empty password (RFC 7617); `timeout`, `circuitBreaker` and `concurrency` are checked (STA-1467).
+ *          takes an empty password (RFC 7617); `timeout`, `circuitBreaker` (its `by` scope too) and `concurrency` are
+ *          checked (STA-1467).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0308 (rule 6); STA-1665; STA-1467.
@@ -13,6 +14,7 @@ import { describe, expect, it } from "@stackra/testing";
 
 import { AuthType } from "#core/enums/auth-type.enum";
 import { IntegrationCategory } from "#core/enums/integration-category.enum";
+import { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
 import { readIntegrationOptions } from "#core/functions/read-integration-options.function";
 import type { IntegrationOptions } from "#core/types/integration-options.type";
 
@@ -122,6 +124,15 @@ describe("readIntegrationOptions timeout, circuit breaker and concurrency (STA-1
     expect(guarded({ circuitBreaker: { failureThreshold: 0 } })).toThrow(/circuitBreaker/);
     expect(guarded({ circuitBreaker: { failureThreshold: 2.5 } })).toThrow(/circuitBreaker/);
     expect(guarded({ circuitBreaker: { cooldown: Duration.seconds(0) } })).toThrow(RangeError);
+  });
+
+  it("keeps a circuit keyed by credential and refuses a scope that is not a RateLimitScope", () => {
+    expect(guarded({ circuitBreaker: { by: RateLimitScope.Credential } })().circuitBreaker).toEqual(
+      { by: "credential" },
+    );
+    expect(guarded({ circuitBreaker: { by: "tenant" as RateLimitScope } })).toThrow(
+      /circuitBreaker/,
+    );
   });
 
   it("refuses a bulkhead without a limit from 1 or with a negative queue", () => {

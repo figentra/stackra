@@ -3,7 +3,9 @@
  * Purpose: unit tests of `HttpConfig`: keyed `app.http`, built with a 1 MiB body cap and a 20-second drain deadline,
  *          a host override of each, a zero cap and a drain deadline outside 1 to 600 seconds refused; the shipped
  *          schema's defaults equal `HttpOptions`' initializers; the load-shedding bulkhead defaults to 1024 calls at once,
- *          1024 queued and a 5-second wait, takes a host's override (0 turns it off) and refuses values out of range.
+ *          1024 queued and a 5-second wait, takes a host's override (0 turns it off) and refuses values out of range;
+ *          the body read deadline defaults to 30 seconds, takes a host's override (0 turns it off) and refuses values out
+ *          of range (STA-1467).
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19, 20 and 26); ADR 0237 (STA-2577 note); ADR
@@ -90,6 +92,21 @@ describe("HttpConfig", () => {
       override maxQueuedCalls = field === "maxQueuedCalls" ? value : 1024;
 
       override maxQueueWaitMs = field === "maxQueueWaitMs" ? value : 5000;
+    }
+    expect(() => buildConfig(OutOfRangeHttpConfig)).toThrow(ConfigInvalidError);
+  });
+
+  it("bounds a body read at 30 seconds by default, and takes a host's deadline or 0 to turn it off", () => {
+    expect(buildConfig(BaseHttpConfig).bodyReadTimeoutMs).toBe(30_000);
+    class HttpConfig extends BaseHttpConfig {
+      override bodyReadTimeoutMs = 0;
+    }
+    expect(buildConfig(HttpConfig).bodyReadTimeoutMs).toBe(0);
+  });
+
+  it.each([-1, 2.5, 600_001])("refuses a body read deadline of %s ms", (ms) => {
+    class OutOfRangeHttpConfig extends BaseHttpConfig {
+      override bodyReadTimeoutMs = ms;
     }
     expect(() => buildConfig(OutOfRangeHttpConfig)).toThrow(ConfigInvalidError);
   });

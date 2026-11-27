@@ -16,6 +16,7 @@ import type { Duration, RetryPolicy } from "@stackra/contracts";
 
 import type { ConnectionLevel } from "#core/enums/connection-level.enum";
 import type { ConnectorKind } from "#core/enums/connector-kind.enum";
+import type { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
 import type { IntegrationCategory } from "#core/enums/integration-category.enum";
 import type { IntegrationRole } from "#core/enums/integration-role.enum";
 import type { AuthOptions } from "#core/types/auth-options.type";
@@ -96,12 +97,22 @@ export interface IntegrationOptions {
    * The circuit breaker the runtime keeps per Integration and origin, in each instance: `failureThreshold` attempts in
    * a row that get no answer, time out, or fail with 408 or a 5xx open it, and for `cooldown` every call is refused
    * at once (`ProviderUnavailableError` with `reason: "circuit_open"` and the wait), without being sent; then one
-   * trial call goes, and its outcome closes or reopens it. A 429 or a 4xx counts as an answer. 5 failures and 30
-   * seconds when left out; `false` turns it off.
+   * trial call goes, and its outcome closes or reopens it. A 429 or a 4xx counts as an answer, and an answer counts
+   * only once its body arrived. 5 failures and 30 seconds when left out; `false` turns it off.
+   *
+   * `by` says whose calls share a circuit. `RateLimitScope.Integration` (the default): every connection to the origin,
+   * since an outage of the provider is everyone's, and one tenant's failing calls then open it for every tenant on
+   * the instance until the cooldown. `RateLimitScope.Credential`: one circuit per connection (and one for the
+   * platform's own credentials) on each origin, for a provider whose failures follow the account (a tenant's own
+   * server, a per-account shard), so one tenant never sheds another's calls.
    */
   readonly circuitBreaker?:
     | false
-    | { readonly failureThreshold?: number; readonly cooldown?: Duration };
+    | {
+        readonly failureThreshold?: number;
+        readonly cooldown?: Duration;
+        readonly by?: RateLimitScope;
+      };
 
   /**
    * The bulkhead the runtime keeps per Integration and origin, in each instance: at most `limit` attempts in flight

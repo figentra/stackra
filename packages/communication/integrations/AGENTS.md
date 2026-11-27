@@ -58,8 +58,8 @@ Provider integrations, connections and their store (ADR 0308). Member at `packag
   (stackra-223); never declare an interval string, a retry shape or a backoff formula here.
 - Every provider call goes through the managed client's per-attempt `timeout`, and the circuit breaker and bulkhead
   `IntegrationRuntime` keeps per Integration and origin (the contracts `CircuitBreaker` and `Bulkhead`, STA-1467).
-  Never call `fetch` around them for a provider's API; a guard's key names the class and the origin, never a
-  credential or a connection's data.
+  Never call `fetch` around them for a provider's API; a guard's key names the class and the origin (and, for a
+  circuit `by` credential, the connection id), never a credential or a connection's data.
 - A secret is a name (`@Secret("RESEND_API_KEY")`), never a value. An Integration's `@Secret` fields stay unset on the
   instance: the managed client reads them blind from the `SecretStore` at call time. A connection's secret fields are
   non-enumerable, so they never spread, serialise or log.

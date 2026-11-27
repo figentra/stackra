@@ -46,7 +46,8 @@ package may import it; it imports nothing.
 adds up to half again).
 
 `Bulkhead` and `CircuitBreaker` are the two in-memory guards a caller puts around a dependency (STA-1467). Neither
-throws while running: `bulkhead.enter()` resolves with a release function or `undefined` (turned away), and
+throws while running: `bulkhead.enter(signal?)` resolves with a release function or `undefined` (turned away, or the
+caller's signal aborted, which also takes a waiter out of the queue at once), and
 `breaker.admit(now)` returns a `CircuitTicket` or `undefined` (open, with `retryAfterMs(now)` saying how long), so the
 caller raises its own refusal. The server `createApp` of `@stackra/app` sheds load with a `Bulkhead`; the managed client
 of `@stackra/integrations` keeps a `CircuitBreaker` (and, when asked, a `Bulkhead`) per provider origin.

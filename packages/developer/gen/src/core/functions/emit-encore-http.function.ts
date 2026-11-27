@@ -4,7 +4,8 @@
  *          handle)`, which every generated raw endpoint answers through, and `answerCall(req, resp, call)`, the bridge
  *          of every action, query and controller endpoint: Node's request becomes a Fetch `Request` with a streamed
  *          body (`nodeBodyStream`, never `Readable.toWeb`, which crashes on Encore's raw request, STA-2794),
- *          `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes`, runs the guards
+ *          `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes` and within
+ *          `HttpConfig.bodyReadTimeoutMs` (408 past it, so a slow upload never holds a load-shedding place, STA-1467), runs the guards
  *          over the exact bytes, authenticates through `CallAuthenticator` and runs the call, and the answer is written
  *          to the `ServerResponse` (STA-2577), its body piped as it is produced, so a server-sent-events answer streams. It answers an `OPTIONS` preflight with 204
  *          and `corsHeaders(request, CorsConfig)`, and adds the same CORS headers to every other answer, with
@@ -159,6 +160,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "      input: call.input,",
       "      raw: call.raw === true,",
       "      maxBodyBytes: container.get(HttpConfig).maxBodyBytes,",
+      "      bodyReadTimeoutMs: container.get(HttpConfig).bodyReadTimeoutMs,",
       "      guard: (guarded) => app.handlers.guard(guarded, container),",
       "      authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),",
       "      visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),",

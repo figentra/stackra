@@ -81,6 +81,13 @@ describe(emitEncoreHttp, () => {
     expect(content).toContain("  }).catch((error: unknown) => app.handlers.shed(request, error));");
   });
 
+  it("bounds the body read by HttpConfig.bodyReadTimeoutMs, so a slow upload never holds a shed place (STA-1467)", () => {
+    const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
+    expect(content).toContain(
+      "      bodyReadTimeoutMs: container.get(HttpConfig).bodyReadTimeoutMs,",
+    );
+  });
+
   it("writes none without @stackra/app or outside a service", () => {
     expect(emitEncoreHttp(COMMERCE_IR)).toBeUndefined();
     expect(emitEncoreHttp({ ...BILLING_IR, layout: "package" })).toBeUndefined();

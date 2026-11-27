@@ -76,6 +76,8 @@ answers 503 through the new `handlers.shed`. The integrations managed client abo
 - **P-004**: a trial's outcome alone closes or reopens a half-open circuit; a stale outcome changes nothing — Validates: FR-007
 - **P-005**: a shed call never gets a request container and never reaches the provider — Validates: FR-002, FR-008, FR-009
 - **P-006**: every attempt's timer is cleared and every place released, whatever the outcome — Validates: FR-006, FR-010
+- **P-008**: an HTTP call holds its bulkhead place reading its body for at most `bodyReadTimeoutMs`, then answers 408 with no timer left — Validates: FR-014
+- **P-009**: a circuit keyed `by` credential opens only on its own connection's failures; another connection's or the platform's calls still send — Validates: FR-016
 - **P-007**: a call run with `{ shed: false }` (every generated cron run) never waits on or is refused by the bulkhead, however full it is, and is still counted in flight — Validates: FR-013
 
 ## Architecture overview
@@ -120,7 +122,7 @@ packages/foundation/contracts/src/core/
 ```ts
 export class Bulkhead {
   constructor(options: { limit: number; queue?: number; maxWaitMs?: number });
-  enter(): Promise<(() => void) | undefined>;
+  enter(signal?: AbortSignal): Promise<(() => void) | undefined>; // an aborted signal leaves the queue
 }
 export class CircuitBreaker {
   constructor(options: { failureThreshold: number; cooldownMs: number; halfOpenProbes?: number });
@@ -144,12 +146,18 @@ packages/runtime/app/src/
 ├── server/types/server-handlers.type.ts             (changed: shed, run options)
 ├── server/types/server-run-options.type.ts          (new: shed: false for cron runs)
 ├── server/index.ts                                  (changed: exports)
+├── server/functions/serve-guarded-call.function.ts  (changed: body read deadline, 408)
+├── server/functions/read-capped-body.function.ts    (changed: abort signal)
+├── server/types/guarded-call-options.type.ts        (changed: bodyReadTimeoutMs)
 ├── config/http.config.ts                            (docs)
-├── core/schemas/http-options.schema.ts              (changed: three keys)
-└── core/constants/http-config-schema.constant.ts    (changed: three keys)
-packages/developer/gen/src/core/functions/emit-encore-http.function.ts (changed: .catch → handlers.shed)
+├── core/schemas/http-options.schema.ts              (changed: four keys)
+└── core/constants/http-config-schema.constant.ts    (changed: four keys)
+packages/developer/gen/src/core/functions/emit-encore-http.function.ts (changed: .catch → shed handler, body deadline)
 packages/developer/gen/src/core/functions/emit-encore-cron-jobs.function.ts (changed: run with { shed: false })
-packages/developer/gen/__golden__/                    (regenerated: http.ts.golden, cron.ts.golden)
+packages/developer/gen/__golden__/                    (regenerated: the HTTP and cron goldens of every fixture service)
+└── <fixture>/expected/services/<member>/stackra-encore/<member>/
+    ├── http.ts.golden                               (regenerated)
+    └── cron.ts.golden                               (regenerated)
 ```
 
 ```ts
@@ -180,7 +188,8 @@ retry a failed CronJob invocation).
 packages/communication/integrations/src/core/
 ├── functions/managed-client.function.ts             (changed: attemptOnce, readBody)
 ├── functions/read-integration-options.function.ts   (changed: checks)
-├── services/integration-runtime.service.ts          (changed: guardsOf)
+├── services/integration-runtime.service.ts          (changed: guardsOf, a circuit per connection when by credential)
+├── enums/rate-limit-scope.enum.ts                   (docs: also the circuit's `by`)
 ├── types/integration-options.type.ts                (changed: timeout, circuitBreaker, concurrency)
 ├── types/managed-client-options.type.ts             (changed: guardsOf)
 └── errors/provider-unavailable.error.ts             (changed: reason)
@@ -190,7 +199,12 @@ packages/communication/integrations/src/core/
 export interface IntegrationOptions {
   readonly timeout?: Duration; // per attempt, 30 s by default
   readonly circuitBreaker?:
-    false | { readonly failureThreshold?: number; readonly cooldown?: Duration };
+    | false
+    | {
+        readonly failureThreshold?: number;
+        readonly cooldown?: Duration;
+        readonly by?: RateLimitScope; // Credential: one circuit per connection
+      };
   readonly concurrency?: {
     readonly limit: number;
     readonly queue?: number;
@@ -206,7 +220,7 @@ export class ProviderUnavailableError extends Refusal({
 ```
 
 **Failure modes**: open circuit / full bulkhead → `ProviderUnavailableError` without a request; caller abort → the
-caller's reason.
+caller's reason, also while queued for the bulkhead; headers then a stalled body → a circuit failure.
 
 ## Files and folders
 
@@ -233,8 +247,8 @@ none
 
 ## Contracts
 
-Additive exports listed in the spec's Impact. Compatibility: no signature changes; `ProviderUnavailableError` gains an
-optional field. Default behaviour changes (shedding on, 30 s attempt timeout, breaker on): minor bumps.
+Additive exports listed in the spec's Impact. Compatibility: only optional additions (`Bulkhead#enter(signal)`,
+`GuardedCallOptions.bodyReadTimeoutMs`, `circuitBreaker.by`); `ProviderUnavailableError` gains an optional field. Default behaviour changes (shedding on, 30 s attempt timeout, breaker on): minor bumps.
 
 ## Error handling
 
@@ -244,6 +258,9 @@ optional field. Default behaviour changes (shedding on, 30 s attempt timeout, br
 ## Security and tenancy
 
 No tenant data; the 503 echoes only an allowed origin through `corsHeaders`; refusals carry no credential or body.
+A shared circuit is one tenant's failures shedding every tenant's calls to that origin for one cooldown: the default,
+since a provider outage is everyone's; `circuitBreaker.by: RateLimitScope.Credential` keys it per connection id (never a
+credential value). The body read deadline answers 408 before any guard, so a slow-loris client never reaches auth.
 
 ## Testing strategy
 
@@ -251,6 +268,9 @@ No tenant data; the 503 echoes only an allowed origin through `corsHeaders`; ref
 - AC-004, AC-005, AC-006: `managed-client.function.test.ts` and `integration-runtime.service.test.ts` "STA-1467", `read-integration-options.function.test.ts`
 - P-001 to P-004: `bulkhead.value.test.ts`, `circuit-breaker.value.test.ts`
 - AC-007: the barrel tests and the gen manifest check
+- AC-009: `serve-guarded-call.function.test.ts` "answers 408 for a body that does not arrive within the deadline", `read-capped-body.function.test.ts`, `http.config.test.ts`, `emit-encore-http.function.test.ts` "bounds the body read"
+- AC-010: `managed-client.function.test.ts` "counts an answer whose body stalls past the timeout as a failure of the circuit" and "lets a call whose caller gives up while queued for the bulkhead leave the queue", `bulkhead.value.test.ts`
+- AC-011: `integration-runtime.service.test.ts` "keeps one circuit per connection for an Integration that keys it by credential", `read-integration-options.function.test.ts`
 - AC-008, P-007: `create-app.function.test.ts` "runs a cron call ({ shed: false }) at once while the bulkhead and its queue are full", `emit-encore-cron-jobs.function.test.ts` "runs every CronJob outside the load-shedding bulkhead" and the `cron.ts.golden` files
 
 ## Rollout

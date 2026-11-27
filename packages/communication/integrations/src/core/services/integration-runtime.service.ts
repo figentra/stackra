@@ -5,14 +5,15 @@
  *          OAuth tokens in memory and renews them single-flight (a refresh, a client credentials grant or a signed JWT
  *          bearer assertion), revokes them at disconnect, and keeps the circuit breaker and bulkhead of each
  *          Integration and origin that every client of it shares (STA-1467): 5 failures in a row open a circuit for
- *          30 seconds unless the Integration states its own `circuitBreaker` (or `false`); a bulkhead only when it
- *          states `concurrency`.
+ *          30 seconds unless the Integration states its own `circuitBreaker` (or `false`), one per connection when it
+ *          says `by: RateLimitScope.Credential`; a bulkhead only when it states `concurrency`.
  * Boundary: a service with three dependencies: the `SecretStore` (the Integration's `@Secret` fields, read blind by
  *           name at call time), the `RateLimitStore` of `@stackra/actions` (the providers' buckets) and the `Clock`.
  *           Tokens are kept per `<integration>:<connection id | platform>`, never logged; an access token is renewed
  *           `refresh.buffer` before it expires, by one call however many requests wait for it. An `OAuth2Code`
  *           integration calls only through a connection. The breakers and bulkheads are in memory, per instance, keyed by
- *           the Integration's class name and the origin called (`Resend:https://api.resend.com`), never a credential.
+ *           the Integration's class name and the origin called (`Resend:https://api.resend.com`), and for a circuit
+ *           `by` credential also the connection id (or `platform`), never a credential value.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 3, 4, 6, 7, 12, 13 and 20); ADR 0173 (secrets); ADR 0294 (decision 17);
  *                     owner D10 2026-10-28 (stackra-223): the lengths are `Duration`s; STA-1467 (circuit breaker and
@@ -27,6 +28,7 @@ import { Bulkhead, CircuitBreaker, Duration } from "@stackra/contracts";
 import type { Connection } from "#core/bases/connection.base";
 import type { Integration } from "#core/bases/integration.base";
 import { AuthType } from "#core/enums/auth-type.enum";
+import { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import { ProviderUnavailableError } from "#core/errors/provider-unavailable.error";
 import { integrationOptionsOf } from "#core/functions/integration-options-of.function";
@@ -38,6 +40,7 @@ import { signJwt } from "#core/functions/sign-jwt.function";
 import { tokenEndpointInit } from "#core/functions/token-endpoint-init.function";
 import type { IntegrationApi } from "#core/types/integration-api.type";
 import type { IntegrationClass } from "#core/types/integration-class.type";
+import type { IntegrationOptions } from "#core/types/integration-options.type";
 import type { OAuthTokens } from "#core/types/oauth-tokens.type";
 
 /** The `auth` options of the three OAuth types. */
@@ -53,6 +56,15 @@ type OAuthOptions = Extract<
 
 /** The circuit breaker an Integration gets when it states none: 5 failures in a row open it for 30 seconds. */
 const CIRCUIT = Object.freeze({ failureThreshold: 5, cooldown: Duration.seconds(30) });
+
+/** A circuit breaker with an Integration's own threshold and cooldown, the defaults for what it leaves out. */
+function breakerOf(options: Exclude<IntegrationOptions["circuitBreaker"], false>): CircuitBreaker {
+  const circuit = { ...CIRCUIT, ...options };
+  return new CircuitBreaker({
+    failureThreshold: circuit.failureThreshold,
+    cooldownMs: Duration.toMilliseconds(circuit.cooldown),
+  });
+}
 
 /** The grant type of a JWT bearer assertion (RFC 7523 section 2.1). */
 const JWT_BEARER_GRANT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
@@ -84,6 +96,9 @@ export class IntegrationRuntime extends Service {
     string,
     { readonly breaker?: CircuitBreaker; readonly bulkhead?: Bulkhead }
   >();
+
+  /** The circuit of each credential and origin, for an Integration that keys it `by` credential (`Acme:conn_…:https://…`). */
+  private readonly breakers = new Map<string, CircuitBreaker>();
 
   /**
    * @param secrets - the secret store.
@@ -128,7 +143,7 @@ export class IntegrationRuntime extends Service {
       clock: this.clock,
       ...(connection === undefined ? {} : { connection }),
       ...(accessToken === undefined ? {} : { accessToken }),
-      guardsOf: (origin) => this.guardsOf(integration, origin),
+      guardsOf: (origin) => this.guardsOf(integration, origin, connection),
     });
   }
 
@@ -180,8 +195,30 @@ export class IntegrationRuntime extends Service {
     this.tokens.delete(key);
   }
 
-  /** The circuit breaker and bulkhead of `integration` calling `origin`, made on first use and then shared. */
+  /**
+   * The circuit breaker and bulkhead of `integration` calling `origin` through `connection`, each made on first use and
+   * then shared: the bulkhead by every client of the origin, the circuit too unless the Integration keys it `by`
+   * credential, when each connection (and the platform's own credentials) gets its own.
+   */
   private guardsOf(
+    integration: Integration,
+    origin: string,
+    connection: Connection | undefined,
+  ): { readonly breaker?: CircuitBreaker; readonly bulkhead?: Bulkhead } {
+    const { circuitBreaker } = integrationOptionsOf(integration.constructor);
+    const shared = this.originGuardsOf(integration, origin);
+    if (circuitBreaker === false || circuitBreaker?.by !== RateLimitScope.Credential) return shared;
+    const key = `${this.keyOf(integration, connection)}:${origin}`;
+    let breaker = this.breakers.get(key);
+    if (breaker === undefined) {
+      breaker = breakerOf(circuitBreaker);
+      this.breakers.set(key, breaker);
+    }
+    return { ...shared, breaker };
+  }
+
+  /** The guards every client of `integration` calling `origin` shares: the bulkhead, and the circuit unless it is `by` credential. */
+  private originGuardsOf(
     integration: Integration,
     origin: string,
   ): { readonly breaker?: CircuitBreaker; readonly bulkhead?: Bulkhead } {
@@ -189,16 +226,9 @@ export class IntegrationRuntime extends Service {
     const known = this.guards.get(key);
     if (known !== undefined) return known;
     const { circuitBreaker, concurrency } = integrationOptionsOf(integration.constructor);
-    const circuit = circuitBreaker === false ? undefined : { ...CIRCUIT, ...circuitBreaker };
+    const shared = circuitBreaker !== false && circuitBreaker?.by !== RateLimitScope.Credential;
     const built = {
-      ...(circuit === undefined
-        ? {}
-        : {
-            breaker: new CircuitBreaker({
-              failureThreshold: circuit.failureThreshold,
-              cooldownMs: Duration.toMilliseconds(circuit.cooldown),
-            }),
-          }),
+      ...(shared ? { breaker: breakerOf(circuitBreaker) } : {}),
       ...(concurrency === undefined
         ? {}
         : {

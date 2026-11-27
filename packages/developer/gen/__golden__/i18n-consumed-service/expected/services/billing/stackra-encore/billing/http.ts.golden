@@ -100,6 +100,7 @@ export async function answerCall(req: IncomingMessage, resp: ServerResponse, cal
       input: call.input,
       raw: call.raw === true,
       maxBodyBytes: container.get(HttpConfig).maxBodyBytes,
+      bodyReadTimeoutMs: container.get(HttpConfig).bodyReadTimeoutMs,
       guard: (guarded) => app.handlers.guard(guarded, container),
       authenticate: (credentials) => new CallAuthenticator(container).authenticate(credentials),
       visitor: (guarded) => new VisitorIdentityService(container.get(VisitorConfig)).resolve(guarded),

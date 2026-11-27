@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `HttpConfig`, the HTTP adapter configuration (key `app.http`): the largest request body a generated adapter
  *          reads before any guard runs, the deadline of the server `createApp`'s drain, and its load-shedding
- *          bulkhead (`maxConcurrentCalls`, `maxQueuedCalls`, `maxQueueWaitMs`).
+ *          bulkhead (`maxConcurrentCalls`, `maxQueuedCalls`, `maxQueueWaitMs`) and the body read deadline
+ *          (`bodyReadTimeoutMs`).
  * Boundary: a configuration class over `HttpOptions` with no env map. A host overrides it as
  *           `class HttpConfig extends BaseHttpConfig` with `override` members only.
  * Runtime: isomorphic

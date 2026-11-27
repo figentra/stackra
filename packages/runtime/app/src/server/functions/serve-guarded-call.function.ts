@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `serveGuardedCall`, the one path every generated HTTP adapter answers through, in a fixed order: read the
- *          body once under the cap (413 before any guard), run every request guard on a request carrying the exact
+ *          body once under the cap (413 before any guard) and within the body read deadline (408 before any guard, so
+ *          a slow upload never holds its load-shedding place past it, STA-1467), run every request guard on a request carrying the exact
  *          bytes, authenticate (an `Authorization` header is verified and never downgraded to anonymous; none is the
  *          anonymous actor only where the call lists it, else 401; an action that declares `credentials: "ignore"` reads
  *          no credential and runs anonymous; an anonymous actor is the visitor its signed token names, and an answer to
@@ -20,7 +21,7 @@
  *           streamed call ends when its stream does.
  * Runtime: node
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order and the
- *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098.
+ *                     signed body hash); ADR 0457 (request guards); ADR 0140 (error envelope); ADR 0098; STA-1467.
  */
 import { kindOf } from "@stackra/container";
 import { ActorKind, actingScopeId, Enum, mintPublicId } from "@stackra/contracts";
@@ -57,6 +58,40 @@ function refused(status: 401 | 403): Response {
   );
 }
 
+/**
+ * The 408 of a body that did not arrive within the deadline: retryable, and the connection closes, so the rest of a
+ * slow upload is not read.
+ */
+function bodyTimedOut(): Response {
+  return Response.json(
+    { code: "request_timeout", category: "unavailable", retryable: true },
+    { status: 408, headers: { connection: "close" } },
+  );
+}
+
+/** Reads `request`'s body under `max` bytes and within `timeoutMs` (no deadline when 0 or absent). */
+async function readBody(
+  request: Request,
+  max: number,
+  timeoutMs: number | undefined,
+): Promise<Uint8Array | "too_large" | "timed_out"> {
+  if (Number(request.headers.get("content-length") ?? 0) > max) return "too_large";
+  if (timeoutMs === undefined || timeoutMs <= 0)
+    return (await readCappedBody(request.body, max)) ?? "too_large";
+  const deadline = new AbortController();
+  const timer = setTimeout(() => {
+    deadline.abort();
+  }, timeoutMs);
+  try {
+    return (await readCappedBody(request.body, max, deadline.signal)) ?? "too_large";
+  } catch (error) {
+    if (deadline.signal.aborted) return "timed_out";
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** A 400 for a body that is not a JSON object. */
 function invalidBody(): Response {
   return Response.json(
@@ -85,12 +120,9 @@ function carry(response: Response, visitor: VisitorIdentity | undefined): Respon
 export async function serveGuardedCall(options: GuardedCallOptions): Promise<Response> {
   const { request } = options;
   const method = request.method.toUpperCase();
-  const declared = Number(request.headers.get("content-length") ?? 0);
-  const bytes =
-    declared > options.maxBodyBytes
-      ? undefined
-      : await readCappedBody(request.body, options.maxBodyBytes);
-  if (bytes === undefined)
+  const bytes = await readBody(request, options.maxBodyBytes, options.bodyReadTimeoutMs);
+  if (bytes === "timed_out") return bodyTimedOut();
+  if (bytes === "too_large")
     return Response.json(
       { code: "payload_too_large", category: "validation", retryable: false },
       { status: 413 },

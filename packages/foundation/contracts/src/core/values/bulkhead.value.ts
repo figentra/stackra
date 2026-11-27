@@ -7,7 +7,8 @@
  * Boundary: in process and in memory; it counts places, never what a call does. `enter()` resolves with a release
  *           function or with `undefined` (turned away) and never rejects: the caller throws its own refusal (the
  *           server's `AppOverloadedError`, an integration's `ProviderUnavailableError`). Release is idempotent, and a
- *           freed place passes straight to the oldest waiter.
+ *           freed place passes straight to the oldest waiter. A waiter whose `signal` aborts leaves the queue at once
+ *           and resolves `undefined`, so a caller that gave up never holds a queue place or a timer.
  * Runtime: isomorphic
  * Governing contract: ADR 0140 (a turned-away call is an `Unavailable` refusal of the caller); ADR 0143 (decision 3:
  *                     a draining server still waits for what it admitted); STA-1467.
@@ -74,10 +75,13 @@ export class Bulkhead {
   /**
    * Takes a place now, or waits for one when the queue has room.
    *
+   * @param signal - the caller's signal: an aborted one takes no place, and one that aborts while waiting leaves the
+   *                 queue at once.
    * @returns the function that gives the place back (idempotent), or `undefined` when the call is turned away: the
-   *          compartment and its queue are full, or no place came free within `maxWaitMs`.
+   *          compartment and its queue are full, no place came free within `maxWaitMs`, or `signal` aborted.
    */
-  enter(): Promise<(() => void) | undefined> {
+  enter(signal?: AbortSignal): Promise<(() => void) | undefined> {
+    if (signal?.aborted === true) return Promise.resolve(undefined);
     if (this.held < this.limit) {
       this.held += 1;
       return Promise.resolve(this.releaser());
@@ -86,18 +90,23 @@ export class Bulkhead {
       return Promise.resolve(undefined);
     return new Promise((resolve) => {
       let timer: ReturnType<typeof setTimeout> | undefined;
+      /** Leaves the queue without a place: the wait ran out or the caller gave up. */
+      const leave = (): void => {
+        if (timer !== undefined) clearTimeout(timer);
+        signal?.removeEventListener("abort", leave);
+        const index = this.waiting.indexOf(waiter);
+        if (index !== -1) this.waiting.splice(index, 1);
+        resolve(undefined);
+      };
       const waiter: Waiter = {
         admit: (release) => {
           if (timer !== undefined) clearTimeout(timer);
+          signal?.removeEventListener("abort", leave);
           resolve(release);
         },
       };
-      if (this.maxWaitMs !== undefined)
-        timer = setTimeout(() => {
-          const index = this.waiting.indexOf(waiter);
-          if (index !== -1) this.waiting.splice(index, 1);
-          resolve(undefined);
-        }, this.maxWaitMs);
+      if (this.maxWaitMs !== undefined) timer = setTimeout(leave, this.maxWaitMs);
+      signal?.addEventListener("abort", leave, { once: true });
       this.waiting.push(waiter);
     });
   }

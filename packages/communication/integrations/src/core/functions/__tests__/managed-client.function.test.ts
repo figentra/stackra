@@ -9,7 +9,8 @@
  *          either: a provider code that echoes a connection's or the platform's secret, or the bearer sent, is
  *          redacted under every key a provider names it, and the client logs nothing; an attempt is aborted at the
  *          Integration's `timeout` (the body read included), the caller's abort stays its own, and the origin's circuit
- *          breaker and bulkhead refuse a call without sending it (STA-1467).
+ *          breaker and bulkhead refuse a call without sending it, an answer counts for the circuit only once its body
+ *          arrived, and a caller that gives up while queued for the bulkhead leaves the queue (STA-1467).
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
  *           are the memory driver of `@stackra/actions`.
  * Runtime: node (vitest)
@@ -764,6 +765,54 @@ describe("managedClient with a slow or failing provider (STA-1467)", () => {
       reason: "circuit_open",
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts an answer whose body stalls past the timeout as a failure of the circuit", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const breaker = new CircuitBreaker({ failureThreshold: 1, cooldownMs: 30_000 });
+    const fetchMock = stubFetch((_url, init) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"partial":'));
+          init.signal?.addEventListener("abort", () => controller.error(init.signal?.reason));
+        },
+      });
+      return new Response(body, { status: 200 });
+    });
+    const api = guardedClient({ breaker });
+    const first = api.get("/messages").catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(await first).toMatchObject({ status: 200, reason: "timeout" });
+    expect(await api.get("/messages").catch((error: unknown) => error)).toMatchObject({
+      reason: "circuit_open",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets a call whose caller gives up while queued for the bulkhead leave the queue with the caller's reason", async () => {
+    const bulkhead = new Bulkhead({ limit: 1, queue: 1 });
+    const gate: { answer?: (response: Response) => void } = {};
+    const fetchMock = stubFetch(
+      () =>
+        new Promise<Response>((resolve) => {
+          gate.answer = resolve;
+        }),
+    );
+    const api = guardedClient({ bulkhead });
+    const first = api.post("/messages", {});
+    await vi.waitFor(() => expect(gate.answer).toBeDefined());
+    const caller = new AbortController();
+    const queued = api
+      .post("/messages", {}, { signal: caller.signal })
+      .catch((error: unknown) => error);
+    await vi.waitFor(() => expect(bulkhead.queued).toBe(1));
+    caller.abort(new Error("caller gave up"));
+    expect(await queued).toEqual(new Error("caller gave up"));
+    expect(bulkhead.queued).toBe(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    gate.answer?.(json({ id: "m_1" }));
+    await expect(first).resolves.toEqual({ id: "m_1" });
+    expect(bulkhead.active).toBe(0);
   });
 
   it("refuses an attempt without sending it while the provider's bulkhead is full", async () => {

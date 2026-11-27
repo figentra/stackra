@@ -39,7 +39,7 @@ peers, each loaded only by the entry that needs it.
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
-| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB), `drainTimeoutSeconds` (20) and the load-shedding `maxConcurrentCalls` (1024), `maxQueuedCalls` (1024), `maxQueueWaitMs` (5000) |
+| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB), `drainTimeoutSeconds` (20) and the load-shedding `maxConcurrentCalls` (1024), `maxQueuedCalls` (1024), `maxQueueWaitMs` (5000); a body slower than `bodyReadTimeoutMs` (30000) is 408 |
 | `nodeBodyStream`                             | `./server`  | a Node or Encore raw request's body as a web stream, with backpressure; `Readable.toWeb` crashes on Encore's `RawRequest` (STA-2794) |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                             |
 | `AppOverloadedError`                         | `./server`  | the 503 refusal (`Retry-After: 1`) a server at capacity sheds a call with (STA-1467)  |
@@ -159,6 +159,10 @@ its transport. A cron run is never shed: Encore does not retry a failed CronJob 
 moves no watermark, so the generated cron adapter calls `handlers.run(call, { shed: false })`, which skips the
 bulkhead (the run is still counted in flight and still refused while draining). A queued call counts as in flight, so
 a drain waits for it. `maxConcurrentCalls: 0` turns shedding off.
+An HTTP call reads its body while it holds its place, so the body must arrive within `bodyReadTimeoutMs` (30000): a
+slower upload is answered 408 (`request_timeout`, retryable, `Connection: close`) before any guard runs, so a handful
+of slow-loris clients can never fill the bulkhead for long. `bodyReadTimeoutMs: 0` turns the deadline off; keep a
+body timeout at the gateway then.
 `/healthz` and `/readyz` never pass the bulkhead, so an overloaded instance stays live and ready.
 
 ```ts

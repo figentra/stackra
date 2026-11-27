@@ -14,8 +14,13 @@ exists, counting `app.calls.shed` on the bound `Metrics`. The new `handlers.shed
 with its envelope, `Retry-After`, `Cache-Control: no-store` and the CORS headers, and the HTTP adapter gen writes calls
 it, so regenerate after upgrading `@stackra/app` and `@stackra/gen` together. A cron run is never shed: the generated
 cron adapter calls `handlers.run(call, { shed: false })` (the new `ServerRunOptions`), since Encore never retries a
-failed CronJob invocation. The integrations managed client aborts each attempt at the Integration's new `timeout` (30
+failed CronJob invocation. An HTTP call reads its body while it holds its place, so `serveGuardedCall` bounds that read
+by the new `app.http` `bodyReadTimeoutMs` (30000; 0 turns it off) and answers a slower body 408 (`request_timeout`)
+before any guard, and the generated adapter passes it. `Bulkhead#enter` takes the caller's `AbortSignal`. The
+integrations managed client aborts each attempt at the Integration's new `timeout` (30
 seconds by default, the body read included) and goes through a circuit breaker per Integration and origin (5 failures in
 a row open it for 30 seconds; `circuitBreaker` tunes it or `false` turns it off) and, with the new `concurrency` option,
-a bulkhead; a call refused without being sent, or whose last attempt timed out, is `ProviderUnavailableError` with
-`reason` `circuit_open`, `bulkhead_full` or `timeout` (STA-1467).
+a bulkhead; an answer counts for the circuit only once its body arrived, `circuitBreaker.by: RateLimitScope.Credential`
+keeps one circuit per connection, and a caller that aborts while queued for the bulkhead leaves the queue. A call
+refused without being sent, or whose last attempt timed out, is `ProviderUnavailableError` with `reason`
+`circuit_open`, `bulkhead_full` or `timeout` (STA-1467).

@@ -4,7 +4,8 @@
  *          reads before any guard runs (a larger one is answered 413), the drain deadline, in seconds: how long a
  *          stopping server waits for its calls in flight before it shuts down anyway, and the load-shedding bulkhead:
  *          how many calls run at once, how many more may queue and for how long, before a call is answered 503
- *          (`AppOverloadedError`).
+ *          (`AppOverloadedError`), and how long a request body may take to arrive (a slower one is answered 408, so a
+ *          slow upload never holds a bulkhead place for long).
  * Boundary: a shape class; it registers this package's own schema (`HTTP_CONFIG_SCHEMA`) when the module loads.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 19 and 26); ADR 0237 (STA-2577 note: raw adapters); ADR 0143 (decision 3:
@@ -69,6 +70,17 @@ export class HttpOptions extends Schema {
     max: 60_000,
   })
   maxQueueWaitMs = 5000;
+
+  /**
+   * How long a generated HTTP adapter waits for a request body to arrive in full, in milliseconds, once the call holds
+   * its bulkhead place; a body slower than that is answered 408 (`request_timeout`) before any guard runs (0 to
+   * 600,000; 30,000 by default). 0 turns the deadline off, leaving slow uploads to the gateway's own body timeout.
+   */
+  @Int({
+    min: 0,
+    max: 600_000,
+  })
+  bodyReadTimeoutMs = 30_000;
 }
 
 registerSchemas([[HttpOptions, HTTP_CONFIG_SCHEMA]]);

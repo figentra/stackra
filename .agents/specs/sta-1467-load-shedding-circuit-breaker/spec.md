@@ -28,10 +28,10 @@ provider's own timeout and the backlog grows until the process stalls.
 
 - **Apps touched**: apps/playground (`stackra.manifest.json`, generated: the new error code)
 - **Services touched**: none
-- **Packages touched**: packages/foundation/contracts (`Bulkhead`, `CircuitBreaker`, `CircuitState` and their option and ticket types), packages/runtime/app (`HttpConfig` bulkhead keys, `handlers.run` admission, `handlers.shed`, `AppOverloadedError`), packages/communication/integrations (per-attempt `timeout`, `circuitBreaker` and `concurrency` options, the runtime's breaker and bulkhead per Integration and origin, `ProviderUnavailableError.reason`), packages/developer/gen (the HTTP adapter answers a shed call through `handlers.shed`; the cron adapter runs with `{ shed: false }`)
-- **Public contract change**: additive: `Bulkhead`, `CircuitBreaker`, `CircuitState`, `BulkheadOptions`, `CircuitBreakerOptions`, `CircuitTicket` exported from `@stackra/contracts`; `AppOverloadedError` (code `app_overloaded`, kind `unavailable`), `ServerHandlers.shed` and the optional second argument of `ServerHandlers.run` (`ServerRunOptions.shed`) from `@stackra/app/server`; config keys `app.http.maxConcurrentCalls` (1024), `app.http.maxQueuedCalls` (1024), `app.http.maxQueueWaitMs` (5000); `IntegrationOptions.timeout`, `.circuitBreaker`, `.concurrency`; `ProviderUnavailableError.reason`; the manifests list the new error code and enum. Behaviour change by default: a server sheds past 1024 calls in flight plus 1024 queued, an integration attempt is aborted at 30 s, and a provider's circuit opens after 5 failures in a row for 30 s.
+- **Packages touched**: packages/foundation/contracts (`Bulkhead`, `CircuitBreaker`, `CircuitState` and their option and ticket types), packages/runtime/app (`HttpConfig` bulkhead keys and body read deadline, `handlers.run` admission, `handlers.shed`, `AppOverloadedError`, the 408 of `serveGuardedCall`), packages/communication/integrations (per-attempt `timeout`, `circuitBreaker` (with `by`) and `concurrency` options, the runtime's breaker and bulkhead per Integration and origin, `ProviderUnavailableError.reason`), packages/developer/gen (the HTTP adapter answers a shed call through `handlers.shed` and passes the body read deadline; the cron adapter runs with `{ shed: false }`)
+- **Public contract change**: additive: `Bulkhead`, `CircuitBreaker`, `CircuitState`, `BulkheadOptions`, `CircuitBreakerOptions`, `CircuitTicket` exported from `@stackra/contracts`; `AppOverloadedError` (code `app_overloaded`, kind `unavailable`), `ServerHandlers.shed` and the optional second argument of `ServerHandlers.run` (`ServerRunOptions.shed`) from `@stackra/app/server`; config keys `app.http.maxConcurrentCalls` (1024), `app.http.maxQueuedCalls` (1024), `app.http.maxQueueWaitMs` (5000), `app.http.bodyReadTimeoutMs` (30000); the optional `GuardedCallOptions.bodyReadTimeoutMs` and the optional `signal` of `Bulkhead#enter`; `IntegrationOptions.timeout`, `.circuitBreaker` (with `by: RateLimitScope`), `.concurrency`; `ProviderUnavailableError.reason`; the manifests list the new error code and enum. Behaviour change by default: a server sheds past 1024 calls in flight plus 1024 queued, an HTTP body slower than 30 s is answered 408, an integration attempt is aborted at 30 s, and a provider's circuit opens after 5 failures in a row for 30 s.
 - **Cross-service events**: none
-- **Tenancy and data**: none (counters in process memory; breakers and bulkheads keyed by Integration class name and origin, never a tenant, connection or credential)
+- **Tenancy and data**: none stored (counters in process memory; breakers and bulkheads keyed by Integration class name and origin, and a circuit `by` credential also by the connection id or `platform`, never a credential value). By default one circuit is shared by every tenant's connections to an origin; `by: RateLimitScope.Credential` isolates tenants (FR-016)
 - **Security and privacy**: a shed refusal carries only its wait; `ProviderUnavailableError` carries the provider, last status, wait and reason, never a credential or body; the shed 503 carries the CORS headers of the bound `CorsConfig` only (an allowed origin is echoed, never another)
 - **Secrets**: none
 - **ADR needed**: no (implements ADR 0140: `Unavailable` is 503 and retryable; ADR 0308 rule 13: the managed client turns a provider outcome into a value or a refusal; ADR 0143 decision 3: a drain waits for what it admitted)
@@ -61,11 +61,11 @@ provider's own timeout and the backlog grows until the process stalls.
 
 ### Sources
 
-- **SRC-001**: `packages/runtime/app/src/server/functions/create-app.function.ts` on `origin/main`: `run` starts every call (FR-001 to FR-005, FR-013)
+- **SRC-001**: `packages/runtime/app/src/server/functions/create-app.function.ts` on `origin/main`: `run` starts every call, and `serveGuardedCall` reads a body with no deadline (FR-001 to FR-005, FR-013, FR-014)
 - **SRC-002**: `packages/communication/integrations/src/core/functions/managed-client.function.ts` on `origin/main`: no timeout, no breaker (FR-006 to FR-010, FR-012)
-- **SRC-003**: `packages/communication/integrations/src/core/services/integration-runtime.service.ts` on `origin/main`: a client per call, nothing shared (FR-011)
-- **SRC-004**: `packages/developer/gen/src/core/functions/emit-encore-http.function.ts`, `emit-encore-events.function.ts`, `emit-encore-queues.function.ts`, `emit-encore-cron-jobs.function.ts` on `origin/main` (FR-004, FR-013)
-- **SRC-005**: ADR 0140, ADR 0143, ADR 0294, ADR 0295, ADR 0308 in `apps/docs/src/docs/adr/`
+- **SRC-003**: `packages/communication/integrations/src/core/services/integration-runtime.service.ts` on `origin/main`: a client per call, nothing shared (FR-011, FR-016)
+- **SRC-004**: `packages/developer/gen/src/core/functions/emit-encore-http.function.ts`, `emit-encore-events.function.ts`, `emit-encore-queues.function.ts`, `emit-encore-cron-jobs.function.ts` on `origin/main` (FR-004, FR-013, FR-014)
+- **SRC-005**: ADR 0140, ADR 0143, ADR 0294, ADR 0295, ADR 0308 in `apps/docs/src/docs/adr/` (FR-015)
 - **SRC-006**: STA-1467 (stackra-308) and the 2026-11-26 readiness audit, item 15.4
 
 ## Glossary
@@ -121,6 +121,8 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
   runs with `crons: false`), so a shed run would be lost for good; the generated cron adapter runs with
   `{ shed: false }` and skips the bulkhead (FR-013).
 - **EC-06**: the breakers and bulkheads are per instance; N instances let N × the threshold of failures through before every one opens.
+- **EC-07**: an HTTP call reads its body while it holds its bulkhead place, so slow uploads could fill the bulkhead; the body read deadline (FR-014) bounds how long one can hold it.
+- **EC-08**: a shared circuit lets one tenant's failing calls shed every tenant's calls to that origin on the instance until the cooldown; an Integration whose failures follow the account keys its circuit `by` credential (FR-016).
 
 ## Requirements
 
@@ -132,12 +134,15 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
 - **FR-004** (example-only): WHEN `run` rejects with `AppOverloadedError` or `AppDrainingError` THE generated HTTP adapter SHALL answer through `handlers.shed`: 503, the refusal's envelope, `Retry-After` in whole seconds when it names a wait, `Cache-Control: no-store` and the CORS headers; any other error SHALL propagate unchanged. Sources: SRC-004
 - **FR-005** (example-only): WHILE `maxConcurrentCalls` is 0 THE app SHALL shed nothing. Sources: SRC-001
 - **FR-006**: THE managed client SHALL abort each attempt at the Integration's `timeout` (30 s by default), the body read included, and refuse a call whose last attempt timed out with `reason: "timeout"`. Sources: SRC-002
-- **FR-007**: WHEN an attempt gets no answer, times out or answers 408 or a 5xx THE managed client SHALL report a failure to the origin's breaker; a 429 SHALL release its ticket; any other answer SHALL report success. Sources: SRC-002
+- **FR-007**: WHEN an attempt gets no answer, times out or answers 408 or a 5xx THE managed client SHALL report a failure to the origin's breaker; a 429 SHALL release its ticket; any other answer SHALL report success only once its body was read in full, and a failure when the body read times out or breaks (an answer dropped unread releases the ticket). Sources: SRC-002
 - **FR-008**: WHILE the origin's circuit is open THE managed client SHALL refuse without sending, with `ProviderUnavailableError` carrying `reason: "circuit_open"`, the wait and the previous attempt's status. Sources: SRC-002
 - **FR-009**: WHEN the origin's bulkhead and its queue are full THE managed client SHALL refuse without sending, with `reason: "bulkhead_full"`. Sources: SRC-002
-- **FR-010**: WHEN the caller's signal aborts THE managed client SHALL throw the caller's reason, release its ticket and bulkhead place, and clear its timer. Sources: SRC-002
+- **FR-010**: WHEN the caller's signal aborts THE managed client SHALL throw the caller's reason, release its ticket and bulkhead place, and clear its timer; an attempt queued for the bulkhead SHALL leave the queue at once (`Bulkhead#enter(signal)`). Sources: SRC-002
 - **FR-011**: THE `IntegrationRuntime` SHALL keep one breaker (5 failures, 30 s unless the Integration states `circuitBreaker`, none with `false`) and one bulkhead (only with `concurrency`) per Integration and origin, shared by every client of it. Sources: SRC-003
 - **FR-012** (example-only): THE `readIntegrationOptions` SHALL refuse on import a `timeout` that is not a positive `Duration`, a `circuitBreaker` without a whole threshold from 1 or with a zero cooldown, and a `concurrency` without a limit from 1 or with a negative queue. Sources: SRC-002
+- **FR-014**: WHILE `HttpConfig.bodyReadTimeoutMs` (0 to 600,000, default 30,000) is above 0 THE `serveGuardedCall` SHALL read the request body within that many milliseconds and otherwise answer 408 (`request_timeout`, `unavailable`, retryable, `Connection: close`) before any guard runs and clear its timer; THE generated HTTP adapter SHALL pass the configured deadline. Sources: SRC-001, SRC-004
+- **FR-015** (example-only): WHEN a waiter's signal aborts THE `Bulkhead` SHALL remove it from the queue, clear its timer and resolve `undefined`; a signal already aborted SHALL take no place. Sources: SRC-005
+- **FR-016**: WHERE an Integration states `circuitBreaker.by: RateLimitScope.Credential` THE `IntegrationRuntime` SHALL keep one breaker per connection (and one for the platform's own credentials) on each origin instead of one shared breaker; the bulkhead stays per Integration and origin. Sources: SRC-003
 - **FR-013**: WHEN `handlers.run` is called with `{ shed: false }` THE app SHALL start the call without the bulkhead, never refuse it as overloaded, still count it in flight and still refuse it while draining; THE generated cron adapter SHALL call `run` that way for every CronJob. Sources: SRC-001, SRC-004
 
 ### Non-functional Requirements
@@ -147,7 +152,7 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
 
 ### Key Entities
 
-- **Guard key**: `<Integration class name>:<origin>` (`Resend:https://api.resend.com`), in process memory.
+- **Guard key**: `<Integration class name>:<origin>` (`Resend:https://api.resend.com`), in process memory; a circuit `by` credential is keyed `<Integration class name>:<connection id | platform>:<origin>`.
 
 ## Acceptance criteria
 
@@ -159,6 +164,9 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
 - **AC-006**: WHEN an Integration states `concurrency` THE attempts past it SHALL be refused with `reason: "bulkhead_full"` without a request.
 - **AC-007**: THE barrels SHALL export the new values and types, and the manifests SHALL list `app_overloaded` and `contracts.CircuitState`.
 - **AC-008**: WHEN the bulkhead and its queue are full THE app SHALL still start a cron run (`{ shed: false }`) at once, and a drain SHALL wait for it.
+- **AC-009**: WHEN a request body has not arrived in full within `bodyReadTimeoutMs` THE answer SHALL be 408 before any guard runs, with no timer left.
+- **AC-010**: WHEN a provider sends its headers and then stalls past the `timeout` THE attempt SHALL count as a failure of the circuit; WHEN a caller aborts while its attempt is queued for the bulkhead THE call SHALL throw the caller's reason at once and leave the queue.
+- **AC-011**: WHEN an Integration keys its circuit `by` credential and one connection's calls open it THE other connections and the platform's own credentials SHALL still send.
 
 ## Success Criteria
 
@@ -168,7 +176,7 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
 ## Out of scope
 
 - A circuit or bulkhead shared across instances (a distributed breaker in a cache).
-- Shedding by priority or tenant (every call shares one compartment).
+- Shedding by priority or tenant (every call shares one compartment; only the circuit can be keyed per connection).
 - Adaptive limits (concurrency computed from latency).
 
 ## Assumptions
@@ -180,6 +188,11 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
 - 2026-11-27 · review finding (medium): cron runs no longer pass the bulkhead. EC-05 said a shed cron tick is retried
   by its transport; Encore never retries a failed CronJob invocation, so a shed daily action would be lost. Added
   `ServerRunOptions.shed`, FR-013, AC-008 and T016.
+
+- 2026-11-27 · review findings (low, three): a slow upload held its bulkhead place without bound (FR-014, AC-009);
+  a provider that sent headers and then stalled never opened the circuit, and a caller that aborted while queued
+  stayed in the queue (FR-007, FR-010, FR-015, AC-010); one tenant's failures opened a shared circuit for every
+  tenant (FR-016, EC-08, AC-011). Added T017 to T019.
 
 ## Status history
 

@@ -3,6 +3,7 @@
  * Purpose: unit tests of `serveGuardedCall` over the real `EdgeHeaderGuard` and its memory drivers: a correctly signed
  *          POST passes and reaches the call with its body fields and path parameters; a body swapped after signing is
  *          401 and never reaches the call; an unsigned request is refused; an oversized body is 413 before any guard; a
+ *          body slower than the body read deadline is 408 before any guard, leaving no timer (STA-1467); a
  *          GET with no body works; a request that fails a guard never reaches the authenticator; a bad `Authorization`
  *          header on an anonymous-allowing call is refused, not downgraded; a call with no header is anonymous only
  *          where it lists the anonymous actor; a refusal of the call is its kind's status; the refusal bodies do not
@@ -271,6 +272,72 @@ describe(serveGuardedCall, () => {
     });
     expect(response.status).toBe(413);
     expect(guard).not.toHaveBeenCalled();
+  });
+
+  it("answers 408 for a body that does not arrive within the deadline, before any guard runs", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const guard = vi.fn(async () => undefined);
+      const stalled = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"reason":'));
+        },
+      });
+      const request = new Request("https://api.example.test/orders", {
+        method: "POST",
+        body: stalled,
+        duplex: "half",
+      } as RequestInit);
+      const answered = serveGuardedCall({
+        request,
+        path: "/orders",
+        maxBodyBytes: 1024,
+        bodyReadTimeoutMs: 30_000,
+        anonymous: true,
+        guard,
+        authenticate: async () => ({ actor: USER }),
+        execute: async () => ({}),
+      });
+      await vi.advanceTimersByTimeAsync(29_999);
+      expect(guard).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      const response = await answered;
+      expect(response.status).toBe(408);
+      expect(response.headers.get("connection")).toBe("close");
+      expect(await response.json()).toEqual({
+        code: "request_timeout",
+        category: "unavailable",
+        retryable: true,
+      });
+      expect(guard).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("reads a body that arrives within the deadline and leaves no timer behind", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const response = await serveGuardedCall({
+        request: new Request("https://api.example.test/orders", {
+          method: "POST",
+          body: '{"reason":"late"}',
+        }),
+        path: "/orders",
+        maxBodyBytes: 1024,
+        bodyReadTimeoutMs: 30_000,
+        anonymous: true,
+        guard: async () => undefined,
+        authenticate: async () => ({ actor: USER }),
+        execute: async (input: unknown) => ({ echoed: input }),
+      });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ echoed: { reason: "late" } });
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("serves a GET with no body, reading the query string", async () => {

@@ -6,7 +6,8 @@
  *          integration trades a signed assertion (scope, audience, no client credentials) for a cached token; one
  *          integration instance is built per class with this runtime; each Integration and origin gets one circuit
  *          breaker (5 failures, 30 s by default, its own when stated, none when turned off) shared by every connection,
- *          and a bulkhead when it states `concurrency` (STA-1467).
+ *          one per connection when it keys the circuit `by` credential, and a bulkhead when it states `concurrency`
+ *          (STA-1467).
  * Boundary: test only; `fetch` is stubbed per URL, the clock is a mutable stand-in and the buckets are the memory driver
  *           of `@stackra/actions`.
  * Runtime: node (vitest)
@@ -23,6 +24,7 @@ import { Integration } from "#core/bases/integration.base";
 import { AuthType } from "#core/enums/auth-type.enum";
 import { ConnectionLevel } from "#core/enums/connection-level.enum";
 import { IntegrationCategory } from "#core/enums/integration-category.enum";
+import { RateLimitScope } from "#core/enums/rate-limit-scope.enum";
 import { ProviderRefusedError } from "#core/errors/provider-refused.error";
 import { encodeBase64 } from "#core/functions/encode-base64.function";
 import { hydrateConnection } from "#core/functions/hydrate-connection.function";
@@ -334,6 +336,43 @@ describe("IntegrationRuntime circuit breakers and bulkheads (STA-1467)", () => {
     await expect(
       regionClient(runtime, "conn_00000000000000000000000001", "eu.status.example").get("/health"),
     ).resolves.toEqual({ ok: true });
+  });
+
+  it("keeps one circuit per connection for an Integration that keys it by credential", async () => {
+    class AccountIntegration extends Integration({
+      ...PLAIN,
+      provider: "account",
+      baseUrl: "https://api.account.example",
+      circuitBreaker: { failureThreshold: 1, by: RateLimitScope.Credential },
+    }) {}
+    class AccountConnection extends Connection<AccountIntegration> {
+      async check(): Promise<ConnectedAccount> {
+        return ConnectedAccount.create({ id: "account" });
+      }
+    }
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const runtime = runtimeOf();
+    const integration = runtime.integration(AccountIntegration);
+    const clientOf = (id: `conn_${string}`) =>
+      hydrateConnection(AccountConnection, { id, fields: {}, secrets: {} }, (built) =>
+        runtime.client(integration, built),
+      ).api;
+    const failing = clientOf("conn_00000000000000000000000001");
+    await expect(failing.get("/health")).rejects.toMatchObject({ status: 503 });
+    await expect(failing.get("/health")).rejects.toMatchObject({ reason: "circuit_open" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // Another tenant's connection, and the platform's own credentials, are not shed by the first one's failures.
+    fetchMock.mockImplementation(async () => new Response('{"ok":true}', { status: 200 }));
+    await expect(clientOf("conn_00000000000000000000000002").get("/health")).resolves.toEqual({
+      ok: true,
+    });
+    await expect(runtime.client(integration).get("/health")).resolves.toEqual({ ok: true });
+    // The same connection through a new client still finds its own open circuit.
+    await expect(clientOf("conn_00000000000000000000000001").get("/health")).rejects.toMatchObject({
+      reason: "circuit_open",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("keeps no circuit for an Integration that turns it off", async () => {

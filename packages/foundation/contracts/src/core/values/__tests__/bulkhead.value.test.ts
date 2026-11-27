@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `Bulkhead`: it admits up to `limit` calls, queues up to `queue` more in arrival order, turns
  *          the rest away at once, turns a waiter away once `maxWaitMs` passes, hands a freed place straight to the
- *          oldest waiter, releases each place once however often release is called, and refuses bad options.
+ *          oldest waiter, releases each place once however often release is called, lets a waiter whose caller aborted
+ *          leave the queue at once, and refuses bad options.
  * Boundary: test only; fake timers drive the wait.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; STA-1467.
@@ -85,6 +86,44 @@ describe("Bulkhead", () => {
     release?.();
     release?.();
     expect(bulkhead.active).toBe(1);
+  });
+
+  it("lets a waiter whose caller gave up leave the queue at once, with no timer left", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const bulkhead = new Bulkhead({ limit: 1, queue: 1, maxWaitMs: 60_000 });
+    const held = await bulkhead.enter();
+    const caller = new AbortController();
+    const waiting = bulkhead.enter(caller.signal);
+    expect(bulkhead.queued).toBe(1);
+    caller.abort();
+    expect(await waiting).toBeUndefined();
+    expect(bulkhead.queued).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+    // the queue place is free again, and the held place passes to the next waiter, not the one that left
+    const next = bulkhead.enter();
+    held?.();
+    expect(await next).toBeTypeOf("function");
+    expect(bulkhead.active).toBe(1);
+  });
+
+  it("takes no place for a caller that already gave up", async () => {
+    const bulkhead = new Bulkhead({ limit: 1 });
+    expect(await bulkhead.enter(AbortSignal.abort())).toBeUndefined();
+    expect(bulkhead.active).toBe(0);
+  });
+
+  it("stops listening to the caller once a waiter gets its place", async () => {
+    const bulkhead = new Bulkhead({ limit: 1, queue: 1 });
+    const held = await bulkhead.enter();
+    const caller = new AbortController();
+    const waiting = bulkhead.enter(caller.signal);
+    held?.();
+    const release = await waiting;
+    expect(release).toBeTypeOf("function");
+    caller.abort();
+    expect(bulkhead.active).toBe(1);
+    release?.();
+    expect(bulkhead.active).toBe(0);
   });
 
   it("refuses options that cannot admit anything", () => {

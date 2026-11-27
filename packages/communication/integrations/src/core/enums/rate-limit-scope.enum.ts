@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: `RateLimitScope`, what one of an Integration's `rateLimits` counts against: each credential the managed
- *          client actually uses, or every call to the provider together.
+ * Purpose: `RateLimitScope`, what one of an Integration's `rateLimits` counts against, or whose calls share its circuit
+ *          breaker (`circuitBreaker.by`, STA-1467): each credential the managed client actually uses, or every call to
+ *          the provider together.
  * Boundary: an `Enum.of` value plus the type of the same name. The bucket key names the connection id (or `platform`
  *           for the Integration's own credentials), never a credential value.
  * Runtime: isomorphic

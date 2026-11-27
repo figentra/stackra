@@ -258,9 +258,11 @@ export function readIntegrationOptions(
       typeof options.circuitBreaker === "object" &&
         options.circuitBreaker !== null &&
         (options.circuitBreaker.failureThreshold === undefined ||
-          isCount(options.circuitBreaker.failureThreshold)),
+          isCount(options.circuitBreaker.failureThreshold)) &&
+        (options.circuitBreaker.by === undefined ||
+          Enum.values(RateLimitScope).includes(options.circuitBreaker.by)),
       "circuitBreaker",
-      "needs false, or a failureThreshold from 1 and a cooldown",
+      "needs false, or a failureThreshold from 1, a cooldown and a RateLimitScope",
     );
     checkDuration(options.circuitBreaker.cooldown, true);
   }

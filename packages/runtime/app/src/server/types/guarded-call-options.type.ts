@@ -6,7 +6,7 @@
  *          and the three seams the generated adapter fills (`guard`, `authenticate`, `execute`).
  * Boundary: a type only. The seams are functions, so the library depends on neither `@stackra/actions` nor Encore.
  * Runtime: node
- * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order);
+ * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); STA-1467 (body read deadline); ADR 0437 (server-check order);
  *                     ADR 0457 (request guards); ADR 0098 (the actor from the credential).
  */
 import type { AnyClass } from "@stackra/container";
@@ -27,6 +27,13 @@ export interface GuardedCallOptions {
 
   /** The body cap in bytes (`HttpConfig.maxBodyBytes`); a larger body is answered 413 before any guard. */
   readonly maxBodyBytes: number;
+
+  /**
+   * How long the body may take to arrive in full, in milliseconds (`HttpConfig.bodyReadTimeoutMs`); a slower one is
+   * answered 408 before any guard, so a slow upload never holds its load-shedding place past it (STA-1467). No
+   * deadline when absent or 0.
+   */
+  readonly bodyReadTimeoutMs?: number;
 
   /** True when the call lists the anonymous actor: with no `Authorization` header it runs as an anonymous visitor. */
   readonly anonymous: boolean;
