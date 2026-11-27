@@ -79,6 +79,7 @@ answers 503 through the new `handlers.shed`. The integrations managed client abo
 - **P-008**: an HTTP call holds its bulkhead place reading its body for at most `bodyReadTimeoutMs`, then answers 408 with no timer left — Validates: FR-014
 - **P-009**: a circuit keyed `by` credential opens only on its own connection's failures; another connection's or the platform's calls still send — Validates: FR-016
 - **P-007**: a call run with `{ shed: false }` (every generated cron run) never waits on or is refused by the bulkhead, however full it is, and is still counted in flight — Validates: FR-013
+- **P-010**: a call whose signal has aborted, or aborts while it waits for a bulkhead place, never runs and never keeps a queue place — Validates: FR-017
 
 ## Architecture overview
 

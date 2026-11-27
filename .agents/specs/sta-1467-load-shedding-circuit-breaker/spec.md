@@ -61,7 +61,7 @@ provider's own timeout and the backlog grows until the process stalls.
 
 ### Sources
 
-- **SRC-001**: `packages/runtime/app/src/server/functions/create-app.function.ts` on `origin/main`: `run` starts every call, and `serveGuardedCall` reads a body with no deadline (FR-001 to FR-005, FR-013, FR-014)
+- **SRC-001**: `packages/runtime/app/src/server/functions/create-app.function.ts` on `origin/main`: `run` starts every call, and `serveGuardedCall` reads a body with no deadline (FR-001 to FR-005, FR-013, FR-014, FR-017)
 - **SRC-002**: `packages/communication/integrations/src/core/functions/managed-client.function.ts` on `origin/main`: no timeout, no breaker (FR-006 to FR-010, FR-012)
 - **SRC-003**: `packages/communication/integrations/src/core/services/integration-runtime.service.ts` on `origin/main`: a client per call, nothing shared (FR-011, FR-016)
 - **SRC-004**: `packages/developer/gen/src/core/functions/emit-encore-http.function.ts`, `emit-encore-events.function.ts`, `emit-encore-queues.function.ts`, `emit-encore-cron-jobs.function.ts` on `origin/main` (FR-004, FR-013, FR-014)
@@ -145,6 +145,8 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
 - **FR-016**: WHERE an Integration states `circuitBreaker.by: RateLimitScope.Credential` THE `IntegrationRuntime` SHALL keep one breaker per connection (and one for the platform's own credentials) on each origin instead of one shared breaker; the bulkhead stays per Integration and origin. Sources: SRC-003
 - **FR-013**: WHEN `handlers.run` is called with `{ shed: false }` THE app SHALL start the call without the bulkhead, never refuse it as overloaded, still count it in flight and still refuse it while draining; THE generated cron adapter SHALL call `run` that way for every CronJob. Sources: SRC-001, SRC-004
 
+- **FR-017**: WHEN `handlers.run` is called with a `signal` THE app SHALL pass it to `Bulkhead#enter`, so a call whose signal has aborted, or aborts while it waits for a place, takes no place, leaves the queue at once and rejects with the signal's reason; THE generated HTTP adapter SHALL pass a request signal that aborts when the client closes the connection before the answer. Sources: SRC-001, SRC-004, SRC-005
+
 ### Non-functional Requirements
 
 - **NFR-001**: THE `Bulkhead` and `CircuitBreaker` SHALL be isomorphic, in memory, deterministic under an injected time, and never throw while running. Sources: SRC-005
@@ -167,11 +169,35 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
 - **AC-009**: WHEN a request body has not arrived in full within `bodyReadTimeoutMs` THE answer SHALL be 408 before any guard runs, with no timer left.
 - **AC-010**: WHEN a provider sends its headers and then stalls past the `timeout` THE attempt SHALL count as a failure of the circuit; WHEN a caller aborts while its attempt is queued for the bulkhead THE call SHALL throw the caller's reason at once and leave the queue.
 - **AC-011**: WHEN an Integration keys its circuit `by` credential and one connection's calls open it THE other connections and the platform's own credentials SHALL still send.
+- **AC-012**: WHEN a call's request aborts while the call waits for a bulkhead place THE app SHALL reject it with the request's reason at once and free its queue place, and count no shed.
 
 ## Success Criteria
 
 - **SC-001**: every requirement has a unit test that fails with its production file put back to `origin/main` — verified by: unit (the revert check in the pull request)
 - **SC-002**: a provider that never answers costs a caller at most the breaker's refusal (microseconds) once the circuit is open — verified by: unit (`managed-client.function.test.ts`)
+
+## Compatibility and migration
+
+Four defaults change for every host that upgrades; each has an opt-out.
+
+| Default (new)                                                                                        | What a host sees                                                                                                                                       | Opt-out                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Load shedding on: `HttpConfig.maxConcurrentCalls` 1024, `maxQueuedCalls` 1024, `maxQueueWaitMs` 5000 | past 1024 calls at once and 1024 waiting, or a wait over 5 s, a call is answered 503 `app_overloaded` with `Retry-After`, where before it was admitted | `maxConcurrentCalls: 0` turns shedding off; or raise the three limits                                                                                |
+| Request body deadline: `HttpConfig.bodyReadTimeoutMs` 30,000                                         | a request body that has not arrived in full within 30 s is answered 408 `request_timeout` before any guard runs                                        | `bodyReadTimeoutMs: 0` turns the deadline off (leave slow uploads to the gateway's body timeout); or raise it, up to 600,000                         |
+| Integration attempt timeout: 30 s per attempt, the body read included                                | a provider call that takes longer is aborted, retried as the Integration's retries allow, then refused with `reason: "timeout"`                        | state a longer `timeout` (a positive `Duration`) on the Integration; there is no unbounded attempt                                                   |
+| Circuit breaker on: one per Integration and origin, 5 failures in a row, 30 s cooldown               | after 5 failed attempts in a row every call to that origin is refused for 30 s without being sent (`reason: "circuit_open"`)                           | `circuitBreaker: false` on the Integration; or tune `failureThreshold` and `cooldown`, or key it per connection with `by: RateLimitScope.Credential` |
+
+Risks to check before upgrading:
+
+- **Uploads**: a large upload over a slow link can take longer than 30 s and now gets 408. A service that accepts
+  large uploads raises `bodyReadTimeoutMs` (or sets 0 behind a gateway with its own body timeout) and raises
+  `maxBodyBytes` to match.
+- **Long provider calls**: a provider call that legitimately runs longer than 30 s (a long generation, a large export
+  or report) now times out, and five such calls in a row open the circuit for every caller of that origin on the
+  instance. Such an Integration states a `timeout` above its slowest normal answer, and a `circuitBreaker` that
+  fits it.
+- Cron runs are not shed (`{ shed: false }`, FR-013); a queued HTTP call whose client goes away leaves the queue
+  (FR-017).
 
 ## Out of scope
 
@@ -194,10 +220,15 @@ An Integration states `concurrency: { limit, queue, maxWait }`; attempts past it
   stayed in the queue (FR-007, FR-010, FR-015, AC-010); one tenant's failures opened a shared circuit for every
   tenant (FR-016, EC-08, AC-011). Added T017 to T019.
 
+- 2026-11-27 · the CTO's conditions: this compatibility section lists the four default changes, their opt-outs and
+  the upload and long-provider risk; `handlers.run` passes the request's abort signal to the bulkhead (FR-017,
+  AC-012, T020).
+
 ## Status history
 
 - 2026-11-27 · — → Draft · spec author · written from the branch's diff
 - 2026-11-27 · Draft → Clarified · spec author · questions answered from the diff and ADRs 0140, 0143, 0308
 - 2026-11-27 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)
