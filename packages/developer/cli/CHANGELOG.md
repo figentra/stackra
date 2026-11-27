@@ -1,5 +1,62 @@
 # @stackra/cli
 
+## 0.34.0
+
+### Minor Changes
+
+- b052b6b: `stackra dev` starts the dev compose before the member: it writes `.stackra/dev/compose.yaml` (and
+  `compose.shared.yaml` for `perLane: false` blocks, ClamAV by default) from the root runway's
+  `environments.dev.infra` and runs `docker compose up --detach --wait`, so Valkey, SeaweedFS, Mailpit, ClamAV and
+  otel-lgtm are healthy before `encore run`. The member's run gets their variables unless the shell or
+  `.stackra/dev-secrets.json` sets them; SeaweedFS's placeholder AWS key pair only when the run has no AWS credential of
+  its own (key variables, `AWS_PROFILE`, a web identity, `~/.aws/credentials` or `~/.aws/config`). `--infra <name>[,<name>]` adds `when: opt-in` blocks and `--no-infra` skips the
+  step; `stackra dev secrets init` lists the names the dev compose provides apart from those that need a value
+  (STA-2664).
+  
+  Compatibility: a root runway that already lists containers under `environments.dev.infra` now has `stackra dev` start
+  them with Docker (member and root runs) and stop when Docker cannot; pass `--no-infra` to skip the step. A runway with
+  only `gateway` and `postgres` runs no Docker, as before.
+- a652bc6: `stackra doctor`, `stackra dev --tunnel` and `stackra new service` no longer send people outside Figentra to
+  Figentra's own tools and repositories. Doctor finds a tool on `PATH` itself instead of running `which`, so it works on
+  Windows (the `Path` key and `PATHEXT` extensions), where every tool used to read as installed (there was no `which` to ask). The network row's fix
+  names the connection, a proxy, a VPN or a firewall instead of one VPN product; the `@figentra` registry row says to add
+  a read token for the registry to the user-level `~/.npmrc`; the secrets rows are `sops CLI`, `Google login for sops`
+  and `secrets checkout` (renamed from `figentra/secrets clone`, still under `STACKRA_SECRETS_DIR` or
+  `~/.stackra/secrets`). `stackra dev --tunnel` asks for `CLOUDFLARE_TUNNEL_TOKEN` in the environment, set for that one
+  run, and a new service's `runway.yaml` header says secret values come from your secret store through runway.
+  
+  A starter profile in `stackra.starter.yaml` can now list `exclude` globs: files its `include` globs match that
+  `stackra create` leaves out (the starter repository's own release or approval workflows). An overlay is still written
+  over an excluded path.
+
+### Patch Changes
+
+- 781b4c5: `stackra db diff` derives a model's trait columns from its traits, the static form of `traitsOf`. Each column-writing trait (`HasPublicId`, `Timestamps`, `UserStamps`, `SoftDeletes`, `Archivable`, `Versioned`, `HasTree`, `HasMetadata`, `BelongsToTenant`, `BelongsToTenantOrPlatform`, `HasOwner`) gives the columns and indexes its migration macro writes, with the macro's type and nullability, over the field the checker read: a `HasTree` model now agrees with `t.tree()` (`ltree` path, nullable on an existing table, GiST index, `varchar(33)` parent with its index) instead of reporting `column_type tree_path` and `undeclared_index idx_<table>_parent_id`, and a `Partitioned({ by })` model agrees with `t.partitionBy`'s BRIN index. The blanket tolerance of `tree_path` and `metadata` on every table is gone, so those columns on a table whose model lacks the trait are now `undeclared_column`, and a `HasTree` table whose path is not `ltree` or lacks its GiST index is reported. A `version` field is typed `integer` only under `Versioned`. New exports: `TRAIT_COLUMNS`, `traitColumnsOf` and the `TraitColumns` type; `SchemaSnapshot` columns may say `nullable: "either"` and indexes `optional`. Discovery keeps the constant properties of a trait's object argument when another is not constant (`Partitioned({ by, retain: Duration.days(400) })` keeps `by`).
+- Updated dependencies [8ca387c]
+- Updated dependencies [b30777a]
+- Updated dependencies [781b4c5]
+- Updated dependencies [512397e]
+- Updated dependencies [72b14d3]
+- Updated dependencies [a652bc6]
+- Updated dependencies [f79b3f6]
+- Updated dependencies [5d0e7b5]
+- Updated dependencies [ee066a8]
+- Updated dependencies [8ca387c]
+- Updated dependencies [b052b6b]
+- Updated dependencies [eabcd6e]
+- Updated dependencies [8ca387c]
+- Updated dependencies [c4a19e8]
+  - @stackra/runway@0.34.0
+  - @stackra/gen@0.34.0
+  - @stackra/mcp@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/repo-checks@0.34.0
+  - @stackra/support@0.34.0
+  - @stackra/console@0.34.0
+  - @stackra/skills@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

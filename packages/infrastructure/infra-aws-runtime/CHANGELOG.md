@@ -1,5 +1,46 @@
 # @stackra/infra-aws-runtime
 
+## 0.34.0
+
+### Minor Changes
+
+- eabcd6e: A Postgres resource whose member consumers name `environments.<env>.database.extensions` now gets a one-shot Fargate
+  task that creates them with the admin login in `template1` and every database, once per revision inside the apply, and
+  every workload migration and service using that resource waits for it. A migration that needs an extension no longer
+  fails on a fresh RDS or Aurora server. The task runs in its own outbound-only security group that the database admits,
+  reads the password from the RDS Proxy secret (never from its definition or the state), and a failure stops the apply.
+  `awsDatabases` takes an optional `ready` map that receives each run, and `awsWorkloads` an optional map it waits on.
+
+### Patch Changes
+
+- ee066a8: Public packages carry nothing internal (STA-2876). Examples, fixtures, comments, READMEs and changelogs use neutral
+  names (acme, bistro, `dev.example`, `/Users/me`) instead of internal product, person, host, account and vault names.
+  
+  `@stackra/runway`: a pull request's preview host lives in the product's own zone. Set
+  `environments.preview.domains.pullRequestZone` in the root runway (for example `preview.example`); a pull-request
+  `publishProduct` without it is refused before any upload or write. `pullRequestPreviewHost(product, n, zone)` takes the
+  zone and refuses one that is not a lowercase host name of two labels or more, and `PULL_REQUEST_PREVIEW_SETTINGS` no
+  longer has `zone`.
+  
+  `@stackra/infra-testbed`: the boxes' EC2 key pair is a stack setting, `AwsTestbedOptions.keyPair` (Pulumi config
+  `keyPair`). `TESTBED_DEFAULTS` now defaults `keyPair` to `stackra-testbed`, `keyFile` to `~/.ssh/stackra-testbed.pem`
+  and `awsProfile` to `figentra`; a stack that uses another pair names it.
+- Updated dependencies [8ca387c]
+- Updated dependencies [b30777a]
+- Updated dependencies [f79b3f6]
+- Updated dependencies [5d0e7b5]
+- Updated dependencies [ee066a8]
+- Updated dependencies [8ca387c]
+- Updated dependencies [b052b6b]
+- Updated dependencies [eabcd6e]
+- Updated dependencies [c4a19e8]
+  - @stackra/runway@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/infra-tools@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

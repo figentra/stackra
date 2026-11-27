@@ -1,5 +1,155 @@
 # @stackra/runway
 
+## 0.34.0
+
+### Minor Changes
+
+- b30777a: A call no longer stalls when every pool connection is taken by calls that each need a second one (STA-1716). A call
+  holds its isolation transaction (ADR 0495) while a `requiresNew` store opens another connection, so with as many
+  concurrent calls as the pool had connections every call waited for a second that never came, and the `pg` pool waits
+  without a limit. `PostgresDatabaseDriver` now admits every transaction that takes a connection of its own through a
+  connection gate by its depth: `max - (nesting - 1)` units run at the top level and one place per deeper level stays free,
+  so a chain no deeper than `pool.nesting` (default 4) always finishes. A chain deeper than the pool is refused at once
+  with a `RangeError`, and a transaction that waits past `pool.acquireTimeout` (default 30 seconds) is refused with the
+  new retryable `ConnectionPoolExhaustedError` (`connection_pool_exhausted`, 503). `DatabaseConfig.pool` takes the two
+  new optional fields. `poolMaxOf` in `@stackra/runway` now refuses a `poolBudget` that gives an instance fewer than two
+  connections. See the ADR 0473 note of 2026-11-26.
+- f79b3f6: Gen now sorts every compiled migration statement into one of the four ADR 0159 classes: `additive`, `online`,
+  `contract` or `banned` (STA-2866). A migration takes the highest class among its statements, and `contract` and
+  `banned` count as destructive. Each top-level statement of a raw `schema.sql()` string is classed alone. Every
+  service gets `.stackra/migration-safety.json` (`stackra.migration-safety/v1`) next to its compiled SQL, with no rows
+  when it has no migration. Gen refuses a banned statement as `migration_banned`. A banned statement is a data write, an
+  index built on an existing table without `CONCURRENTLY`, a lock or a table rewrite. A table made with
+  `CREATE TABLE IF NOT EXISTS` counts as existing, since it may be adopted. Gen never guesses safe: a statement it cannot
+  read is `contract`, a read or a `DO` block that calls a function outside a short read-only list (aggregates, settings,
+  advisory locks) is `contract`, `SELECT … INTO` and a filled `CREATE TABLE … AS` are `banned`, and comments, literals and quoted names never change the
+  class. A call's name is read whole in any script, so `ücount(` never passes as `count(`. An `ADD COLUMN` that makes
+  Postgres rewrite the table is `contract`: a volatile default such as `gen_random_uuid()` or `nextval()`, a `serial`
+  type, a stored generated column or an identity column; a constant or stable default such as `now()` stays `additive`.
+  Security that narrows what the running release reads or writes is `contract` on an existing table: `ENABLE` or
+  `FORCE ROW LEVEL SECURITY`, a restrictive policy, any `ALTER POLICY` and any `REVOKE`.
+  Ten released migrations already hold a banned statement. They are frozen, so gen keeps compiling them and classes them
+  `banned`; so is any migration the service's committed migration lock names, since a database may already have applied
+  it. New exports: `classifyMigrationStatement`, `classifyMigrations`, `emitMigrationSafety`,
+  `MIGRATION_SAFETY_FILE` and the `MigrationSafety*` types.
+  
+  `runway evidence` now fills `destructive` and `destructiveMigrations` instead of always writing `null`:
+  
+  - A service target reads the classes of each service it ships.
+  - A client target (`eas`, `mintlify`, `npm`, `electron-release`) is `false`.
+  - A Workers member is `false` when its config has no Durable Object migrations and no D1 binding.
+  
+  A service whose safety file is missing (gen has not run, as on a fresh checkout) is `null`, never `false`.
+  
+  The new `runway migrations:record` command runs after a deploy step succeeded and writes
+  `runway-migrations-<environment>.json`, the migrations that deploy applied. The next deploy to the same environment
+  passes that record to `runway evidence` with the new `--previous <file>` option, so only a destructive migration that
+  is new to the environment counts. Without it, a service that holds a destructive migration leaves `destructive` at
+  `null`, so the owner approves the deploy.
+- 5d0e7b5: One reader decides the environment a process runs as, and only the runtime sets it (STA-2844, ADR 0296 as amended on
+  2026-11-26). `@stackra/config` adds `readEnvironment(raw, platform?)`, the closed list `StackraEnvironment` (`dev`,
+  `test`, `preview`, `staging`, `production`), `isDeployedEnvironment`, `PlatformEnvironment`, `ENVIRONMENT_VARIABLE` and
+  `SAFETY_CRITICAL_VARIABLES`. A configuration field mapped to `STACKRA_ENVIRONMENT` is now runtime-only: a runway
+  `config` value or a test's `values` for it fails boot with `ConfigInvalidError`, and a `STACKRA_ENVIRONMENT` outside the
+  list (`prod`, a typo) fails boot instead of reading as some environment. `@stackra/app/server` adds
+  `providePlatformEnvironment`, and the server `createApp` builds the configuration with the reader's answer: a deployed
+  Encore service with no variable runs as its deployed environment instead of `dev`, `dev` or `test` declared on a
+  deployment fails boot, and so does a self-hosted image that reports no environment. `@stackra/gen` writes
+  `stackra-encore/<member>/environment.ts` for every service that runs `@stackra/app`, imported first by each generated
+  Encore file. `runway validate` and `stackra validate --repository` refuse a runway `config` block that sets such a field
+  (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, `runtimeOnlyFieldsOf`).
+  
+  Upgrading: remove any `environment` value from a runway `config` block or a test's `values` for a configuration mapped to
+  `STACKRA_ENVIRONMENT` (`outbox.relay_inbox`, `market_packs`), and set the variable on the runtime instead, or leave it
+  unset on Encore Cloud. Regenerate with `stackra gen` so each service gets its `environment.ts`.
+  
+  Preview needs to be named. A deployed app with `STACKRA_ENVIRONMENT` unset, on a platform that reports its environment, boots as the environment the platform reports. So a preview deployment boots as `preview` only when the platform reports preview or `STACKRA_ENVIRONMENT=preview` is set; otherwise it boots as whatever the platform says.
+- ee066a8: Public packages carry nothing internal (STA-2876). Examples, fixtures, comments, READMEs and changelogs use neutral
+  names (acme, bistro, `dev.example`, `/Users/me`) instead of internal product, person, host, account and vault names.
+  
+  `@stackra/runway`: a pull request's preview host lives in the product's own zone. Set
+  `environments.preview.domains.pullRequestZone` in the root runway (for example `preview.example`); a pull-request
+  `publishProduct` without it is refused before any upload or write. `pullRequestPreviewHost(product, n, zone)` takes the
+  zone and refuses one that is not a lowercase host name of two labels or more, and `PULL_REQUEST_PREVIEW_SETTINGS` no
+  longer has `zone`.
+  
+  `@stackra/infra-testbed`: the boxes' EC2 key pair is a stack setting, `AwsTestbedOptions.keyPair` (Pulumi config
+  `keyPair`). `TESTBED_DEFAULTS` now defaults `keyPair` to `stackra-testbed`, `keyFile` to `~/.ssh/stackra-testbed.pem`
+  and `awsProfile` to `figentra`; a stack that uses another pair names it.
+- 8ca387c: A deployed app no longer keeps Idempotency-Keys or rate-limit buckets in process memory (STA-2798). `StoresConfig`
+  gains the field `environment`, mapped to `STACKRA_ENVIRONMENT` and typed as `@stackra/config`'s closed
+  `StackraEnvironment` (the one environment reader of STA-2844; unset reads as `dev`, a misspelt name fails boot). Where
+  `isDeployedEnvironment` says the app is deployed (`preview`, `staging`, `production`), a `memory` idempotency or
+  rate-limit store fails boot with `ConfigInvalidError` naming the field: the memory store forgets every key on a restart,
+  so a retried write ran twice, and kept one set of buckets per instance. `dev` and `test` keep the memory default. The
+  environment is runtime-only: a runway `config` block or a test's `values` that sets `actions.stores.environment` fails
+  boot and `runway validate`, so runway cannot make a deployment read as `dev`.
+  
+  Before you deploy, set both stores in runway, for example in the root's `defaults.service.config` of each deployed
+  environment:
+  
+  ```yaml
+  config:
+    actions.stores: { idempotency: postgres, rateLimit: postgres }
+  ```
+  
+  `runway validate` and `stackra validate --repository` report the same thing first: the new `checkActionStores(root,
+  service, manifest)` of `@stackra/runway` names each deployed environment of a service, whose committed manifest binds
+  `actions.IdempotencyStore` or `actions.RateLimitStore`, that does not select `postgres` or `valkey`.
+- b052b6b: `devComposeOf(input)` plans the dev compose of a lane from the root runway's `environments.dev.infra`: every block
+  that is not Encore's own (`gateway`, `postgres`) becomes a Compose service of its kind (`DEV_INFRA_KINDS`: `valkey`,
+  `seaweedfs`, `mailpit`, `clamav`, `otel-lgtm`) or of its own `containerPorts`, published on 127.0.0.1 at the runway's
+  ports moved by lane, with health checks, named volumes, SeaweedFS buckets made at start and `when: opt-in` profiles.
+  It returns the variables a member needs to reach them (`*_VALKEY_URL`, `AWS_ENDPOINT_URL_S3`, `SMTP_HOST`/`SMTP_PORT`,
+  `OTEL_EXPORTER_OTLP_ENDPOINT`), with SeaweedFS's placeholder AWS key pair apart as `fallbackCredentials` (never a
+  global variable over a developer's own credential), and refuses a missing image or port, an unknown kind, a bad bucket or two blocks giving
+  one variable. `writeDevFacts` now writes the gateway's and each container's address into `.stackra/dev/ports.json`,
+  so a `from-port: valkey` var resolves (STA-2664). SeaweedFS runs
+  with its telemetry off (`-master.telemetry=false`).
+- eabcd6e: `plannedExtensions(services, environment, members?)` and `createExtensionsScript(extensions)` give the infrastructure
+  the Postgres extensions a server must hold and the idempotent psql script that creates them with the admin login in
+  `template1` and every database that takes connections, before any migration runs (ADR 0160 note of 2026-11-26). The
+  script refuses a name outside `PostgresExtension` and stops non-zero at the first database psql fails in.
+- c4a19e8: **Breaking: a Worker deploy now proves which version answered its smoke.** `@stackra/runway` is still 0.x (and every `@stackra/*` package shares one fixed version), so this ships as a minor bump, but it **breaks a Worker deploy that has not adopted it**. Do both steps below before upgrading, or every Worker deploy fails:
+  
+  1. **Give every Worker member at least one smoke check** (`targets.cloudflare-workers.members.<key>.smoke`). A member with none is now refused before anything ships.
+  2. **Make every Worker name its version.** Give it a `version_metadata` binding (`CF_VERSION_METADATA`) and send its id in `x-stackra-version` on every answer. For an assets-only Worker, add a script that answers only `GET /-/version` with `{ "version": "<id>" }` and the same header (`run_worker_first: ["/-/version"]`), and set `versionProof: route` on the member. A Worker whose answers name no version fails every deploy step.
+  
+  ### Breaking
+  
+  - A Worker member with no smoke check is refused before anything ships.
+  - A smoke answer with no version proof fails the step: no `x-stackra-version` header naming the version under test, or, with `versionProof: route`, no `/-/version` route answering it.
+  
+  **What changed.** The `cloudflare-workers` provider's smoke now proves which Worker version answered, so a deploy can no longer pass its smoke on the old version. Before, it smoked a new version through `Cloudflare-Workers-Version-Overrides` while that version was in no deployment. Cloudflare honours an override only for a version in the current deployment and routes any other request as usual, so the "0% smoke" checked the version already serving and passed even when the new one was broken.
+  
+  - **0% stage first.** The provider adds the new version to the deployment at 0% (`wrangler versions deploy <serving>@100 <new>@0`), smokes it there by override, and only then moves traffic in the member's `rollout` steps (10/50/100 for an `api` member in production), smoking after every step, the 100% one included. A failed 0% smoke takes the version out again and moves no traffic; a failed later step puts the previous version back.
+  - **Every answer names the version.** Each smoke answer must name the version under test, in its `x-stackra-version` header or, with `versionProof: route`, in the `/-/version` route read before and after the checks. Another version answering fails the step. A route member's `/-/version` answering 404 counts as another version.
+  - **`current` names the commit that serves.** A partial step deploys with the message `<sha> (<percent>%)` and the rollback after a failed step with `<sha> (rolled back to <version>)`. Only the 100% step carries the bare SHA, and `current` skips a failed attempt's deployments.
+  - **Promotion inside the job.** After the 0% smoke, each step's smoke has `stepSmokeAttempts` (6) attempts per check. With `RUNWAY_DEPLOY_DEADLINE` set (epoch seconds; the reusable Workers workflow sets it 3 minutes inside its 30-minute timeout), no traffic moves unless the holds fit, and a step's smoke stops before the deadline, so the previous version goes back rather than the job being killed mid-split. A failed rollback is reported together with the smoke failure that caused it, saying the traffic may still be split.
+  - **Rolling back to an older version.** `verify` proves the version its record names. A version uploaded before this change names none: its answers must still be 2xx, and Cloudflare's own deployment must show it at 100%. Core `rollback()` now rolls back every target before it throws, then names each target that is down in one `RunwayDeployFailedError`.
+  - **A never-deployed Worker** is recognised only by Cloudflare's code 10007; any other `wrangler deployments status` failure (a wrong account, a renamed Worker) stops the deploy.
+  
+  `WORKER_VERSION`, `WorkerVersionProof` and `servedVersionProblem` are exported, so another smoke (the box deploy's) can apply the same proof.
+
+### Patch Changes
+
+- 8ca387c: `checkActionStores` also requires the driver a deployed environment selects for `config.actions.stores.<field>` to be a
+  candidate of the port in the member's generated manifest (`postgres` comes with `@stackra/database`, `valkey` with
+  `@stackra/actions`), so `runway validate` and `stackra validate --repository` no longer approve a driver the service
+  cannot build. A manifest row without `candidates` is still held to durability only.
+- Updated dependencies [5c17430]
+- Updated dependencies [512397e]
+- Updated dependencies [5d0e7b5]
+- Updated dependencies [ee066a8]
+- Updated dependencies [8ca387c]
+- Updated dependencies [d24706c]
+  - @stackra/app@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/console@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

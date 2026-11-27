@@ -1,5 +1,25 @@
 # @stackra/content
 
+## 0.34.0
+
+### Patch Changes
+
+- Updated dependencies [b30777a]
+- Updated dependencies [72b14d3]
+- Updated dependencies [fa7235b]
+- Updated dependencies [8ca387c]
+- Updated dependencies [8ca387c]
+- Updated dependencies [80130cb]
+  - @stackra/database@0.34.0
+  - @stackra/actions@0.34.0
+  - @stackra/tenancy@0.34.0
+  - @stackra/entitlements@0.34.0
+  - @stackra/errors@0.34.0
+  - @stackra/model@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

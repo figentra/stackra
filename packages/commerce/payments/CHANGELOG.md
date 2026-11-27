@@ -1,5 +1,41 @@
 # @stackra/payments
 
+## 0.34.0
+
+### Patch Changes
+
+- ee066a8: Public packages carry nothing internal (STA-2876). Examples, fixtures, comments, READMEs and changelogs use neutral
+  names (acme, bistro, `dev.example`, `/Users/me`) instead of internal product, person, host, account and vault names.
+  
+  `@stackra/runway`: a pull request's preview host lives in the product's own zone. Set
+  `environments.preview.domains.pullRequestZone` in the root runway (for example `preview.example`); a pull-request
+  `publishProduct` without it is refused before any upload or write. `pullRequestPreviewHost(product, n, zone)` takes the
+  zone and refuses one that is not a lowercase host name of two labels or more, and `PULL_REQUEST_PREVIEW_SETTINGS` no
+  longer has `zone`.
+  
+  `@stackra/infra-testbed`: the boxes' EC2 key pair is a stack setting, `AwsTestbedOptions.keyPair` (Pulumi config
+  `keyPair`). `TESTBED_DEFAULTS` now defaults `keyPair` to `stackra-testbed`, `keyFile` to `~/.ssh/stackra-testbed.pem`
+  and `awsProfile` to `figentra`; a stack that uses another pair names it.
+- Updated dependencies [b30777a]
+- Updated dependencies [72b14d3]
+- Updated dependencies [fa7235b]
+- Updated dependencies [5d0e7b5]
+- Updated dependencies [ee066a8]
+- Updated dependencies [8ca387c]
+- Updated dependencies [8ca387c]
+  - @stackra/database@0.34.0
+  - @stackra/actions@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/ui@0.34.0
+  - @stackra/integrations@0.34.0
+  - @stackra/errors@0.34.0
+  - @stackra/market-packs@0.34.0
+  - @stackra/money@0.34.0
+  - @stackra/testing@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

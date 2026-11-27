@@ -1,5 +1,106 @@
 # @stackra/gen
 
+## 0.34.0
+
+### Minor Changes
+
+- 781b4c5: `stackra db diff` derives a model's trait columns from its traits, the static form of `traitsOf`. Each column-writing trait (`HasPublicId`, `Timestamps`, `UserStamps`, `SoftDeletes`, `Archivable`, `Versioned`, `HasTree`, `HasMetadata`, `BelongsToTenant`, `BelongsToTenantOrPlatform`, `HasOwner`) gives the columns and indexes its migration macro writes, with the macro's type and nullability, over the field the checker read: a `HasTree` model now agrees with `t.tree()` (`ltree` path, nullable on an existing table, GiST index, `varchar(33)` parent with its index) instead of reporting `column_type tree_path` and `undeclared_index idx_<table>_parent_id`, and a `Partitioned({ by })` model agrees with `t.partitionBy`'s BRIN index. The blanket tolerance of `tree_path` and `metadata` on every table is gone, so those columns on a table whose model lacks the trait are now `undeclared_column`, and a `HasTree` table whose path is not `ltree` or lacks its GiST index is reported. A `version` field is typed `integer` only under `Versioned`. New exports: `TRAIT_COLUMNS`, `traitColumnsOf` and the `TraitColumns` type; `SchemaSnapshot` columns may say `nullable: "either"` and indexes `optional`. Discovery keeps the constant properties of a trait's object argument when another is not constant (`Partitioned({ by, retain: Duration.days(400) })` keeps `by`).
+- 72b14d3: Locked migrations are frozen (ADR 0159, STA-2160). A service's `stackra gen` now writes a `migrations` section to its `stackra.manifest.json`: each compiled migration's id and the SHA-256 of what it compiled to, in apply order. From then on gen refuses a locked migration that compiles to other SQL (`migration_locked_changed`), one that is gone (`migration_locked_missing`), one that an unlocked migration would run before (`migration_lock_gap`) and a malformed section (`migration_lock_malformed`). The locked migrations keep their place at the head of the order, so a new migration, a new package's included, runs after them; `stackra db diff` reads the same lock.
+  
+  `compileMigration` takes `frozen: true` for a locked migration: an authoring rule that only checks how it is written (every column states its nullability and has a comment) comes back in `warnings` instead of throwing, which gen reports as a `migration_rule_frozen` warning, and the SQL must still hash as locked. Safety rules still refuse. A migration the lock does not name stays editable and meets every rule.
+  
+  Upgrading: run `stackra gen` in each service with migrations and commit its `stackra.manifest.json`; until then `stackra gen --check` reports the manifest as stale. To change a locked migration that no environment has applied, remove its entry from `migrations` by hand and run `stackra gen` again. A package's own migrations are checked but not locked; the services that host the package lock them.
+- f79b3f6: Gen now sorts every compiled migration statement into one of the four ADR 0159 classes: `additive`, `online`,
+  `contract` or `banned` (STA-2866). A migration takes the highest class among its statements, and `contract` and
+  `banned` count as destructive. Each top-level statement of a raw `schema.sql()` string is classed alone. Every
+  service gets `.stackra/migration-safety.json` (`stackra.migration-safety/v1`) next to its compiled SQL, with no rows
+  when it has no migration. Gen refuses a banned statement as `migration_banned`. A banned statement is a data write, an
+  index built on an existing table without `CONCURRENTLY`, a lock or a table rewrite. A table made with
+  `CREATE TABLE IF NOT EXISTS` counts as existing, since it may be adopted. Gen never guesses safe: a statement it cannot
+  read is `contract`, a read or a `DO` block that calls a function outside a short read-only list (aggregates, settings,
+  advisory locks) is `contract`, `SELECT … INTO` and a filled `CREATE TABLE … AS` are `banned`, and comments, literals and quoted names never change the
+  class. A call's name is read whole in any script, so `ücount(` never passes as `count(`. An `ADD COLUMN` that makes
+  Postgres rewrite the table is `contract`: a volatile default such as `gen_random_uuid()` or `nextval()`, a `serial`
+  type, a stored generated column or an identity column; a constant or stable default such as `now()` stays `additive`.
+  Security that narrows what the running release reads or writes is `contract` on an existing table: `ENABLE` or
+  `FORCE ROW LEVEL SECURITY`, a restrictive policy, any `ALTER POLICY` and any `REVOKE`.
+  Ten released migrations already hold a banned statement. They are frozen, so gen keeps compiling them and classes them
+  `banned`; so is any migration the service's committed migration lock names, since a database may already have applied
+  it. New exports: `classifyMigrationStatement`, `classifyMigrations`, `emitMigrationSafety`,
+  `MIGRATION_SAFETY_FILE` and the `MigrationSafety*` types.
+  
+  `runway evidence` now fills `destructive` and `destructiveMigrations` instead of always writing `null`:
+  
+  - A service target reads the classes of each service it ships.
+  - A client target (`eas`, `mintlify`, `npm`, `electron-release`) is `false`.
+  - A Workers member is `false` when its config has no Durable Object migrations and no D1 binding.
+  
+  A service whose safety file is missing (gen has not run, as on a fresh checkout) is `null`, never `false`.
+  
+  The new `runway migrations:record` command runs after a deploy step succeeded and writes
+  `runway-migrations-<environment>.json`, the migrations that deploy applied. The next deploy to the same environment
+  passes that record to `runway evidence` with the new `--previous <file>` option, so only a destructive migration that
+  is new to the environment counts. Without it, a service that holds a destructive migration leaves `destructive` at
+  `null`, so the owner approves the deploy.
+- 5d0e7b5: One reader decides the environment a process runs as, and only the runtime sets it (STA-2844, ADR 0296 as amended on
+  2026-11-26). `@stackra/config` adds `readEnvironment(raw, platform?)`, the closed list `StackraEnvironment` (`dev`,
+  `test`, `preview`, `staging`, `production`), `isDeployedEnvironment`, `PlatformEnvironment`, `ENVIRONMENT_VARIABLE` and
+  `SAFETY_CRITICAL_VARIABLES`. A configuration field mapped to `STACKRA_ENVIRONMENT` is now runtime-only: a runway
+  `config` value or a test's `values` for it fails boot with `ConfigInvalidError`, and a `STACKRA_ENVIRONMENT` outside the
+  list (`prod`, a typo) fails boot instead of reading as some environment. `@stackra/app/server` adds
+  `providePlatformEnvironment`, and the server `createApp` builds the configuration with the reader's answer: a deployed
+  Encore service with no variable runs as its deployed environment instead of `dev`, `dev` or `test` declared on a
+  deployment fails boot, and so does a self-hosted image that reports no environment. `@stackra/gen` writes
+  `stackra-encore/<member>/environment.ts` for every service that runs `@stackra/app`, imported first by each generated
+  Encore file. `runway validate` and `stackra validate --repository` refuse a runway `config` block that sets such a field
+  (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, `runtimeOnlyFieldsOf`).
+  
+  Upgrading: remove any `environment` value from a runway `config` block or a test's `values` for a configuration mapped to
+  `STACKRA_ENVIRONMENT` (`outbox.relay_inbox`, `market_packs`), and set the variable on the runtime instead, or leave it
+  unset on Encore Cloud. Regenerate with `stackra gen` so each service gets its `environment.ts`.
+  
+  Preview needs to be named. A deployed app with `STACKRA_ENVIRONMENT` unset, on a platform that reports its environment, boots as the environment the platform reports. So a preview deployment boots as `preview` only when the platform reports preview or `STACKRA_ENVIRONMENT=preview` is set; otherwise it boots as whatever the platform says.
+- 8ca387c: Runway's `config` values now reach boot, so the STA-2798 refusal of the memory action stores holds on a real
+  deployment and the advice it prints works.
+  
+  - `@stackra/gen` writes `.stackra/gen/runway-config.ts` (`runwayConfig`) for a service whose runway, or the root's
+    `defaults.service.config`, sets a `config` value: each environment's values by config key, the member's over the
+    root's field by field. The server, seed and console entries pass it to `bootApp` as `runway`.
+  - `@stackra/app`: `bootApp` takes `runway` (environment to config key to values) and applies the running environment's
+    as the values layer (ADR 0296). The running environment comes from the one reader, `readEnvironment` of
+    `@stackra/config` (STA-2844): `dev` when `STACKRA_ENVIRONMENT` is unset, and a name outside the closed list fails boot
+    with `ConfigInvalidError` instead of applying no environment's values. The server `createApp` takes the same `runway`
+    option. A runway value for a runtime-only field (one mapped to `STACKRA_ENVIRONMENT`) fails boot.
+  
+  After upgrading, run `stackra gen` so each service gets `runway-config.ts`. The environment a deployed Encore service
+  runs as comes from STA-2844's generated `environment.ts`.
+
+### Patch Changes
+
+- 512397e: A Stackra service under `encore run` no longer crashes on a request with a body. The generated HTTP adapter turned
+  Encore's raw request into a web stream with `Readable.toWeb`, whose end-of-stream cleanup calls
+  `req.req.removeListener`; Encore keeps its native request, which is no emitter, in `req`, so every POST, PUT or
+  PATCH threw "stream.req.removeListener is not a function". `@stackra/app/server` now exports `nodeBodyStream`, which
+  reads the body through plain listeners with backpressure (the cap stays `HttpConfig.maxBodyBytes`), and the adapter
+  uses it (STA-2794).
+- ee066a8: Public packages carry nothing internal (STA-2876). Examples, fixtures, comments, READMEs and changelogs use neutral
+  names (acme, bistro, `dev.example`, `/Users/me`) instead of internal product, person, host, account and vault names.
+  
+  `@stackra/runway`: a pull request's preview host lives in the product's own zone. Set
+  `environments.preview.domains.pullRequestZone` in the root runway (for example `preview.example`); a pull-request
+  `publishProduct` without it is refused before any upload or write. `pullRequestPreviewHost(product, n, zone)` takes the
+  zone and refuses one that is not a lowercase host name of two labels or more, and `PULL_REQUEST_PREVIEW_SETTINGS` no
+  longer has `zone`.
+  
+  `@stackra/infra-testbed`: the boxes' EC2 key pair is a stack setting, `AwsTestbedOptions.keyPair` (Pulumi config
+  `keyPair`). `TESTBED_DEFAULTS` now defaults `keyPair` to `stackra-testbed`, `keyFile` to `~/.ssh/stackra-testbed.pem`
+  and `awsProfile` to `figentra`; a stack that uses another pair names it.
+- Updated dependencies [ee066a8]
+  - @stackra/support@0.34.0
+  - @stackra/errors@0.34.0
+  - @stackra/money@0.34.0
+  - @stackra/contracts@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

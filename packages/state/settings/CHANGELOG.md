@@ -1,5 +1,28 @@
 # @stackra/settings
 
+## 0.34.0
+
+### Patch Changes
+
+- Updated dependencies [b30777a]
+- Updated dependencies [72b14d3]
+- Updated dependencies [fa7235b]
+- Updated dependencies [5d0e7b5]
+- Updated dependencies [ee066a8]
+- Updated dependencies [80130cb]
+  - @stackra/database@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/ui@0.34.0
+  - @stackra/tenancy@0.34.0
+  - @stackra/icons@0.34.0
+  - @stackra/errors@0.34.0
+  - @stackra/i18n@0.34.0
+  - @stackra/market-packs@0.34.0
+  - @stackra/model@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes
