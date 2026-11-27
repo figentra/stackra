@@ -6,7 +6,8 @@
  *          35-day snapshot copies in the backup account), the files bucket (when a service default puts
  *          `filesystem.disk` on `s3`; media stores through it and a runway `media.disk` is ignored, ADR 0465), the static egress addresses, the jurisdiction, the GitHub repository and the
  *          Encore Cloud account link. Backups never leave the jurisdiction: an environment with backups whose AWS
- *          regions are not the foundation's region, or sit in another jurisdiction, is refused.
+ *          regions are not the foundation's region, or sit in another jurisdiction, is refused, and so is the
+ *          `guard_duty` media scanner over a files bucket with `shared.buckets.versioning: false` (STA-669).
  * Boundary: plain data in and out, so gen can write the result as `<env>.infra.config.json`; account ids, amounts and
  *           the Encore link stay `ref:<path>` until the Pulumi program resolves them. The app origins come from gen,
  *           which knows the app members' hosts; the root runway does not list them.
@@ -43,8 +44,9 @@ function onS3Of(settings: InfraRunway["environments"][string] | undefined): bool
  * @param environment - the environment the Pulumi stack deploys.
  * @param origins - the app origins that upload files straight to the bucket (`https://console.acme.example`).
  * @throws RunwayInvalidError when the environment names no account, a budget has no amount for its account, backups
- *         have no backup account or would be copied out of an environment region's jurisdiction, or an `encore-cloud`
- *         environment has no Encore account link.
+ *         have no backup account or would be copied out of an environment region's jurisdiction, an `encore-cloud`
+ *         environment has no Encore account link, or the `guard_duty` scanner (`media.scanner`) is selected over a
+ *         files bucket with versioning off.
  * @throws TypeError when an origin is not `https://<host>[:port]`.
  * @example
  * const config = awsBaselineConfig(root, "staging", ["https://console.staging.acme.example"]);
@@ -119,6 +121,17 @@ export function awsBaselineConfig(
 
   const onS3 = onS3Of(settings);
   const buckets = settings?.shared?.buckets;
+  // GuardDuty tags one object version; the guard_duty scanner pins its verdict to that version (STA-669).
+  if (
+    onS3 &&
+    settings?.defaults?.service?.config?.media?.scanner === "guard_duty" &&
+    buckets?.versioning === false
+  )
+    issues.push({
+      path: `environments.${environment}.shared.buckets.versioning`,
+      message:
+        "The guard_duty scanner pins GuardDuty's verdict to an object version: keep versioning on, or select clamav",
+    });
   const egress = settings?.shared?.network?.egress;
 
   const onEncore = settings?.destinations?.services === "encore-cloud";

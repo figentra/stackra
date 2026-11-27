@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: integration tests of `GuardDutyFileScannerDriver` on a real S3 API: the verdict GuardDuty tags on an object
- *          is pinned to the version (versioned bucket) or the ETag and last write (unversioned bucket) the head saw,
- *          and a clean tag is `clean` only for the caller's bytes; a key written again under the caller (a second PUT
+ *          is pinned to the version the head saw, and a clean tag is `clean` only for the caller's bytes; an
+ *          unversioned bucket is refused; a key written again under the caller (a second PUT
  *          through the still-valid signed upload URL, then tagged clean) is `pending`. `MediaLibrary.claim` over the
  *          `s3` disk then places nothing on that first claim and, claimed again, places the bytes GuardDuty tagged
  *          (STA-669).
@@ -183,20 +183,15 @@ describe("the guard_duty scanner on a real S3 API (STA-669)", () => {
     });
   });
 
-  it("pins an unversioned object by its ETag: clean for its bytes, pending for others", async () => {
+  it("refuses an unversioned bucket, even for a clean tag on the caller's bytes", async () => {
     await createBucket("plain", false);
     const scanner = new GuardDutyFileScannerDriver(filesOf("plain"));
     await put("plain", "uploads/upl_4", SECOND);
     await tag("plain", "uploads/upl_4", "NO_THREATS_FOUND");
 
-    expect(await scanner.scan("uploads/upl_4", async () => SECOND)).toEqual({
-      verdict: ScanVerdict.Clean,
-      threats: [],
-    });
-    expect(await scanner.scan("uploads/upl_4", async () => FIRST)).toEqual({
-      verdict: ScanVerdict.Pending,
-      threats: [],
-    });
+    await expect(scanner.scan("uploads/upl_4", async () => SECOND)).rejects.toThrow(
+      /needs a versioned bucket/,
+    );
   });
 
   it("reports THREATS_FOUND on the current version as infected", async () => {

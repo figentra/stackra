@@ -53,9 +53,10 @@ Entries `.`, `./contracts`, `./node`, `./react`, `./testing`.
   `MediaConfig.environment` is deployed (`isDeployedEnvironment` of @stackra/config). That field is mapped to
   `STACKRA_ENVIRONMENT` and read from the runtime only (STA-2844); never give it a default other than `dev`, a value
   from another source, or an environment list of this package's own.
-- `guard_duty` calls a file `clean` only when the tagged object is the caller's bytes (pinned by `VersionId`, else
-  `If-Match` on the ETag and the same last write, then compared). Never read the tag of "the latest object" alone: the
-  key can be written again through a still-valid signed URL while a claim runs (STA-669).
+- `guard_duty` calls a file `clean` only when the tagged object is the caller's bytes (pinned by `VersionId`, then
+  compared). It requires a versioned bucket and refuses an object with no version; never fall back to an ETag pin or to
+  the tag of "the latest object": the key can be written again through a still-valid signed URL while a claim runs
+  (STA-669).
 - Gen binds `MediaLibrary` with `FileSystem`, `MediaConfig`, `Clock` and `FileScanner` (its `PLATFORM_BINDINGS` row,
   ADR 0465). Its `Uploader` and `FileScanner` candidates come from this package's manifest (STA-1297) and
   `FileSystem`'s from `@stackra/filesystem`'s: `memory` for each, so `.useDrivers("memory")` binds it. A host that injects `MediaLibrary`

@@ -19,9 +19,9 @@ reader of `@stackra/config` (a runway or test value for it fails boot), and a `p
 boot with `media.scanner: memory` fails with `ConfigInvalidError` on `scanner`. Set `config.media.scanner` to
 `guard_duty` or `clamav` for each deployed environment in runway before upgrading. The `guard_duty` scanner now pins
 GuardDuty's verdict to the bytes the library places: it reads the tag of the object version it heads, and a clean tag
-counts only when that object (by `VersionId`, else `If-Match` on its ETag) holds the caller's bytes; otherwise the
-verdict is `pending` and the next claim reads the object anew. Its role needs `s3:GetObject` besides
-`s3:GetObjectTagging` (and the version permissions on a versioned bucket).
+counts only when that version holds the caller's bytes; otherwise the verdict is `pending` and the next claim reads
+the object anew. It requires a versioned bucket: an object with no version is refused with a `TypeError` (the claim
+keeps the upload). Its role needs `s3:GetObject`, `s3:GetObjectVersion` and `s3:GetObjectVersionTagging`.
 
 Breaking for code that builds `MediaLibrary` by hand: its constructor takes the scanner as a fourth argument
 (`new MediaLibrary(disk, config, clock, new MemoryFileScannerDriver())` in a test). Gen's wiring binds it

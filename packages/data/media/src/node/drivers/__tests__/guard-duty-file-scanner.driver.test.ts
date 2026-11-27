@@ -2,9 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `GuardDutyFileScannerDriver`: each GuardDuty status mapped to a verdict, with no tag as
  *          `pending`; the tag read pinned to the version the head saw; a clean tag called `clean` only when the object
- *          it sits on is the caller's bytes (by `VersionId` in a versioned bucket, by `If-Match` on the ETag and the
- *          same last write in an unversioned one), and `pending` when the object was written again under the caller
- *          (STA-669); a config without a bucket is refused.
+ *          it sits on is the caller's bytes (by `VersionId`), and `pending` when the object was written again under
+ *          the caller (STA-669); an object with no version (an unversioned bucket) is refused before any tag is read;
+ *          a config without a bucket is refused.
  * Boundary: test only; `S3Client.prototype.send` is replaced by an in-memory object, so no request leaves the process.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0354; ADR 0222; STA-669.
@@ -114,19 +114,16 @@ describe("GuardDutyFileScannerDriver", () => {
   });
 
   it.each([undefined, "null"])(
-    "pins an unversioned object (version %s) by its ETag",
+    "refuses an object with no version (%s): the bucket must be versioned",
     async (version) => {
       const { driver, inputs } = scanner({ status: "NO_THREATS_FOUND", version });
-      expect(await driver.scan("uploads/upl_1", reader())).toEqual({
-        verdict: "clean",
-        threats: [],
-      });
-      expect(inputs(GetObjectTaggingCommand)).toEqual([
-        { Bucket: "acme-files", Key: "uploads/upl_1" },
-      ]);
-      expect(inputs(GetObjectCommand)).toEqual([
-        { Bucket: "acme-files", Key: "uploads/upl_1", IfMatch: '"etag-1"' },
-      ]);
+      const read = reader();
+      await expect(driver.scan("uploads/upl_1", read)).rejects.toThrow(
+        /needs a versioned bucket: turn versioning on for filesystem\.s3\.bucket/,
+      );
+      expect(inputs(GetObjectTaggingCommand)).toEqual([]);
+      expect(inputs(GetObjectCommand)).toEqual([]);
+      expect(read).not.toHaveBeenCalled();
     },
   );
 
@@ -144,33 +141,6 @@ describe("GuardDutyFileScannerDriver", () => {
     const read = reader(new TextEncoder().encode("%PDF-1.7 shorter"));
     expect(await driver.scan("uploads/upl_1", read)).toEqual({ verdict: "pending", threats: [] });
     expect(inputs(GetObjectCommand)).toEqual([]);
-  });
-
-  it("is pending when an unversioned object was written again since the head (If-Match fails)", async () => {
-    const changed = Object.assign(
-      new Error("At least one of the pre-conditions you specified did not hold"),
-      {
-        name: "PreconditionFailed",
-        $metadata: { httpStatusCode: 412 },
-      },
-    );
-    const { driver } = scanner({ status: "NO_THREATS_FOUND", getError: changed });
-    expect(await driver.scan("uploads/upl_1", reader())).toEqual({
-      verdict: "pending",
-      threats: [],
-    });
-  });
-
-  it("is pending when an unversioned object was written again with the same ETag, and frees the body", async () => {
-    const { driver, destroy } = scanner({
-      status: "NO_THREATS_FOUND",
-      getLastModified: new Date("2026-11-27T08:00:05Z"),
-    });
-    expect(await driver.scan("uploads/upl_1", reader())).toEqual({
-      verdict: "pending",
-      threats: [],
-    });
-    expect(destroy).toHaveBeenCalledOnce();
   });
 
   it("rethrows a read that fails for another reason", async () => {

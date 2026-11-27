@@ -112,7 +112,12 @@ const ENVIRONMENT = z.looseObject({
     .looseObject({
       service: z
         .looseObject({
-          config: z.looseObject({ filesystem: DISK }).optional(),
+          config: z
+            .looseObject({
+              filesystem: DISK,
+              media: z.looseObject({ scanner: z.string().optional() }).optional(),
+            })
+            .optional(),
         })
         .optional(),
     })

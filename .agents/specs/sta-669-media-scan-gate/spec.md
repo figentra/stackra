@@ -22,7 +22,10 @@ every file `MediaLibrary` places or links, and records the public contract that 
 The CTO's verdict on stackra#1094 (2026-11-26) asked for two more changes, built here: the `media.scanner` default
 `memory` marks every file but the EICAR test file clean, so it is refused outside `dev` and `test` at boot through the
 one environment reader of STA-2844 (merged as stackra#1166); and the `guard_duty` scanner checks the object's version or
-ETag, so GuardDuty's clean tag on other bytes than the ones the library places never counts.
+ETag, so GuardDuty's clean tag on other bytes than the ones the library places never counts. The CTO's approval of
+2026-11-27 adds two conditions, built here too: `guard_duty` requires a versioned bucket (the driver refuses an object
+with no version, and the AWS foundation refuses `guard_duty` over `shared.buckets.versioning: false`), and the bucket's
+malware-protection wiring is a tracked issue, STA-2912.
 
 ### Sources
 
@@ -41,6 +44,8 @@ ETag, so GuardDuty's clean tag on other bytes than the ones the library places n
   (the pinned verdict); `@stackra/config`'s `readEnvironment`, `isDeployedEnvironment` and `StackraEnvironment`
   (STA-2844); ADR 0266 (decision 2) and ADR 0296 (amendment 2026-11-26)
 - FR-001 to FR-011 come from these sources; nothing was asked of the owner.
+- FR-012 comes from the CTO's approval of stackra#1094 on 2026-11-27 (require bucket versioning when `guard_duty` is
+  selected; track the bucket's malware-protection wiring).
 
 ## Impact
 
@@ -58,8 +63,9 @@ ETag, so GuardDuty's clean tag on other bytes than the ones the library places n
   `MediaOptions`, `MediaConfig$`) gains `environment: StackraEnvironment`, mapped to `STACKRA_ENVIRONMENT` and
   runtime-only (a new `env` row in the manifest); a deployed environment (`preview`, `staging`, `production`) with
   `scanner: memory` now fails boot with `ConfigInvalidError`. The `guard_duty` scanner sends `HeadObject` and
-  `GetObject` besides `GetObjectTagging`, so its role needs `s3:GetObject` (and `s3:GetObjectVersion`,
-  `s3:GetObjectVersionTagging` on a versioned bucket)
+  `GetObject` besides `GetObjectTagging`, so its role needs `s3:GetObject`, `s3:GetObjectVersion` and
+  `s3:GetObjectVersionTagging`; it requires a versioned bucket, and `awsBaselineConfig` of @stackra/infra-aws refuses
+  `media.scanner: guard_duty` over `shared.buckets.versioning: false`
 - **Cross-service events**: none
 - **Tenancy and data**: no table; the staged upload record `uploads/<id>.json` gains an optional `retainUntil` (read
   back tolerantly, so records written before the change still parse)
@@ -182,10 +188,9 @@ the latest tag would clear unscanned bytes.
 
 1. **Given** a versioned bucket and a clean tag on the version the head sees, **When** that version holds the caller's
    bytes, **Then** the verdict is `clean`.
-2. **Given** a clean tag on a later version (or, unversioned, on an object whose bytes differ from the caller's),
-   **When** scanned, **Then** the verdict is `pending`.
-3. **Given** an unversioned key written again between the head and the read-back (`If-Match` fails, or the same ETag
-   with another last write), **When** scanned, **Then** the verdict is `pending`.
+2. **Given** a clean tag on a later version, **When** scanned, **Then** the verdict is `pending`.
+3. **Given** an unversioned bucket, **When** an object is scanned, **Then** the driver refuses it before reading any
+   tag, naming `filesystem.s3.bucket` versioning, and the claim keeps the upload.
 
 ### Edge Cases
 
@@ -197,8 +202,8 @@ the latest tag would clear unscanned bytes.
   like any expired upload, and the staged bytes are cleaned by the bucket's `uploads/` lifecycle.
 - **EC-04**: An upload record written before this change (no `retainUntil`) still parses.
 - **EC-05**: A misspelt `STACKRA_ENVIRONMENT` (`prod`) fails boot on `environment`; it never reads as `dev`.
-- **EC-06**: An unversioned key written again with identical bytes keeps its ETag; the read-back's last write differs,
-  so the verdict is `pending` (one more claim), never a tag of an object the head did not see.
+- **EC-06**: A bucket with versioning off or suspended answers no version (or `null`): the `guard_duty` driver refuses
+  the object rather than pin a verdict by ETag, so nothing is placed or linked until versioning is on.
 
 ## Requirements
 
@@ -226,8 +231,9 @@ the latest tag would clear unscanned bytes.
 - **FR-010**: IF `media.scanner` is `memory` and `isDeployedEnvironment(environment)` is true THEN THE `MediaConfig`
   schema SHALL refuse the configuration with an issue on `scanner`, so boot fails.
 - **FR-011**: WHEN the `guard_duty` scanner reads a `NO_THREATS_FOUND` tag THE driver SHALL call the file `clean` only
-  if the tagged object, pinned by `VersionId` or else by `If-Match` on its ETag and the same last write, holds exactly
-  the caller's bytes, and SHALL answer `pending` otherwise.
+  if the tagged object, pinned by `VersionId`, holds exactly the caller's bytes, and SHALL answer `pending` otherwise.
+- **FR-012**: THE `guard_duty` scanner SHALL require a versioned bucket: an object with no version is refused, and the
+  AWS foundation refuses `media.scanner: guard_duty` over a files bucket with versioning off.
 
 ### Key Entities
 
@@ -259,13 +265,19 @@ the latest tag would clear unscanned bytes.
   the closed list SHALL fail it too.
 - **AC-011**: WHEN a clean tag sits on other bytes than the caller's THE `guard_duty` scanner SHALL answer `pending`,
   so `MediaLibrary.claim` places nothing.
+- **AC-012**: IF the object `guard_duty` heads has no version THEN THE driver SHALL throw a `TypeError` naming the
+  bucket's versioning before it reads a tag or the bytes, so `MediaLibrary.claim` keeps the upload and places nothing.
+- **AC-013**: IF `guard_duty` runs over an unversioned files bucket THEN THE foundation SHALL refuse it: `awsBaselineConfig`
+  throws `RunwayInvalidError` at `environments.<env>.shared.buckets.versioning` for `media.scanner: guard_duty` over the
+  `s3` disk with `shared.buckets.versioning: false`.
 
 ## Success Criteria
 
 - **SC-001**: The scan-gate cases in `media-library.service.test.ts` pass and fail when the gate is reverted —
   verified by: unit
 - **SC-002**: The clamd integration suite passes on a Testcontainers `clamav/clamav:1.4` — verified by: integration
-- **SC-003**: The touched members' typecheck, lint, format and tests pass on the box — verified by: manual (box log)
+- **SC-003**: The touched members' typecheck, lint, format and tests pass on a Linux build machine — verified by:
+  manual (run log)
 - **SC-004**: The refusal cases fail when the schema's refinement is reverted, and the `guard_duty` cases (unit and
   LocalStack) fail on the driver as it was — verified by: unit and integration
 
@@ -279,17 +291,19 @@ the latest tag would clear unscanned bytes.
 - An exhaustive `switch` over `UploadRejectedError.reason` adds `malware` and `unscannable`.
 - The CDN must serve `public/*` only, never `uploads/*` (already the ADR 0222 key layout).
 - Before upgrading, set `config.media.scanner` to `guard_duty` or `clamav` in runway for every deployed environment;
-  until then the deployment's boot fails on `scanner`. Give the `guard_duty` role `s3:GetObject` (and the version
-  permissions on a versioned bucket).
+  until then the deployment's boot fails on `scanner`. Give the `guard_duty` role `s3:GetObject`,
+  `s3:GetObjectVersion` and `s3:GetObjectVersionTagging`.
+- `guard_duty` now requires a versioned files bucket. An unversioned bucket was pinned by ETag before; it is now
+  refused at scan time (the upload is kept) and at foundation config (`shared.buckets.versioning: false` with
+  `guard_duty`). Versioning is on by default; a runway that turned it off turns it back on or selects `clamav`.
 
 ## Risks
 
 - Files a deployment's memory scanner already passed before this change keep their stored `clean`; re-scanning them
   is the owning service's job (the refusal stops new ones).
-- In an unversioned bucket the pin is the ETag and the last write (one-second resolution): a tag read can only belong
-  to another write if GuardDuty scanned and tagged it between two requests; turn versioning on to pin by version.
 - The `guard_duty` driver depends on the infrastructure package turning malware protection on for the files bucket;
-  that wiring is a follow-up.
+  that wiring is tracked as STA-2912. Until it lands, a `guard_duty` deployment gets no tag and every claim stays
+  `pending` (nothing unscanned is served).
 - `claim` now reads the whole staged file into memory (bounded by the bucket's `maxBytes`), and linking a pre-gate
   record reads it once for the scan.
 
@@ -307,12 +321,17 @@ the latest tag would clear unscanned bytes.
 
 - 2026-11-27: the CTO's verdict of 2026-11-26 adds FR-009 to FR-011, AC-009 to AC-011, User Stories 4 and 5, EC-05,
   EC-06 and SC-004; the memory-default risk is closed by FR-010.
+- 2026-11-27: the CTO's approval conditions add FR-012, AC-012 and AC-013 (versioning required with `guard_duty`;
+  EC-06 and the unversioned scenario rewritten) and track the bucket's malware-protection wiring as STA-2912.
 
 ## Status history
 
 - 2026-11-26 → Draft (from STA-669 and the diff on the branch)
 - 2026-11-26 → Clarified (no open question: every answer comes from ADR 0222, ADR 0354 and the code)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 → Tasked (tasks.md; built on the same branch)
 - 2026-11-27 → Implementing (built in this branch, with the CTO's changes of 2026-11-26 on the STA-2844 reader;
   awaiting the CTO's approval)
+- 2026-11-27 → Implementing (CTO conditions: versioning required with `guard_duty`, AC-012 and AC-013; the bucket's
+  malware-protection wiring tracked as STA-2912)

@@ -59,6 +59,7 @@ it clean only when that object is the caller's bytes.
 - **P-007**: Every `MediaFile` that `claim` or `store` returns has `scan` equal to `clean` — Validates: FR-007
 - **P-008**: `MediaConfig` takes `scanner: memory` only in `dev` or `test`, and `environment` from no value — Validates: FR-009, FR-010
 - **P-009**: `guard_duty` is `clean` only when the pinned object equals the caller's bytes, else `pending` — Validates: FR-011
+- **P-010**: `guard_duty` never answers for an object with no version, and the AWS foundation never pairs it with an unversioned files bucket — Validates: FR-012
 
 ## Architecture overview
 
@@ -81,8 +82,11 @@ adds the token so generated wiring resolves the configured scanner.
 - `MediaConfig`, `MediaOptions`, `MEDIA_CONFIG_SCHEMA` (media): `environment` mapped to `STACKRA_ENVIRONMENT`; a
   `superRefine` refuses `scanner: memory` where `isDeployedEnvironment` is true (the same shape as `StoresConfig` of
   @stackra/actions); the manifest's `env` row.
-- `GuardDutyFileScannerDriver` (media): `HeadObject`, then `GetObjectTagging` of that version, then for a clean tag
-  `GetObject` by `VersionId` (or `If-Match` and the same last write) compared with `read()`; a `412` is `pending`.
+- `GuardDutyFileScannerDriver` (media): `HeadObject` (an object with no version is refused: the bucket must be
+  versioned), then `GetObjectTagging` of that version, then for a clean tag `GetObject` by `VersionId` compared with
+  `read()`.
+- `awsBaselineConfig` (infra-aws): refuses `media.scanner: guard_duty` over the `s3` disk with
+  `shared.buckets.versioning: false`; `INFRA_RUNWAY_SCHEMA` reads `defaults.service.config.media.scanner`.
 
 ## Files and folders
 
@@ -166,9 +170,9 @@ Promise<string>` (now `async`; may raise `ScanPendingError`, `FileBlockedError`)
 The gate enforces ADR 0222's "an unscanned file is never served": `uploads/*` is never served, and a file crosses to
 `public/` or `private/` only on `clean`. Writing the scanned bytes instead of moving the staged object closes a
 time-of-check window through the still-valid signed URL. The same window on the GuardDuty side is closed by pinning
-the tag to the version (or ETag and last write) and comparing that object with the bytes placed. The `memory` scanner is
+the tag to the version and comparing that object with the bytes placed; a bucket without versioning is refused. The `memory` scanner is
 refused in every deployed environment, judged by the one reader from the runtime only, so runway cannot relax it. No
-permission or tenant change. Residual risks (GuardDuty bucket wiring, unversioned buckets) are named in the spec's
+permission or tenant change. The residual risk (the GuardDuty bucket wiring, STA-2912) is named in the spec's
 Risks.
 
 ## Testing strategy
@@ -183,10 +187,12 @@ Risks.
 - Error shape: `file-blocked.error.test.ts`, `scan-pending.error.test.ts`; exports: `core/__tests__/index.test.ts`.
 - AC-009, AC-010: `packages/data/media/src/config/__tests__/media.config.test.ts` and
   `src/core/constants/__tests__/media-config-schema.constant.test.ts`; they fail with the refinement reverted.
-- AC-011: `packages/data/media/src/node/drivers/__tests__/guard-duty-file-scanner.driver.test.ts` (versioned,
-  unversioned, `412`, same ETag with another last write, size mismatch) and
+- AC-011, AC-012: `packages/data/media/src/node/drivers/__tests__/guard-duty-file-scanner.driver.test.ts` (versioned,
+  other bytes, size mismatch, no version refused) and
   `guard-duty-file-scanner.driver.int.test.ts` on Testcontainers `localstack/localstack:4.4.0`, including a
   `MediaLibrary.claim` over the `s3` disk; both fail on the driver as it was.
+- AC-013: `packages/infrastructure/infra-aws/src/core/functions/__tests__/aws-baseline-config.function.test.ts`
+  ("refuses the guard_duty scanner over a files bucket with versioning off"); it fails with the check removed.
 
 ## Rollout
 

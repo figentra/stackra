@@ -192,11 +192,12 @@ removes uploads nobody claimed and their records.
 `FileScanner` (`./contracts`) scans every file before `MediaLibrary` places or links it (the scan gate above):
 `guard_duty` reads the
 `GuardDutyMalwareScanStatus` tag GuardDuty Malware Protection writes on the object (no tag yet is `pending`), pinned
-to the object it heads: the tag of that version (`VersionId` in a versioned bucket), and for a clean tag that object
-read back (by `VersionId`, else `If-Match` on its ETag with the same last write) and compared with the bytes the
-library holds, so a clean tag on other bytes is `pending`, never `clean`. Its role needs `s3:GetObject` and
-`s3:GetObjectTagging` (plus `s3:GetObjectVersion` and `s3:GetObjectVersionTagging` on a versioned bucket; versioning
-pins the verdict exactly),
+to the object version it heads: the tag of that version, and for a clean tag that version read back and compared with
+the bytes the library holds, so a clean tag on other bytes is `pending`, never `clean`. It requires a versioned bucket:
+an object with no version is refused (a `TypeError` naming `filesystem.s3.bucket`; the claim keeps the upload), and
+`awsBaselineConfig` of @stackra/infra-aws refuses `guard_duty` over `shared.buckets.versioning: false`. Its role needs
+`s3:GetObject`, `s3:GetObjectVersion` and `s3:GetObjectVersionTagging`; turning GuardDuty Malware Protection on for the
+bucket is tracked as STA-2912,
 `clamav` streams the bytes to clamd (`INSTREAM`) where GuardDuty is not offered (GCP Dammam, a local stack), and
 `memory` finds only the EICAR test file. Verdicts are `clean`, `infected`, `pending` and `failed`.
 
