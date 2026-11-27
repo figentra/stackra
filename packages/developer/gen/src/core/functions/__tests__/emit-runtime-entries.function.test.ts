@@ -5,10 +5,11 @@
  *          its `createApp` takes and loading the route table and blocks this run writes, the native one of a
  *          web-and-native app on `nativeWiring`; a package and a worker get none; a service with seeders and a boot
  *          gets `seed` (STA-1709), which registers factory pairs and runs hosted package seeders
- *          first, in module order (STA-2061).
+ *          first, in module order (STA-2061); the server and seed entries hand `bootApp` runway's config values when gen
+ *          writes them (STA-2798).
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0295 (decisions 7 to 9).
+ * Governing contract: ADR 0022 (test placement); ADR 0295 (decisions 7 to 9); ADR 0296 (decision 1); STA-2798.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -97,6 +98,18 @@ describe("emitRuntimeEntries", () => {
     );
   });
 
+  it("hands createApp runway's config values when gen writes them (STA-2798)", () => {
+    const content = emitRuntimeEntries(COMMERCE_IR, [
+      ".stackra/gen/boot.ts",
+      ".stackra/gen/runway-config.ts",
+    ])[0]?.content;
+    expect(content).toContain('import { runwayConfig } from "#stackra/runway-config";');
+    expect(content).toContain(
+      "export const app = await createApp(CommerceModule, { wiring, boot, runway: runwayConfig });",
+    );
+    expect(emitRuntimeEntries(COMMERCE_IR)[0]?.content).not.toContain("runway");
+  });
+
   it("writes one entry per client runtime of an app's targets", () => {
     const app = {
       ...COMMERCE_IR,
@@ -166,6 +179,17 @@ describe("emitRuntimeEntries", () => {
         '      { key: "orders.demo", module: "orders", profile: "demo", type: OrdersDemoSeeder },',
       );
       expect(content).toContain("    argv: process.argv.slice(2),");
+    });
+
+    it("boots with runway's values of the seeded environment when gen writes them (STA-2798)", () => {
+      const content =
+        emitRuntimeEntries(ir, [".stackra/gen/boot.ts", ".stackra/gen/runway-config.ts"]).find(
+          (file) => file.path === ".stackra/entry/seed.ts",
+        )?.content ?? "";
+      expect(content).toContain('import { runwayConfig } from "#stackra/runway-config";');
+      expect(content).toContain(
+        "const { container } = await bootApp(wiring, { roots: [CommerceModule], env: process.env, runway: runwayConfig });",
+      );
     });
 
     it("lists the constructor tokens of a seeder that injects (STA-1698)", () => {

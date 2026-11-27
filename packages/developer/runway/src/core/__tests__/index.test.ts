@@ -70,6 +70,7 @@ describe("@stackra/runway", () => {
       "WorkerPreset",
       "WorkerVersionProof",
       "baseUrlOf",
+      "checkActionStores",
       "checkDestinations",
       "checkEnvironmentRegion",
       "checkHosts",
