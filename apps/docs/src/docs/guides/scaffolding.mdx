@@ -22,6 +22,28 @@ cd services/demo && stackra gen && stackra test
 
 `--area` is required (`app`, `admin`, `public` or `platform`): it sets the service's auth exposure, so it is never defaulted (ADR 0082). `--data` adds the database test peers, `@stackra/testing`, an example module (`src/modules/notes/`: a model, its migration, a unit test on PGlite and one `.int.test.ts`) and a `test:int` script (`stackra test --tier int`, which needs Docker). Writing a service writes no tool config: gen writes its Vitest, tsdown and integration-tier configs into `.stackra/` on its first run.
 
+## Pieces of a feature
+
+Inside a service, the same command adds the pieces of a feature, each in the shape gen checks, so the next `stackra gen` passes with no refusal:
+
+```bash
+stackra new module orders --fields title:string,notes:text?
+stackra new action create-order --module orders
+stackra new query list-orders --module orders
+stackra new migration add-due-at-to-orders --module orders --fields dueAt:timestamp?
+pnpm install && stackra gen && stackra test
+```
+
+| Piece       | Name             | Writes                                                                                                                                                                                                            |
+| ----------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `module`    | the module key   | `src/modules/<key>/` with its first model (the singular of the key, or `--model`)                                                                                                                                 |
+| `model`     | the model        | the model with a free public id prefix and `--fields`, its create migration and a PGlite test, its `CrudService`, its view schema and its Permissions class (`read` at L0)                                        |
+| `migration` | `add-...`        | the module's next migration, adding `--fields` as nullable columns (the expand step of [ADR 0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules)), a PGlite test, and the same fields on the model        |
+| `action`    | `<verb>-<model>` | the action (`<model>.<verb>`, `Idempotency.Optional`), its input and output schemas and a unit test, and its permission at L2 in the model's Permissions class; `create`, `update` and `delete` are written whole |
+| `query`     | `<verb>-<model>` | the query, its schemas and a unit test: `get` reads one row by public id, `list` and other verbs read a cursor page                                                                                               |
+
+`--fields` takes `name:type[?]` pairs (`string`, `text`, `int`, `bool`, `timestamp`, `uuid`; `?` for a nullable column). In a service that runs `@stackra/tenancy` a new model is tenant-owned, or global with `--global` ([ADR 0239](/adr/0239-rls-shape-equality-on-tenant-id-with-read-models-for-org-views)). Each piece declares the packages it needs in the service's `package.json`, formats its files, and writes nothing when a file it would create is already there. A custom action verb loads the row and answers it; what the verb changes is yours to write, and the command says where.
+
 ## Kinds
 
 | Kind          | Template                                             | Lands in                     | Pick it for                                                                           |

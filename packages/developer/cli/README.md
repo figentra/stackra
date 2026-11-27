@@ -25,6 +25,7 @@ and `yaml`.
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `stackra new <kind> <name>`                               | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`; `--scope`, `--over`                                                   |
 | `stackra new <tooling\|app:*> <name>`                     | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                               |
+| `stackra new <module\|model\|migration\|action\|query> <name>` | a piece of a feature inside a service (`--module`, `--model`, `--fields`, `--prefix`, `--global`, `--table`, `--member`, `--dry-run`)     |
 | `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest; a warning prints and exits 0, a refusal exits 1         |
 | `stackra dev [--target <t>]`                              | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify                                                         |
 | `stackra dev --surface <surface>`                         | a product surface in its real shell (published or `--os` checkout), Vite with hot reload                                                  |
@@ -263,6 +264,35 @@ example module (`src/modules/notes/`: model, migration, a PGlite unit test, one 
 `--repo <path>` names the workspace for every kind; a service written into a folder with no `pnpm-workspace.yaml` also
 writes a minimal workspace root (`package.json`, `pnpm-workspace.yaml` with the catalogs it names and `stackra` pinned to
 this CLI's version, and an `.npmrc` for the Stackra registry, no token). An existing root is never overwritten.
+
+## Feature pieces
+
+Inside a service, `stackra new` adds the pieces of a feature the way gen expects them, so the next `stackra gen` passes
+strict (STA-2855; ADR 0294, 0305, 0159):
+
+| Kind                                         | Writes                                                                                                                                                                                                                                 |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `module <key> [--model <name>]`              | `src/modules/<key>/` with its first model (the singular of the key, or `--model`), as `model` writes it.                                                                                                                              |
+| `model <name> --module <key> [--fields ...]` | the model (`HasPublicId` with a free prefix, `Timestamps`, the fields), its create migration (next number, nullability and a comment per column) with a PGlite test, its `CrudService`, its view schema and its Permissions (`read` at L0). |
+| `migration <add-...> --module <key> --fields`| the next migration, adding the fields as nullable columns (the expand step), its PGlite test, and the same fields on the model. A NOT NULL column, a drop or a rename is written by hand.                                           |
+| `action <verb>-<model> --module <key>`       | the action (`<model>.<verb>`, users and agents, `Idempotency.Optional`), its input and output schemas and a unit test; its permission is added to the model's Permissions at L2. `create`, `update` and `delete` are complete.        |
+| `query <verb>-<model> --module <key>`        | the query, its schemas and a unit test: `get` reads one row by public id, `list` and any other verb read one cursor page newest first.                                                                                                 |
+
+`--fields` is `name:type[?]`, comma-separated, with `string`, `text`, `int`, `bool`, `timestamp` and `uuid`; `?` makes
+the column nullable. In a service that runs `@stackra/tenancy` a new model is tenant-owned (`BelongsToTenant`,
+`t.belongsToTenant()`), or `Model.global` with `--global`. The prefix is kept clear of the shared registry and the
+service's own models (`--prefix` to pick one). Each kind declares the packages its files and gen's wiring import, with
+the spec the service already uses for `@stackra/*`, formats what it wrote with the workspace's oxfmt, and refuses before
+writing anything when a file it would create exists. The service is the nearest folder with a `stackra.config.ts` that
+calls `defineService`, or `--member <path>`.
+
+```bash
+stackra new module orders --fields title:string,notes:text?
+stackra new action create-order --module orders
+stackra new query list-orders --module orders
+stackra new migration add-due-at-to-orders --module orders --fields dueAt:timestamp?
+pnpm install && stackra gen && stackra test
+```
 
 ## Settings packs
 

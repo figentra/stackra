@@ -15,6 +15,7 @@ workspace root the task commands fan out through Turborepo; in a member they run
 | Command                              | Does                                                                                          |
 | ------------------------------------ | --------------------------------------------------------------------------------------------- |
 | `stackra new <kind> <name>`          | a v3 `package` (`--category`), `service` (`--area`) or `seed-pack`, laid out by the rules     |
+| `stackra new <piece> <name>`         | inside a service: a `module`, `model`, `migration`, `action` or `query` that passes gen       |
 | `stackra gen [--check]`              | derive and write `.stackra/`; `--check` fails when a committed manifest no longer matches     |
 | `stackra dev`                        | gen, then serve: Vite for the web, Expo for phones, Wrangler for Workers, Encore for services |
 | `stackra dev --surface <s> --os <c>` | a product surface in its real OS shell, with hot reload                                       |

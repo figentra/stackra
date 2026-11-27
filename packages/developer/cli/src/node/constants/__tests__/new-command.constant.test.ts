@@ -313,4 +313,54 @@ describe("NEW_COMMAND", () => {
     expect(await refused.code).toBe(1);
     expect(refused.output()).toMatch(/^--description is required/);
   });
+  it("adds a module to the service it runs in, and lists it first on a dry run", async () => {
+    const service = join(root, "services/shop");
+    mkdirSync(join(service, "src"), { recursive: true });
+    writeFileSync(
+      join(service, "stackra.config.ts"),
+      'import { ApiArea, defineService } from "@stackra/contracts";\n\nexport default defineService({ area: ApiArea.App });\n',
+    );
+    writeFileSync(
+      join(service, "package.json"),
+      `${JSON.stringify({ name: "@acme/service-shop", dependencies: { "@stackra/app": "catalog:stackra" } })}\n`,
+    );
+    const feature = (positionals: readonly string[], values: CliContext["values"] = {}) => {
+      const { io, output } = captureIo();
+      const code = NEW_COMMAND.run({
+        cwd: service,
+        io,
+        values,
+        positionals,
+        rest: [],
+        cli: async () => 0,
+      });
+      return { code, output };
+    };
+
+    const dry = feature(["module", "orders"], { "dry-run": true });
+    expect(await dry.code).toBe(0);
+    expect(dry.output()).toContain(
+      "Would create in services/shop:\n  src/modules/orders/access/order.permissions.ts\n",
+    );
+    expect(existsSync(join(service, "src/modules"))).toBe(false);
+
+    const made = feature(["module", "orders"], { fields: "title:string" });
+    expect(await made.code).toBe(0);
+    expect(made.output()).toContain("  src/modules/orders/models/order.model.ts\n");
+    expect(made.output()).toContain(
+      "Changed:\n  package.json (declared @stackra/contracts, @stackra/database",
+    );
+    expect(made.output()).toContain(
+      "next, in services/shop: `pnpm install && stackra gen && stackra test`",
+    );
+
+    const action = feature(["action", "create-order"], { module: "orders" });
+    expect(await action.code).toBe(0);
+    expect(action.output()).toContain(
+      "  src/modules/orders/access/order.permissions.ts (added create at L2)\n",
+    );
+    await expect(feature(["action"]).code).rejects.toThrow(
+      "name the action: stackra new action <name>",
+    );
+  });
 });
