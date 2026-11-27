@@ -1,8 +1,18 @@
-# What guard-public-content.mjs does not read, each entry with why and the issue that removes it. Keep it short.
+# The public-content policy of this repository, read by guard-public-content.mjs (STA-2911): what it denies on top of
+# the recommended deny list built into the guard, which recommended entries it waives, and what it does not read. An
+# invalid entry stops the guard (exit 2), so a typo never turns it off. Keep it short.
+#
+# deny: a term this repository also forbids, as { sha256, length, reason }; never the term itself
+#   (`node tools/scripts/guard-public-content.mjs --hash <term>` prints the entry).
+# waive: an entry of the recommended deny list this repository does not forbid, as { sha256, reason, issue }
+#   (`--recommended` lists them).
+# allow: what the guard does not read, each with why and the issue that removes it:
 # - path: a repository path (`dir/**` or exact): the whole file, unread.
 # - path + lineSha256: one line of that exact file, by the SHA-256 of its text (`--hash-line <path>:<n>` prints
 #   it); the guard reports the entry once the line is gone.
 # - package: a tarball's package name (`--pack`).
+deny: []
+waive: []
 allow:
   - path: "packages/developer/cli/**"
     reason: "The CLI, doctor and starter are scrubbed on their own branch, which owns these files."
