@@ -203,5 +203,6 @@ None.
 - 2026-11-26 · — → Draft · Claude (STA-2872 session) · created from audit item DX1.1
 - 2026-11-26 · Draft → Clarified · Claude (STA-2872 session) · groups, hiding rules and the 25-command target settled
 - 2026-11-26 · Clarified → Planned · Claude (STA-2872 session) · plan.md
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 · Planned → Tasked · Claude (STA-2872 session) · tasks.md
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2872 session) · T001 to T010 on the branch
