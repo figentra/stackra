@@ -5,8 +5,9 @@
  *          and package manager (each also a flag; `--yes` takes every default; without a terminal nothing is asked),
  *          fetches the starter (`@stackra/starter` from the Stackra registry at the CLI's version, or `--starter
  *          <dir|tgz>`), asks where staging and production run (`--region`: any AWS or Google Cloud region id, a key
- *          of the starter's `regions`, or a preset me, eu or ksa; the default keeps the starter's) and places the
- *          root runway there (`placeRegion`), runs the doctor for what the profile needs, writes the profile's files under the chosen
+ *          of the starter's `regions`, or a preset me, eu or ksa; the default is the starter's) and places the
+ *          root runway there (`placeRegion`, for every answer, the starter's own too: staging and production must name
+ *          their `region` for `runway validate`), runs the doctor for what the profile needs, writes the profile's files under the chosen
  *          names, installs, runs `stackra gen` and shows what it wrote as a tree, each step a task, type-checks and tests, makes the
  *          first commit and prints the next steps.
  * Boundary: writes only inside `<directory>` and runs pnpm, gen and git there. The starter tarball is checked
@@ -203,26 +204,28 @@ export class CreateCommand extends Command({
         : { tarballs: tarballSpecs(resolve(cwd, this.tarballs)) }),
     });
     const placed = starterRegion(files);
-    const region = await ask<string | undefined>(this.region, placed.name, () =>
+    // The question's default, `--yes` and a run without a terminal all take the same region.
+    const regionDefault = placed.name ?? "us-east-1";
+    const region = await ask(this.region, regionDefault, () =>
       io.prompt.text({
         message: `Where do staging and production run? ${REGION_FORMS}`,
-        default: placed.name ?? "us-east-1",
+        default: regionDefault,
         validate: (value) =>
           resolveRegion(placed, value) === undefined ? `Name ${REGION_FORMS}` : undefined,
         option: "region",
       }),
     );
-    if (region !== undefined && region !== placed.name) {
-      const resolved = resolveRegion(placed, region);
-      if (resolved === undefined)
-        throw new Error(`--region ${region} is not a region Runway knows: name ${REGION_FORMS}`);
-      const runway = files.get("runway.yaml");
-      if (runway !== undefined)
-        files.set(
-          "runway.yaml",
-          new TextEncoder().encode(placeRegion(new TextDecoder().decode(runway), resolved)),
-        );
-    }
+    // Placed even when the answer is the starter's own region: a starter may list it only in `regions`, and
+    // `checkEnvironmentRegion` refuses a staging or production that names no `region` (STA-2896 review).
+    const resolved = resolveRegion(placed, region);
+    if (resolved === undefined)
+      throw new Error(`--region ${region} is not a region Runway knows: name ${REGION_FORMS}`);
+    const runway = files.get("runway.yaml");
+    if (runway !== undefined)
+      files.set(
+        "runway.yaml",
+        new TextEncoder().encode(placeRegion(new TextDecoder().decode(runway), resolved)),
+      );
 
     if (this.doctor) {
       const results = await io.output.task("Checking the machine", () =>
@@ -296,7 +299,7 @@ export class CreateCommand extends Command({
       name,
       scope,
       edition,
-      ...(region === undefined ? {} : { region }),
+      region,
       profile: this.profile,
       files: files.size,
       generated,

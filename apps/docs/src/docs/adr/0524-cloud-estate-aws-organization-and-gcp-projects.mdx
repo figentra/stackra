@@ -227,7 +227,8 @@ outside the Figentra estate: a team in the US, India or APAC could not say where
   environment.
 - **`stackra create` asks** where staging and production run (`--region`), and writes the answer into the new app's
   root runway: each environment's `region` and `regions`, the root `regions` entry, `targets.encore-cloud.cloud`, and
-  the deprecated `providers.aws.region` while it remains. `--yes` keeps the starter's region.
+  the deprecated `providers.aws.region` while it remains. `--yes` keeps the starter's region and still writes it as
+  staging's and production's `region`, so the new app passes `runway validate`.
 
 Decisions 1 to 3 and 5 are unchanged: Figentra's own estate is still one AWS account and one GCP project per product.
 
