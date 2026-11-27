@@ -48,7 +48,8 @@ describe("postgresTypeOf", () => {
     ["a translated text", field({ kind: "translated", form: "value" }), "jsonb"],
     ["an @Int number", field({ kind: "number" }, [{ name: "Int", options: {} }]), "integer"],
     ["a @Num number", field({ kind: "number" }, [{ name: "Num", options: {} }]), "numeric"],
-    ["the version trait field", field({ kind: "number" }, [], "version"), "integer"],
+    // A trait's column is typed by its TRAIT_COLUMNS row (STA-1408), never by a field's name.
+    ["a version field with no rule", field({ kind: "number" }, [], "version"), undefined],
     ["a number with no rule", field({ kind: "number" }), undefined],
     ["a duration", field({ kind: "duration" }), undefined],
     ["an upload", field({ kind: "upload" }), undefined],

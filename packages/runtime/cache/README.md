@@ -13,7 +13,7 @@ the memory, storage, Valkey, Postgres and Workers KV drivers.
 
 | Symbol                                                   | Entry         | Use                                                                                |
 | -------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------- |
-| `Cache`                                                  | `./contracts` | the port: `get`, `put`, `remember`, `forget`, `forgetTag`                          |
+| `Cache`                                                  | `./contracts` | the port: `get`, `put`, `remember`, `forget`, `forgetTag`, `add`                   |
 | `CacheNamespace`                                         | `./contracts` | the port naming the current call's namespace, put in front of every key            |
 | `CacheLock`                                              | `./contracts` | the port that runs a `remember(..., { lock: true })` fill on one instance          |
 | `CacheMetrics`                                           | `./contracts` | the port that receives a `CacheMetric` per hit, stale hit, miss, load, evict       |
@@ -66,6 +66,10 @@ ctx.afterCommit(() => this.cache.forget(CacheKey.of(Product, product.id)));
 - `remember` runs one load per key at a time: concurrent callers share it. A rejected load stores nothing. A load that a
   `put` or `forget` overtakes still answers its callers but is not stored, so a read that began before a change never
   caches the old value again.
+- `add(key, value, ttl)` stores only when nothing is kept under the key and answers whether it did, atomically across
+  every instance sharing the store (`memory` in one process, `valkey` with `SET NX`, `postgres` with an upsert that
+  replaces only a dead row); `storage` and `workers` have no atomic set-if-absent and reject it. Its lifetime is
+  exact, never jittered. The shared edge nonce store claims request ids with it (ADR 0437).
 - A cached **read** is the query's `cache:` option (ADR 0305 rule 31), not this port. A row read by its id is cached
   by the model trait `Cached({ ttl })` (@stackra/model, served by @stackra/database's `CrudService`). There is no
   `@Cached` decorator and no `ctx.cache`.

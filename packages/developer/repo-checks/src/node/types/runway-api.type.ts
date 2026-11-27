@@ -4,8 +4,10 @@
  *          loads that entry at run time, so this structural type stands in for an import of the package.
  * Boundary: type only; `checkRunwayFiles` receives a value of it, so tests pass a fake.
  * Runtime: node
- * Governing contract: ADR 0296 (runway files are checked against their kind's schema).
+ * Governing contract: ADR 0296 (runway files are checked against their kind's schema; amendment 2026-11-26: a
+ *                     runway `config` block never sets a field only the runtime may set, STA-2844).
  */
+import type { RuntimeOnlyFieldShape } from "#node/types/runtime-only-field-shape.type";
 
 /** The `@stackra/runway` functions the runway-file check uses. */
 export type RunwayApi = {
@@ -39,4 +41,13 @@ export type RunwayApi = {
     root: unknown,
     service: unknown,
   ) => readonly { readonly path: string; readonly message: string }[];
+
+  /** The `config` blocks of a parsed runway that set a runtime-only field (STA-2844; absent before it). */
+  readonly checkRuntimeOnlyConfig?: (
+    document: unknown,
+    fields: readonly RuntimeOnlyFieldShape[],
+  ) => readonly { readonly path: string; readonly message: string }[];
+
+  /** The repository's runtime-only fields, from the `./node` entry (STA-2844; absent before it). */
+  readonly runtimeOnlyFieldsOf?: (root: string) => readonly RuntimeOnlyFieldShape[];
 };

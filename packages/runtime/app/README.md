@@ -47,6 +47,8 @@ peers, each loaded only by the entry that needs it.
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
 | `MemoryEdgeSigningKeysDriver`                | `./server`  | the `memory` `EdgeSigningKeys` driver (tests, local runs)                             |
 | `MemoryEdgeNonceStoreDriver`                 | `./server`  | the `memory` `EdgeNonceStore` driver (tests, a single instance)                       |
+| `SecretsEdgeSigningKeysDriver`               | `./server`  | the `secrets` `EdgeSigningKeys` driver (the bound secret store, read on every check)  |
+| `CacheEdgeNonceStoreDriver`                  | `./server`  | the `cache` `EdgeNonceStore` driver (every instance, over `Cache.add`)                |
 | `OriginGuard`                                | `./server`  | the second server check: a state-changing request only from an allowed origin         |
 | `CsrfGuard`                                  | `./server`  | the third server check: the CSRF header on a cookie-authenticated state change        |
 | `BearerTokenGuard`                           | `./server`  | authentication without the edge: a JWKS-verified `Authorization: Bearer` JWT          |
@@ -100,6 +102,13 @@ bindings, `import.meta.env`), resolves `@Secret` fields by name from the same so
 its base class, so a package that injects its base gets the host's override. A value that breaks its rule fails boot
 with `ConfigInvalidError` naming it; a port with no driver fails with `UnresolvedPortError`. The reporter is the bound
 `ErrorReporter`, or the console when none is bound.
+
+The server `createApp` builds the configuration with `STACKRA_ENVIRONMENT` set to the running environment from the one
+reader (`readEnvironment` of `@stackra/config`), given what the platform reported. A service's generated
+`stackra-encore/<member>/environment.ts` hands Encore's `appMeta().environment` to `providePlatformEnvironment` before
+any other generated file loads the app, so a deployed Encore service (which cannot set the variable) runs as
+`preview`, `staging` or `production`, never `dev`; `dev` or `test` declared on a deployment, a misspelt name, or a
+self-hosted image that reports nothing fails the process at boot (STA-2844).
 
 ## Wiring sections
 
@@ -180,11 +189,26 @@ edge header (an identity header, the signature, the request id or the timestamp)
 request with none is not edge traffic (a service call, a cross-app delivery, a webhook), so it goes on to
 authentication or its endpoint's own signature check. Gen binds the guard in every service.
 
-The key provider and the nonce store are ports chosen by `EdgeConfig` (`app.edge`): `keys` is `memory` (tests, local
-runs; empty, so every signed request is refused) or `env`, which reads the secret `STACKRA_EDGE_SIGNING_KEYS` (the
-edge Worker's signing keys, newest first, comma-separated). `nonces` is `memory` only for now, so a replay is refused
-per instance; a shared store over `Cache.add` follows before any edge goes live. `maxAge` is a getter a host
-overrides in `src/overrides/app/` (ADR 0306).
+The key provider and the nonce store are ports chosen by `EdgeConfig` (`app.edge`). `keys` is `memory` (tests, local
+runs; empty, so every signed request is refused), `env`, which reads the secret `STACKRA_EDGE_SIGNING_KEYS` once at
+boot (the edge Worker's signing keys, newest first, comma-separated), or `secrets`, which reads the same secret (or the
+one `signingKeysSecret` names) from the bound `SecretStore` on every check. Every shipped target's `bootApp` binds the
+environment the process started with as that store, not the wiring's `secrets.store` driver, and nothing reloads it,
+so today `secrets` answers the same keys as `env` and a key rotation (ADR 0437 decision 4) still needs each API
+instance restarted after the new key is listed first: list both keys, restart every instance, then switch the Worker
+to the new key. A reloading boot store is STA-2804. `nonces` is `memory` (one instance: a replay is refused only where it was first seen) or
+`cache`, which claims each request id with `Cache.add`, the cache's atomic set-if-absent, so every instance that
+shares a `valkey` or `postgres` cache refuses a replay. A region with more than one API instance sets `nonces: cache`
+and a shared cache driver before its edge goes live:
+
+```yaml
+# runway.yaml (production)
+config:
+  app: { edge: { keys: env, nonces: cache } }
+  cache: { driver: valkey }
+```
+
+`maxAge` is a getter a host overrides in `src/overrides/app/` (ADR 0306).
 
 ### Bearer tokens (JWKS)
 

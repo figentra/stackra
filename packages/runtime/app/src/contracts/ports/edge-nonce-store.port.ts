@@ -4,7 +4,7 @@
  *          signed edge headers, so a captured request cannot be replayed inside the validity window.
  * Boundary: an abstract class that is its own token, keyed `app.EdgeNonceStore`. `claim` must be atomic: of two
  *           concurrent claims of one id, exactly one wins. The shipped `memory` driver holds one process's ids; a
- *           region with several API instances binds a shared driver (a cache with set-if-absent) by wiring.
+ *           region with several API instances selects `cache`, which claims through the shared `Cache.add`.
  * Runtime: isomorphic
  * Governing contract: ADR 0437 (decision 4 and Consequences: a short-lived store of seen request ids per region).
  */
