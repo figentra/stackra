@@ -80,6 +80,7 @@
   "dependencies": {
     "@stackra/contracts": "workspace:*",
     "@stackra/runway": "workspace:*",
+    "@stackra/skills": "workspace:*",
     "yaml": "catalog:",
     "zod": "catalog:"
   },
