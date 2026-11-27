@@ -29,13 +29,14 @@ description: "Tasks for STA-2919: the developer MCP serves Stackra's conventions
 
 **Independent Test**: `prompts/list` and `prompts/get` against a fixture repository.
 
-- [x] T004 [US3] The prompts in `packages/developer/mcp/src/node/constants/local-prompts.constant.ts`, `packages/developer/mcp/src/node/functions/get-local-prompt.function.ts`, `packages/developer/mcp/src/node/functions/prompt-arguments.function.ts` and `packages/developer/mcp/src/node/types/prompt-message.type.ts`, tested in `packages/developer/mcp/src/node/functions/__tests__/get-local-prompt.function.test.ts` — covers: FR-005, FR-006, FR-007, FR-008, P-002, P-003, AC-005, AC-006, AC-007, EC-03, EC-04, EC-05 — route: package — deps: T003
+- [x] T004 [US3] The prompts in `packages/developer/mcp/src/node/constants/local-prompts.constant.ts`, `packages/developer/mcp/src/node/functions/get-local-prompt.function.ts`, `packages/developer/mcp/src/node/functions/prompt-arguments.function.ts` and `packages/developer/mcp/src/node/types/prompt-message.type.ts`, tested in `packages/developer/mcp/src/node/functions/__tests__/get-local-prompt.function.test.ts` — covers: FR-005, FR-006, FR-007, FR-008, P-002, P-003, AC-005, AC-006, AC-007, AC-008, EC-03, EC-04, EC-05 — route: package — deps: T003
 
 ## Phase 4: The server
 
-- [x] T005 Answer the five methods, advertise the capabilities and take `skills` in `packages/developer/mcp/src/node/functions/serve-local-mcp.function.ts` and `packages/developer/mcp/src/node/types/serve-local-mcp-options.type.ts`, tested in `packages/developer/mcp/src/node/functions/__tests__/serve-local-mcp.function.test.ts` — covers: FR-001, AC-001, AC-002, AC-005, AC-007, EC-06, SC-002 — route: package — deps: T004
+- [x] T005 Answer the five methods, advertise the capabilities and take `skills` in `packages/developer/mcp/src/node/functions/serve-local-mcp.function.ts` and `packages/developer/mcp/src/node/types/serve-local-mcp-options.type.ts`, tested in `packages/developer/mcp/src/node/functions/__tests__/serve-local-mcp.function.test.ts` — covers: FR-001, AC-001, AC-002, AC-005, AC-008, EC-06, SC-002 — route: package — deps: T004
 
 ## Phase 5: Polish
 
 - [x] T006 Document the resources and prompts in `packages/developer/mcp/README.md`, `packages/developer/mcp/AGENTS.md`, `apps/docs/src/docs/cli.mdx`, `apps/docs/src/docs/cli.ar.mdx`, `apps/docs/src/docs/clients-and-tools.mdx`, `apps/docs/src/docs/clients-and-tools.ar.mdx` and `.changeset/mcp-resources-and-prompts.md` — covers: FR-001, AC-001 — route: steward-docs — deps: T005
-- [x] T007 Run the package's tests, typecheck, oxlint and oxfmt, the revert check and the stdio proof, in `packages/developer/mcp/package.json` — covers: SC-001, SC-002, AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007 — route: verify-fix — deps: T006
+- [x] T007 Run the package's tests, typecheck, oxlint and oxfmt, the revert check and the stdio proof, in `packages/developer/mcp/package.json` — covers: SC-001, SC-002, AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008 — route: verify-fix — deps: T006
+- [x] T008 The property tests of P-005, P-006 and P-007 in `packages/developer/mcp/src/node/functions/__tests__/serve-local-mcp.function.test.ts`, `packages/developer/mcp/src/node/functions/__tests__/guidelines-of.function.test.ts` and `packages/developer/mcp/src/node/functions/__tests__/get-local-prompt.function.test.ts`, each failing with its behaviour reverted — covers: FR-001, FR-003, FR-008, P-005, P-006, P-007, AC-001, AC-003, AC-008 — route: package — deps: T007

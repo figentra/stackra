@@ -70,6 +70,9 @@ new `skills` option. The argument check moves to `argumentsOf`, shared by tools 
 - **P-002**: for every prompt and every tool set, the recipe's last numbered steps are the finish steps for that tool set — Validates: FR-006, FR-007
 - **P-003**: for every prompt, `promptArguments` marks required exactly the fields that refuse `undefined` — Validates: FR-005
 - **P-004**: for every URI outside the served set, `readLocalResource` answers `-32002` naming it — Validates: FR-004
+- **P-005**: for every protocol revision a client asks for, `initialize` advertises exactly `tools`, `resources` and `prompts`, and every list method of an advertised capability answers — Validates: FR-001
+- **P-006**: for every skill set and every tool set, `guidelinesOf` holds each always-on rule's body with its headings outside fences one level down (no top-level heading under “Always”), lists every other rule and every skill by URI and description, and ends with `finishSteps` of that tool set — Validates: FR-003
+- **P-007**: for every prompt, a request with an unknown argument, a missing required argument or a non-string argument, an unknown prompt name and a `code` that is not snake_case each answer `-32602` before a manifest is read — Validates: FR-008
 
 ## Architecture overview
 
@@ -154,11 +157,21 @@ are checked by zod first; a member key and a refusal code are restricted to thei
 
 - AC-001, AC-002, AC-004: `serve-local-mcp.function.test.ts` ("serves the guidelines, the manifests, the rules and the
   skills as resources"), `list-local-resources.function.test.ts`, `read-local-resource.function.test.ts`.
+- P-005 (FR-001): `serve-local-mcp.function.test.ts` ("advertises tools, resources and prompts for every revision, and
+  each capability's list method answers"), over `MCP_PROTOCOL_VERSIONS` and an unknown revision.
 - AC-003: `guidelines-of.function.test.ts` (fixtures and the shipped set).
+- P-006 (FR-003): `guidelines-of.function.test.ts` ("holds every always-on rule nested, lists the rest and ends with
+  the finish steps, for every set"), over five skill sets (none, fixtures, the shipped set, its rules, its skills)
+  and three tool sets.
 - AC-005: `finish-steps.function.test.ts`, `get-local-prompt.function.test.ts` ("ends every recipe…"), the server's
   prompt test with a `test` command tool.
-- AC-006, AC-007: `get-local-prompt.function.test.ts`, the server's prompt test.
-- Revert check: the server file from `main` makes the four new server tests fail.
+- AC-006, AC-007, AC-008: `get-local-prompt.function.test.ts`, the server's prompt test.
+- P-007 (FR-008): `get-local-prompt.function.test.ts` ("refuses every invalid request of every prompt as invalid
+  params before reading a manifest"): one manifest is not JSON, so a request that reached the manifests would
+  answer `-32603`; a valid control request does.
+- Revert check: the server file from `main` makes the four new server tests fail. Per property: advertising
+  `tools` only fails P-005; listing always-on rule bodies undemoted fails P-006; reading the manifests before the
+  argument check fails P-007.
 - Manual: the built `stackra mcp` driven over stdio on box 2.
 
 ## Rollout

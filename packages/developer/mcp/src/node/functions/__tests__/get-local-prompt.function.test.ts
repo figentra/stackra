@@ -218,6 +218,45 @@ describe("getLocalPrompt", () => {
       expect.objectContaining({ code: -32_602 }),
     );
   });
+  // P-007: every invalid request of every prompt answers -32602 before a manifest is read. One manifest here is not
+  // JSON, so a request that reached the manifests would answer -32603 instead.
+  it("refuses every invalid request of every prompt as invalid params before reading a manifest", () => {
+    writeFileSync(join(root, "services", "billing", "stackra.manifest.json"), "{ not json");
+    const valid: Record<keyof typeof LOCAL_PROMPTS, Record<string, string>> = {
+      "add-feature": { feature: "Refund an order", member: "commerce" },
+      "fix-gen-drift": { output: "stale" },
+      "explain-refusal": { code: "order_not_payable", message: "Not payable" },
+    };
+    // The control: a valid request that reads the manifests meets the broken one.
+    expect(() => getLocalPrompt(knowledge, "add-feature", valid["add-feature"])).toThrow(
+      expect.objectContaining({ code: -32_603 }),
+    );
+
+    const invalid: [string, unknown][] = [
+      ["deploy", {}],
+      ["", {}],
+      ["explain-refusal", { code: "Order Not Payable" }],
+      ["explain-refusal", { code: "order-not-payable" }],
+    ];
+    for (const [name, args] of Object.entries(valid)) {
+      const prompt = LOCAL_PROMPTS[name as keyof typeof LOCAL_PROMPTS];
+      invalid.push([name, { ...args, extra: "1" }]);
+      for (const argument of promptArguments(prompt.input)) {
+        invalid.push([name, { ...args, [argument.name]: 42 }]);
+        if (argument.required)
+          invalid.push([
+            name,
+            Object.fromEntries(Object.entries(args).filter(([key]) => key !== argument.name)),
+          ]);
+      }
+    }
+    const known = knowledge;
+    for (const [name, args] of invalid) {
+      expect(() => getLocalPrompt(known, name, args), `${name} ${JSON.stringify(args)}`).toThrow(
+        expect.objectContaining({ code: -32_602 }),
+      );
+    }
+  });
 });
 
 describe("promptArguments", () => {

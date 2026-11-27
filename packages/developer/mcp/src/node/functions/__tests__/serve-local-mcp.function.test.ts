@@ -22,6 +22,7 @@ import type { AgentDocument } from "@stackra/skills";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { MCP_PROTOCOL_VERSIONS } from "#node/constants/mcp-protocol-versions.constant";
 import { connectMcp } from "#node/functions/connect-mcp.function";
 import { serveLocalMcp } from "#node/functions/serve-local-mcp.function";
 import type { LocalTool } from "#node/types/local-tool.type";
@@ -285,6 +286,36 @@ describe("serveLocalMcp", () => {
       isError: true,
     });
     expect(run).not.toHaveBeenCalled();
+
+    disconnect();
+    await served;
+  });
+
+  // P-005: whatever revision a client asks for, the three capabilities are advertised and each one's list answers.
+  it("advertises tools, resources and prompts for every revision, and each capability's list method answers", async () => {
+    const { client, served, disconnect } = start(vi.fn<StackraRunner>());
+    const lists: Record<string, readonly string[]> = {
+      tools: ["tools/list"],
+      resources: ["resources/list", "resources/templates/list"],
+      prompts: ["prompts/list"],
+    };
+
+    for (const protocolVersion of [...MCP_PROTOCOL_VERSIONS, "1999-01-01"]) {
+      const { capabilities } = (await client.request("initialize", {
+        protocolVersion,
+        capabilities: {},
+      })) as { capabilities: Record<string, object> };
+      expect(Object.keys(capabilities).toSorted(), protocolVersion).toEqual([
+        "prompts",
+        "resources",
+        "tools",
+      ]);
+      for (const capability of Object.keys(capabilities)) {
+        for (const method of lists[capability] ?? []) {
+          await expect(client.request(method), method).resolves.toBeTypeOf("object");
+        }
+      }
+    }
 
     disconnect();
     await served;

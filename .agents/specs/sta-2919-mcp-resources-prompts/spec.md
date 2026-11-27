@@ -170,7 +170,7 @@ with the manifest or skill it needs attached, ending with `stackra gen --check` 
   otherwise, and the recipes SHALL name only `stackra new` kinds that exist (`service`, `package`). Sources:
   `new-command.constant.ts`
 - **FR-008**: WHEN a prompt is unknown, a required argument is missing, an argument is unknown, or `code` is not
-  snake_case THE server SHALL answer `-32602` before reading anything. Sources: the server's tool-argument check
+  snake_case THE server SHALL answer `-32602` before reading any manifest. Sources: the server's tool-argument check
 
 ### Key Entities
 
@@ -188,9 +188,12 @@ with the manifest or skill it needs attached, ending with `stackra gen --check` 
 - **AC-004**: IF a URI names nothing served THEN THE server SHALL answer `-32002` with the URI.
 - **AC-005**: WHEN any prompt is got THE recipe SHALL end with `stackra gen`, `stackra gen --check` and the tests,
   through `test` when listed and `verify` otherwise.
-- **AC-006**: WHEN `add-feature` names a member with a manifest, or `explain-refusal` names a declared code, THE
-  answer SHALL attach that manifest, or quote the declaring entries and attach the errors skill.
-- **AC-007**: IF a prompt or its arguments are invalid THEN THE server SHALL answer `-32602`.
+- **AC-006**: WHEN `add-feature` names a member that has a committed manifest THE server SHALL attach that
+  member's manifest as `stackra://manifest/<member>`.
+- **AC-007**: WHEN `explain-refusal` names a code that a committed manifest declares THE server SHALL quote every
+  declaring entry with its member and attach `stackra://skills/backend-errors` when the skill set holds it.
+- **AC-008**: IF a prompt or its arguments are invalid THEN THE server SHALL answer `-32602` before reading any
+  manifest.
 
 ## Success Criteria _(mandatory)_
 
@@ -214,7 +217,7 @@ with the manifest or skill it needs attached, ending with `stackra gen --check` 
 
 ## Amendments
 
-None.
+- 2026-11-27 · review: AC-006 split into AC-006 (`add-feature`) and AC-007 (`explain-refusal`) to keep each in EARS form; the former AC-007 is AC-008. FR-008 says "before reading any manifest" (the skill set is still loaded first, EC-06). P-005 to P-007 added in plan.md for FR-001, FR-003 and FR-008, each with a test (T008).
 
 ## Status history
 
