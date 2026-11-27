@@ -5,7 +5,7 @@
  *          tools-stack images behind ports: no Python service, no Python in a member, no Python business logic (moved
  *          from `tools/scripts/python-placement.mjs`).
  * Boundary: walks the checkout and reads names only; writes nothing. Skips `node_modules`, `.git`, `.claude` (agent
- *           worktrees), `.notes` (the private submodule), build output (`dist`, `.turbo`, `.stackra`) and virtual
+ *           worktrees), `.notes` (a git-ignored local notes checkout), build output (`dist`, `.turbo`, `.stackra`) and virtual
  *           environments (`.venv`, `venv`).
  * Runtime: node
  * Governing contract: ADR 0492 (decision 7 and its enforcement list); STA-1637.

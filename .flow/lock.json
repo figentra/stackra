@@ -4,10 +4,10 @@
   "preset": {
     "name": "./packages/developer/flow-preset/preset",
     "version": "0.11.0",
-    "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
+    "digest": "sha256:97075e21f0f291ac92df881ee7ab569bffd21445edb5065a1c9affa5b7cc67a0"
   },
   "profile": "framework",
-  "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
+  "overrides": "sha256:64220bfdec2aa661a5b1cfefde91d12b240b89450f64705f2d6d9a2c5c6b7d2b",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:e9bd4919bafea5d6e8ce7dd7d88a47d8ff841bd48d19ccbad8756ecea302d973",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:a21f86c0761479111b99ec88802b44a06c7a0bcab44a9344fb41c109c197bb35",
@@ -62,7 +62,7 @@
     ".agents/rules/tenancy.md": "sha256:1f4abda4c1b0e5102e574e72f37b57b477a2cfa2d2d541f56d8ff633769c4121",
     ".agents/rules/third-party-sources.md": "sha256:b62ce70f21bf2888f6f49022d3268328e5611037dfa40b251507e685c9b386eb",
     ".agents/rules/versions.md": "sha256:c66b505e4e5077fb3839ef4900738f07d65573c7508e9d77ee1465e964af65ef",
-    ".agents/rules/workspace-layout.md": "sha256:e55675457eca374b3f4b98d885606c9a2e0a697007286bd1c74580d5d2c2f1c2",
+    ".agents/rules/workspace-layout.md": "sha256:dd30c722664bde590b68d7ebc21123c46005e27e8d5fb669f8c4a6442685a912",
     ".agents/rules/worktrees.md": "sha256:c527c9ff0235e157b26e2b0cf1484f34bef6d408f9c99bd085c4c3d259e3f93a",
     ".agents/skills/ai-mcp-tools/SKILL.md": "sha256:1e083a21b8578729f597342f82632418e71342eb8175f728c669516d4fca0de2",
     ".agents/skills/backend-assets-and-storage/SKILL.md": "sha256:5e473f49b8d8d5a738cc91b5648d4141db02f6a2786f7f3bb0406cc9efc250c7",
@@ -76,7 +76,7 @@
     ".agents/skills/docs-adr/SKILL.md": "sha256:bfba4be20e7d835b84b951fc1ac75fcdc8740ac52fcbcf470b3b0e13b5b38007",
     ".agents/skills/docs-spec-flow/SKILL.md": "sha256:e29933de0206a9615ebede28db49f3dae9b0374e25edd3469c8e97ef68b0c09a",
     ".agents/skills/frontend-resource-console/SKILL.md": "sha256:90787dd1601ba9bb7a18397a5c6d048df9d37f007fd9a88e9e90898b924caf53",
-    ".agents/skills/mobile-eas-setup/SKILL.md": "sha256:43955bf2a41217c9413c1b0a75b397bc9cc0cb55a6f7a891a65cf404d007477f",
+    ".agents/skills/mobile-eas-setup/SKILL.md": "sha256:cbf967ab93c5e78a9eadcf6c8fcef594c9cb7d18ffc5b1a06522d564d4d822c8",
     ".agents/skills/mobile-release/SKILL.md": "sha256:8c41b68f6281a219fee484366f1945f0a946aef9d49ff7e772acc1cf5595dc21",
     ".agents/skills/mobile-store-listing/SKILL.md": "sha256:8c0fc8fe35ae34c1b5cc37408518d977a9e6b26bab9a4a3b93ae17053c130e07",
     ".agents/skills/security-tenancy-isolation-test/SKILL.md": "sha256:e9bcc4663caebd3781df317269dc56c97a570e8f17b3976f365d8c1d0e66b23f",
@@ -117,7 +117,7 @@
     "opencode.jsonc": "sha256:91e93423ab0dec77ff76f5916ddc0148f26b4ac8a6bff817df407e6a2f74279b",
     ".opencode/plugins/fflow-guard.mjs": "sha256:771cd2dcb0636bfb9913e0280682baae345586c8dd7b339c556a9907815da867",
     ".mcp.yaml": "sha256:3b9cd6e6f147b2037a293f4b7ef168ff02f5e2eb3293e5c50786dba161660a0f",
-    "AGENTS.md": "sha256:dab4cf454062d629d97175371c2c1d40a21800cb60dd4df29881bad305b97017",
+    "AGENTS.md": "sha256:4e6ea4e38188f522f642bcfd6d59e5e3e51b7e267874de736ee2cf26749959e0",
     "CLAUDE.md": "sha256:1bb66f4650b13073d4dab49176c59479864a28274e4c6fb4a7902500a3c21dfc",
     "lefthook.yml": "sha256:56d729654d9993aebf75d7b7bedf829cbdd138ae121d08f3d30bcbdba9459c6b",
     "README.md": "sha256:ece6c89119dd00daebdee62a167cc671d059619c2b359c9a951729e935c9a102",

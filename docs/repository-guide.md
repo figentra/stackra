@@ -30,7 +30,6 @@ OS and relicensed to MIT on port ([ADR 0084](../apps/docs/src/docs/adr/0084-fige
 | [`.agents/specs/`](../.agents/specs)                   | Figentra Flow specs, one folder per Linear issue (`sta-<n>-<slug>/`)                                    |
 | [`.github/`](../.github)                               | CI (the `Quality Gate`), release and Linear sync workflows, the PR template, CODEOWNERS                 |
 | [`.changeset/`](../.changeset)                         | pending changesets for package releases                                                                 |
-| `.notes/`                                              | a private git submodule for the owner only; excluded from every check                                   |
 
 Root configuration: `pnpm-workspace.yaml` (members and version catalogs), `turbo.jsonc` (tasks and tier tags),
 `mise.toml` (toolchain), `lefthook.yml` (git hooks), `.commitlintrc.yaml`, `.oxlintrc.jsonc`, `.oxfmtrc.jsonc`,

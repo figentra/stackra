@@ -81,6 +81,7 @@ export { checkRunwayUnreadFields } from "#node/functions/check-runway-unread-fie
 export { checkService } from "#node/functions/check-service.function";
 export { checkTestPlacement } from "#node/functions/check-test-placement.function";
 export { checkRepositoryLayout } from "#node/functions/check-repository-layout.function";
+export { checkSubmodules } from "#node/functions/check-submodules.function";
 export { checkToolPins } from "#node/functions/check-tool-pins.function";
 export { checkGenStrictEnv } from "#node/functions/check-gen-strict-env.function";
 export { checkWindowSizing } from "#node/functions/check-window-sizing.function";
@@ -148,6 +149,7 @@ export { specTraceProblems } from "#node/functions/spec-trace-problems.function"
 export { specTrace } from "#node/functions/spec-trace.function";
 export { stripJsonc } from "#node/functions/strip-jsonc.function";
 export { structureFindings } from "#node/functions/structure-findings.function";
+export { submodulesOf } from "#node/functions/submodules-of.function";
 export { testFileFor } from "#node/functions/test-file-for.function";
 export { tierFor } from "#node/functions/tier-for.function";
 export { turboTagsFor } from "#node/functions/turbo-tags-for.function";
@@ -165,4 +167,5 @@ export type { SpecFindingsOptions } from "#node/types/spec-findings-options.type
 export type { SpecTask } from "#node/types/spec-task.type";
 export type { SpecTrace } from "#node/types/spec-trace.type";
 export type { StructureGroup } from "#node/types/structure-group.type";
+export type { Submodule } from "#node/types/submodule.type";
 export type { WorkspaceMember } from "#node/types/workspace-member.type";

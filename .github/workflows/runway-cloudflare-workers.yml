@@ -109,7 +109,7 @@ jobs:
           ref: ${{ inputs.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+          submodules: false # core has no submodules; stackra validate refuses an undeclared one (STA-2918)
 
       # Every deploy is of a commit on main (ADR 0170 decision 6): a tag or an explicit SHA can name any commit, so
       # the check runs before anything is built or any credential is read. The SHA is the release's identity. The

@@ -70,7 +70,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+          submodules: false # core has no submodules; stackra validate refuses an undeclared one (STA-2918)
 
       # ADR 0027 D2: node and pnpm come from mise.toml.
       - name: Toolchain (mise)

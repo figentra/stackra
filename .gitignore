@@ -49,8 +49,9 @@ playwright-report/
 # Vite
 *.local
 
-# Local reference dumps and editor state
+# Local reference dumps and editor state; `.notes/` is a notes checkout left where the old submodule was (STA-2918)
 .ref/
+/.notes/
 *.code-workspace
 .idea/
 .vscode/*
