@@ -9,8 +9,9 @@
  *           the row's `expires_at` (the end of its stale window) only lets a sweep reclaim it: each entry write sweeps
  *           up to `postgres.sweep` dead entries, and each tag add as many dead members. `forget` lists the covered keys with a prefix `like` on the
  *           "C"-collated primary key, so it reads the index, never the whole table. The tables are unlogged: a crash
- *           empties them and a read replica does not see them, which a cache allows. Single-flight is per process. A
- *           failed statement rejects the call.
+ *           empties them and a read replica does not see them, which a cache allows. `add` is one upsert that
+ *           replaces only a row past its `expires_at` and answers by `returning`, atomic under the row lock.
+ *           Single-flight is per process. A failed statement rejects the call.
  * Runtime: node
  * Governing contract: ADR 0150 (decisions 1, 2 and 4); ADR 0076 (on-prem); ADR 0160 (raw SQL is parameterised);
  *                     ADR 0305 (rule 32); STA-1438.
@@ -86,6 +87,18 @@ export class PostgresCacheDriver extends StoredCacheDriver<Cache> {
             [key, text, until(ttl)],
           );
           await reclaim(entries);
+        },
+        create: async (key, text, ttl) => {
+          // raw-sql: a set-if-absent upsert that replaces only a dead row has no ORM form without a model (ADR 0160);
+          // the conflicting row is locked, so of two concurrent creates of a key exactly one returns it
+          const created = await sql.query(
+            `insert into ${entries} as kept (key, body, expires_at) values (?, ?, ?) ` +
+              "on conflict (key) do update set body = excluded.body, expires_at = excluded.expires_at " +
+              "where kept.expires_at <= ? returning key",
+            [key, text, until(ttl), clock.now()],
+          );
+          await reclaim(entries);
+          return created.length === 1;
         },
         delete: async (key) => {
           // raw-sql: a delete by primary key (ADR 0160)

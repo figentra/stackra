@@ -9,9 +9,11 @@
  *           stores; a network driver serialises them, so store plain data. An entry is dropped by its key, by a key
  *           that covers it, or by one of its tags (`forgetTag`); tags and keys never cross namespaces. `remember` can
  *           serve a stale entry while one caller reloads it, and with `lock` shares one load across instances
- *           (`CacheLock`). There is no `@Cached` facet and no `ctx.cache`.
+ *           (`CacheLock`). `add` stores only where nothing is kept, atomically across the instances that share the store
+ *           (`memory`, `valkey`, `postgres`); a driver that cannot make it atomic (`storage`, `workers`) rejects it.
+ *           There is no `@Cached` facet and no `ctx.cache`.
  * Runtime: isomorphic
- * Governing contract: ADR 0305 (rules 32 and 33); ADR 0150 (decisions 2 and 4: keys, tags, single-flight, stale-while-revalidate); ADR 0294 (decisions 15, 16 and 17).
+ * Governing contract: ADR 0305 (rules 32 and 33); ADR 0150 (decisions 2 and 4: keys, tags, single-flight, stale-while-revalidate); ADR 0294 (decisions 15, 16 and 17); ADR 0437 (Enforcement: the shared nonce store is `add`).
  */
 import type { Duration } from "@stackra/contracts";
 import { Port } from "@stackra/contracts";
@@ -58,6 +60,16 @@ export abstract class Cache extends Port {
     load: () => T | Promise<T>,
     options?: CacheRememberOptions,
   ): Promise<T>;
+
+  /**
+   * Stores `value` under `key` for exactly `ttl` (no jitter, no tags) only when nothing is kept under `key`, and answers
+   * whether it stored. Atomic across every instance that shares the store: of two concurrent adds of one key, exactly
+   * one answers `true`. An entry still kept for its stale window counts as kept. A zero `ttl` stores nothing and answers
+   * `false`. A driver whose store has no atomic set-if-absent leaves this default, which rejects.
+   */
+  add<T>(_key: CacheKey, _value: T, _ttl: Duration): Promise<boolean> {
+    return Promise.reject(new TypeError(`${this.constructor.name} does not support add`));
+  }
 
   /**
    * Drops `key` and every key it covers: `CacheKey.of(Product, id)` covers `CacheKey.of(Product, id, locale)`. A load in

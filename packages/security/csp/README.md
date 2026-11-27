@@ -18,6 +18,8 @@ server render writes.
 | `.`       | `securityHeaders`       | HSTS, nosniff, Referrer-Policy, Permissions-Policy, COOP and X-Frame-Options, on by default    |
 | `.`       | `createNonce`           | 128 random bits, base64, once per request                                                      |
 | `.`       | `CspAdditions`          | type of the second argument of `contentSecurityPolicy`                                         |
+| `.`       | `sanitizeHtml`          | client or tenant HTML rebuilt from an allowlist (`RICH_TEXT_HTML_POLICY` by default)           |
+| `.`       | `narrowHtmlPolicy`      | a host's `HtmlPolicy` intersected with the default, so it can only narrow what HTML keeps      |
 | `./react` | `NonceProvider`         | puts the request's nonce under the server render                                               |
 | `./react` | `useNonce`              | the nonce, or `undefined` outside a provider (the browser)                                     |
 | `./react` | `Style`                 | a `<style>` element that carries the nonce                                                     |

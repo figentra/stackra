@@ -31,6 +31,10 @@ driver).
   `textEntryStore` over an outside `CacheStore`. `storedCache` owns the namespace prefix, `coversKey`, tags, the stale
   window, the `CacheLock` fill, jitter, metrics and single-flight; a `put`, `forget` or `forgetTag` marks a covered
   load (or background reload) stale so it is not stored. Never repeat that in a driver.
+- A store with an atomic set-if-absent gives `create` (memory: one synchronous check-and-set; Valkey: `SET … PX … NX`;
+  Postgres: an upsert whose `where` replaces only a dead row, answered by `returning`); `storedCache.add` uses it with
+  an exact lifetime. A store without one (the storage area, Workers KV) leaves it out and `add` rejects: never emulate
+  it with a read then a write.
 - A store that lists a prefix cheaply gives `keys`; one that cannot (Valkey) leaves it out and `storedCache` indexes
   each key under every covering key instead. Never `SCAN` or list a whole store. Set names start `k/` (covered keys)
   or `t/` (tags) and are kept apart from entry keys by `#` (Valkey) or marker keys under `#` (`markerSets`).

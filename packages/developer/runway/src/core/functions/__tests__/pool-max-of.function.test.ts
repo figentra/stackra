@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `poolMaxOf`: a service's budget is divided by its group's most instances, the root default
  *          stands in for a missing budget, a monolith and an isolated member count one instance, no budget gives
- *          `undefined`, and a budget below the instance count is refused at its path.
+ *          `undefined`, and a budget that gives an instance fewer than the two connections a call under isolation holds
+ *          is refused at its path.
  * Boundary: test only; runways are built through `parseRunway`, so each is a checked shape.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0473 (decision 2).
+ * Governing contract: ADR 0022 (test placement); ADR 0473 (decision 2); ADR 0495 (consequences); STA-1716.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -67,10 +68,17 @@ describe("poolMaxOf", () => {
     expect(poolMaxOf(root(grouped), service(), "commerce", production)).toBeUndefined();
   });
 
-  it("refuses a budget that leaves an instance no connection", () => {
+  it("refuses a budget that leaves an instance fewer than two connections (STA-1716)", () => {
     expect(() => poolMaxOf(root(grouped), service(3), "commerce", production)).toThrow(
       RunwayInvalidError,
     );
+    expect(() => poolMaxOf(root(grouped), service(7), "commerce", production)).toThrow(
+      /the 2 a call under isolation holds at once/,
+    );
+    expect(poolMaxOf(root(grouped), service(8), "commerce", production)).toBe(2);
+    expect(() =>
+      poolMaxOf(root({ topology: { mode: "monolith" } }), service(1), "commerce", production),
+    ).toThrow(RunwayInvalidError);
     try {
       poolMaxOf(root(grouped), service(3), "commerce", production);
     } catch (error) {
