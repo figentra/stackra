@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the duplicate dev port check (`checkPorts`, STA-863), the requirement driver check (`checkRequires`, STA-2049), the runtime-only config check (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, STA-2844), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the dev compose plan (`devComposeOf`, `DEV_INFRA_KINDS`, STA-2664), the requirement driver check (`checkRequires`, STA-2049), the runtime-only config check (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, STA-2844), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
@@ -19,6 +19,7 @@
 export { RunwayConfig } from "#config/runway.config";
 export { APPROVED_POSTGRES_EXTENSIONS } from "#core/constants/approved-postgres-extensions.constant";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
+export { DEV_INFRA_KINDS } from "#core/constants/dev-infra-kinds.constant";
 export { TIER_SIZES } from "#core/constants/tier-sizes.constant";
 export { WORKER_VERSION } from "#core/constants/worker-version.constant";
 export { AppleCapability } from "#core/enums/apple-capability.enum";
@@ -61,6 +62,7 @@ export { checkRegions } from "#core/functions/check-regions.function";
 export { checkZoneOwners } from "#core/functions/check-zone-owners.function";
 export { deploy } from "#core/functions/deploy.function";
 export { deployTargets } from "#core/functions/deploy-targets.function";
+export { devComposeOf } from "#core/functions/dev-compose-of.function";
 export { devPorts } from "#core/functions/dev-ports.function";
 export { mobileIdsOf } from "#core/functions/mobile-ids-of.function";
 export { parseRunway } from "#core/functions/parse-runway.function";
@@ -101,6 +103,15 @@ export type { DeployTarget } from "#core/types/deploy-target.type";
 export type { DriftRow } from "#core/types/drift-row.type";
 export type { EnvironmentSizes } from "#core/types/environment-sizes.type";
 export type { WorkerDrift } from "#core/types/worker-drift.type";
+export type { ComposeDocument } from "#core/types/compose-document.type";
+export type { ComposeService } from "#core/types/compose-service.type";
+export type { DevComposeInput } from "#core/types/dev-compose-input.type";
+export type { DevComposePlan } from "#core/types/dev-compose-plan.type";
+export type { DevCredentialFallback } from "#core/types/dev-credential-fallback.type";
+export type { DevInfraHealthcheck } from "#core/types/dev-infra-healthcheck.type";
+export type { DevInfraIssue } from "#core/types/dev-infra-issue.type";
+export type { DevInfraKind } from "#core/types/dev-infra-kind.type";
+export type { DevInfraService } from "#core/types/dev-infra-service.type";
 export type { DevPorts } from "#core/types/dev-ports.type";
 export type { EnvironmentCloud } from "#core/types/environment-cloud.type";
 export type { ExpoCredentials } from "#core/types/expo-credentials.type";
