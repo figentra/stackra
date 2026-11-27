@@ -86,13 +86,23 @@ describe("deployPlan", () => {
             { name: "TWICE_KEY", required: false },
             { name: "TWICE_KEY", required: true },
             { name: "PLAIN_KEY" },
+            { name: "DEFAULTED_KEY", kind: "config", required: false },
+            { name: "MIXED_KEY", kind: "secret", required: false },
+            { name: "MIXED_KEY", kind: "config", required: false },
           ],
         },
       ],
     });
     const secrets = p.sync.filter((entry) => entry.kind === "secret");
-    expect(secrets.filter((entry) => "optional" in entry).map((entry) => entry.name)).toEqual([
-      "OPTIONAL_KEY",
+    expect(
+      secrets.flatMap((entry) =>
+        "optional" in entry ? [{ name: entry.name, optional: entry.optional }] : [],
+      ),
+    ).toEqual([
+      { name: "OPTIONAL_KEY", optional: "placeholder" },
+      // A config row's default would be overridden by an empty value: it is left unset, never a placeholder.
+      { name: "DEFAULTED_KEY", optional: "default" },
+      { name: "MIXED_KEY", optional: "default" },
     ]);
     expect(secrets.map((entry) => entry.name)).toEqual(
       expect.arrayContaining(["LISTED_KEY", "OPTIONAL_KEY", "TWICE_KEY", "PLAIN_KEY"]),

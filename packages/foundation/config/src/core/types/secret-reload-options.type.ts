@@ -14,10 +14,11 @@ export type SecretReloadOptions = {
 
   /**
    * Told of each failed reload with the store's error, which names steps, statuses or ids, never a value. The store
-   * keeps answering from its last good copy.
+   * keeps answering from its last good copy. Also told when `onReload` throws. If it throws itself, the error is
+   * dropped: `reloadNow` never rejects.
    */
   readonly onError?: ((error: unknown) => void) | undefined;
 
-  /** Told after each reload that read every secret. */
+  /** Told after each reload that read every secret; if it throws, `onError` is told and the reload still counts. */
   readonly onReload?: (() => void) | undefined;
 };

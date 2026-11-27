@@ -9,13 +9,15 @@
  *           keeps the last good values. Values live in a private map, are never listed, logged or put in an error: a
  *           failed load names the folder, the names and an errno code, never a value. With no `names`, only
  *           SCREAMING_SNAKE regular files are read, so the platform's own entries (`..data`, dotfiles) are skipped. A
- *           file over 64 KiB is refused. Kubernetes swaps a mounted Secret's files in place, so a reload
- *           (`scheduleSecretReload`) picks up a rotation with no restart.
+ *           file over 64 KiB is refused: each file is opened once, and its kind and size are checked on that handle and
+ *           again on the bytes read, so a file swapped or grown between the check and the read is never taken in
+ *           unchecked. Kubernetes swaps a mounted Secret's files in place, so a reload (`scheduleSecretReload`) picks up
+ *           a rotation with no restart.
  * Runtime: node
  * Governing contract: ADR 0371 (amendment 2026-11-27, STA-258: on-premises and air-gapped stores); ADR 0173 (nobody
  *                     reads a value; secrets by name); ADR 0294 (decision 16).
  */
-import { readdir, readFile, stat } from "node:fs/promises";
+import { open, readdir } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
 import { Driver } from "@stackra/container";
@@ -34,6 +36,29 @@ const codeOf = (error: unknown): string =>
   typeof (error as { code?: unknown } | null)?.code === "string"
     ? String((error as { code: string }).code)
     : "unreadable";
+
+/** Why a file was not taken, or its text: read through one handle, never more than `MAX_BYTES` + 1 bytes. */
+async function readCapped(path: string): Promise<{ text: string } | { refused: string }> {
+  const handle = await open(path, "r");
+  try {
+    const info = await handle.stat();
+    if (!info.isFile()) return { refused: "not a file" };
+    if (info.size > MAX_BYTES) return { refused: `over ${MAX_BYTES} bytes` };
+    // The size above is the handle's; a file that grows after it is caught by the bytes actually read.
+    const buffer = Buffer.alloc(MAX_BYTES + 1);
+    let length = 0;
+    while (length < buffer.length) {
+      // oxlint-disable-next-line no-await-in-loop -- one small file, read until it ends or passes the cap
+      const { bytesRead } = await handle.read(buffer, length, buffer.length - length, length);
+      if (bytesRead === 0) break;
+      length += bytesRead;
+    }
+    if (length > MAX_BYTES) return { refused: `over ${MAX_BYTES} bytes` };
+    return { text: buffer.toString("utf8", 0, length) };
+  } finally {
+    await handle.close();
+  }
+}
 
 /**
  * Reads secrets from mounted files.
@@ -82,19 +107,13 @@ export class FileSecretStoreDriver extends Driver(SecretStore) {
       const path = join(directory, name);
       try {
         // oxlint-disable-next-line no-await-in-loop -- a handful of small files, read one after the other
-        const info = await stat(path);
-        if (!info.isFile()) {
+        const read = await readCapped(path);
+        if ("refused" in read) {
           // A listed folder may hold the platform's own folders; a named secret must be a file.
-          if (!listed) failed.push(`${name} (not a file)`);
+          if (read.refused !== "not a file" || !listed) failed.push(`${name} (${read.refused})`);
           continue;
         }
-        if (info.size > MAX_BYTES) {
-          failed.push(`${name} (over ${MAX_BYTES} bytes)`);
-          continue;
-        }
-        // oxlint-disable-next-line no-await-in-loop -- as above
-        const text = await readFile(path, "utf8");
-        values.set(name, text.replace(/\r?\n$/, ""));
+        values.set(name, read.text.replace(/\r?\n$/, ""));
       } catch (error) {
         const code = codeOf(error);
         failed.push(`${name} (${code === "ENOENT" ? "missing" : code})`);

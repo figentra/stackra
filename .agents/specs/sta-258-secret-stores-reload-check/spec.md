@@ -68,12 +68,15 @@ each environment's set, with empty placeholders allowed so provisioning does not
 - **SRC-003**: `.github/actions/secrets-decrypt/action.yml` and `packages/developer/runway/src/node/functions/decrypt-scope.function.ts` on `origin/main` (FR-008, FR-012)
 - **SRC-004**: ADR 0371 (with its 2026-11-07 amendment), ADR 0173, ADR 0525, ADR 0294 in `apps/docs/src/docs/adr/` (FR-001 to FR-012)
 - **SRC-005**: STA-258 (this work), STA-2804 (the boot binding and its reload policy), the readiness report item 15.5 (FR-005, FR-006)
+- **SRC-006**: the independent review of PR stackra-inc/stackra#1192 (its three low follow-ups) and `packages/foundation/config/src/core/functions/layer-config.function.ts` on the branch, which takes an empty environment value as set (FR-013 to FR-015)
 
 ## Glossary
 
 - **Loading store**: a `SecretStore` driver that reads its values in `load()` and answers `get` from that copy.
-- **Placeholder**: a synced name only code declares, `required: false` everywhere; the environment may lack it and the
-  sync writes it empty.
+- **Placeholder**: a synced secret only code declares, `required: false` everywhere and on no `config` row; the
+  environment may lack it and the sync writes it empty.
+- **Default**: a synced name only code declares, `required: false` everywhere, that a `config` row declares; the
+  environment may lack it and the sync leaves it unset, so its config default applies.
 - **Synced names**: what `deployPlan(env).sync` lists as secrets: member runway `secrets`, the manifest's `secret` and
   `config` rows for that environment, and the generated gateway's.
 
@@ -144,6 +147,9 @@ reads the secrets its platform mounts as files.
 - **FR-010**: `readMemberSecrets` SHALL read an absent or empty placeholder as an empty string and still fail on a required one. Sources: SRC-002
 - **FR-011**: `runway secrets sync` SHALL write a placeholder the scope lacks into Encore as an empty value only when `encore secret list` shows Encore holds no value for it in the environment, SHALL keep a value Encore holds, SHALL write no placeholder when the listing cannot be read, and SHALL say so by name. Sources: SRC-002
 - **FR-012**: `runway secrets decrypt` SHALL, for a product scope of the checked-out repository, run the names check for every runway environment of that scope before it decrypts anything, and exit 1 naming each required secret the scope lacks; it SHALL check nothing for any other scope. Sources: SRC-003
+- **FR-013**: `deployPlan` SHALL mark an optional name a `config` row declares `optional: "default"` and every other optional name `optional: "placeholder"`; `secretSyncPlan` SHALL list the first as `defaults`; `readMemberSecrets` SHALL leave a default out when the scope lacks it or holds it empty; `runway secrets sync` SHALL never write a default the scope lacks, and SHALL say so by name. Sources: SRC-002
+- **FR-014**: `reloadNow()` SHALL never reject: an `onReload` error SHALL go to `onError`, and an `onError` error SHALL be dropped. Sources: SRC-005
+- **FR-015**: THE `file` driver SHALL open each file once and check its kind and size on that handle and on the bytes it reads, so a file swapped or grown after the check is refused, never read unchecked. Sources: SRC-004
 
 ### Non-functional Requirements
 
@@ -153,6 +159,7 @@ reads the secrets its platform mounts as files.
 ### Key Entities
 
 - **Placeholder**: a name in `SecretSyncEntry.placeholders`.
+- **Default**: a name in `SecretSyncEntry.defaults`.
 - **Loading store**: `LoadableSecretStore` (`SecretStore` with `load()`).
 
 ## Acceptance criteria
@@ -166,6 +173,9 @@ reads the secrets its platform mounts as files.
 - **AC-003**: WHEN a loading store reloads after a rotation THE store SHALL answer the new value; WHEN the reload fails THE store SHALL answer the old one.
 - **AC-004**: THE Google driver SHALL read through the regional endpoint with the metadata token and fail closed without one.
 - **AC-005**: THE `file` driver SHALL follow a Kubernetes Secret volume's atomic swap on reload.
+- **AC-011**: WHEN the scope lacks an optional config name THE check SHALL warn that its default applies, and the sync SHALL write nothing for it.
+- **AC-012**: WHEN `onReload` or `onError` throws THE `reloadNow()` promise SHALL resolve, and the interval SHALL leave no unhandled rejection.
+- **AC-013**: WHEN a secret file grows past 64 KiB after the driver first looked at it THE load SHALL fail naming it, with the last good copy kept.
 - **AC-006**: THE committed manifest SHALL list `memory`, `aws_secrets_manager`, `gcp_secret_manager` and `file` as `config.SecretStore` candidates.
 
 ## Success Criteria
@@ -190,6 +200,9 @@ reads the secrets its platform mounts as files.
   `runway secrets decrypt` for every product deploy instead of behind the opt-in `check-environment` input, which is
   removed (FR-012, AC-007); `SecretsConfig.reloadSeconds` is removed because nothing reads it until STA-2804 binds the
   store at boot (FR-006). STA-258 stays open for that runtime half.
+- 2026-11-27 · review follow-ups: an optional config name is never written empty, so its default applies (FR-013,
+  AC-011); a listener that throws never rejects `reloadNow()` (FR-014, AC-012); the `file` driver checks each file on
+  one handle and on the bytes read (FR-015, AC-013).
 
 ## Status history
 
@@ -199,3 +212,4 @@ reads the secrets its platform mounts as files.
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)
 - 2026-11-27 → Implementing (review findings addressed: T016 to T018)
+- 2026-11-27 → Implementing (review follow-ups addressed: T019 to T021)

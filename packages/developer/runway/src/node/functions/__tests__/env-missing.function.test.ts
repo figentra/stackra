@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: unit tests of `envMissing` on a repository and a ciphertext folder: a required synced name the scope lacks
  *          is an error (runway secrets, manifest rows and the gateway's alike), an optional one (`required: false`) is
- *          a warning, a name the scope holds is quiet, a member with no runtime is skipped, names needed only in
+ *          a warning (an optional config name's says its default applies), a name the scope holds is quiet, a member with no runtime is skipped, names needed only in
  *          another environment are not asked for; it refuses without a project or ciphertext and outside CI. No
  *          value is ever read: the ciphertext files hold canaries the findings never carry.
  * Boundary: test only; builds repositories in a temporary folder.
@@ -43,6 +43,7 @@ const MANIFEST = JSON.stringify({
     { name: "STRIPE_SECRET_KEY", kind: "secret", required: true },
     { name: "SENTRY_DSN", kind: "secret", required: false },
     { name: "API_ORIGIN", kind: "config", required: true },
+    { name: "API_TIMEOUT", kind: "config", required: false },
     { name: "PROD_ONLY_KEY", kind: "secret", required: true, environments: ["production"] },
     { name: "VITE_PUBLIC_KEY", kind: "public", required: true },
   ],
@@ -82,9 +83,13 @@ describe(envMissing, () => {
         name: "GATEWAY_KEY",
         where: "stackra-encore (generated API gateway)",
       },
+      { level: "warning", name: "API_TIMEOUT", where: "services/api" },
       { level: "warning", name: "SENTRY_DSN", where: "services/api" },
     ]);
     expect(findings[0]?.message).toContain("is not in products/acme/staging");
+    expect(findings.at(-2)?.message).toContain(
+      "it is optional config, so the sync leaves it unset and its default applies",
+    );
     expect(findings.at(-1)?.message).toContain("the sync writes an empty placeholder");
     expect(JSON.stringify(findings)).not.toContain(CANARY);
   });
@@ -92,6 +97,7 @@ describe(envMissing, () => {
   it("is quiet when the scope holds every synced name", async () => {
     const { root, dir } = repository([
       "API_ORIGIN",
+      "API_TIMEOUT",
       "GATEWAY_KEY",
       "MAIL_TOKEN",
       "SENTRY_DSN",

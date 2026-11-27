@@ -13,7 +13,7 @@ export type SecretReload = {
    * Reloads the store now; a reload already running is joined, not repeated.
    *
    * @returns true when the store read every secret, false when it failed (the store keeps its last good copy and
-   *          `onError` was told).
+   *          `onError` was told). It never rejects, even when a listener throws.
    */
   reloadNow: () => Promise<boolean>;
 

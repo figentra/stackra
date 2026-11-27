@@ -11,4 +11,8 @@ still provisions, only when `encore secret list` shows Encore holds no value for
 hand is kept, and when the listing cannot be read no placeholder is written. `runway secrets decrypt` runs the same check
 first for a product scope (`products/<project>/<env>`) of the checked-out repository and exits 1, naming the missing
 secrets, before it decrypts anything, so every deploy that reads its secrets through the secrets-decrypt action is
-checked with no input to set.
+checked with no input to set. An optional config name (a `config` row with `required: false`, whose class has a
+default) is never a placeholder, since an empty value would override that default: `deployPlan` marks it
+`optional: "default"` (an optional secret is `optional: "placeholder"`), `secretSyncPlan` lists it in the entry's
+`defaults`, `readMemberSecrets` leaves it out when the scope lacks it or holds it empty, and the sync leaves it unset in
+Encore and says so.

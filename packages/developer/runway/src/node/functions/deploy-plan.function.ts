@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `deployPlan(env, runways)`, what a deploy of `env` does, from the runways (`runway plan`); a member's sync
  *          names are its runway secrets and the `secret` and `config` names its manifest declares (STA-2104), a name
- *          only code declares, as `required: false` everywhere, marked `optional` (STA-258). A
+ *          only code declares, as `required: false` everywhere, marked `optional` (STA-258): `default` when a
+ *          `config` row declares it (its config class has a default, which an empty value would override, so it is
+ *          left unset), else `placeholder` (an optional secret, written empty so the runtime still provisions). A
  *          `public` name is a build variable (EAS environment, Vite define, Worker var), never a server secret, so it
  *          is not in the secret sync; pushing it as a build variable is STA-2009's. The secret values of `env` live
  *          in one figentra/secrets scope, `products/<project>/<dev|staging|production>` (ADR 0525), and a preview
@@ -56,12 +58,19 @@ export function deployPlan(env: string, { root, members }: DeployRunways): Deplo
         ...listed,
         ...rows.filter((row) => row.required !== false).map((row) => row.name),
       ]);
+      // An optional `config` name has a default in its class: an empty value would override it, so it is never a
+      // placeholder; the sync leaves it unset and the default applies.
+      const configured = new Set(
+        rows.filter((row) => row.kind === "config").map((row) => row.name),
+      );
       return [
         ...[...new Set([...listed, ...rows.map((row) => row.name)])].map((name) => ({
           member,
           kind: "secret" as const,
           name,
-          ...(required.has(name) ? {} : { optional: true as const }),
+          ...(required.has(name)
+            ? {}
+            : { optional: configured.has(name) ? ("default" as const) : ("placeholder" as const) }),
         })),
         ...Object.keys(own.vars ?? {}).map((name) => ({ member, kind: "var" as const, name })),
       ];

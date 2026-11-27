@@ -20,10 +20,12 @@ Takes the names a deploy of the environment syncs: each member's runway `secrets
 committed manifest declares for that environment, and the generated gateway's. It compares them with the file names of
 the scope's ciphertext (`<dir>/products/<project>/<env>/<NAME>.enc.yaml`). It decrypts nothing and reads no value.
 
-A name only code declares, with `required: false` everywhere (an optional `@Secret` or config field), may be absent:
-`runway secrets sync` writes it as an empty placeholder, so Encore still provisions the service, unless `encore secret
-list` shows Encore already holds a value for it in that environment, which it keeps. Any other name the
-scope lacks fails the run. A member no runtime takes secrets from is not checked.
+A name only code declares, with `required: false` everywhere (an optional `@Secret` or config field), may be absent.
+For an optional `@Secret`, `runway secrets sync` writes an empty placeholder, so Encore still provisions the service,
+unless `encore secret list` shows Encore already holds a value for it in that environment, which it keeps. An optional
+config field has a default in its class, and an empty value would override it, so the sync leaves that name unset and
+the default applies. Any other name the scope lacks fails the run. A member no runtime takes secrets from is not
+checked.
 
 ## What it prints
 

@@ -63,6 +63,9 @@ ADR 0371 (amended here), ADR 0173, ADR 0525, ADR 0294 (decisions 16, 19, 20, 26)
 - **P-004**: `runway env missing` and `runway secrets sync` agree: what the check lets pass absent, the sync writes empty where Encore holds no value, and a value Encore holds is never replaced by an empty one — Validates: FR-008, FR-010, FR-011
 - **P-006**: a decrypt of a product scope that lacks a required synced name decrypts nothing — Validates: FR-012
 - **P-005**: no error, log line or finding carries a value or a token — Validates: NFR-001
+- **P-007**: no optional config name is ever written empty, so an empty value never overrides a config default — Validates: FR-013
+- **P-008**: `reloadNow()` resolves whatever its listeners do — Validates: FR-014
+- **P-009**: no value the `file` driver answers is longer than 64 KiB, however the file changes while it is read — Validates: FR-015
 
 ## Architecture overview
 

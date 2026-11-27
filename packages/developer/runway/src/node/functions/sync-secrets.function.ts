@@ -10,7 +10,8 @@
  *           before anything is written, so a missing name fails the sync with nothing changed. An optional name the
  *           scope lacks is written as an empty placeholder, so Encore still provisions the service, only when
  *           `encore secret list` shows Encore holds no value for it in the environment (`encoreHeldSecrets`); a value
- *           set by hand is kept, and when the listing cannot be read no placeholder is written (STA-258). Encore secrets are
+ *           set by hand is kept, and when the listing cannot be read no placeholder is written; an optional config
+ *           name the scope lacks is never written, so its config default applies (STA-258). Encore secrets are
  *           app-wide, and the job's environment holds one value per name, so two services that name one secret share
  *           it. The Encore environment is `environments.<env>.encore.environment`, else the runway environment's own name. The
  *           writes run in a temporary folder holding only `encore.app` with the root runway's `providers.encore.app`, so
@@ -34,11 +35,18 @@ import type { CommandRunner } from "#node/types/command-runner.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
 import type { SecretSyncEntry } from "#node/types/secret-sync-entry.type";
 
-/** The names-only line of one member's secrets; optional names are marked as placeholders. */
+/** The names-only line of one member's secrets; optional secrets and optional config names are marked. */
 function lineOf(entry: SecretSyncEntry, encoreEnvironment: string): string {
   const placeholders = new Set(entry.placeholders ?? []);
+  const defaults = new Set(entry.defaults ?? []);
   const names = entry.names
-    .map((name) => (placeholders.has(name) ? `${name} (optional)` : name))
+    .map((name) =>
+      placeholders.has(name)
+        ? `${name} (optional)`
+        : defaults.has(name)
+          ? `${name} (optional, has a default)`
+          : name,
+    )
     .join(", ");
   if (entry.writer === "encore")
     return `encore ${encoreEnvironment} ← sops ${entry.scope ?? "(no project, no scope)"}: ${names} (${entry.folder})`;
@@ -98,6 +106,10 @@ export async function syncSecrets(input: {
     });
     for (const [name, value] of read) values.set(name, value);
   }
+  // An optional config name no service read is left as it is in Encore: an empty value would override its default.
+  const unset = [...new Set(services.flatMap((entry) => entry.defaults ?? []))]
+    .filter((name) => !values.has(name))
+    .toSorted();
   const app = runways.root.providers.encore?.app;
   if (app === undefined)
     throw new RunwayUnresolvedError(
@@ -120,6 +132,10 @@ export async function syncSecrets(input: {
         held = null;
       }
     }
+    for (const name of unset)
+      log(
+        `left ${name} in encore ${encoreEnvironment} as it is: optional config with no value in the scope, so its default applies`,
+      );
     for (const [name, value] of values) {
       if (value === "" && (held === null || held.has(name))) {
         log(

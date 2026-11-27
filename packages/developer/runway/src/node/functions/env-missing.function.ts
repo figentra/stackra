@@ -4,8 +4,9 @@
  *          syncs (`secretSyncPlan`: each member's runway secrets and the `secret` and `config` names its manifest
  *          declares, and the generated gateway's) that the environment's sops scope (`products/<project>/<env>`, ADR
  *          0525) does not hold, checked before anything is decrypted or deployed. A required name the scope lacks is an
- *          error; an optional one (`required: false` in code, in no runway list) is a warning, since the sync writes it
- *          as an empty placeholder unless Encore already holds a value. A name is its ciphertext file's name (`<dir>/<scope>/<NAME>.enc.yaml`).
+ *          error; an optional one (`required: false` in code, in no runway list) is a warning, since the sync writes an
+ *          optional secret as an empty placeholder unless Encore already holds a value, and leaves an optional config
+ *          name unset so its default applies. A name is its ciphertext file's name (`<dir>/<scope>/<NAME>.enc.yaml`).
  * Boundary: CI only (`prepareEnvRead` proves the job), like `envOrphans`, its mirror; reads file names only, never a
  *           value, and decrypts nothing. A member no runtime takes secrets from (writer `none`) is not checked.
  * Runtime: node
@@ -53,6 +54,7 @@ export async function envMissing(
   for (const entry of secretSyncPlan(input.environment, runways)) {
     if (entry.writer === "none") continue;
     const placeholders = new Set(entry.placeholders ?? []);
+    const defaults = new Set(entry.defaults ?? []);
     for (const name of entry.names) {
       if (held.has(name)) continue;
       findings.push(
@@ -63,12 +65,19 @@ export async function envMissing(
               where: entry.folder,
               message: `is not in ${scope}: it is optional, so the sync writes an empty placeholder unless Encore already holds a value`,
             }
-          : {
-              level: "error",
-              name,
-              where: entry.folder,
-              message: `is not in ${scope}: add it to figentra/secrets before this deploy, or declare it optional (\`required: false\`) when an empty placeholder will do`,
-            },
+          : defaults.has(name)
+            ? {
+                level: "warning",
+                name,
+                where: entry.folder,
+                message: `is not in ${scope}: it is optional config, so the sync leaves it unset and its default applies`,
+              }
+            : {
+                level: "error",
+                name,
+                where: entry.folder,
+                message: `is not in ${scope}: add it to figentra/secrets before this deploy, or declare it optional (\`required: false\`) when an empty placeholder will do`,
+              },
       );
     }
   }

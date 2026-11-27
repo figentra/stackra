@@ -2,7 +2,9 @@
  * Stackra file contract:
  * Purpose: `scheduleSecretReload(store, options)`, how a rotated secret reaches a running process without a redeploy:
  *          it calls the store's `load()` every `everySeconds` (and on `reloadNow()`, a rotation signal), one reload at a
- *          time, and reports a failed reload to `onError` while the store keeps its last good copy.
+ *          time, and reports a failed reload to `onError` while the store keeps its last good copy. A listener that
+ *          throws never rejects `reloadNow` (the interval would leave that rejection unhandled): an `onReload` error
+ *          goes to `onError`, and an `onError` error is dropped.
  * Boundary: schedules only; it reads no value and never prints one. The interval is unref'd where the runtime allows,
  *           so it never keeps a process alive. A `@Secret` field is resolved once, when its configuration is built, so
  *           a reload reaches code that reads the store by name (`SecretStore.get`) on each use, such as the edge
@@ -37,17 +39,30 @@ export function scheduleSecretReload(
       `everySeconds must be a whole number from 0 to ${MAX_SECONDS}; 0 schedules no interval`,
     );
 
+  // A listener that throws must never reject `reloadNow`: the interval calls it with `void`, and an unhandled
+  // rejection can end a Node process. `onReload`'s error goes to `onError`; `onError`'s own is dropped.
+  const tell = (error: unknown): void => {
+    try {
+      onError?.(error);
+    } catch {
+      // The reporter failed; the reload's answer stands and the store keeps its copy.
+    }
+  };
   let running: Promise<boolean> | undefined;
   const reloadNow = (): Promise<boolean> => {
     running ??= store
       .load()
       .then(
         () => {
-          onReload?.();
+          try {
+            onReload?.();
+          } catch (error) {
+            tell(error);
+          }
           return true;
         },
         (error: unknown) => {
-          onError?.(error);
+          tell(error);
           return false;
         },
       )

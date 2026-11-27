@@ -351,6 +351,78 @@ describe("placeholders (STA-258)", () => {
     }
   });
 
+  it("leaves an optional config name the scope lacks unset, never empty, so its default applies", async () => {
+    const withDefault: DeployRunways = {
+      root: RUNWAYS.root,
+      members: [
+        {
+          member: "api",
+          folder: "services",
+          env: [
+            { name: "STRIPE_SECRET_KEY", kind: "secret", required: true },
+            { name: "API_TIMEOUT", kind: "config", required: false },
+          ],
+          runway: {},
+        },
+      ],
+    };
+    expect(secretSyncPlan("staging", withDefault)).toEqual([
+      {
+        member: "api",
+        folder: "services/api",
+        names: ["API_TIMEOUT", "STRIPE_SECRET_KEY"],
+        defaults: ["API_TIMEOUT"],
+        scope: "products/acme/staging",
+        writer: "encore",
+      },
+    ]);
+    for (const env of [
+      { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+      { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, API_TIMEOUT: "" },
+    ]) {
+      const values = await readMemberSecrets({
+        environment: "staging",
+        member: "api",
+        runways: withDefault,
+        ci: true,
+        env,
+      });
+      expect([...values.keys()]).toEqual(["STRIPE_SECRET_KEY"]);
+    }
+    // A value in the scope is synced like any other.
+    const held = await readMemberSecrets({
+      environment: "staging",
+      member: "api",
+      runways: withDefault,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, API_TIMEOUT: "30" },
+    });
+    expect(held.get("API_TIMEOUT")).toBe("30");
+
+    const { run, calls } = recorder(new Error("must not be asked"));
+    const lines: string[] = [];
+    await syncSecrets({
+      environment: "staging",
+      runways: withDefault,
+      repository: repository(true),
+      dryRun: false,
+      log: (line) => lines.push(line),
+      run,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+    });
+    expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+      { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
+    ]);
+    expect(lines).toContain(
+      "encore staging-eu ← sops products/acme/staging: API_TIMEOUT (optional, has a default), STRIPE_SECRET_KEY (services/api)",
+    );
+    expect(lines).toContain(
+      "left API_TIMEOUT in encore staging-eu as it is: optional config with no value in the scope, so its default applies",
+    );
+    expectNoValue(lines.join("\n"));
+  });
+
   it("asks Encore nothing when every value is in the scope", async () => {
     const { run, calls } = recorder(new Error("must not be asked"));
     await syncSecrets({

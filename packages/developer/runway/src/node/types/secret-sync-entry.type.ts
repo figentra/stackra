@@ -25,6 +25,13 @@ export type SecretSyncEntry = {
    */
   readonly placeholders?: readonly string[];
 
+  /**
+   * The names among `names` that are optional config (`required: false` on a `config` row, in no runway list), sorted;
+   * absent when none is. The environment may lack one: the sync then leaves it unset, never empty, so the config
+   * class's default applies (STA-258).
+   */
+  readonly defaults?: readonly string[];
+
   /** The figentra/secrets scope that holds them (`products/acme/staging`), or null when the root names no `project`. */
   readonly scope: string | null;
 

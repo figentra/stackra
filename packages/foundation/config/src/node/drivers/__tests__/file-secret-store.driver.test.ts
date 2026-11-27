@@ -4,7 +4,8 @@
  *          is loaded; it reads every SCREAMING_SNAKE file (one trailing line break dropped) and skips the platform's
  *          own entries; with `names` it reads only those and fails on a missing one or a folder; it refuses a relative
  *          or empty folder, an unlistable one and a file over 64 KiB; a failed reload keeps the last good copy and a
- *          good one picks up a rotated file. No error carries a value.
+ *          good one picks up a rotated file. No error carries a value. A file that grows after the size check is
+ *          `file-secret-store-race.driver.test.ts`'s.
  * Boundary: test only; files live in a temporary folder removed after each test. Values are made-up canaries.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0173; ADR 0371 (amendment 2026-11-27, STA-258).

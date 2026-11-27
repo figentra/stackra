@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `scheduleSecretReload`: it reloads on the interval and on `reloadNow`, joins a reload that is
  *          already running, reports a failed reload to `onError` while the store keeps answering its last good copy,
- *          schedules nothing for 0, stops on `stop`, unrefs its timer, and refuses an interval outside 0 to 86400.
+ *          never rejects when `onReload` or `onError` throws, schedules nothing for 0, stops on `stop`, unrefs its
+ *          timer, and refuses an interval outside 0 to 86400.
  * Boundary: test only; fake timers and an in-memory store whose `load` a test steers. Values are made-up canaries.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0371 (amendment 2026-11-27, STA-258).
@@ -78,6 +79,47 @@ describe(scheduleSecretReload, () => {
     store.fail = undefined;
     await expect(reload.reloadNow()).resolves.toBe(true);
     expect(store.get("SIGNING_KEY")).toBe("never-canary");
+  });
+
+  it("never rejects when a listener throws, so the interval leaves no unhandled rejection", async () => {
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+    try {
+      const store = new SteeredStore();
+      store.next.set("SIGNING_KEY", "good-canary");
+      const reporterBroke = new Error("reporter down");
+      const onError = vi.fn((_error: unknown) => {
+        throw reporterBroke;
+      });
+      const listenerBroke = new Error("listener down");
+      const reload = scheduleSecretReload(store, {
+        everySeconds: 30,
+        onError,
+        onReload: () => {
+          throw listenerBroke;
+        },
+      });
+
+      // onReload throws: the reload still counts, and onError hears the listener's error.
+      await expect(reload.reloadNow()).resolves.toBe(true);
+      expect(onError).toHaveBeenCalledWith(listenerBroke);
+      expect(store.get("SIGNING_KEY")).toBe("good-canary");
+
+      // The load fails and onError throws too: false, not a rejection, on demand and on the interval.
+      store.fail = new Error("AWS Secrets Manager could not read: app/prod");
+      await expect(reload.reloadNow()).resolves.toBe(false);
+      await vi.advanceTimersByTimeAsync(30_000);
+      reload.stop();
+      vi.useRealTimers();
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 10);
+      });
+      expect(unhandled).not.toHaveBeenCalled();
+      expect(onError).toHaveBeenLastCalledWith(store.fail);
+      expect(store.loads).toBe(3);
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
   });
 
   it("joins a reload that is already running instead of starting a second", async () => {
