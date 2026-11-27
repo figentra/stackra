@@ -82,5 +82,6 @@ None.
 
 - 2026-11-26 → Clarified (audit item 13.2; gen's rules read from source)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing (built and proved on a Linux build host in the same branch)
