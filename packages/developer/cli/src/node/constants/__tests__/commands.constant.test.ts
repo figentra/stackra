@@ -51,7 +51,6 @@ describe("COMMANDS", () => {
     expect(namesIn("Repository")).toEqual(
       [
         "any-ratchet",
-        "app-native-deps",
         "architecture-map",
         "catalogue-completeness",
         "constitution",
@@ -60,7 +59,6 @@ describe("COMMANDS", () => {
         "doc-standard",
         "duplicate-exports",
         "duplication",
-        "eas-preflight",
         "row-security-declarations",
         "skill-licences",
         "structure",
@@ -89,6 +87,18 @@ describe("COMMANDS", () => {
         "verify",
       ].toSorted(),
     );
+  });
+
+  // @covers sta-2872:FR-002
+  it("puts the mobile build checks where an app team with a mobile app sees them", () => {
+    expect(structures.find((structure) => structure.name === "eas-preflight")?.group).toBe(
+      "Deploy",
+    );
+    expect(structures.find((structure) => structure.name === "app-native-deps")?.group).toBe(
+      "Quality",
+    );
+    expect(COMMAND_FITS["eas-preflight"]).toBe("mobile");
+    expect(COMMAND_FITS["app-native-deps"]).toBe("mobile");
   });
 
   // @covers sta-2872:FR-002

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `COMMAND_FITS`, the commands `stackra list` shows only in a workspace that uses what they act on: the
- *          mobile onboarding with a mobile app, preview serve with web surfaces, smoke with a product's surfaces or
+ *          mobile onboarding and the mobile build checks (eas-preflight, app-native-deps) with a mobile app,
+ *          preview serve with web surfaces, smoke with a product's surfaces or
  *          apps, seed-pack with seed packs, and the search, settings, audit and operator commands with the package
  *          whose data they touch. Every other command fits every workspace (the Repository group aside, which only
  *          the core repository lists).
@@ -15,6 +16,8 @@ import type { CommandFit } from "#node/types/command-fit.type";
 /** The commands listed only where the workspace has their fit. */
 export const COMMAND_FITS: Readonly<Record<string, CommandFit>> = {
   "mobile:onboard": "mobile",
+  "eas-preflight": "mobile",
+  "app-native-deps": "mobile",
   "preview:serve": "surfaces",
   smoke: "product",
   "seed-pack": "seed-packs",

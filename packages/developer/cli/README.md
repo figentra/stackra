@@ -143,7 +143,8 @@ The list is kept short for the workspace it runs in (STA-2872):
 - **Repository** holds the core repository's own checks (structure, cycles, duplication, doc-standard, the testbed,
   the consumer gate, …). They are listed only in the workspace that builds `@stackra/cli`.
 - **Fits** (`COMMAND_FITS`): a command that acts on something only some workspaces have is listed only there. Smoke
-  needs a product's surfaces or mobile app, preview serve web surfaces, mobile onboard a mobile app, seed-pack a
+  needs a product's surfaces or mobile app, preview serve web surfaces, mobile onboard, `eas-preflight` (Deploy)
+  and `app-native-deps` (Quality) a mobile app, seed-pack a
   `seed-packs/` folder, and the search, settings, audit and operator commands the package whose data they touch.
 - **Hidden**: the check presets (`validate`, `verify`, `code:check`, `code:fix`; `check` names them) and what a script,
   hook or agent client runs (`mcp`, `mcp exec`, `mcp sync`, `agents sync`, `agents check`).
