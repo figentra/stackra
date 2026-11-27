@@ -143,6 +143,7 @@
   },
   "dependencies": {
     "@stackra/actions": "workspace:*",
+    "@stackra/cache": "workspace:*",
     "@stackra/clients": "workspace:*",
     "@stackra/config": "workspace:*",
     "@stackra/container": "workspace:*",

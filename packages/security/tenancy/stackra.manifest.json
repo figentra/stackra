@@ -558,6 +558,12 @@
                 "name": "ScopeTree",
                 "from": "@stackra/scope/contracts"
               }
+            },
+            {
+              "class": {
+                "name": "Database",
+                "from": "@stackra/database"
+              }
             }
           ]
         }
