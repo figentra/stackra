@@ -231,6 +231,17 @@ Minor changeset for `@stackra/cli`. `stackra console <member>` keeps its form, s
 - [x] T006 Document the top-level form in `packages/developer/cli/README.md`, `apps/docs/src/docs/guides/console.mdx` and `.changeset/top-level-member-commands.md` — covers: SC-002, AC-001, AC-006
 - [x] T007 Run the `@stackra/cli` tests, typecheck, oxlint and oxfmt, and the created-app proof, in `packages/developer/cli/package.json` — covers: SC-001, SC-002, SC-003, AC-001, AC-002, AC-003, AC-005, AC-006, AC-007
 
+## Compatibility and migration
+
+- **Behaviour change (FR-007)**: `stackra console <member> <command>` used to run in the folder it was typed in. It
+  now runs in the member's root when you stand outside the member (and in your own folder when you stand inside it).
+  A relative path argument typed at the workspace root, such as `--out report.csv`, therefore resolves inside the
+  member (`services/orders/report.csv`) instead of where it was typed. To keep the old meaning, pass an absolute path
+  (`--out "$PWD/report.csv"`) or run the command from inside the member. Options that default to the current folder
+  (`db:status --cwd`) now act on the member from the workspace root, which is the point of the change.
+- Every `stackra` command keeps its name, options and exit codes; a member command never shadows one (FR-004).
+- A workspace whose members declare no console commands lists the same `stackra` commands as before.
+
 ## Out of scope
 
 - A one-line description per member command in the list: the manifest's `commands` rows carry no description, and
@@ -249,6 +260,8 @@ Minor changeset for `@stackra/cli`. `stackra console <member>` keeps its form, s
   import, so the member's folder covers the import as well as the run (FR-007, AC-007)
 - A-002 · 2026-11-27 · spec gate (`fflow gate ci`): one-line EARS criteria, `### Sources`, the folder tree and
   interfaces, and every changed file named by a task
+- A-003 · 2026-11-27 · CTO review condition: the FR-007 folder change is recorded as a behaviour change
+  (Compatibility and migration, the changeset, the console guide and the CLI README), with how to keep the old meaning
 
 ## Status history
 

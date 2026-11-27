@@ -103,6 +103,10 @@ stackra db:status -- --help     # the command's own arguments and options
 - `stackra`'s own commands keep their names. A member command called `gen` or `db:migrate` runs only as
   `stackra console <member> db:migrate`, which names one member's console by its folder, package name or path.
 - A package has no console of its own: its commands run in each member that hosts it.
+- **Behaviour change**: `stackra console <member> <command>` also runs in the member's root when you stand outside
+  it, where it used to run in the folder you typed it in. A relative path argument typed at the workspace root
+  (`--out report.csv`) now resolves inside the member. Pass an absolute path (`--out "$PWD/report.csv"`) or run the
+  command from inside the member to keep the old meaning.
 
 ## Output
 
