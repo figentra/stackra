@@ -40,9 +40,16 @@ import {
 
 const script = new URL("../secrets-history-scan.mjs", import.meta.url).pathname;
 const hex = (n) => randomBytes(n).toString("hex");
-/** A credential-shaped value: random, mixed case and digits, made at run time. */
+/**
+ * A credential-shaped value: random, mixed case and digits, made at run time. Letters and digits alternate, so no two
+ * letters touch and no word can form: a gitleaks stopword would silence its generic rule, and a placeholder word
+ * ("test", "fake") would turn `classifyMatch` to "placeholder", either of which made the tests flaky.
+ */
+const LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz";
 const credential = () =>
-  `Q${randomBytes(30).toString("base64url").replaceAll("-", "Z").replaceAll("_", "7")}9`;
+  [...randomBytes(42)]
+    .map((b, i) => (i % 2 === 0 ? LETTERS[b % LETTERS.length] : String(b % 10)))
+    .join("");
 
 /** PEM armor, built at run time so this file carries no key-shaped text for the repository's own scan. */
 const armor = (edge) => `-----${edge} PRIVATE ${"KEY"}-----`;
@@ -108,9 +115,11 @@ function leakyRepo() {
 }
 
 /**
- * A fake gitleaks on PATH. `findings(mode)` returns gitleaks JSON for the "policy" or "raw" pass (raw when the
- * config is the script's generated default-rules file); it puts the planted values into Secret and Match, unredacted,
- * so a test proves the script's own field list keeps them out.
+ * A fake gitleaks on PATH. `findings(mode)` returns gitleaks JSON for the "policy" or "raw" pass; each scan runs the
+ * policy pass and then the raw pass, so odd calls are "policy" and even calls "raw". The raw pass must use the
+ * script's generated default-rules file and `--ignore-gitleaks-allow`, and the policy pass must not ignore inline
+ * allow comments; anything else exits 9. It puts the planted values into Secret and Match, unredacted, so a test
+ * proves the script's own field list keeps them out.
  */
 function fakeGitleaks(findings) {
   const bin = tmp("bin");
@@ -126,7 +135,12 @@ if (args[0] === "version") { console.log("v8.30.1"); process.exit(0); }
 const at = (flag) => args[args.indexOf(flag) + 1];
 if (!args.includes("--log-opts=--all")) { console.error("fake: scan without --all"); process.exit(9); }
 if (!args.includes("--redact=100")) { console.error("fake: scan without --redact"); process.exit(9); }
-const mode = at("--config").endsWith("default-rules.toml") ? "raw" : "policy";
+const calls = ${JSON.stringify(join(bin, "calls"))};
+const call = (fs.existsSync(calls) ? Number(fs.readFileSync(calls, "utf8")) : 0) + 1;
+fs.writeFileSync(calls, String(call));
+const mode = call % 2 === 1 ? "policy" : "raw";
+if (mode === "raw" && !at("--config").endsWith("default-rules.toml")) { console.error("fake: raw pass under a policy config"); process.exit(9); }
+if ((mode === "raw") !== args.includes("--ignore-gitleaks-allow")) { console.error("fake: " + mode + " pass with the wrong inline-allow flag"); process.exit(9); }
 fs.writeFileSync(at("--report-path"), JSON.stringify(JSON.parse(fs.readFileSync(${JSON.stringify(data)}, "utf8"))[mode]));
 `,
   );
@@ -254,7 +268,10 @@ test("scan reports every ref that carries a finding, splits policy from allowlis
   }
   assert.match(r.out, /### demo/);
   assert.match(r.out, /Findings under the repository's policy .*: \*\*1\*\*/);
-  assert.match(r.out, /Findings with gitleaks' default rules and no allowlist: \*\*2\*\*/);
+  assert.match(
+    r.out,
+    /Findings with gitleaks' default rules, no allowlist and no inline `gitleaks:allow`: \*\*2\*\*/,
+  );
   assert.match(r.out, /Findings that look like a credential and need a person to look: \*\*1\*\*/);
   const leakRow = r.out.split("\n").find((l) => l.startsWith("| `src/config.ts`"));
   assert.match(
@@ -340,6 +357,41 @@ test(
       row,
       new RegExp(
         `\`${commit.slice(0, 12)}\` \\| generic-api-key \\| reported \\| review \\| no \\| — \\| — \\| #41 \\|`,
+      ),
+    );
+  },
+);
+
+test(
+  "scan with the real gitleaks lists a credential marked gitleaks:allow on a pull request ref as allowlisted",
+  { skip: !realGitleaks && "gitleaks is not installed" },
+  () => {
+    const dir = tmp("inline");
+    sh(dir, "init", "-q", "-b", "main");
+    commitFile(dir, "README.md", "# demo\n", "chore: start");
+    sh(dir, "checkout", "-q", "-b", "side/allowed");
+    const secret = credential();
+    // the marker is built at run time so this file holds no inline-allow line of its own
+    const marker = ["gitleaks", "allow"].join(":");
+    const commit = commitFile(
+      dir,
+      "src/client.ts",
+      `export const apiKey = "${secret}"; // ${marker}\n`,
+      "feat: client",
+    );
+    sh(dir, "update-ref", "refs/pull/52/head", commit);
+    sh(dir, "checkout", "-q", "main");
+    sh(dir, "branch", "-q", "-D", "side/allowed");
+    const r = capture(["scan", "--repo", dir, "--name", "inline"]);
+    assert.equal(r.code, 0, r.err);
+    assert.ok(!r.out.includes(secret));
+    assert.match(r.out, /Findings under the repository's policy .*: \*\*0\*\*/);
+    const row = r.out.split("\n").find((l) => l.startsWith("| `src/client.ts`"));
+    assert.ok(row, "an inline-allowed credential is still listed by the raw pass");
+    assert.match(
+      row,
+      new RegExp(
+        `\`${commit.slice(0, 12)}\` \\| generic-api-key \\| allowlisted \\| review \\| no \\| — \\| — \\| #52 \\|`,
       ),
     );
   },

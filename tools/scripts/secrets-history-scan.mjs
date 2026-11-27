@@ -3,10 +3,12 @@
  * Stackra file contract:
  * Purpose: the full-history secret scan of every public ref of a repository and the stale-branch archive plan
  *   (STA-2878). `scan` runs the pinned gitleaks over every commit reachable from any ref (branches, tags and GitHub's
- *   `refs/pull/*`) twice, once under the repository's policy and once with gitleaks' default rules and no allowlist,
- *   and prints a Markdown report naming each finding by commit, file, line, rule and the refs that carry it, never by
- *   value. `branches` lists the branches merged into the base (by ancestry or by content, so squash merges count) and
- *   the `save/*` and `wt-*` snapshots. `archive` writes one verified git bundle per listed branch and the deletion
+ *   `refs/pull/*`) twice, once under the repository's policy and once with gitleaks' default rules and no allowlist
+ *   of any kind (no `.gitleaks.toml` allowlist, no `.gitleaksignore`, and inline `gitleaks:allow` comments ignored
+ *   with `--ignore-gitleaks-allow`, so a token-shaped value marked allowed on any ref is still listed), and prints
+ *   a Markdown report naming each finding by commit, file, line, rule and the refs that carry it, never by value.
+ *   `branches` lists the branches merged into the base (by ancestry or by content, so squash merges count) and the
+ *   `save/*` and `wt-*` snapshots. `archive` writes one verified git bundle per listed branch and the deletion
  *   commands for the owner to run after review; it never deletes or pushes anything.
  * Boundary: a local git directory (a `git clone --mirror` of the public repository, so every public ref is local),
  *   the `gitleaks` binary (`--gitleaks`, default `gitleaks` on PATH; mise.toml pins it, ADR 0027), files under the
@@ -173,8 +175,15 @@ export function refInventory(repo) {
   };
 }
 
-/** Runs gitleaks over every commit of every ref and returns its findings (values redacted by gitleaks too). */
-export function gitleaksAll(repo, { gitleaks = "gitleaks", config, ignore }) {
+/**
+ * Runs gitleaks over every commit of every ref and returns its findings (values redacted by gitleaks too).
+ * `ignoreInlineAllow` adds `--ignore-gitleaks-allow`, so a line carrying a `gitleaks:allow` comment is still reported;
+ * the raw pass sets it and the policy pass does not, because the repository's policy honours those comments.
+ */
+export function gitleaksAll(
+  repo,
+  { gitleaks = "gitleaks", config, ignore, ignoreInlineAllow = false },
+) {
   const dir = mkdtempSync(join(tmpdir(), "history-scan-"));
   try {
     const report = join(dir, "report.json");
@@ -188,6 +197,7 @@ export function gitleaksAll(repo, { gitleaks = "gitleaks", config, ignore }) {
       "0",
     ];
     args.push("--report-format", "json", "--report-path", report, "--config", config);
+    if (ignoreInlineAllow) args.push("--ignore-gitleaks-allow");
     // gitleaks reads `.gitleaksignore` from the scanned source when no path is given; an empty file turns that off
     const ignorePath = ignore ?? join(dir, "empty.gitleaksignore");
     if (!ignore) writeFileSync(ignorePath, "");
@@ -278,7 +288,8 @@ export function isAncestor(repo, commit, base) {
 
 /**
  * Merges the policy and the raw pass into value-free rows. A finding only the raw pass reports is "allowlisted" by
- * the repository's policy (a fixture path, an allow regex or a `.gitleaksignore` fingerprint).
+ * the repository's policy (a fixture path, an allow regex, a `.gitleaksignore` fingerprint or an inline
+ * `gitleaks:allow` comment).
  * Returns `{ rows, texts }`: `texts` are the matched texts, kept only for `assertValueFree`.
  */
 export function buildFindings(repo, { policy, raw, base }) {
@@ -350,7 +361,7 @@ export function renderScan({ name, inventory, version, base, rows }) {
       `${inventory.pulls} pull request refs${inventory.other ? ` and ${inventory.other} other refs` : ""} with ${version}.`,
     "",
     `- Findings under the repository's policy (\`.gitleaks.toml\`, \`.gitleaksignore\`): **${reported.length}**`,
-    `- Findings with gitleaks' default rules and no allowlist: **${rows.length}**`,
+    `- Findings with gitleaks' default rules, no allowlist and no inline \`gitleaks:allow\`: **${rows.length}**`,
     `- Findings that look like a credential and need a person to look: **${review.length}**`,
     "",
   ];
@@ -382,7 +393,11 @@ export function scan(opts) {
       config: policyConfig,
       ignore: opts.ignore && resolve(opts.ignore),
     });
-    const raw = gitleaksAll(repo, { gitleaks: opts.gitleaks, config: rawConfig });
+    const raw = gitleaksAll(repo, {
+      gitleaks: opts.gitleaks,
+      config: rawConfig,
+      ignoreInlineAllow: true,
+    });
     const { rows, texts } = buildFindings(repo, { policy, raw, base: opts.base });
     const inventory = refInventory(repo);
     const version = `gitleaks ${gitleaksVersion(opts.gitleaks).replace(/^v/, "")}`;
