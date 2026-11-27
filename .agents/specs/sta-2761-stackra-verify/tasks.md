@@ -16,7 +16,7 @@ description: "Tasks for STA-2761: stackra/verify, main's gate run on our machine
 ## Phase 2: User Story 3 - The judge image builds offline (F1)
 
 - [x] T003 Test first, then copy root's pnpm metadata for the judge user and install with `--cache-dir` in `tools/scripts/stackra-verify.mjs` (`judgeDockerfile`) — covers: FR-002, AC-002 — route: tests — deps: T001
-- [x] T004 Test first, then name `--store-dir /store` on every rebuild (`REBUILD_COMMAND`) in `tools/scripts/stackra-verify.mjs` — covers: FR-002, AC-002 — route: tests — deps: T001
+- [x] T004 Test first, then name the install's store (the --store-dir flag) on every rebuild (`REBUILD_COMMAND`) in `tools/scripts/stackra-verify.mjs` — covers: FR-002, AC-002 — route: tests — deps: T001
 - [x] T005 Test first, then build every macro package main's gen loads in `tools/scripts/stackra-verify.mjs` (`GEN_MACRO_PACKAGES`) — covers: FR-003, AC-003 — route: tests — deps: T001
 
 ## Phase 3: User Story 2 - A PR's code never runs inside a judge (F2)
