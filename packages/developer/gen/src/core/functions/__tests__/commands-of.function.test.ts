@@ -3,10 +3,11 @@
  * Purpose: unit tests of `commandsOf`, `emitCommands`, `emitConsoleEntry` and the `commands` section of
  *          `buildManifest`: a command's manifest row, the `kind_path` refusal outside its group, the merge of a hosted
  *          package's rows marked `from` (never a `bin` row), `command_collision` naming both classes, and the exact
- *          `#stackra/commands` and console entry text for a small service.
+ *          `#stackra/commands` and console entry text for a small service, which hands `bootApp` runway's config values
+ *          when gen writes them (STA-2798).
  * Boundary: test only; runs on hand-built service and package IRs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0506 (decisions 4 and 6); STA-1731 spec SC-001.
+ * Governing contract: ADR 0022 (test placement); ADR 0506 (decisions 4 and 6); STA-1731 spec SC-001; STA-2798.
  */
 import type { StackraManifest } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
@@ -253,5 +254,18 @@ describe("emitCommands and emitConsoleEntry", () => {
     );
     expect(emitConsoleEntry(ir, [])).toBeUndefined();
     expect(emitConsoleEntry({ ...ir, layout: "package" }, paths)).toBeUndefined();
+  });
+
+  it("hands bootApp runway's config values when gen writes them (STA-2798)", () => {
+    const content =
+      emitConsoleEntry(ir, [
+        ".stackra/gen/commands.ts",
+        ".stackra/gen/wiring.ts",
+        ".stackra/gen/runway-config.ts",
+      ])?.content ?? "";
+    expect(content).toContain('import { runwayConfig } from "#stackra/runway-config";');
+    expect(content).toContain(
+      "  container: async () => (await bootApp(wiring, { env: process.env, runway: runwayConfig })).container,",
+    );
   });
 });

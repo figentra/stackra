@@ -168,6 +168,15 @@ export interface MemberIR {
   >;
 
   /**
+   * Runway's `config` values of a service for each environment, by config key (ADR 0296: the last layer): the root's
+   * `defaults.service.config` with the member's own `config` over it, field by field (STA-2798). Absent when no
+   * environment sets one, and in an IR built by hand.
+   */
+  readonly runwayConfig?: Readonly<
+    Record<string, Readonly<Record<string, Readonly<Record<string, unknown>>>>>
+  >;
+
+  /**
    * The committed manifests of every other service beside the member that publishes an integration event, with the
    * folder each sits in. Read only for a member with a relay listener (ADR 0260 decision 4), whose events target
    * subscribes it to all of their topics. Absent otherwise and in an IR built by hand.

@@ -83,6 +83,17 @@ root runway states where members run: providers, destinations, shared pools, def
 `topology`. In a grouped environment every service member sits in exactly one group, or in the `default` group;
 `checkPlacement` reports what is not. `checkRequires(root, service)` reports each `valkey` requirement that no environment's
 cache driver serves (`config.cache.driver`, in the member or the root's `defaults.service.config`).
+`checkActionStores(root, service, manifest)` reports each deployed environment (`preview`, `staging`, `production`)
+that keeps an action store the member's generated manifest binds (`actions.IdempotencyStore`,
+`actions.RateLimitStore`) in `memory`: set `config.actions.stores.idempotency` and `.rateLimit` to `postgres` or
+`valkey`, in the member or the root's `defaults.service.config`, and to a driver the manifest lists as a candidate of
+the port (`postgres` comes with `@stackra/database`). `@stackra/actions` refuses the same thing at boot, where gen's
+`#stackra/runway-config` delivers these values (STA-2798).
+
+A `config` block never sets a field only the runtime may set: `checkRuntimeOnlyConfig(document, fields)` reports each
+one, where `fields` are the `env` rows that the manifests the files configure map to a safety-critical variable
+(`runtimeOnlyFields`, or `runtimeOnlyFieldsOf(root)` from `./node`). The running environment (`STACKRA_ENVIRONMENT`)
+is the first such field: it comes from the platform or the runtime, never from a runway file (STA-2844).
 
 A `config` block never sets a field only the runtime may set: `checkRuntimeOnlyConfig(document, fields)` reports each
 one, where `fields` are the `env` rows that the manifests the files configure map to a safety-critical variable
