@@ -3,26 +3,34 @@
  * Purpose: `expectedSchema`, the schema a member's models declare, for `stackra db diff`: one table per model (and per
  *          model addition's side table) in its module's Postgres schema, snake_case plural; one column per data field
  *          (trait fields included, a `Money` as `<name>_minor` and `<name>_currency`, types from `postgresTypeOf`);
+ *          the columns and indexes of the model's traits, derived from them as `traitsOf` lists them
+ *          (`traitColumnsOf`: `has_tree`'s `varchar(33)` `parent_id`, its `ltree` `tree_path` either nullable and the
+ *          GiST index; `has_metadata`'s jsonb bag and optional GIN index; `versioned`'s integer `version`;
+ *          `partitioned`'s optional BRIN index over the `by` column; ...), which win over the field they mirror;
  *          one `varchar(33)` column per relation that owns a column (`m:1`, an owning `1:1`, a `Link`) named
  *          `<name>_id`, with an `fk_<table>_<column>` foreign key when its target is a model of the same module;
  *          one pivot table per `m:n` relation, named by `pivotTable` or `<table>_<field>`, with the two `varchar(33)`
  *          keys the ORM names (`<owner>_id` and `<target>_id`, or `<table>_1_id` and `<table>_2_id` for a
  *          self-reference), the owner's `tenant_id` when it has one, and their same-module foreign keys; a
  *          `@Searchable` model's `search_text` (text) and `search_filters` (jsonb); and one index per `@Index` under
- *          its derived `idx_<table>_<columns>` name with `unique` and `where` as declared.
- * Boundary: pure; reads `ir.shapes` and `ir.classes`, through a model's own base models too. Abstract models have no
+ *          its derived `idx_<table>_<columns>` name with `unique` and `where` as declared (a trait's index of the same
+ *          name gives way to it).
+ * Boundary: pure; reads `ir.shapes` and `ir.classes`, through a model's own base models too (their traits applied
+ *           first). Abstract models have no
  *           table and no pivot. `@Searchable` declares no index here (the migration chooses its GIN and trigram
  *           indexes) and no `search_vector`: the facet names no locale, so the comparison tolerates the vectors and
  *           `__v<n>` shadows on a table that expects `search_text`. Two relations that name one pivot give one table.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 20 and 28: a table per model in its module's schema; links have no foreign
  *                     key); ADR 0231 (`idx_` and `fk_` names); ADR 0159; ADR 0221 (search columns); ADR 0336 (side
- *                     tables); STA-1808; STA-2071.
+ *                     tables); ADR 0096 (decision 4: trait columns from the trait registry); STA-1808; STA-2071;
+ *                     STA-1408.
  */
 import { snakeCase } from "@stackra/support";
 
 import { plural } from "#core/functions/plural.function";
 import { postgresTypeOf } from "#core/functions/postgres-type-of.function";
+import { traitColumnsOf } from "#core/functions/trait-columns-of.function";
 import type { DeclaredClass } from "#core/types/declared-class.type";
 import type { FieldIR } from "#core/types/field-ir.type";
 import type { MemberIR } from "#core/types/member-ir.type";
@@ -92,7 +100,7 @@ export function expectedSchema(ir: MemberIR): SchemaSnapshot {
     const table = plural(snakeCase(shape.name));
     const chain = shapeChain(ir, shape);
     const own = new Map<string, SchemaSnapshot["columns"][number]>();
-    const put = (name: string, type: string | undefined, nullable: boolean): void => {
+    const put = (name: string, type: string | undefined, nullable: boolean | "either"): void => {
       own.set(name, { schema, table, name, ...(type === undefined ? {} : { type }), nullable });
     };
     if (shape.kind === "model_addition") put("id", PUBLIC_ID, false);
@@ -108,6 +116,11 @@ export function expectedSchema(ir: MemberIR): SchemaSnapshot {
         put(`${name}_currency`, "char(3)", nullable);
       } else put(name, postgresTypeOf(field), nullable);
     }
+    // The columns the traits write: the column a trait field mirrors takes the macro's type and nullability.
+    const classes = classChain(ir, declared);
+    // oxlint-disable-next-line unicorn/no-array-reverse -- reverses an array built here, which nothing else holds; toReversed is ES2023 and the base lib is ES2022
+    const traits = traitColumnsOf([...classes].reverse().flatMap((each) => each.traits));
+    for (const column of traits.columns) put(column.name, column.type, column.nullable);
     const relations = new Map<string, RelationIR>();
     for (const each of fromBase)
       for (const relation of each.entity?.relations ?? []) relations.set(relation.name, relation);
@@ -125,7 +138,6 @@ export function expectedSchema(ir: MemberIR): SchemaSnapshot {
           referencedTable: plural(snakeCase(relation.target.name)),
         });
     }
-    const classes = classChain(ir, declared);
     if (
       shape.kind === "model" &&
       classes.some((each) =>
@@ -202,6 +214,21 @@ export function expectedSchema(ir: MemberIR): SchemaSnapshot {
           predicate: typeof flags.where === "string" ? flags.where : undefined,
         });
       }
+    for (const index of traits.indexes) {
+      const name = ["idx", table, ...index.columns].join("_");
+      if (named.has(name)) continue;
+      named.add(name);
+      indexes.push({
+        schema,
+        table,
+        name,
+        columns: index.columns,
+        unique: false,
+        method: index.method,
+        predicate: undefined,
+        ...(index.optional === true ? { optional: true as const } : {}),
+      });
+    }
   }
   columns.push(...pivotColumns.values());
   foreignKeys.push(...pivotKeys.values());

@@ -18,7 +18,8 @@ Strings are i18n keys, never literals. The package was `@stackra/mail` (ADR 0294
 **Tier:** `tier:lib` (`packages/communication/notifications`). Entries `.`, `./contracts`, `./node`, `./react` and
 `./testing`. Depends on `@stackra/contracts`, `@stackra/container`, `@stackra/config`, `@stackra/validation`,
 `@stackra/i18n`, `@stackra/money`, `@stackra/assets`, `@stackra/errors`, `@stackra/events` (the `DeliveryRecorded`
-event and the `EventOutbox` it is written to), `@stackra/integrations` (provider Integrations and the provider resolver), `@stackra/clients` (`./node` queues through it) and `@stackra/support` (`base64url`, `htmlToText`). React is an
+event and the `EventOutbox` it is written to), `@stackra/integrations` (provider Integrations and the provider resolver), `@stackra/clients` (`./node` queues through it), `@stackra/support` (`base64url`, `htmlToText`) and `@stackra/csp`
+(`sanitizeHtml`, for `richText`). React is an
 optional peer, needed by `./node`, `./react` and `./testing` only.
 
 ## What is here
@@ -100,7 +101,7 @@ import { type MailProps, useMail } from "@stackra/notifications/react";
 import { Component } from "#stackra/ui";
 
 export class OrderReceiptMail extends Component<MailProps<typeof OrderReceiptNotification>> {
-  mail = useMail(); // t, money, asset, locale, dir for the recipient
+  mail = useMail(); // t, money, asset, richText, locale, dir for the recipient
 
   render() {
     const { t, money, locale, dir } = this.mail;
@@ -117,6 +118,23 @@ export class OrderReceiptMail extends Component<MailProps<typeof OrderReceiptNot
 
 `MailProps<typeof X>` is what `data(event)` resolves to, or the event when there is no `data` method. `useMail()` throws
 outside a mail render.
+
+### Tenant and client HTML
+
+Every string a body passes (a prop, an ICU value) is escaped. HTML that a tenant or a client wrote, such as a branch's
+welcome note from the console editor, goes in through `richText`, which writes back only what `sanitizeHtml`
+(`@stackra/csp`) keeps under the rich-text allowlist: no script, style, event handler, `style` attribute, image or
+non-http(s)/mailto link. The sanitized text is in the plain-text part too. A body never writes
+`dangerouslySetInnerHTML`: `react/no-danger` is an error in `*.mail.tsx` (`@stackra/oxlint-config`, STA-2582).
+
+```tsx
+const { richText } = this.mail;
+return <Html lang={locale} dir={dir}>{richText(this.props.branch.welcomeNoteHtml)}</Html>;
+```
+
+`richText(html, policy)` takes a narrower `HtmlPolicy` (only paragraphs, say). The policy is intersected with the
+rich-text default (`narrowHtmlPolicy` from `@stackra/csp`), so it can only take away: a tag or attribute the default
+refuses, such as `img` and its `src` or a link `target`, is dropped whatever the policy allows.
 
 ## Delivery
 

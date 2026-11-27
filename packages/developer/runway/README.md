@@ -83,6 +83,11 @@ root runway states where members run: providers, destinations, shared pools, def
 `checkPlacement` reports what is not. `checkRequires(root, service)` reports each `valkey` requirement that no environment's
 cache driver serves (`config.cache.driver`, in the member or the root's `defaults.service.config`).
 
+A `config` block never sets a field only the runtime may set: `checkRuntimeOnlyConfig(document, fields)` reports each
+one, where `fields` are the `env` rows that the manifests the files configure map to a safety-critical variable
+(`runtimeOnlyFields`, or `runtimeOnlyFieldsOf(root)` from `./node`). The running environment (`STACKRA_ENVIRONMENT`)
+is the first such field: it comes from the platform or the runtime, never from a runway file (STA-2844).
+
 `providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
 and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);
 the release workflow's `registry` input carries the same value to `runway-npm.yml`, and no member's `publishConfig`
@@ -475,7 +480,7 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 | `runway promote <sha> [--dry-run]`           | Dispatches every production caller that takes a `sha`, for a commit of origin/main; the record is `rollback to <sha>`                       | 0                        |
 | `runway rollback <sha> [--dry-run]`          | The same for an earlier commit; refuses the head of origin/main (ADR 0352)                                                                   | 0; 2 on the head         |
 | `runway status [env]`                        | What each GitHub environment runs, from GitHub's deployment records: commit, time, state                                                     | 0                        |
-| `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), a product's staging and production `region` and a ksa environment's GCP project (ADR 0524), service `requires`; deprecated fields and an unused AWS account opt-in warn | 0; 1 with each finding   |
+| `runway validate`                            | Every runway file against its schema, the root's placement, its destinations and target blocks against the drivers (O8), a product's staging and production `region` and a ksa environment's GCP project (ADR 0524), service `requires`, a `config` block that sets a runtime-only field such as the running environment (STA-2844); deprecated fields and an unused AWS account opt-in warn | 0; 1 with each finding   |
 | `runway drift [env]`                         | Each Cloudflare Worker's live settings against what runway.yaml renders (read-only, `CLOUDFLARE_API_TOKEN_READ`)                            | 0; 1 when a Worker drifted |
 | `runway secrets sync <env> [--dry-run]` (alias `runway env sync`) | The member secrets of `env`, and the names each member's manifest declares (STA-2104), from the job's environment (the sops scope `products/<project>/<env>` that `.github/actions/secrets-decrypt` decrypted, ADR 0525) into the runtimes; a real sync runs only in a CI job its GitHub OIDC token proves. `--from-env` is accepted and ignored (deprecated) | 0                        |
 | `runway secrets decrypt --scope <s> [--dir <d>] [--names A,B]` | One figentra/secrets scope (ADR 0525), decrypted with the job's own Cloud KMS identity from the ciphertext `.github/actions/secrets-decrypt` downloads, masked and exported into `GITHUB_ENV`; names only on output, and it refuses to run without `GITHUB_ENV` | 0; throws on a bad scope, a missing name or a refused key |

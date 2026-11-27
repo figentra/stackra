@@ -7,7 +7,7 @@
  *           prefixed with the URI-encoded `CacheNamespace.current()` and `/`, so namespaces never share or forget each
  *           other's entries. Dead entries are dropped when read or pushed out by the bound, never by a timer. The
  *           behaviour is `storedCache` over `memoryEntryStore`; `remember`'s `lock` changes nothing here, since no other
- *           instance shares this store.
+ *           instance shares this store. `add` is atomic within this process only.
  * Runtime: isomorphic
  * Governing contract: ADR 0150 (decisions 1, 2 and 4: memory LRU, namespaced keys and tags, single-flight and
  *                     stale-while-revalidate); ADR 0305 (rule 32).

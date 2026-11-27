@@ -642,6 +642,14 @@ A model with a subscriber trait, own or a declared package's, adds its subscribe
 (`traitSubscribers`): `TreeSubscriber` for `HasTree` (STA-1419), then
 `ValidateOnFlushSubscriber` for `ValidateOnFlush` (STA-1410), so a row is checked in clear before it is sealed.
 
+## Encore environment (STA-2844)
+
+A service that runs `@stackra/app` from the generated server entry gets `stackra-encore/<member>/environment.ts`, which
+hands Encore's `appMeta().environment` (name, type, cloud) to `providePlatformEnvironment` of `@stackra/app/server`.
+That reads the running environment through the one reader (`readEnvironment` of `@stackra/config`) and settles
+`STACKRA_ENVIRONMENT` before the app boots. Every generated Encore file imports `./environment` first, then
+`./database` (`encoreSetupImports`). A v2 service with an authored `src/main.ts`, a package and an app get none.
+
 ## Cross-app events (ADR 0511 decisions 11 to 19, STA-1910)
 
 - **Consumer.** A listener of an event of a service read from a contract package is registered like a sibling's
