@@ -33,7 +33,7 @@ makes an input field required merges unnoticed. Split out of STA-229 (whose cove
 
 ## Impact
 
-- **Apps touched**: none
+- **Apps touched**: apps/docs (ADR 0182's Enforcement section only)
 - **Services touched**: none
 - **Packages touched**: packages/tooling/vitest, packages/developer/gen, packages/developer/cli
 - **Public contract change**: `@stackra/vitest-config` gains the `./contract` entry (`contractTier`, `CONTRACT_TESTS`);
