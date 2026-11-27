@@ -279,6 +279,16 @@
       "entry": "node"
     },
     {
+      "name": "env:missing",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "RunwayEnvMissingCommand",
+      "file": "src/node/commands/runway-env-missing.command.ts",
+      "entry": "node"
+    },
+    {
       "name": "env:orphans",
       "aliases": [],
       "hidden": false,

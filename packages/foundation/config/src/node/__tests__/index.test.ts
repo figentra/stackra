@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: the consumer contract of the `./node` entry: `AwsSdkKmsClientDriver` and
- *          `AwsSecretsManagerSecretStoreDriver` are its only values, and loading it never loads an AWS SDK: both are
+ *          `AwsSecretsManagerSecretStoreDriver`, `FileSecretStoreDriver` and `GcpSecretManagerSecretStoreDriver` are its only
+ *          values, and loading it never loads an AWS SDK: both are
  *          optional peers a host without those stores never installs (BILLING-A, 0.32.0).
  * Boundary: test only; imports the stand-in barrel through its `#node` alias, with each AWS SDK mocked to throw on
  *           import, so an eager import fails this file.
@@ -26,6 +27,8 @@ describe("@stackra/config/node", () => {
     expect(Object.keys(node).toSorted()).toEqual([
       "AwsSdkKmsClientDriver",
       "AwsSecretsManagerSecretStoreDriver",
+      "FileSecretStoreDriver",
+      "GcpSecretManagerSecretStoreDriver",
     ]);
   });
 });

@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `RUNWAY_COMMANDS`, the `runway` binary's commands on @stackra/console (ADR 0506 decision 8): plan, deploy,
- *          promote, rollback, status, validate, drift, `secrets sync`, `env check` and `env orphans`
- *          (STA-2104). No passthrough command is left.
+ *          promote, rollback, status, validate, drift, `secrets sync`, `env check`, `env missing`
+ *          (STA-258) and `env orphans` (STA-2104). No passthrough command is left.
  * Boundary: a frozen list of classes; the binary (`runway.ts`) runs it.
  * Runtime: node
  * Governing contract: ADR 0506 (decision 8); ADR 0352; STA-2100.
@@ -12,6 +12,7 @@ import type { CommandClass } from "@stackra/console";
 import { RunwayDeployCommand } from "#node/commands/runway-deploy.command";
 import { RunwayDriftCommand } from "#node/commands/runway-drift.command";
 import { RunwayEnvCheckCommand } from "#node/commands/runway-env-check.command";
+import { RunwayEnvMissingCommand } from "#node/commands/runway-env-missing.command";
 import { RunwayEnvOrphansCommand } from "#node/commands/runway-env-orphans.command";
 import { RunwayEvidenceCommand } from "#node/commands/runway-evidence.command";
 import { RunwayPlanCommand } from "#node/commands/runway-plan.command";
@@ -34,6 +35,7 @@ export const RUNWAY_COMMANDS: readonly CommandClass[] = Object.freeze([
   RunwaySecretsSyncCommand,
   RunwaySecretsDecryptCommand,
   RunwayEnvCheckCommand,
+  RunwayEnvMissingCommand,
   RunwayEnvOrphansCommand,
   RunwayEvidenceCommand,
 ]);

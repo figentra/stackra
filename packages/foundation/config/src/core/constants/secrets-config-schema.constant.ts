@@ -1,11 +1,12 @@
 /**
  * Stackra file contract:
  * Purpose: `SECRETS_CONFIG_SCHEMA`, the zod schema this package ships for `SecretsConfig` (exported as
- *          `SecretsConfig$`): which `SecretStore` driver runs.
+ *          `SecretsConfig$`): which `SecretStore` driver runs and how often a loading one reloads.
  * Boundary: the stand-in for what gen writes for this package. Every field has a default, so `.parse({})` gives the
  *           full defaults; they equal `SecretsOptions`' initializers (tested). A driver name only, never a value.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173.
+ * Governing contract: ADR 0294 (decision 26: a package ships its own `X$`); ADR 0173; ADR 0371 (amendment
+ *                     2026-11-27).
  */
 import { z } from "zod";
 
@@ -14,4 +15,5 @@ import { SECRET_STORE_DRIVERS } from "#core/constants/secret-store-drivers.const
 /** The shipped `SecretsConfig$`. */
 export const SECRETS_CONFIG_SCHEMA = z.object({
   store: z.enum(SECRET_STORE_DRIVERS).default("memory"),
+  reloadSeconds: z.number().int().min(0).max(86_400).default(0),
 });

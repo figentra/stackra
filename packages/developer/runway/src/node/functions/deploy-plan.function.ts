@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `deployPlan(env, runways)`, what a deploy of `env` does, from the runways (`runway plan`); a member's sync
- *          names are its runway secrets and the `secret` and `config` names its manifest declares (STA-2104). A
+ *          names are its runway secrets and the `secret` and `config` names its manifest declares (STA-2104), a name
+ *          only code declares, as `required: false` everywhere, marked `optional` (STA-258). A
  *          `public` name is a build variable (EAS environment, Vite define, Worker var), never a server secret, so it
  *          is not in the secret sync; pushing it as a build variable is STA-2009's. The secret values of `env` live
  *          in one figentra/secrets scope, `products/<project>/<dev|staging|production>` (ADR 0525), and a preview
@@ -46,14 +47,22 @@ export function deployPlan(env: string, { root, members }: DeployRunways): Deplo
       const own = runway.environments?.[env] ?? {};
       // The names code declares (gen's manifest rows, ADR 0173 amendment 2026-11-04) sync beside the runway's own;
       // a public name is a build variable, never a server secret (decision 3).
-      const code = declared
+      const rows = declared
         .filter((row) => row.kind !== "public")
-        .filter((row) => row.environments === undefined || row.environments.includes(env))
-        .map((row) => row.name);
+        .filter((row) => row.environments === undefined || row.environments.includes(env));
+      const listed = [...(runway.secrets ?? []), ...(own.secrets ?? [])];
+      // A runway list asks for a value; a code row asks unless it says `required: false` (STA-258).
+      const required = new Set([
+        ...listed,
+        ...rows.filter((row) => row.required !== false).map((row) => row.name),
+      ]);
       return [
-        ...[...new Set([...(runway.secrets ?? []), ...(own.secrets ?? []), ...code])].map(
-          (name) => ({ member, kind: "secret" as const, name }),
-        ),
+        ...[...new Set([...listed, ...rows.map((row) => row.name)])].map((name) => ({
+          member,
+          kind: "secret" as const,
+          name,
+          ...(required.has(name) ? {} : { optional: true as const }),
+        })),
         ...Object.keys(own.vars ?? {}).map((name) => ({ member, kind: "var" as const, name })),
       ];
     }),

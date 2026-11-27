@@ -7,11 +7,12 @@
  * Boundary: the values live in memory only: they are returned, never logged, printed, written to a file or put in an
  *           argument, and no error carries one, only names. It runs only in a GitHub Actions job of the repository,
  *           proved by GitHub's signed OIDC token (`proveGithubJob`), never by `GITHUB_ACTIONS`; anywhere else it
- *           refuses before reading. Every declared name must be set, or it throws naming the missing ones; other
+ *           refuses before reading. Every declared name must be set, or it throws naming the missing ones, except a
+ *           placeholder (an optional name, STA-258), which reads as an empty string when the scope lacks it; other
  *           names in the environment are not returned.
  * Runtime: node
  * Governing contract: ADR 0525 (sops; CI decrypts in place); ADR 0257; ADR 0267 (nobody reads a value); STA-606;
- *                     STA-1990 (the Workers provider reads through it); STA-2100 (the OIDC proof).
+ *                     STA-1990 (the Workers provider reads through it); STA-2100 (the OIDC proof); STA-258 (placeholders).
  */
 import { RunwayUnresolvedError } from "#core/errors/runway-unresolved.error";
 import { proveGithubJob } from "#node/functions/prove-github-job.function";
@@ -49,7 +50,9 @@ export async function readMemberSecrets(input: {
   const entry = secretSyncPlan(environment, runways).find((item) => item.member === member);
   if (entry === undefined) return new Map();
   const env = input.env ?? process.env;
-  const missing = entry.names.filter((name) => (env[name] ?? "") === "");
+  // An optional name may be absent or empty: it reads as an empty placeholder (STA-258).
+  const placeholders = new Set(entry.placeholders ?? []);
+  const missing = entry.names.filter((name) => !placeholders.has(name) && (env[name] ?? "") === "");
   if (missing.length > 0)
     throw new RunwayUnresolvedError(
       `the job's environment lacks ${member}'s ${missing.join(", ")}: decrypt ${entry.scope ?? `the product's ${environment} scope`} first (.github/actions/secrets-decrypt)`,

@@ -189,6 +189,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runway/secrets-sync",
             "runway/secrets-decrypt",
             "runway/env-check",
+            "runway/env-missing",
             "runway/env-orphans",
             "runway/evidence",
           ],

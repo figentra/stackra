@@ -4,18 +4,23 @@
  *          writes the entry barrels (STA-339). The old `./env` entry is folded in (owner Q4).
  * Boundary: names each re-export and declares nothing. `MigrationRunner` is @stackra/contracts' (owner Q2). The
  *           layering internals (`layerConfig`, `sealConfig`, `configRoot`) stay internal. The running environment's
- *           one reader (`readEnvironment`, `StackraEnvironment`, `isDeployedEnvironment`) lives here (STA-2844).
+ *           one reader (`readEnvironment`, `StackraEnvironment`, `isDeployedEnvironment`) lives here (STA-2844), and
+ *           `scheduleSecretReload` with its types (STA-258).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
 export { AwsSecretsManagerConfig } from "#config/aws-secrets-manager.config";
+export { GcpSecretManagerConfig } from "#config/gcp-secret-manager.config";
+export { SecretFilesConfig } from "#config/secret-files.config";
 export { SecretsConfig } from "#config/secrets.config";
 export { SignerConfig } from "#config/signer.config";
 export { Config } from "#core/bases/config.base";
 export { AWS_SECRETS_MANAGER_CONFIG_SCHEMA as AwsSecretsManagerConfig$ } from "#core/constants/aws-secrets-manager-config-schema.constant";
 export { env } from "#core/constants/env.constant";
 export { ENVIRONMENT_VARIABLE } from "#core/constants/environment-variable.constant";
+export { GCP_SECRET_MANAGER_CONFIG_SCHEMA as GcpSecretManagerConfig$ } from "#core/constants/gcp-secret-manager-config-schema.constant";
 export { SAFETY_CRITICAL_VARIABLES } from "#core/constants/safety-critical-variables.constant";
+export { SECRET_FILES_CONFIG_SCHEMA as SecretFilesConfig$ } from "#core/constants/secret-files-config-schema.constant";
 export { SECRETS_CONFIG_SCHEMA as SecretsConfig$ } from "#core/constants/secrets-config-schema.constant";
 export { SIGNER_CONFIG_SCHEMA as SignerConfig$ } from "#core/constants/signer-config-schema.constant";
 export { Secret } from "#core/decorators/secret.decorator";
@@ -29,7 +34,10 @@ export { configKey } from "#core/functions/config-key.function";
 export { hydrateEnv } from "#core/functions/hydrate-env.function";
 export { isDeployedEnvironment } from "#core/functions/is-deployed-environment.function";
 export { readEnvironment } from "#core/functions/read-environment.function";
+export { scheduleSecretReload } from "#core/functions/schedule-secret-reload.function";
 export { AwsSecretsManagerOptions } from "#core/schemas/aws-secrets-manager-options.schema";
+export { GcpSecretManagerOptions } from "#core/schemas/gcp-secret-manager-options.schema";
+export { SecretFilesOptions } from "#core/schemas/secret-files-options.schema";
 export { SecretsOptions } from "#core/schemas/secrets-options.schema";
 export { SignerOptions } from "#core/schemas/signer-options.schema";
 export type { BuildFacts } from "#core/types/build-facts.type";
@@ -41,5 +49,8 @@ export type { ConfigValues } from "#core/types/config-values.type";
 export type { EnvDerivations } from "#core/types/env-derivations.type";
 export type { EnvMap } from "#core/types/env-map.type";
 export type { EnvValue } from "#core/types/env-value.type";
+export type { LoadableSecretStore } from "#core/types/loadable-secret-store.type";
 export type { PlatformEnvironment } from "#core/types/platform-environment.type";
 export type { PublicPart } from "#core/types/public-part.type";
+export type { SecretReload } from "#core/types/secret-reload.type";
+export type { SecretReloadOptions } from "#core/types/secret-reload-options.type";

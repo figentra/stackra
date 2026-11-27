@@ -19,24 +19,26 @@ const MEMBER_ROOTS = ["apps", "services", "workers"];
 
 /** The names a member's committed manifest declares (gen's `env` rows), when it has any (STA-2104). */
 function envOf(file: string): {
-  env?: { name: string; kind?: string; environments?: readonly string[] }[];
+  env?: { name: string; kind?: string; required?: boolean; environments?: readonly string[] }[];
 } {
   if (!existsSync(file)) return {};
   const rows = (JSON.parse(readFileSync(file, "utf8")) as { env?: unknown }).env;
   if (!Array.isArray(rows)) return {};
   return {
-    env: rows.flatMap((row: { name?: unknown; kind?: unknown; environments?: unknown }) =>
-      typeof row.name === "string"
-        ? [
-            {
-              name: row.name,
-              ...(typeof row.kind === "string" ? { kind: row.kind } : {}),
-              ...(Array.isArray(row.environments)
-                ? { environments: row.environments.filter((item) => typeof item === "string") }
-                : {}),
-            },
-          ]
-        : [],
+    env: rows.flatMap(
+      (row: { name?: unknown; kind?: unknown; required?: unknown; environments?: unknown }) =>
+        typeof row.name === "string"
+          ? [
+              {
+                name: row.name,
+                ...(typeof row.kind === "string" ? { kind: row.kind } : {}),
+                ...(typeof row.required === "boolean" ? { required: row.required } : {}),
+                ...(Array.isArray(row.environments)
+                  ? { environments: row.environments.filter((item) => typeof item === "string") }
+                  : {}),
+              },
+            ]
+          : [],
     ),
   };
 }

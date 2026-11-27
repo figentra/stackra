@@ -17,6 +17,7 @@ with `@Secret("NAME")` and resolved blind.
 | `.`           | `hydrateEnv`                               | the generated `#stackra/env`: public part, or the whole instance         |
 | `.`           | `env`                                      | `env.str()`, `env.url()`, `env.enum([...])` for build-time files         |
 | `.`           | `configKey`                                | the key derivation gen shares                                            |
+| `.`           | `scheduleSecretReload`                     | reload a loading secret store on an interval or a rotation signal         |
 | `.`           | `ConfigInvalidError`                       | thrown at boot; names paths, variables and secrets, never values         |
 | `.`           | `BuildFacts`, `PublicPart`, `ConfigValues` | types                                                                    |
 | `./contracts` | `SecretStore`                              | the port secrets resolve through; the runtime binds its driver           |
@@ -77,19 +78,42 @@ throws. A schema with a secret never reaches a wire surface (gen's `secret_on_wi
 ## Secret store drivers
 
 A deployed runtime reads its secrets from the platform's own store (`envSecrets` in `@stackra/app`), where runway's
-sync writes them from `figentra/secrets` (ADR 0525). Beside it, the AWS Secrets Manager driver reads a deployment's
-secrets into memory at boot; the runtime awaits `load()` before it builds the configuration that reads them (and again
-after a rotation). No driver lists, logs or reports a value.
+sync writes them from `figentra/secrets` (ADR 0525). Beside it, three loading drivers read a deployment's secrets into
+memory: the runtime awaits `load()` before it builds the configuration that reads them. A load swaps the copy only when
+every read succeeded, so a failed reload keeps the last good values. No driver lists, logs or reports a value
+(ADR 0371, amendment of 2026-11-27).
 
 | Driver                               | Entry    | Configuration                                                                                                                                                    |
 | ------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `MemorySecretStoreDriver`            | `.`      | none: `memory`, the secrets a test sets (STA-1308)                                                                                                               |
 | `AwsSecretsManagerSecretStoreDriver` | `./node` | `AwsSecretsManagerConfig`: region and secret ids; the runtime's AWS role signs the reads                                                                         |
+| `GcpSecretManagerSecretStoreDriver`  | `./node` | `GcpSecretManagerConfig`: project, `location` for regional secrets, ids (`NAME` or `NAME@<version>`), `timeoutMs`; the metadata server's service-account token signs the reads |
+| `FileSecretStoreDriver`              | `./node` | `SecretFilesConfig`: the absolute folder the platform mounts secrets in (`/run/secrets`), one file per name, and optionally the `names` it must hold |
 
 `SecretsConfig.store` (key `config.secrets`) picks the driver: `memory` unless config says otherwise, so a member
-boots with no secrets config; a deployment that reads AWS sets `store: aws_secrets_manager` in its runway values.
+boots with no secrets config; a deployment sets `store: aws_secrets_manager`, `gcp_secret_manager` or `file` in its
+runway values.
 
-A JSON-object secret in AWS gives one secret per string member. `@aws-sdk/client-secrets-manager` is an optional peer.
+A JSON-object secret in AWS or Google Secret Manager gives one secret per string member. `@aws-sdk/client-secrets-manager`
+is an optional peer; the Google driver calls the REST API with `fetch` and needs no SDK. The `file` driver drops one
+trailing line break, reads only SCREAMING_SNAKE files (so Kubernetes' `..data` is skipped) and refuses a file over 64 KiB.
+
+### Reload on rotation
+
+`scheduleSecretReload(store, { everySeconds, onError, onReload })` reloads a loading store every `everySeconds` (0: only
+on `reloadNow()`, a rotation signal such as `SIGHUP`), one reload at a time, with an unref'd timer.
+`SecretsConfig.reloadSeconds` is the interval a deployment sets (default 0). A failed reload goes to `onError` and the
+store keeps answering from its last good copy. A reload reaches code that reads `SecretStore.get` on each use (the edge
+signing keys' `secrets` driver); a `@Secret` configuration field is resolved when its configuration is built, so it
+changes on the next boot. `bootApp` still binds the environment store; binding and scheduling the configured store at
+boot is STA-2804.
+
+```ts
+const store = new GcpSecretManagerSecretStoreDriver(gcpConfig);
+await store.load();
+const reload = scheduleSecretReload(store, { everySeconds: 300, onError: (error) => reporter.report(error) });
+process.on("SIGHUP", () => void reload.reloadNow());
+```
 
 ## Signer drivers
 

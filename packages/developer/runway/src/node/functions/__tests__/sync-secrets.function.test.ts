@@ -196,6 +196,92 @@ describe("secretSyncPlan gateway", () => {
   });
 });
 
+/** The runways with one service whose code declares SENTRY_DSN optional (`required: false`). */
+const WITH_OPTIONAL: DeployRunways = {
+  root: RUNWAYS.root,
+  members: [
+    {
+      member: "api",
+      folder: "services",
+      env: [
+        { name: "STRIPE_SECRET_KEY", kind: "secret", required: true },
+        { name: "SENTRY_DSN", kind: "secret", required: false },
+      ],
+      runway: {},
+    },
+  ],
+};
+
+describe("placeholders (STA-258)", () => {
+  it("lists a member's optional names as its placeholders", () => {
+    expect(secretSyncPlan("staging", WITH_OPTIONAL)).toEqual([
+      {
+        member: "api",
+        folder: "services/api",
+        names: ["SENTRY_DSN", "STRIPE_SECRET_KEY"],
+        placeholders: ["SENTRY_DSN"],
+        scope: "products/acme/staging",
+        writer: "encore",
+      },
+    ]);
+  });
+
+  it("reads an absent or empty optional name as an empty placeholder, never a required one", async () => {
+    for (const env of [
+      { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+      { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY, SENTRY_DSN: "" },
+    ]) {
+      const values = await readMemberSecrets({
+        environment: "staging",
+        member: "api",
+        runways: WITH_OPTIONAL,
+        ci: true,
+        env,
+      });
+      expect(values.get("SENTRY_DSN")).toBe("");
+      expect(values.get("STRIPE_SECRET_KEY")).toBe(CANARIES.STRIPE_SECRET_KEY);
+    }
+    expect(
+      await rejection(
+        readMemberSecrets({
+          environment: "staging",
+          member: "api",
+          runways: WITH_OPTIONAL,
+          ci: true,
+          env: { SENTRY_DSN: "canary-sentry" },
+        }),
+      ),
+    ).toMatch(/lacks api's STRIPE_SECRET_KEY:/);
+  });
+
+  it("writes an absent optional name into Encore as an empty placeholder, and says so", async () => {
+    const { run, calls } = recorder();
+    const lines: string[] = [];
+    await syncSecrets({
+      environment: "staging",
+      runways: WITH_OPTIONAL,
+      repository: repository(true),
+      dryRun: false,
+      log: (line) => lines.push(line),
+      run,
+      ci: true,
+      env: { STRIPE_SECRET_KEY: CANARIES.STRIPE_SECRET_KEY },
+    });
+    expect(calls.map(({ args, input }) => ({ name: args.at(-1), input }))).toEqual([
+      { name: "SENTRY_DSN", input: "" },
+      { name: "STRIPE_SECRET_KEY", input: CANARIES.STRIPE_SECRET_KEY },
+    ]);
+    expect(lines).toContain(
+      "encore staging-eu ← sops products/acme/staging: SENTRY_DSN (optional), STRIPE_SECRET_KEY (services/api)",
+    );
+    expect(lines).toContain(
+      "set SENTRY_DSN in encore staging-eu as an empty placeholder (optional, no value in the scope)",
+    );
+    expect(lines).toContain("set STRIPE_SECRET_KEY in encore staging-eu");
+    expectNoValue(lines.join("\n"));
+  });
+});
+
 describe("readMemberSecrets", () => {
   it("returns only the member's declared names from the job's environment, in CI", async () => {
     const values = await readMemberSecrets({

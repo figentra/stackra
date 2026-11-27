@@ -7,7 +7,8 @@
  *          Encore Cloud environment with `encore secret set --env <env> <NAME>`, the value on stdin. A Worker's secrets
  *          are the Workers provider's to set at deploy, a mobile app's wait for STA-2009, and other apps take none.
  * Boundary: names only in every line and every error; a value goes only to the runner's stdin. Every value is read
- *           before anything is written, so a missing name fails the sync with nothing changed. Encore secrets are
+ *           before anything is written, so a missing name fails the sync with nothing changed; an optional name the
+ *           scope lacks is written as an empty placeholder, so Encore still provisions the service (STA-258). Encore secrets are
  *           app-wide, and the job's environment holds one value per name, so two services that name one secret share
  *           it. The Encore environment is `environments.<env>.encore.environment`, else the runway environment's own name. The
  *           writes run in a temporary folder holding only `encore.app` with the root runway's `providers.encore.app`, so
@@ -30,9 +31,12 @@ import type { CommandRunner } from "#node/types/command-runner.type";
 import type { DeployRunways } from "#node/types/deploy-runways.type";
 import type { SecretSyncEntry } from "#node/types/secret-sync-entry.type";
 
-/** The names-only line of one member's secrets. */
+/** The names-only line of one member's secrets; optional names are marked as placeholders. */
 function lineOf(entry: SecretSyncEntry, encoreEnvironment: string): string {
-  const names = entry.names.join(", ");
+  const placeholders = new Set(entry.placeholders ?? []);
+  const names = entry.names
+    .map((name) => (placeholders.has(name) ? `${name} (optional)` : name))
+    .join(", ");
   if (entry.writer === "encore")
     return `encore ${encoreEnvironment} ← sops ${entry.scope ?? "(no project, no scope)"}: ${names} (${entry.folder})`;
   if (entry.writer === "cloudflare-workers")
@@ -112,7 +116,11 @@ export async function syncSecrets(input: {
           `encore secret set ${name} in ${encoreEnvironment} failed: check the job's Encore login and that ${encoreEnvironment} is an environment of the app`,
         );
       }
-      log(`set ${name} in encore ${encoreEnvironment}`);
+      log(
+        value === ""
+          ? `set ${name} in encore ${encoreEnvironment} as an empty placeholder (optional, no value in the scope)`
+          : `set ${name} in encore ${encoreEnvironment}`,
+      );
     }
   } finally {
     rmSync(cwd, { recursive: true, force: true });

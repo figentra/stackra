@@ -6,7 +6,8 @@
  *          secret under the secret's name.
  * Boundary: server only. The AWS SDK is an optional peer imported on the first `load`, so loading `./node` never
  *           needs it installed. `get` is synchronous by the port's contract, so the runtime awaits `load()` at boot (and
- *           again after a rotation); a `get` before the first load throws. Values live in a private map, are
+ *           again after a rotation, `scheduleSecretReload`); a `get` before the first load throws. A load swaps the copy
+ *           only when every id was read, so a failed reload keeps the last good values. Values live in a private map, are
  *           never listed, logged or put in an error: a failed load names the secret ids that failed, never a value. No
  *           credential is configured: the SDK's default chain (the role) signs every call.
  * Runtime: node
@@ -17,23 +18,10 @@ import { Driver } from "@stackra/container";
 
 import type { AwsSecretsManagerConfig } from "#config/aws-secrets-manager.config";
 import { SecretStore } from "#contracts/ports/secret-store.port";
+import { secretEntriesOf } from "#core/functions/secret-entries-of.function";
 
 /** The most ids one `BatchGetSecretValue` call takes. */
 const BATCH = 20;
-
-/** The secrets one secret value gives, by name. */
-function entriesOf(name: string, text: string): readonly (readonly [string, string])[] {
-  try {
-    const parsed: unknown = JSON.parse(text);
-    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed))
-      return Object.entries(parsed).filter(
-        (entry): entry is [string, string] => typeof entry[1] === "string",
-      );
-  } catch {
-    // Not JSON: one secret under the secret's name.
-  }
-  return [[name, text]];
-}
 
 /**
  * Reads secrets from AWS Secrets Manager.
@@ -80,7 +68,7 @@ export class AwsSecretsManagerSecretStoreDriver extends Driver(SecretStore) {
         );
         for (const secret of answer.SecretValues ?? [])
           if (secret.Name !== undefined && secret.SecretString !== undefined)
-            for (const [name, value] of entriesOf(secret.Name, secret.SecretString))
+            for (const [name, value] of secretEntriesOf(secret.Name, secret.SecretString))
               values.set(name, value);
         for (const error of answer.Errors ?? []) failed.push(error.SecretId ?? "(unknown)");
       }

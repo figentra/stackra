@@ -30,6 +30,9 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `
   holds paths and names only. Tests assert a canary value never reaches any output.
 - A secret store driver reads values only in `load()`, keeps them in a private map and names steps, statuses or ids in
   its errors, never a value. Tests use made-up canaries and assert they never reach an error.
+- A loading driver (`aws_secrets_manager`, `gcp_secret_manager`, `file`) swaps its copy only after every read succeeded,
+  so a failed reload (`scheduleSecretReload`) keeps the last good values. Never parse a provider's body where the parse
+  error could quote it: the Google driver's `jsonOf` swallows it (ADR 0371, amendment of 2026-11-27).
 - The key comes from `configKey` only; gen calls the same function. Never add a `key` option.
 - `hydrateEnv(..., { only: "public" })` reads public-prefixed variables only (`PUBLIC_ENV_PREFIXES`).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

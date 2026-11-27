@@ -49,11 +49,13 @@ export interface DeployRunways {
     readonly folder?: string;
     /**
      * The names the member's committed manifest declares (gen's `env` rows), with their kind (`secret`, `config`,
-     * `public`) and the environments that need them.
+     * `public`), whether a value is required (`false`: optional, so an empty placeholder is allowed, STA-258) and the
+     * environments that need them.
      */
     readonly env?: readonly {
       readonly name: string;
       readonly kind?: string;
+      readonly required?: boolean;
       readonly environments?: readonly string[];
     }[];
     readonly runway: {

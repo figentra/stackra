@@ -71,6 +71,34 @@ describe("deployPlan", () => {
     ]);
   });
 
+  it("marks a name only code declares, required: false everywhere, as optional (STA-258)", () => {
+    const [web] = MEMBERS;
+    if (web === undefined) throw new Error("fixture has no member");
+    const p = deployPlan("production", {
+      root: ROOT_RUNWAY,
+      members: [
+        {
+          ...web,
+          runway: { ...web.runway, secrets: ["LISTED_KEY"] },
+          env: [
+            { name: "OPTIONAL_KEY", required: false },
+            { name: "LISTED_KEY", required: false },
+            { name: "TWICE_KEY", required: false },
+            { name: "TWICE_KEY", required: true },
+            { name: "PLAIN_KEY" },
+          ],
+        },
+      ],
+    });
+    const secrets = p.sync.filter((entry) => entry.kind === "secret");
+    expect(secrets.filter((entry) => "optional" in entry).map((entry) => entry.name)).toEqual([
+      "OPTIONAL_KEY",
+    ]);
+    expect(secrets.map((entry) => entry.name)).toEqual(
+      expect.arrayContaining(["LISTED_KEY", "OPTIONAL_KEY", "TWICE_KEY", "PLAIN_KEY"]),
+    );
+  });
+
   it("reads the repository's own runway: every caller workflow exists, and production deploys the static Worker and the docs", () => {
     const repo = repositoryRoot();
     const runways = readRunways(repo);

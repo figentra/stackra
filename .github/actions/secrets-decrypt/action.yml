@@ -3,7 +3,9 @@
 #          itself (direct Workload Identity Federation through figentra/infra's `callers` provider, no service account),
 #          copies one scope's ciphertext (`<NAME>.enc.yaml` under the flat prefix `<scope with . for />/`, published
 #          by figentra/secrets' sync.yml) from the private bucket, and runs `runway secrets decrypt`, which decrypts
-#          each file with Cloud KMS in memory and exports the values, masked, into the job's environment.
+#          each file with Cloud KMS in memory and exports the values, masked, into the job's environment. With
+#          `check-environment`, it first runs `runway env missing <env>` on the downloaded file names, so a deploy whose
+#          scope lacks a required secret fails before anything is decrypted or deployed (STA-258).
 # Boundary: no GitHub token and no stored credential: figentra/infra grants the job's principal
 #           (`<repo>.<environment>.<workflow repo>.<workflow file>`, main only outside ci/build) a viewer condition on
 #           its scope's prefix and decrypt on its scope's key (estate/secret-callers.mjs). Values are never echoed; the
@@ -29,6 +31,13 @@ inputs:
     description: The ciphertext bucket sync.yml publishes to.
     required: false
     default: figentra-secrets-ciphertext
+  check-environment:
+    description: >-
+      A runway environment (staging, production). Before the decrypt, `runway env missing <env>` fails the job when the
+      scope lacks a secret that environment's deploy syncs (names only; an optional name warns). Run it from the
+      repository root after checkout. Empty skips the check.
+    required: false
+    default: ""
   runway-version:
     description: >-
       The @stackra/runway version whose `secrets decrypt` runs (from the Stackra registry). Empty means the version of
@@ -71,6 +80,7 @@ runs:
         SCOPE: ${{ inputs.scope }}
         NAMES: ${{ inputs.names }}
         RUNWAY_VERSION: ${{ inputs.runway-version }}
+        CHECK_ENVIRONMENT: ${{ inputs.check-environment }}
       run: |
         set -euo pipefail
         # @stackra/* reads anonymously from the Stackra registry, so this needs no token before any secret exists.
@@ -116,6 +126,11 @@ runs:
             fi
             echo "::notice title=secrets-decrypt::@stackra/runway $wanted is not fully published yet; using $RUNWAY_VERSION"
           fi
+        fi
+        # Names only, before any decrypt: the scope must hold every secret the environment's deploy syncs.
+        if [ -n "$CHECK_ENVIRONMENT" ]; then
+          npx --yes --@stackra:registry="$registry" -p "@stackra/runway@$RUNWAY_VERSION" \
+            runway env missing "$CHECK_ENVIRONMENT" --dir "$RUNNER_TEMP/secrets"
         fi
         args=(secrets decrypt --scope "$SCOPE" --dir "$RUNNER_TEMP/secrets")
         if [ -n "$NAMES" ]; then args+=(--names "$NAMES"); fi
