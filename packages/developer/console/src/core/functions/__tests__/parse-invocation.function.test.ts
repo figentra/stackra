@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: proves `parseInvocation` binds long, short, `=`, negated, repeated and `--` tokens (a boolean named
- *          `no-<x>` beside a string option `<x>` read as itself), converts numbers, and
+ *          `no-<x>` read as itself, any other `--no-<x>` negating `--<x>`, and both declared refused), converts
+ *          numbers, and
  *          reports a missing argument, an unknown option, a bad number, a value out of bounds and a surplus token.
  * Boundary: unit test.
  * Runtime: node
@@ -53,10 +54,26 @@ class CopyCommand extends Command({
 
 const structure = readCommand(CopyCommand);
 
-/** A string option beside a boolean whose own flag is its `no-` form (`stackra dev --infra` and `--no-infra`). */
+/** A boolean whose own flag starts with `no-` (`stackra dev --no-infra`), beside a negatable flag. */
 class ServeCommand extends Command({
   name: "serve",
   description: "Serve",
+}) {
+  @Option
+  noInfra = false;
+
+  @Option
+  watch = true;
+
+  handle() {
+    return 0;
+  }
+}
+
+/** Both a flag and its `no-` form: refused. */
+class BothCommand extends Command({
+  name: "both",
+  description: "Both",
 }) {
   @Option
   @Str
@@ -64,9 +81,6 @@ class ServeCommand extends Command({
 
   @Option
   noInfra = false;
-
-  @Option
-  quiet2 = true;
 
   handle() {
     return 0;
@@ -91,16 +105,26 @@ describe("parseInvocation", () => {
     });
   });
 
-  it("reads a boolean named no-<x> as itself beside a string option <x>, not as its negation", () => {
+  it("reads --no-<x> as its own flag only when a boolean declares no-<x>", () => {
     const serve = readCommand(ServeCommand);
     expect(parseInvocation(["--no-infra"], serve).values).toEqual({ noInfra: true });
-    expect(parseInvocation(["--infra", "mail,clam", "--no-infra"], serve).values).toEqual({
-      infra: "mail,clam",
+    expect(parseInvocation(["--no-infra", "--no-watch"], serve).values).toEqual({
       noInfra: true,
+      watch: false,
     });
-    expect(parseInvocation(["--infra=mail"], serve).values).toEqual({ infra: "mail" });
-    // Any other flag still negates as before.
-    expect(parseInvocation(["--no-quiet2"], serve).values).toEqual({ quiet2: false });
+  });
+
+  it("keeps negating the boolean --<x> when no-<x> is not declared", () => {
+    expect(parse("a", "--no-force").values).toEqual({ source: "a", force: false });
+    expect(parseInvocation(["--no-watch"], readCommand(ServeCommand)).values).toEqual({
+      watch: false,
+    });
+  });
+
+  it("refuses a command that declares both <x> and no-<x>", () => {
+    expect(() => readCommand(BothCommand)).toThrow(
+      /--no-infra \(noInfra\) is the negation of --infra \(infra\); declare one of them/,
+    );
   });
 
   it("treats every token after -- as positional", () => {

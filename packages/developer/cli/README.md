@@ -129,7 +129,7 @@ gets the containers' variables (`CACHE_VALKEY_URL`, `AWS_ENDPOINT_URL_S3`, `SMTP
 added only when the run has no AWS credential of its own (no key variable, `AWS_PROFILE`, web identity token,
 container endpoint, `~/.aws/credentials` or `~/.aws/config`): the store takes any signature, so a profile keeps signing
 for S3 and for the run's other AWS clients alike. On a host whose only credential is an instance role, an empty
-`~/.aws/config` keeps the pair out. `--infra <name>[,<name>]` also starts `when: opt-in` blocks; `--no-infra` skips
+`~/.aws/config` keeps the pair out. `--opt-in <name>[,<name>]` also starts `when: opt-in` blocks; `--no-infra` skips
 the step. The containers keep running after `stackra dev` stops; `docker compose -f .stackra/dev/compose.yaml down`
 stops them. A member run turbo starts from the root leaves the step to the root run.
 

@@ -189,6 +189,10 @@ summary), and writes the member.
 - `stackra new app:* x` without `--description` exits 2 instead of 1.
 - Code that imported `legacyCommand` or set `CliCommand.group` (only the unreleased STA-2872 branch) uses a command
   class.
+- **Behaviour change**: `stackra dev --infra <name>[,<name>]` (STA-2664, on main since stackra#1141) is now
+  `stackra dev --opt-in <name>[,<name>]`. A command may not declare both `--<x>` and `--no-<x>`, and `--no-infra` (the
+  flag the Docker error tells people to use) stays, so the opt-in list takes the other name. A script that passed
+  `--infra` passes `--opt-in`.
 
 ## Risks
 
@@ -222,6 +226,12 @@ findings }` and `validate --repository` `{ findings: [{ dir, text }] }`; FR-005 
 - 2026-11-27 · main's dev compose flags (`stackra dev --infra <names>` and `--no-infra`, STA-2664) arrived after the
   port: `DevCommand` declares both, and the console's `parseInvocation` reads `--no-infra` as its own boolean, where
   `node:util.parseArgs` would read it as the negation of `--infra`. Added T012.
+
+- 2026-11-27 · CTO ruling on the duplication of the check presets: no baseline raise. `check`, `validate`, `verify`,
+  `code:check` and `code:fix` take their eight shared flags from one `CheckOptionSet` with `@Options` (STA-2924,
+  stackra#1208), and `runCheckPreset` runs a preset's body with them. Narrowed the `--no-<x>` parse: it is read as its
+  own flag only when a boolean declares `no-<x>`, any other `--no-<x>` still negates `--<x>`, and declaring both is a
+  declaration error, so `stackra dev`'s opt-in list is `--opt-in`. Added T013 and T014.
 
 ## Status history
 

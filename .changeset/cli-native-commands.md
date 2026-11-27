@@ -17,3 +17,7 @@ left on the console's passthrough (STA-2883, ADR 0500 decision 7).
   and output lines, and its text moves to standard error.
 - Text output is unchanged. `legacyCommand` and `CliCommand.group` / `hidden` are gone: a command's group and hidden
   flag live on its class.
+
+`stackra dev --infra <name>[,<name>]` is now `stackra dev --opt-in <name>[,<name>]`: a command no longer declares both a
+flag and its `--no-` form, and `--no-infra` stays. `check`, `validate`, `verify`, `code:check` and `code:fix` take
+their shared flags from one option set (`@Options`), with the same names and help.

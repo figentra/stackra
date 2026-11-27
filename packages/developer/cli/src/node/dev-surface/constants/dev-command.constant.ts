@@ -8,8 +8,10 @@
  *          `--tunnel`: the developer machine's Cloudflare Tunnel runs beside it and stops with it (`startTunnel`).
  *          The member mode runs the quick doctor first (`devReady`) and stops early when the machine is not ready, then
  *          writes `.stackra/dev/ports.json` (`writeDevFacts`, lane from `STACKRA_LANE`) and starts the dev compose of
- *          the root runway's `environments.dev.infra` (`startDevInfra`: Valkey, SeaweedFS, Mailpit, ClamAV, …; `--infra
- *          <name>[,<name>]` adds `when: opt-in` blocks, `--no-infra` skips it) before the tool starts.
+ *          the root runway's `environments.dev.infra` (`startDevInfra`: Valkey, SeaweedFS, Mailpit, ClamAV, …;
+ *          `--opt-in <name>[,<name>]` adds `when: opt-in` blocks, `--no-infra` skips it) before the tool starts. The
+ *          opt-in list is `--opt-in`, not `--infra`, because `--infra` beside `--no-infra` would be its negation
+ *          (STA-2883, the console refuses declaring both).
  * Boundary: data plus dispatch; a surface flag without `--surface` is a usage error, never ignored, and so is an infra
  *           flag in the surface, mobile or product mode. A member run that turbo started from the root run
  *           (`TURBO_HASH` set) leaves the dev compose to that outer run, so the members never race to start it.
@@ -45,7 +47,7 @@ const MEMBER_DEV = toolCommand(
 const SURFACE_FLAGS = ["os", "shell", "shell-origin", "api", "device"] as const;
 
 /** The flags only the member mode takes. */
-const INFRA_FLAGS = ["infra", "no-infra"] as const;
+const INFRA_FLAGS = ["opt-in", "no-infra"] as const;
 
 /**
  * Starts the dev compose for a member or root run, unless `--no-infra` or a turbo-started member run.
@@ -60,7 +62,7 @@ async function devInfra(context: CliContext, root: string, lane: number): Promis
   }
   // A member run turbo started from the root run: that outer run started the containers already.
   if (process.env["TURBO_HASH"] !== undefined) return 0;
-  const raw = context.values["infra"];
+  const raw = context.values["opt-in"];
   const optIn =
     typeof raw === "string"
       ? raw
@@ -100,7 +102,7 @@ export const DEV_COMMAND: CliCommand = {
   ...MEMBER_DEV,
   summary:
     "Generate, then serve the member (--target picks an app target; --surface runs a product surface in its shell)",
-  usage: `${MEMBER_DEV.usage} [--infra <name>[,<name>]] [--no-infra]\n       stackra dev --surface <surface> [--os <checkout>] [--shell <version>] [--shell-origin <url>] [--api <url>]\n       stackra dev --mobile <app> --os <checkout> [--device <udid>]\n       stackra dev --product --os <checkout> [--device <udid>]\n       any of these with --tunnel: this machine's Cloudflare Tunnel runs beside it (CLOUDFLARE_TUNNEL_TOKEN from the agents scope of figentra/secrets)`,
+  usage: `${MEMBER_DEV.usage} [--opt-in <name>[,<name>]] [--no-infra]\n       stackra dev --surface <surface> [--os <checkout>] [--shell <version>] [--shell-origin <url>] [--api <url>]\n       stackra dev --mobile <app> --os <checkout> [--device <udid>]\n       stackra dev --product --os <checkout> [--device <udid>]\n       any of these with --tunnel: this machine's Cloudflare Tunnel runs beside it (CLOUDFLARE_TUNNEL_TOKEN from the agents scope of figentra/secrets)`,
   options: {
     ...MEMBER_DEV.options,
     surface: { type: "string" },
@@ -112,7 +114,7 @@ export const DEV_COMMAND: CliCommand = {
     product: { type: "boolean" },
     device: { type: "string" },
     tunnel: { type: "boolean" },
-    infra: { type: "string" },
+    "opt-in": { type: "string" },
     "no-infra": { type: "boolean" },
   },
   async run(context) {

@@ -2,9 +2,8 @@
  * Stackra file contract:
  * Purpose: `parseInvocation(tokens, structure?)`, the global options and the field values of one invocation, parsed by
  *          `node:util.parseArgs` (strict, negatable flags, repeated list options, `--`), with numbers converted and
- *          bounds, missing arguments and surplus tokens reported as a `UsageError`. A boolean field whose flag is
- *          `no-<x>` beside an option `<x>` (`--infra <names>` and `--no-infra`) is read as itself, never as the
- *          negation `parseArgs` would make of it.
+ *          bounds, missing arguments and surplus tokens reported as a `UsageError`. `--no-<x>` is read as its own
+ *          flag only when a boolean field declares `no-<x>` (`noInfra`); otherwise it negates the boolean `--<x>`.
  * Boundary: pure apart from `parseArgs`; never constructs a command. With no structure only global options are
  *           accepted. A missing argument is not an error when `--help` is given. Isomorphic because `node:util` is in
  *           every runtime Stackra targets for a CLI.
@@ -35,15 +34,12 @@ function optionsOf(fields: readonly CommandField[]): NonNullable<ParseArgsConfig
 }
 
 /**
- * The boolean fields whose own flag is the `no-` form of another field's (`no-infra` beside `infra`): `parseArgs` reads
- * `--no-infra` as the negation of `--infra`, so these are taken out of the tokens before it runs.
+ * The boolean fields whose own flag starts with `no-` (`noInfra` is `--no-infra`): `parseArgs` would read `--no-infra`
+ * as the negation of an `infra` option, so these are taken out of the tokens before it runs. Any other `--no-<x>` still
+ * negates the boolean `--<x>`; declaring both `<x>` and `no-<x>` is refused by `readCommand`.
  */
 function ownNegatives(fields: readonly CommandField[]): readonly CommandField[] {
-  const flags = new Set(fields.map((field) => field.flag));
-  return fields.filter(
-    (field) =>
-      field.kind === "boolean" && field.flag.startsWith("no-") && flags.has(field.flag.slice(3)),
-  );
+  return fields.filter((field) => field.kind === "boolean" && field.flag.startsWith("no-"));
 }
 
 /** The global options in `values`. */

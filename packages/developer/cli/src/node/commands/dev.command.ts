@@ -81,12 +81,12 @@ export class DevCommand extends Command({
   })
   tunnel = false;
 
-  /** Opt-in dev infra blocks. */
+  /** Opt-in dev compose blocks. */
   @Option({
     description: "Also start these opt-in blocks of the dev compose (comma-separated names)",
   })
   @Str
-  infra?: string;
+  optIn?: string;
 
   /** Skip the dev compose. */
   @Option({ description: "Start no dev compose (Valkey, SeaweedFS, Mailpit, …) for this run" })
@@ -106,7 +106,7 @@ export class DevCommand extends Command({
         api: this.api,
         device: this.device,
         tunnel: this.tunnel,
-        infra: this.infra,
+        "opt-in": this.optIn,
         "no-infra": this.noInfra,
       },
     });

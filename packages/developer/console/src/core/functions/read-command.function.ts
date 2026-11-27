@@ -197,6 +197,14 @@ export function readCommand(type: CommandClass): CommandStructure {
     readOptions(set, property);
   }
 
+  // `--no-<x>` is the negation of `--<x>`, so a command declares one of them, never both (`infra` and `noInfra`).
+  const optionFlags = new Map(optionFields.map((field) => [field.flag, field.property]));
+  for (const [flag, property] of optionFlags)
+    if (flag.startsWith("no-") && optionFlags.has(flag.slice(3)))
+      throw new ConsoleDeclarationError(
+        label,
+        `--${flag} (${property}) is the negation of --${flag.slice(3)} (${optionFlags.get(flag.slice(3)) ?? ""}); declare one of them`,
+      );
   if (options.passthrough && argumentFields.length + optionFields.length > 0)
     throw new ConsoleDeclarationError(
       label,

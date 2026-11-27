@@ -91,6 +91,10 @@ left out. `context.cli` runs a nested `stackra` line under the same runtime from
 ## Files and folders
 
 ```text
+packages/developer/cli/src/node/option-sets/check.option-set.ts
+packages/developer/cli/src/node/functions/check-values.function.ts
+packages/developer/cli/src/node/functions/run-check-preset.function.ts
+packages/developer/console/src/core/functions/read-command.function.ts
 packages/developer/console/src/core/functions/parse-invocation.function.ts
 .changeset/cli-native-commands.md
 apps/docs/src/docs/cli.ar.mdx

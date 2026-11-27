@@ -2,5 +2,6 @@
 "@stackra/console": patch
 ---
 
-A boolean option named `no-<x>` beside an option `<x>` is read as itself: `stackra dev --no-infra` sets `noInfra`,
-where `node:util.parseArgs` read it as the negation of `--infra <names>` (STA-2883).
+`--no-<x>` is read as its own flag only when a boolean option declares `no-<x>` (`noInfra` is `--no-infra`), where
+`node:util.parseArgs` read it as the negation of `<x>`; any other `--no-<x>` still negates the boolean `--<x>`. A
+command that declares both `<x>` and `no-<x>` is a `ConsoleDeclarationError` (STA-2883).

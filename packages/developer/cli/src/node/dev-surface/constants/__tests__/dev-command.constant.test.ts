@@ -65,12 +65,12 @@ describe("DEV_COMMAND", () => {
   });
 
   it("documents the infra flags and refuses them outside the member mode", async () => {
-    expect(DEV_COMMAND.usage).toContain("--infra <name>[,<name>]");
+    expect(DEV_COMMAND.usage).toContain("--opt-in <name>[,<name>]");
     expect(DEV_COMMAND.usage).toContain("--no-infra");
     for (const [args, message] of [
       [
-        ["dev", "--surface", "console", "--infra", "otel-lgtm"],
-        "--infra runs in the member mode only, not with --surface",
+        ["dev", "--surface", "console", "--opt-in", "otel-lgtm"],
+        "--opt-in runs in the member mode only, not with --surface",
       ],
       [
         ["dev", "--product", "--no-infra"],
