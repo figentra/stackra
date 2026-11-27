@@ -35,7 +35,8 @@ gen writes no tsdown config for, and `seederLedger` queried `seed_records` witho
 
 - **Apps touched**: apps/docs (the CLI page, English and Arabic)
 - **Services touched**: none
-- **Packages touched**: packages/developer/cli, packages/developer/runway, packages/data/database
+- **Packages touched**: packages/developer/cli, packages/developer/runway, packages/data/database,
+  packages/developer/repo-checks (`RUNWAY_UNREAD_FIELDS` drops `lanes.from`, which `devLane` now reads)
 - **Public contract change**: yes, additive: `@stackra/runway` exports `devLane`, `syncDevEncoreApp`,
   `syncDevEncoreMember` and the `DevEncoreApp` and `DevEncoreAppRequest` types; `stackra dev` takes `--seed`; the dev
   facts file carries `infra` (its schema already allowed it)
