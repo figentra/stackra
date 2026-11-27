@@ -114,7 +114,7 @@ packages/developer/cli/src/node/feature-scaffold/functions/singular.function.ts
 packages/developer/cli/src/node/feature-scaffold/types/feature-field.type.ts
 packages/developer/cli/src/node/feature-scaffold/types/feature-options.type.ts
 packages/developer/cli/src/node/feature-scaffold/types/feature-result.type.ts
-packages/developer/cli/src/node/feature-scaffold/types/field-type.type.ts
+packages/developer/cli/src/node/feature-scaffold/types/feature-field-type.type.ts
 packages/developer/cli/src/node/feature-scaffold/types/model-facts.type.ts
 packages/developer/cli/src/node/feature-scaffold/types/model-names.type.ts
 ```

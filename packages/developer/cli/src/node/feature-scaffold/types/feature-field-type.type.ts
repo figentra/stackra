@@ -1,6 +1,6 @@
 /**
  * Stackra file contract:
- * Purpose: `FieldType`, one type `--fields` accepts: the TypeScript type of the property, the validation decorator
+ * Purpose: `FeatureFieldType`, one type `--fields` accepts: the TypeScript type of the property, the validation decorator
  *          written above it, and the Blueprint call of its column.
  * Boundary: type only.
  * Runtime: node
@@ -8,7 +8,7 @@
  */
 
 /** One `--fields` type. */
-export type FieldType = {
+export type FeatureFieldType = {
   /** The TypeScript type of the property. */
   readonly ts: string;
 

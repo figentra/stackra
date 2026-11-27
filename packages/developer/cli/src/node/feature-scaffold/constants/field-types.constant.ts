@@ -8,10 +8,10 @@
  * Runtime: node
  * Governing contract: ADR 0294 (rule R4); ADR 0159 (the Blueprint column calls).
  */
-import type { FieldType } from "#node/feature-scaffold/types/field-type.type";
+import type { FeatureFieldType } from "#node/feature-scaffold/types/feature-field-type.type";
 
 /** `--fields` type to its property, decorator and column. */
-export const FIELD_TYPES: Readonly<Record<string, FieldType>> = Object.freeze({
+export const FIELD_TYPES: Readonly<Record<string, FeatureFieldType>> = Object.freeze({
   string: {
     ts: "string",
     decorator: "@Str({ max: 255 })",

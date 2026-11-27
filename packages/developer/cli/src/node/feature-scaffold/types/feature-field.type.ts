@@ -9,7 +9,7 @@
  *                     nullability and a comment per column).
  */
 
-/** One field. */
+/** One field of a model, an input or a view, as the feature kinds write and read it. */
 export type FeatureField = {
   /** The camelCase property (`dueAt`). */
   readonly name: string;
