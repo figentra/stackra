@@ -36,7 +36,7 @@ stackra/
 │   ├── example/            # Reference service (plain TypeScript)
 │   └── health/             # Health check service
 ├── workers/                # tier:app (Cloudflare Workers, ADR 0284)
-│   └── static/             # stackra-static: hosted static files at static.stackra.figentra.com
+│   └── static/             # stackra-static: hosted static files at static.figentra.com
 └── tools/
     ├── scripts/            # validation, scaffolding
     └── scaffold/           # Templates

@@ -201,7 +201,7 @@ describe("registry browser", () => {
       expect(html).toContain("Core &lt;b&gt;kernel&lt;/b&gt;");
       expect(html).not.toContain("Core <b>kernel</b>");
       // Install and licence.
-      expect(html).toContain("@stackra:registry=https://npm.stackra.figentra.com/");
+      expect(html).toContain("@stackra:registry=https://npm.figentra.com/");
       expect(html).toContain("pnpm add @stackra/core");
       expect(html).not.toContain("_authToken");
       expect(html).toContain('<span dir="ltr">MIT</span>');
@@ -237,7 +237,7 @@ describe("registry browser", () => {
         expect(html).toContain("Sync engine");
         expect(html).toContain("Metadata only.");
         expect(html).toContain("Stackra Pro: a licence is needed.");
-        expect(html).toContain("//npm.stackra.figentra.com/:_authToken=${STACKRA_LICENCE_TOKEN}");
+        expect(html).toContain("//npm.figentra.com/:_authToken=${STACKRA_LICENCE_TOKEN}");
         expect(html).not.toContain("Secret pro readme");
         expect(html).not.toContain('id="dependencies"');
         expect(html).not.toContain('id="provenance"');

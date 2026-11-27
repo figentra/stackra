@@ -46,7 +46,7 @@ prove them. This repository is its monorepo, on pnpm and Turborepo.
   same authorisation as a human caller, and a write tool needs a named human approver. The repository is built with
   AI agents too, under the rules in [`AGENTS.md`](AGENTS.md).
 
-Packages publish only to the Stackra registry (`https://npm.stackra.figentra.com/`,
+Packages publish only to the Stackra registry (`https://npm.figentra.com/`,
 [ADR 0453](apps/docs/src/docs/adr/0453-the-stackra-registry-one-npm-compatible-store-on-cloudflare-and-our-own-licence-engine.mdx)),
 never npmjs. The plan is the [roadmap](apps/docs/src/docs/roadmap.mdx).
 
@@ -80,7 +80,7 @@ says what is missing. Full steps: [quickstart](apps/docs/src/docs/quickstart.mdx
 | `apps/`                      | `@figentra/console`, `@figentra/mobile`, `@figentra/playground` and `@figentra/docs`    |
 | `packages/<category>/<name>` | the `@stackra/<name>` libraries; `packages/tooling/` holds the config presets           |
 | `services/`                  | `@figentra/service-<name>` reference services, plain TypeScript                         |
-| `workers/`                   | `@figentra/worker-<name>` Cloudflare Workers (`static`, static.stackra.figentra.com)    |
+| `workers/`                   | `@figentra/worker-<name>` Cloudflare Workers (`static`, static.figentra.com)            |
 | `tools/`                     | the repository scripts and the templates `pnpm new` renders                             |
 | `.agents/`                   | every AI artifact (rules, agents, hooks, skills) and the Figentra Flow specs (`specs/`) |
 | `.flow/`                     | the Figentra Flow install: the constitution, `lock.json` and this README's data         |

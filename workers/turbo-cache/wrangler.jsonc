@@ -4,8 +4,9 @@
 // Owner: release-operations · Secrets: TURBO_CACHE_TOKEN is a Worker secret that deploy-turbo-cache.yml sets from
 //        sops ci/build/turbo TURBO_TOKEN (stdin); the same job passes CLOUDFLARE_API_TOKEN from sops ci/deploy.
 // Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
-// Code facts only (ADR 0519 decision 1): the compatibility date, observability, the custom domain, workers_dev and
-// preview URLs are runway.yaml's (`targets.cloudflare-workers.members.turbo-cache`), rendered on deploy.
+// Code facts only (ADR 0519 decision 1): the compatibility date, observability, the Custom Domains (both hosts, the
+// main one first), workers_dev and preview URLs are runway.yaml's (`targets.cloudflare-workers.members.turbo-cache`),
+// rendered on deploy as `routes`.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "stackra-turbo-cache",

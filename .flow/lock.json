@@ -7,7 +7,7 @@
     "digest": "sha256:8364f4136426780572ecdbafe6ff22227c2ed91ef1e70843138cd90b63dfe824"
   },
   "profile": "framework",
-  "overrides": "sha256:45610e8c5fc12be93195f104ff4cd634192be57082ded8057e791e7ed442197d",
+  "overrides": "sha256:b0320a3a89952c6e72aa3c4c6a766b3618e41e8a6005e0563d4e138f087072f6",
   "files": {
     ".agents/skills/flow-specify/SKILL.md": "sha256:e9bd4919bafea5d6e8ce7dd7d88a47d8ff841bd48d19ccbad8756ecea302d973",
     ".agents/skills/flow-clarify/SKILL.md": "sha256:a21f86c0761479111b99ec88802b44a06c7a0bcab44a9344fb41c109c197bb35",
@@ -62,7 +62,7 @@
     ".agents/rules/tenancy.md": "sha256:1f4abda4c1b0e5102e574e72f37b57b477a2cfa2d2d541f56d8ff633769c4121",
     ".agents/rules/third-party-sources.md": "sha256:b62ce70f21bf2888f6f49022d3268328e5611037dfa40b251507e685c9b386eb",
     ".agents/rules/versions.md": "sha256:c66b505e4e5077fb3839ef4900738f07d65573c7508e9d77ee1465e964af65ef",
-    ".agents/rules/workspace-layout.md": "sha256:e55675457eca374b3f4b98d885606c9a2e0a697007286bd1c74580d5d2c2f1c2",
+    ".agents/rules/workspace-layout.md": "sha256:dce8503b65bb256e77e8a4c016b945e86182956286b1995145e30aa3da8437e0",
     ".agents/rules/worktrees.md": "sha256:c527c9ff0235e157b26e2b0cf1484f34bef6d408f9c99bd085c4c3d259e3f93a",
     ".agents/skills/ai-mcp-tools/SKILL.md": "sha256:1e083a21b8578729f597342f82632418e71342eb8175f728c669516d4fca0de2",
     ".agents/skills/backend-assets-and-storage/SKILL.md": "sha256:5e473f49b8d8d5a738cc91b5648d4141db02f6a2786f7f3bb0406cc9efc250c7",
@@ -117,10 +117,10 @@
     "opencode.jsonc": "sha256:91e93423ab0dec77ff76f5916ddc0148f26b4ac8a6bff817df407e6a2f74279b",
     ".opencode/plugins/fflow-guard.mjs": "sha256:771cd2dcb0636bfb9913e0280682baae345586c8dd7b339c556a9907815da867",
     ".mcp.yaml": "sha256:3b9cd6e6f147b2037a293f4b7ef168ff02f5e2eb3293e5c50786dba161660a0f",
-    "AGENTS.md": "sha256:dab4cf454062d629d97175371c2c1d40a21800cb60dd4df29881bad305b97017",
+    "AGENTS.md": "sha256:7dd6a3969588b1db715f43208f92429a0cd86027677849c09683f8dfa1d32a74",
     "CLAUDE.md": "sha256:1bb66f4650b13073d4dab49176c59479864a28274e4c6fb4a7902500a3c21dfc",
     "lefthook.yml": "sha256:56d729654d9993aebf75d7b7bedf829cbdd138ae121d08f3d30bcbdba9459c6b",
-    "README.md": "sha256:ece6c89119dd00daebdee62a167cc671d059619c2b359c9a951729e935c9a102",
+    "README.md": "sha256:5d05b1d4e05c4026873cb60ef6dfde5931dff505e548891e8d9c84bab69fd5cb",
     ".github/workflows/fflow-baseline.yml": "sha256:21164d6f6eab0ac0f1cc25be52daa83a69f5f1765339a16b02d71835cdc6f3f4",
     ".github/workflows/fflow-approve.yml": "sha256:ac6cf910062f6c1eb83d64bd1e1a7ee43685245f13edd9f30eed425401e68048",
     ".github/CODEOWNERS": "sha256:a5195bfed135306e598e58ba0ded06d8f02bb2f8e9cfb2be7f9558a4b074ff2d"

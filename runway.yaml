@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://static.stackra.figentra.com/schemas/runway/root.json
 # Stackra file contract:
 # Purpose: core's ROOT runway (ADR 0296): where Stackra's own deployables run and how they ship. Core deploys only
-#          its own infrastructure (ADR 0170 decision 1): the static Worker (static.stackra.figentra.com), the registry
-#          Worker (npm.stackra.figentra.com, ADR 0453), the Turborepo cache Worker (turbo.stackra.figentra.com,
-#          ADR 0026), the docs (docs.stackra.figentra.com), the landing (stackra.figentra.com, an ADR 0440 experience
+#          its own infrastructure (ADR 0170 decision 1): the shared Figentra Workers, each on its main host with the old
+#          stackra host kept as a second Custom Domain (STA-2892): static (static.figentra.com, ADR 0284), the registry
+#          (npm.figentra.com, ADR 0025, ADR 0453) and the Turborepo cache (turbo.figentra.com, ADR 0026); the docs (docs.stackra.figentra.com), the landing (stackra.figentra.com, an ADR 0440 experience
 #          document in the OS landing shell) and the @stackra/* packages on the Stackra registry. No
 #          staging and no previews (ADR 0170 decisions 5 and 7 as they apply to Stackra), so `dev` and `production`
 #          only. Each target names the caller workflow that deploys each of its members; `pnpm runway
@@ -146,15 +146,19 @@ targets:
       static:
         path: workers/static
         preset: public-site
-        customDomains: [static.stackra.figentra.com]
+        # The main host first; the stackra host stays, permanently, so no published `$schema` URL breaks (ADR 0284).
+        customDomains: [static.figentra.com, static.stackra.figentra.com]
         workersDev: false
         previewUrls: false
         observability:
           logs: true
           headSamplingRate: 0.1
+        # One check per host (STA-2892).
         smoke:
+          - url: https://static.figentra.com/schemas/index.json
           - url: https://static.stackra.figentra.com/schemas/index.json
-        # Its answers are static assets: the script's /-/version names the version each smoke step reached (STA-2786).
+        # Its answers are static assets: the script's /-/version names the version each smoke step reached, read on
+        # each smoke host (STA-2786).
         versionProof: route
       # ADR 0453. The ids are the `registry` environment's variables, swapped for the zero placeholders of
       # wrangler.jsonc on the runner only. /-/npm/v1/keys answers only once the signing key is readable.
@@ -168,14 +172,19 @@ targets:
         # Empty is writable; `true` freezes publishes (STA-1733).
         vars: [REGISTRY_READ_ONLY]
         secrets: [REGISTRY_SIGNING_KEY]
-        customDomains: [npm.stackra.figentra.com]
+        # The main host first (wrangler.jsonc REGISTRY_HOST); the stackra host stays, permanently, as
+        # REGISTRY_ALIAS_HOSTS, so an existing .npmrc or lockfile keeps installing (STA-2892).
+        customDomains: [npm.figentra.com, npm.stackra.figentra.com]
         workersDev: false
         previewUrls: false
         # Every request is kept so an install failure can be traced (STA-1573).
         observability:
           logs: true
           headSamplingRate: 1
+        # Both hosts; every answer names the version that gave it (STA-2786).
         smoke:
+          - url: https://npm.figentra.com/-/ping
+          - url: https://npm.figentra.com/-/npm/v1/keys
           - url: https://npm.stackra.figentra.com/-/ping
           - url: https://npm.stackra.figentra.com/-/npm/v1/keys
       # ADR 0026. The Worker's TURBO_CACHE_TOKEN is CI's TURBO_TOKEN, so the status check with it proves both.
@@ -184,13 +193,17 @@ targets:
         preset: cache
         secrets:
           TURBO_CACHE_TOKEN: TURBO_TOKEN
-        customDomains: [turbo.stackra.figentra.com]
+        # The main host first; the stackra host stays, permanently, for every TURBO_API that names it (STA-2892).
+        customDomains: [turbo.figentra.com, turbo.stackra.figentra.com]
         workersDev: false
         previewUrls: false
         observability:
           logs: true
           headSamplingRate: 0.1
+        # Both hosts; every answer names the version that gave it (STA-2786).
         smoke:
+          - url: https://turbo.figentra.com/v8/artifacts/status
+            bearer: TURBO_TOKEN
           - url: https://turbo.stackra.figentra.com/v8/artifacts/status
             bearer: TURBO_TOKEN
       # ADR 0514, STA-2026: the Fumadocs site (apps/docs/wrangler.jsonc), static assets but for the /-/version route.
@@ -215,7 +228,7 @@ targets:
       docs: deploy-docs.yml
       static: deploy-static.yml
       registry: deploy-registry.yml
-      # stackra-turbo-cache (ADR 0026), turbo.stackra.figentra.com; runs in the `static` environment.
+      # stackra-turbo-cache (ADR 0026), turbo.figentra.com (and its stackra host); runs in the `static` environment.
       turbo-cache: deploy-turbo-cache.yml
   # The reusable provider is .github/workflows/runway-npm.yml. The registry's trusted publisher row names the calling
   # workflow, so it names release.yml; publishing is a GitHub OIDC exchange, with no token (ADR 0453 decision 6).

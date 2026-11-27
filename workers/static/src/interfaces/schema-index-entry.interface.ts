@@ -8,7 +8,7 @@
 
 /** One latest schema, as `/index.json` lists it. */
 export interface SchemaIndexEntry {
-  /** The schema's canonical URL, equal to its `$id` (for example `https://static.stackra.figentra.com/mcp.json`). */
+  /** The schema's canonical URL, equal to its `$id` (for example `https://static.figentra.com/schemas/mcp.json`). */
   id: string;
   /** The schema's `title`, or its path when it has none. */
   title: string;

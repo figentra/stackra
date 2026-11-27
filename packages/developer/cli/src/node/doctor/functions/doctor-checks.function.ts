@@ -158,8 +158,13 @@ export async function doctorChecks(
       fix: "free at least 5 GB (installs, Docker images and the Encore build cache)",
     });
 
+  // The registry is named explicitly, so the check also works before the app (and its .npmrc) exists.
+  const origin = registryOrigin(root, undefined);
   const groups: readonly (DoctorNeed | "base")[] = ["base", ...needs];
-  const hosts = [...new Set(groups.flatMap((group) => DOCTOR_HOSTS[group] ?? []))];
+  // The host the workspace's .npmrc names is probed too: an older workspace keeps npm.stackra.figentra.com (STA-2892).
+  const hosts = [
+    ...new Set([...groups.flatMap((group) => DOCTOR_HOSTS[group] ?? []), new URL(origin).hostname]),
+  ];
   const probes = await probeHosts(hosts);
   const dropped = droppedAddresses(probes);
   const down = hosts.filter((host) => !probes.some((probe) => probe.host === host && probe.ok));
@@ -178,8 +183,6 @@ export async function doctorChecks(
     fix: WARP_FIX,
   });
 
-  // The registry is named explicitly, so the check also works before the app (and its .npmrc) exists.
-  const origin = registryOrigin(root, undefined);
   const registry = (name: string) =>
     sh("pnpm", ["view", name, "version", "--json", `--registry=${origin}`], root).status === 0;
   const stackraName = publishedDependency(workspace.manifests, "@stackra");

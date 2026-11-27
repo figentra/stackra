@@ -2,10 +2,14 @@
 
 Stackra's hosted static files: one Cloudflare Worker (`stackra-static`) that serves static assets
 ([ADR 0284](../../apps/docs/src/docs/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker.mdx)). It serves
-`https://static.stackra.figentra.com/`. Each kind of file has its own first path segment: `/schemas/` today, more
-kinds (CDN files, install scripts) later in the same member. It sits beside the other Stackra hosts on the
-`figentra.com` zone: `docs.stackra.figentra.com` (Mintlify) and `npm.stackra.figentra.com` (the `npm-registry`
-Worker).
+`https://static.figentra.com/` and, permanently, `https://static.stackra.figentra.com/` (the ADR's 2026-11-05
+amendment, STA-2892): both hosts serve the same files, so no published `$schema` URL breaks. Each kind of file has its
+own first path segment: `/schemas/` today, more kinds (CDN files, install scripts) later in the same member. Both hosts
+are Custom Domains in `runway.yaml` (`targets.cloudflare-workers.members.static`), the main one first.
+
+A schema's `$id` may name either host, and every published copy keeps the host its `$id` names: existing Stackra
+schemas keep `static.stackra.figentra.com`, and a new schema names `static.figentra.com` (`STATIC_HOSTS`;
+`parseSchema` refuses any other host).
 
 ## What it serves
 

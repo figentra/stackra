@@ -84,7 +84,7 @@ async function deprecate(
       detail: message,
     });
   }
-  await forgetPackument(deps.cache, name);
+  await forgetPackument(deps.cache, deps.settings.hosts, name);
   return json({ ok: true });
 }
 
@@ -224,6 +224,6 @@ export async function putPackage(
       return failure(409, `${name}@${version} exists; versions are immutable`);
     throw error;
   }
-  await forgetPackument(deps.cache, name);
+  await forgetPackument(deps.cache, deps.settings.hosts, name);
   return json({ ok: true, id: name, version }, 201);
 }

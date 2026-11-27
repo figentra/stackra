@@ -1,13 +1,14 @@
 // Stackra file contract:
-// Purpose: the Cloudflare Worker `stackra-registry`, the Stackra npm registry at npm.stackra.figentra.com (ADR 0453):
-//          its script (dist/main.mjs, built by tsdown), the R2, D1 and KV bindings, the custom domain and every limit
-//          as a Worker var (ADR 0453 decision 19).
+// Purpose: the Cloudflare Worker `stackra-registry`, the npm registry at npm.figentra.com (ADR 0025, ADR 0453), which
+//          keeps answering on npm.stackra.figentra.com, permanently (STA-2892): its script (dist/main.mjs, built by
+//          tsdown), the R2, D1 and KV bindings, its hosts and every limit as a Worker var (ADR 0453 decision 19).
 // Owner: release-operations · Secrets: REGISTRY_SIGNING_KEY is a Worker secret set by CI from the sops scope
 //        `ci/production/registry` (ADR 0525); CI passes CLOUDFLARE_API_TOKEN from sops in the environment. No secret is in this file.
 // Deploy: CI only, .github/workflows/deploy-registry.yml (runbook in README.md).
 // Carve-out (ADR 0284 decision 8): hand-written until `stackra gen` emits Workers config from runway.yaml (ADR 0168).
-// Code facts only (ADR 0519 decision 1): the compatibility date, observability, the custom domain, workers_dev and
-// preview URLs are runway.yaml's (`targets.cloudflare-workers.members.registry`), rendered on deploy.
+// Code facts only (ADR 0519 decision 1): the compatibility date, observability, the Custom Domains (both hosts, the
+// main one first), workers_dev and preview URLs are runway.yaml's (`targets.cloudflare-workers.members.registry`),
+// rendered on deploy as `routes`.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "stackra-registry",
@@ -32,7 +33,11 @@
   "kv_namespaces": [{ "binding": "CACHE", "id": "00000000000000000000000000000000" }],
   // Every limit and TTL is a setting (ADR 0453 decision 19); src/settings/read-settings.ts refuses a missing one.
   "vars": {
-    "REGISTRY_HOST": "npm.stackra.figentra.com",
+    // The main host: what a URL in an answer names when the request came in on no listed host (ADR 0025).
+    "REGISTRY_HOST": "npm.figentra.com",
+    // The other hosts the Worker answers on, a JSON array: runway.yaml's second Custom Domains. A request on one of
+    // them gets tarball and attestation URLs on that host, so an existing .npmrc or lockfile keeps working (STA-2892).
+    "REGISTRY_ALIAS_HOSTS": "[\"npm.stackra.figentra.com\"]",
     // registry.maxTarballBytes: 50 MiB.
     "REGISTRY_MAX_TARBALL_BYTES": 52428800,
     // The unpacked size a tarball may reach while the publish checks read it (a gzip bomb guard).
@@ -56,8 +61,7 @@
     // listed: a JSON array of { "key": "<SPKI DER, base64>", "expires": "<ISO date>" }.
     "REGISTRY_SIGNING_KEY_EXPIRES": "",
     "REGISTRY_RETIRED_KEYS": "[]",
-    // The OIDC audiences a publish may use, a JSON array; "" means only `npm:<REGISTRY_HOST>` (STA-1733: both hosts
-    // during the move to registry.figentra.com).
+    // The OIDC audiences a publish may use, a JSON array; "" means `npm:<host>` for REGISTRY_HOST and each alias host.
     "REGISTRY_OIDC_AUDIENCES": "",
     // "true" refuses every write with 503 while reads go on: set during a data move only (STA-1733).
     "REGISTRY_READ_ONLY": "",

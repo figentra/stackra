@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `readSettings`: the wrangler.jsonc vars parse into the settings (numbers or strings), the
- *          OIDC audiences default to `npm:<host>` and the read-only switch to off, and a missing or malformed var
- *          throws instead of falling back to a code default.
+ *          OIDC audiences default to `npm:<host>` for each served host (the main host and its aliases, STA-2892) and
+ *          the read-only switch to off, and a missing or malformed var throws instead of falling back to a code default.
  * Boundary: pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0453 (decision 19).
@@ -49,7 +49,29 @@ describe("readSettings", () => {
     ).toEqual(SETTINGS);
   });
 
+  it("answers on the main host and its alias hosts, each a default OIDC audience (STA-2892)", () => {
+    const settings = readSettings(env(VARS));
+    expect(settings.host).toBe("npm.figentra.com");
+    expect(settings.hosts).toEqual(["npm.figentra.com", "npm.stackra.figentra.com"]);
+    expect(settings.oidcAudiences).toEqual([
+      "npm:npm.figentra.com",
+      "npm:npm.stackra.figentra.com",
+    ]);
+    for (const none of [undefined, ""]) {
+      const single = readSettings(env({ ...VARS, REGISTRY_ALIAS_HOSTS: none }));
+      expect(single.hosts).toEqual(["npm.figentra.com"]);
+      expect(single.oidcAudiences).toEqual(["npm:npm.figentra.com"]);
+    }
+  });
+
   it.each([
+    ["REGISTRY_HOST", "npm.figentra.com:443"],
+    ["REGISTRY_HOST", "NPM.figentra.com"],
+    ["REGISTRY_ALIAS_HOSTS", '"npm.stackra.figentra.com"'],
+    ["REGISTRY_ALIAS_HOSTS", '["https://npm.stackra.figentra.com/"]'],
+    ["REGISTRY_ALIAS_HOSTS", '["npm.figentra.com"]'],
+    ["REGISTRY_ALIAS_HOSTS", '["a.figentra.com","a.figentra.com"]'],
+    ["REGISTRY_ALIAS_HOSTS", "[1]"],
     ["REGISTRY_OIDC_AUDIENCES", "[]"],
     ["REGISTRY_OIDC_AUDIENCES", '"npm:x"'],
     ["REGISTRY_OIDC_AUDIENCES", "[1]"],

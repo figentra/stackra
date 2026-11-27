@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of the site plan: the URL layout (moving, latest, major, exact), `$id` rewriting, index.json,
- *          the empty site before STA-305, and the schema validation errors.
+ * Purpose: unit tests of the site plan: the URL layout (moving, latest, major, exact), `$id` rewriting on the host
+ *          the `$id` names (either of the Worker's two hosts, STA-2892), index.json, the empty site before STA-305, and
+ *          the schema validation errors.
  * Boundary: pure; no file system and no git.
  * Runtime: node
  * Governing contract: ADR 0284 (hosted static files); ADR 0022 (test placement).
@@ -10,11 +11,14 @@
 import type { SchemaRelease, SchemaSource, SiteFile } from "#src/interfaces";
 import { planSite } from "#src/site/plan-site";
 
+/** The schemas base of an existing Stackra schema, which keeps its host (ADR 0284 decision 3 as amended). */
 const HOST = "https://static.stackra.figentra.com/schemas";
+/** The schemas base of a new schema: the Worker's main host (STA-2892). */
+const MAIN = "https://static.figentra.com/schemas";
 
-const schema = (path: string, extra: Record<string, unknown> = {}): SchemaSource => ({
+const schema = (path: string, extra: Record<string, unknown> = {}, base = HOST): SchemaSource => ({
   file: `tools/schemas${path}`,
-  text: JSON.stringify({ $id: `${HOST}${path}`, title: path, ...extra }),
+  text: JSON.stringify({ $id: `${base}${path}`, title: path, ...extra }),
 });
 
 /** One release holding a single schema whose description names the version. */
@@ -36,7 +40,8 @@ describe("planSite", () => {
       "/schemas/index.json",
     ]);
     expect(JSON.parse(files.get("/schemas/index.json") ?? "")).toEqual({
-      host: "static.stackra.figentra.com",
+      host: "static.figentra.com",
+      hosts: ["static.figentra.com", "static.stackra.figentra.com"],
       schemas: [],
       releases: [],
     });
@@ -85,13 +90,44 @@ describe("planSite", () => {
     });
   });
 
+  it("keeps the host each $id names: a new schema on the main host, an existing one on the stackra host", () => {
+    const files = byPath(
+      planSite(
+        [schema("/runway/app.json"), schema("/figentra/brand.json", {}, MAIN)],
+        [{ version: "1.0.0", schemas: [schema("/figentra/brand.json", {}, MAIN)] }],
+      ),
+    );
+    expect(JSON.parse(files.get("/schemas/figentra/brand.json") ?? "").$id).toBe(
+      `${MAIN}/figentra/brand.json`,
+    );
+    expect(JSON.parse(files.get("/schemas/1.0.0/figentra/brand.json") ?? "").$id).toBe(
+      `${MAIN}/1.0.0/figentra/brand.json`,
+    );
+    expect(JSON.parse(files.get("/schemas/v1/figentra/brand.json") ?? "").$id).toBe(
+      `${MAIN}/v1/figentra/brand.json`,
+    );
+    expect(JSON.parse(files.get("/schemas/latest/runway/app.json") ?? "").$id).toBe(
+      `${HOST}/latest/runway/app.json`,
+    );
+    expect(JSON.parse(files.get("/schemas/index.json") ?? "").schemas).toEqual([
+      { id: `${MAIN}/figentra/brand.json`, title: "/figentra/brand.json" },
+      { id: `${HOST}/runway/app.json`, title: "/runway/app.json" },
+    ]);
+  });
+
+  it("rejects one name on both hosts: both hosts serve the same path", () => {
+    expect(() => planSite([schema("/mcp.json"), schema("/mcp.json", {}, MAIN)], [])).toThrow(
+      /two files would be published at \/schemas\/mcp\.json/,
+    );
+  });
+
   it("rejects a schema whose $id names another host", () => {
     const foreign = {
       file: "tools/schemas/x.schema.json",
       text: '{"$id":"https://example.com/schemas/x.json"}',
     };
     expect(() => planSite([foreign], [])).toThrow(
-      /must be https:\/\/static\.stackra\.figentra\.com\/schemas/,
+      /must be https:\/\/static\.figentra\.com\/schemas\/<name>\.json or https:\/\/static\.stackra\.figentra\.com\/schemas/,
     );
   });
 
