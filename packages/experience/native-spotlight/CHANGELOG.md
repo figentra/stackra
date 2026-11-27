@@ -1,5 +1,16 @@
 # @stackra/native-spotlight
 
+## 0.34.0
+
+### Patch Changes
+
+- Updated dependencies [5d0e7b5]
+  - @stackra/config@0.34.0
+  - @stackra/platform@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @stackra/brand-kit
 
+## 0.34.0
+
+### Patch Changes
+
+- Updated dependencies [ee066a8]
+  - @stackra/support@0.34.0
+  - @stackra/tokens@0.34.0
+  - @stackra/contracts@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

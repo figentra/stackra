@@ -1,5 +1,29 @@
 # @stackra/infra-testbed
 
+## 0.34.0
+
+### Minor Changes
+
+- ee066a8: Public packages carry nothing internal (STA-2876). Examples, fixtures, comments, READMEs and changelogs use neutral
+  names (acme, bistro, `dev.example`, `/Users/me`) instead of internal product, person, host, account and vault names.
+  
+  `@stackra/runway`: a pull request's preview host lives in the product's own zone. Set
+  `environments.preview.domains.pullRequestZone` in the root runway (for example `preview.example`); a pull-request
+  `publishProduct` without it is refused before any upload or write. `pullRequestPreviewHost(product, n, zone)` takes the
+  zone and refuses one that is not a lowercase host name of two labels or more, and `PULL_REQUEST_PREVIEW_SETTINGS` no
+  longer has `zone`.
+  
+  `@stackra/infra-testbed`: the boxes' EC2 key pair is a stack setting, `AwsTestbedOptions.keyPair` (Pulumi config
+  `keyPair`). `TESTBED_DEFAULTS` now defaults `keyPair` to `stackra-testbed`, `keyFile` to `~/.ssh/stackra-testbed.pem`
+  and `awsProfile` to `figentra`; a stack that uses another pair names it.
+
+### Patch Changes
+
+- 0786781: The testbed agent's seed refresh leaves out `.stackra/dev-secrets.json`, as the Mac's rsync does. The agent script's
+  `EXCLUDES` list had lost the entry that `TESTBED_DEFAULTS.rsyncExcludes` gained in STA-2679, so the two lists differed
+  and the `testbed-agent` excludes test failed.
+- @stackra/contracts@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

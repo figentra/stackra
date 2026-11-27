@@ -1,5 +1,100 @@
 # @stackra/app
 
+## 0.34.0
+
+### Minor Changes
+
+- 5c17430: A signed edge request can no longer be replayed against another API instance of the same region. `Cache.add(key,
+  value, ttl)` is an atomic set-if-absent that answers whether it stored: one `SET … PX … NX` on Valkey, an upsert that
+  replaces only a dead row on Postgres, one check-and-set in memory; the `storage` and `workers` drivers have none and
+  reject it, as does the port's default for any other driver. `EdgeNonceStore` gains the `cache` driver, which claims
+  each request id with `Cache.add`, so every instance sharing a `valkey` or `postgres` cache refuses a replay; a region
+  with more than one API instance sets `app.edge.nonces: cache`. `EdgeSigningKeys` gains the `secrets` driver, which
+  reads the signing keys from the bound `SecretStore` on every check (the secret `app.edge.signingKeysSecret` names,
+  `STACKRA_EDGE_SIGNING_KEYS` by default). `bootApp` still binds the environment the app started with as that store and
+  does not reload it, so a key rotation still needs a restart with either `env` or `secrets`; a reloading store is
+  STA-2804. `memory` stays the default for both ports (ADR 0437, STA-2803).
+- 5d0e7b5: One reader decides the environment a process runs as, and only the runtime sets it (STA-2844, ADR 0296 as amended on
+  2026-11-26). `@stackra/config` adds `readEnvironment(raw, platform?)`, the closed list `StackraEnvironment` (`dev`,
+  `test`, `preview`, `staging`, `production`), `isDeployedEnvironment`, `PlatformEnvironment`, `ENVIRONMENT_VARIABLE` and
+  `SAFETY_CRITICAL_VARIABLES`. A configuration field mapped to `STACKRA_ENVIRONMENT` is now runtime-only: a runway
+  `config` value or a test's `values` for it fails boot with `ConfigInvalidError`, and a `STACKRA_ENVIRONMENT` outside the
+  list (`prod`, a typo) fails boot instead of reading as some environment. `@stackra/app/server` adds
+  `providePlatformEnvironment`, and the server `createApp` builds the configuration with the reader's answer: a deployed
+  Encore service with no variable runs as its deployed environment instead of `dev`, `dev` or `test` declared on a
+  deployment fails boot, and so does a self-hosted image that reports no environment. `@stackra/gen` writes
+  `stackra-encore/<member>/environment.ts` for every service that runs `@stackra/app`, imported first by each generated
+  Encore file. `runway validate` and `stackra validate --repository` refuse a runway `config` block that sets such a field
+  (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, `runtimeOnlyFieldsOf`).
+  
+  Upgrading: remove any `environment` value from a runway `config` block or a test's `values` for a configuration mapped to
+  `STACKRA_ENVIRONMENT` (`outbox.relay_inbox`, `market_packs`), and set the variable on the runtime instead, or leave it
+  unset on Encore Cloud. Regenerate with `stackra gen` so each service gets its `environment.ts`.
+  
+  Preview needs to be named. A deployed app with `STACKRA_ENVIRONMENT` unset, on a platform that reports its environment, boots as the environment the platform reports. So a preview deployment boots as `preview` only when the platform reports preview or `STACKRA_ENVIRONMENT=preview` is set; otherwise it boots as whatever the platform says.
+- 8ca387c: Runway's `config` values now reach boot, so the STA-2798 refusal of the memory action stores holds on a real
+  deployment and the advice it prints works.
+  
+  - `@stackra/gen` writes `.stackra/gen/runway-config.ts` (`runwayConfig`) for a service whose runway, or the root's
+    `defaults.service.config`, sets a `config` value: each environment's values by config key, the member's over the
+    root's field by field. The server, seed and console entries pass it to `bootApp` as `runway`.
+  - `@stackra/app`: `bootApp` takes `runway` (environment to config key to values) and applies the running environment's
+    as the values layer (ADR 0296). The running environment comes from the one reader, `readEnvironment` of
+    `@stackra/config` (STA-2844): `dev` when `STACKRA_ENVIRONMENT` is unset, and a name outside the closed list fails boot
+    with `ConfigInvalidError` instead of applying no environment's values. The server `createApp` takes the same `runway`
+    option. A runway value for a runtime-only field (one mapped to `STACKRA_ENVIRONMENT`) fails boot.
+  
+  After upgrading, run `stackra gen` so each service gets `runway-config.ts`. The environment a deployed Encore service
+  runs as comes from STA-2844's generated `environment.ts`.
+- d24706c: The server `createApp` bounds its shutdown drain. `drain()` waits for calls in flight for at most
+  `HttpConfig.drainTimeoutSeconds` (`app.http`, 1 to 600, 20 by default); at that deadline it reports one
+  `DrainTimeoutError` (the count still running and the deadline) through the `ErrorReporter` and resolves, so `close()`
+  and SIGTERM still run the shutdown hooks (the outbox flush among them) before the platform's SIGKILL. Before, one hung
+  call kept the process alive until it was killed. `DrainTimeoutError` is exported from `@stackra/app/server`.
+  
+  A long-lived response such as a server-sent events stream counts as a call in flight, so it is cut when the drain
+  deadline passes.
+
+### Patch Changes
+
+- 512397e: A Stackra service under `encore run` no longer crashes on a request with a body. The generated HTTP adapter turned
+  Encore's raw request into a web stream with `Readable.toWeb`, whose end-of-stream cleanup calls
+  `req.req.removeListener`; Encore keeps its native request, which is no emitter, in `req`, so every POST, PUT or
+  PATCH threw "stream.req.removeListener is not a function". `@stackra/app/server` now exports `nodeBodyStream`, which
+  reads the body through plain listeners with backpressure (the cap stays `HttpConfig.maxBodyBytes`), and the adapter
+  uses it (STA-2794).
+- ee066a8: Public packages carry nothing internal (STA-2876). Examples, fixtures, comments, READMEs and changelogs use neutral
+  names (acme, bistro, `dev.example`, `/Users/me`) instead of internal product, person, host, account and vault names.
+  
+  `@stackra/runway`: a pull request's preview host lives in the product's own zone. Set
+  `environments.preview.domains.pullRequestZone` in the root runway (for example `preview.example`); a pull-request
+  `publishProduct` without it is refused before any upload or write. `pullRequestPreviewHost(product, n, zone)` takes the
+  zone and refuses one that is not a lowercase host name of two labels or more, and `PULL_REQUEST_PREVIEW_SETTINGS` no
+  longer has `zone`.
+  
+  `@stackra/infra-testbed`: the boxes' EC2 key pair is a stack setting, `AwsTestbedOptions.keyPair` (Pulumi config
+  `keyPair`). `TESTBED_DEFAULTS` now defaults `keyPair` to `stackra-testbed`, `keyFile` to `~/.ssh/stackra-testbed.pem`
+  and `awsProfile` to `figentra`; a stack that uses another pair names it.
+- Updated dependencies [5c17430]
+- Updated dependencies [fa7235b]
+- Updated dependencies [2677a78]
+- Updated dependencies [5d0e7b5]
+- Updated dependencies [8ca387c]
+- Updated dependencies [8ca387c]
+  - @stackra/cache@0.34.0
+  - @stackra/actions@0.34.0
+  - @stackra/csp@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/identity@0.34.0
+  - @stackra/settings@0.34.0
+  - @stackra/clients@0.34.0
+  - @stackra/navigation@0.34.0
+  - @stackra/errors@0.34.0
+  - @stackra/i18n@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

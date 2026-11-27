@@ -1,5 +1,24 @@
 # @stackra/infra-identity
 
+## 0.34.0
+
+### Patch Changes
+
+- Updated dependencies [8ca387c]
+- Updated dependencies [b30777a]
+- Updated dependencies [f79b3f6]
+- Updated dependencies [5d0e7b5]
+- Updated dependencies [ee066a8]
+- Updated dependencies [8ca387c]
+- Updated dependencies [b052b6b]
+- Updated dependencies [eabcd6e]
+- Updated dependencies [c4a19e8]
+  - @stackra/runway@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

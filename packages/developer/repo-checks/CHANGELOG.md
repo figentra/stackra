@@ -1,5 +1,48 @@
 # @stackra/repo-checks
 
+## 0.34.0
+
+### Minor Changes
+
+- 5d0e7b5: One reader decides the environment a process runs as, and only the runtime sets it (STA-2844, ADR 0296 as amended on
+  2026-11-26). `@stackra/config` adds `readEnvironment(raw, platform?)`, the closed list `StackraEnvironment` (`dev`,
+  `test`, `preview`, `staging`, `production`), `isDeployedEnvironment`, `PlatformEnvironment`, `ENVIRONMENT_VARIABLE` and
+  `SAFETY_CRITICAL_VARIABLES`. A configuration field mapped to `STACKRA_ENVIRONMENT` is now runtime-only: a runway
+  `config` value or a test's `values` for it fails boot with `ConfigInvalidError`, and a `STACKRA_ENVIRONMENT` outside the
+  list (`prod`, a typo) fails boot instead of reading as some environment. `@stackra/app/server` adds
+  `providePlatformEnvironment`, and the server `createApp` builds the configuration with the reader's answer: a deployed
+  Encore service with no variable runs as its deployed environment instead of `dev`, `dev` or `test` declared on a
+  deployment fails boot, and so does a self-hosted image that reports no environment. `@stackra/gen` writes
+  `stackra-encore/<member>/environment.ts` for every service that runs `@stackra/app`, imported first by each generated
+  Encore file. `runway validate` and `stackra validate --repository` refuse a runway `config` block that sets such a field
+  (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, `runtimeOnlyFieldsOf`).
+  
+  Upgrading: remove any `environment` value from a runway `config` block or a test's `values` for a configuration mapped to
+  `STACKRA_ENVIRONMENT` (`outbox.relay_inbox`, `market_packs`), and set the variable on the runtime instead, or leave it
+  unset on Encore Cloud. Regenerate with `stackra gen` so each service gets its `environment.ts`.
+  
+  Preview needs to be named. A deployed app with `STACKRA_ENVIRONMENT` unset, on a platform that reports its environment, boots as the environment the platform reports. So a preview deployment boots as `preview` only when the platform reports preview or `STACKRA_ENVIRONMENT=preview` is set; otherwise it boots as whatever the platform says.
+- 8ca387c: A deployed app no longer keeps Idempotency-Keys or rate-limit buckets in process memory (STA-2798). `StoresConfig`
+  gains the field `environment`, mapped to `STACKRA_ENVIRONMENT` and typed as `@stackra/config`'s closed
+  `StackraEnvironment` (the one environment reader of STA-2844; unset reads as `dev`, a misspelt name fails boot). Where
+  `isDeployedEnvironment` says the app is deployed (`preview`, `staging`, `production`), a `memory` idempotency or
+  rate-limit store fails boot with `ConfigInvalidError` naming the field: the memory store forgets every key on a restart,
+  so a retried write ran twice, and kept one set of buckets per instance. `dev` and `test` keep the memory default. The
+  environment is runtime-only: a runway `config` block or a test's `values` that sets `actions.stores.environment` fails
+  boot and `runway validate`, so runway cannot make a deployment read as `dev`.
+  
+  Before you deploy, set both stores in runway, for example in the root's `defaults.service.config` of each deployed
+  environment:
+  
+  ```yaml
+  config:
+    actions.stores: { idempotency: postgres, rateLimit: postgres }
+  ```
+  
+  `runway validate` and `stackra validate --repository` report the same thing first: the new `checkActionStores(root,
+  service, manifest)` of `@stackra/runway` names each deployed environment of a service, whose committed manifest binds
+  `actions.IdempotencyStore` or `actions.RateLimitStore`, that does not select `postgres` or `valkey`.
+
 ## 0.33.1
 
 ### Patch Changes

@@ -1,5 +1,47 @@
 # @stackra/database
 
+## 0.34.0
+
+### Minor Changes
+
+- b30777a: A call no longer stalls when every pool connection is taken by calls that each need a second one (STA-1716). A call
+  holds its isolation transaction (ADR 0495) while a `requiresNew` store opens another connection, so with as many
+  concurrent calls as the pool had connections every call waited for a second that never came, and the `pg` pool waits
+  without a limit. `PostgresDatabaseDriver` now admits every transaction that takes a connection of its own through a
+  connection gate by its depth: `max - (nesting - 1)` units run at the top level and one place per deeper level stays free,
+  so a chain no deeper than `pool.nesting` (default 4) always finishes. A chain deeper than the pool is refused at once
+  with a `RangeError`, and a transaction that waits past `pool.acquireTimeout` (default 30 seconds) is refused with the
+  new retryable `ConnectionPoolExhaustedError` (`connection_pool_exhausted`, 503). `DatabaseConfig.pool` takes the two
+  new optional fields. `poolMaxOf` in `@stackra/runway` now refuses a `poolBudget` that gives an instance fewer than two
+  connections. See the ADR 0473 note of 2026-11-26.
+- 72b14d3: Locked migrations are frozen (ADR 0159, STA-2160). A service's `stackra gen` now writes a `migrations` section to its `stackra.manifest.json`: each compiled migration's id and the SHA-256 of what it compiled to, in apply order. From then on gen refuses a locked migration that compiles to other SQL (`migration_locked_changed`), one that is gone (`migration_locked_missing`), one that an unlocked migration would run before (`migration_lock_gap`) and a malformed section (`migration_lock_malformed`). The locked migrations keep their place at the head of the order, so a new migration, a new package's included, runs after them; `stackra db diff` reads the same lock.
+  
+  `compileMigration` takes `frozen: true` for a locked migration: an authoring rule that only checks how it is written (every column states its nullability and has a comment) comes back in `warnings` instead of throwing, which gen reports as a `migration_rule_frozen` warning, and the SQL must still hash as locked. Safety rules still refuse. A migration the lock does not name stays editable and meets every rule.
+  
+  Upgrading: run `stackra gen` in each service with migrations and commit its `stackra.manifest.json`; until then `stackra gen --check` reports the manifest as stale. To change a locked migration that no environment has applied, remove its entry from `migrations` by hand and run `stackra gen` again. A package's own migrations are checked but not locked; the services that host the package lock them.
+- fa7235b: An Idempotency-Key's result now commits with the action's writes, and a committed call never frees its key, so a retry can no longer repeat a committed write (STA-2797, ADR 0495 note of 2026-11-26). The pipeline writes the result of a store that joins transactions (the Postgres store) inside the call's transaction, after the interceptors; with no `CallIsolation` bound it opens one `UnitOfWork` transaction around such a keyed call. A Valkey or memory store's claim is extended to the replay window as the last step before the commit (a claim another call took after this one's lease lapsed rolls the call back with `idempotency_key_in_progress`, so it never writes twice); the store is completed right after the commit, and if that write fails the caller still gets its output, the failure is logged as `actions.idempotency_store_failed`, and the key stays held for the window. A claim now holds its key for a 15-minute lease, separate from the 24-hour replay window, so a call whose process died before its commit frees its key after the lease instead of answering in-progress for a day. Every claim carries a holder token unique to the call, and the memory and Valkey stores extend, complete or free a key only while it still holds that call's claim.
+  
+  Breaking for anyone implementing `IdempotencyStore` (only the shipped memory, Valkey and Postgres drivers do): `claim(key, fingerprint, lease, holder)` takes the lease and the call's holder token; the new `extend(key, fingerprint, ttl, holder)` keeps the holder's claim (or a free key) held for the window and resolves `false` when the claim was lost; `complete(key, fingerprint, output, ttl, holder)` takes the fingerprint, the replay window and the holder, and writes the record when the key is held by that holder or free; `release(key, holder)` frees only the holder's claim.
+
+### Patch Changes
+
+- Updated dependencies [5c17430]
+- Updated dependencies [fa7235b]
+- Updated dependencies [5d0e7b5]
+- Updated dependencies [8ca387c]
+- Updated dependencies [8ca387c]
+  - @stackra/cache@0.34.0
+  - @stackra/actions@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/errors@0.34.0
+  - @stackra/model@0.34.0
+  - @stackra/console@0.34.0
+  - @stackra/testing@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/events@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

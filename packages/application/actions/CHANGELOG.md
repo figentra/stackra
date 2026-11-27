@@ -1,5 +1,60 @@
 # @stackra/actions
 
+## 0.34.0
+
+### Minor Changes
+
+- fa7235b: An Idempotency-Key's result now commits with the action's writes, and a committed call never frees its key, so a retry can no longer repeat a committed write (STA-2797, ADR 0495 note of 2026-11-26). The pipeline writes the result of a store that joins transactions (the Postgres store) inside the call's transaction, after the interceptors; with no `CallIsolation` bound it opens one `UnitOfWork` transaction around such a keyed call. A Valkey or memory store's claim is extended to the replay window as the last step before the commit (a claim another call took after this one's lease lapsed rolls the call back with `idempotency_key_in_progress`, so it never writes twice); the store is completed right after the commit, and if that write fails the caller still gets its output, the failure is logged as `actions.idempotency_store_failed`, and the key stays held for the window. A claim now holds its key for a 15-minute lease, separate from the 24-hour replay window, so a call whose process died before its commit frees its key after the lease instead of answering in-progress for a day. Every claim carries a holder token unique to the call, and the memory and Valkey stores extend, complete or free a key only while it still holds that call's claim.
+  
+  Breaking for anyone implementing `IdempotencyStore` (only the shipped memory, Valkey and Postgres drivers do): `claim(key, fingerprint, lease, holder)` takes the lease and the call's holder token; the new `extend(key, fingerprint, ttl, holder)` keeps the holder's claim (or a free key) held for the window and resolves `false` when the claim was lost; `complete(key, fingerprint, output, ttl, holder)` takes the fingerprint, the replay window and the holder, and writes the record when the key is held by that holder or free; `release(key, holder)` frees only the holder's claim.
+- 8ca387c: A deployed app no longer keeps Idempotency-Keys or rate-limit buckets in process memory (STA-2798). `StoresConfig`
+  gains the field `environment`, mapped to `STACKRA_ENVIRONMENT` and typed as `@stackra/config`'s closed
+  `StackraEnvironment` (the one environment reader of STA-2844; unset reads as `dev`, a misspelt name fails boot). Where
+  `isDeployedEnvironment` says the app is deployed (`preview`, `staging`, `production`), a `memory` idempotency or
+  rate-limit store fails boot with `ConfigInvalidError` naming the field: the memory store forgets every key on a restart,
+  so a retried write ran twice, and kept one set of buckets per instance. `dev` and `test` keep the memory default. The
+  environment is runtime-only: a runway `config` block or a test's `values` that sets `actions.stores.environment` fails
+  boot and `runway validate`, so runway cannot make a deployment read as `dev`.
+  
+  Before you deploy, set both stores in runway, for example in the root's `defaults.service.config` of each deployed
+  environment:
+  
+  ```yaml
+  config:
+    actions.stores: { idempotency: postgres, rateLimit: postgres }
+  ```
+  
+  `runway validate` and `stackra validate --repository` report the same thing first: the new `checkActionStores(root,
+  service, manifest)` of `@stackra/runway` names each deployed environment of a service, whose committed manifest binds
+  `actions.IdempotencyStore` or `actions.RateLimitStore`, that does not select `postgres` or `valkey`.
+
+### Patch Changes
+
+- 8ca387c: Runway's `config` values now reach boot, so the STA-2798 refusal of the memory action stores holds on a real
+  deployment and the advice it prints works.
+  
+  - `@stackra/gen` writes `.stackra/gen/runway-config.ts` (`runwayConfig`) for a service whose runway, or the root's
+    `defaults.service.config`, sets a `config` value: each environment's values by config key, the member's over the
+    root's field by field. The server, seed and console entries pass it to `bootApp` as `runway`.
+  - `@stackra/app`: `bootApp` takes `runway` (environment to config key to values) and applies the running environment's
+    as the values layer (ADR 0296). The running environment comes from the one reader, `readEnvironment` of
+    `@stackra/config` (STA-2844): `dev` when `STACKRA_ENVIRONMENT` is unset, and a name outside the closed list fails boot
+    with `ConfigInvalidError` instead of applying no environment's values. The server `createApp` takes the same `runway`
+    option. A runway value for a runtime-only field (one mapped to `STACKRA_ENVIRONMENT`) fails boot.
+  
+  After upgrading, run `stackra gen` so each service gets `runway-config.ts`. The environment a deployed Encore service
+  runs as comes from STA-2844's generated `environment.ts`.
+- Updated dependencies [5c17430]
+- Updated dependencies [5d0e7b5]
+  - @stackra/cache@0.34.0
+  - @stackra/config@0.34.0
+  - @stackra/errors@0.34.0
+  - @stackra/testing@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/events@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @stackra/builder
 
+## 0.34.0
+
+### Patch Changes
+
+- Updated dependencies [80130cb]
+  - @stackra/workflow@0.34.0
+  - @stackra/rules@0.34.0
+  - @stackra/collaboration@0.34.0
+  - @stackra/errors@0.34.0
+  - @stackra/experience@0.34.0
+  - @stackra/container@0.34.0
+  - @stackra/contracts@0.34.0
+  - @stackra/validation@0.34.0
+
 ## 0.33.1
 
 ### Patch Changes
