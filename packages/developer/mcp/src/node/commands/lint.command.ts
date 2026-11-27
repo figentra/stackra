@@ -6,12 +6,11 @@
  * Boundary: runs through the CLI runner only and never fixes: no `--fix` reaches the linter. Not read-only, because a
  *           docs app's lint regenerates and builds its site.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5: run and explain failures); STA-2873.
+ * Governing contract: ADR 0282 (decision 5: run and explain failures); STA-2873; STA-2886.
  */
 import { Command, Option, type CommandIo } from "@stackra/console";
 import { Str } from "@stackra/validation";
 
-import { diagnosticsOf } from "#node/functions/diagnostics-of.function";
 import { parseDiagnostics } from "#node/functions/parse-diagnostics.function";
 import { runToolCommand } from "#node/functions/run-tool-command.function";
 import type { DevToolHost } from "#core/ports/dev-tool-host.port";
@@ -43,7 +42,7 @@ export class LintCommand extends Command({
   handle(io: CommandIo): Promise<number> {
     return runToolCommand(io, this.host, ["lint"], {
       member: this.member,
-      read: (output) => diagnosticsOf(parseDiagnostics(output)),
+      read: (output) => ({ diagnostics: parseDiagnostics(output, "lint") }),
     });
   }
 }

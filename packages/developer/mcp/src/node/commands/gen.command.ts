@@ -3,14 +3,15 @@
  * Purpose: `GenCommand`, the `gen` tool of the local MCP: runs `stackra gen` for the repository or one member,
  *          `--check` to fail on drift without writing, `--manifests` to write the manifests alone, and returns the run
  *          with each refusal and warning (file, place, code, message, fix) read from its output.
- * Boundary: runs through the CLI runner only, so gen's own gates apply; gen writes only generated files.
+ * Boundary: runs through the CLI runner only, so gen's own gates apply; gen writes only generated files, and
+ *           the tool writes its log.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5: run gen and explain failures); ADR 0294 (decision 22); STA-2873.
+ * Governing contract: ADR 0282 (decision 5: run gen and explain failures); ADR 0294 (decision 22); STA-2873;
+ *                     STA-2886.
  */
 import { Command, Option, type CommandIo } from "@stackra/console";
 import { Str } from "@stackra/validation";
 
-import { diagnosticsOf } from "#node/functions/diagnostics-of.function";
 import { parseGenOutput } from "#node/functions/parse-gen-output.function";
 import { runToolCommand } from "#node/functions/run-tool-command.function";
 import type { DevToolHost } from "#core/ports/dev-tool-host.port";
@@ -52,7 +53,7 @@ export class GenCommand extends Command({
       io,
       this.host,
       ["gen", ...(this.check ? ["--check"] : []), ...(this.manifests ? ["--manifests"] : [])],
-      { member: this.member, read: (output) => diagnosticsOf(parseGenOutput(output)) },
+      { member: this.member, read: (output) => ({ diagnostics: parseGenOutput(output) }) },
     );
   }
 }

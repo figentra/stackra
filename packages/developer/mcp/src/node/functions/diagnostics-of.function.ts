@@ -5,9 +5,9 @@
  *          out.
  * Boundary: pure.
  * Runtime: node
- * Governing contract: STA-2873.
+ * Governing contract: STA-2873; STA-2886.
  */
-import type { Diagnostic } from "#node/types/diagnostic.type";
+import type { Diagnostic } from "@stackra/console/contracts";
 
 /** The most findings one tool result lists. */
 const DIAGNOSTICS_LIMIT = 200;

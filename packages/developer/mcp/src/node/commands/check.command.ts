@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: `CheckCommand`, the `check` tool of the local MCP: runs `stackra check --format=json` (the quality gate),
  *          all phases or the ones picked or skipped, optionally over the changed files only, past a failed phase, or
- *          with the tests, and returns the run with its findings and their counts by phase and severity.
- * Boundary: runs through the CLI runner only and never fixes (`--fix` is not offered). `findings` is null when the
- *           run printed no report (it failed before one).
+ *          with the tests, and returns the run with each finding as a diagnostic and their counts by phase and severity.
+ * Boundary: runs through the CLI runner only and never fixes (`--fix` is not offered). `report` is false when the run
+ *           printed no report (it failed before one).
  * Runtime: node
- * Governing contract: ADR 0282 (decision 3: the CLI runs every check; decision 5); STA-2873.
+ * Governing contract: ADR 0282 (decision 3: the CLI runs every check; decision 5); STA-2873; STA-2886.
  */
 import { Command, Option, type CommandIo } from "@stackra/console";
 import { List } from "@stackra/validation";

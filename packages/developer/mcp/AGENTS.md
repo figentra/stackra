@@ -22,6 +22,10 @@ shape (ADR 0294, 0305). Entries `.` and `./node` (ADR 0127, 2026-10-24 note).
   served through `toolsOf`: never a hand-written tool table. A tool describes only kinds, sections and phases that
   exist; an enum mirrors the CLI (`NEW_KINDS`, `CHECK_PHASE_NAMES`) and `@stackra/cli`'s `MCP_COMMAND` test holds it
   there. A tool that writes is refused on a deployed target (`deployedTarget`).
+- A tool reports findings only as `Diagnostic`s (`@stackra/console/contracts`), never a shape of its own: a runner tool
+  returns them as `diagnostics` from its `read`, `runToolCommand` writes the log and `toolResult` lifts them to the top
+  of the result. A `code` is what `stackra explain` takes; a `docsUrl` comes from the tool's output or `explainDocs`,
+  never typed by hand.
 - The hosted server core (`toolTable`, `filterTools`, `protectedResourceMetadata`, `wwwAuthenticate`) is pure and
   lives in `.`. It reads committed manifests only, never adds or annotates a tool by hand, and takes every URL,
   permission and entitlement answer from the host; the deployment itself is the OS `ai` service.

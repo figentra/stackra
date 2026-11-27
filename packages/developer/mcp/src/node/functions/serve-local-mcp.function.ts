@@ -6,7 +6,9 @@
  *          CLI's new, gen, validate, check, verify, test, typecheck and lint with structured results), then the host's
  *          tools (one with a built-in's name replaces it), then every local Encore tool, proxied under an `encore_`
  *          prefix across every `tools/list` page. Each tool is listed with its MCP hints (read-only, destructive,
- *          idempotent). Resolves when the client disconnects.
+ *          idempotent). Every call of its own tools answers `structuredContent` `{ ok, diagnostics, data?, error? }`
+ *          (`toolResult`): one `Diagnostic` list, each code linked to its `stackra explain` docs (`explainDocs`) through
+ *          the same runner. Resolves when the client disconnects.
  * Boundary: every write runs through the given `StackraRunner`, the CLI's own commands and gates; this file writes
  *           nothing itself. A tool that is not read-only is refused, before it runs, when the server runs in a deployed
  *           environment or the call names one (`deployedTarget`). A tool's input is checked by its command, and a bad
@@ -14,7 +16,7 @@
  *           ADR 0282 is a separate deployment, not this server.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 5: local mode); R-29 (`stackra mcp` proxies the local Encore tools);
- *                     STA-1966 FR-020; STA-2873.
+ *                     STA-1966 FR-020; STA-2873; STA-2886 (one Diagnostic contract).
  */
 import { toolsOf } from "@stackra/console";
 
@@ -24,9 +26,11 @@ import { McpProtocolError } from "#node/errors/mcp-protocol.error";
 import { connectMcp } from "#node/functions/connect-mcp.function";
 import { deployedTarget } from "#node/functions/deployed-target.function";
 import { devToolContainer } from "#node/functions/dev-tool-container.function";
+import { explainDocs } from "#node/functions/explain-docs.function";
 import { listUpstreamTools } from "#node/functions/list-upstream-tools.function";
 import { openEncoreMcp } from "#node/functions/open-encore-mcp.function";
 import { spawnStackra } from "#node/functions/spawn-stackra.function";
+import { toolResult } from "#node/functions/tool-result.function";
 import type { LocalTool } from "#node/types/local-tool.type";
 import type { ServeLocalMcpOptions } from "#node/types/serve-local-mcp-options.type";
 import type { UpstreamTool } from "#node/types/upstream-tool.type";
@@ -44,22 +48,20 @@ const annotationsOf = (tool: LocalTool) =>
         idempotentHint: tool.idempotent ?? false,
       };
 
-/** The tool result refusing a write on a deployed target. */
-const refusal = (name: string, reason: string) => {
-  const document = {
-    ok: false,
-    error: {
-      code: "deployed_target",
-      message: `${name} writes, and ${reason}: the local developer MCP only writes in dev or test`,
-      fix: "run it from a local checkout, or through the deploy path for that environment",
+/** The tool result refusing a write on a deployed target: one `deployed_target` diagnostic. */
+const refusal = (name: string, reason: string) =>
+  toolResult(
+    name,
+    {
+      ok: false,
+      error: {
+        code: "deployed_target",
+        message: `${name} writes, and ${reason}: the local developer MCP only writes in dev or test`,
+        fix: "run it from a local checkout, or through the deploy path for that environment",
+      },
     },
-  };
-  return {
-    content: [{ type: "text", text: JSON.stringify(document, null, 2) }],
-    structuredContent: document,
-    isError: true,
-  };
-};
+    1,
+  );
 
 /**
  * Serves the local MCP until the client disconnects.
@@ -74,6 +76,7 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
   const root = options.root ?? process.cwd();
   const env = options.env ?? process.env;
   const run = options.run ?? spawnStackra(root);
+  const docs = explainDocs(run);
   const upstream =
     options.encore === undefined
       ? openEncoreMcp(root, options.version)
@@ -104,13 +107,9 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
     if (tool !== undefined) {
       const reason = tool.readOnly ? undefined : deployedTarget(env, args);
       if (reason !== undefined) return refusal(name, reason);
-      // The command's own --json document is the structured result; its exit code decides isError.
+      // The command's own --json document, as one diagnostic report; its exit code decides isError.
       const { document, exitCode } = await tool.invoke(args ?? {});
-      return {
-        content: [{ type: "text", text: JSON.stringify(document, null, 2) }],
-        structuredContent: document,
-        isError: exitCode !== 0,
-      };
+      return toolResult(name, document, exitCode, docs);
     }
     if (name.startsWith(ENCORE)) {
       const peer = await upstream;

@@ -3,14 +3,13 @@
  * Purpose: `TypecheckCommand`, the `typecheck` tool of the local MCP: runs `stackra typecheck` (gen first, then the
  *          member's type check; every member through Turborepo at the root) and returns the run with each TypeScript
  *          diagnostic (file, line, column, code, message) read from its output.
- * Boundary: runs through the CLI runner only; it writes what gen writes and nothing else.
+ * Boundary: runs through the CLI runner only; it writes what gen writes and the tool's log, nothing else.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5: run and explain failures); STA-2873.
+ * Governing contract: ADR 0282 (decision 5: run and explain failures); STA-2873; STA-2886.
  */
 import { Command, Option, type CommandIo } from "@stackra/console";
 import { Str } from "@stackra/validation";
 
-import { diagnosticsOf } from "#node/functions/diagnostics-of.function";
 import { parseDiagnostics } from "#node/functions/parse-diagnostics.function";
 import { runToolCommand } from "#node/functions/run-tool-command.function";
 import type { DevToolHost } from "#core/ports/dev-tool-host.port";
@@ -42,7 +41,7 @@ export class TypecheckCommand extends Command({
   handle(io: CommandIo): Promise<number> {
     return runToolCommand(io, this.host, ["typecheck"], {
       member: this.member,
-      read: (output) => diagnosticsOf(parseDiagnostics(output)),
+      read: (output) => ({ diagnostics: parseDiagnostics(output, "typecheck") }),
     });
   }
 }

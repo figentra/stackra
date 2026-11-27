@@ -59,7 +59,8 @@ process.exitCode = await execWithSecrets(argv); // or { secretsDir: "/path/to/fi
 
 `serveLocalMcp` speaks MCP over stdio (newline-delimited JSON-RPC 2.0). Every tool is a console command declared
 `tool` (`DEV_TOOL_COMMANDS`), served through `toolsOf` of `@stackra/console`, so a tool's input schema, hints and
-handler are its command's own, and its result is the command's `--json` document (`structuredContent`):
+handler are its command's own, and its result (`structuredContent`) is the command's `--json` document as one
+diagnostic report, `{ ok, diagnostics, data?, error? }`:
 
 | Tool        | Hints               | Does                                                                                          |
 | ----------- | ------------------- | --------------------------------------------------------------------------------------------- |
@@ -82,9 +83,20 @@ so a write passes the CLI's own commands and gates; the CLI passes its command c
 Each result carries the command line, where it ran, the exit code, the time and the tail of the output, plus what the
 tool reads from it.
 
+Every finding arrives in one shape, `Diagnostic` from `@stackra/console/contracts`: `phase` (the check phase or the
+tool), `code`, `severity`, `file` (from the repository root), `line`, `column`, `message`, `fix` and `docsUrl`. A failed
+test, a type error, a lint finding, a gen refusal, a `stackra check` finding and the command's own error (a bad input,
+an unknown member, `deployed_target`) are each one diagnostic in the result's top-level `diagnostics`, errors first and
+at most 200 (`data.truncated` when more). A failed run that printed no finding still gets one, `command_failed`, with
+the last line it printed. `code` is what `stackra explain` takes (a check finding is `<tool>/<rule>`), and a finding
+without a link gets the one `stackra explain <code> --json` gives, through the same runner, once per code; a code the
+error-code reference does not list gets no link. The full plain output of each tool's last run is in
+`.stackra/logs/last-<tool>.log`, and `data.log` names it, so an assistant reads the list first and the log only when it
+needs more.
+
 A tool that is not read-only is refused, before it runs, when the server runs in a deployed environment
 (`STACKRA_ENVIRONMENT` other than `dev` or `test`) or the call names one (`env` or `environment`): the result is the
-error `deployed_target`. A proxied Encore tool counts as writing unless Encore marks it `readOnlyHint`. The Encore app
+error `deployed_target`, as one diagnostic. A proxied Encore tool counts as writing unless Encore marks it `readOnlyHint`. The Encore app
 id is the root runway's `providers.encore.app`; when there is none, or Encore does not answer within ten seconds, the
 local tools still work.
 
