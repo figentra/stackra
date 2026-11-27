@@ -141,7 +141,8 @@ shows the rest.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
-- **AC-001**: WHEN `stackra` runs in the minimal app THE CLI SHALL list at most 25 commands, none of the Repository group.
+- **AC-001**: WHEN `stackra` runs in an app made from the template's `starter/minimal` profile THE CLI SHALL list at most 25
+  commands, none of the Repository group.
 - **AC-002**: WHEN the list is drawn THE CLI SHALL show the headings in `COMMAND_GROUPS` order.
 - **AC-003**: WHEN `stackra list --all` runs THE CLI SHALL list every command of `COMMANDS`.
 - **AC-004**: WHILE a command is unlisted or hidden THE CLI SHALL still run it by name.
