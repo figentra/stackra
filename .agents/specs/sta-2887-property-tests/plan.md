@@ -10,7 +10,9 @@ fast-check joins the `quality` catalog and five packages gain one property test 
 `<subject>-properties.<kind>.test.ts` beside the subject's own tests (unit tier, ADR 0182). The money file checks
 `divide` and `times` against a floor-and-ceiling model in every mode, allocation, cash rounding and the decimal round
 trip. The ledger file found that `Journal.post` summed lines as numbers, which round past 2^53; `post` now sums in
-BigInt, and both counterexamples are kept. The ledger's memory repository and journal move to two fixtures the tests
+BigInt, and both counterexamples are kept. It then found the same rounding in the floor checks of `append` and `post`
+and in `reverseWhere`'s running balance; those are exact too, and a floored write whose floor or balance is not a safe
+integer is refused with a `RangeError`. The ledger's memory repository and journal move to two fixtures the tests
 share. Stryker joins the same catalog, and `@stackra/iam` runs it over `src/core/functions` with `pnpm test:mutation`;
 the first run's security-relevant survivors get tests, and the score before and after goes in its AGENTS.md. ADR 0220's
 enforcement line states what is now enforced.
@@ -43,11 +45,11 @@ enforcement line states what is now enforced.
 
 ## Deploy modes
 
-| Mode       | Behaviour                                                          |
-| ---------- | ------------------------------------------------------------------ |
-| SaaS       | `Journal.post` refuses a posting that does not sum to exactly zero |
-| On-prem    | same                                                               |
-| Air-gapped | same                                                               |
+| Mode       | Behaviour                                                                            |
+| ---------- | ------------------------------------------------------------------------------------ |
+| SaaS       | `Journal.post` refuses a posting that does not sum to exactly zero; floors are exact |
+| On-prem    | same                                                                                 |
+| Air-gapped | same                                                                                 |
 
 ## Correctness properties
 
@@ -55,18 +57,23 @@ enforcement line states what is now enforced.
 - **P-002**: for every amount and ratios, the allocated parts sum to the amount and each is within one minor unit of its share — Validates: FR-001
 - **P-003**: for every posting of safe amounts, `post` writes it exactly when its lines sum to zero — Validates: FR-002, FR-003
 - **P-004**: for every sequence of appends, a balance is the sum of the account's applied entries, and a floor of zero is never crossed — Validates: FR-003
+- **P-007**: for every safe balance, floor and debits, `post` refuses exactly when the exact net takes an account below its floor, and `reverseWhere` cuts exactly where the exact running balance meets it — Validates: FR-007
+- **P-008**: for every balance beyond the safe-integer range and every floor that is not a safe integer, a floored write throws a `RangeError` and writes nothing — Validates: FR-008
 - **P-005**: for every UUID, the public id round-trips and keeps order; for every string, decoding returns a UUID or throws a `TypeError` — Validates: FR-004
 - **P-006**: for every body, exactly one Luhn, GTIN or MOD 97-10 check value is accepted, and every single-digit change is refused — Validates: FR-004
 
 ## Architecture overview
 
-No production structure changes. `Journal.post` keeps its order of checks; only the sum is exact. The property tests
+No production structure changes. `Journal.post` keeps its order of checks; only the sums are exact. Two private
+helpers in `journal.service.ts` hold the floor arithmetic: `exactBalance` (a balance read as a BigInt, refused when not
+a safe integer) and `endsBelow` (balance plus an exact change against the floor). The property tests
 sit beside the example tests and import the subject through the package's `#core`/`#node` aliases. Stryker runs from
 the iam package folder with `vitest.stryker.config.ts`, which is the unit config less one declaration-emit test.
 
 ## Components and responsibilities
 
-- `Journal.post` (`ledger/src/node/services/journal.service.ts`): sums lines in BigInt.
+- `Journal.post`, `append`, `reverseWhere` (`ledger/src/node/services/journal.service.ts`): sum lines, nets and
+  running balances in BigInt; `floorOf` refuses a floor that is not a safe integer.
 - `journal-over.fixture.ts`, `memory-entries.fixture.ts` (`ledger/src/node/services/__tests__/`): the shared memory
   journal, moved from `journal.service.test.ts`.
 - `stryker.config.mjs`, `vitest.stryker.config.ts` (`packages/security/iam/`): the trial.
@@ -78,6 +85,7 @@ pnpm-workspace.yaml
 pnpm-lock.yaml
 .gitignore
 .changeset/ledger-exact-posting-sum.md
+.changeset/ledger-exact-floors.md
 apps/docs/src/docs/adr/0220-stackra-money-and-the-ledger-package.mdx
 packages/commerce/money/
 ├── AGENTS.md
@@ -93,19 +101,26 @@ packages/commerce/ledger/
         ├── journal-properties.service.test.ts
         ├── journal-over.fixture.ts
         └── memory-entries.fixture.ts
-packages/foundation/contracts/src/core/functions/__tests__/mint-public-id-properties.function.test.ts
-packages/data/model/src/core/functions/__tests__/public-id-properties.function.test.ts
-packages/foundation/validation/src/core/functions/__tests__/identifier-properties.function.test.ts
+packages/foundation/contracts/
+├── package.json
+└── src/core/functions/__tests__/mint-public-id-properties.function.test.ts
+packages/data/model/
+├── package.json
+└── src/core/functions/__tests__/public-id-properties.function.test.ts
+packages/foundation/validation/
+├── package.json
+└── src/core/functions/__tests__/identifier-properties.function.test.ts
 packages/security/iam/
 ├── AGENTS.md
 ├── package.json
 ├── stryker.config.mjs
 ├── vitest.stryker.config.ts
-└── src/core/functions/__tests__/
-    ├── break-glass-grant.function.test.ts
-    ├── field-access.function.test.ts
-    ├── key-covers.function.test.ts
-    └── selects-permission.function.test.ts
+└── src/core/functions/
+    └── __tests__/
+        ├── break-glass-grant.function.test.ts
+        ├── field-access.function.test.ts
+        ├── key-covers.function.test.ts
+        └── selects-permission.function.test.ts
 ```
 
 - `packages/commerce/ledger/src/node/services/journal.service.ts`
@@ -119,12 +134,13 @@ None.
 ## Contracts
 
 No contract changes. `Journal.post(lines)` keeps its signature and its documented refusal (`UnbalancedPostingError`
-when the lines do not sum to zero); the TSDoc now says the sum is exact.
+when the lines do not sum to zero); the TSDoc now says the sum is exact. `append`, `post` and `reverseWhere` keep their
+signatures; their `@throws RangeError` lines add a floor or a floored balance that is not a safe integer.
 
 ## Error handling
 
 An unbalanced posting is refused with `UnbalancedPostingError` (`total` the sum as a number, `lines` the count), as
-before. A failing property prints fast-check's seed and shrunk counterexample.
+before. A floored write whose floor or balance is not a safe integer throws a `RangeError` before it writes anything. A failing property prints fast-check's seed and shrunk counterexample.
 
 ## Security and tenancy
 
@@ -138,10 +154,12 @@ No runtime security change. The new iam tests pin four behaviours the first muta
 - AC-004: `mint-public-id-properties.function.test.ts`, `public-id-properties.function.test.ts`,
   `identifier-properties.function.test.ts`.
 - AC-005: `pnpm test:mutation` in `@stackra/iam`, before and after the new tests.
+- AC-006, AC-007: the floor properties and the two floor counterexamples in `journal-properties.service.test.ts`;
+  the journal before the fix fails four of them, and removing only the balance guard fails the beyond-the-range one.
 
 ## Rollout
 
-A patch changeset for `@stackra/ledger`. Nothing to run on upgrade.
+Two patch changesets for `@stackra/ledger`. Nothing to run on upgrade.
 
 ## Delegation and risk plan
 
@@ -155,7 +173,8 @@ higher floor), ADR 0135, ADR 0022, ADR 0269.
 ## Docs
 
 `apps/docs/src/docs/adr/0220-stackra-money-and-the-ledger-package.mdx`, `packages/commerce/money/AGENTS.md`,
-`packages/commerce/ledger/AGENTS.md`, `packages/security/iam/AGENTS.md`, `.changeset/ledger-exact-posting-sum.md`.
+`packages/commerce/ledger/AGENTS.md`, `packages/security/iam/AGENTS.md`, `.changeset/ledger-exact-posting-sum.md`,
+`.changeset/ledger-exact-floors.md`.
 
 ## Complexity tracking
 

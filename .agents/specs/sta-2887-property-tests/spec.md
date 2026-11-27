@@ -35,24 +35,28 @@ package. This spec is written from what the branch built.
 - `packages/security/iam/src/core/functions/` (the decision functions the trial mutates)
 - ADR 0220 (decisions 1 to 4 and its enforcement line), ADR 0182 (test tiers, the security coverage floor), ADR 0135
   (public id format), ADR 0022 and ADR 0269 (test placement and imports)
-- FR-001 to FR-006: the branch's diff against `main`, its test runs and the two Stryker runs (listed under Success
+- FR-001 to FR-008: the branch's diff against `main`, its test runs and the two Stryker runs (listed under Success
   Criteria)
 
 ## Impact _(mandatory, answer every line before /flow-clarify completes)_
 
 - **Apps touched**: none
 - **Services touched**: none
-- **Packages touched**: packages/commerce/ledger (`Journal.post` sums exactly; test fixtures), packages/commerce/money,
+- **Packages touched**: packages/commerce/ledger (`Journal.post` sums exactly; floor checks and reversal cuts are
+  exact; a floored write against a balance or with a floor beyond the safe-integer range is refused; test fixtures), packages/commerce/money,
   packages/foundation/contracts, packages/data/model, packages/foundation/validation (property tests and the
   fast-check dev dependency), packages/security/iam (Stryker config, `test:mutation` script, tests that kill
   security-relevant survivors)
 - **Public contract change**: none. No export, type or manifest changes. `Journal.post` now refuses every posting whose
   lines do not sum to exactly zero and accepts every one that does, which is its documented contract; before, a
   floating-point sum broke it beside amounts near `Number.MAX_SAFE_INTEGER`. `UnbalancedPostingError.total` stays a
-  number.
+  number. `append`, `post` and `reverseWhere` compare a floor exactly, and throw a `RangeError` (already their
+  documented error for a value that is not a safe integer) when a call's floor, or the balance a floor is checked
+  against, is not a safe integer; the TSDoc `@throws` lines say so.
 - **Cross-service events**: none
-- **Tenancy and data**: no schema or row change. The ledger fix stops an unbalanced posting from being written, which
-  protects every tenant's balances; nothing reads tenant rows differently.
+- **Tenancy and data**: no schema or row change. The ledger fixes stop an unbalanced posting, a floor crossed by a
+  unit and a reversal cut short from being written, which protects every tenant's balances; nothing reads tenant rows
+  differently.
 - **Security and privacy**: no runtime change. The iam trial adds tests only: a write mixing a writable and a hidden
   field is refused, a non-public call is never covered by a key, a selector with anything around its shape selects
   nothing, a break-glass grant approved by another person is accepted.
@@ -65,9 +69,11 @@ package. This spec is written from what the branch built.
 - **UI surfaces**: none
 - **Docs to update**: `apps/docs/src/docs/adr/0220-stackra-money-and-the-ledger-package.mdx` (enforcement),
   `packages/commerce/money/AGENTS.md`, `packages/commerce/ledger/AGENTS.md`, `packages/security/iam/AGENTS.md`
-  (the mutation score and how to run it), `.changeset/ledger-exact-posting-sum.md` (patch for `@stackra/ledger`)
+  (the mutation score and how to run it), `.changeset/ledger-exact-posting-sum.md` and
+  `.changeset/ledger-exact-floors.md` (patches for `@stackra/ledger`)
 - **Lane**: full (money code, a ledger fix and a new catalog entry)
-- **Change risk**: R1 (tests and a dev tool; the one runtime change makes `Journal.post` meet its documented contract)
+- **Change risk**: R1 (tests and a dev tool; the runtime changes make `Journal` meet its documented contract: exact
+  sums, and a refusal where a floor cannot be checked exactly)
 
 ## Glossary _(full lane)_
 
@@ -116,6 +122,13 @@ it writes the posting only when the lines sum to zero.
    written.
 3. **Given** any sequence of appends, **When** the balance is read, **Then** it is the sum of the account's entries,
    a retried reference counting once; with a floor of zero no sequence takes it below zero.
+4. **Given** a balance of `MAX`, a floor of `-1` and the debits `-MAX` and `-2` in one posting, **When** they are
+   posted, **Then** they are refused below the floor (a `number` net rounded `-(2^53 + 1)` to `-2^53` and wrote them).
+5. **Given** the entries `[-MAX, 1, MAX, 1]` and a floor of zero, **When** all are reversed, **Then** each is reversed
+   in full and the balance is zero (a `number` running balance rounded `2^53 + 1` and cut the last reversal to
+   nothing).
+6. **Given** a balance beyond the safe-integer range, or a floor that is not a safe integer, **When** a floored
+   `append`, `post` or `reverseWhere` runs, **Then** a `RangeError` and nothing written.
 
 ---
 
@@ -170,6 +183,10 @@ the mutants that survived, file by file.
 - **FR-005** (example-only): `@stackra/iam` SHALL run Stryker over its decision functions with `pnpm test:mutation`, and its AGENTS.md
   SHALL record the score.
 - **FR-006** (example-only): Every counterexample a property found SHALL stay as an example test.
+- **FR-007**: `Journal` SHALL decide a floor exactly: a posting's per-account net, a debit against the balance and a
+  reversal's running balance are computed in BigInt.
+- **FR-008**: `Journal` SHALL refuse with a `RangeError`, writing nothing, a floored write whose floor or whose balance
+  read is not a safe integer.
 
 ## Acceptance criteria _(mandatory for a tiered spec, ADR 0502)_
 
@@ -178,12 +195,16 @@ the mutants that survived, file by file.
 - **AC-003**: WHEN a posting's lines sum to exactly zero THE `Journal.post` SHALL write it, for any safe amounts.
 - **AC-004**: WHEN the property tests run THE id and validation helpers SHALL round-trip, keep order and never throw anything but a documented `TypeError` or a `false`.
 - **AC-005**: WHEN `pnpm test:mutation` runs in `@stackra/iam` THE Stryker trial SHALL report a mutation score per file.
+- **AC-006**: WHEN an account's exact balance after a posting or a reversal would be below its floor THE `Journal` SHALL refuse the posting or cut the reversal at the floor, for any safe amounts and balances.
+- **AC-007**: IF a floored write's floor or the balance it is checked against is not a safe integer THEN THE `Journal` SHALL throw a `RangeError` and write nothing.
 
 ## Success Criteria _(mandatory)_
 
 - **SC-001**: `money-properties.value.test.ts` (15 properties) proves FR-001 and AC-001 — verified by: unit
-- **SC-002**: `journal-properties.service.test.ts` (7 tests, two of them the kept counterexamples) proves FR-002,
-  FR-003, FR-006, AC-002 and AC-003; reverting the fix fails three or four of them — verified by: unit
+- **SC-002**: `journal-properties.service.test.ts` (13 tests, four of them kept counterexamples) proves FR-002,
+  FR-003, FR-006 to FR-008 and AC-002, AC-003, AC-006, AC-007; reverting the posting sum fails the two posting
+  counterexamples, reverting the exact floors fails four floor tests, and removing only the balance guard fails the
+  beyond-the-range property — verified by: unit
 - **SC-003**: `mint-public-id-properties.function.test.ts`, `public-id-properties.function.test.ts` and
   `identifier-properties.function.test.ts` prove FR-004 and AC-004 — verified by: unit
 - **SC-004**: `pnpm test:mutation` in `@stackra/iam` reports 79.35% (292 of 368 mutants killed) before the new tests and
@@ -193,7 +214,8 @@ the mutants that survived, file by file.
 ## Compatibility and migration
 
 - `Journal.post` accepted or refused a posting wrongly only when a partial sum passed 2^53; every posting below that
-  behaves as before. No data migration: a posting written wrongly before is corrected by a reversal, as any mistake.
+  behaves as before. A floored write on an account whose balance is beyond the safe-integer range now throws a
+  `RangeError`; no ledger the packages serve holds such a balance, and an unfloored write (`floor: null`) still works. No data migration: a posting written wrongly before is corrected by a reversal, as any mistake.
 - The new dev dependencies are in the `quality` catalog; nothing ships to consumers.
 
 ## Risks
@@ -206,8 +228,8 @@ the mutants that survived, file by file.
 ## Out of scope
 
 - Gating CI on a mutation score, or running Stryker on other packages.
-- The `balance + amount < floor` comparisons in `append` and `post`, which still add two JavaScript numbers; a balance
-  near 2^53 is beyond any ledger the packages serve today.
+- Reading a balance beyond the safe-integer range exactly: `Repository.sum` returns a number, so that needs a bigint
+  sum on the repository port. Until then a floor is never checked against such a balance (FR-008).
 
 ## Assumptions
 
@@ -227,3 +249,4 @@ None.
 - 2026-11-26 · Draft → Clarified · Claude (STA-2887, batch 14) · clarifications complete (none open)
 - 2026-11-26 · Clarified → Planned · Claude (STA-2887, batch 14) · plan.md
 - 2026-11-26 · Planned → Tasked · Claude (STA-2887, batch 14) · tasks.md; the tasks marked done are already on the branch; Implementing waits for the approver's Planned approval (ADR 0502)
+- 2026-11-27 · Tasked (amended) · Claude (STA-2887, batch 14) · FR-007, FR-008, AC-006, AC-007 and T010: exact floors and reversal cuts, and a refusal where a floor cannot be checked exactly; still waiting for the approver's Planned approval before → Implementing (ADR 0502)

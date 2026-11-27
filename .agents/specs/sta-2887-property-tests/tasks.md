@@ -18,16 +18,18 @@ description: "Tasks for STA-2887: property tests for money, ledger, ids and vali
 
 ## Phase 3: User Story 2 - The ledger never writes an unbalanced posting (Priority: P1)
 
-- [x] T003 [US2] Test first: property tests of postings, balances, floors and reversals, and the two counterexamples, in `packages/commerce/ledger/src/node/services/__tests__/journal-properties.service.test.ts`, over the memory journal moved to `journal-over.fixture.ts` and `memory-entries.fixture.ts` — covers: FR-003, FR-006, P-003, P-004, AC-002, AC-003 — route: tests — deps: T001
+- [x] T003 [US2] Test first: property tests of postings, balances, floors and reversals, and the two counterexamples, in `packages/commerce/ledger/src/node/services/__tests__/journal-properties.service.test.ts`, over the memory journal moved to `packages/commerce/ledger/src/node/services/__tests__/journal-over.fixture.ts` and `packages/commerce/ledger/src/node/services/__tests__/memory-entries.fixture.ts` — covers: FR-003, FR-006, P-003, P-004, AC-002, AC-003 — route: tests — deps: T001
 - [x] T004 [US2] Sum a posting's lines in BigInt in `packages/commerce/ledger/src/node/services/journal.service.ts`, with the changeset `.changeset/ledger-exact-posting-sum.md` — covers: FR-002, P-003, AC-002, AC-003 — route: package — deps: T003
 
 ## Phase 4: User Story 3 - Ids and identifier checks (Priority: P2)
 
 - [x] T005 [US3] Property tests in `packages/foundation/contracts/src/core/functions/__tests__/mint-public-id-properties.function.test.ts`, `packages/data/model/src/core/functions/__tests__/public-id-properties.function.test.ts` and `packages/foundation/validation/src/core/functions/__tests__/identifier-properties.function.test.ts` — covers: FR-004, P-005, P-006, AC-004 — route: tests — deps: T001
 
+- [x] T010 [US2] Test first: exact floors in `packages/commerce/ledger/src/node/services/__tests__/journal-properties.service.test.ts` (the floor properties, the overdraft and reversal counterexamples, the beyond-the-range refusal), with the exact sum in `packages/commerce/ledger/src/node/services/__tests__/memory-entries.fixture.ts`; then BigInt nets, balances and reversal cuts and the `RangeError` guard in `packages/commerce/ledger/src/node/services/journal.service.ts`, with the changeset `.changeset/ledger-exact-floors.md` — covers: FR-006, FR-007, FR-008, P-007, P-008, AC-006, AC-007 — route: package — deps: T004
+
 ## Phase 5: User Story 4 - The mutation-testing trial (Priority: P2)
 
-- [x] T006 [US4] Stryker over `src/core/functions` with `pnpm test:mutation` in `packages/security/iam/stryker.config.mjs` and `packages/security/iam/vitest.stryker.config.ts`, its sandbox and reports ignored in `.gitignore` — covers: FR-005, AC-005 — route: package — deps: T001
+- [x] T006 [US4] Stryker over the iam decision functions with `pnpm test:mutation` in `packages/security/iam/stryker.config.mjs` and `packages/security/iam/vitest.stryker.config.ts`, its sandbox and reports ignored in `.gitignore` — covers: FR-005, AC-005 — route: package — deps: T001
 - [x] T007 [US4] Tests that kill the first run's security-relevant survivors in `packages/security/iam/src/core/functions/__tests__/` (field access, key coverage, selector anchors, break-glass approval), and the score before and after in `packages/security/iam/AGENTS.md` — covers: FR-005, AC-005 — route: tests — deps: T006
 
 ## Phase 6: Polish
