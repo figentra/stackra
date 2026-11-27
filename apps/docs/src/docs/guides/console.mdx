@@ -54,6 +54,42 @@ The rules that follow from the declarations:
 - **The constructor only stores collaborators.** The kernel builds a throwaway instance with no arguments to read the defaults. If the constructor throws, the defaults are lost silently.
 - **`handle(io)`** returns an exit code from 0 to 255, nothing (exit 0), or an object or array, which becomes the `--json` data. Any other return value, or a throw, exits 1.
 
+### Shared option sets
+
+When several commands take the same options, declare them once in an option set and give it to each command with
+`@Options`:
+
+```ts
+// check.option-set.ts
+export class CheckOptionSet extends OptionSet {
+  @Option({ description: "Apply the fixes the tools can make" })
+  fix = false;
+
+  @Option({ description: "Run only these phases, comma-separated" })
+  @Str
+  only?: string;
+}
+
+// lint.command.ts
+export class LintCommand extends Command({
+  name: "lint",
+  description: "Lint the workspace",
+}) {
+  @Options(CheckOptionSet)
+  flags = new CheckOptionSet();
+
+  async handle(io: CommandIo) {
+    if (this.flags.fix) io.output.info("fixing");
+  }
+}
+```
+
+An option set is a plain class of `@Option` fields: it is not a command and never runs. Each command keeps its own name;
+the set's flags join its options and its help lists each one once. A run fills the set instance on the field (a field
+with no initialiser gets one). A flag that the set shares with an option of the command, or with another set the
+command takes, is refused with `ConsoleDeclarationError`. An option set lives in `<name>.option-set.ts` and is named
+`<Name>OptionSet`.
+
 The package compiles field decorators in the legacy form (`(target, property)`), so the tsconfig needs `experimentalDecorators: true`, as the scaffolder writes it.
 
 ## Register the commands: createConsole and nodePorts

@@ -24,7 +24,6 @@ const flag = (value: string | boolean | undefined): string | undefined =>
 /** The `stackra testbed` command: runs work on the test boxes and manages them. */
 export const TESTBED_COMMAND: CliCommand = {
   name: "testbed",
-  group: "Repository",
   summary:
     "Run heavy work on the shared test boxes (run, status, unlock, ip, ssh, sync, scale, image); deprecated: use `testbed` from @figentra/testbed (ADR 0522)",
   usage:

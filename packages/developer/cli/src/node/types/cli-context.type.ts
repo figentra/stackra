@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `CliContext`, what a command's `run` receives: the working directory, the io, its parsed options and
- *          positionals, the arguments after `--`, and the CLI itself, so a command can run another in-process.
+ *          positionals, the arguments after `--`, the CLI itself, so a command can run another in-process, and where it reports
+ *          its `--json` data.
  * Boundary: type only; `runCli` builds it after parsing.
  * Runtime: node
  * Governing contract: ADR 0282 (decision 3: `stackra` runs every operation; decision 5: the MCP runs its commands).
@@ -27,4 +28,7 @@ export type CliContext = {
 
   /** Runs another `stackra` command (its arguments without the program name) and resolves with its exit code. */
   readonly cli: (args: readonly string[], io: CliIo) => Promise<number>;
+
+  /** Hands the run's `--json` data to its command class; a body that reports nothing gets its output as the data. */
+  readonly report?: (data: unknown) => void;
 };

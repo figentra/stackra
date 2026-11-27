@@ -16,7 +16,6 @@ import type { CliCommand } from "#node/types/cli-command.type";
 /** `stackra db seed`. */
 export const DB_SEED_COMMAND: CliCommand = {
   name: "db seed",
-  group: "Database",
   summary:
     "Run the member's seeders of a profile, each in its own transaction, skipping unchanged ones",
   usage: `stackra db seed [--profile ${Object.keys(SEED_PROFILES).join("|")}] [--env <environment>] [--module <key>] [--again] [--allow-production]`,

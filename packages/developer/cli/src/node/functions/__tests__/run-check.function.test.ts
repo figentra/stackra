@@ -2,10 +2,11 @@
  * Stackra file contract:
  * Purpose: unit tests of `runCheck` over stand-in phases: a clean run exits 0 with the summary, a failing phase stops
  *          the later ones, a missing tool is "skipped (not installed)", a throwing phase becomes a crash finding, a
- *          warning never fails, and `--format json` prints only the findings array.
+ *          warning never fails, `--format json` prints only the findings array, and the run reports its phases and
+ *          findings (`context.report`, the `--json` data).
  * Boundary: test only; `CHECK_PHASES` is replaced, so no tool runs.
  * Runtime: node (vitest)
- * Governing contract: ADR 0282 (decision 3); ADR 0022 (test placement).
+ * Governing contract: ADR 0282 (decision 3); ADR 0022 (test placement); STA-2883 spec FR-005.
  */
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -172,5 +173,52 @@ describe("runCheck", () => {
         adr: "0007",
       }),
     ]);
+  });
+
+  // @covers sta-2883:FR-005
+  it("reports each phase and every finding, whatever the format", async () => {
+    state.phases = [
+      phase("config", async () => ({
+        findings: [
+          toolFinding(
+            { name: "config", tool: "repo-checks", adr: null },
+            { rule: "json-configs", path: "x.json", message: "convert", fixable: true },
+          ),
+        ],
+      })),
+      phase("lint", async () => ({ findings: [] })),
+    ];
+    for (const format of ["text", "json", "github"]) {
+      const report = vi.fn();
+      const { io } = captureIo();
+      const code = await runCheck(
+        {
+          cwd: mkdtempSync(join(tmpdir(), "check-")),
+          io,
+          values: { only: "config,lint", format },
+          positionals: [],
+          rest: [],
+          cli: async () => 0,
+          report,
+        },
+        {},
+      );
+      expect(code).toBe(1);
+      expect(report).toHaveBeenCalledExactlyOnceWith({
+        phases: [
+          {
+            phase: "config",
+            status: "failed",
+            findings: 1,
+            fixable: 1,
+            durationMs: expect.any(Number),
+          },
+          { phase: "lint", status: "not run", findings: 0, fixable: 0, durationMs: 0 },
+        ],
+        findings: [
+          expect.objectContaining({ phase: "config", rule: "json-configs", path: "x.json" }),
+        ],
+      });
+    }
   });
 });

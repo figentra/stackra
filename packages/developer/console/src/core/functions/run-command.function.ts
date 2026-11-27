@@ -15,6 +15,7 @@ import { OperatorBreakGlass } from "#contracts/ports/operator-break-glass.port";
 import type { SignalSource } from "#contracts/types/signal-source.type";
 import { EXIT_CODE } from "#core/constants/exit-code.constant";
 import type { Command } from "#core/bases/command.base";
+import { fillCommand } from "#core/functions/fill-command.function";
 import { BreakGlassRequiredError } from "#core/errors/break-glass-required.error";
 import { CommandAuditMissingError } from "#core/errors/command-audit-missing.error";
 import { CommandNotAuditedError } from "#core/errors/command-not-audited.error";
@@ -115,7 +116,7 @@ export async function runCommand(
       container === undefined
         ? (Reflect.construct(entry.type, []) as Command)
         : container.get(entry.type as unknown as abstract new () => Command);
-    Object.assign(command, values);
+    fillCommand(command, entry, values);
     handling = Promise.resolve().then(() => command.handle(io(controller.signal)));
     const result = await Promise.race([handling, interrupted]);
     // A handler that returns on abort still ends with the signal's code.

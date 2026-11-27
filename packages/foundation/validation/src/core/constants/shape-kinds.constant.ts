@@ -7,7 +7,8 @@
  *           snake_case (`Refusal` is `refusal`, `IntegrationEvent` is `integration_event`). A kind package that adds a
  *           field-carrying kind adds its code here in the same change.
  * Runtime: isomorphic
- * Governing contract: ADR 0294 (decisions 6, 16 and 26); ADR 0231 (snake_case machine codes).
+ * Governing contract: ADR 0294 (decisions 6, 16 and 26); ADR 0231 (snake_case machine codes); STA-2924 (`option_set`,
+ *                     the shared option sets of `@stackra/console`).
  */
 
 /** The kind codes of field-carrying classes. */
@@ -20,6 +21,7 @@ export const SHAPE_KINDS: readonly string[] = Object.freeze([
   "domain_event",
   "integration_event",
   "model",
+  "option_set",
   "projection",
   "refusal",
   "schema",

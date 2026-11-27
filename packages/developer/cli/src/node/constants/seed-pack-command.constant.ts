@@ -27,7 +27,6 @@ import type { CliCommand } from "#node/types/cli-command.type";
 /** The `stackra seed-pack` command. */
 export const SEED_PACK_COMMAND: CliCommand = {
   name: "seed-pack",
-  group: "Database",
   summary: "Check a product's seed pack, or seed one profile without touching tenant values",
   usage: `stackra seed-pack <product> [--profile ${Object.keys(SEED_PROFILES).join("|")}] [--env <environment>] [--check] [--allow-production]`,
   options: {

@@ -32,6 +32,10 @@ your workspace uses: the search commands appear once a member uses `@stackra/sea
 surfaces or a mobile app, and the Stackra repository's own checks only in that repository. Every command still runs by
 name; `stackra list --all` lists them all.
 
+`stackra <command> --help` explains each argument and option. In a terminal, `stackra new` asks for what you left out
+(the kind, the name, a service's area, a package's category); in CI it exits 2 and names the flag to pass. Add `--json`
+to any command for one JSON document: `stackra gen --check --json` lists each refusal with its code, file, line and fix.
+
 ## Products
 
 `stackra build --product` builds every surface bundle and mobile app of the root runway, and

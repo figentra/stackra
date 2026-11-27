@@ -46,6 +46,11 @@ The value kind of a field comes from `@Str`, `@Int`, `@Num` or `@List`; an `@Opt
 (`--dry-run`, `--no-dry-run`), an `@Argument` with none a string. Initialisers are the defaults. An argument without an
 initialiser is required unless it is `@Argument({ optional: true })`.
 
+Options several commands share go in an option set (`class CheckOptionSet extends OptionSet { @Option fix = false; }`,
+in `check.option-set.ts`), which each command takes in one field: `@Options(CheckOptionSet) flags = new
+CheckOptionSet();`. The command keeps its own name, its help lists each shared flag once, a run fills `this.flags`, and
+a flag the set shares with another option of the command is a `ConsoleDeclarationError`.
+
 ## A console
 
 ```typescript

@@ -3,13 +3,13 @@
  * Purpose: `runGen(root, options, io)`, one gen run over one member as the CLI prints it: every refusal in gen's
  *          two-line form and each warning (`warning: `, never a failure), then the files written, or with `check` the files that are stale; `pass: "manifests"` runs
  *          gen's manifest pass alone. It resolves true when the member is clean: no refusal, and with `check` nothing
- *          stale.
+ *          stale. `onOutcome` gets the same run as data (`GenOutcome`), for `stackra gen --json`.
  * Boundary: gen writes only under the member root and, on a refusal, nothing but the client files and manifest it
  *           lists; a check writes nothing. Gen gets `loadWithVite` as its module loader, so a member's resource trees
  *           are recorded (STA-1947).
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10, 22 and 26: the committed manifest, `stackra gen --check`, refusals
- *                     print their fix); ADR 0295 (decision 5); ADR 0101 (Enforcement: gen warns).
+ *                     print their fix); ADR 0295 (decision 5); ADR 0101 (Enforcement: gen warns); STA-2883.
  */
 import { relative } from "node:path";
 
@@ -18,6 +18,7 @@ import { generate } from "@stackra/gen/node";
 
 import { loadWithVite } from "#node/functions/load-with-vite.function";
 import type { CliIo } from "#node/types/cli-io.type";
+import type { GenOutcome } from "#node/types/gen-outcome.type";
 
 /**
  * Runs gen on the member at `root` and prints the outcome.
@@ -27,6 +28,7 @@ import type { CliIo } from "#node/types/cli-io.type";
  *                  printed paths are relative to (default: the working directory); `pass: "manifests"` writes the
  *                  manifest alone.
  * @param io - where the outcome is printed.
+ * @param onOutcome - gets the outcome as data once it is printed.
  * @throws Error when gen cannot read the member's package.json, tsconfig or a dependency manifest.
  * @example
  * const clean = await runGen("packages/commerce/loyalty-kit", { check: true }, PROCESS_IO);
@@ -40,6 +42,7 @@ export async function runGen(
     readonly pass?: "manifests";
   },
   io: CliIo,
+  onOutcome?: (outcome: GenOutcome) => void,
 ): Promise<boolean> {
   const where = relative(options.base ?? process.cwd(), root) || ".";
   const {
@@ -52,6 +55,10 @@ export async function runGen(
     ...(options.pass === undefined ? {} : { pass: options.pass }),
     loader: loadWithVite,
   });
+  const done = (clean: boolean, written: readonly string[], stale: readonly string[]): boolean => {
+    onOutcome?.({ member: where, clean, errors, warnings, written, stale });
+    return clean;
+  };
   for (const error of errors) io.err(`${where}/${formatGenError(error)}\n`);
   for (const warning of warnings) io.err(`warning: ${where}/${formatGenError(warning)}\n`);
   if (errors.length > 0) {
@@ -59,16 +66,16 @@ export async function runGen(
     for (const path of changed) io.out(`wrote ${where}/${path}\n`);
     const what = changed.length > 0 ? "only the files listed were written" : "nothing was written";
     io.err(`gen: ${errors.length} error(s) in ${where}; ${what}\n`);
-    return false;
+    return done(false, changed, []);
   }
   if (options.check === true) {
     for (const path of changed) io.err(`stale: ${where}/${path}\n`);
     if (changed.length > 0) {
       io.err(`gen --check: ${where} is out of date; run \`stackra gen\` and commit the result\n`);
-      return false;
+      return done(false, [], changed);
     }
-    return true;
+    return done(true, [], []);
   }
   for (const path of changed) io.out(`wrote ${where}/${path}\n`);
-  return true;
+  return done(true, changed, []);
 }

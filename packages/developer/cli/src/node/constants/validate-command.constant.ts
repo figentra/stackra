@@ -9,10 +9,10 @@
  *          architecture map drift, the Python placement (ADR 0492 decision 7), the package entity lists (STA-1793), the lang
  *          catalogue exports (STA-1798), the launch files' drift from the runways (STA-2081) and the
  *          session settings (ADR 0495 decision 3, STA-1699). `--repository` prints the findings as `<dir>: <finding>` and a count and exits 1,
- *          or prints nothing.
+ *          or prints nothing; it reports `{ findings: [{ dir, text }] }` (`context.report`, the `--json` data).
  * Boundary: reads the checkout and runs `pnpm -r list`; notices (an unbuilt runway package) go to `io.err`.
  * Runtime: node
- * Governing contract: ADR 0129; ADR 0492 (decision 7); ADR 0495 (decision 3); ADR 0022; ADR 0282 (decision 3); STA-1373; STA-1544; stackra-224; stackra-229.
+ * Governing contract: ADR 0129; ADR 0492 (decision 7); ADR 0495 (decision 3); ADR 0022; ADR 0282 (decision 3); ADR 0506 (`--json` data); STA-2883 FR-005; STA-1373; STA-1544; stackra-224; stackra-229.
  */
 import {
   catalogueFindings,
@@ -47,8 +47,6 @@ const CHECK = checkCommand(
 /** The `stackra validate` command. */
 export const VALIDATE_COMMAND: CliCommand = {
   ...CHECK,
-  group: "Quality",
-  hidden: true,
   usage: `${CHECK.usage} [--repository]`,
   options: { ...CHECK.options, repository: { type: "boolean" } },
   async run(context) {
@@ -76,6 +74,7 @@ export const VALIDATE_COMMAND: CliCommand = {
       ...launchConfigFindings(root),
       ...sessionSettingFindings(root),
     ];
+    context.report?.({ findings: findings.map(({ dir, text }) => ({ dir: dir || ".", text })) });
     for (const { dir, text } of findings) io.err(`${dir || "."}: ${text}\n`);
     if (findings.length > 0) {
       io.err(`\n${findings.length} finding(s).\n`);

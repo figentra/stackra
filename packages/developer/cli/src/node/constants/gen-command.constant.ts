@@ -8,6 +8,9 @@
  *          runs pass 1 alone (the bootstrap). `--check` writes nothing and fails on a refusal or a stale file, which
  *          is the CI gate. At a workspace root with a root runway it also writes Claude's `.claude/launch.json`
  *          and VS Code's `dev: …` tasks from the runways (`writeLaunchFiles`); `--check` fails when one is stale.
+ *          Under `--json` (`context.report`) the data is each member's outcome (clean, written, stale), every refusal
+ *          and warning with its member, code, file (from the working directory), line, column, subject, message and
+ *          fix, the members skipped and the launch files.
  * Boundary: runs every member even after one fails, so one run reports everything; only the last round's refusals
  *           print, with every member's warnings (a member that passes too) and an `N warning(s) in M member(s)` line;
  *           exits 1 when any member is not clean, and a warning never changes the exit code. At a workspace root a
@@ -15,21 +18,57 @@
  * Runtime: node
  * Governing contract: ADR 0294 (decisions 10 and 22: `stackra gen --check`); ADR 0295 (decisions 1 and 5); ADR 0261;
  *                     ADR 0260 (a cycle between services is allowed at the manifest level);
- *                     STA-2081 (the launch file).
+ *                     STA-2081 (the launch file); STA-2883 (`--json`).
  */
 import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
+
+import type { GenError } from "@stackra/gen";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { writeLaunchFiles } from "#node/launch-config/functions/write-launch-files.function";
 import { runGen } from "#node/functions/run-gen.function";
 import { workspaceMembers } from "#node/functions/workspace-members.function";
 import type { CliCommand } from "#node/types/cli-command.type";
+import type { GenOutcome } from "#node/types/gen-outcome.type";
+
+/** A finding as `--json` reports it: its member, and its file from the working directory. */
+const finding = (member: string, error: GenError) => ({
+  member,
+  code: error.code,
+  file: member === "." ? error.file : `${member}/${error.file}`,
+  line: error.line,
+  column: error.column,
+  subject: error.subject,
+  message: error.message,
+  fix: error.fix,
+});
+
+/** The `--json` data of a run: each member's latest outcome, the findings, the skipped members and the launch files. */
+const genData = (
+  check: boolean,
+  outcomes: Iterable<GenOutcome>,
+  skipped: readonly string[],
+  launch: readonly { readonly file: string; readonly status: string }[],
+) => {
+  const all = [...outcomes];
+  return {
+    check,
+    clean:
+      all.every((outcome) => outcome.clean) && !launch.some(({ status }) => status === "stale"),
+    members: all.map(({ member, clean, written, stale }) => ({ member, clean, written, stale })),
+    refusals: all.flatMap(({ member, errors }) => errors.map((error) => finding(member, error))),
+    warnings: all.flatMap(({ member, warnings }) =>
+      warnings.map((error) => finding(member, error)),
+    ),
+    skipped,
+    launch,
+  };
+};
 
 /** The `stackra gen` command definition. */
 export const GEN_COMMAND: CliCommand = {
   name: "gen",
-  group: "Develop",
   summary:
     "Generate the manifest, schemas, wiring and entries (--check: fail when stale; --manifests: manifests only)",
   usage: "stackra gen [--check] [--manifests] [--backend tsgo|ts6]",
@@ -38,7 +77,7 @@ export const GEN_COMMAND: CliCommand = {
     backend: { type: "string" },
     manifests: { type: "boolean" },
   },
-  async run({ cwd, values, io }) {
+  async run({ cwd, values, io, report: reportData }) {
     const backend = values["backend"];
     if (backend !== undefined && backend !== "tsgo" && backend !== "ts6") {
       throw new CliUsageError(`unknown backend: ${String(backend)} (expected tsgo or ts6)`);
@@ -60,8 +99,15 @@ export const GEN_COMMAND: CliCommand = {
     const roots = workspace
       ? configured.filter((folder) => existsSync(join(folder, "node_modules")))
       : configured;
-    for (const folder of configured.filter((root) => !roots.includes(root)))
-      io.out(`gen: skipped ${relative(cwd, folder)}: not installed\n`);
+    const skipped = configured
+      .filter((root) => !roots.includes(root))
+      .map((root) => relative(cwd, root));
+    for (const folder of skipped) io.out(`gen: skipped ${folder}: not installed\n`);
+    // Each member's latest outcome, for `--json`.
+    const outcomes = new Map<string, GenOutcome>();
+    const keep = (root: string) => (outcome: GenOutcome) => {
+      outcomes.set(root, outcome);
+    };
 
     // The dev-server lists (Claude, VS Code) read only the runways, so they are settled before the members (STA-2081).
     const launch =
@@ -80,8 +126,12 @@ export const GEN_COMMAND: CliCommand = {
       const passIo = manifests ? io : { ...io, err: () => {} };
       let written = true;
       for (const root of roots)
-        written = (await runGen(root, { ...options, pass: "manifests" }, passIo)) && written;
-      if (manifests) return written ? 0 : 1;
+        written =
+          (await runGen(root, { ...options, pass: "manifests" }, passIo, keep(root))) && written;
+      if (manifests) {
+        reportData?.(genData(false, outcomes.values(), skipped, launch));
+        return written ? 0 : 1;
+      }
     }
 
     // Pass 2 runs in rounds until one writes nothing (gen is deterministic, so a quiet round is the fixed point). A
@@ -102,7 +152,14 @@ export const GEN_COMMAND: CliCommand = {
       };
       for (const root of pending) {
         const lines: string[] = [];
-        if (!(await runGen(root, options, { ...roundIo, err: (text) => lines.push(text) })))
+        if (
+          !(await runGen(
+            root,
+            options,
+            { ...roundIo, err: (text) => lines.push(text) },
+            keep(root),
+          ))
+        )
           failed.push(root);
         report.set(root, lines);
       }
@@ -122,6 +179,7 @@ export const GEN_COMMAND: CliCommand = {
           );
         if (options.check === true && failed.length === 0)
           io.out(`gen --check: ${roots.length} member(s) up to date\n`);
+        reportData?.(genData(options.check === true, outcomes.values(), skipped, launch));
         return failed.length === 0 && !launchStale ? 0 : 1;
       }
       pending = next;

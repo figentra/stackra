@@ -10,7 +10,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (R1 to R3, decision 16: the kind table); ADR 0305 (rules 1 to 3); STA-903 (`agent`,
  *                     `pass`); ADR 0336 (decision 1: `<base>.model-addition.ts`, `<Base>Addition`); ADR 0470
- *                     (decision 1: `<name>.report.ts`, `<Name>Report`).
+ *                     (decision 1: `<name>.report.ts`, `<Name>Report`); STA-2924
+ *                     (`<name>.option-set.ts`, `<Name>OptionSet`).
  */
 
 /** Kind code to its file suffix and class-name suffix. */
@@ -50,6 +51,7 @@ export const KIND_FILES: Readonly<
   model_addition: { file: "model-addition", suffix: "Addition" },
   module: { file: "module", suffix: "Module" },
   notification: { file: "notification", suffix: "Notification" },
+  option_set: { file: "option-set", suffix: "OptionSet" },
   panel: { file: "panel", suffix: "Panel" },
   pass: { file: "pass", suffix: "Pass" },
   permissions: { file: "permissions", suffix: "Permissions" },

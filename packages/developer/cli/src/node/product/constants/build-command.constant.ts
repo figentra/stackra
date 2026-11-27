@@ -22,7 +22,6 @@ const PRODUCT_FLAGS = ["dry-run", "surfaces-only", "os", "scope", "env"] as cons
 /** The `stackra build` command definition. */
 export const BUILD_COMMAND: CliCommand = {
   ...MEMBER_BUILD,
-  group: "Develop",
   summary:
     "Generate, then build the member (--product builds a product's surfaces and mobile apps)",
   usage: `${MEMBER_BUILD.usage}\n       stackra build --product [--dry-run] [--os <checkout>] [--scope <@scope>] [--env <environment>]`,
