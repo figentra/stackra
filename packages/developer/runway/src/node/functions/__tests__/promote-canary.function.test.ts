@@ -18,10 +18,10 @@ const SINCE = "2026-10-28T00:00:00.000Z";
 const LATER = new Date("2026-10-29T01:00:00.000Z");
 const RELEASE = {
   version: "1.3.0",
-  url: "https://assets.test/mezzora/console/1.3.0/entry.js",
-  base: "https://assets.test/mezzora/console/1.3.0/",
+  url: "https://assets.test/bistro/console/1.3.0/entry.js",
+  base: "https://assets.test/bistro/console/1.3.0/",
   targets: "console@3",
-  modulepreload: ["https://assets.test/mezzora/console/1.3.0/entry.js"],
+  modulepreload: ["https://assets.test/bistro/console/1.3.0/entry.js"],
   css: [],
 };
 const CANARY = { ...RELEASE, scopes: ["scp_internal"], since: SINCE };
@@ -39,14 +39,14 @@ describe("promoteCanary", () => {
     const kv = new MemoryEdgeKv();
     const verdict = await promoteCanary({
       kv,
-      promotion: { kind: "release", product: "mezzora", surface: "console", canary: CANARY },
+      promotion: { kind: "release", product: "bistro", surface: "console", canary: CANARY },
       sample: HEALTHY,
       now: LATER,
     });
     expect(verdict).toBe("promote");
     expect(kv.calls).toEqual([
-      ["put", "release:mezzora:console", JSON.stringify(RELEASE)],
-      ["delete", "canary:mezzora:console"],
+      ["put", "release:bistro:console", JSON.stringify(RELEASE)],
+      ["delete", "canary:bistro:console"],
     ]);
   });
 
@@ -54,19 +54,19 @@ describe("promoteCanary", () => {
     const kv = new MemoryEdgeKv();
     const verdict = await promoteCanary({
       kv,
-      promotion: { kind: "release", product: "mezzora", surface: "console", canary: CANARY },
+      promotion: { kind: "release", product: "bistro", surface: "console", canary: CANARY },
       sample: FAILING,
       now: LATER,
     });
     expect(verdict).toBe("rollback");
-    expect(kv.calls).toEqual([["delete", "canary:mezzora:console"]]);
+    expect(kv.calls).toEqual([["delete", "canary:bistro:console"]]);
   });
 
   it("holds without writing", async () => {
     const kv = new MemoryEdgeKv();
     const verdict = await promoteCanary({
       kv,
-      promotion: { kind: "release", product: "mezzora", surface: "console", canary: CANARY },
+      promotion: { kind: "release", product: "bistro", surface: "console", canary: CANARY },
       sample: { requests: 10, errors: 0 },
       now: LATER,
     });
@@ -102,7 +102,7 @@ describe("promoteCanary", () => {
     const kv = new MemoryEdgeKv();
     const verdict = await promoteCanary({
       kv,
-      promotion: { kind: "release", product: "mezzora", surface: "console", canary: CANARY },
+      promotion: { kind: "release", product: "bistro", surface: "console", canary: CANARY },
       sample: HEALTHY,
       now: LATER,
       settings: { windowHours: 48 },

@@ -122,7 +122,7 @@ An app author uses `ContainerProvider`, `ScopeProvider` and the hooks from `./re
 
 ## Requirements _(mandatory)_
 
-Requirements use EARS (ubiquitous, event-driven "When", state-driven "While", unwanted "If … then"). Source paths are relative to `/Users/akouta/Projects/figentra/packages/os/foundation/container`.
+Requirements use EARS (ubiquitous, event-driven "When", state-driven "While", unwanted "If … then"). Source paths are relative to `figentra/packages/os/foundation/container`.
 
 ### Functional Requirements
 

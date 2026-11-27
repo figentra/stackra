@@ -11,7 +11,7 @@
  * The zone of `hostname` among `zones`, or undefined when none holds it.
  *
  * @example
- * zoneOf("api-me-central.figentra.com", ["figentra.com", "figentra.cloud"]); // "figentra.com"
+ * zoneOf("api-me-central.figentra.com", ["figentra.com", "dev.example"]); // "figentra.com"
  */
 export function zoneOf(hostname: string, zones: Iterable<string>): string | undefined {
   let found: string | undefined;

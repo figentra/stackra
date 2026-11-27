@@ -2,7 +2,7 @@
  * Stackra file contract:
  * Purpose: `SCALE_PROTOCOLS`, the shipped scale protocol pack, the default of `NativeScaleConfig.protocols`: the first
  *          two protocols this package drives, chosen because together they cover most retail and precision scales a
- *          Commerce, Mezzora or Jute counter meets over Bluetooth or USB serial:
+ *          Commerce edition's counter meets over Bluetooth or USB serial:
  *          - `mt_sics`: Mettler Toledo's Standard Interface Command Set (levels 0 and 1), a documented request and
  *            answer protocol that reports stability, unit, net weight, overload and underload, and the tare (`TA`);
  *          - `continuous_ascii`: the continuous ASCII stream of A&D's standard format (`ST,+00123.45  g`), which many

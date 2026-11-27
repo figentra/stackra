@@ -62,6 +62,25 @@ test("readRepos: the data file lists the org and repos; --repos overrides the li
   assert.deepEqual(readRepos(["--repos=os"], text).repos, ["os"]);
 });
 
+test("readRepos: --extra-repos adds the private repos the public file does not name, each once", () => {
+  const text = "org: acme\nrepos:\n  - stackra\n  - billing\n";
+  assert.deepEqual(readRepos(["--extra-repos", " shop, stackra,,docs "], text).repos, [
+    "stackra",
+    "billing",
+    "shop",
+    "docs",
+  ]);
+  assert.deepEqual(readRepos(["--extra-repos=shop\ndocs"], text).repos, [
+    "stackra",
+    "billing",
+    "shop",
+    "docs",
+  ]);
+  // --repos alone still replaces the whole list.
+  assert.deepEqual(readRepos(["--repos", "pay", "--extra-repos", "shop"], text).repos, ["pay"]);
+  assert.deepEqual(readRepos([], text).repos, ["stackra", "billing"]);
+});
+
 test("gather: PRs and main commits from every repo, fork PRs dropped, unreadable repos skipped", () => {
   const { gh, calls } = ghStub({
     stackra: { merged: [pr(5, { headRefName: "figentra/sta-1-a" })], open: [pr(6)] },

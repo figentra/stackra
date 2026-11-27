@@ -31,7 +31,7 @@ import type { CommandRunner } from "#node/types/command-runner.type";
 import type { ProductPublishRequest } from "#node/types/product-publish-request.type";
 
 const NOW = new Date("2026-10-28T00:00:00.000Z");
-const BASE = "https://assets.test/mezzora/console/1.3.0/";
+const BASE = "https://assets.test/bistro/console/1.3.0/";
 
 let repository: string;
 let calls: Parameters<CommandRunner>[];
@@ -93,10 +93,10 @@ describe("publishProduct", () => {
     const result = await publishProduct(request());
 
     expect(result.uploaded).toEqual([
-      "mezzora/console/1.3.0/bundle.manifest.json",
-      "mezzora/console/1.3.0/chunks/view-def.js",
-      "mezzora/console/1.3.0/entry-abc.js",
-      "mezzora/console/1.3.0/style-123.css",
+      "bistro/console/1.3.0/bundle.manifest.json",
+      "bistro/console/1.3.0/chunks/view-def.js",
+      "bistro/console/1.3.0/entry-abc.js",
+      "bistro/console/1.3.0/style-123.css",
     ]);
     expect(calls[2]).toEqual([
       "wrangler",
@@ -104,7 +104,7 @@ describe("publishProduct", () => {
         "r2",
         "object",
         "put",
-        "figentra-assets/mezzora/console/1.3.0/entry-abc.js",
+        "figentra-assets/bistro/console/1.3.0/entry-abc.js",
         `--file=${join(repository, "dist/bundles/console/1.3.0/entry-abc.js")}`,
         "--cache-control=public, max-age=31536000, immutable",
         "--content-type=text/javascript",
@@ -125,15 +125,15 @@ describe("publishProduct", () => {
     };
     expect(result.canaries).toEqual({ console: canary });
     expect(result.releases).toEqual({});
-    expect(kv.json("canary:mezzora:console")).toEqual(canary);
-    expect(kv.rows.has("release:mezzora:console")).toBe(false);
+    expect(kv.json("canary:bistro:console")).toEqual(canary);
+    expect(kv.rows.has("release:bistro:console")).toBe(false);
     expect(result.written).toEqual([
-      "host:console.mezzora.figentra.com",
-      "host:mezzora.figentra.com",
-      "host:mezzora.com",
-      "wellknown:console.mezzora.figentra.com:apple-app-site-association",
-      "wellknown:console.mezzora.figentra.com:assetlinks.json",
-      "canary:mezzora:console",
+      "host:console.bistro.figentra.com",
+      "host:bistro.figentra.com",
+      "host:bistro.example",
+      "wellknown:console.bistro.figentra.com:apple-app-site-association",
+      "wellknown:console.bistro.figentra.com:assetlinks.json",
+      "canary:bistro:console",
     ]);
   });
 
@@ -193,8 +193,8 @@ describe("publishProduct", () => {
     writeBundle(repository, "console", "1.3.0");
     const result = await publishProduct(request({ firstRelease: true, canaryScopes: [] }));
     expect(result.canaries).toEqual({});
-    expect(kv.json("release:mezzora:console")).toEqual(result.releases["console"]);
-    expect(kv.rows.has("canary:mezzora:console")).toBe(false);
+    expect(kv.json("release:bistro:console")).toEqual(result.releases["console"]);
+    expect(kv.rows.has("canary:bistro:console")).toBe(false);
   });
 
   it("refuses an unserved target before any upload or write", async () => {
@@ -238,8 +238,8 @@ describe("publishProduct", () => {
     writeBundle(repository, "console", "1.3.0");
     const result = await publishProduct(request({ environment: "staging", canaryScopes: [] }));
     expect(result.canaries).toEqual({});
-    expect(kv.json("release:mezzora:console")).toEqual(result.releases["console"]);
-    expect(kv.rows.has("canary:mezzora:console")).toBe(false);
+    expect(kv.json("release:bistro:console")).toEqual(result.releases["console"]);
+    expect(kv.rows.has("canary:bistro:console")).toBe(false);
   });
 
   it("publishes the ops contributions bundle beside the others", async () => {
@@ -249,13 +249,13 @@ describe("publishProduct", () => {
     const result = await publishProduct(request({ served: ["console@3", "ops@1"] }));
     expect(result.uploaded).toEqual(
       expect.arrayContaining([
-        "mezzora/ops/1.3.0/bundle.manifest.json",
-        "mezzora/ops/1.3.0/ops.contributions.json",
+        "bistro/ops/1.3.0/bundle.manifest.json",
+        "bistro/ops/1.3.0/ops.contributions.json",
       ]),
     );
-    const base = "https://assets.test/mezzora/ops/1.3.0/";
+    const base = "https://assets.test/bistro/ops/1.3.0/";
     expect(Object.keys(result.canaries)).toEqual(["console", "ops"]);
-    expect(kv.json("canary:mezzora:ops")).toEqual({
+    expect(kv.json("canary:bistro:ops")).toEqual({
       version: "1.3.0",
       url: `${base}ops.contributions.json`,
       base,

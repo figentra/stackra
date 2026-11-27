@@ -29,7 +29,7 @@ const ENTRY = z.strictObject({
   props: OPEN_OBJECT_SCHEMA.optional(),
 });
 
-/** `"@figentra/mezzora-ops-ui"`, or `{ package, panels, resources, widgets }`. */
+/** `"@figentra/bistro-ops-ui"`, or `{ package, panels, resources, widgets }`. */
 export const CONTRIBUTION_SCHEMA = z.union([
   PACKAGE_NAME_SCHEMA,
   z.strictObject({

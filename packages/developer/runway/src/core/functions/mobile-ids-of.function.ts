@@ -20,7 +20,7 @@ type IdentityIds = {
  *
  * @example
  * mobileIdsOf("commerce", "staff", {}); // { bundleId: "com.figentra.commerce.staff", packageName: "com.figentra.commerce.staff" }
- * mobileIdsOf("academorix", "academorix", {}); // bundleId "com.figentra.academorix"
+ * mobileIdsOf("academy", "academy", {}); // bundleId "com.figentra.academy"
  */
 export function mobileIdsOf(product: string, app: string, identity: IdentityIds = {}): MobileIds {
   const derived = ["com", "figentra", product, ...(app === product ? [] : [app])].join(".");

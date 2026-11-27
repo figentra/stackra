@@ -19,8 +19,8 @@ import type { RootRunway } from "#core/types/root-runway.type";
 const rootWith = (surfaces: Record<string, unknown>): RootRunway =>
   ({
     version: 3,
-    project: "mezzora",
-    product: { key: "mezzora" },
+    project: "bistro",
+    product: { key: "bistro" },
     surfaces,
     environments: {
       production: { domains: { zone: "figentra.com" } },
@@ -33,10 +33,10 @@ describe("checkHosts", () => {
     expect(
       checkHosts(
         rootWith({
-          console: { shell: "os/console@3", host: "console.mezzora" },
+          console: { shell: "os/console@3", host: "console.bistro" },
           landing: {
             shell: "os/landing@1",
-            hosts: [{ host: "mezzora" }, { host: "mezzora.com." }],
+            hosts: [{ host: "bistro" }, { host: "bistro.example." }],
           },
         }),
       ),
@@ -46,8 +46,8 @@ describe("checkHosts", () => {
   it("refuses two surfaces on one host, naming both, in every environment", () => {
     const issues = checkHosts(
       rootWith({
-        console: { shell: "os/console@3", host: "app.mezzora" },
-        portal: { shell: "os/console@3", preset: "portal", hosts: [{ host: "app.mezzora" }] },
+        console: { shell: "os/console@3", host: "app.bistro" },
+        portal: { shell: "os/console@3", preset: "portal", hosts: [{ host: "app.bistro" }] },
       }),
     );
     expect(
@@ -61,33 +61,33 @@ describe("checkHosts", () => {
     ).toEqual([
       {
         code: "host_collision",
-        host: "app.mezzora.figentra.com",
+        host: "app.bistro.figentra.com",
         environment: "production",
         surfaces: ["console", "portal"],
         path: "surfaces.portal.hosts.0.host",
       },
       {
         code: "host_collision",
-        host: "app.mezzora.staging.figentra.com",
+        host: "app.bistro.staging.figentra.com",
         environment: "staging",
         surfaces: ["console", "portal"],
         path: "surfaces.portal.hosts.0.host",
       },
     ]);
     expect(issues[0]?.message).toMatch(
-      /surfaces console and portal both resolve to app\.mezzora\.figentra\.com/,
+      /surfaces console and portal both resolve to app\.bistro\.figentra\.com/,
     );
   });
 
   it("refuses a relative and an absolute name that meet under one zone only", () => {
     const issues = checkHosts(
       rootWith({
-        console: { shell: "os/console@3", host: "app.mezzora" },
-        landing: { shell: "os/landing@1", host: "app.mezzora.figentra.com." },
+        console: { shell: "os/console@3", host: "app.bistro" },
+        landing: { shell: "os/landing@1", host: "app.bistro.figentra.com." },
       }),
     );
     expect(issues.map((issue) => `${issue.environment} ${issue.host}`)).toEqual([
-      "production app.mezzora.figentra.com",
+      "production app.bistro.figentra.com",
     ]);
   });
 
@@ -97,10 +97,10 @@ describe("checkHosts", () => {
         rootWith({
           landing: {
             shell: "os/landing@1",
-            host: "mezzora",
-            hosts: [{ host: "mezzora", canonical: true }],
+            host: "bistro",
+            hosts: [{ host: "bistro", canonical: true }],
           },
-          ops: { contributes: "@mezzora/ops-ui" },
+          ops: { contributes: "@bistro/ops-ui" },
         }),
       ),
     ).toEqual([]);
@@ -110,11 +110,11 @@ describe("checkHosts", () => {
     try {
       parseRunway("root", {
         version: 3,
-        project: "mezzora",
-        product: { key: "mezzora" },
+        project: "bistro",
+        product: { key: "bistro" },
         surfaces: {
-          console: { shell: "os/console@3", host: "app.mezzora" },
-          portal: { shell: "os/console@3", preset: "portal", host: "app.mezzora" },
+          console: { shell: "os/console@3", host: "app.bistro" },
+          portal: { shell: "os/console@3", preset: "portal", host: "app.bistro" },
         },
         environments: { production: { domains: { zone: "figentra.com" } } },
       });

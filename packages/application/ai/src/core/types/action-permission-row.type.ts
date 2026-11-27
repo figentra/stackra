@@ -3,7 +3,7 @@
  * Purpose: `ActionPermissionRow`, one row of the AI action permission matrix: the action key it covers, narrowed by
  *          role, record and data class, with its state and, for after approval, the approver rule.
  * Boundary: a type only. Rows are rule-set data (`rule-set:os:ai-action-permissions`), seeded per product
- *           (`seed-pack:juristra`, Academorix's nine rows) and edited by the tenant; this package only matches them. The
+ *           (`seed-pack:juristra`, Academy's nine rows) and edited by the tenant; this package only matches them. The
  *           most specific row wins: a record id over a record kind, then a role, then a data class.
  * Runtime: isomorphic
  * Governing contract: X2-12, J2-6 and A2-24; R3-SO-02 (`{ seatKind, notRequester, stepUp }` from the rule set).

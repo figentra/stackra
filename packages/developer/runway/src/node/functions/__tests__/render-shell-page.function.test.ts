@@ -22,7 +22,7 @@ const SHELL: EdgeShellRelease = {
   importMap: { imports: { react: "/assets/shells/console/3.1.0/react.js" } },
 };
 
-const BASE = "/assets/mezzora/console/1.2.0/";
+const BASE = "/assets/bistro/console/1.2.0/";
 
 const RELEASE: EdgeRelease = {
   version: "1.2.0",
@@ -34,7 +34,7 @@ const RELEASE: EdgeRelease = {
 };
 
 const RECORD: StartupRecord = {
-  product: "mezzora",
+  product: "bistro",
   surface: "console",
   locales: { default: "en", enabled: ["en", "ar"] },
   shell: { major: 3, version: "3.1.0" },
@@ -47,7 +47,7 @@ describe("renderShellPage", () => {
       shell: SHELL,
       release: RELEASE,
       record: RECORD,
-      title: "Mezzora",
+      title: "Bistro",
     });
 
     expect(html).toMatch(/^<!doctype html><html lang="en"><head>/);

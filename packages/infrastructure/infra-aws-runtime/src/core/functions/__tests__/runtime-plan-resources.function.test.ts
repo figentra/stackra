@@ -24,7 +24,7 @@ const DIGEST = `ghcr.io/zitadel/zitadel@sha256:${"b".repeat(64)}`;
 function rootWith(extra: Record<string, unknown> = {}) {
   return parseRunway("root", {
     version: 3,
-    project: "academorix",
+    project: "academy",
     environments: { dev: {}, staging: {}, production: {} },
     resources: {
       "main-db": { kind: "postgres", size: { production: "large" } },
@@ -71,7 +71,7 @@ describe("runtimePlan resources and workloads", () => {
       {
         key: "resources.main-db",
         resource: "main-db",
-        name: "academorix-dev-main-db",
+        name: "academy-dev-main-db",
         engine: "rds",
         version: "18",
         instanceClass: "db.t4g.micro",
@@ -114,7 +114,7 @@ describe("runtimePlan resources and workloads", () => {
     expect(plan.caches).toEqual([
       {
         key: "resources.sessions",
-        name: "academorix-staging-sessions",
+        name: "academy-staging-sessions",
         nodeType: "cache.t4g.medium",
         replicas: 0,
         tags: { env: "staging", service: "sessions" },
@@ -130,7 +130,7 @@ describe("runtimePlan resources and workloads", () => {
 
     expect(dev).toMatchObject({
       key: "workloads.zitadel",
-      name: "academorix-dev-zitadel",
+      name: "academy-dev-zitadel",
       image: DIGEST,
       public: true,
       cpu: 256,

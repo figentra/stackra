@@ -8,7 +8,7 @@ description: "Accepted · 2026-10-25"
 `@Replaces(Port)` binds a custom driver over a port's shipped drivers for the whole container
 ([0263](/adr/0263-di-stays-and-gen-writes-the-wiring), [0306](/adr/0306-overrides-one-tree-under-src-overrides-and-five-placement-layers)
 decision 9). It cannot pick a provider per tenant or per country. Payments, SMS, WhatsApp, fiscal clearance, KYC,
-shipping, accounting and AI do exactly that: a KSA tenant charges through a KSA gateway, an Academorix tenant may bring
+shipping, accounting and AI do exactly that: a KSA tenant charges through a KSA gateway, an academy-product tenant may bring
 its own SMS account. [0308](/adr/0308-integrations-v3-1-provider-descriptions-connection-stores-and-webhooks) rule 4
 lets a Connection's fields override an Integration's, but that covers credentials, not the choice of provider. The
 adapter readiness report asked for one rule before payments and fiscal are built. The owner decided it on 2026-10-25

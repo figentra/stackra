@@ -20,11 +20,12 @@ export const TESTBED_DEFAULTS = {
   homeRegion: "eu-west-1",
   /** The instance role and profile every region's boxes use; the home stack declares both (IAM is global). */
   instanceProfile: "stackra-testbed-instance",
-  awsProfile: "academorix",
+  awsProfile: "figentra",
   sshUser: "ubuntu",
   securityGroup: "stackra-testbed",
-  keyPair: "academorix-ci",
-  keyFile: "~/.ssh/academorix-ci.pem",
+  /** The EC2 key pair the launch template names; a stack may name another (`AwsTestbedOptions.keyPair`). */
+  keyPair: "stackra-testbed",
+  keyFile: "~/.ssh/stackra-testbed.pem",
   /**
    * The SSM parameter the Image Builder distribution writes the newest AMI id to. Image Builder's service-linked role
    * may write only parameters under `/imagebuilder/`, so the name keeps that prefix.

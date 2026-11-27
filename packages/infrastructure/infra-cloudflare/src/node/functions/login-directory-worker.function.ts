@@ -20,8 +20,8 @@ import type * as pulumi from "@pulumi/pulumi";
  * loginDirectoryWorker({
  *   accountId,
  *   script: "figentra-login-directory",
- *   zoneIds: { "mezzora.com": zone.id },
- *   routes: { "mezzora.com": ["login.mezzora.com/directory"] },
+ *   zoneIds: { "bistro.example": zone.id },
+ *   routes: { "bistro.example": ["login.bistro.example/directory"] },
  * });
  */
 export function loginDirectoryWorker(args: {

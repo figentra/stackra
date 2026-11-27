@@ -8,7 +8,7 @@
  */
 import { z } from "zod";
 
-/** `api`, `console-akouta`, `turbo-cache`. */
+/** `api`, `console-dana`, `turbo-cache`. */
 export const DNS_LABEL_SCHEMA = z
   .string()
   .regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/, "Expected one DNS label (a-z, 0-9, inner -)");
