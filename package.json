@@ -35,6 +35,7 @@
     "changeset:status": "changeset status",
     "changeset:version": "changeset version && pnpm install --lockfile-only && turbo run gen:workspace gen --output-logs=errors-only",
     "secrets:scan": "gitleaks git . --config .gitleaks.toml --no-banner --redact",
+    "secrets:scan:history": "node tools/scripts/secrets-history-scan.mjs",
     "delegate": "node tools/scripts/delegate.mjs",
     "linear": "node tools/scripts/secrets-exec.mjs --names LINEAR_AGENT_TOKEN,LINEAR_AGENT_CLIENT_ID,LINEAR_AGENT_CLIENT_SECRET,LINEAR_API_KEY -- node tools/scripts/linear.mjs",
     "spec:linear": "node tools/scripts/secrets-exec.mjs --names LINEAR_AGENT_TOKEN,LINEAR_AGENT_CLIENT_ID,LINEAR_AGENT_CLIENT_SECRET,LINEAR_API_KEY -- fflow linear",
