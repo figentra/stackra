@@ -25,6 +25,13 @@ export type CliContext = {
   /** The arguments after `--`, passed on untouched. */
   readonly rest: readonly string[];
 
-  /** Runs another `stackra` command (its arguments without the program name) and resolves with its exit code. */
-  readonly cli: (args: readonly string[], io: CliIo) => Promise<number>;
+  /**
+   * Runs another `stackra` command (its arguments without the program name) and resolves with its exit code; in
+   * `cwd` (an absolute folder, such as a member) when given, else in this run's directory.
+   */
+  readonly cli: (
+    args: readonly string[],
+    io: CliIo,
+    options?: { readonly cwd?: string },
+  ) => Promise<number>;
 };

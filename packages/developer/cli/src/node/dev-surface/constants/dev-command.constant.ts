@@ -13,6 +13,8 @@
  * Boundary: data plus dispatch; a surface flag without `--surface` is a usage error, never ignored, and so is an infra
  *           flag in the surface, mobile or product mode. A member run that turbo started from the root run
  *           (`TURBO_HASH` set) leaves the dev compose to that outer run, so the members never race to start it.
+ *           Every mode runs with `STACKRA_ENVIRONMENT=dev` set explicitly when it is unset or empty (nothing reads an
+ *           unset value as local); a value that is set is kept.
  * Runtime: node
  * Governing contract: ADR 0436 (decision 6); app-shells section 15 point 2; ADR 0282 (decision 3); ADR 0290
  *                     (decisions 4 and 5); STA-1952 spec FR-019; ADR 0199 (decision 3); STA-2664 (item 6).
@@ -116,6 +118,8 @@ export const DEV_COMMAND: CliCommand = {
     "no-infra": { type: "boolean" },
   },
   async run(context) {
+    // A dev run says it is local; what it starts inherits the name instead of guessing it.
+    process.env["STACKRA_ENVIRONMENT"] ||= "dev";
     const tunnel =
       context.values["tunnel"] === true ? startTunnel(process.env, context.io) : undefined;
     try {

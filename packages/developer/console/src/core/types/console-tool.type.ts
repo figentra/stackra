@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: `ConsoleTool`, a command offered as a local developer MCP tool: its MCP name, description, input JSON
- *          Schema and read-only hint, and `invoke`, which runs the command through the same kernel with `--json` and
- *          resolves with that run's JSON document, exit code and plain text.
+ *          Schema and hints (read-only, destructive, idempotent), and `invoke`, which runs the command through the
+ *          same kernel with `--json` and resolves with that run's JSON document, exit code and plain text.
  * Boundary: a type only; `toolsOf` builds them, `@stackra/mcp` serves them. Never a tenant MCP tool (ADR 0155).
  * Runtime: isomorphic
  * Governing contract: STA-1966 spec FR-020 and FR-027; ADR 0282 decision 5.
@@ -21,6 +21,12 @@ export interface ConsoleTool {
 
   /** It changes nothing. */
   readonly readOnly: boolean;
+
+  /** It may delete or overwrite what someone wrote; false for a read-only tool. */
+  readonly destructive: boolean;
+
+  /** Running it again with the same input changes nothing more; true for a read-only tool. */
+  readonly idempotent: boolean;
 
   /** Runs the command with `input` and resolves with its `--json` document. */
   readonly invoke: (input: unknown) => Promise<{

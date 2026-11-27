@@ -4661,12 +4661,21 @@ importers:
 
   packages/developer/mcp:
     dependencies:
+      '@stackra/console':
+        specifier: workspace:*
+        version: link:../console
       '@stackra/contracts':
         specifier: workspace:*
         version: link:../../foundation/contracts
+      '@stackra/repo-checks':
+        specifier: workspace:*
+        version: link:../repo-checks
       '@stackra/runway':
         specifier: workspace:*
         version: link:../runway
+      '@stackra/validation':
+        specifier: workspace:*
+        version: link:../../foundation/validation
       yaml:
         specifier: 'catalog:'
         version: 2.9.1

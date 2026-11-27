@@ -5,7 +5,7 @@
  *          row per identity; without a section, one row per section with its count. At the workspace root it reads
  *          every member's manifest and adds a package column. The rows are the `--json` data.
  * Boundary: reads committed manifests only; never runs gen, so it shows what is committed. Exits 1 when there is no
- *           manifest, 2 for an unknown section.
+ *           manifest, 2 for an unknown section. Also the read-only `ls` tool of the local MCP (STA-2873).
  * Runtime: node
  * Governing contract: ADR 0294 (decision 20 and consequences: `stackra ls <kind>`; decision 10); ADR 0506; STA-1966.
  */
@@ -23,6 +23,7 @@ export class LsCommand extends Command({
   name: "ls",
   description: "List the identities a committed manifest locks (actions, events, permissions, …)",
   bin: true,
+  tool: { readOnly: true },
 }) {
   /** One section, or every section's count. */
   @Argument({

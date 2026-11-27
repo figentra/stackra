@@ -6,6 +6,7 @@
   "modules": [
     {
       "key": "mcp",
+      "class": "McpModule",
       "exports": [],
       "dependsOn": []
     }
@@ -23,5 +24,117 @@
   "passes": [],
   "entitlements": [],
   "roles": [],
+  "commands": [
+    {
+      "name": "app:info",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "AppInfoCommand",
+      "file": "src/node/commands/app-info.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "check",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "CheckCommand",
+      "file": "src/node/commands/check.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "gen",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "GenCommand",
+      "file": "src/node/commands/gen.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "lint",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "LintCommand",
+      "file": "src/node/commands/lint.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "manifest",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "ManifestCommand",
+      "file": "src/node/commands/manifest.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "new",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "NewCommand",
+      "file": "src/node/commands/new.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "routes",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "RoutesCommand",
+      "file": "src/node/commands/routes.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "test",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "TestCommand",
+      "file": "src/node/commands/test.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "typecheck",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "TypecheckCommand",
+      "file": "src/node/commands/typecheck.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "validate",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "ValidateCommand",
+      "file": "src/node/commands/validate.command.ts",
+      "entry": "node"
+    },
+    {
+      "name": "verify",
+      "aliases": [],
+      "hidden": false,
+      "audit": false,
+      "bin": true,
+      "class": "VerifyCommand",
+      "file": "src/node/commands/verify.command.ts",
+      "entry": "node"
+    }
+  ],
   "schemas": {}
 }

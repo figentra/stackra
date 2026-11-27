@@ -1,9 +1,10 @@
 /**
  * Stackra file contract:
  * Purpose: `toolsOf(config, ports)`, the local developer MCP tools of a console: one per command declared
- *          `tool: true`, with its JSON Schema from the definition, and an `invoke` that runs the command through the
- *          same kernel with `--json`, no terminal and no prompts, and resolves with that run's document. So a tool and
- *          its command share one schema and one handler, and `--json`, MCP and the test harness return the same data.
+ *          `tool`, with its JSON Schema and hints (read-only, destructive, idempotent) from the definition, and an
+ *          `invoke` that runs the command through the same kernel with `--json`, no terminal and no prompts, and
+ *          resolves with that run's document. So a tool and its command share one schema and one handler, and
+ *          `--json`, MCP and the test harness return the same data.
  * Boundary: no MCP SDK; `@stackra/mcp` serves the tools. Writes only to the streams it captures. Tenant tools stay on
  *           the action's own path (ADR 0155); a console tool is local developer tooling only.
  * Runtime: isomorphic
@@ -38,6 +39,8 @@ export function toolsOf(config: ConsoleConfig, ports: ToolPorts): ConsoleTool[] 
         description: structure.description,
         inputSchema: inputSchemaOf(structure),
         readOnly: structure.tool.readOnly,
+        destructive: structure.tool.destructive,
+        idempotent: structure.tool.idempotent,
         invoke: async (input) => {
           let argv: string[];
           try {

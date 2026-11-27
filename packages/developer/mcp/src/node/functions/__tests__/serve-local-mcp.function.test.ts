@@ -1,15 +1,17 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `serveLocalMcp`: the handshake answers the client's protocol revision; `tools/list` holds the
- *          local tools and the Encore tools under `encore_`; `manifest` reads the committed manifests; `new`, `gen`,
- *          `validate` and `verify` run through the given CLI runner (the CLI's gates), with a failing exit marked as
- *          an error; invalid arguments are refused before anything runs; an Encore call is forwarded unprefixed; the
- *          server resolves when the client disconnects; command tools (STA-1966) are served with their own schema and
- *          handler, their `--json` document as the structured result.
+ *          built-in tool commands in order with their MCP hints and the Encore tools under `encore_` across every
+ *          `tools/list` page; `manifest`, `app_info` and `routes` read the repository, and a section, kind or member a
+ *          tool does not have is refused naming the ones there are; `new`, `gen`, `validate`, `check`, `verify`,
+ *          `test`, `typecheck` and `lint` run through the given CLI runner (the CLI's gates), in a member's folder when
+ *          named, with structured results; a bad input is a tool error and nothing runs; a writing tool is refused on a
+ *          deployed target while a read-only one still answers; an Encore call is forwarded unprefixed; the server
+ *          resolves when the client disconnects; a host tool replaces the built-in of its name.
  * Boundary: test only; in-memory streams, a fake runner, a fake Encore peer and a throwaway repository in the OS temp
  *           directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 5 and enforcement); R-29.
+ * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 5 and enforcement); R-29; STA-2873.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -27,29 +29,56 @@ import type { StackraRunner } from "#node/types/stackra-runner.type";
 
 let root: string;
 
+/** Writes `value` as JSON at `path` under the root. */
+function writeJson(path: string, value: unknown): void {
+  mkdirSync(join(root, path, ".."), { recursive: true });
+  writeFileSync(join(root, path), JSON.stringify(value));
+}
+
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "stackra-mcp-"));
-  mkdirSync(join(root, "services", "commerce"), { recursive: true });
-  writeFileSync(
-    join(root, "services", "commerce", "stackra.manifest.json"),
-    JSON.stringify({
-      member: "commerce",
-      package: "@acme/service-commerce",
-      version: "1",
-      actions: [{ key: "orders.order.cancel@1" }],
-    }),
-  );
+  writeJson("package.json", { name: "acme", version: "0.1.0", packageManager: "pnpm@12.16.1" });
+  writeJson("services/commerce/package.json", { name: "@acme/service-commerce" });
+  writeJson("services/commerce/stackra.manifest.json", {
+    member: "commerce",
+    package: "@acme/service-commerce",
+    version: "1",
+    actions: [
+      {
+        key: "orders.order.cancel@1",
+        kind: "action",
+        permission: "orders.order.cancel",
+        risk: "L2",
+        endpoint: { method: "POST", path: "/orders/cancel" },
+      },
+      { key: "orders.order.list@1", kind: "query", endpoint: { method: "GET", path: "/orders" } },
+      { key: "orders.order.purge@1", kind: "action" },
+    ],
+    events: [],
+  });
+  writeJson("apps/web/package.json", { name: "@acme/web" });
+  writeJson("apps/web/stackra.manifest.json", {
+    member: "web",
+    package: "@acme/web",
+    version: "1",
+    kind: "app",
+    routes: [{ key: "orders", class: "OrdersRoute", file: "src/routes/orders.route.ts" }],
+  });
+  writeJson("packages/data/search/package.json", { name: "@acme/search" });
 });
 
 afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-/** A started server with a client peer; `encore` is the upstream peer or `null`. */
+/** A started server with a client peer. */
 function start(
   run: StackraRunner,
-  encore: McpPeer | null = null,
-  tools: readonly LocalTool[] = [],
+  options: {
+    readonly encore?: McpPeer | null;
+    readonly tools?: readonly LocalTool[];
+    readonly env?: Record<string, string>;
+  } = {},
 ) {
   const toServer = new PassThrough();
   const toClient = new PassThrough();
@@ -59,19 +88,48 @@ function start(
     input: toServer,
     output: toClient,
     run,
-    encore,
-    tools,
+    encore: options.encore ?? null,
+    tools: options.tools ?? [],
+    // A local server unless the test says otherwise; `{}` is a server with no environment.
+    env: options.env ?? { STACKRA_ENVIRONMENT: "dev" },
   });
   const client = connectMcp(toClient, toServer);
   return { client, served, disconnect: () => toServer.end() };
 }
 
-/** The text of a tool result. */
-const textOf = (result: unknown): string =>
-  (result as { content: { text: string }[] }).content[0]?.text ?? "";
+/** A tool call's result. */
+type Called = {
+  readonly isError: boolean;
+  readonly structuredContent: {
+    readonly ok: boolean;
+    readonly data?: Record<string, unknown> & readonly unknown[];
+    readonly error?: { readonly code?: string; readonly message: string; readonly fix?: string };
+  };
+};
+
+/** Calls `name` with `args`. */
+const call = async (client: McpPeer, name: string, args: unknown = {}): Promise<Called> =>
+  (await client.request("tools/call", { name, arguments: args })) as Called;
+
+/** An upstream Encore peer whose `tools/list` answers `pages` in turn, by cursor. */
+function encorePeer(pages: readonly { tools: unknown[]; nextCursor?: string }[]) {
+  const listed: unknown[] = [];
+  const handle = vi.fn(async (method: string, params: unknown) => {
+    if (method === "tools/list") {
+      listed.push(params);
+      const cursor = (params as { cursor?: string } | undefined)?.cursor;
+      return pages[cursor === undefined ? 0 : Number(cursor)];
+    }
+    return { content: [{ type: "text", text: JSON.stringify(params) }] };
+  });
+  const toEncore = new PassThrough();
+  const fromEncore = new PassThrough();
+  connectMcp(toEncore, fromEncore, handle);
+  return { peer: connectMcp(fromEncore, toEncore), handle, listed };
+}
 
 describe("serveLocalMcp", () => {
-  it("answers the handshake and lists the local tools", async () => {
+  it("answers the handshake and lists the built-in tools in order with their hints", async () => {
     const { client, served, disconnect } = start(vi.fn<StackraRunner>());
 
     await expect(
@@ -83,92 +141,402 @@ describe("serveLocalMcp", () => {
     });
     await expect(
       client.request("initialize", { protocolVersion: "1999-01-01" }),
-    ).resolves.toMatchObject({
-      protocolVersion: "2025-11-25",
-    });
+    ).resolves.toMatchObject({ protocolVersion: "2025-11-25" });
     await expect(client.request("ping")).resolves.toEqual({});
 
     const { tools } = (await client.request("tools/list")) as {
-      tools: { name: string; inputSchema: object }[];
+      tools: { name: string; inputSchema: Record<string, unknown>; annotations: unknown }[];
     };
     expect(tools.map((tool) => tool.name)).toEqual([
+      "app_info",
       "manifest",
+      "routes",
       "new",
       "gen",
       "validate",
+      "check",
       "verify",
+      "test",
+      "typecheck",
+      "lint",
     ]);
-    expect(tools[1]?.inputSchema).toMatchObject({ type: "object", required: ["kind", "name"] });
+    const byName = new Map(tools.map((tool) => [tool.name, tool]));
+    expect(byName.get("manifest")?.annotations).toEqual({ readOnlyHint: true });
+    expect(byName.get("gen")?.annotations).toEqual({
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+    });
+    expect(byName.get("new")?.annotations).toEqual({
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+    });
+    expect(byName.get("new")?.inputSchema).toMatchObject({
+      type: "object",
+      required: ["kind", "name"],
+      properties: {
+        kind: {
+          enum: [
+            "package",
+            "service",
+            "seed-pack",
+            "tooling",
+            "app:console",
+            "app:mobile",
+            "app:desktop",
+            "app:docs",
+          ],
+        },
+      },
+      additionalProperties: false,
+    });
 
     await expect(client.request("resources/list")).rejects.toMatchObject({ code: -32_601 });
     disconnect();
     await expect(served).resolves.toBeUndefined();
   });
 
-  it("reads manifests, filtered by member and narrowed to a section", async () => {
+  it("reads manifests by member and section, refusing a section or member there is not", async () => {
     const { client, disconnect } = start(vi.fn<StackraRunner>());
 
-    const all = await client.request("tools/call", { name: "manifest", arguments: {} });
-    expect(JSON.parse(textOf(all))).toEqual([expect.objectContaining({ member: "commerce" })]);
-
-    const actions = await client.request("tools/call", {
-      name: "manifest",
-      arguments: { member: "commerce", section: "actions" },
-    });
-    expect(JSON.parse(textOf(actions))).toEqual([
-      { member: "commerce", actions: [{ key: "orders.order.cancel@1" }] },
+    const all = await call(client, "manifest");
+    expect(all.isError).toBe(false);
+    expect(all.structuredContent.data).toEqual([
+      expect.objectContaining({ member: "web" }),
+      expect.objectContaining({ member: "commerce" }),
     ]);
 
-    const missing = await client.request("tools/call", {
-      name: "manifest",
-      arguments: { member: "billing" },
+    const routes = await call(client, "manifest", { member: "web", section: "routes" });
+    expect(routes.structuredContent.data).toEqual([
+      { member: "web", routes: [expect.objectContaining({ key: "orders" })] },
+    ]);
+    const byFolder = await call(client, "manifest", {
+      member: "services/commerce/",
+      section: "events",
     });
-    expect(missing).toMatchObject({ isError: true });
+    expect(byFolder.structuredContent.data).toEqual([{ member: "commerce", events: [] }]);
+
+    // A section is only ever one the manifests hold; the refusal names them.
+    const unknownSection = await call(client, "manifest", { section: "settings" });
+    expect(unknownSection.isError).toBe(true);
+    expect(unknownSection.structuredContent.error).toMatchObject({
+      message: 'No manifest has a "settings" section',
+      fix: "name one of: actions, events, kind, member, package, routes, version",
+    });
+
+    const unknownMember = await call(client, "manifest", { member: "billing" });
+    expect(unknownMember.isError).toBe(true);
+    expect(unknownMember.structuredContent.error?.fix).toBe(
+      "name one of: web, packages/data/search, commerce",
+    );
+
+    const noManifest = await call(client, "manifest", { member: "@acme/search" });
+    expect(noManifest.structuredContent.error).toMatchObject({
+      message: "@acme/search has no stackra.manifest.json yet",
+      fix: "stackra gen",
+    });
     disconnect();
   });
 
-  it("runs every write and gate through the CLI runner", async () => {
-    const run = vi.fn<StackraRunner>(async (args) =>
-      args[0] === "verify"
-        ? { exitCode: 1, output: "lint failed\n" }
-        : { exitCode: 0, output: "ok\n" },
+  it("answers the app facts: package, environment, runway, members and dev ports", async () => {
+    writeFileSync(
+      join(root, "runway.yaml"),
+      [
+        "version: 3",
+        "project: acme",
+        "environments: {}",
+        "providers:",
+        "  encore:",
+        "    app: acme-x7",
+        "",
+      ].join("\n"),
     );
+    writeJson(".stackra/dev/ports.json", {
+      version: 1,
+      environment: "dev",
+      lane: 2,
+      members: { web: { url: "http://localhost:5175", port: 5175, host: "localhost" } },
+      infra: { postgres: { url: "postgres://localhost:5434", port: 5434 } },
+    });
+    const { client, disconnect } = start(vi.fn<StackraRunner>(), {
+      env: { STACKRA_ENVIRONMENT: "test" },
+    });
+
+    const facts = await call(client, "app_info");
+    expect(facts.isError).toBe(false);
+    expect(facts.structuredContent.data).toMatchObject({
+      root,
+      package: { name: "acme", version: "0.1.0", packageManager: "pnpm@12.16.1" },
+      node: process.version,
+      environment: { name: "test", deployed: false },
+      runway: { project: "acme", environments: [], providers: ["encore"], encoreApp: "acme-x7" },
+      members: [
+        {
+          member: "web",
+          package: "@acme/web",
+          path: "apps/web",
+          kind: "app",
+          sections: { routes: 1 },
+        },
+        {
+          member: null,
+          package: "@acme/search",
+          path: "packages/data/search",
+          kind: "package",
+          sections: null,
+        },
+        {
+          member: "commerce",
+          path: "services/commerce",
+          kind: "service",
+          sections: { actions: 3, events: 0 },
+        },
+      ],
+      dev: {
+        environment: "dev",
+        lane: 2,
+        members: { web: { url: "http://localhost:5175", port: 5175 } },
+        infra: { postgres: { url: "postgres://localhost:5434", port: 5434 } },
+      },
+    });
+
+    writeFileSync(join(root, "runway.yaml"), "version: [\n");
+    const broken = await call(client, "app_info");
+    expect(broken.structuredContent.data).toMatchObject({
+      runway: { error: expect.stringContaining("runway.yaml") },
+    });
+    disconnect();
+  });
+
+  it("lists the HTTP endpoints by path and the app pages, filtered", async () => {
+    const { client, disconnect } = start(vi.fn<StackraRunner>());
+
+    const routes = await call(client, "routes");
+    expect(routes.structuredContent.data).toEqual({
+      endpoints: [
+        {
+          member: "commerce",
+          method: "GET",
+          path: "/orders",
+          action: "orders.order.list@1",
+          kind: "query",
+        },
+        {
+          member: "commerce",
+          method: "POST",
+          path: "/orders/cancel",
+          action: "orders.order.cancel@1",
+          kind: "action",
+          permission: "orders.order.cancel",
+          risk: "L2",
+        },
+      ],
+      pages: [{ member: "web", key: "orders", file: "src/routes/orders.route.ts" }],
+    });
+
+    const cancel = await call(client, "routes", { member: "commerce", search: "CANCEL" });
+    expect(cancel.structuredContent.data).toEqual({
+      endpoints: [expect.objectContaining({ path: "/orders/cancel" })],
+      pages: [],
+    });
+    disconnect();
+  });
+
+  it("runs new, gen, validate and verify through the CLI runner with structured results", async () => {
+    const run = vi.fn<StackraRunner>(async (args) => {
+      if (args[0] === "verify")
+        return {
+          exitCode: 1,
+          output:
+            "lint: 3 files\n" +
+            JSON.stringify(
+              [
+                {
+                  phase: "lint",
+                  rule: "eslint(no-debugger)",
+                  path: "a.ts",
+                  line: 3,
+                  severity: "error",
+                },
+                { phase: "docs", rule: "contract", path: "b.ts", line: null, severity: "warning" },
+              ],
+              null,
+              2,
+            ) +
+            "\n",
+        };
+      if (args[0] === "gen")
+        return {
+          exitCode: 1,
+          output:
+            "\u001B[31msrc/a.ts:4:3 error shape_number_kind Orders: a number needs a kind\u001B[39m\n" +
+            "  fix: use @Int\ngen: 1 error(s) in .; nothing was written\n",
+        };
+      return { exitCode: 0, output: "Created packages/data/loyalty-kit\n" };
+    });
     const { client, disconnect } = start(run);
 
-    const created = await client.request("tools/call", {
-      name: "new",
-      arguments: { kind: "package", name: "loyalty-kit", flags: ["--category", "data"] },
+    const created = await call(client, "new", {
+      kind: "package",
+      name: "loyalty-kit",
+      category: "data",
+      description: "--looks-like-a-flag",
+      port: 3700,
+      dryRun: true,
     });
-    expect(created).toMatchObject({ isError: false });
-    expect(textOf(created)).toBe("$ stackra new package loyalty-kit --category data\nok\n\nexit 0");
+    expect(created.isError).toBe(false);
+    expect(created.structuredContent.data).toMatchObject({
+      command:
+        "stackra new package loyalty-kit --category=data --description=--looks-like-a-flag --port=3700 --dry-run",
+      cwd: ".",
+      exitCode: 0,
+      ok: true,
+      output: "Created packages/data/loyalty-kit\n",
+    });
 
-    await client.request("tools/call", { name: "gen", arguments: { check: true } });
-    await client.request("tools/call", { name: "validate" });
-    const verified = await client.request("tools/call", { name: "verify", arguments: {} });
-    expect(verified).toMatchObject({ isError: true });
-    expect(textOf(verified)).toContain("lint failed");
+    const generated = await call(client, "gen", { check: true, member: "commerce" });
+    expect(generated.isError).toBe(true);
+    expect(generated.structuredContent).toMatchObject({
+      ok: false,
+      data: {
+        command: "stackra gen --check",
+        cwd: "services/commerce",
+        exitCode: 1,
+        errors: 1,
+        warnings: 0,
+        diagnostics: [
+          {
+            file: "src/a.ts",
+            line: 4,
+            column: 3,
+            severity: "error",
+            code: "shape_number_kind",
+            message: "Orders: a number needs a kind",
+            fix: "use @Int",
+          },
+        ],
+      },
+    });
 
-    expect(run.mock.calls.map(([args]) => args)).toEqual([
-      ["new", "package", "loyalty-kit", "--category", "data"],
-      ["gen", "--check"],
-      ["validate"],
-      ["verify"],
+    expect((await call(client, "validate")).isError).toBe(false);
+    const verified = await call(client, "verify", { keepGoing: true });
+    expect(verified.isError).toBe(true);
+    expect(verified.structuredContent.data).toMatchObject({
+      command: "stackra verify --format=json --keep-going",
+      findings: [{ phase: "lint", path: "a.ts" }, { phase: "docs" }],
+      counts: { lint: { errors: 1, warnings: 0 }, docs: { errors: 0, warnings: 1 } },
+    });
+
+    expect(run.mock.calls).toEqual([
+      [
+        [
+          "new",
+          "package",
+          "loyalty-kit",
+          "--category=data",
+          "--description=--looks-like-a-flag",
+          "--port=3700",
+          "--dry-run",
+        ],
+        undefined,
+      ],
+      [["gen", "--check"], { cwd: join(root, "services/commerce") }],
+      [["validate"], undefined],
+      [["verify", "--format=json", "--keep-going"], undefined],
     ]);
     disconnect();
   });
 
-  it("refuses invalid arguments and unknown tools before running anything", async () => {
+  it("runs test, typecheck, lint and check in a member and reads their results", async () => {
+    const outputs: Record<string, string> = {
+      test: [
+        " FAIL  src/a.test.ts > orders > cancels",
+        "AssertionError: expected 1 to be 2",
+        "",
+        " Test Files  1 failed | 2 passed (3)",
+        "      Tests  1 failed | 9 passed | 1 skipped (11)",
+      ].join("\n"),
+      typecheck:
+        "src/a.ts(2,14): error TS2322: Type 'string' is not assignable to type 'number'.\n",
+      lint: "\n  ! eslint(no-debugger): `debugger` statement is not allowed\n   ,-[src/c.ts:3:1]\n",
+      check: "[]\n",
+    };
+    const run = vi.fn<StackraRunner>(async (args) => ({
+      exitCode: args[0] === "check" || args[0] === "lint" ? 0 : 1,
+      output: outputs[args[0] ?? ""] ?? "",
+    }));
+    const { client, disconnect } = start(run);
+
+    const tested = await call(client, "test", { member: "commerce", tier: "int" });
+    expect(tested.isError).toBe(true);
+    expect(tested.structuredContent.data).toMatchObject({
+      command: "stackra test --tier=int",
+      cwd: "services/commerce",
+      tests: {
+        files: { passed: 2, failed: 1, skipped: 0 },
+        tests: { passed: 9, failed: 1, skipped: 1, todo: 0 },
+        failures: [
+          {
+            file: "src/a.test.ts",
+            test: "orders > cancels",
+            message: "AssertionError: expected 1 to be 2",
+          },
+        ],
+      },
+    });
+
+    const typed = await call(client, "typecheck", { member: "commerce" });
+    expect(typed.structuredContent.data).toMatchObject({
+      errors: 1,
+      diagnostics: [{ file: "src/a.ts", line: 2, column: 14, code: "TS2322", severity: "error" }],
+    });
+
+    const linted = await call(client, "lint");
+    expect(linted.isError).toBe(false);
+    expect(linted.structuredContent.data).toMatchObject({
+      cwd: ".",
+      errors: 0,
+      warnings: 1,
+      diagnostics: [
+        { file: "src/c.ts", line: 3, code: "eslint(no-debugger)", severity: "warning" },
+      ],
+    });
+
+    const checked = await call(client, "check", { only: ["format", "lint"], withTests: true });
+    expect(checked.structuredContent).toMatchObject({
+      ok: true,
+      data: {
+        command: "stackra check --format=json --only=format,lint --with-tests",
+        findings: [],
+      },
+    });
+
+    expect(run.mock.calls.map(([args, at]) => [args, at?.cwd])).toEqual([
+      [["test", "--tier=int"], join(root, "services/commerce")],
+      [["typecheck"], join(root, "services/commerce")],
+      [["lint"], undefined],
+      [["check", "--format=json", "--only=format,lint", "--with-tests"], undefined],
+    ]);
+    disconnect();
+  });
+
+  it("returns a bad input as a tool error and runs nothing; an unknown tool is a protocol error", async () => {
     const run = vi.fn<StackraRunner>();
     const { client, disconnect } = start(run);
 
-    await expect(
-      client.request("tools/call", { name: "new", arguments: { kind: "--force", name: "x" } }),
-    ).rejects.toMatchObject({
-      code: -32_602,
-    });
-    await expect(
-      client.request("tools/call", { name: "gen", arguments: { extra: 1 } }),
-    ).rejects.toMatchObject({ code: -32_602 });
+    for (const [name, args] of [
+      ["new", { kind: "module", name: "x" }],
+      ["new", { kind: "package", name: "--force" }],
+      ["gen", { extra: 1 }],
+      ["check", { only: ["lint", "deploy"] }],
+      ["test", { tier: "load" }],
+      ["test", { member: "billing" }],
+    ] as const) {
+      const refused = await call(client, name, args);
+      expect(refused.isError, `${name} ${JSON.stringify(args)}`).toBe(true);
+      expect(refused.structuredContent.ok).toBe(false);
+    }
     await expect(client.request("tools/call", { name: "deploy" })).rejects.toMatchObject({
       code: -32_602,
     });
@@ -179,48 +547,152 @@ describe("serveLocalMcp", () => {
     disconnect();
   });
 
-  it("proxies the Encore tools under encore_ and forwards calls unprefixed", async () => {
-    const upstreamHandle = vi.fn(async (method: string, params: unknown) =>
-      method === "tools/list"
-        ? {
-            tools: [
-              {
-                name: "call_endpoint",
-                description: "Call an endpoint",
-                inputSchema: { type: "object" },
-              },
-            ],
-          }
-        : { content: [{ type: "text", text: JSON.stringify(params) }] },
-    );
-    const toEncore = new PassThrough();
-    const fromEncore = new PassThrough();
-    connectMcp(toEncore, fromEncore, upstreamHandle);
-    const encore = connectMcp(fromEncore, toEncore);
+  it("refuses a writing tool on a deployed target and still answers a read-only one", async () => {
+    const run = vi.fn<StackraRunner>(async () => ({ exitCode: 0, output: "" }));
+    const deployed = start(run, { env: { STACKRA_ENVIRONMENT: "production" } });
 
-    const { client, served, disconnect } = start(vi.fn<StackraRunner>(), encore);
-    const { tools } = (await client.request("tools/list")) as { tools: { name: string }[] };
-    expect(tools.at(-1)).toEqual({
-      name: "encore_call_endpoint",
-      description: "Call an endpoint",
+    const refused = await call(deployed.client, "gen");
+    expect(refused).toMatchObject({
+      isError: true,
+      structuredContent: {
+        ok: false,
+        error: {
+          code: "deployed_target",
+          message:
+            "gen writes, and the server runs in production (STACKRA_ENVIRONMENT): " +
+            "the local developer MCP only writes in dev or test",
+        },
+      },
+    });
+    expect((await call(deployed.client, "manifest", { member: "web" })).isError).toBe(false);
+    expect((await call(deployed.client, "validate")).isError).toBe(false);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run.mock.calls[0]?.[0]).toEqual(["validate"]);
+    deployed.disconnect();
+
+    // A local server still refuses a host tool call that names a deployed environment.
+    const invoke = vi.fn<LocalTool["invoke"]>(async () => ({
+      document: { ok: true },
+      exitCode: 0,
+    }));
+    const settings: LocalTool = {
+      name: "settings_apply",
+      description: "Apply settings",
       inputSchema: { type: "object" },
+      readOnly: false,
+      invoke,
+    };
+    const local = start(vi.fn<StackraRunner>(), {
+      tools: [settings],
+      env: { STACKRA_ENVIRONMENT: "dev" },
     });
+    expect(await call(local.client, "settings_apply", { env: "staging" })).toMatchObject({
+      isError: true,
+      structuredContent: { error: { code: "deployed_target" } },
+    });
+    expect(await call(local.client, "settings_apply", { env: "dev" })).toMatchObject({
+      isError: false,
+    });
+    expect(invoke).toHaveBeenCalledTimes(1);
+    local.disconnect();
+  });
 
-    const called = await client.request("tools/call", {
-      name: "encore_call_endpoint",
+  it("refuses every writing tool when STACKRA_ENVIRONMENT is unset, and still answers a read-only one", async () => {
+    const run = vi.fn<StackraRunner>(async () => ({ exitCode: 0, output: "" }));
+    const unset = start(run, { env: {} });
+    for (const name of ["gen", "new", "test", "lint"])
+      expect(await call(unset.client, name, { kind: "package", name: "x" })).toMatchObject({
+        isError: true,
+        structuredContent: {
+          ok: false,
+          error: {
+            code: "deployed_target",
+            message: expect.stringContaining(
+              "the server's STACKRA_ENVIRONMENT is unset, so it may be a deployed runtime",
+            ),
+            fix: expect.stringContaining("STACKRA_ENVIRONMENT=dev"),
+          },
+        },
+      });
+    expect((await call(unset.client, "manifest", { member: "web" })).isError).toBe(false);
+    // app_info names no environment and counts the server as deployed.
+    expect((await call(unset.client, "app_info")).structuredContent.data).toMatchObject({
+      environment: { name: null, deployed: true },
+    });
+    expect(run).not.toHaveBeenCalled();
+    unset.disconnect();
+
+    // The same call on a server that says dev runs.
+    const dev = start(run, { env: { STACKRA_ENVIRONMENT: "dev" } });
+    expect((await call(dev.client, "gen")).isError).toBe(false);
+    expect(run).toHaveBeenCalledTimes(1);
+    dev.disconnect();
+  });
+
+  it("proxies every page of Encore tools under encore_, forwards calls unprefixed, and guards its writes", async () => {
+    const encore = encorePeer([
+      {
+        tools: [
+          {
+            name: "call_endpoint",
+            description: "Call an endpoint",
+            inputSchema: { type: "object" },
+          },
+        ],
+        nextCursor: "1",
+      },
+      {
+        tools: [
+          {
+            name: "get_traces",
+            description: "Read traces",
+            inputSchema: { type: "object" },
+            annotations: { readOnlyHint: true },
+          },
+        ],
+      },
+    ]);
+
+    const { client, served, disconnect } = start(vi.fn<StackraRunner>(), {
+      encore: encore.peer,
+      env: { STACKRA_ENVIRONMENT: "staging" },
+    });
+    const { tools } = (await client.request("tools/list")) as { tools: { name: string }[] };
+    expect(tools.slice(-2)).toEqual([
+      {
+        name: "encore_call_endpoint",
+        description: "Call an endpoint",
+        inputSchema: { type: "object" },
+      },
+      {
+        name: "encore_get_traces",
+        description: "Read traces",
+        inputSchema: { type: "object" },
+        annotations: { readOnlyHint: true },
+      },
+    ]);
+    expect(encore.listed).toEqual([{}, { cursor: "1" }]);
+
+    const traces = (await client.request("tools/call", {
+      name: "encore_get_traces",
+      arguments: { service: "commerce" },
+    })) as { content: { text: string }[] };
+    expect(JSON.parse(traces.content[0]?.text ?? "")).toEqual({
+      name: "get_traces",
       arguments: { service: "commerce" },
     });
-    expect(JSON.parse(textOf(called))).toEqual({
-      name: "call_endpoint",
-      arguments: { service: "commerce" },
+    // Encore does not say call_endpoint is read-only, so a deployed server refuses it.
+    expect(await call(client, "encore_call_endpoint", { service: "commerce" })).toMatchObject({
+      isError: true,
+      structuredContent: { error: { code: "deployed_target" } },
     });
 
     disconnect();
     await served;
-    await expect(encore.closed).resolves.toBeUndefined();
+    await expect(encore.peer.closed).resolves.toBeUndefined();
   });
 
-  it("serves command tools with their own schema and handler, replacing a built-in of the same name", async () => {
+  it("serves host tools with their own schema and handler, replacing a built-in of the same name", async () => {
     const doctor: LocalTool = {
       name: "validate",
       description: "Check the machine",
@@ -236,7 +708,7 @@ describe("serveLocalMcp", () => {
       }),
     };
     const run = vi.fn<StackraRunner>();
-    const { client, served, disconnect } = start(run, null, [doctor]);
+    const { client, served, disconnect } = start(run, { tools: [doctor] });
 
     const { tools } = (await client.request("tools/list")) as {
       tools: { name: string; description: string; annotations: unknown }[];
@@ -247,6 +719,7 @@ describe("serveLocalMcp", () => {
         annotations: { readOnlyHint: true },
       }),
     ]);
+    expect(tools.findIndex((tool) => tool.name === "validate")).toBe(5);
     const result = await client.request("tools/call", {
       name: "validate",
       arguments: { quick: true },

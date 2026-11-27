@@ -37,10 +37,18 @@ export interface CommandOptions {
   readonly examples?: readonly string[];
 
   /**
-   * A tool of the local developer MCP (ADR 0282 decision 5) with the same schema and handler as the command; the
-   * read-only hint when `{ readOnly: true }`. Never a tenant MCP tool.
+   * A tool of the local developer MCP (ADR 0282 decision 5) with the same schema and handler as the command. Its
+   * hints: `readOnly` when it changes nothing; for a tool that writes, `destructive` when it may delete or overwrite
+   * what someone wrote (true when not said, the MCP default) and `idempotent` when running it twice with the same
+   * input changes nothing more (false when not said). `true` is a writing, destructive tool. Never a tenant MCP tool.
    */
-  readonly tool?: boolean | { readonly readOnly: boolean };
+  readonly tool?:
+    | boolean
+    | {
+        readonly readOnly: boolean;
+        readonly destructive?: boolean;
+        readonly idempotent?: boolean;
+      };
 
   /**
    * Migration only (ADR 0500 decision 7, STA-1966): the command declares no fields, and `io.rest` holds every token

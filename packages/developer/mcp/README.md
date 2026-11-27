@@ -57,25 +57,43 @@ process.exitCode = await execWithSecrets(argv); // or { secretsDir: "/path/to/fi
 
 ## The local server
 
-`serveLocalMcp` speaks MCP over stdio (newline-delimited JSON-RPC 2.0) and offers:
+`serveLocalMcp` speaks MCP over stdio (newline-delimited JSON-RPC 2.0). Every tool is a console command declared
+`tool` (`DEV_TOOL_COMMANDS`), served through `toolsOf` of `@stackra/console`, so a tool's input schema, hints and
+handler are its command's own, and its result is the command's `--json` document (`structuredContent`):
 
-| Tool       | Does                                                                      |
-| ---------- | ------------------------------------------------------------------------- |
-| `manifest` | reads the committed `stackra.manifest.json` files, by member and section  |
-| `new`      | `stackra new <kind> <name> [flags]`                                       |
-| `gen`      | `stackra gen` (`--check` with `check: true`)                              |
-| `validate` | `stackra validate`                                                        |
-| `verify`   | `stackra verify`                                                          |
-| `encore_*` | every tool of the local Encore MCP (`encore mcp run --app=<id>`), proxied |
+| Tool        | Hints               | Does                                                                                          |
+| ----------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| `app_info`  | read-only           | root package, Node, environment, runway (project, environments, providers, Encore app), every member with its kind and manifest counts, dev ports and URLs |
+| `manifest`  | read-only           | the committed `stackra.manifest.json` of every member or one, whole or one section; a section no manifest has is refused with the ones there are |
+| `routes`    | read-only           | the HTTP endpoints (method, path, action, permission, risk, area) and the app pages, by member and search text |
+| `new`       | writes, additive    | `stackra new <kind> <name>`; `kind` is an enum of exactly the kinds the CLI makes              |
+| `gen`       | writes, idempotent  | `stackra gen` (`check`, `manifests`, `member`); each refusal with its place, code and fix      |
+| `validate`  | read-only           | `stackra validate`                                                                            |
+| `check`     | writes, idempotent  | `stackra check --format=json` (`only`, `skip`, `affected`, `keepGoing`, `withTests`); findings and counts by phase |
+| `verify`    | writes, idempotent  | `stackra verify --format=json`; findings and counts by phase                                  |
+| `test`      | writes, idempotent  | `stackra test` (`member`, `tier`); file and test counts and each failure with its first error line |
+| `typecheck` | writes, idempotent  | `stackra typecheck` (`member`); each TypeScript diagnostic with file, line, column and code     |
+| `lint`      | writes, idempotent  | `stackra lint` (`member`), never `--fix`; each oxlint finding with its place and rule         |
+| `encore_*`  | as Encore says      | every tool of the local Encore MCP (`encore mcp run --app=<id>`), every `tools/list` page, proxied |
 
-Every command tool runs through the `run` option, so a write passes the CLI's own commands and gates; the CLI passes
-its command core, and the default spawns `stackra`. The Encore app id is the root runway's `providers.encore.app`; when
-there is none, or Encore does not answer within ten seconds, the local tools still work.
+The host adds its own tools (`tools`): `@stackra/cli` passes `doctor` and `ls`; one named like a built-in replaces it.
+Every tool that runs a command runs it through the `run` option, in the named member's folder when it has a `member`,
+so a write passes the CLI's own commands and gates; the CLI passes its command core, and the default spawns `stackra`.
+Each result carries the command line, where it ran, the exit code, the time and the tail of the output, plus what the
+tool reads from it.
+
+A tool that is not read-only is refused, before it runs, unless the server runs in `dev` or `test`: an unset or empty
+`STACKRA_ENVIRONMENT` is not local (fail closed), and neither is a call that names another environment (`env` or
+`environment`). The result is the error `deployed_target`. `stackra mcp` and `stackra dev` set
+`STACKRA_ENVIRONMENT=dev` themselves when it is unset and keep a value that is set; a host calling `serveLocalMcp`
+passes `env` with it. A proxied Encore tool counts as writing unless Encore marks it `readOnlyHint`. The Encore app
+id is the root runway's `providers.encore.app`; when there is none, or Encore does not answer within ten seconds, the
+local tools still work.
 
 ```ts
 import { serveLocalMcp } from "@stackra/mcp/node";
 
-await serveLocalMcp({ version: CLI_VERSION, run: (args) => commands.run(args) });
+await serveLocalMcp({ version: CLI_VERSION, run: (args, at) => commands.run(args, at) });
 ```
 
 ## The hosted server core
