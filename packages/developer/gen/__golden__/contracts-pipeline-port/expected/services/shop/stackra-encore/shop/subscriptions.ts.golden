@@ -8,6 +8,7 @@
  *           the next gen run.
  * Runtime: node
  */
+import "./environment";
 import "./database";
 import type { EventEnvelope } from "@stackra/outbox/contracts";
 import { InboxService } from "@stackra/outbox/node";

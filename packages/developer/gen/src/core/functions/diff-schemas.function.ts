@@ -7,24 +7,24 @@
  * Boundary: pure. Only the given modules are compared (a declared package's tables are its own models'). The columns
  *           and indexes the migrations write that no model field declares are implied, never `undeclared_*`: every
  *           `varchar(33)` column but `id` (a link, a foreign key, the tenant column, `parent_id`) carries an automatic
- *           `idx_<table>_<column>` index, `tree_path` and `metadata` come from traits, and on a table that expects
- *           `search_text` (a `@Searchable` model) the search macro's vectors and `__v<n>` shadows are implied too, so
- *           an index over implied columns only is tolerated. A search column on any other table is undeclared. A
+ *           `idx_<table>_<column>` index, and on a table that expects `search_text` (a `@Searchable` model) the search
+ *           macro's vectors and `__v<n>` shadows are implied too, so an index over implied columns only is tolerated.
+ *           A search column on any other table is undeclared, and so is a trait's column (`tree_path`, `metadata`) on
+ *           a table whose model lacks the trait: `expectedSchema` expects a trait's columns only where it is applied.
+ *           An expected column `nullable: "either"` agrees with both; an expected `optional` index may be absent; an
+ *           expected index with a `method` (a trait's GiST or GIN) must have it. A
  *           predicate compares as Postgres renders it: without parentheses, casts, double quotes, case and spaces,
  *           with `!=`, `in`, `not in`, `like`, `ilike` and `between` folded to `<>`, `= any`, `<> all`, `~~`, `~~*`
  *           and two comparisons. Primary keys and partitions are not compared.
  * Runtime: isomorphic
  * Governing contract: ADR 0159 (the migration owns the schema; the model is the declaration); ADR 0231 (`idx_` and
  *                     `fk_` names); ADR 0282 (decision 3: `stackra db diff`); ADR 0221 (search
- *                     columns); STA-1808; STA-2071.
+ *                     columns); STA-1808; STA-2071; STA-1408 (trait columns).
  */
 import { normalizePostgresType } from "#core/functions/normalize-postgres-type.function";
 import { postgresTypeAgrees } from "#core/functions/postgres-type-agrees.function";
 import type { SchemaDifference } from "#core/types/schema-difference.type";
 import type { SchemaSnapshot } from "#core/types/schema-snapshot.type";
-
-/** Columns traits write that no model field names. */
-const IMPLIED_COLUMN = /^(tree_path|metadata)$/;
 
 /** Columns the search macro writes: a vector (per locale), the text and the filters, each with a rebuild shadow. */
 const SEARCH_COLUMN = /^(search_vector(_[a-z0-9_]+)?|search_text|search_filters)(__v\d+)?$/;
@@ -59,21 +59,22 @@ const predicateKey = (predicate: string | undefined): string =>
     .replaceAll(/=anyarray\[([^\]]*)\]/g, "in$1")
     .replaceAll(/<>allarray\[([^\]]*)\]/g, "notin$1");
 
-/** An index as one comparable and printable string. */
-const shapeOf = (index: Index): string =>
-  `${index.unique ? "unique " : ""}(${index.columns.join(", ")})${
+/** An index as one comparable and printable string; with `method`, its access method too. */
+const shapeOf = (index: Index, method = false): string =>
+  `${index.unique ? "unique " : ""}${method ? `using ${index.method ?? "?"} ` : ""}(${index.columns.join(", ")})${
     index.predicate === undefined ? "" : ` where ${index.predicate}`
   }`;
 
-/** Whether two indexes with one name are the same index. */
-const sameIndex = (a: Index, b: Index): boolean =>
-  a.unique === b.unique &&
-  a.columns.join(",") === b.columns.join(",") &&
-  predicateKey(a.predicate) === predicateKey(b.predicate);
+/** Whether `built` is the index `wanted` (the model's side) describes; a method is compared when `wanted` names one. */
+const sameIndex = (wanted: Index, built: Index): boolean =>
+  wanted.unique === built.unique &&
+  wanted.columns.join(",") === built.columns.join(",") &&
+  predicateKey(wanted.predicate) === predicateKey(built.predicate) &&
+  (wanted.method === undefined || wanted.method === built.method);
 
 /** A column's type and nullability as one printable string. */
 const columnText = (column: Column): string =>
-  `${column.type === undefined ? "?" : normalizePostgresType(column.type)}${column.nullable ? "" : " not null"}`;
+  `${column.type === undefined ? "?" : normalizePostgresType(column.type)}${column.nullable === false ? " not null" : ""}`;
 
 /** Rows grouped by `schema.table`. */
 function byTable<T extends { readonly schema: string; readonly table: string }>(
@@ -140,15 +141,14 @@ export function diffSchemas(
     const migratedColumns = byName(migrated);
     const modelledColumns = byName(modelled);
     const searchable = modelledColumns.has("search_text");
-    const impliedColumn = (name: string): boolean =>
-      IMPLIED_COLUMN.test(name) || (searchable && SEARCH_COLUMN.test(name));
+    const impliedColumn = (name: string): boolean => searchable && SEARCH_COLUMN.test(name);
     for (const column of modelled) {
       const found = migratedColumns.get(column.name);
       if (found === undefined) {
         add("missing_column", column.name, columnText(column), "-");
         continue;
       }
-      if (found.nullable !== column.nullable)
+      if (column.nullable !== "either" && found.nullable !== column.nullable)
         add(
           "nullability",
           column.name,
@@ -180,9 +180,14 @@ export function diffSchemas(
     const migratedIndexes = byName(builtIndexes.get(key));
     for (const index of modelledIndexes.values()) {
       const found = migratedIndexes.get(index.name);
-      if (found === undefined) add("missing_index", index.name, shapeOf(index), "-");
-      else if (!sameIndex(index, found))
-        add("index_shape", index.name, shapeOf(index), shapeOf(found));
+      if (found === undefined) {
+        if (index.optional !== true)
+          add("missing_index", index.name, shapeOf(index, index.method !== undefined), "-");
+      } else if (!sameIndex(index, found)) {
+        // The access method is printed only when it is what differs.
+        const method = index.method !== undefined && index.method !== found.method;
+        add("index_shape", index.name, shapeOf(index, method), shapeOf(found, method));
+      }
     }
     for (const index of migratedIndexes.values())
       if (

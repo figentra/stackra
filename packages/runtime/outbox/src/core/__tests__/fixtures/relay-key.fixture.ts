@@ -79,10 +79,16 @@ export function relayConfig(values: {
   });
 }
 
-/** The consumer's inbox configuration pinning `producers`, running in `environment`. */
+/**
+ * The consumer's inbox configuration pinning `producers`, running in `environment`. The environment comes from the
+ * runtime (`STACKRA_ENVIRONMENT`), never a value (STA-2844).
+ */
 export function inboxConfig(
   producers: Readonly<Record<string, PinnedProducer>>,
   environment = "dev",
 ): RelayInboxConfig {
-  return buildConfig(RelayInboxConfig, { values: { producers: { ...producers }, environment } });
+  return buildConfig(RelayInboxConfig, {
+    env: { STACKRA_ENVIRONMENT: environment },
+    values: { producers: { ...producers } },
+  });
 }
