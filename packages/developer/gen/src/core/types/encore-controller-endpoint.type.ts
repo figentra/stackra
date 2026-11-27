@@ -12,7 +12,7 @@ import type { ClassRef } from "#core/types/class-ref.type";
 
 /** A raw controller, reachable without a session and still behind every guard. */
 export interface EncoreControllerEndpoint {
-  /** A controller. */
+  /** The discriminant: this endpoint is a raw controller. */
   readonly kind: "controller";
 
   /** The export in `api.ts`: the camel-cased class name. */

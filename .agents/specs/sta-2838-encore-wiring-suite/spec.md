@@ -35,11 +35,12 @@ split out of STA-229 to build it.
 - **Apps touched**: docs (the scaffolding guide, the testing-by-kind standard, an enforcement note in ADR 0182)
 - **Services touched**: none in this repo (its services are placeholders with an authored `src/main.ts`, so gen writes
   them no suite); every service that runs as a generated Encore app gets the suite on its next gen
-- **Packages touched**: gen (`encoreEndpoints`, `emitEncoreWiringTest` (environment and database files first), `emitWiringTierConfig`, two constants, three
-  types, `emitEncoreApi` reading its rows from `encoreEndpoints`, `generateMember`, tests); cli (`--tier wiring`,
+- **Packages touched**: gen (`packages/developer/gen`: `encoreEndpoints`, `emitEncoreWiringTest` (environment and database files first), `emitWiringTierConfig`, two constants, three
+  types, `emitEncoreApi` reading its rows from `encoreEndpoints`, `generateMember`, tests); cli (`packages/developer/cli`: `--tier wiring`,
   `insideEncoreTest`, `withLocalEncoreApp`, `TEST_TIER_VARIABLE`, the `test:wiring` script in `stackra new service`, tests, README); root
-  `turbo.jsonc` (the `test:wiring` task); flow-preset (the task vocabulary row, rendered into
-  `.agents/rules/task-vocabulary.md`, `.flow/lock.json` updated)
+  `turbo.jsonc` (the `test:wiring` task); flow-preset (`packages/developer/flow-preset`: the task vocabulary row, rendered into
+  `.agents/rules/task-vocabulary.md`, `.flow/lock.json` updated); app (`packages/runtime/app`: `CallAuthenticator`
+  resolves the key source only for a well-formed token, so a malformed bearer is a 401 where no key source is bound)
 - **Public contract change**: additive. `@stackra/gen` exports `ENCORE_WIRING_TEST`, `ENCORE_WIRING_CONFIG` and
   `emitEncoreWiringTest`; `stackra test` accepts `--tier wiring` and reads `STACKRA_TEST_TIER` when no `--tier` is
   given, and only inside `encore test`; `resolveTool` takes an optional `encoreTest` flag. Nothing existing changes shape; the generated `api.ts` is
