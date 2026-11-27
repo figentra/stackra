@@ -70,7 +70,9 @@ contract step's data gate.
 - **P-012**: with `after` applied under release v2, a run of v2 (first or retried) and a run naming no release are
   refused and leave the version clean; a run of v3 applies the step; a forward-only run naming no release on a
   database with an applied file is refused before `after` applies, so the retry with v2 records `after` under v2 and
-  its contract step is refused; on a fresh database such a run applies every file — Validates: AC-002
+  its contract step is refused; on a fresh database such a run applies every file; a run applying the contract step
+  with the migration it waits for is refused before that migration applies; while the run that applied it failed, a
+  contract step is refused under every later release until a release holding it finishes its run — Validates: AC-002
 - **P-013**: as an owner role on a `FORCE` table with no tenant set, or a role without SELECT on the table, the data
   gate is refused naming the role and both causes and the old column keeps its values; a backfill fails with 42501, records it and is not finished — Validates: AC-012
 - **P-014**: a rename whose new column has a default, a setting default, a generation or NOT NULL does not compile —
@@ -85,9 +87,12 @@ contract step's data gate.
 2. `SchemaRecord` compiles a table rename to the rename and its view, a finished rename or drop to the gate and the
    drop, and `requireBackfill` to `pendingRowsGateSql`; `contractAfter()` collects the `after` ids, which
    `compileMigration` appends to the declared edges.
-3. `migrate` sets `stackra.migrate_from_version` to the version it started from, outside `ROLLBACK_ENVIRONMENTS`,
-   before applying any file. `releaseGateSql` compares the newest ledger version of the `after` migration's files with
-   it.
+3. `migrate` sets `stackra.migrate_from_version` (the version it started from) and `stackra.migrate_release`,
+   outside `ROLLBACK_ENVIRONMENTS`, transaction-locally at the head of each transactional file (ADR 0495 decision 3).
+   Before any change it refuses a pending contract step whose `after` is pending too (`contractAfterIds` reads the
+   gate's `-- stackra:contract-after=<id>` line); after the last file it records a named run's release in
+   `schema_migrations_releases` with the last file version it holds. `releaseGateSql` reads the newest ledger row of
+   the `after` migration's files and passes only when another release holding it finished a run since.
 4. `Backfill({ ... })` records a checked declaration; `runBackfill` drives a `BackfillSession`; `backfill` (node) opens
    one on the direct URL with the runner's timeouts.
 
@@ -111,17 +116,22 @@ packages/data/database/
   src/core/bases/__tests__/backfill.base.test.ts
   src/core/bases/migration.base.ts
   src/core/constants/backfill-ledger.constant.ts
+  src/core/constants/contract-after-marker.constant.ts
   src/core/constants/migrate-from-version-setting.constant.ts
   src/core/constants/migrate-release-setting.constant.ts
   src/core/constants/migration-id-pattern.constant.ts
   src/core/functions/assert-column-type.function.ts
   src/core/functions/compile-migration.function.ts
   src/core/functions/constraint-name.function.ts
+  src/core/functions/contract-after-file-pattern.function.ts
+  src/core/functions/contract-after-ids.function.ts
   src/core/functions/pending-rows-gate-sql.function.ts
   src/core/functions/release-gate-sql.function.ts
   src/core/functions/rename-sync-sql.function.ts
   src/core/functions/run-backfill.function.ts
   src/core/functions/__tests__/compile-migration.function.test.ts
+  src/core/functions/__tests__/contract-after-ids.function.test.ts
+  src/core/functions/__tests__/release-gate-sql.function.test.ts
   src/core/functions/__tests__/run-backfill.function.test.ts
   src/core/records/blueprint.record.ts
   src/core/records/column-change.record.ts
@@ -158,11 +168,18 @@ packages/data/database/
   src/node/index.ts
   src/node/__tests__/index.test.ts
   src/node/services/database-runner.service.ts
+  src/testing/constants/platform-tables.constant.ts
+packages/developer/cli/
+  src/node/commands/db-migrate.command.ts
+  src/node/commands/__tests__/db-migrate.command.test.ts
+  src/node/types/database-runner.type.ts
 packages/developer/gen/src/core/constants/kind-files.constant.ts
 packages/developer/gen/src/node/constants/kind-bases.constant.ts
 packages/developer/coding-standard/src/core/constants/kind-bases.constant.ts
 packages/developer/repo-checks/src/node/constants/module-groups.constant.ts
 .changeset/expand-contract-migration-steps.md
+.changeset/db-migrate-release-option.md
+apps/docs/src/docs/standards/structure.mdx
 ```
 
 ## Data models and migrations
@@ -216,8 +233,9 @@ role can read (tested with forced row-level security and an unprivileged role).
 
 ## Known risks
 
-- The gate trusts that one `stackra db migrate` run is one release. A pipeline that runs migrate twice for one release
-  (first the expand, then the contract) would pass the gate; the runbook says to run it once per release.
+- The gate counts a release as serving once its `stackra db migrate` run finished; a deploy that fails after the
+  migrate step (the app rollout itself) is not seen. Give each deploy its own release id, and run migrate once per
+  release.
 - A backfill walks rows the migrating role can see. On a table with forced row-level security the role must bypass it
   (as `refuseNulls` already assumes).
 - Validator-derived CHECK constraints are not built here; they stay on STA-1406.

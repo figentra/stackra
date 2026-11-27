@@ -73,6 +73,7 @@ A module is `src/modules/<key>/` in a service and `src/node/` in a package. Each
 | `database/migrations/` | `.migration`                                                                                        | `NNNN-<name>.migration.ts`, numbered per module         | ADR 0294 d13 |
 | `database/factories/`  | `.factory`                                                                                          | `<model>.factory.ts`                                    | ADR 0294 d13 |
 | `database/seeders/`    | `.seeder`                                                                                           | minimal, demo and test seeders                          | ADR 0294 d13 |
+| `database/backfills/`  | `.backfill`                                                                                         | data backfills a contract step waits for                | ADR 0294 d13 |
 | `ai/`                  | `.prompt`, `.skill`, `.facts`                                                                       | prompts, skills and facts                               | ADR 0294 d13 |
 | `functions/`           | `.function`                                                                                         | plain functions                                         | ADR 0294 d13 |
 | `constants/`           | `.constant`                                                                                         | module-level constants                                  | ADR 0294 d13 |

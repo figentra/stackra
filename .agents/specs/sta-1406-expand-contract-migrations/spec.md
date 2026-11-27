@@ -44,16 +44,21 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
   rename sync trigger, `t.check`, `t.exclude`, `t.timeRange`, `t.dropIndex`, `t.dropCheck`, the `Backfill` kind, its
   runner, the node `backfill` entry, migration `database.0009_create_backfill_runs`, the runner's starting-version and
   release settings, the `release_id` column of `schema_migrations_history`, `db:migrate --release`, tests, README,
-  AGENTS.md); gen (`KIND_FILES` and `KIND_BASES` rows for `backfill`); coding-standard (the
-  `base-matches-suffix` row for `.backfill.ts`); repo-checks (the `database/backfills` module group)
+  AGENTS.md, the `schema_migrations_releases` ledger of finished release runs); cli (`stackra db migrate --release`
+  and the `DatabaseRunner` type's `release`); gen (`KIND_FILES` and `KIND_BASES` rows for `backfill`); coding-standard
+  (the `base-matches-suffix` row for `.backfill.ts`); repo-checks (the `database/backfills` module group); the docs
+  app's generated structure standards page (the `database/backfills/` row)
 - **Public contract change**: additive. `Blueprint` gains `dropColumn`, `renameColumn`, `finishRenameColumn`, `check`,
   `dropCheck`, `exclude`, `dropIndex` and `timeRange`; `SchemaBuilder` gains `rename`, `finishRename`, `drop` and
   `requireBackfill`; the `.` entry exports `Backfill`, `runBackfill` and the types `BackfillBatch`, `BackfillClass`,
   `BackfillOptions`, `BackfillProgress`, `BackfillQuery`, `BackfillSession`, `ContractOptions`,
   `DroppedIndexOptions`, `ExclusionOptions`, `RenamedColumnOptions`, `RunBackfillOptions`; `./node` exports
   `backfill`. `compileMigration`'s `after` now also lists the ids its contract steps wait for. `migrate` and
-  `DatabaseRunner.migrate` take an optional `release` (else `STACKRA_RELEASE`), `db:migrate` gains `--release`, and
-  the runner adds a nullable `release_id` column to its `schema_migrations_history` ledger. A member whose macro was
+  `DatabaseRunner.migrate` (database and cli) take an optional `release` (else `STACKRA_RELEASE`), `db:migrate` (the
+  member console command and the `stackra db migrate` bin) gains `--release`, and the runner adds a nullable
+  `release_id` column to its `schema_migrations_history` ledger and a `schema_migrations_releases(release_id,
+through_version, finished_at)` table of finished release runs. A forward-only run on a database with applied files
+  that would apply a contract step together with the migration it waits for is now refused before any change. A member whose macro was
   named like one of the new methods would now collide at compile time (none in this repo).
 - **Cross-service events**: none
 - **Tenancy and data**: one new platform table, `database.backfill_runs` (declared with `t.platformTable`), holding a
@@ -74,7 +79,8 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
 - **Licence tier**: free (MIT, this repo)
 - **UI surfaces**: none
 - **Docs to update**: `packages/data/database/README.md` (Dropping and renaming, Checks and exclusions, Backfills,
-  Running migrations), `packages/data/database/AGENTS.md`, a changeset
+  Running migrations), `packages/data/database/AGENTS.md`, `apps/docs/src/docs/standards/structure.mdx` (generated),
+  the changesets
 - **Lane**: full
 - **Change risk**: R2 (new migration DDL a production deploy runs, and a gate in the production migration runner; no
   auth, secret or HTTP shape change)
@@ -88,7 +94,13 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
   before any change, naming the step, the migration and the release, whether the run is that release's first or a
   retry of the same deploy; a migration never applied, and a run that names no release, are refused the same way.
   IF a forward-only run with files to apply names no release on a database with an applied file THEN THE runner
-  SHALL refuse it before any change, so no file is recorded without the release a later retry names.
+  SHALL refuse it before any change, so no file is recorded without the release a later retry names. IF a
+  forward-only run on a database with an applied file would apply a contract step and the migration it waits for
+  together THEN THE runner SHALL refuse it before any change, naming both files. WHILE no run of a release other than
+  this run's, holding the named migration, has finished since that migration was applied, THE release gate SHALL
+  refuse the step, so a release whose run failed (its code never live) never lets a later one drop what the release
+  before it reads; THE runner SHALL record a named forward-only run's release as finished only once it applied every
+  pending file, and SHALL set the gate's settings transaction-locally in each transactional file (ADR 0495).
 - **AC-003**: THE gate SHALL pass on a fresh database (the run started at version 0), in dev, preview and test, and
   wherever no `schema_migrations_history` exists (Encore's runner, tests).
 - **AC-004**: WHEN a column is renamed (expand), THE compiled step SHALL add the new column and a trigger that keeps the
@@ -127,3 +139,6 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
 - 2026-11-27 → Implementing (review fixes: AC-002 a forward-only run naming no release on a database with applied
   files is refused before any change; AC-012 the refusal names a missing SELECT grant too; follow-ups STA-2901,
   STA-2902, STA-2903)
+- 2026-11-27 → Implementing (review fixes: AC-002 the gate counts only a release whose run finished, and a contract
+  step shipped with the migration it waits for is refused before any change; the gate settings are transaction-local;
+  `stackra db migrate --release` in the CLI)
