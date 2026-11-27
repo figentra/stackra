@@ -1,14 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `libraryPreset`, the vitest config of a package: the service layout under the shared coverage gate, plus a
- *          jsdom project for its `react` and `native` folders.
+ *          jsdom project for its `react` and `native` folders. Contract tests run only in their own tier.
  * Boundary: test layout only: projects, environments, the coverage gate.
  * Runtime: node
  * Governing contract: ADR 0005 (legacy decorators); ADR 0022 (test placement); ADR 0295 (decision 5: generated tool
- *                     configs).
+ *                     configs); ADR 0182 (the contract tier globs, `CONTRACT_TESTS`).
  */
-import { defineConfig, mergeConfig, type ViteUserConfig } from "vitest/config";
+import { configDefaults, defineConfig, mergeConfig, type ViteUserConfig } from "vitest/config";
 
+import { CONTRACT_TESTS } from "../constants/contract-tests.constant.ts";
 import { servicePreset } from "./service-preset.function.ts";
 import { withCoverage } from "./with-coverage.function.ts";
 import type { LibraryPresetOptions } from "../types/library-preset-options.type.ts";
@@ -28,6 +29,7 @@ export function libraryPreset({ root, react, native }: LibraryPresetOptions): Vi
             name: "react",
             environment: "jsdom",
             include: [`${react}/**/__tests__/**/*.test.tsx`],
+            exclude: [...configDefaults.exclude, ...CONTRACT_TESTS],
           },
         },
     native === undefined
@@ -40,6 +42,7 @@ export function libraryPreset({ root, react, native }: LibraryPresetOptions): Vi
             name: "native",
             environment: "jsdom",
             include: [`${native}/**/__tests__/**/*.test.tsx`],
+            exclude: [...configDefaults.exclude, ...CONTRACT_TESTS],
           },
         },
   ].filter((project) => project !== undefined);
