@@ -7,7 +7,7 @@
  *           `data_view` catalogue.
  * Runtime: browser
  * Governing contract: showcase redesign spec (2026-10-27) section 4 (demo contract); data-collection plan (owner,
- *          2026-10-29); Arabic voice guide (Qossai, 2026-10-28).
+ *          2026-10-29); Arabic voice guide (2026-10-28).
  */
 import type { CollectionColumn, TableColumn } from "@stackra/ui/contracts";
 import { Chip, MoneyValue, useCatalogueText } from "@stackra/ui/react";

@@ -17,7 +17,7 @@ import { GoogleCloud } from "#core/ports/google-cloud.port";
  *
  * @example
  * const google = new MemoryGoogleCloudDriver();
- * google.taken.add("academorix");
+ * google.taken.add("academy");
  */
 export class MemoryGoogleCloudDriver extends Driver(GoogleCloud) {
   /** Project ids Runway can use. */

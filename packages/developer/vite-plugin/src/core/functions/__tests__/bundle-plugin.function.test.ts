@@ -33,7 +33,7 @@ beforeEach(() => {
     join(root, "stackra.manifest.json"),
     JSON.stringify({
       member: "console_ui",
-      package: "@mezzora/console-ui",
+      package: "@bistro/console-ui",
       version: "1.4.0",
       surfaces: [{ surface: "console", targets: "console@3", shell: "@os/console-shell" }],
     }),
@@ -125,7 +125,7 @@ describe("bundlePlugin", () => {
     expect(() => run([ENTRY])).toThrow("run `stackra gen`");
     writeFileSync(
       join(root, "stackra.manifest.json"),
-      JSON.stringify({ member: "x", package: "@mezzora/x", version: "1.0.0" }),
+      JSON.stringify({ member: "x", package: "@bistro/x", version: "1.0.0" }),
     );
     expect(() => run([ENTRY], { surface: "till" })).toThrow("targets no till shell");
   });
@@ -135,7 +135,7 @@ describe("bundlePlugin", () => {
     expect(errors).toEqual([]);
     expect(emitted.map((file) => file.fileName)).toEqual(["bundle.manifest.json"]);
     expect(JSON.parse(emitted[0]?.source ?? "{}")).toEqual({
-      package: "@mezzora/console-ui",
+      package: "@bistro/console-ui",
       surface: "console",
       targets: "console@3",
       version: "1.4.0",

@@ -20,7 +20,7 @@ import { secretOf } from "#node/functions/secret-of.function";
  *
  * @example
  * const sentry = new SentryApiProjectsDriver();
- * await sentry.findProject("figentra", "academorix-academorix");
+ * await sentry.findProject("figentra", "academy-academy");
  */
 export class SentryApiProjectsDriver extends Driver(SentryProjects) {
   /** The job's environment; a test replaces it. */

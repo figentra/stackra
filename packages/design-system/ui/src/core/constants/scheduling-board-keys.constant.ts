@@ -4,7 +4,7 @@
  *          the navigation and views, the spoken names of blocks and empty slots, the drag announcements, the board's
  *          own conflict reasons, the kinds and day statuses, and native's accessibility actions.
  * Boundary: internal: the web and native SchedulingBoard import it by path. Each key exists in all seven base locales;
- *           the Arabic words wait on Qossai's review.
+ *           the Arabic words wait on a native speaker's review.
  * Runtime: isomorphic
  * Governing contract: ADR 0080 (typed i18n keys); ADR 0231 (`<module>::<path>`); ADR 0403 (seven languages); shared
  *                     modules step 4a (LEADER, 2026-11-09).

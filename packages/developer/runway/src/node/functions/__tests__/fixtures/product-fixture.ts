@@ -139,35 +139,35 @@ environments:
     deploy: { on: promote, approval: github-environment }
 `;
 
-/** academorix's root runway in the shape of the products' go-live PRs: the portal a console preset, hosts on v2. */
-export const ACADEMORIX_RUNWAY = (capabilities: string) => `version: 3
-project: academorix
+/** academy's root runway in the shape of the products' go-live PRs: the portal a console preset, hosts on v2. */
+export const ACADEMY_RUNWAY = (capabilities: string) => `version: 3
+project: academy
 product:
-  key: academorix
+  key: academy
 surfaces:
   console:
     shell: os/console@3
-    packages: ["@figentra/academorix-console-ui", "@figentra/academorix-studio-board"]
-    host: console.v2.academorix
+    packages: ["@figentra/academy-console-ui", "@figentra/academy-studio-board"]
+    host: console.v2.academy
   portal:
     shell: os/console@3
     preset: portal
-    packages: ["@figentra/academorix-family-ui"]
-    host: family.v2.academorix
+    packages: ["@figentra/academy-family-ui"]
+    host: family.v2.academy
   landing:
     shell: os/landing@1
     content: assets/landing
-    packages: ["@figentra/academorix-landing-blocks"]
-    host: v2.academorix
+    packages: ["@figentra/academy-landing-blocks"]
+    host: v2.academy
 mobile:
-  academorix:
+  academy:
     template: os/mobile@3
-    packages: ["@figentra/academorix-family-ui", "@figentra/academorix-staff-ui", "@figentra/academorix-studio-board"]
+    packages: ["@figentra/academy-family-ui", "@figentra/academy-staff-ui", "@figentra/academy-studio-board"]
     identity:
-      name: { en: Academorix }
-      ios: { bundleId: app.academorix.mobile }
-      android: { package: app.academorix.mobile }
-      scheme: academorix
+      name: { en: Academy }
+      ios: { bundleId: app.academy.mobile }
+      android: { package: app.academy.mobile }
+      scheme: academy
     tablet: true
     capabilities: [${capabilities}]
     stores: { apple: { account: figentra }, google: { account: figentra } }
@@ -178,11 +178,11 @@ environments:
     domains: { zone: figentra.com }
 `;
 
-/** academorix's packages and the entries each exports. */
-export const ACADEMORIX_PACKAGES = {
-  "@figentra/academorix-console-ui": ["console"],
-  "@figentra/academorix-studio-board": ["console", "native"],
-  "@figentra/academorix-family-ui": ["portal", "native"],
-  "@figentra/academorix-landing-blocks": ["landing"],
-  "@figentra/academorix-staff-ui": ["native"],
+/** academy's packages and the entries each exports. */
+export const ACADEMY_PACKAGES = {
+  "@figentra/academy-console-ui": ["console"],
+  "@figentra/academy-studio-board": ["console", "native"],
+  "@figentra/academy-family-ui": ["portal", "native"],
+  "@figentra/academy-landing-blocks": ["landing"],
+  "@figentra/academy-staff-ui": ["native"],
 } as const;

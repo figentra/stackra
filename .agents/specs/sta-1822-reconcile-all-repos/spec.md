@@ -12,7 +12,7 @@
 
 **Input**: `tools/scripts/linear-reconcile.mjs` reads merged and open PRs only from `figentra/stackra`, the newest 100
 of each. Work that lands in another figentra repo (stackra-pro, stackra-template, stackra-notes, billing, pay,
-invoicing, tamo, os, juristra, figentra, flow, brand, commerce, organza, velora, academorix, jute, mezzora) never
+invoicing, tamo, os, juristra, figentra, flow, brand, commerce, organza, velora, jute and the rest) never
 reaches it, and a direct push or a squash merge whose PR
 body lost the trailer is never seen, so those STA issues stay open after their work merges. The script moves to
 `figentra linear reconcile` later (ADR 0500); this fixes it where it lives today.
@@ -60,7 +60,7 @@ body lost the trailer is never seen, so those STA issues stay open after their w
 - Q: Does a `Refs:` key now close an issue? → A: yes, for merged-to-main work (the leader's ask): every
   feat/fix commit carries `Refs: STA-n` (commitlint `refs-issue-key`), so it is the only signal outside core branch
   names. A title mention and `Part of STA-n` stay mentions (leader correction, 2026-11-01).
-- Q: Which repos? → A: the 19 of `gh repo list figentra` except `.github` and `academorix-legacy` (leader, 2026-11-01).
+- Q: Which repos? → A: the 19 of `gh repo list figentra` except `.github` and `the first product's legacy repository` (leader, 2026-11-01).
 - Q: Which credential reads the other repos? → A: the stackra-bot App, with the same repository secrets release.yml
   passes today, given only inside the `linear-sync` environment; the figentra-ci-deploy identity is the shared deploy
   identity and is not reused. Moving both workflows to Infisical prod `/ci/release` is STA-1827 (leader, 2026-11-01).

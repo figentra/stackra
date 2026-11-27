@@ -34,7 +34,7 @@ describe("edgeWorker", () => {
     const worker = EDGE_WORKER_SCHEMA.parse({
       script: "figentra-edge",
       namespaces: { edge: {}, "edge-eu": { jurisdiction: "eu" } },
-      routes: { "figentra.com": ["*.shop.figentra.com/*", "console.mezzora.figentra.com/*"] },
+      routes: { "figentra.com": ["*.shop.figentra.com/*", "console.bistro.figentra.com/*"] },
       exclusions: { "figentra.com": ["api.figentra.com/*"] },
       rollout: [
         { version: "v-new", percent: 10 },

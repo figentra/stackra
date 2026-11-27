@@ -20,7 +20,7 @@ import type { TunnelIngressRule } from "#core/types/tunnel-ingress-rule.type";
  *
  * @param args - the account id, the dev zone's id, the tunnel name (`<project>-<dev>`) and its ingress rules.
  * @example
- * devTunnel({ accountId, zoneId: devZone.id, name: "figentra-akouta", ingress: tunnelIngress({ … }) });
+ * devTunnel({ accountId, zoneId: devZone.id, name: "figentra-dana", ingress: tunnelIngress({ … }) });
  */
 export function devTunnel(args: {
   readonly accountId: string;
