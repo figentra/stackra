@@ -203,6 +203,9 @@ create` writes the app, **Then** `.github/workflows/ci.yml` is written and the t
 - A script that reads doctor's `--json` and matches `figentra/secrets clone` must match `secrets checkout`.
 - A starter manifest without `exclude` is unchanged. A CLI older than this change ignores `exclude` and writes the
   excluded files, as before; the template's `exclude` takes effect from the release that carries it.
+- The template's `exclude` lines ship only together with, or after, an `@stackra/cli` release that supports `exclude`
+  (FR-007): the stackra-template change that adds them lands only once that release is on the registry, and moves the
+  template's `@stackra/cli` catalog pin to it in the same change. Until then the template keeps no `exclude` key.
 - `doctorChecks(root, workspace, options)` callers need no change.
 
 ## Risks
@@ -210,14 +213,16 @@ create` writes the app, **Then** `.github/workflows/ci.yml` is written and the t
 - **R-1**: Windows `PATHEXT` semantics differ slightly by shell (PowerShell adds `.PS1` for its own lookup); doctor
   follows the process rules `spawn` uses, which is what doctor's later `spawnSync` calls see.
 - **R-2**: The template still carries other fflow-generated files (`.flow/`, `flow.config.json`, the guard hook) and a
-  CI registry step that reads Figentra's secrets; those move with STA-2790 (fold fflow into `stackra`) and a starter CI
-  follow-up.
+  CI registry step that reads Figentra's secrets. Tracked: the starter CI's registry step is STA-2877 (the default
+  outside profile's `ci.yml` has no registry-auth step; the probe itself is STA-2884); the CODEOWNERS and `.flow/`
+  residue is STA-2877 (only the opt-in internal profile writes them); fflow itself folds into `stackra` with STA-2790.
 
 ## Out of scope
 
 - Folding fflow into the `stackra` CLI (STA-2790).
 - Building `stackra agents setup` (ADR 0282 decision 10); the template's broken `agents:setup` script is removed instead.
-- The starter CI's registry-auth action (decrypts from Figentra's secrets).
+- The starter CI's registry-auth action (decrypts from Figentra's secrets): STA-2877.
+- The template's CODEOWNERS and `.flow/` residue (`.flow/lock.json`, `.flow/readme.yml`): STA-2877.
 
 ## Assumptions
 
@@ -238,3 +243,4 @@ None.
 - 2026-11-26 · Clarified → Planned · Claude (STA-2859 session) · plan.md
 - 2026-11-26 · Planned → Tasked · Claude (STA-2859 session) · tasks.md
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2859 session) · T001 to T010 on the branch
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27

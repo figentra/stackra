@@ -159,7 +159,8 @@ stackra-template under the same key and take effect with the CLI release that ca
 ## Delegation and risk plan
 
 One session; one branch in core, one in stackra-template. Follow-ups: STA-2790 (fflow into `stackra`), the starter CI's
-registry step.
+registry step (STA-2877), the template's CODEOWNERS and `.flow/` residue (STA-2877). The stackra-template branch with
+the `exclude` lines merges only once an `@stackra/cli` release that supports `exclude` is on the registry.
 
 ## ADRs
 
