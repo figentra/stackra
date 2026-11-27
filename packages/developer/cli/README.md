@@ -39,7 +39,7 @@ and `yaml`.
 | `stackra promote --to <e> [--from <e>] [--sha <sha>]`     | ship what `--from` (default staging) runs to `--to` through runway's providers; `--approved` behind an approval                           |
 | `stackra start`                                           | gen, then `vite preview` of an app's web build                                                                                            |
 | `stackra typecheck`                                       | gen, then `tsc --noEmit`                                                                                                                  |
-| `stackra test [--tier unit\|int\|e2e]`                    | gen, then vitest (unit, or integration through `.stackra/vitest.int.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e) |
+| `stackra test [--tier unit\|int\|contract\|e2e]`          | gen, then vitest (unit, or integration and contract through `.stackra/vitest.int.config.ts` and `.stackra/vitest.contract.config.ts`), Playwright (web and desktop e2e) or Maestro (native e2e) |
 | `stackra lint`                                            | `oxlint .`                                                                                                                                |
 | `stackra check [flags]`                                   | the quality gate: every check phase in order at the workspace root (see below)                                                            |
 | `stackra validate`                                        | `check --only config,structure,docs,catalogues,spec`                                                                                      |
@@ -69,6 +69,7 @@ and `yaml`.
 | `stackra doc-standard`                                    | contract headers and TSDoc of every source file (ADR 0007)                                                                                |
 | `stackra catalogue-completeness`                          | every lang catalogue has English's keys and placeholders (ADR 0403)                                                                       |
 | `stackra cycles`                                          | fail on any workspace package cycle, printing its path                                                                                    |
+| `stackra contract [--base <ref>] [--oasdiff <path>]`      | fail on a breaking change to any member's HTTP contract since the merge base with `--base` (`origin/main`): `oasdiff breaking` on each manifest's OpenAPI projection |
 | `stackra app-native-deps`                                 | fail when an Expo app lacks a native library its dependency closure needs                                                                 |
 | `stackra duplicate-exports`                               | fail when one exported name is declared in two packages                                                                                   |
 | `stackra any-ratchet`                                     | fail when a package has more `no-explicit-any` disables than its baseline                                                                 |
@@ -116,7 +117,18 @@ eu-central-1 in that order (`STACKRA_TESTBED_REGIONS` or `--regions` to change),
   from SSM `/imagebuilder/stackra-testbed/ami`.
 
 At the workspace root (a folder with `pnpm-workspace.yaml`), `dev`, `build`, `start`, `typecheck`, `test` and `lint`
-run `turbo run <task>` (`test:e2e` for `--tier e2e`); each member's script calls `stackra <task>` again.
+run `turbo run <task>` (`test:e2e` for `--tier e2e`, `test:contract` for `--tier contract`); each member's script calls
+`stackra <task>` again.
+
+`stackra contract` is the `oasdiff` check of the contract tier (ADR 0182 decision 4, STA-2837). For every workspace
+member that had a `stackra.manifest.json` at the merge base of `HEAD` and `--base` (`origin/main` by default; CI passes
+`HEAD~1`), it projects the manifest to OpenAPI (`openApiOf` of gen) at that commit and in the working tree, brings each
+mounted package's shapes in from that package's manifest on the same side, and runs `oasdiff breaking` (on PATH, pinned
+in `mise.toml` as `github:oasdiff/oasdiff`; `--oasdiff` names another binary). Each error-level break is a failed row
+named by the member folder (`POST /invoices: API path removed without deprecation [api-path-removed-without-deprecation]`);
+warnings never fail. A member removed since the base reads as every operation removed; a new one has no baseline. A
+break made on purpose is excused by an entry of `tools/contract/accepted-breaks.yaml` (`member`, `operation`, `id`,
+`issue`, `reason`, `added`, `expires` at most 30 days later); an expired entry excuses nothing.
 
 In a member or at the root, `stackra dev` first starts the dev compose of the root runway's `environments.dev.infra`
 (Valkey, SeaweedFS, Mailpit, ClamAV, otel-lgtm; Encore keeps its own Postgres): it writes `.stackra/dev/compose.yaml`

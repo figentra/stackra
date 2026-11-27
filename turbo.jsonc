@@ -98,6 +98,15 @@
       ],
       "outputs": [],
     },
+    // ADR 0182 d1 and d4, STA-2837: the contract tier. Never cached: a contract test may start `oasdiff` (pinned in
+    // mise.toml), a binary no input hash sees. The root `test:contract` then runs `stackra contract`, the oasdiff check
+    // of every member's HTTP contract against the merge base with origin/main.
+    "test:contract": {
+      "description": "Run a member's `.contract.test.ts` files (and gen's .stackra/tests): `vitest run --config .stackra/vitest.contract.config.ts`. Needs `oasdiff` on PATH when a test starts it. Defined only by members that have contract tests. After gen and //#gen:workspace, as test.",
+      "dependsOn": ["^build", "gen", "//#gen:workspace"],
+      "cache": false,
+      "outputs": [],
+    },
     // ADR 0022 (2026-11-09): a package's e2e tier. Never cached: it drives a real browser against a live page server.
     // Defined only by members that have an `.e2e.page.tsx`; not part of `verify`.
     "test:e2e": {

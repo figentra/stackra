@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: proves the role presets: the service preset splits unit and int projects with decorators on, the library
+ * Purpose: proves the role presets: the service preset splits unit and int projects with decorators on and keeps
+ *          contract tests out of the unit project, the library
  *          preset adds the optional react and native projects and the coverage gate, the app preset keeps jsdom plus
  *          a node project per folder, the mobile preset is jsdom with decorators, and the tooling preset is plain Node.
  * Boundary: test only; reads the config objects, runs no project.
@@ -9,6 +10,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { CONTRACT_TESTS } from "../contract.ts";
 import { appPreset, libraryPreset, mobilePreset, servicePreset, toolingPreset } from "../index.ts";
 
 /** The fields of a project entry these tests read. */
@@ -41,6 +43,12 @@ describe("servicePreset", () => {
       ".stackra/tests/**/*.int.test.ts",
     ]);
   });
+
+  it("leaves the contract tier out of the unit project", () => {
+    const [unit] = projectsOf(servicePreset({ root: "/svc" }));
+
+    for (const glob of CONTRACT_TESTS) expect(unit?.test.exclude).toContain(glob);
+  });
 });
 
 describe("libraryPreset", () => {
@@ -60,6 +68,17 @@ describe("libraryPreset", () => {
     expect(react?.test.include).toEqual(["src/react/**/__tests__/**/*.test.tsx"]);
     expect(native?.test.include).toEqual(["src/native/**/__tests__/**/*.test.tsx"]);
     expect(native?.resolve?.alias?.["react-native"]).toBe("react-native-web");
+  });
+
+  it("leaves the contract tier out of the unit, react and native projects", () => {
+    const projects = projectsOf(
+      libraryPreset({ root: "/pkg", react: "src/react", native: "src/native" }),
+    );
+
+    for (const name of ["unit", "react", "native"]) {
+      const project = projects.find((p) => p.test.name === name);
+      for (const glob of CONTRACT_TESTS) expect(project?.test.exclude).toContain(glob);
+    }
   });
 
   it("is under the shared coverage gate", () => {

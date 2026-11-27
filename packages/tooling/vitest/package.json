@@ -62,6 +62,11 @@
       "@stackra/source": "./src/int.ts",
       "types": "./dist/int.d.ts",
       "default": "./dist/int.js"
+    },
+    "./contract": {
+      "@stackra/source": "./src/contract.ts",
+      "types": "./dist/contract.d.ts",
+      "default": "./dist/contract.js"
     }
   },
   "publishConfig": {

@@ -1,0 +1,11 @@
+# Stackra file contract:
+# Purpose: the breaking HTTP contract changes `stackra contract` accepts on purpose (ADR 0182 decision 4, STA-2837). One
+#          entry per break `oasdiff breaking` reports at error level: `member` (the member folder), `operation`
+#          (`<METHOD> <path>`, as the OpenAPI projection spells it, `{param}` segments), `id` (the oasdiff rule, such as
+#          `api-path-removed-without-deprecation`), `issue` (the key that records the decision), `reason` (who calls the
+#          operation and how they move), `added` (not in the future) and `expires` (0 to 30 days after `added`). An
+#          entry is for the change that makes the break: an expired one excuses nothing, so delete it once that change
+#          has merged.
+# Boundary: data only.
+# Owner: release-operations · Secrets: forbidden
+accepted: []

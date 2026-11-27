@@ -36,7 +36,8 @@
  *           STA-2866), for every service, with no rows when it has no migration, so a missing file always means gen
  *           has not run; and it refuses a banned statement outside a released migration (`migration_banned`).
  *           A package or service with an `.int.test.ts` under `src/` also gets `.stackra/vitest.int.config.ts`, the
- *           unit config narrowed to the integration tier (`emitIntTierConfig`, STA-1819).
+ *           unit config narrowed to the integration tier (`emitTierConfig`, STA-1819), and one with a
+ *           `.contract.test.ts` gets `.stackra/vitest.contract.config.ts`, narrowed to the contract tier (STA-2837).
  *           A package with a `.e2e.page.tsx` under `src/` also gets `.stackra/e2e/` (a Vite app that renders the page)
  *           and `.stackra/playwright.e2e.config.ts` (`emitE2ePageFiles`, ADR 0022 amendment of 2026-11-09).
  *           A clean full run also returns its warnings (`client_event_unsubscribed`, `checkSubscriptions`, STA-1910).
@@ -60,7 +61,7 @@ import { MIGRATIONS_DIR } from "#core/constants/migrations-dir.constant";
 import { PACKAGE_ENTITIES_FILE } from "#core/constants/package-entities-file.constant";
 import { ROOT_DTS_TSCONFIG } from "#core/constants/root-dts-tsconfig.constant";
 import { emitE2ePageFiles } from "#core/functions/emit-e2e-page-files.function";
-import { emitIntTierConfig } from "#core/functions/emit-int-tier-config.function";
+import { emitTierConfig } from "#core/functions/emit-tier-config.function";
 import { emitMigrationsCheck } from "#core/functions/emit-migrations-check.function";
 import { checkSubscriptions } from "#core/functions/check-subscriptions.function";
 import { emitMigrationSafety } from "#core/functions/emit-migration-safety.function";
@@ -77,7 +78,7 @@ import { encoreApp } from "#node/functions/encore-app.function";
 import { generateDocsSite } from "#node/functions/generate-docs-site.function";
 import { hasE2ePages } from "#node/functions/has-e2e-pages.function";
 import { isDocsMember } from "#node/functions/is-docs-member.function";
-import { hasIntTests } from "#node/functions/has-int-tests.function";
+import { hasTierTests } from "#node/functions/has-tier-tests.function";
 import { readResourceTrees } from "#node/functions/read-resource-trees.function";
 import { runwayQueues } from "#node/functions/runway-queues.function";
 import type { GenerateResult } from "#node/types/generate-result.type";
@@ -367,15 +368,13 @@ export async function generate(
         );
   let files = [...manifestFiles, ...encoreFiles, ...migrationFiles];
   // A member with an `.int.test.ts`, its own or gen's, gets the integration-tier config beside the unit one
-  // (`stackra test --tier int`), so the generated tenant-isolation test runs with no authored int test beside it.
-  if (
-    files.some((file) => file.path === ".stackra/vitest.config.ts") &&
-    hasIntTests(
-      root,
-      files.map((file) => file.path),
-    )
-  )
-    files.push(emitIntTierConfig(ir.package));
+  // (`stackra test --tier int`), so the generated tenant-isolation test runs with no authored int test beside it; one
+  // with a `.contract.test.ts` gets the contract-tier config the same way (`stackra test --tier contract`).
+  if (files.some((file) => file.path === ".stackra/vitest.config.ts")) {
+    const paths = files.map((file) => file.path);
+    for (const tier of ["int", "contract"] as const)
+      if (hasTierTests(root, tier, paths)) files.push(emitTierConfig(ir.package, tier));
+  }
   // A package with a `<name>.e2e.page.tsx` gets the Vite app that renders it and the Playwright config that runs the
   // `.e2e.test.ts` specs against it (`stackra test --tier e2e`; ADR 0022, 2026-11-09).
   if (ir.layout === "package" && hasE2ePages(root)) files.push(...emitE2ePageFiles(ir.package));

@@ -3,7 +3,8 @@
  * Purpose: unit tests of `resolveTool`: the tool per task, layout and target, the generated `.stackra/` config passed
  *          when it exists, Mintlify in `.stackra/site/` for a docs app with `docs.config.ts` (STA-1316), React Router
  *          there once gen assembled a Fumadocs site and its dependencies are installed (STA-2026), and the
- *          refusals (unknown target or tier as usage errors, no tool as a plain error).
+ *          refusals (unknown target or tier as usage errors, no tool as a plain error), and the int and contract
+ *          tiers through the configs gen writes (STA-2837).
  * Boundary: test only; writes throwaway members in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decisions 2 and 5); ADR 0182; ADR 0284.
@@ -246,12 +247,39 @@ describe("resolveTool", () => {
     );
   });
 
+  it("runs the generated contract config for a package or service, and refuses without it or in an app", () => {
+    expect(() => resolveTool("test", member("package"), { tier: "contract" })).toThrow(
+      "no .stackra/vitest.contract.config.ts, so the member has no `.contract.test.ts`",
+    );
+    generated("vitest.int.config.ts");
+    expect(() => resolveTool("test", member("package"), { tier: "contract" })).toThrow(
+      "no .stackra/vitest.contract.config.ts",
+    );
+    generated("vitest.contract.config.ts");
+    expect(resolveTool("test", member("package"), { tier: "contract" })).toEqual({
+      command: "vitest",
+      args: ["run", "--config", ".stackra/vitest.contract.config.ts"],
+      cwd: root,
+    });
+    expect(resolveTool("test", member("service"), { tier: "contract" }).args).toEqual([
+      "run",
+      "--config",
+      ".stackra/vitest.contract.config.ts",
+    ]);
+    expect(() => resolveTool("test", member("app", ["web"]), { tier: "contract" })).toThrow(
+      "contract tests run in a package or a service",
+    );
+  });
+
   it("refuses an unknown target or tier as a usage error", () => {
     expect(() => resolveTool("dev", member("app", ["web"]), { target: "ios" })).toThrow(
       CliUsageError,
     );
     expect(() => resolveTool("dev", member("package"), { target: "web" })).toThrow(CliUsageError);
     expect(() => resolveTool("test", member("package"), { tier: "load" })).toThrow(CliUsageError);
+    expect(() => resolveTool("test", member("package"), { tier: "load" })).toThrow(
+      "unknown tier: load (expected unit, int, contract or e2e)",
+    );
   });
 
   it("refuses a task no tool serves with a plain error", () => {

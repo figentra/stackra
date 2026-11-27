@@ -47,6 +47,7 @@ import { AuditVerifyCommand } from "#node/commands/audit-verify.command";
 import { CatalogueCompletenessCommand } from "#node/commands/catalogue-completeness.command";
 import { ConsumerGateCommand } from "#node/commands/consumer-gate.command";
 import { CreateCommand } from "#node/commands/create.command";
+import { ContractCommand } from "#node/commands/contract.command";
 import { CyclesCommand } from "#node/commands/cycles.command";
 import { DbMigrateCommand } from "#node/commands/db-migrate.command";
 import { DbRollbackCommand } from "#node/commands/db-rollback.command";
@@ -83,7 +84,7 @@ export const COMMANDS: CliCommands = [
   BUILD_COMMAND,
   toolCommand("start", "Generate, then preview an app's web build"),
   toolCommand("typecheck", "Generate, then type-check the member"),
-  toolCommand("test", "Generate, then run the member's tests (--tier unit, int or e2e)"),
+  toolCommand("test", "Generate, then run the member's tests (--tier unit, int, contract or e2e)"),
   toolCommand("lint", "Lint the member with oxlint"),
   checkCommand(
     "check",
@@ -141,6 +142,7 @@ export const COMMANDS: CliCommands = [
   DocStandardCommand,
   CatalogueCompletenessCommand,
   CyclesCommand,
+  ContractCommand,
   AppNativeDepsCommand,
   DuplicateExportsCommand,
   AnyRatchetCommand,

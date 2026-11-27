@@ -1,13 +1,15 @@
 /**
  * Stackra file contract:
- * Purpose: `servicePreset`, the vitest config of a service: unit and int tests as two projects, legacy decorators on.
+ * Purpose: `servicePreset`, the vitest config of a service: unit and int tests as two projects, legacy decorators on;
+ *          contract tests (`.contract.test.ts`) run only in their own tier, never in the unit project.
  * Boundary: test layout only: projects, environments, the coverage gate.
  * Runtime: node
  * Governing contract: ADR 0005 (legacy decorators); ADR 0022 (test placement); ADR 0295 (decision 5: generated tool
- *                     configs); ADR 0182 (the int tier globs, `INT_TESTS`).
+ *                     configs); ADR 0182 (the int and contract tier globs, `INT_TESTS`, `CONTRACT_TESTS`).
  */
 import { configDefaults, defineConfig, mergeConfig, type ViteUserConfig } from "vitest/config";
 
+import { CONTRACT_TESTS } from "../constants/contract-tests.constant.ts";
 import { INT_TESTS } from "../constants/int-tests.constant.ts";
 import { stackraVitestDecorators } from "../constants/stackra-vitest-decorators.constant.ts";
 import { UNIT_TESTS } from "../constants/unit-tests.constant.ts";
@@ -26,7 +28,7 @@ export function servicePreset({ root, exclude = [] }: ServicePresetOptions): Vit
             test: {
               name: "unit",
               include: [UNIT_TESTS],
-              exclude: [...configDefaults.exclude, ...INT_TESTS, ...exclude],
+              exclude: [...configDefaults.exclude, ...INT_TESTS, ...CONTRACT_TESTS, ...exclude],
             },
           },
           {

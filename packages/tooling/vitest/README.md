@@ -20,6 +20,7 @@ export default mergeConfig(
 | `./preset-react`      | React libraries and the console app (jsdom)                     |
 | `./coverage`          | `withCoverage`, the shared coverage gate                        |
 | `./int`               | `intTier`, the integration tier (`test:int`) of a member        |
+| `./contract`          | `contractTier`, the contract tier (`test:contract`) of a member |
 
 The base preset sets `pool: "forks"`, `maxWorkers` at half the CPUs (`STACKRA_TEST_MAX_WORKERS` overrides it),
 `testTimeout` 30 s and `hookTimeout` 60 s, because service tests boot a PGlite (3 to 4 s of CPU each). `intTier` keeps
@@ -50,5 +51,13 @@ export default intTier(config);
 `intTier` keeps the member's preset, aliases and generated setup and replaces `include` with `INT_TESTS`:
 `src/**/__tests__/**/*.int.test.{ts,tsx}` and gen's `.stackra/tests/**/*.int.test.ts` (the tenant-isolation test).
 Files run one after another, one container each. CI runs the tier in the Quality Gate (`pnpm test:int`).
+
+A member with `.contract.test.ts` files (a declared contract checked against its agreed shape, such as an OpenAPI
+document against `oasdiff`) runs them in the contract tier: gen writes `.stackra/vitest.contract.config.ts`, which wraps
+the generated config in `contractTier` from `@stackra/vitest-config/contract` the same way, and the member's script is
+`"test:contract": "stackra test --tier contract"` (or `vitest run --config .stackra/vitest.contract.config.ts`).
+`contractTier` replaces `include` with `CONTRACT_TESTS`: `src/**/__tests__/**/*.contract.test.{ts,tsx}` and gen's
+`.stackra/tests/**/*.contract.test.ts`; files keep running in parallel. `pnpm test:contract` runs every member's tier,
+then `stackra contract`, the `oasdiff` check of every member's HTTP contract (ADR 0182 decision 4).
 
 `passWithNoTests` is off on purpose: a package with no tests fails `pnpm test` until it has one.

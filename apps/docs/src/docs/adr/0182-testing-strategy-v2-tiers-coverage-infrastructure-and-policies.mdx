@@ -27,7 +27,13 @@ description: "Accepted · 2026-10-20"
 
 ## Enforcement
 
-planned — `pnpm validate` checks that each test file name has a known tier infix, and the turbo tasks run each tier.
+partial — the contract tier is enforced (STA-2837, 2026-11-26): gen writes `.stackra/vitest.contract.config.ts`
+(`contractTier` from `@stackra/vitest-config/contract`) for a member with a `.contract.test.ts`, `stackra test --tier
+contract` and the turbo task `test:contract` run it, and `stackra contract` runs `oasdiff breaking` (pinned in
+`mise.toml`) on every member's OpenAPI projection of its `stackra.manifest.json` against the base commit. The Quality
+Gate runs `stackra contract --base HEAD~1` on every pull request; a breaking change fails unless an unexpired entry of
+`tools/contract/accepted-breaks.yaml` names it. Planned: `pnpm validate` checks that each test file name has a known
+tier infix, and the turbo tasks run the remaining tiers.
 
 ## Open questions
 

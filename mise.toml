@@ -21,6 +21,9 @@ shfmt = "3.14.1"
 "aqua:rhysd/actionlint" = "1.7.12"
 "aqua:zizmorcore/zizmor" = "1.31.1"
 "aqua:google/osv-scanner" = "2.7.0"
+# The contract tier's HTTP contract check (ADR 0182 decision 4, STA-2837): `stackra contract` runs `oasdiff breaking` on
+# each member's manifest projection. Same pin as OASDIFF_PIN in @stackra/cli and the Quality Gate.
+"github:oasdiff/oasdiff" = "1.40.0"
 # Developer-machine CLIs the repo calls. Not pinned here (no mise backend carries them):
 #   opencode (v2 installer: https://opencode.ai/install), encore (brew install encoredev/tap/encore), aws, claude.
 # maestro needs a JDK on PATH.

@@ -3,10 +3,10 @@
  * Purpose: unit tests of `toolCommand`: its usage lists the task's options; in a member it runs gen first (not for
  *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
  *          has nothing to build; at the workspace root it fans out through
- *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
- *          the site and then fails on a broken link, naming the page (STA-2026); a service's `dev` gets the dev compose's
- *          variables with the dev-secrets file's values over them, and no placeholder AWS keys when the run has an AWS
- *          credential of its own, the dev-secrets file's included (STA-2664).
+ *          `turbo run <task>` (`test:e2e` and `test:contract` for those tiers) and refuses `--target`; a Fumadocs docs
+ *          site's `lint` builds the site and then fails on a broken link, naming the page (STA-2026); a service's `dev`
+ *          gets the dev compose's variables with the dev-secrets file's values over them, and no placeholder AWS keys
+ *          when the run has an AWS credential of its own, the dev-secrets file's included (STA-2664).
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule; STA-2664 (item 6).
@@ -208,6 +208,16 @@ describe("toolCommand", () => {
     await toolCommand("test", "Test").run(context({ tier: "e2e" }));
     expect(spawn).toHaveBeenLastCalledWith(
       { command: "turbo", args: ["run", "test:e2e"], cwd: root },
+      expect.anything(),
+    );
+    await toolCommand("test", "Test").run(context({ tier: "contract" }));
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "turbo", args: ["run", "test:contract"], cwd: root },
+      expect.anything(),
+    );
+    await toolCommand("test", "Test").run(context({ tier: "unit" }));
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "turbo", args: ["run", "test"], cwd: root },
       expect.anything(),
     );
     await expect(toolCommand("dev", "Dev").run(context({ target: "ios" }))).rejects.toThrow(

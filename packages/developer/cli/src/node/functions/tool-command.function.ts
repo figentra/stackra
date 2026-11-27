@@ -83,10 +83,10 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
       if (existsSync(join(cwd, "pnpm-workspace.yaml"))) {
         if (target !== undefined)
           throw new CliUsageError("--target picks one app's target; run it in the app");
-        if (tier !== undefined && tier !== "unit" && tier !== "e2e") {
-          throw new CliUsageError(`unknown tier: ${tier} (expected unit or e2e)`);
+        if (tier !== undefined && tier !== "unit" && tier !== "contract" && tier !== "e2e") {
+          throw new CliUsageError(`unknown tier: ${tier} (expected unit, contract or e2e)`);
         }
-        const turboTask = tier === "e2e" ? "test:e2e" : task;
+        const turboTask = tier === undefined || tier === "unit" ? task : `test:${tier}`;
         return runProcess({ command: "turbo", args: ["run", turboTask], cwd }, io);
       }
 
