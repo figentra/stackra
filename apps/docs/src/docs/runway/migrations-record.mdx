@@ -1,0 +1,64 @@
+---
+title: "runway migrations:record"
+description: "Records the migrations a successful deploy applied, for the next deploy's evidence."
+---
+
+Records the migrations a successful deploy applied, for the next deploy's evidence.
+
+```bash
+stackra runway migrations:record <environment> --target <target> --sha <sha> [--member <member>] [--json]
+```
+
+| Argument or option | Kind     | Meaning                                                                             |
+| ------------------ | -------- | ----------------------------------------------------------------------------------- |
+| `environment`      | argument | The runway environment the job deployed.                                            |
+| `--target`         | option   | The service target the job deployed (`encore-cloud`, `aws-ecs`, `compose`, `helm`). |
+| `--sha`            | option   | The full commit the job deployed.                                                   |
+| `--member`         | option   | The service the job shipped; default every service under `services/`.               |
+
+## What it does
+
+Reads each shipped service's `.stackra/migration-safety.json` and `.stackra/migrations` file names and writes
+`runway-migrations-<environment>[-<member>].json` in the working folder (`runway.migrations/v1`): the environment, the
+commit and the `<member>:<id>` key of every migration the deploy applied. The next deploy to the same environment passes
+it to [`runway evidence --previous`](/runway/evidence), so `destructive` names only a destructive migration that is new
+to the environment.
+
+Run it only after the deploy step succeeded (`if: success()` after the deploy step, in the deploy job). The evidence
+step cannot write this record: it runs before the deploy, which the owner may reject or which may fail. A record of a
+deploy that never applied its migrations would make the next evidence call a destructive migration old, and the
+approvals bot could approve it without the owner.
+
+When a service's classes are missing or stale (gen has not run), it writes nothing and warns. The next evidence then
+reads the record of an earlier successful deploy, so more migrations count as new: the deploy goes to the owner, never
+the other way.
+
+## What it prints
+
+The file name and the number of migrations; with `--json`, the record.
+
+## Exit codes
+
+| Code | Means                                                                   |
+| ---- | ----------------------------------------------------------------------- |
+| 0    | Written, or not written with a warning because the classes are unknown. |
+| 2    | No service `--target`, or no full `--sha`.                              |
+
+## Where it runs
+
+In the deploy job, after the deploy step succeeded and after `stackra gen` (the deploy build already runs it). Upload
+the file as the artifact `runway-migrations-<environment>[-<member>]`. The next deploy's evidence job downloads that
+artifact from the environment's last successful deploy run (the latest one whose deploy job succeeded) and passes it
+as `--previous`. A rejected, failed or cancelled run uploads no record, so it can never be taken.
+
+## Examples
+
+```bash
+stackra runway migrations:record production --target encore-cloud --sha <sha>
+stackra runway migrations:record production --target encore-cloud --member billing --sha <sha> --json
+```
+
+## See also
+
+[`runway evidence`](/runway/evidence), [0533](/adr/0533-approvals-bot-deployment-protection) and
+[0159](/adr/0159-migrations-gen-ordered-sql-and-safety-rules).
