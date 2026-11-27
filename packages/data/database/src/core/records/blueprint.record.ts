@@ -11,20 +11,31 @@
  *           an index on an existing table is built concurrently in its own step, and one on a table being created
  *           builds in the transaction; no primary key is added to an existing table; a column change (`t.change`) is
  *           made only on an existing table, once per column, and never on a column the same blueprint adds; a foreign
- *           key or enum check added to an existing table is `NOT VALID` in the transaction and validated in a step of
- *           its own after it, so no long lock is held while the rows are scanned (stackra-251).
+ *           key, enum check or named check added to an existing table is `NOT VALID` in the transaction and validated
+ *           in a step of its own after it, so no long lock is held while the rows are scanned (stackra-251); an
+ *           exclusion constraint goes on a new table only. A drop or rename (STA-1406) is only on an existing table:
+ *           a dropped column and a finished rename are contract steps whose release gate (and, for a rename, data
+ *           gate) open the transaction; a rename's expand adds the new column with a sync trigger; a dropped index is
+ *           its own concurrent step, before any built one. A column is not dropped and also added, changed or
+ *           renamed in one blueprint.
  * Runtime: node
- * Governing contract: ADR 0159 (decision 3; as amended by ADR 0305); ADR 0239 (equality policy; `equalsOrUnset`,
+ * Governing contract: ADR 0159 (decision 3: expand and contract; as amended by ADR 0305); ADR 0160 note of 2026-11-03
+ *                     (btree_gist exclusions); ADR 0239 (equality policy; `equalsOrUnset`,
  *                     STA-1300); ADR 0327 (decisions 3 and 9: scope-tree columns, isolation in the database); ADR 0412 (inherited rows, read only);
  *                     `.agents/rules/tenancy.md`; ADR 0231 (names); ADR 0135 (public ids); ADR 0294 (decision 28: links);
  *                     ADR 0321 (`HasTree`: `t.tree()`; `HasMetadata`: `t.metadata()`).
  */
+import { assertColumnType } from "#core/functions/assert-column-type.function";
 import { constraintName } from "#core/functions/constraint-name.function";
 import { declarationReason } from "#core/functions/declaration-reason.function";
+import { pendingRowsGateSql } from "#core/functions/pending-rows-gate-sql.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
+import { releaseGateSql } from "#core/functions/release-gate-sql.function";
+import { renameSyncSql } from "#core/functions/rename-sync-sql.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
 import { systemAccessRoleSql } from "#core/functions/system-access-role-sql.function";
 import { ColumnRecord } from "#core/records/column.record";
+import { MIGRATION_ID_PATTERN } from "#core/constants/migration-id-pattern.constant";
 import { TABLE_DECLARATION_MARKERS } from "#core/constants/table-declaration-markers.constant";
 import { PUBLIC_ID_TEXT } from "#core/constants/public-id-text.constant";
 import { SYSTEM_ACCESS_ROLE } from "#core/constants/system-access-role.constant";
@@ -37,7 +48,11 @@ import type { ColumnChange } from "#core/types/column-change.type";
 import type { ColumnDefinition } from "#core/types/column-definition.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
 import type { CompiledStep } from "#core/types/compiled-step.type";
+import type { ContractOptions } from "#core/types/contract-options.type";
+import type { DroppedIndexOptions } from "#core/types/dropped-index-options.type";
+import type { ExclusionOptions } from "#core/types/exclusion-options.type";
 import type { MacroClass } from "#core/types/macro-class.type";
+import type { RenamedColumnOptions } from "#core/types/renamed-column-options.type";
 import type { RowLevelSecurityOptions } from "#core/types/row-level-security-options.type";
 
 /** A public id prefix: 2 to 6 lowercase letters. */
@@ -56,6 +71,83 @@ const SETTING_DEFAULT_SQUAWK_IGNORE =
 
 /** A custom setting: `<prefix>.<name>`, snake_case. */
 const SETTING = /^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/;
+
+/** An operator of an exclusion element: `=`, `&&`, `<>`, `@>`, `-|-`, … */
+const EXCLUSION_OPERATOR = /^[=<>!&|@~#^?*+/%-]{1,3}$/;
+
+/**
+ * The reason and the squawk ignore written above a contract step's drop: the release gate before it in the same
+ * transaction refuses the step until the release that stopped using the object shipped. Lint lines never change a
+ * checksum (STA-2612).
+ */
+const contractSquawkIgnore = (rule: string): string =>
+  "-- lint: a contract step: the release gate above refuses it until the release that stopped using it has shipped (ADR 0159 d3).\n" +
+  `-- squawk-ignore ${rule}\n`;
+
+/** The reason and squawk ignore of a dropped check, which only relaxes the table. */
+const DROP_CHECK_SQUAWK_IGNORE =
+  "-- lint: a dropped check only relaxes the table: no release relies on a write being refused.\n" +
+  "-- squawk-ignore ban-drop-constraint\n";
+
+/** The reason and squawk ignore of a finished rename's sync function, which only its trigger, dropped first, calls. */
+const DROP_SYNC_FUNCTION_SQUAWK_IGNORE =
+  "-- lint: the rename's sync trigger function: only its trigger, dropped above, calls it.\n" +
+  "-- squawk-ignore ban-drop-function\n";
+
+/**
+ * Refuses a SQL fragment a step embeds that is blank, spans lines, or holds `;` or `$$`, which could end the statement
+ * or the `DO` block around it.
+ *
+ * @throws TypeError naming the call.
+ */
+function checkFragment(call: string, fragment: unknown): string {
+  if (typeof fragment !== "string" || fragment.trim() === "" || /[\r\n;]|\$\$/.test(fragment))
+    throw new TypeError(`${call} takes one line of SQL without ; or $$`);
+  return fragment.trim();
+}
+
+/**
+ * Refuses a contract step's `after` that is not a migration id.
+ *
+ * @throws TypeError naming the call.
+ */
+function checkAfter(call: string, after: unknown): string {
+  if (typeof after !== "string" || !MIGRATION_ID_PATTERN.test(after))
+    throw new TypeError(
+      `${call} needs { after }: the migration of the earlier release that made it safe, such as "orders.0007_stop_writing_note"`,
+    );
+  return after;
+}
+
+/** A column this blueprint drops: a contract step after the release `after`. */
+interface DroppedColumn {
+  readonly column: string;
+  readonly after: string;
+  readonly type: string;
+}
+
+/** A rename this blueprint finishes: a contract step after the release `after`. */
+interface FinishedRename {
+  readonly from: string;
+  readonly to: string;
+  readonly after: string;
+  readonly type: string;
+}
+
+/** A named check constraint, or one of an earlier migration dropped here under the name of `table`. */
+interface NamedCheck {
+  readonly name: string;
+  readonly expression: string;
+  readonly table: string;
+}
+
+/** An exclusion constraint of a table being created. */
+interface Exclusion {
+  readonly name: string;
+  readonly elements: readonly (readonly [string, string])[];
+  readonly using: "gist" | "btree";
+  readonly where: string | undefined;
+}
 
 /** The ways a policy matches its column with the setting. */
 const MATCHES: readonly RowLevelSecurityOptions["match"][] = [
@@ -145,6 +237,28 @@ export class BlueprintRecord {
 
   /** The policies of earlier migrations this blueprint drops. */
   private readonly dropped: DroppedPolicy[] = [];
+
+  /** The columns this blueprint drops (contract). */
+  private readonly droppedColumns: DroppedColumn[] = [];
+
+  /** The column renames this blueprint starts (expand): the old name and the new. */
+  private readonly renames: { readonly from: string; readonly to: string }[] = [];
+
+  /** The column renames this blueprint finishes (contract). */
+  private readonly finishedRenames: FinishedRename[] = [];
+
+  /** The named check constraints this blueprint adds. */
+  private readonly checks: NamedCheck[] = [];
+
+  /** The check constraints of earlier migrations this blueprint drops. */
+  private readonly droppedChecks: NamedCheck[] = [];
+
+  /** The exclusion constraints of the table being created. */
+  private readonly exclusions: Exclusion[] = [];
+
+  /** The indexes of earlier migrations this blueprint drops, each with the table name it was built under. */
+  private readonly droppedIndexes: { readonly index: TableIndexRecord; readonly table: string }[] =
+    [];
 
   /** The composite primary key, when one was declared. */
   private primaryKey: readonly string[] | undefined = undefined;
@@ -264,6 +378,11 @@ export class BlueprintRecord {
   /** Implements `Blueprint.jsonb`, documented there. */
   jsonb(name: string): ColumnDefinition {
     return this.add(new ColumnRecord(name, "jsonb"));
+  }
+
+  /** Implements `Blueprint.timeRange`, documented there. */
+  timeRange(name: string): ColumnDefinition {
+    return this.add(new ColumnRecord(name, "tstzrange"));
   }
 
   /** Implements `Blueprint.tsvector`, documented there. */
@@ -474,6 +593,153 @@ export class BlueprintRecord {
     const change = new ColumnChangeRecord(column);
     this.changes.push(change);
     return change;
+  }
+
+  /**
+   * Implements `Blueprint.dropColumn`, documented there.
+   *
+   * @throws TypeError on a table being created, for a name that is not snake_case, an `after` that is not a migration
+   *         id, a type the blueprint does not write, or a column already dropped here.
+   */
+  dropColumn(column: string, options: ContractOptions & RenamedColumnOptions): void {
+    this.existing(`t.dropColumn("${column}")`);
+    quoteIdentifier(column);
+    const after = checkAfter(`t.dropColumn("${column}")`, options?.after);
+    assertColumnType(column, options.type);
+    if (this.droppedColumns.some((known) => known.column === column))
+      throw new TypeError(`${this.table}.${column} is already dropped in this blueprint`);
+    this.droppedColumns.push({ column, after, type: options.type });
+  }
+
+  /**
+   * Implements `Blueprint.renameColumn`, documented there.
+   *
+   * @throws TypeError on a table being created, for a name that is not snake_case, the same name twice, a type the
+   *         blueprint does not write, a column already renamed here, or a new name this blueprint already has.
+   */
+  renameColumn(from: string, to: string, options: RenamedColumnOptions): ColumnDefinition {
+    this.existing(`t.renameColumn("${from}", "${to}")`);
+    quoteIdentifier(from);
+    if (from === to) throw new TypeError(`t.renameColumn: ${from} is renamed to itself`);
+    assertColumnType(to, options?.type);
+    if (this.renames.some((known) => known.from === from))
+      throw new TypeError(`${this.table}.${from} is already renamed in this blueprint`);
+    // the trigger's name, checked now so a name past Postgres's 63 characters fails at the call
+    constraintName("trg", this.table, [from, to]);
+    const column = this.add(new ColumnRecord(to, options.type));
+    this.renames.push({ from, to });
+    return column;
+  }
+
+  /**
+   * Implements `Blueprint.finishRenameColumn`, documented there.
+   *
+   * @throws TypeError on a table being created, for a name that is not snake_case, the same name twice, an `after` that
+   *         is not a migration id, a type the blueprint does not write, or a rename already finished here.
+   */
+  finishRenameColumn(
+    from: string,
+    to: string,
+    options: ContractOptions & RenamedColumnOptions,
+  ): void {
+    const call = `t.finishRenameColumn("${from}", "${to}")`;
+    this.existing(call);
+    quoteIdentifier(from);
+    quoteIdentifier(to);
+    if (from === to) throw new TypeError(`${call}: a column is renamed to another name`);
+    const after = checkAfter(call, options?.after);
+    assertColumnType(from, options.type);
+    constraintName("trg", this.table, [from, to]);
+    if (this.finishedRenames.some((known) => known.from === from))
+      throw new TypeError(`${this.table}.${from} is already finished in this blueprint`);
+    this.finishedRenames.push({ from, to, after, type: options.type });
+  }
+
+  /**
+   * Implements `Blueprint.check`, documented there.
+   *
+   * @throws TypeError for a name that is not snake_case, a second check of that name, or an expression that is blank,
+   *         spans lines or holds `;` or `$$`.
+   */
+  check(name: string, expression: string): void {
+    constraintName("ck", this.table, [name]);
+    const sql = checkFragment(`t.check("${name}")`, expression);
+    if (this.checks.some((known) => known.name === name))
+      throw new TypeError(`${this.table} already has the check ${name}`);
+    this.checks.push({ name, expression: sql, table: this.table });
+  }
+
+  /**
+   * Implements `Blueprint.dropCheck`, documented there.
+   *
+   * @throws TypeError on a table being created, for a name that is not snake_case, or an expression `check` refuses.
+   */
+  dropCheck(name: string, options: { readonly expression: string; readonly table?: string }): void {
+    this.existing(`t.dropCheck("${name}")`);
+    const table = options?.table ?? this.table;
+    constraintName("ck", table, [name]);
+    const expression = checkFragment(`t.dropCheck("${name}")`, options?.expression);
+    this.droppedChecks.push({ name, expression, table });
+  }
+
+  /**
+   * Implements `Blueprint.exclude`, documented there.
+   *
+   * @throws TypeError on an existing table, for a name or column that is not snake_case, no element, an operator that
+   *         is not one, an unknown method, or a predicate `check` refuses.
+   */
+  exclude(
+    name: string,
+    elements: Readonly<Record<string, string>>,
+    options: ExclusionOptions = {},
+  ): void {
+    if (!this.creating)
+      throw new TypeError(
+        `t.exclude("${name}"): ${this.table} exists, and Postgres builds an exclusion constraint's index under an exclusive lock with no online form; add it to a new table, or a reviewed schema.sql on a small one`,
+      );
+    constraintName("ex", this.table, [name]);
+    const pairs = Object.entries(elements ?? {});
+    if (pairs.length === 0) throw new TypeError(`t.exclude("${name}") needs at least one element`);
+    for (const [column, operator] of pairs) {
+      quoteIdentifier(column);
+      if (typeof operator !== "string" || !EXCLUSION_OPERATOR.test(operator))
+        throw new TypeError(`t.exclude("${name}"): "${operator}" is not an operator`);
+    }
+    const using = options.using ?? "gist";
+    if (using !== "gist" && using !== "btree")
+      throw new TypeError(`t.exclude("${name}"): "${using}" is not gist or btree`);
+    if (this.exclusions.some((known) => known.name === name))
+      throw new TypeError(`${this.table} already has the exclusion ${name}`);
+    const where =
+      options.where === undefined
+        ? undefined
+        : checkFragment(`t.exclude("${name}")`, options.where);
+    this.exclusions.push({ name, elements: pairs, using, where });
+  }
+
+  /**
+   * Implements `Blueprint.dropIndex`, documented there.
+   *
+   * @throws TypeError on a table being created, for no column, a column or table that is not snake_case, an unknown
+   *         method, or a predicate `check` refuses.
+   */
+  dropIndex(columns: readonly string[], options: DroppedIndexOptions = {}): void {
+    this.existing("t.dropIndex");
+    const index = new TableIndexRecord(columns, options.unique === true);
+    if (options.using !== undefined) index.using(options.using);
+    if (options.where !== undefined) index.where(checkFragment("t.dropIndex", options.where));
+    const table = options.table ?? this.table;
+    quoteIdentifier(table);
+    index.name(table);
+    this.droppedIndexes.push({ index, table });
+  }
+
+  /** The migrations of earlier releases this blueprint's contract steps wait for, in the order they were written. */
+  contractAfter(): readonly string[] {
+    return [
+      ...this.droppedColumns.map((drop) => drop.after),
+      ...this.finishedRenames.map((finish) => finish.after),
+    ];
   }
 
   /** Implements `Blueprint.index`, documented there. */
@@ -766,6 +1032,137 @@ export class BlueprintRecord {
     return column;
   }
 
+  /**
+   * Refuses a step that only an existing table takes.
+   *
+   * @throws TypeError on a table being created.
+   */
+  private existing(call: string): void {
+    if (this.creating)
+      throw new TypeError(
+        `${call}: ${this.table} is created by this migration, so it has nothing to drop or rename; define it as it should be`,
+      );
+  }
+
+  /**
+   * Refuses two steps of this blueprint on one column that cannot both run: a drop of a column the blueprint also adds,
+   * changes or renames, or a finished rename of one it also adds, changes or drops; and a rename's new column with a
+   * default, a generation or NOT NULL, which would hide the rows the copy has not reached.
+   *
+   * @throws TypeError naming the column.
+   */
+  private checkContractColumns(): void {
+    const added = new Set(this.columns.map((column) => column.name));
+    const changed = new Set(this.changes.map((change) => change.name));
+    const renamed = new Set(this.renames.flatMap(({ from, to }) => [from, to]));
+    const dropped = new Set(this.droppedColumns.map((drop) => drop.column));
+    for (const { column } of this.droppedColumns)
+      if (added.has(column) || changed.has(column) || renamed.has(column))
+        throw new TypeError(
+          `${this.table}.${column} is dropped by this blueprint, so it is not also added, changed or renamed`,
+        );
+    for (const { from, to } of this.finishedRenames)
+      for (const column of [from, to])
+        if (added.has(column) || changed.has(column) || renamed.has(column) || dropped.has(column))
+          throw new TypeError(
+            `${this.table}.${column}: its rename is finished by this blueprint, so it is not also added, changed, renamed or dropped`,
+          );
+    for (const { from, to } of this.renames) {
+      if (added.has(from))
+        throw new TypeError(
+          `${this.table}.${from} is added by this blueprint, so it is defined, not renamed`,
+        );
+      // A default fills `to` in every existing row and every insert of the release that writes `from`, so the sync
+      // trigger (which copies into a null `to`) and the finish gate (`to` null, `from` set) would both see nothing to
+      // copy, and the finish would drop `from` with its values.
+      const column = this.columns.find((candidate) => candidate.name === to);
+      if (
+        column !== undefined &&
+        (column.defaultSql !== undefined ||
+          column.generated !== undefined ||
+          column.nullability === "not null")
+      )
+        throw new TypeError(
+          `${this.table}.${to}: the new name of a column rename starts nullable, with no default, so the sync trigger and the backfill copy ${from} into every row; add the default or NOT NULL with t.change after t.finishRenameColumn`,
+        );
+    }
+  }
+
+  /** The release and data gates of this blueprint's contract steps, first in its transaction. */
+  private contractGates(schema: string, qualified: string): CompiledStatement[] {
+    const gates: CompiledStatement[] = [];
+    for (const { column, after } of this.droppedColumns)
+      gates.push({
+        sql: releaseGateSql(after, `${schema}.${this.table} drop column ${column}`),
+        inverse: [],
+      });
+    for (const { from, to, after } of this.finishedRenames)
+      gates.push(
+        {
+          sql: releaseGateSql(after, `${schema}.${this.table} finish rename ${from} to ${to}`),
+          inverse: [],
+        },
+        {
+          sql: pendingRowsGateSql(
+            qualified,
+            `${quoteIdentifier(to)} is null and ${quoteIdentifier(from)} is not null`,
+            `run the backfill that copies ${from} into ${to} before ${from} is dropped`,
+          ),
+          inverse: [],
+        },
+      );
+    return gates;
+  }
+
+  /**
+   * The contract and constraint statements of an existing table, after its added columns: each rename's sync trigger,
+   * the checks added `NOT VALID`, the checks dropped, the columns dropped, then each finished rename's trigger and old
+   * column, each with its dev inverse.
+   */
+  private contractSql(schema: string, qualified: string): CompiledStatement[] {
+    const statements: CompiledStatement[] = [];
+    for (const { from, to } of this.renames) {
+      const sync = renameSyncSql(schema, this.table, from, to);
+      statements.push(
+        { sql: sync.createFunction, inverse: [sync.dropFunction] },
+        { sql: sync.createTrigger, inverse: [sync.dropTrigger] },
+      );
+    }
+    for (const { name, expression } of this.checks) {
+      const check = quoteIdentifier(constraintName("ck", this.table, [name]));
+      statements.push({
+        sql: `alter table ${qualified} add constraint ${check} check (${expression}) not valid`,
+        inverse: [`alter table ${qualified} drop constraint if exists ${check}`],
+      });
+    }
+    for (const { name, expression, table } of this.droppedChecks) {
+      const check = quoteIdentifier(constraintName("ck", table, [name]));
+      statements.push({
+        sql: `${DROP_CHECK_SQUAWK_IGNORE}alter table ${qualified} drop constraint ${check}`,
+        inverse: [
+          `alter table ${qualified} add constraint ${check} check (${expression}) not valid`,
+        ],
+      });
+    }
+    const dropColumn = (column: string, type: string): CompiledStatement => ({
+      sql: `${contractSquawkIgnore("ban-drop-column")}alter table ${qualified} drop column ${quoteIdentifier(column)}`,
+      inverse: [`alter table ${qualified} add column ${quoteIdentifier(column)} ${type}`],
+    });
+    for (const { column, type } of this.droppedColumns) statements.push(dropColumn(column, type));
+    for (const { from, to, type } of this.finishedRenames) {
+      const sync = renameSyncSql(schema, this.table, from, to);
+      statements.push(
+        { sql: sync.dropTrigger, inverse: [sync.createTrigger] },
+        {
+          sql: DROP_SYNC_FUNCTION_SQUAWK_IGNORE + sync.dropFunction,
+          inverse: [sync.createFunction],
+        },
+        dropColumn(from, type),
+      );
+    }
+    return statements;
+  }
+
   /** Adds `column`, refusing a repeated name. */
   private add(column: ColumnRecord): ColumnRecord {
     if (this.columns.some((known) => known.name === column.name))
@@ -792,6 +1189,15 @@ export class BlueprintRecord {
     const definitions = this.columns.map((column) => column.definition(this.table, schema));
     if (primary.length > 0)
       definitions.push(`primary key (${primary.map(quoteIdentifier).join(", ")})`);
+    // A new table is empty, so its checks and exclusions are part of its definition: nothing to scan or lock.
+    for (const { name, expression } of this.checks)
+      definitions.push(
+        `constraint ${quoteIdentifier(constraintName("ck", this.table, [name]))} check (${expression})`,
+      );
+    for (const { name, elements, using, where } of this.exclusions)
+      definitions.push(
+        `constraint ${quoteIdentifier(constraintName("ex", this.table, [name]))} exclude using ${using} (${elements.map(([column, operator]) => `${quoteIdentifier(column)} with ${operator}`).join(", ")})${where === undefined ? "" : ` where (${where})`}`,
+      );
     const partitioned =
       partition === undefined ? "" : ` partition by range (${quoteIdentifier(partition)})`;
     const statements: CompiledStatement[] = [
@@ -843,7 +1249,9 @@ export class BlueprintRecord {
         `${this.table} exists: a primary key is never added to an existing table`,
       );
     const added = new Set(this.columns.map((column) => column.name));
-    const statements: CompiledStatement[] = [];
+    this.checkContractColumns();
+    // The gates come first, so a refused contract step stops the migration before anything else runs.
+    const statements: CompiledStatement[] = this.contractGates(schema, qualified);
     for (const change of this.changes) {
       if (added.has(change.name))
         throw new TypeError(
@@ -887,6 +1295,17 @@ export class BlueprintRecord {
       if (column.indexed && !this.declaresIndexOn(column.name))
         onlineIndex(new TableIndexRecord([column.name], false));
     }
+    statements.push(...this.contractSql(schema, qualified));
+    // A dropped index goes before any built one, so a rebuild under the same name finds the name free.
+    online.unshift(
+      ...this.droppedIndexes.map(({ index, table }) => ({
+        sql: [
+          `drop index concurrently if exists ${quoteIdentifier(schema)}.${quoteIdentifier(index.name(table))}`,
+        ],
+        transactional: false,
+        inverse: [index.sql(table, qualified, true)],
+      })),
+    );
     for (const index of this.indexes) {
       if (!index.online)
         throw new TypeError(
@@ -898,6 +1317,15 @@ export class BlueprintRecord {
     for (const column of this.columns)
       for (const validate of column.validateSql(this.table, qualified))
         online.push({ sql: [validate], transactional: true, inverse: [] });
+    // A named check is added NOT VALID above and validated here, as a foreign key is; dropping it undoes both.
+    for (const { name } of this.checks)
+      online.push({
+        sql: [
+          `alter table ${qualified} validate constraint ${quoteIdentifier(constraintName("ck", this.table, [name]))}`,
+        ],
+        transactional: true,
+        inverse: [],
+      });
     // A safe notNull() validates its NOT VALID check in a later step, then sets NOT NULL without a scan (ADR 0159).
     for (const change of this.changes) online.push(...change.laterSteps(this.table, qualified));
     statements.push(...this.rowSecuritySql(qualified));

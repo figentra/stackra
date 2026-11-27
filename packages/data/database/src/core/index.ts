@@ -6,7 +6,7 @@
  *          use the classes the ORM throws and reads. `DatabaseConfig` (with `DatabaseConfig$` and `DatabaseConfigOptions`)
  *          holds the health probe's settings.
  * Boundary: names each re-export and declares nothing. The Postgres and unit-of-work drivers live in `./node`; the
- *           `VisibilityFilter` and `HoldRegistry` ports and the `Where` type live in `./contracts`. `Projection` is the read-model kind base (its versions table's migration is found by path). The migration records, the registries, the name helpers, the
+ *           `VisibilityFilter` and `HoldRegistry` ports and the `Where` type live in `./contracts`. `Projection` is the read-model kind base (its versions table's migration is found by path). `Backfill` is the data-backfill kind base and `runBackfill` its batch runner on a given session (STA-1406); `backfill` in `./node` opens that session. The migration records, the registries, the name helpers, the
  *           block-id minting and the visibility filter function stay internal; the sequence tables' migration is found
  *           by its path (`src/node/database/migrations/`), as every migration is, so it is not re-exported.
  * Runtime: node
@@ -19,6 +19,7 @@ export {
   UniqueConstraintViolationException as UniqueViolation,
 } from "@mikro-orm/core";
 export { DatabaseConfig } from "#config/database.config";
+export { Backfill } from "#core/bases/backfill.base";
 export { CrudService } from "#core/bases/crud-service.base";
 export { Macro } from "#core/bases/macro.base";
 export { Migration } from "#core/bases/migration.base";
@@ -56,6 +57,7 @@ export { TableFilterInvalidError } from "#core/errors/table-filter-invalid.error
 export { ancestorOf } from "#core/functions/ancestor-of.function";
 export { areaCovers } from "#core/functions/area-covers.function";
 export { compileMigration } from "#core/functions/compile-migration.function";
+export { runBackfill } from "#core/functions/run-backfill.function";
 export { connectHoldRegistry } from "#core/functions/connect-hold-registry.function";
 export { connectNativeWriteWatcher } from "#core/functions/connect-native-write-watcher.function";
 export { connectSequenceTimeZone } from "#core/functions/connect-sequence-time-zone.function";
@@ -95,9 +97,18 @@ export { HasLocation } from "#core/traits/has-location.trait";
 export { HasMetadata } from "#core/traits/has-metadata.trait";
 export { GraphQuery } from "#core/services/graph-query.service";
 export { SequenceService } from "#core/services/sequence.service";
+export type { BackfillBatch } from "#core/types/backfill-batch.type";
+export type { BackfillClass } from "#core/types/backfill-class.type";
+export type { BackfillOptions } from "#core/types/backfill-options.type";
+export type { BackfillProgress } from "#core/types/backfill-progress.type";
+export type { BackfillQuery } from "#core/types/backfill-query.type";
+export type { BackfillSession } from "#core/types/backfill-session.type";
 export type { Blueprint } from "#core/types/blueprint.type";
 export type { ChangedRow } from "#core/types/changed-row.type";
 export type { ColumnChange } from "#core/types/column-change.type";
+export type { ContractOptions } from "#core/types/contract-options.type";
+export type { DroppedIndexOptions } from "#core/types/dropped-index-options.type";
+export type { ExclusionOptions } from "#core/types/exclusion-options.type";
 export type { ColumnDefinition } from "#core/types/column-definition.type";
 export type { ColumnGroup } from "#core/types/column-group.type";
 export type { CompileOptions } from "#core/types/compile-options.type";
@@ -128,6 +139,8 @@ export type { MetricsOptions } from "#core/types/metrics-options.type";
 export type { MigrationClass } from "#core/types/migration-class.type";
 export type { MigrationId } from "#core/types/migration-id.type";
 export type { MigrationOptions } from "#core/types/migration-options.type";
+export type { RenamedColumnOptions } from "#core/types/renamed-column-options.type";
+export type { RunBackfillOptions } from "#core/types/run-backfill-options.type";
 export type { OperationActionOptions } from "#core/types/operation-action-options.type";
 export type { OperationQueryOptions } from "#core/types/operation-query-options.type";
 export type { ProjectionClass } from "#core/types/projection-class.type";

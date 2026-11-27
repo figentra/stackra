@@ -6,7 +6,8 @@
  *           are not listed: they declare no class. A new kind joins this table with its ADR.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (rule R3 and decision 16, the kind table, with the 2026-10-23 amendment); ADR 0305
- *                     (rules 2, 3, 5 and 19); ADR 0308 (Integration and Connection).
+ *                     (rules 2, 3, 5 and 19); ADR 0308 (Integration and Connection); ADR 0159 (decision 3: `Backfill`,
+ *                     STA-1406).
  */
 
 /**
@@ -18,6 +19,7 @@ export const KIND_BASES: Readonly<Record<string, readonly string[]>> = Object.fr
   action: ["Action"],
   "approval-condition": ["ApprovalCondition"],
   "analytics-event": ["AnalyticsEvent"],
+  backfill: ["Backfill"],
   block: ["Block"],
   bridge: ["Bridge"],
   bucket: ["Bucket"],

@@ -20,6 +20,10 @@ export const PLATFORM_TABLES: ReadonlyMap<string, string> = new Map([
   ],
   ["public.schema_migrations_history", "the migration runner's ledger of applied files"],
   [
+    "public.schema_migrations_releases",
+    "the migration runner's ledger of releases whose run finished, read by contract steps' release gates",
+  ],
+  [
     "database.idempotency_keys",
     "database.0002: claimed before the call's scope session opens; each key is already scoped",
   ],

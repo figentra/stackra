@@ -10,7 +10,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (R1 to R3, decision 16: the kind table); ADR 0305 (rules 1 to 3); STA-903 (`agent`,
  *                     `pass`); ADR 0336 (decision 1: `<base>.model-addition.ts`, `<Base>Addition`); ADR 0470
- *                     (decision 1: `<name>.report.ts`, `<Name>Report`).
+ *                     (decision 1: `<name>.report.ts`, `<Name>Report`); ADR 0159 (decision 3: `<name>.backfill.ts`,
+ *                     `<Name>Backfill`, STA-1406).
  */
 
 /** Kind code to its file suffix and class-name suffix. */
@@ -21,6 +22,7 @@ export const KIND_FILES: Readonly<
   approval_condition: { file: "approval-condition", suffix: "ApprovalCondition" },
   agent: { file: "agent", suffix: "Agent" },
   analytics_event: { file: "analytics-event", suffix: "" },
+  backfill: { file: "backfill", suffix: "Backfill" },
   block: { file: "block", suffix: "Block" },
   bridge: { file: "bridge", suffix: "Bridge" },
   bucket: { file: "bucket", suffix: "Bucket" },

@@ -9,22 +9,13 @@
  * Runtime: node
  * Governing contract: ADR 0159 as amended by ADR 0305 (decision 3; the 2026-10-23 note: gen derives every inverse).
  */
+import { assertColumnType } from "#core/functions/assert-column-type.function";
 import { constraintName } from "#core/functions/constraint-name.function";
 import { quoteIdentifier } from "#core/functions/quote-identifier.function";
 import { sqlLiteral } from "#core/functions/sql-literal.function";
 import type { ColumnChange } from "#core/types/column-change.type";
 import type { CompiledStatement } from "#core/types/compiled-statement.type";
 import type { CompiledStep } from "#core/types/compiled-step.type";
-
-/** The SQL types a blueprint writes, and so the ones a change converts between. */
-const SQL_TYPE =
-  /^(text|integer|bigint|boolean|timestamptz|uuid|jsonb|tsvector|ltree|geography\((Point|Polygon|LineString),4326\)|varchar\([1-9]\d{0,7}\)|char\([1-9]\d{0,7}\)|numeric\([1-9]\d{0,3}, \d{1,4}\))$/;
-
-/** Refuses a type the blueprint does not write. */
-function assertType(column: string, type: string): void {
-  if (!SQL_TYPE.test(type))
-    throw new TypeError(`${column}: "${type}" is not a column type a blueprint writes`);
-}
 
 /** The reason and the squawk ignore written above a type change Postgres makes without rewriting the table. */
 const WIDEN_SQUAWK_IGNORE =
@@ -98,8 +89,8 @@ export class ColumnChangeRecord implements ColumnChange {
   type(to: string, options: { readonly from: string; readonly using?: string }): this {
     if (this.conversion !== undefined)
       throw new TypeError(`${this.name} already changes its type in this blueprint`);
-    assertType(this.name, to);
-    assertType(this.name, options.from);
+    assertColumnType(this.name, to);
+    assertColumnType(this.name, options.from);
     if (to === options.from) throw new TypeError(`${this.name} is already ${to}`);
     if (options.using?.trim() === "")
       throw new TypeError(`The conversion expression of ${this.name} is blank`);

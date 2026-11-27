@@ -8,10 +8,8 @@
  * Runtime: node
  * Governing contract: ADR 0159 (2026-10-23 and 2026-10-24 notes: rollback on dev, preview and test only).
  */
+import { ROLLBACK_ENVIRONMENTS } from "#node/constants/rollback-environments.constant";
 import { openMigrationSession } from "#node/functions/open-migration-session.function";
-
-/** The environments a rollback may run in. */
-const ROLLBACK_ENVIRONMENTS = new Set(["dev", "preview", "test"]);
 
 /**
  * Reverts the last migration.

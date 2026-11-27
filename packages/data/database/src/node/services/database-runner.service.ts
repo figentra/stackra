@@ -16,6 +16,9 @@ import type { seedState as SeedState } from "#node/functions/seed-state.function
 /** The target of a runner call: the member's folder and the runway environment. */
 type Target = { readonly cwd: string; readonly environment: string };
 
+/** The target of a migrate run: also the release it applies, which the contract steps' release gates compare. */
+type MigrateTarget = Target & { readonly release?: string };
+
 /**
  * Runs the migration and seed functions for the console.
  *
@@ -24,7 +27,7 @@ type Target = { readonly cwd: string; readonly environment: string };
  */
 export class DatabaseRunner extends Service {
   /** Applies the pending migrations; see `migrate`. */
-  async migrate(target: Target): Promise<{ readonly applied: readonly string[] }> {
+  async migrate(target: MigrateTarget): Promise<{ readonly applied: readonly string[] }> {
     // Imported on use: the runner is a wiring binding, and a static import would load the migration runner (and its
     // session) into every test setup of the package, ahead of a test's own mock of it.
     const { migrate } = await import("#node/functions/migrate.function");

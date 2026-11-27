@@ -114,6 +114,11 @@ and not redacted. Under `--json` it writes to standard error and ignores standar
 child is refused while a secret option or argument of the run holds a value, because its output cannot be redacted.
 `onOutput` receives redacted chunks.
 
+`migrationRelease(option, io, env)` is the release a migrate command names to the database runner: the `--release`
+option, else `STACKRA_RELEASE`, else the commit of the checkout at `io.cwd` (`git rev-parse HEAD`, run through
+`io.process`), else none. `stackra db migrate` and the member console's `db:migrate` both use it, so a deploy that runs
+either in its checkout names its release without a flag.
+
 ## Themes
 
 `STACKRA_THEME` is the default. Another product builds its own from its brand kit's colour tokens:

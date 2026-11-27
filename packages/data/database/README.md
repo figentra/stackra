@@ -220,6 +220,111 @@ Besides `integer` (32-bit), `t.bigint(name)` is a 64-bit count or minor-unit amo
 `t.decimal(name, precision, scale)` an exact `numeric` reading or bound (precision 1 to 1000, scale 0 to precision);
 money is always `t.money`.
 
+### Dropping and renaming (expand and contract)
+
+A destructive step ships in a later release than the change that made it safe (ADR 0159 d3). The blueprint writes both
+halves; nothing needs raw `schema.sql`:
+
+```ts
+// release N: the code stops reading `legacy_ref`; the column is renamed, both names kept equal
+schema.table("orders", (t: Blueprint) => {
+  t.renameColumn("note", "memo", { type: "varchar(200)" }).nullable().comment("The order's note.");
+});
+schema.rename("customer", "customers"); // the old name stays as a view
+
+// release N+1 (a later migration): the contract steps, each gated on the release that made it safe
+schema.requireBackfill("orders.copy_note", { table: "orders", pending: "memo is null and note is not null" });
+schema.table("orders", (t: Blueprint) => {
+  t.finishRenameColumn("note", "memo", { after: "orders.0007_rename_note", type: "varchar(200)" });
+  t.dropColumn("legacy_ref", { after: "orders.0007_rename_note", type: "varchar(64)" });
+});
+schema.finishRename("customer", "customers", { after: "orders.0007_rename_note" });
+schema.drop("order_drafts", { after: "orders.0007_rename_note" });
+```
+
+- **Release gate.** Every contract step (`dropColumn`, `finishRenameColumn`, `finishRename`, `drop`) names `{ after }`,
+  the migration of the earlier release. It compiles to a `DO` block first in the transaction that refuses the
+  migration while `after` was applied under the release this run applies (or never), and `after` becomes one of the
+  migration's edges, so gen orders the two and refuses an id no migration has. The release is the deploy's version or
+  commit: `stackra db migrate --release <id>`, else `STACKRA_RELEASE`, else the commit the member's checkout is at
+  (`git rev-parse HEAD`, the commit `stackra deploy` ships), so a deploy that runs `stackra db migrate` in its checkout
+  names its release without a flag. The runner records it on every `schema_migrations_history` row and sets
+  `stackra.migrate_from_version` and `stackra.migrate_release` in forward-only environments, so a retried deploy of
+  the same release (a CI retry, a re-run pipeline) is refused as its first run was, a run that names no release is
+  refused, and only the next release passes. Outside dev, preview and test, `stackra db migrate` refuses, before any
+  change, a run that names no release while a pending file holds a contract step on a database that already has
+  applied files; the refusal says to pass `--release <version or commit>` or set `STACKRA_RELEASE=<version or
+  commit>` in the release step. A run of plain additive files that names no release applies them as before. Give every
+  deploy its own id: one reused across deploys holds the step until it changes. A release counts as serving only once
+  its `stackra db migrate` run finished: a named forward-only run that applies every pending file records its release
+  in `schema_migrations_releases`, with the last file version it holds and when it finished. "Finished" means the
+  migrate run completed, not that the rollout did, so the pipeline runs `stackra db migrate` right before it rolls the
+  release out. The gate passes only when the run of a release other than this run's that finished last holds `after`
+  and finished after `after` was applied. So when the run that applied `after` failed (its code never went live, the
+  release before it still serves), every later release is refused until one holding `after` finishes without the
+  contract step; when an older release that never held `after` finishes a run later (a rollback), the step is refused
+  again until a release holding `after` finishes last; and a step applied by a run that named no release waits for a
+  named run holding it to finish. A run that would apply `after` and the contract step together is refused before any
+  change on a
+  database with applied files (`migrate` reads the gate's `-- stackra:contract-after=<id>` line): ship the contract
+  step in a later release. The gate passes on a fresh database, on dev, preview
+  and test, and wherever Encore's runner or a test applies the files (no `schema_migrations_history`).
+- **Column rename.** `t.renameColumn(from, to, { type })` adds `to` (`.nullable()` with its comment: no default, no
+  generation, not NOT NULL, refused otherwise, since a filled `to` hides the rows still to copy) and the trigger
+  `trg_<table>_<from>_<to>`, which keeps the two equal on every insert and update, so the release that writes `from`
+  and the one that writes `to` run side by side. A `Backfill` copies the old rows; `t.finishRenameColumn` refuses while
+  a row still has `to` null and `from` set, then drops the trigger and `from`. Add the default or NOT NULL with
+  `t.change` after the finish. Indexes are not copied.
+- **Row-level security.** The data gate (`requireBackfill`, the finish of a column rename) and every backfill batch run
+  with `row_security` off, so they read every tenant's rows or fail: on a table under row-level security (every
+  tenant table is `ENABLE` + `FORCE`), a role that is neither superuser nor `BYPASSRLS`, or one without SELECT on the
+  table, gets a refusal naming the table, the role and both causes (SQLSTATE 42501 for a backfill), never a count of
+  the rows its policy shows, which with no tenant set is none.
+  Run migrations and backfills on `DATABASE_DIRECT_URL` as a role that bypasses row security; the runtime role never
+  does (the health check fails readiness when it could).
+- **Table rename.** `schema.rename(from, to)` renames the table and leaves a `security_invoker` view under the old
+  name, updatable, through which the older release keeps reading and writing with its own grants and row-level
+  security. Indexes, constraints and policies keep their names; a later `dropIndex`, `dropCheck` or
+  `dropRowLevelSecurity` names the old table as `table`.
+- **Drops.** `t.dropColumn` and `schema.drop` carry a reviewed squawk ignore and the gate. A dropped column's dev
+  inverse adds it back empty (so it states `type`); a dropped table has no inverse. `t.dropIndex(columns, options)`
+  drops concurrently in its own step and `t.dropCheck(name, { expression })` relaxes the table; neither waits for a
+  release.
+
+### Checks and exclusions
+
+`t.check(name, expression)` adds `ck_<table>_<name>`: inline on a new table, `NOT VALID` plus a validation step on an
+existing one. `t.exclude(name, { room_id: "=", during: "&&" }, { where })` adds the exclusion constraint
+`ex_<table>_<name>` to a table the migration creates (GiST by default; `=` on a scalar needs
+`Extension.BtreeGist`); Postgres has no online form, so an existing table is refused. `t.timeRange(name)` is a
+`tstzrange` column for such a constraint.
+
+### Backfills
+
+A backfill is the data half of a contract step (ADR 0159 d3, ADR 0334 rule 4): a `Backfill` class in
+`database/backfills/<name>.backfill.ts`, run in batches by a queue job.
+
+```ts
+export class CopyNoteBackfill extends Backfill({
+  key: "orders.copy_note",
+  table: "orders.orders",
+  pending: "memo is null and note is not null",
+  set: "memo = note", // or override apply(batch) and write through batch.execute(... where ${batch.where})
+  batch: 500,
+  pause: 50,
+}) {}
+```
+
+`backfill(CopyNoteBackfill, { maxBatches: 100 })` (`./node`) runs it on the direct URL with the runner's timeouts;
+`runBackfill(type, session, options)` takes any session. Each batch selects the next `pending` rows past the cursor by
+the keyset column (`by`, `id` by default), fills them and moves the cursor in one transaction, so a crash loses at most
+the batch in flight and the next run resumes. Progress (`rows`, `batches`, `cursor`, `finished`) is kept in
+`database.backfill_runs`; a failed batch records its SQLSTATE only. The job that owns it calls `backfill` with
+`maxBatches` and queues itself again until `finished`. Rows written behind the cursor later are reached with
+`restart: true`. `schema.requireBackfill(key, { table, pending })` is the contract step's data gate: it counts pending
+rows, not the ledger, so a fresh database passes. Both walk every tenant's rows, so their role bypasses row security
+(see "Row-level security" above); a role that cannot fails on its first batch instead of reporting `finished`.
+
 ### Running migrations
 
 `stackra db migrate` (`migrate` from `./node`) applies the compiled `.stackra/migrations` files in order:
@@ -227,7 +332,7 @@ money is always `t.money`.
 - It holds a session-level `pg_advisory_lock` for the whole run, so a second pod or job waits instead of applying the
   same files.
 - `schema_migrations(version, dirty)` keeps golang-migrate's shape; `schema_migrations_history(version, name,
-checksum, applied_at)` records each applied file's SHA-256. A run refuses to start when an applied file's text no
+checksum, applied_at, release_id)` records each applied file's SHA-256 and the release that applied it. A run refuses to start when an applied file's text no
   longer matches (a frozen migration was edited); files applied before the ledger existed are recorded on the first
   run. A dev `rollback` removes the reverted rows.
 - Sessions run with `lock_timeout 5s` and `statement_timeout 5min`; a file whose leading comment lines hold
@@ -235,6 +340,16 @@ checksum, applied_at)` records each applied file's SHA-256. A run refuses to sta
 - When a file fails, the INVALID indexes it named (a failed `create index concurrently`) are dropped and the version
   goes back to the last applied file, clean, so the next run starts that file again. Only a crash mid-file leaves the
   version dirty.
+- Outside dev, preview and test, a run sets `stackra.migrate_from_version` to the version it started from and
+  `stackra.migrate_release` to its release (`--release`, else `STACKRA_RELEASE`, else, for `stackra db migrate` and the
+  member console's `db:migrate` (one chain, @stackra/console's `migrationRelease`), the checkout's commit: letters, digits and `. _ + / -`), which the release gate of every contract step reads (see
+  "Dropping and renaming"). There a run whose pending files hold a contract step must name its release once the
+  database has an applied file, and is refused before any change otherwise, with a message naming `--release` and
+  `STACKRA_RELEASE`; plain additive files apply with no release named, as before. There a run is also refused before
+  any change when a pending contract step waits for a migration the same run applies, and a named run that applies
+  every pending file records its release as finished in `schema_migrations_releases(release_id, through_version,
+  finished_at)`; a failed run records nothing. "Finished" means the migrate run completed, so run migrate right before
+  the rollout.
 
 ## Scope isolation
 

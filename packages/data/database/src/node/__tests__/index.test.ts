@@ -32,6 +32,7 @@ describe("@stackra/database/node", () => {
       "SeedPackStatusCommand",
       "ServiceHoldRegistryDriver",
       "applySeed",
+      "backfill",
       "databaseUrl",
       "directDatabaseUrl",
       "migrate",
