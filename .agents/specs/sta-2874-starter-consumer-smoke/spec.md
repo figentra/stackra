@@ -187,7 +187,7 @@ None for the build. ADR 0515's text (stackra#1129) needs the decision-3 wording 
 - 2026-11-26 → Clarified (STA-2874, split from STA-2778; the audit's 404 re-checked on the registry)
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md; built in the same branch)
-- 2026-11-26 · Tasked → Implementing · Claude (STA-2874 session) · T001-T006 built and tested on box 2
+- 2026-11-26 · Tasked → Implementing · Claude (STA-2874 session) · T001-T006 built and tested on a Linux build machine
 - 2026-11-27 · Implementing → Implementing · Claude (STA-2874 session) · review fixes: tier raised to big (a new
   package); the smoke moved out of the release job into its own `consumer-smoke` job, with a `promote` job after it
   (T007, AC-012); the starter's vitest config tracked; the design sections written from what was built. The Clarified
