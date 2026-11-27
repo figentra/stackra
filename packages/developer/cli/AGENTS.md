@@ -64,8 +64,10 @@ shape (ADR 0294, 0305). No code entry: the package ships `bin.stackra` (`src/nod
   and sends it only as the bearer token of its one call; never print it, log it or pass it as an argument.
 - A seed pack, a template or a command never holds a business value (a price, a rate, a country rule): those are rows
   in the product's seed pack, each citing its answer id. A seed run never writes a record a tenant changed.
-- `stackra new` names a member only through `memberNaming` (`--scope`, else the root runway's `product.key`, ADR
-  0349 decision 2) and writes `@stackra/*` versions in the form it returns; a template never hard-codes a scope.
+- `stackra new` names a member only through `memberNaming` (`--scope`, else the workspace's own scope: the root
+  package.json `stackra.scope` that `stackra create` writes, or a non-first-party root package scope; else the root
+  runway's `product.key`, ADR 0349 decision 2) and writes `@stackra/*` versions in the form it returns; a template
+  never hard-codes a scope, and a created app's members never land in `@figentra` (STA-2890).
   Templates write nothing under `src/`, and `--over` never writes an existing file (it prints `lineDiff`), nor
   `CHANGELOG.md` or `runway.yaml`; keep both true when a template grows.
 - `stackra add` reaches the registry only through a `CatalogueClient` (`httpCatalogueClient` in `COMMANDS`, a fake in

@@ -5,7 +5,8 @@
  *          the programming model v3 shape, with the `stackra` field and turbo tags of ADR 0453 decision 11
  *          (`packages/<category>/<name>`, `services/<name>`) or a product seed pack
  *          (`seed-packs/<name>`) at the workspace root, then names the next steps. The package name comes from
- *          `memberNaming` (`--scope`, else the root runway's `product.key`). `--over` regenerates over an existing
+ *          `memberNaming` (`--scope`, else the root package.json `stackra.scope` or the root package's own scope,
+ *          else the root runway's `product.key`). `--over` regenerates over an existing
  *          member: it writes only the files that are missing and prints a line diff for each authored file that
  *          differs from the template, never writing it. It refuses a folder that exists (without `--over`), a name or
  *          scope that is not kebab-case, a category with no folder under `packages/`, and an area that is not an

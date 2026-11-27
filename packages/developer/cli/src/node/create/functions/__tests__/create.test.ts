@@ -2,13 +2,18 @@
  * Stackra file contract:
  * Purpose: hold `stackra create`'s pure parts to their contract: a profile writes only its paths and overlays, the
  *          rename list and the catalog pin apply, the starter's own files never reach the app, a malformed manifest or
- *          an unknown profile is refused; the gen tree groups by member and kind; a starter's files describe the
- *          doctor workspace of the app they make.
- * Boundary: pure functions on in-memory files; runs no command.
+ *          an unknown profile is refused; the chosen scope is stored as the root package.json `stackra.scope` and
+ *          `stackra new` names the app's members in it, not in `@figentra`; the gen tree groups by member and kind; a
+ *          starter's files describe the doctor workspace of the app they make.
+ * Boundary: pure functions on in-memory files; runs no command. The scope test writes the app to a throwaway folder
+ *           in the OS temp directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0515; STA-1952 spec FR-006, FR-007, FR-010 and FR-015.
+ * Governing contract: ADR 0022; ADR 0515; STA-1952 spec FR-006, FR-007, FR-010 and FR-015; STA-2890.
  */
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 import { test } from "@stackra/testing";
@@ -18,6 +23,7 @@ import { starterFiles } from "#node/create/functions/starter-files.function";
 import { starterTarball } from "#node/create/functions/starter-tarball.function";
 import { starterWorkspace } from "#node/create/functions/starter-workspace.function";
 import { doctorNeeds } from "#node/doctor/functions/doctor-needs.function";
+import { memberNaming } from "#node/functions/member-naming.function";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -142,6 +148,41 @@ test("a malformed manifest, an unknown profile and a missing overlay are refused
   assert.throws(
     () => starterFiles(broken, options),
     /overlay runway\.yaml: the starter has no starter\/minimal\/runway\.yaml/,
+  );
+});
+
+test("the chosen scope is stored in the root package.json and names the app's new members", () => {
+  const files = starterFiles(
+    starter({
+      "package.json":
+        '{"name":"acme-platform","stackra":{"encore":"1.58.8"},"scripts":{"dev":"stackra dev"}}',
+    }),
+    options,
+  );
+  const pkg = read(files, "package.json");
+  assert.deepEqual(JSON.parse(pkg), {
+    name: "demo-app",
+    stackra: { encore: "1.58.8", scope: "@demo" },
+    scripts: { dev: "stackra dev" },
+  });
+  assert.match(pkg, /^\{\n {2}"name": "demo-app",\n/);
+  assert.match(pkg, /\n\}\n$/);
+  // The app on disk, as `stackra create` leaves it: its runway still carries the product key.
+  const root = mkdtempSync(join(tmpdir(), "stackra-create-scope-"));
+  try {
+    for (const [path, bytes] of files) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      writeFileSync(join(root, path), bytes);
+    }
+    assert.match(read(files, "runway.yaml"), /key: demoapp/);
+    assert.equal(memberNaming(root, "service", "orders").packageName, "@demo/service-orders");
+    assert.equal(memberNaming(root, "package", "kit").packageName, "@demo/kit");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  assert.throws(
+    () => starterFiles(starter({ "package.json": "[]" }), options),
+    /package\.json is not a JSON object/,
   );
 });
 

@@ -242,13 +242,22 @@ connector-catalogue, brand-kit), the record `key` and `rows`; every row has an `
 
 `stackra new package|service <name>` writes the stackra/template shape: `#src/*` and `#assets/*` imports, the
 `./assets/*` export, an `assets/` folder, and `@stackra/*` at `catalog:stackra` when the workspace declares that
-catalog (`workspace:*` in this repository). The published name follows ADR 0349 decision 2:
+catalog (`workspace:*` in this repository). The published name is the workspace's own scope in an app, and follows
+ADR 0349 decision 2 in a Figentra product repository. The first row that applies wins:
 
-| Given                                     | Package                      | Service                              |
-| ----------------------------------------- | ---------------------------- | ------------------------------------ |
-| `--scope @acme`                           | `@acme/<name>`               | `@acme/service-<name>`               |
-| `--scope <product>` or root `product.key` | `@figentra/<product>-<name>` | `@figentra/<product>-service-<name>` |
-| neither (this repository, the OS)         | `@stackra/<name>`            | `@figentra/service-<name>`           |
+| Given                                                     | Package                      | Service                              |
+| --------------------------------------------------------- | ---------------------------- | ------------------------------------ |
+| `--scope @acme`                                           | `@acme/<name>`               | `@acme/service-<name>`               |
+| `--scope <product>`                                       | `@figentra/<product>-<name>` | `@figentra/<product>-service-<name>` |
+| root package.json `stackra.scope` `@acme`                 | `@acme/<name>`               | `@acme/service-<name>`               |
+| root package named `@acme/...` (not a first-party scope)  | `@acme/<name>`               | `@acme/service-<name>`               |
+| root runway `product.key` `<product>`                     | `@figentra/<product>-<name>` | `@figentra/<product>-service-<name>` |
+| none of these (this repository, the OS)                   | `@stackra/<name>`            | `@figentra/service-<name>`           |
+
+`stackra create` writes the scope it asks for as the root package.json `stackra.scope`, so `stackra new service orders`
+in a created app writes `@acme/service-orders`. An app created before that names its members in `@figentra` until
+`"stackra": { "scope": "@acme" }` is added to its root package.json. The first-party scopes (`@stackra`,
+`@stackra-pro`, `@figentra`) never count as a root package's own scope.
 
 `--over` regenerates over an existing member: it writes only the files that are missing and prints a line diff for
 each authored file that differs from the template, without writing it. It never writes or diffs `CHANGELOG.md` or an
