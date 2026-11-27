@@ -7,20 +7,34 @@
  *          either side (on a pinned clock, both edges accepted), a missing identity header, a replayed request id, and
  *          every signature when no key is active. It records a request's signed tenant only once the signature and
  *          the request id verified: never for a platform host, a request with no edge header or a refused one; a
- *          correctly signed scope that is not an `scp_` public id is refused (fail closed).
- * Boundary: test only; real Web Crypto, the memory drivers, and requests built as the edge Worker forwards them.
+ *          correctly signed scope that is not an `scp_` public id is refused (fail closed). With the `cache` nonce
+ *          store, a request accepted by one instance is refused as a replay by another that shares the store (with
+ *          per-instance `memory` stores it would pass there), and a store that cannot claim fails the check closed.
+ * Boundary: test only; real Web Crypto, the memory drivers (one `MemoryCacheDriver` as the store two instances share),
+ *           and requests built as the edge Worker forwards them.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0437 (decisions 4 and 8; Enforcement); ADR 0457.
  */
 import { createHash } from "node:crypto";
 
+import { buildConfig } from "@stackra/config";
+import {
+  CacheConfig,
+  MemoryCacheDriver,
+  NoneCacheMetricsDriver,
+  SharedCacheNamespaceDriver,
+} from "@stackra/cache";
+import { Cache } from "@stackra/cache/contracts";
+import { SystemClockDriver } from "@stackra/container";
 import { isRefusal } from "@stackra/errors";
 import { describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { signEdgeRequest } from "#core/functions/sign-edge-request.function";
+import type { EdgeNonceStore } from "#contracts/ports/edge-nonce-store.port";
 import { VERIFIED_EDGE_SCOPE } from "#server/constants/verified-edge-scope.constant";
+import { CacheEdgeNonceStoreDriver } from "#server/drivers/cache-edge-nonce-store.driver";
 import { MemoryEdgeNonceStoreDriver } from "#server/drivers/memory-edge-nonce-store.driver";
 import { MemoryEdgeSigningKeysDriver } from "#server/drivers/memory-edge-signing-keys.driver";
 import { EdgeSignatureInvalidError } from "#server/errors/edge-signature-invalid.error";
@@ -71,11 +85,24 @@ async function forwarded(options: Forwarded = {}): Promise<Request> {
   });
 }
 
-/** A guard over memory drivers holding `secrets`. */
-function guard(secrets: string[] = ["next", "previous"]) {
+/** A guard over memory drivers holding `secrets`, with its own memory nonce store unless `nonces` is given. */
+function guard(
+  secrets: string[] = ["next", "previous"],
+  nonces: EdgeNonceStore = new MemoryEdgeNonceStoreDriver(),
+) {
   const keys = new MemoryEdgeSigningKeysDriver();
   keys.secrets = secrets;
-  return new EdgeHeaderGuard(keys, new MemoryEdgeNonceStoreDriver());
+  return new EdgeHeaderGuard(keys, nonces);
+}
+
+/** A memory cache standing in for the store every instance of a region shares. */
+function sharedCache(): MemoryCacheDriver {
+  return new MemoryCacheDriver(
+    buildConfig(CacheConfig),
+    new SharedCacheNamespaceDriver(),
+    new SystemClockDriver(),
+    new NoneCacheMetricsDriver(),
+  );
 }
 
 /** Whether `check` refused with `EdgeSignatureInvalidError`. */
@@ -137,6 +164,42 @@ describe("EdgeHeaderGuard", () => {
     const subject = guard();
     await subject.check(await forwarded({ requestId: "req-replay" }));
     expect(await refuses(subject, await forwarded({ requestId: "req-replay" }))).toBe(true);
+  });
+
+  it("refuses a request replayed against another instance that shares the cache nonce store", async () => {
+    const shared = sharedCache();
+    const one = guard(undefined, new CacheEdgeNonceStoreDriver(shared));
+    const two = guard(undefined, new CacheEdgeNonceStoreDriver(shared));
+    const captured = await forwarded({ requestId: "req-captured" });
+    const replay = captured.clone();
+    await expect(one.check(captured)).resolves.toBeUndefined();
+    expect(await refuses(two, replay)).toBe(true);
+    expect(VERIFIED_EDGE_SCOPE.has(replay)).toBe(false);
+  });
+
+  it("lets that replay through on a second instance with its own memory store: why a region needs cache", async () => {
+    const captured = await forwarded({ requestId: "req-per-instance" });
+    const replay = captured.clone();
+    await guard().check(captured);
+    await expect(guard().check(replay)).resolves.toBeUndefined();
+  });
+
+  it("fails closed when the nonce store cannot claim: a cache with no atomic add lets nothing through", async () => {
+    class NoAddCache extends Cache {
+      get = vi.fn();
+
+      put = vi.fn();
+
+      remember = vi.fn();
+
+      forget = vi.fn();
+
+      forgetTag = vi.fn();
+    }
+    const subject = guard(undefined, new CacheEdgeNonceStoreDriver(new NoAddCache()));
+    const request = await forwarded();
+    await expect(subject.check(request)).rejects.toThrow("NoAddCache does not support add");
+    expect(VERIFIED_EDGE_SCOPE.has(request)).toBe(false);
   });
 
   it("refuses a signed request missing an identity header", async () => {

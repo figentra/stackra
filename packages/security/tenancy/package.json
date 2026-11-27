@@ -144,6 +144,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@stackra/locking": "workspace:*",
+    "@stackra/outbox": "workspace:*",
     "@stackra/queue": "workspace:*",
     "@stackra/testing": "workspace:*",
     "@stackra/tsdown-config": "workspace:*",

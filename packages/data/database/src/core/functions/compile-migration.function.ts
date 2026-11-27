@@ -5,10 +5,12 @@
  *          migration and writes the ordered files; `usePostgres` applies its output in tests.
  * Boundary: pure: no database connection, no file access. It enforces the rules visible in one migration (explicit
  *           nullability and comments, expand-only column adds, online indexes, approved extensions, stated raw
- *           inverses); ordering across members, the foreign-key-target check and the step hashes are gen's.
+ *           inverses); ordering across members, the foreign-key-target check and the step hashes are gen's. With
+ *           `frozen` (a migration gen has locked) an authoring rule (explicit nullability and comments) is returned in
+ *           `warnings` instead of thrown, and the steps are those the migration compiled to when it was locked.
  * Runtime: node
  * Governing contract: ADR 0159 (decisions 1 to 3; the 2026-10-23 and 2026-10-24 notes); ADR 0160; ADR 0294
- *                     (decision 20: a Postgres schema per module).
+ *                     (decision 20: a Postgres schema per module); STA-2160 (frozen migrations).
  */
 import { kindOf } from "@stackra/container";
 
@@ -38,8 +40,13 @@ export function compileMigration(type: MigrationClass, options: CompileOptions):
     options.publicIds === "uuid" ? "uuid" : PUBLIC_ID_TEXT,
   );
   (Reflect.construct(type, []) as MigrationBase).up(schema);
-  return {
-    after: (kind.options["after"] ?? []) as readonly MigrationId[],
-    steps: schema.compile(options.schema, options.createsSchema ?? false),
-  };
+  const after = (kind.options["after"] ?? []) as readonly MigrationId[];
+  if (options.frozen !== true)
+    return { after, steps: schema.compile(options.schema, options.createsSchema ?? false) };
+  // A frozen migration compiles as it was locked: an authoring rule a later version added only warns (STA-2160).
+  const warnings: string[] = [];
+  const steps = schema.compile(options.schema, options.createsSchema ?? false, (rule) => {
+    warnings.push(rule);
+  });
+  return { after, steps, warnings };
 }

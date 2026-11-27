@@ -36,6 +36,9 @@
   build scripts, tests, stories, e2e). Spell the return type of every exported function and public class member:
   `ReactElement` for a component, the base's node type for a panel override, an object type of resources for a
   Pulumi helper. Never infer the public type of a package.
+- STA-2582: `react/no-danger` is at error in `**/*.mail.tsx`, in the last override so nothing turns it off. A mail
+  body puts tenant or client HTML in through `useMail().richText` (sanitized by `@stackra/csp`), never raw; keep the
+  rule and `no-danger-mail.test.ts` together.
 - Secrets: forbidden.
 
 ## PII

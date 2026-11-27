@@ -3,7 +3,8 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/config, which has several public files, until `stackra gen`
  *          writes the entry barrels (STA-339). The old `./env` entry is folded in (owner Q4).
  * Boundary: names each re-export and declares nothing. `MigrationRunner` is @stackra/contracts' (owner Q2). The
- *           layering internals (`layerConfig`, `sealConfig`, `configRoot`) stay internal.
+ *           layering internals (`layerConfig`, `sealConfig`, `configRoot`) stay internal. The running environment's
+ *           one reader (`readEnvironment`, `StackraEnvironment`, `isDeployedEnvironment`) lives here (STA-2844).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 15); the STA-347 stand-in barrel decision; ADR 0127 2026-10-24 note.
  */
@@ -13,16 +14,21 @@ export { SignerConfig } from "#config/signer.config";
 export { Config } from "#core/bases/config.base";
 export { AWS_SECRETS_MANAGER_CONFIG_SCHEMA as AwsSecretsManagerConfig$ } from "#core/constants/aws-secrets-manager-config-schema.constant";
 export { env } from "#core/constants/env.constant";
+export { ENVIRONMENT_VARIABLE } from "#core/constants/environment-variable.constant";
+export { SAFETY_CRITICAL_VARIABLES } from "#core/constants/safety-critical-variables.constant";
 export { SECRETS_CONFIG_SCHEMA as SecretsConfig$ } from "#core/constants/secrets-config-schema.constant";
 export { SIGNER_CONFIG_SCHEMA as SignerConfig$ } from "#core/constants/signer-config-schema.constant";
 export { Secret } from "#core/decorators/secret.decorator";
 export { EphemeralSignerDriver } from "#core/drivers/ephemeral-signer.driver";
 export { KmsSignerDriver } from "#core/drivers/kms-signer.driver";
 export { MemorySecretStoreDriver } from "#core/drivers/memory-secret-store.driver";
+export { StackraEnvironment } from "#core/enums/stackra-environment.enum";
 export { ConfigInvalidError } from "#core/errors/config-invalid.error";
 export { buildConfig } from "#core/functions/build-config.function";
 export { configKey } from "#core/functions/config-key.function";
 export { hydrateEnv } from "#core/functions/hydrate-env.function";
+export { isDeployedEnvironment } from "#core/functions/is-deployed-environment.function";
+export { readEnvironment } from "#core/functions/read-environment.function";
 export { AwsSecretsManagerOptions } from "#core/schemas/aws-secrets-manager-options.schema";
 export { SecretsOptions } from "#core/schemas/secrets-options.schema";
 export { SignerOptions } from "#core/schemas/signer-options.schema";
@@ -35,4 +41,5 @@ export type { ConfigValues } from "#core/types/config-values.type";
 export type { EnvDerivations } from "#core/types/env-derivations.type";
 export type { EnvMap } from "#core/types/env-map.type";
 export type { EnvValue } from "#core/types/env-value.type";
+export type { PlatformEnvironment } from "#core/types/platform-environment.type";
 export type { PublicPart } from "#core/types/public-part.type";
