@@ -9,7 +9,8 @@
  * Boundary: stateless; the keys come from the bound `EdgeSigningKeys` and the seen ids from the bound `EdgeNonceStore`
  *           (both configuration: the driver is chosen by wiring). Every failure is one `EdgeSignatureInvalidError`.
  *           The nonce is claimed only after the signature verifies, so unsigned traffic cannot fill the store. Replays
- *           are refused per instance while the nonce store is the memory driver. The validity window is a getter a host
+ *           are refused per instance with the `memory` nonce store and across every instance with `cache` (a shared
+ *           `Cache.add`); a store that cannot claim rejects the check, never lets it through. The validity window is a getter a host
  *           overrides (ADR 0306). Rate limits, CSRF and the later checks of the order are other guards and the actions
  *           pipeline, not this one; a request with no edge header is authenticated there (ADR 0437 note of 2026-11-09).
  *           A verified request's signed tenant is recorded in `VERIFIED_EDGE_SCOPE`, keyed by the request.

@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit and type tests of `DatabaseConfig`: a configuration over `DatabaseConfigOptions` keyed `database`, built
  *          with its defaults and a runway values layer, refusing a timeout that is not a duration and a pool whose `min`
- *          is above its `max`, the read-your-writes window, and taking the deployment's region key.
+ *          is above its `max` or whose connection-gate `nesting` is below one, the read-your-writes window, and taking
+ *          the deployment's region key.
  * Boundary: test only.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0294 (decisions 19 and
@@ -64,6 +65,18 @@ describe("DatabaseConfig", () => {
       buildConfig(DatabaseConfig, {
         values: { pool: { max: 2, min: 3, idleTimeout: Duration.seconds(10) } },
       }),
+    ).toThrow(ConfigInvalidError);
+  });
+
+  it("takes the connection gate's wait and nesting, and refuses a nesting below one (STA-1716)", () => {
+    const pool = { max: 6, min: 0, idleTimeout: Duration.seconds(10) };
+    expect(
+      buildConfig(DatabaseConfig, {
+        values: { pool: { ...pool, acquireTimeout: Duration.seconds(5), nesting: 3 } },
+      }).pool,
+    ).toEqual({ ...pool, acquireTimeout: Duration.seconds(5), nesting: 3 });
+    expect(() =>
+      buildConfig(DatabaseConfig, { values: { pool: { ...pool, nesting: 0 } } }),
     ).toThrow(ConfigInvalidError);
   });
 

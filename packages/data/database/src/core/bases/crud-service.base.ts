@@ -81,6 +81,7 @@ import { columnOf } from "#core/functions/column-of.function";
 import { disposableIds } from "#core/functions/disposable-ids.function";
 import { entityCacheOf } from "#core/functions/entity-cache-of.function";
 import { filterCondition } from "#core/functions/filter-condition.function";
+import { holdConnection } from "#core/functions/hold-connection.function";
 import { filterOf } from "#core/functions/filter-of.function";
 import { holdLinksOf } from "#core/functions/hold-links-of.function";
 import { checkMetadata } from "#core/functions/check-metadata.function";
@@ -671,20 +672,26 @@ export abstract class CrudService<M extends object> extends Service implements R
         const model = this.model();
         const filter = await visibleFilter(model, where);
         const settings = await readRowSecuritySettings(this.em());
-        return this.em().transactional(
-          async (em) => {
-            await replayRowSecuritySettings(settings, (sql, params) =>
-              (em as EntityManager).execute(sql, params),
-            );
-            const row = await em.findOneOrFail(model, filter, {
-              failHandler: () => NotFoundError.create(),
-            });
-            this.checkVersion(row, options.expectedVersion);
-            em.assign(row as M, data as never);
-            await em.flush();
-            return row as M;
-          },
-          { propagation: TransactionPropagation.REQUIRES_NEW },
+        const outer = this.em();
+        return holdConnection(
+          outer,
+          () =>
+            outer.transactional(
+              async (em) => {
+                await replayRowSecuritySettings(settings, (sql, params) =>
+                  (em as EntityManager).execute(sql, params),
+                );
+                const row = await em.findOneOrFail(model, filter, {
+                  failHandler: () => NotFoundError.create(),
+                });
+                this.checkVersion(row, options.expectedVersion);
+                em.assign(row as M, data as never);
+                await em.flush();
+                return row as M;
+              },
+              { propagation: TransactionPropagation.REQUIRES_NEW },
+            ),
+          true,
         );
       }
       const row = await this.findOneOrFail(where);
@@ -895,26 +902,34 @@ export abstract class CrudService<M extends object> extends Service implements R
   /**
    * Runs `work` now on its own entity manager: in a savepoint of the caller's transaction, or one of its own. A
    * transaction of its own runs on another connection, so the caller's row-security settings (scope, tenant) are
-   * replayed in it first, as `Database.transaction` does with `requiresNew` (STA-2565).
+   * replayed in it first, as `Database.transaction` does with `requiresNew` (STA-2565), and it waits for its place in
+   * the pool's `ConnectionGate` (STA-1716).
    */
   private async writeNow<T>(
     options: Pick<TransactionOptions, "requiresNew">,
     work: (em: EntityManager) => Promise<T>,
   ): Promise<T> {
     const settings = options.requiresNew === true ? await readRowSecuritySettings(this.em()) : [];
-    return this.em().transactional(
-      async (em) => {
-        await replayRowSecuritySettings(settings, (sql, params) =>
-          (em as EntityManager).execute(sql, params),
-        );
-        return work(em as EntityManager);
-      },
-      {
-        propagation:
-          options.requiresNew === true
-            ? TransactionPropagation.REQUIRES_NEW
-            : TransactionPropagation.NESTED,
-      },
+    const outer = this.em();
+    // a transaction on a connection of its own waits for its place in the pool's gate first (STA-1716)
+    return holdConnection(
+      outer,
+      () =>
+        outer.transactional(
+          async (em) => {
+            await replayRowSecuritySettings(settings, (sql, params) =>
+              (em as EntityManager).execute(sql, params),
+            );
+            return work(em as EntityManager);
+          },
+          {
+            propagation:
+              options.requiresNew === true
+                ? TransactionPropagation.REQUIRES_NEW
+                : TransactionPropagation.NESTED,
+          },
+        ),
+      options.requiresNew === true,
     );
   }
 

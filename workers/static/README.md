@@ -1,6 +1,6 @@
 # @figentra/worker-static
 
-Stackra's hosted static files: one Cloudflare Worker (`stackra-static`) with static assets only and no Worker script
+Stackra's hosted static files: one Cloudflare Worker (`stackra-static`) that serves static assets
 ([ADR 0284](../../apps/docs/src/docs/adr/0284-hosted-static-files-one-cloudflare-static-assets-worker.mdx)). It serves
 `https://static.stackra.figentra.com/`. Each kind of file has its own first path segment: `/schemas/` today, more
 kinds (CDN files, install scripts) later in the same member. It sits beside the other Stackra hosts on the
@@ -26,6 +26,11 @@ The build reads the JSON Schemas in `tools/schemas/*.schema.json` (STA-305) at t
 Every response carries `Access-Control-Allow-Origin: *`. Each published copy has `$id` rewritten to its own URL, so a
 pinned version never resolves references against `latest`. Headers come from a generated `_headers` file, which
 Cloudflare applies to static assets.
+
+One path runs a Worker script (`src/worker/main.ts`, `run_worker_first`): `GET /-/version` answers
+`{ "version": "<id>" }` and `x-stackra-version: <id>`, the id of the Worker version that serves (the
+`CF_VERSION_METADATA` binding), uncached. Runway's deploy smoke reads it at 0% and at every promotion step, so a
+smoke that reaches the old version fails instead of passing (STA-2786).
 
 People who open the host in a browser get one branded Stackra page ("Nothing to see here", a link to the docs, the
 legal footer): at `/`, and as the 404 body for any unknown path (`not_found_handling: "404-page"`). It lists no

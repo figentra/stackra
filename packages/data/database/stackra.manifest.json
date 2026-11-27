@@ -23,6 +23,13 @@
       "class": "AppendOnlyWriteError"
     },
     {
+      "code": "connection_pool_exhausted",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "database",
+      "class": "ConnectionPoolExhaustedError"
+    },
+    {
       "code": "constraint_violated",
       "kind": "validation",
       "category": "validation",

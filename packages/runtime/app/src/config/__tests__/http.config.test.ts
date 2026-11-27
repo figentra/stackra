@@ -1,10 +1,12 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `HttpConfig`: keyed `app.http`, built with a 1 MiB body cap, a host override, a zero cap
- *          refused; the shipped schema's default equals `HttpOptions`' initializer.
+ * Purpose: unit tests of `HttpConfig`: keyed `app.http`, built with a 1 MiB body cap and a 20-second drain deadline,
+ *          a host override of each, a zero cap and a drain deadline outside 1 to 600 seconds refused; the shipped
+ *          schema's defaults equal `HttpOptions`' initializers.
  * Boundary: test only.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19, 20 and 26); ADR 0237 (STA-2577 note).
+ * Governing contract: ADR 0022 (test placement); ADR 0294 (decisions 19, 20 and 26); ADR 0237 (STA-2577 note); ADR
+ *                     0143 (decision 3: draining timeouts).
  */
 import { buildConfig, ConfigInvalidError, configKey } from "@stackra/config";
 import { describe, expect, it } from "@stackra/testing";
@@ -34,6 +36,24 @@ describe("HttpConfig", () => {
       override maxBodyBytes = 0;
     }
     expect(() => buildConfig(ZeroHttpConfig)).toThrow(ConfigInvalidError);
+  });
+
+  it("bounds the drain at 20 seconds by default", () => {
+    expect(buildConfig(BaseHttpConfig).drainTimeoutSeconds).toBe(20);
+  });
+
+  it("takes a host's drain deadline", () => {
+    class HttpConfig extends BaseHttpConfig {
+      override drainTimeoutSeconds = 45;
+    }
+    expect(buildConfig(HttpConfig).drainTimeoutSeconds).toBe(45);
+  });
+
+  it.each([0, 601, 1.5])("refuses a drain deadline of %s seconds", (seconds) => {
+    class OutOfRangeHttpConfig extends BaseHttpConfig {
+      override drainTimeoutSeconds = seconds;
+    }
+    expect(() => buildConfig(OutOfRangeHttpConfig)).toThrow(ConfigInvalidError);
   });
 
   it("ships a schema default equal to the shape's initializer", () => {

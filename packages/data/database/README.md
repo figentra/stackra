@@ -404,8 +404,10 @@ const page = await book.list({ after: lastId, limit: 500 });
 
 `PostgresIdempotencyStoreDriver` and `PostgresRateLimitStoreDriver` are the durable drivers (name `postgres`) of
 `@stackra/actions`' `IdempotencyStore` and `RateLimitStore` ports, for a deployment that runs no Valkey (ADR 0396).
-Their tables come from `database.0002_create_action_store_tables`; each call commits in its own transaction, so a
-claim holds before the action's unit of work starts. Selecting them in runway (`config.actions.stores`) needs
+Their tables come from `database.0002_create_action_store_tables`. The idempotency store joins the running
+transaction (ADR 0495 notes of 2026-11-01 and 2026-11-26): the pipeline claims the key and writes its result inside the
+call's transaction, so the result commits with the action's writes or not at all, and a concurrent claim of the same
+key waits for it. A held key lapses after its 15-minute lease; a done key replays for the window. Selecting them in runway (`config.actions.stores`) needs
 `@stackra/actions` to list `postgres` among its store driver names.
 
 ## Cache tables on Postgres
@@ -728,15 +730,27 @@ outermost transaction ends. The migration runner keeps its own session timeouts.
 `pool` in the same config is the connection pool of one instance (ADR 0473), passed by the boot as
 `PostgresDatabaseDriver.connect({ url, pool })` and used for the primary and each replica:
 
-| Field         | Default | Meaning                                            |
-| ------------- | ------- | -------------------------------------------------- |
-| `max`         | `10`    | The most connections this instance opens           |
-| `min`         | `0`     | The connections kept open while idle               |
-| `idleTimeout` | `PT10S` | How long an idle connection above `min` stays open |
+| Field            | Default | Meaning                                                                         |
+| ---------------- | ------- | ------------------------------------------------------------------------------- |
+| `max`            | `10`    | The most connections this instance opens                                        |
+| `min`            | `0`     | The connections kept open while idle                                            |
+| `idleTimeout`    | `PT10S` | How long an idle connection above `min` stays open                              |
+| `acquireTimeout` | `PT30S` | How long a transaction waits for its place before `connection_pool_exhausted`   |
+| `nesting`        | `4`     | The deepest chain of connections one unit holds at once (the gate keeps places) |
 
 The service's runway `database.poolBudget` is the connections all its instances may hold together. The deploy hands
 each instance its share as `DATABASE_POOL_MAX` (`poolMaxOf` in `@stackra/runway`: the budget divided by the group's
-`instances.max`), and the generated boot puts it over `pool.max`.
+`instances.max`, refused below two), and the generated boot puts it over `pool.max`.
+
+A call holds a connection for its isolation transaction (ADR 0495) while a `requiresNew` store opens another (the
+iam policy snapshot, the Postgres rate limit, the access log, a webhook attempt), and a relay tick can nest a delivery,
+an inbox receipt and that call's store under it. So every transaction that takes a connection of its own passes the
+pool's connection gate first (STA-1716): of `max` connections, `max - (nesting - 1)` units run at the top level at once
+and one place per deeper level stays for the transactions they open, so a chain no deeper than `nesting` always
+finishes, however many calls arrive. A chain deeper than `max` is refused at once (`RangeError`), since no pool of that
+size could serve it; a wait past `acquireTimeout` is refused with the retryable `ConnectionPoolExhaustedError` (503).
+Size a budget for the concurrency you want plus `nesting - 1` per instance. A savepoint takes no connection and is never
+gated; neither is a query outside a transaction, which holds nothing while it waits.
 
 In production the runtime URL goes through the cloud's managed proxy (RDS Proxy on AWS, the Cloud SQL connector on
 GCP). Tools that hold session state (the migration and seed runners: a session advisory lock and session `SET`) read

@@ -3,13 +3,14 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the duplicate dev port check (`checkPorts`, STA-863), the requirement driver check (`checkRequires`, STA-2049), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the requirement driver check (`checkRequires`, STA-2049), the runtime-only config check (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, STA-2844), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
  *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the approved Postgres extensions (`PostgresExtension`,
  *          `APPROVED_POSTGRES_EXTENSIONS`, ADR 0160), the `SmokeDriver` port of the smoke
- *          step (STA-265), their enums, errors and types.
+ *          step (STA-265), the Worker version proof (`WORKER_VERSION`, `WorkerVersionProof`, `servedVersionProblem`,
+ *          STA-2786), their enums, errors and types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
  * Runtime: isomorphic
@@ -19,6 +20,7 @@ export { RunwayConfig } from "#config/runway.config";
 export { APPROVED_POSTGRES_EXTENSIONS } from "#core/constants/approved-postgres-extensions.constant";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
 export { TIER_SIZES } from "#core/constants/tier-sizes.constant";
+export { WORKER_VERSION } from "#core/constants/worker-version.constant";
 export { AppleCapability } from "#core/enums/apple-capability.enum";
 export { CacheEviction } from "#core/enums/cache-eviction.enum";
 export { CacheMode } from "#core/enums/cache-mode.enum";
@@ -36,6 +38,7 @@ export { RegionKey } from "#core/enums/region-key.enum";
 export { RunwayEnvironment } from "#core/enums/runway-environment.enum";
 export { RunwayKind } from "#core/enums/runway-kind.enum";
 export { WorkerPreset } from "#core/enums/worker-preset.enum";
+export { WorkerVersionProof } from "#core/enums/worker-version-proof.enum";
 export { TopologyMode } from "#core/enums/topology-mode.enum";
 export { RunwayDeployFailedError } from "#core/errors/runway-deploy-failed.error";
 export { RunwayInvalidError } from "#core/errors/runway-invalid.error";
@@ -52,6 +55,7 @@ export { environmentSizesOf } from "#core/functions/environment-sizes-of.functio
 export { surfaceHosts } from "#core/functions/surface-hosts.function";
 export { checkPorts } from "#core/functions/check-ports.function";
 export { checkRequires } from "#core/functions/check-requires.function";
+export { checkRuntimeOnlyConfig } from "#core/functions/check-runtime-only-config.function";
 export { checkRegions } from "#core/functions/check-regions.function";
 export { checkZoneOwners } from "#core/functions/check-zone-owners.function";
 export { deploy } from "#core/functions/deploy.function";
@@ -66,7 +70,9 @@ export { productOf } from "#core/functions/product-of.function";
 export { promote } from "#core/functions/promote.function";
 export { regionsOf } from "#core/functions/regions-of.function";
 export { rollback } from "#core/functions/rollback.function";
+export { runtimeOnlyFields } from "#core/functions/runtime-only-fields.function";
 export { diffWorkerSettings } from "#core/functions/diff-worker-settings.function";
+export { servedVersionProblem } from "#core/functions/served-version-problem.function";
 export { renderWranglerConfig } from "#core/functions/render-wrangler-config.function";
 export { runwayJsonSchema } from "#core/functions/runway-json-schema.function";
 export { unusedCloudOptIns } from "#core/functions/unused-cloud-opt-ins.function";
@@ -109,6 +115,7 @@ export type { RootRunway } from "#core/types/root-runway.type";
 export type { RunwayDocument } from "#core/types/runway-document.type";
 export type { RunwayFacts } from "#core/types/runway-facts.type";
 export type { RunwayIssue } from "#core/types/runway-issue.type";
+export type { RuntimeOnlyField } from "#core/types/runtime-only-field.type";
 export type { RunwayRegion } from "#core/types/runway-region.type";
 export type { SmokeResult } from "#core/types/smoke-result.type";
 export type { SmokeSubject } from "#core/types/smoke-subject.type";
