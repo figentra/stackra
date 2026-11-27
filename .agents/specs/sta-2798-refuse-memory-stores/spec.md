@@ -118,6 +118,7 @@ None.
 
 - 2026-11-26 → Clarified (the PR's diff and its independent review)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Clarified (the CTO's verdict: move onto the STA-2844 reader; STA-2844 merged into this branch)
 - 2026-11-26 → Implementing (rebuilt on `readEnvironment` and `isDeployedEnvironment`; awaiting the CTO's approval)
