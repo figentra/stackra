@@ -3,15 +3,20 @@
  * Purpose: unit tests of `toolCommand`: its usage lists the task's options; in a member it runs gen first (not for
  *          lint, not without `stackra.config.ts`) and stops on a refusal; a package with no entry and no tsdown config
  *          has nothing to build; at the workspace root it fans out through
- *          `turbo run <task>` (`test:e2e` for the e2e tier) and refuses `--target`; a Fumadocs docs site's `lint` builds
- *          the site and then fails on a broken link, naming the page (STA-2026); a service's `dev` gets the dev compose's
- *          variables with the dev-secrets file's values over them, and no placeholder AWS keys when the run has an AWS
- *          credential of its own, the dev-secrets file's included (STA-2664).
+ *          `turbo run <task>` (`test:e2e` and `test:wiring` for those tiers) and refuses `--target`; a Fumadocs docs
+ *          site's `lint` builds the site and then fails on a broken link, naming the page (STA-2026); a service's `dev`
+ *          gets the dev compose's variables with the dev-secrets file's values over them, and no placeholder AWS keys
+ *          when the run has an AWS credential of its own, the dev-secrets file's included (STA-2664); `--tier wiring`
+ *          starts `encore test` with the tier in `STACKRA_TEST_TIER`, and the `stackra test` Encore runs reads it there
+ *          and runs the generated suite without generating again (STA-2838); the variable is refused outside Encore and
+ *          in a run that would start `encore test` a second time, and an `encore test` that exits 0 without the suite
+ *          having started fails, and the outer `encore test` runs with `encore.app` local-only, gen's file back
+ *          afterwards.
  * Boundary: test only; `runGen` and `runProcess` are replaced by fakes, so nothing is generated or started.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decision 5); the task vocabulary rule; STA-2664 (item 6).
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -40,6 +45,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -54,6 +60,16 @@ const context = (values: CliContext["values"] = {}): CliContext => ({
 
 const pkg = () =>
   writeFileSync(join(root, "stackra.config.ts"), "export default definePackage({});\n");
+
+/** A service gen wrote the wiring tier for. */
+const wiringService = () => {
+  writeFileSync(join(root, "stackra.config.ts"), "export default defineService({});\n");
+  mkdirSync(join(root, ".stackra"));
+  writeFileSync(join(root, ".stackra", "vitest.wiring.config.ts"), "");
+};
+
+/** The marker the inner wiring run writes. */
+const marker = () => join(root, ".stackra", "encore-wiring.ran");
 
 describe("toolCommand", () => {
   it("names the task and lists its options in the usage", () => {
@@ -198,6 +214,99 @@ describe("toolCommand", () => {
     expect(await toolCommand("lint", "Lint").run(context())).toBe(0);
   });
 
+  it("starts encore test for a service's wiring tier, and runs the suite from inside without generating (STA-2838)", async () => {
+    wiringService();
+    vi.stubEnv("STACKRA_TEST_TIER", "");
+    // `encore test` runs the inner `stackra test`, which marks the suite as started.
+    spawn.mockImplementation(async () => {
+      writeFileSync(marker(), "");
+      return 0;
+    });
+    expect(await toolCommand("test", "Test").run(context({ tier: "wiring" }))).toBe(0);
+    expect(gen).toHaveBeenCalledTimes(1);
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "encore", args: ["test"], cwd: root, env: { STACKRA_TEST_TIER: "wiring" } },
+      expect.anything(),
+    );
+    // What `encore test` starts: the member's `test` script, with the tier and Encore's runtime configuration.
+    vi.stubEnv("STACKRA_TEST_TIER", "wiring");
+    vi.stubEnv("ENCORE_RUNTIME_CONFIG", "from-encore");
+    rmSync(marker());
+    spawn.mockReset().mockResolvedValue(0);
+    expect(await toolCommand("test", "Test").run(context())).toBe(0);
+    expect(gen).toHaveBeenCalledTimes(1);
+    expect(existsSync(marker())).toBe(true);
+    expect(spawn).toHaveBeenLastCalledWith(
+      {
+        command: "vitest",
+        args: ["run", "--config", ".stackra/vitest.wiring.config.ts"],
+        cwd: root,
+      },
+      expect.anything(),
+    );
+    // The tier on the command line wins over the variable.
+    await toolCommand("test", "Test").run(context({ tier: "unit" }));
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "vitest", args: ["run"], cwd: root },
+      expect.anything(),
+    );
+  });
+
+  it("refuses a tier from STACKRA_TEST_TIER outside encore test, so it never starts encore test again (STA-2838)", async () => {
+    wiringService();
+    vi.stubEnv("STACKRA_TEST_TIER", "wiring");
+    for (const name of [
+      "ENCORE_RUNTIME_CONFIG",
+      "ENCORE_RUNTIME_CONFIG_PATH",
+      "ENCORE_APP_META",
+      "ENCORE_APP_META_PATH",
+    ])
+      vi.stubEnv(name, "");
+    await expect(toolCommand("test", "Test").run(context())).rejects.toThrow(
+      "STACKRA_TEST_TIER=wiring is set, but this is not the test command of `encore test`",
+    );
+    expect(spawn).not.toHaveBeenCalled();
+    expect(gen).not.toHaveBeenCalled();
+    // A run that carries the variable never starts a second `encore test`, even when --tier names the tier.
+    await expect(toolCommand("test", "Test").run(context({ tier: "wiring" }))).rejects.toThrow(
+      "STACKRA_TEST_TIER is already set",
+    );
+    expect(spawn).not.toHaveBeenCalled();
+  });
+
+  it("runs the outer encore test local-only, then puts gen's encore.app back (STA-2838)", async () => {
+    wiringService();
+    vi.stubEnv("STACKRA_TEST_TIER", "");
+    const generated = `${JSON.stringify({ id: "acme-platform", lang: "typescript" }, null, 2)}\n`;
+    writeFileSync(join(root, "encore.app"), generated);
+    let during: unknown;
+    spawn.mockImplementation(async () => {
+      during = JSON.parse(readFileSync(join(root, "encore.app"), "utf8"));
+      writeFileSync(marker(), "");
+      return 0;
+    });
+    expect(await toolCommand("test", "Test").run(context({ tier: "wiring" }))).toBe(0);
+    expect(during).toEqual({ id: "", lang: "typescript" });
+    expect(readFileSync(join(root, "encore.app"), "utf8")).toBe(generated);
+  });
+
+  it("fails an encore test that exits 0 without the wiring suite having started (STA-2838)", async () => {
+    wiringService();
+    vi.stubEnv("STACKRA_TEST_TIER", "");
+    // A stale marker from an earlier run does not count: the outer run removes it first.
+    writeFileSync(marker(), "");
+    const { io, output } = captureIo();
+    expect(await toolCommand("test", "Test").run({ ...context({ tier: "wiring" }), io })).toBe(1);
+    expect(spawn).toHaveBeenCalledWith(
+      expect.objectContaining({ command: "encore", args: ["test"] }),
+      expect.anything(),
+    );
+    expect(output()).toContain("encore test exited 0, but the wiring suite never started");
+    // Encore's own failure is passed through as it is.
+    spawn.mockResolvedValue(3);
+    expect(await toolCommand("test", "Test").run(context({ tier: "wiring" }))).toBe(3);
+  });
+
   it("fans out through turbo at the workspace root", async () => {
     writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
     await toolCommand("build", "Build").run(context());
@@ -208,6 +317,11 @@ describe("toolCommand", () => {
     await toolCommand("test", "Test").run(context({ tier: "e2e" }));
     expect(spawn).toHaveBeenLastCalledWith(
       { command: "turbo", args: ["run", "test:e2e"], cwd: root },
+      expect.anything(),
+    );
+    await toolCommand("test", "Test").run(context({ tier: "wiring" }));
+    expect(spawn).toHaveBeenLastCalledWith(
+      { command: "turbo", args: ["run", "test:wiring"], cwd: root },
       expect.anything(),
     );
     await expect(toolCommand("dev", "Dev").run(context({ target: "ios" }))).rejects.toThrow(

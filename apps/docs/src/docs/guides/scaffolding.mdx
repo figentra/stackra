@@ -20,7 +20,8 @@ pnpm install
 cd services/demo && stackra gen && stackra test
 ```
 
-`--area` is required (`app`, `admin`, `public` or `platform`): it sets the service's auth exposure, so it is never defaulted (ADR 0082). `--data` adds the database test peers, `@stackra/testing`, an example module (`src/modules/notes/`: a model, its migration, a unit test on PGlite and one `.int.test.ts`) and a `test:int` script (`stackra test --tier int`, which needs Docker). Writing a service writes no tool config: gen writes its Vitest, tsdown and integration-tier configs into `.stackra/` on its first run.
+`--area` is required (`app`, `admin`, `public` or `platform`): it sets the service's auth exposure, so it is never defaulted (ADR 0082). `--data` adds the database test peers, `@stackra/testing`, an example module (`src/modules/notes/`: a model, its migration, a unit test on PGlite and one `.int.test.ts`) and a `test:int` script (`stackra test --tier int`, which needs Docker). Every service gets a `test:wiring` script
+(`stackra test --tier wiring`): the Encore wiring suite gen writes, run under `encore test` (needs Encore and Docker). Writing a service writes no tool config: gen writes its Vitest, tsdown and integration-tier configs into `.stackra/` on its first run.
 
 ## Kinds
 

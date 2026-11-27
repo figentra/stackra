@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `resolveTool`: the tool per task, layout and target, the generated `.stackra/` config passed
  *          when it exists, Mintlify in `.stackra/site/` for a docs app with `docs.config.ts` (STA-1316), React Router
- *          there once gen assembled a Fumadocs site and its dependencies are installed (STA-2026), and the
- *          refusals (unknown target or tier as usage errors, no tool as a plain error).
+ *          there once gen assembled a Fumadocs site and its dependencies are installed (STA-2026), a service's
+ *          wiring tier (`encore test` outside, Vitest with the generated config inside, STA-2838), and the refusals
+ *          (unknown target or tier as usage errors, no tool as a plain error).
  * Boundary: test only; writes throwaway members in the OS temp directory.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0295 (decisions 2 and 5); ADR 0182; ADR 0284.
@@ -244,6 +245,28 @@ describe("resolveTool", () => {
     expect(() => resolveTool("test", member("app", ["web"]), { tier: "int" })).toThrow(
       "integration tests run in a package or a service",
     );
+  });
+
+  it("runs a service's Encore wiring suite: encore test outside, Vitest with gen's config inside (STA-2838)", () => {
+    expect(() => resolveTool("test", member("service"), { tier: "wiring" })).toThrow(
+      "gen wrote no .stackra/vitest.wiring.config.ts",
+    );
+    generated("vitest.wiring.config.ts");
+    expect(resolveTool("test", member("service"), { tier: "wiring" })).toEqual({
+      command: "encore",
+      args: ["test"],
+      cwd: root,
+      env: { STACKRA_TEST_TIER: "wiring" },
+    });
+    expect(resolveTool("test", member("service"), { tier: "wiring", encoreTest: true })).toEqual({
+      command: "vitest",
+      args: ["run", "--config", ".stackra/vitest.wiring.config.ts"],
+      cwd: root,
+    });
+    for (const layout of ["package", "app", "worker"] as const)
+      expect(() => resolveTool("test", member(layout), { tier: "wiring" })).toThrow(
+        "the Encore wiring suite runs in a service",
+      );
   });
 
   it("refuses an unknown target or tier as a usage error", () => {

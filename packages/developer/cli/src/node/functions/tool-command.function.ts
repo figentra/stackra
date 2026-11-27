@@ -12,27 +12,40 @@
  *          A package gen wrote no entry for (a fresh `stackra new package`, nothing under `src/` yet) and with no
  *          tsdown config of its own has nothing to build: `build` says so and exits 0 instead of starting tsdown. A
  *          service has nothing to build either: Encore builds it at deploy (ADR 0091).
+ *          `test --tier wiring` (STA-2838) starts `encore test` in a service; Encore runs the member's `test` script,
+ *          this command again, which reads the tier from `STACKRA_TEST_TIER` and, inside Encore, runs the generated
+ *          wiring suite without generating again. At the root it runs `turbo run test:wiring`. The variable counts only
+ *          inside `encore test` (anywhere else it is refused, so a leaked or exported value never starts `encore test`
+ *          again), a run that already carries it never starts another `encore test`, and an `encore test` that exits 0
+ *          without the inner run having started the suite (`WIRING_RAN_MARKER`) fails. The outer `encore test` runs the
+ *          app local-only (`withLocalEncoreApp`), so it needs no Encore Cloud login.
  * Boundary: starts at most one tool (two in sequence for a Mintlify docs app's `lint`); a gen refusal stops before
  *           the tool and exits 1.
  * Runtime: node
  * Governing contract: ADR 0295 (decision 5: tools read the configs gen writes); the task vocabulary rule (root
  *                     commands run `turbo run <task>`); ADR 0182 (test tiers).
  */
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { DOCS_CONFIG_FILE, formatGenError } from "@stackra/gen";
 import { watchDocsSite } from "@stackra/gen/node";
 
+import { TEST_TIER_VARIABLE } from "#node/constants/test-tier-variable.constant";
+import { WIRING_RAN_MARKER } from "#node/constants/wiring-ran-marker.constant";
 import { devInfraEnv } from "#node/dev-infra/functions/dev-infra-env.function";
 import { devSecretEnv } from "#node/dev-secrets/functions/dev-secret-env.function";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { checkDocsLinks } from "#node/functions/check-docs-links.function";
+import { insideEncoreTest } from "#node/functions/inside-encore-test.function";
+import { withLocalEncoreApp } from "#node/functions/local-encore-app.function";
 import { readMember } from "#node/functions/read-member.function";
 import { resolveTool } from "#node/functions/resolve-tool.function";
 import { runGen } from "#node/functions/run-gen.function";
 import { runProcess } from "#node/functions/run-process.function";
 import type { CliCommand } from "#node/types/cli-command.type";
+import type { CliIo } from "#node/types/cli-io.type";
+import type { ToolRun } from "#node/types/tool-run.type";
 import type { ToolTask } from "#node/types/tool-task.type";
 
 /** The member-root config names tsdown finds itself. */
@@ -61,6 +74,42 @@ function hasTsdownConfig(cwd: string): boolean {
 }
 
 /**
+ * Runs the wiring tier's tool: from inside `encore test`, marks the suite as started and runs it; from outside, starts
+ * `encore test` once and fails an exit 0 after which the inner run never marked the suite as started.
+ */
+async function runWiring(
+  tool: ToolRun,
+  cwd: string,
+  encoreTest: boolean,
+  envTier: string | undefined,
+  io: CliIo,
+): Promise<number> {
+  const marker = join(cwd, WIRING_RAN_MARKER);
+  if (encoreTest) {
+    mkdirSync(dirname(marker), { recursive: true });
+    writeFileSync(marker, `${new Date().toISOString()}\n`);
+    return runProcess(tool, io);
+  }
+  // A run that already carries the variable was started by another wiring run: never a second `encore test`.
+  if (envTier !== undefined) {
+    throw new CliUsageError(
+      `${TEST_TIER_VARIABLE} is already set: this run was started by \`stackra test --tier wiring\`, which starts \`encore test\` once`,
+    );
+  }
+  rmSync(marker, { force: true });
+  // Local-only: the suite needs nothing from Encore Cloud, and a linked id stops a machine that is not logged in.
+  const code = await withLocalEncoreApp(cwd, () => runProcess(tool, io));
+  if (code !== 0) return code;
+  if (!existsSync(marker)) {
+    io.err(
+      `encore test exited 0, but the wiring suite never started: the member's \`test\` script did not run \`stackra test\` with ${TEST_TIER_VARIABLE} inside Encore\n`,
+    );
+    return 1;
+  }
+  return 0;
+}
+
+/**
  * The command that runs `task`.
  *
  * @param task - the command name, also the Turborepo task.
@@ -78,20 +127,37 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
     options,
     async run({ cwd, values, io }) {
       const target = typeof values["target"] === "string" ? values["target"] : undefined;
-      const tier = typeof values["tier"] === "string" ? values["tier"] : undefined;
+      // `encore test` runs the member's `test` script with no argument, so the wiring tier reaches it by variable.
+      const flagTier = typeof values["tier"] === "string" ? values["tier"] : undefined;
+      const variable = task === "test" ? process.env[TEST_TIER_VARIABLE] : undefined;
+      const envTier = variable === undefined || variable === "" ? undefined : variable;
+      const insideEncore = insideEncoreTest(process.env);
+      // The variable is only how the outer run talks to the one `encore test` starts. Outside Encore it would start
+      // `encore test` again with the same variable, without end, so it is refused rather than obeyed.
+      if (flagTier === undefined && envTier !== undefined && !insideEncore) {
+        throw new CliUsageError(
+          `${TEST_TIER_VARIABLE}=${envTier} is set, but this is not the test command of \`encore test\`: unset it, or pass --tier`,
+        );
+      }
+      const tier = flagTier ?? envTier;
+      const encoreTest = task === "test" && tier === "wiring" && insideEncore;
 
       if (existsSync(join(cwd, "pnpm-workspace.yaml"))) {
         if (target !== undefined)
           throw new CliUsageError("--target picks one app's target; run it in the app");
-        if (tier !== undefined && tier !== "unit" && tier !== "e2e") {
-          throw new CliUsageError(`unknown tier: ${tier} (expected unit or e2e)`);
+        if (tier !== undefined && tier !== "unit" && tier !== "e2e" && tier !== "wiring") {
+          throw new CliUsageError(`unknown tier: ${tier} (expected unit, e2e or wiring)`);
         }
-        const turboTask = tier === "e2e" ? "test:e2e" : task;
+        const turboTask = tier === "e2e" || tier === "wiring" ? `test:${tier}` : task;
         return runProcess({ command: "turbo", args: ["run", turboTask], cwd }, io);
       }
 
       const docs = existsSync(join(cwd, DOCS_CONFIG_FILE));
-      if (docs || (task !== "lint" && existsSync(join(cwd, "stackra.config.ts")))) {
+      // Inside `encore test` the outer run has generated already, and Encore compiled what it wrote.
+      if (
+        !encoreTest &&
+        (docs || (task !== "lint" && existsSync(join(cwd, "stackra.config.ts"))))
+      ) {
         if (!(await runGen(cwd, { base: cwd }, io))) return 1;
       }
       const member = readMember(cwd);
@@ -103,7 +169,9 @@ export function toolCommand(task: ToolTask, summary: string): CliCommand {
         io.out(`nothing to build in ${cwd}: Encore builds a service at deploy\n`);
         return 0;
       }
-      const tool = resolveTool(task, member, { target, tier });
+      const tool = resolveTool(task, member, { target, tier, encoreTest });
+      if (task === "test" && tier === "wiring")
+        return runWiring(tool, cwd, encoreTest, envTier, io);
       if (docs && task === "lint") {
         const code = await runProcess(tool, io);
         if (code !== 0) return code;

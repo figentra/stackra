@@ -60,6 +60,8 @@ describe("serviceTemplate", () => {
   it("writes no tool config and no test:int without --data", () => {
     expect(paths(false).filter((path) => /(vitest|tsdown)[^/]*config/.test(path))).toEqual([]);
     expect(manifest(false).scripts["test:int"]).toBeUndefined();
+    // Every service runs its generated Encore wiring suite under `encore test` (STA-2838).
+    expect(manifest(false).scripts["test:wiring"]).toBe("stackra test --tier wiring");
     expect(manifest(false).devDependencies["testcontainers"]).toBeUndefined();
   });
 
@@ -76,6 +78,7 @@ describe("serviceTemplate", () => {
     expect(paths(true).filter((path) => /(vitest|tsdown)[^/]*config/.test(path))).toEqual([]);
     const pkg = manifest(true);
     expect(pkg.scripts["test:int"]).toBe("stackra test --tier int");
+    expect(pkg.scripts["test:wiring"]).toBe("stackra test --tier wiring");
     expect(Object.keys(pkg.devDependencies)).toEqual(
       expect.arrayContaining([
         "@electric-sql/pglite",

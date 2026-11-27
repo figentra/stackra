@@ -127,7 +127,7 @@ async function authenticate(
   {
     keys = TestKeys,
     principals = true,
-  }: { keys?: typeof MemoryJsonWebKeysDriver; principals?: boolean } = {},
+  }: { keys?: typeof MemoryJsonWebKeysDriver | null; principals?: boolean } = {},
 ): Promise<CallAuthData> {
   vi.stubEnv("STACKRA_BEARER_ISSUER", ISSUER);
   vi.stubEnv("STACKRA_BEARER_AUDIENCE", AUDIENCE);
@@ -137,7 +137,11 @@ async function authenticate(
     modules: { shop: { exports: [], dependsOn: [], type: ShopModule } },
     config: [{ key: "app.bearer", provide: BearerConfig }],
     drivers: [
-      { port: JsonWebKeys, key: "app.JsonWebKeys", candidates: { memory: async () => keys } },
+      ...(keys === null
+        ? []
+        : [
+            { port: JsonWebKeys, key: "app.JsonWebKeys", candidates: { memory: async () => keys } },
+          ]),
       ...(principals
         ? [
             {
@@ -293,6 +297,18 @@ describe(CallAuthenticator, () => {
     const refusal = await authenticate(
       { authorization: await bearer(serviceClaims) },
       { principals: false },
+    ).then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+    expect(isRefusal(refusal, BearerTokenInvalidError)).toBe(true);
+  });
+
+  it("refuses a malformed token as unauthenticated even with no key source bound (STA-2838)", async () => {
+    // The generated Encore wiring suite probes every guarded route with this token and expects 401, never a 500.
+    const refusal = await authenticate(
+      { authorization: "Bearer wiring.not-a.token" },
+      { keys: null },
     ).then(
       () => undefined,
       (error: unknown) => error,

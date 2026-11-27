@@ -21,7 +21,9 @@
  *           for a key, any refusal of the verifier, a forwarded token beside a key (a key never acts for a user), or no
  *           bound `ApiKeyVerifierService` (every key refused). Never Anonymous. An issuer, principal or key store that
  *           cannot be reached throws
- *           its own error (an outage, not a bad token). No token is ever logged or put in an error.
+ *           its own error (an outage, not a bad token). The key source is resolved only once a token is well formed
+ *           under a configured issuer, so a malformed token is refused even where no `JsonWebKeys` driver is bound.
+ *           No token is ever logged or put in an error.
  * Runtime: node
  * Governing contract: ADR 0209 (decision 3 and its 2026-11-07 amendment, point 5: one auth handler); ADR 0206
  *                     (decision 8: tokens verified by JWKS); ADR 0098 (the actor from the credential); ADR 0278 (as
@@ -152,13 +154,14 @@ export class CallAuthenticator {
    */
   private async actorOfToken(token: string): Promise<Actor> {
     const config = this.container.get(BearerConfig);
-    const keys = this.container.get(JsonWebKeys);
     const claims = await verifyBearerToken(token, {
       issuer: config.issuer,
       audience: config.audience,
       leewaySeconds: config.leewaySeconds,
       now: new Date(),
-      keys: (kid) => keys.find(kid),
+      // Resolved only for a well-formed token under a configured issuer: a malformed one is refused (401) even where
+      // no key source is bound (STA-2838).
+      keys: (kid) => this.container.get(JsonWebKeys).find(kid),
     });
     if (claims === undefined) throw BearerTokenInvalidError.create();
     // No bound driver knows no service: an empty store refuses every service token.

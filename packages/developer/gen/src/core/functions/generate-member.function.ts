@@ -6,7 +6,7 @@
  *          registrations, a service's boot and inbound webhook route, the cross-app inbox (`#stackra/inbox` and its
  *          Encore `api.raw` adapter, for a listener of a contract-only producer's event) and relay configuration
  *          (`#stackra/events-relay`, for a runway `events` block; STA-1910), a service's Encore service declaration and its `api()` endpoints per action and query (STA-2063), its Encore CronJobs, its Encore database (stackra-250), its HTTP adapter
- *          (CORS preflights and headers, STA-1385), broker-delivered
+ *          (CORS preflights and headers, STA-1385), its Encore wiring suite and the config that runs it (STA-2838), broker-delivered
  *          queue topics, integration event topics and (for a relay service) the subscriptions to every product topic, the public id prefixes, an app's route tables and blocks, its client tool table (`#stackra/client-tools`, ADR 0490), the public SDKs (TypeScript, Python and PHP) of the actions marked public, one generated client per consumed
  *          service (injected, listened to, or imported by any file, so an app's routes count), `#stackra/settings`
  *          (the setting keys of its settings classes, stackra-209), `#stackra/ui` (the class components' `Component`
@@ -80,7 +80,9 @@ import { formatJson } from "#core/functions/format-json.function";
 import { emitBlocks } from "#core/functions/emit-blocks.function";
 import { emitBoot } from "#core/functions/emit-boot.function";
 import { emitEncoreSqldbTypes } from "#core/functions/emit-encore-sqldb-types.function";
+import { emitEncoreWiringTest } from "#core/functions/emit-encore-wiring-test.function";
 import { emitIsolationTest } from "#core/functions/emit-isolation-test.function";
+import { emitWiringTierConfig } from "#core/functions/emit-wiring-tier-config.function";
 import { emitClients } from "#core/functions/emit-clients.function";
 import { emitClientTools } from "#core/functions/emit-client-tools.function";
 import { emitEncoreApi } from "#core/functions/emit-encore-api.function";
@@ -330,6 +332,9 @@ export function generateMember(
   // The BrokerMessage those topic files import, declared beside them: Encore cannot resolve it through a package's dist.
   const brokerMessage = emitEncoreBrokerMessage(ir, files);
   if (brokerMessage !== undefined) files.push(brokerMessage);
+  // The thin Encore suite over the files above and the config that runs it under `encore test` (ADR 0182 d3, STA-2838).
+  const wiringSuite = emitEncoreWiringTest(ir, manifest, files);
+  if (wiringSuite !== undefined) files.push(wiringSuite, emitWiringTierConfig(ir.package));
   files.push(
     ...clients.files,
     ...emitRoutes(ir),

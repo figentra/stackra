@@ -8,7 +8,9 @@
  *          `.stackra/site/` gen assembles, or in `src/` for a docs app not yet moved to that layout, STA-1316),
  *          and vitest, tsc
  *          and oxlint everywhere (`--tier int` runs the `.stackra/vitest.int.config.ts` gen writes for a member with an
- *          `.int.test.ts`). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
+ *          `.int.test.ts`; `--tier wiring` runs a service's generated Encore wiring suite: `encore test` from outside,
+ *          whose test command is the member's `stackra test` again, told the tier by `STACKRA_TEST_TIER`, and Vitest
+ *          with `.stackra/vitest.wiring.config.ts` from inside, STA-2838). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
  *          member-root config it finds itself.
  * Boundary: pure apart from checking which generated configs exist, whether a Fumadocs site's dependencies are
  *           installed, and reading a docs app's dev port from its `runway.yaml` (`environments.dev.port`, the one place
@@ -26,10 +28,12 @@ import {
   DOCS_CONFIG_FILE,
   DOCS_SITE_DIR,
   ENCORE_SERVICES_DIR,
+  ENCORE_WIRING_CONFIG,
   TYPECHECK_TSCONFIG,
 } from "@stackra/gen";
 import { parse } from "yaml";
 
+import { TEST_TIER_VARIABLE } from "#node/constants/test-tier-variable.constant";
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import type { Member } from "#node/types/member.type";
 import type { ToolRun } from "#node/types/tool-run.type";
@@ -42,14 +46,15 @@ const WEB_TARGETS = new Set(["web", "pwa"]);
 const NATIVE_TARGETS = new Set(["ios", "android"]);
 
 /** The test tiers a member command runs; the other tiers of ADR 0182 run under their own tasks. */
-const TIERS = new Set(["unit", "int", "e2e"]);
+const TIERS = new Set(["unit", "int", "e2e", "wiring"]);
 
 /**
  * The tool process for `task` in `member`.
  *
  * @param task - the command.
  * @param member - the member it runs in.
- * @param options - `target` picks one of an app's targets; `tier` picks the test tier (default `unit`).
+ * @param options - `target` picks one of an app's targets; `tier` picks the test tier (default `unit`);
+ *   `encoreTest` says the process runs as `encore test`'s test command (`insideEncoreTest`).
  * @throws CliUsageError when `target` is not one of the app's targets or `tier` is unknown.
  * @throws Error when no tool serves this task for this member, naming why.
  * @example
@@ -59,7 +64,11 @@ const TIERS = new Set(["unit", "int", "e2e"]);
 export function resolveTool(
   task: ToolTask,
   member: Member,
-  options: { readonly target?: string | undefined; readonly tier?: string | undefined },
+  options: {
+    readonly target?: string | undefined;
+    readonly tier?: string | undefined;
+    readonly encoreTest?: boolean | undefined;
+  },
 ): ToolRun {
   const { root, layout, targets } = member;
   const at = (command: string, args: readonly string[], cwd = root): ToolRun => ({
@@ -134,8 +143,21 @@ export function resolveTool(
     case "test": {
       const tier = options.tier ?? "unit";
       if (!TIERS.has(tier))
-        throw new CliUsageError(`unknown tier: ${tier} (expected unit, int or e2e)`);
+        throw new CliUsageError(`unknown tier: ${tier} (expected unit, int, e2e or wiring)`);
       if (tier === "unit") return at("vitest", ["run", ...config("vitest.config.ts")]);
+      if (tier === "wiring") {
+        // Gen writes the suite and this config for a service that runs as a generated Encore app; nobody authors one.
+        if (layout !== "service") return refuse("the Encore wiring suite runs in a service");
+        if (!existsSync(join(root, ENCORE_WIRING_CONFIG)))
+          return refuse(
+            `gen wrote no ${ENCORE_WIRING_CONFIG}: the service needs a generated Encore app and @stackra/testing`,
+          );
+        // Inside: the Encore runtime, the app's metadata and the migrated test database are set up; run the suite.
+        if (options.encoreTest === true)
+          return at("vitest", ["run", "--config", ENCORE_WIRING_CONFIG]);
+        // Outside: `encore test` runs the member's `test` script (`stackra test`) inside; the tier travels with it.
+        return { ...at("encore", ["test"]), env: { [TEST_TIER_VARIABLE]: "wiring" } };
+      }
       if (tier === "int") {
         // Gen writes this config for a package or service that has an `.int.test.ts`; nobody authors one.
         if (layout !== "package" && layout !== "service")

@@ -93,6 +93,21 @@ describe("generateMember", () => {
     expect(files[0]?.content.endsWith("}\n")).toBe(true);
   });
 
+  it("writes the Encore wiring suite and its config after the Encore files of a service that declares Vitest (STA-2838)", () => {
+    const withVitest = {
+      ...BILLING_IR,
+      packages: [...(BILLING_IR.packages ?? []), "vitest", "@stackra/vitest-config"],
+    };
+    const paths = generateMember(withVitest).files.map((file) => file.path);
+    const at = paths.indexOf(".stackra/tests/encore-wiring.test.ts");
+    expect(at).toBe(paths.indexOf("stackra-encore/billing/broker-message.ts") + 1);
+    expect(paths[at + 1]).toBe(".stackra/vitest.wiring.config.ts");
+    // Without Vitest the member cannot run it, so gen writes neither.
+    expect(generateMember(BILLING_IR).files.map((file) => file.path)).not.toContain(
+      ".stackra/vitest.wiring.config.ts",
+    );
+  });
+
   it("writes the entity files, registrations, boot, webhook route, CronJobs, queue topics and event topics of a service", () => {
     const { files, errors } = generateMember(BILLING_IR);
     expect(errors).toEqual([]);

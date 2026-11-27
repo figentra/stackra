@@ -29,6 +29,10 @@ description: "Accepted · 2026-10-20"
 
 planned — `pnpm validate` checks that each test file name has a known tier infix, and the turbo tasks run each tier.
 
+Decision 3's thin Encore suite is built (STA-2838): gen writes `.stackra/tests/encore-wiring.test.ts` for every service
+that runs as a generated Encore app, and `stackra test --tier wiring` (turbo task `test:wiring`) runs it under
+`encore test`.
+
 ## Open questions
 
 1. The device matrix (TS18) needs real devices; the owner must choose which ones.
