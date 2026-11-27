@@ -224,5 +224,6 @@ findings }` and `validate --repository` `{ findings: [{ dir, text }] }`; FR-005 
 - 2026-11-26 · — → Draft · Claude (STA-2883 session) · created from audit item DX1.2
 - 2026-11-26 · Draft → Clarified · Claude (STA-2883 session) · bodies stay, classes declare fields, runtime per run
 - 2026-11-26 · Clarified → Planned · Claude (STA-2883 session) · plan.md
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 · Planned → Tasked · Claude (STA-2883 session) · tasks.md
 - 2026-11-26 · Tasked → Implementing · Claude (STA-2883 session) · T001 to T009 on the branch
