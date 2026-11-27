@@ -27,6 +27,8 @@ export const ALLOWED: Readonly<Record<string, string>> = Object.freeze({
   LocaleSwitcherProps:
     "the props of the two LocaleSwitchers above: ui's drawn component vs i18n's headless kit block with its render function",
   // Two concepts that share a name.
+  DATABASE_SETUP_SETTINGS:
+    "@stackra/infra-aws-runtime's Fargate task that creates a Postgres resource's planned extensions vs @stackra/infra-gcp's Cloud Run job for the same step; each provider's own facts (image path, size, timeout), no shared fields to move",
   PushPermission:
     "@stackra/notifications' answer of a push registration (granted, denied, prompt) vs @stackra/platform's usePushPermission() result (the status with its request and open-settings calls)",
   PushRegistration:

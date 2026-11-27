@@ -6,11 +6,16 @@
  *          reachable only over TLS through the connector; pgaudit sets its flags and routes its entries into a log bucket
  *          in the region, and is absent when off; the slow-statement flags follow `slowQueryMs`; no database means no
  *          instance; a Valkey cache becomes a Memorystore instance on the VPC with its connection policy, encrypted in
- *          transit with IAM sign-in, and stands without a database.
+ *          transit with IAM sign-in, and stands without a database; planned extensions get an admin user, its password
+ *          in an in-region secret only the job's account reads, and a Cloud Run job run inside the apply that creates
+ *          them over the private network with TLS (or through the connector socket on a server without a VPC), again
+ *          only when the extensions change; without extensions none of that exists, and extensions without an admin
+ *          password are refused.
  * Boundary: test only; no engine and no cloud call (ADR 0171: agents never apply a stack).
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401.
+ * Governing contract: ADR 0022 (test placement); ADR 0186, ADR 0238, ADR 0401; ADR 0160 (note of 2026-11-26).
  */
+import * as pulumi from "@pulumi/pulumi";
 import { describe, expect, it } from "@stackra/testing";
 
 import type { GcpRuntimeConfig } from "#core/types/gcp-runtime-config.type";
@@ -38,9 +43,36 @@ const PRODUCTION: GcpRuntimeConfig = {
     pgaudit: { log: ["ddl", "role"], retentionDays: 400 },
     slowQueryMs: 1000,
     network: "ref:gcp.network.prod",
+    extensions: [],
   },
   cache: null,
 };
+
+/** Production whose services name `extensions`, on its VPC or (`network: null`) through the connector. */
+function withExtensions(
+  extensions: NonNullable<GcpRuntimeConfig["database"]>["extensions"],
+  network: string | null = "ref:gcp.network.prod",
+): GcpRuntimeConfig {
+  const database = PRODUCTION.database as NonNullable<GcpRuntimeConfig["database"]>;
+  return { ...PRODUCTION, database: { ...database, extensions, network } };
+}
+
+/** The extensions job's one container, as registered. */
+type JobContainer = {
+  image: string;
+  commands: string[];
+  args: string[];
+  envs: { name: string; value?: string; valueSource?: unknown }[];
+  volumeMounts?: unknown;
+};
+
+/** The registered extensions job's inputs and its container. */
+async function jobOf(engine: Awaited<ReturnType<typeof mockPulumi>>) {
+  const job = (await engine.find("Job", "acme-production-extensions")).inputs;
+  const template = (job["template"] as { template: Record<string, unknown> }).template;
+  const [container] = template["containers"] as JobContainer[];
+  return { job, template, container };
+}
 
 /** The shared Valkey cache production declares in the cache tests. */
 const CACHE: NonNullable<GcpRuntimeConfig["cache"]> = {
@@ -52,6 +84,15 @@ const CACHE: NonNullable<GcpRuntimeConfig["cache"]> = {
   network: "ref:gcp.network.prod",
   subnet: "ref:gcp.subnet.prod",
 };
+
+/** The extensions job's run token for production on its VPC with `extensions`. */
+async function tokenOf(
+  extensions: NonNullable<GcpRuntimeConfig["database"]>["extensions"],
+): Promise<unknown> {
+  const engine = await mockPulumi({ gcp: { network: { prod: "net" } } });
+  gcpRuntime(withExtensions(extensions), { adminPassword: pulumi.secret("p") });
+  return (await jobOf(engine)).job["runExecutionToken"];
+}
 
 describe("gcpRuntime", () => {
   it("keeps backups in the region with point-in-time recovery on a private network", async () => {
@@ -137,6 +178,112 @@ describe("gcpRuntime", () => {
       sslMode: "ENCRYPTED_ONLY",
       authorizedNetworks: [],
     });
+  });
+
+  it("creates the planned extensions with an admin login over the private network, inside the apply", async () => {
+    const engine = await mockPulumi({
+      gcp: { network: { prod: "projects/acme-prod/global/networks/main" } },
+    });
+    gcpRuntime(withExtensions(["pg_trgm", "vector"]), {
+      adminPassword: pulumi.secret("password-canary"),
+      subnet: "projects/acme-prod/regions/me-central2/subnetworks/run",
+    });
+
+    expect((await engine.find("User", "acme-production-admin")).inputs).toMatchObject({
+      project: "acme-prod",
+      instance: "acme-production-postgres",
+      name: "stackra_admin",
+      deletionPolicy: "ABANDON",
+    });
+    expect((await engine.find("Secret", "acme-production-db-admin")).inputs).toMatchObject({
+      secretId: "acme-production-db-admin",
+      replication: { userManaged: { replicas: [{ location: "me-central2" }] } },
+    });
+    expect((await engine.find("Account", "acme-production-dbext")).inputs["accountId"]).toBe(
+      "acme-production-dbext",
+    );
+    expect(
+      (await engine.find("SecretIamMember", "acme-production-db-admin-reader")).inputs,
+    ).toMatchObject({
+      secretId: "acme-production-db-admin",
+      role: "roles/secretmanager.secretAccessor",
+      member: "serviceAccount:acme-production-dbext@mock.iam.gserviceaccount.com",
+    });
+
+    const { job, template, container } = await jobOf(engine);
+    expect(job).toMatchObject({ location: "me-central2", name: "acme-production-extensions" });
+    expect(job["runExecutionToken"]).toMatch(/^[0-9a-f]{12}$/);
+    expect(template).toMatchObject({
+      serviceAccount: "acme-production-dbext@mock.iam.gserviceaccount.com",
+      maxRetries: 0,
+      vpcAccess: {
+        egress: "PRIVATE_RANGES_ONLY",
+        networkInterfaces: [
+          {
+            network: "projects/acme-prod/global/networks/main",
+            subnetwork: "projects/acme-prod/regions/me-central2/subnetworks/run",
+          },
+        ],
+      },
+    });
+    expect(container?.image).toBe("docker.io/library/postgres:18.6-alpine");
+    expect(container?.commands).toEqual(["sh", "-c"]);
+    expect(container?.args[0]).toContain('CREATE EXTENSION IF NOT EXISTS "pg_trgm";');
+    expect(container?.args[0]).toContain('CREATE EXTENSION IF NOT EXISTS "vector";');
+    expect(container?.envs).toEqual(
+      expect.arrayContaining([
+        { name: "PGUSER", value: "stackra_admin" },
+        { name: "PGSSLMODE", value: "require" },
+        {
+          name: "PGPASSWORD",
+          valueSource: {
+            secretKeyRef: expect.objectContaining({ secret: "acme-production-db-admin" }),
+          },
+        },
+      ]),
+    );
+    // The job only names the secret: the password reaches the user and the secret, nothing else.
+    expect(JSON.stringify(job)).not.toContain("password-canary");
+    const types = (await engine.settled()).map((resource) => resource.type.split(":").at(-1));
+    expect(types).not.toContain("IAMMember");
+  });
+
+  it("reaches a server without a VPC through the Cloud SQL connector socket", async () => {
+    const engine = await mockPulumi();
+    gcpRuntime(withExtensions(["citext"], null), {
+      adminPassword: pulumi.secret("password-canary"),
+    });
+
+    const { template, container } = await jobOf(engine);
+    // The mocks leave the connection name unresolved; the volume names the instance's connection.
+    expect(template["volumes"]).toMatchObject([{ name: "cloudsql", cloudSqlInstance: {} }]);
+    expect(template).not.toHaveProperty("vpcAccess");
+    expect(container?.volumeMounts).toEqual([{ name: "cloudsql", mountPath: "/cloudsql" }]);
+    expect(container?.envs.find((env) => env.name === "PGHOST")?.value).toMatch(/^\/cloudsql\//);
+    expect(container?.envs.map((env) => env.name)).not.toContain("PGSSLMODE");
+    expect(
+      (await engine.find("IAMMember", "acme-production-dbext-sql-client")).inputs["role"],
+    ).toBe("roles/cloudsql.client");
+  });
+
+  it("runs the job again only when the extensions change", async () => {
+    const first = await tokenOf(["pg_trgm"]);
+    expect(await tokenOf(["pg_trgm"])).toBe(first);
+    expect(await tokenOf(["pg_trgm", "vector"])).not.toBe(first);
+  });
+
+  it("creates no login, secret or job when no service names an extension", async () => {
+    const engine = await mockPulumi({ gcp: { network: { prod: "net" } } });
+    gcpRuntime(PRODUCTION);
+
+    const types = (await engine.settled()).map((resource) => resource.type.split(":").at(-1));
+    for (const type of ["User", "Secret", "SecretVersion", "Account", "Job"])
+      expect(types).not.toContain(type);
+  });
+
+  it("refuses planned extensions without an admin password", async () => {
+    await mockPulumi({ gcp: { network: { prod: "net" } } });
+    expect(() => gcpRuntime(withExtensions(["vector"]))).toThrow(/pass adminPassword/);
   });
 
   it("switches pgaudit on and routes its entries into a log bucket in the region", async () => {

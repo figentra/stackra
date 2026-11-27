@@ -7,6 +7,8 @@
  *          registered in the namespace, and CPU target-tracking autoscaling when its maximum is above its minimum.
  *          A workload with `migrate` also gets a migration task definition (the same container with the migration's
  *          arguments and no port) that `WORKLOAD_MIGRATION_PROVIDER` runs once per revision; its service waits for it.
+ *          The migration and the service of a workload that uses a Postgres resource wait for that database's
+ *          extensions run (`awsDatabases`), so neither meets a missing extension.
  *          A public workload also gets an ALB in the public subnets, HTTPS only, admitting Cloudflare's ranges alone,
  *          with a target group that checks the workload's health path. A worker with no port (a queue consumer) gets
  *          no port mapping, and its `healthCommand`, when it names one, as the container's health check.
@@ -18,7 +20,7 @@
  *           the load balancer checks public workloads.
  * Runtime: node
  * Governing contract: ADR 0493 (decisions 2 and 4, owner answers Q5 and Q6), ADR 0444 (decision 4: Fargate, SSM),
- *                     ADR 0172 (decision 5: tags), ADR 0173 (no secret values).
+ *                     ADR 0172 (decision 5: tags), ADR 0173 (no secret values), ADR 0160 (note of 2026-11-26).
  */
 /* oxlint-disable no-new -- reason: Pulumi registers a resource when it is constructed; that is the point */
 import * as aws from "@pulumi/aws";
@@ -31,10 +33,8 @@ import { workloadParameter } from "#core/functions/workload-parameter.function";
 import type { RuntimePlan } from "#core/types/runtime-plan.type";
 import { CLOUDFLARE_IPV4_RANGES } from "#node/constants/cloudflare-ipv4-ranges.constant";
 import { WORKLOAD_MIGRATION_PROVIDER } from "#node/constants/workload-migration-provider.constant";
+import { taskExecutionRole } from "#node/functions/task-execution-role.function";
 import type { AwsRuntimeOptions } from "#node/types/aws-runtime-options.type";
-
-/** The AWS-managed policy every task execution role carries (image pulls, log writes). */
-const EXECUTION_POLICY = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy";
 
 /** ALB and target group names allow 32 characters. */
 const BALANCER_NAME_LIMIT = 32;
@@ -67,6 +67,8 @@ type WorkloadOutputs = Record<
  * Declares the workloads of `plan` and returns each one's service, internal host and public host.
  *
  * @param securityGroup - the shared workload security group `awsRuntime` created.
+ * @param databasesReady - each database's extensions run by resource name (`awsDatabases`), which a workload using it
+ *        waits for.
  * @throws TypeError when the plan has a workload and the options name no VPC, or a public one and no public subnets or
  *         certificate.
  * @example
@@ -76,6 +78,7 @@ export function awsWorkloads(
   plan: RuntimePlan,
   options: AwsRuntimeOptions,
   securityGroup: pulumi.Input<string>,
+  databasesReady: ReadonlyMap<string, pulumi.Resource> = new Map(),
 ): WorkloadOutputs {
   const out: WorkloadOutputs = {};
   if (plan.workloads.length === 0) return out;
@@ -122,23 +125,7 @@ export function awsWorkloads(
 
   const region = aws.getRegionOutput();
   const caller = aws.getCallerIdentityOutput();
-  const executionRole = new aws.iam.Role(`${prefix}-execution`, {
-    assumeRolePolicy: JSON.stringify({
-      Version: "2012-10-17",
-      Statement: [
-        {
-          Effect: "Allow",
-          Principal: { Service: "ecs-tasks.amazonaws.com" },
-          Action: "sts:AssumeRole",
-        },
-      ],
-    }),
-    tags: baseTags,
-  });
-  new aws.iam.RolePolicyAttachment(`${prefix}-execution`, {
-    role: executionRole.name,
-    policyArn: EXECUTION_POLICY,
-  });
+  const executionRole = taskExecutionRole(`${prefix}-execution`, baseTags);
   new aws.iam.RolePolicy(`${prefix}-parameters`, {
     role: executionRole.id,
     policy: pulumi.jsonStringify({
@@ -168,6 +155,11 @@ export function awsWorkloads(
 
   for (const workload of plan.workloads) {
     const tags = { ...options.tags, ...workload.tags };
+    // The extensions runs of the databases it uses: its migration and its service start after them.
+    const extensionsRuns = workload.uses.flatMap((resource) => {
+      const run = databasesReady.get(resource);
+      return run === undefined ? [] : [run];
+    });
     const image =
       workload.registryImage && settings?.registry !== undefined
         ? pulumi.interpolate`${settings.registry}/${workload.image}`
@@ -294,6 +286,7 @@ export function awsWorkloads(
           timeoutMinutes: workload.migrate.timeoutMinutes,
           pollSeconds: MIGRATE_POLL_SECONDS,
         },
+        { dependsOn: extensionsRuns },
       );
     }
     const registry = new aws.servicediscovery.Service(workload.name, {
@@ -391,6 +384,7 @@ export function awsWorkloads(
         dependsOn: [
           ...(listener === undefined ? [] : [listener]),
           ...(migration === undefined ? [] : [migration]),
+          ...extensionsRuns,
           ...(workload.spot && capacity !== undefined ? [capacity] : []),
         ],
       },

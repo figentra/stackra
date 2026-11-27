@@ -2,16 +2,17 @@
  * Stackra file contract:
  * Purpose: `GcpRuntimeConfig`, the typed config of one deployment's GCP runtime stack, derived from the root runway by
  *          `gcpRuntimeConfig` and read by `gcpRuntime`: the deployment, its Cloud SQL Postgres server with its
- *          backups, point-in-time recovery, pgaudit and the slow-statement log, and its shared Memorystore for Valkey
- *          cache.
+ *          backups, point-in-time recovery, pgaudit, the slow-statement log and the extensions its services name, and
+ *          its shared Memorystore for Valkey cache.
  * Boundary: type only; plain JSON. The VPC may still be `ref:<path>`; no value is a secret (Cloud SQL users are made
  *           by the database stack's IAM sign-in, not here).
  * Runtime: isomorphic
  * Governing contract: ADR 0354 (open question 1 answered for the database only), ADR 0186 (backups in the region),
  *                     ADR 0238 (one database server per environment), ADR 0401, ADR 0212 (decision 5: pgaudit), STA-1400
- *                     (slow-statement log), ADR 0296 (decisions 1 and 5: the shared Valkey cache).
+ *                     (slow-statement log), ADR 0296 (decisions 1 and 5: the shared Valkey cache), ADR 0160 (note of
+ *                     2026-11-26: the extensions created before migrations).
  */
-import type { CacheEviction } from "@stackra/runway";
+import type { CacheEviction, PostgresExtension } from "@stackra/runway";
 
 import type { MEMORYSTORE_NODE_TYPES } from "#core/constants/memorystore-node-types.constant";
 import type { GcpDeployment } from "#core/types/gcp-deployment.type";
@@ -42,6 +43,8 @@ export type GcpRuntimeConfig = GcpDeployment & {
     readonly slowQueryMs: number | false;
     /** The VPC the server joins on a private IP (`ref:<path>`), or `null` to reach it only through the connector. */
     readonly network: string | null;
+    /** The approved extensions the environment's services name, sorted; created in every database before migrations. */
+    readonly extensions: readonly PostgresExtension[];
   } | null;
   /** The shared Valkey cache, or `null` when the environment's `shared.cache.engine` is not `valkey`. */
   readonly cache: {

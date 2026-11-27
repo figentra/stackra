@@ -5,7 +5,8 @@
  *          when `highAvailability`, the daily backups kept (`backups.retentionDays`) and point-in-time recovery
  *          (`backups.pitr`, `pitrDays`), pgaudit (`pgaudit`, on with `PGAUDIT_DEFAULTS` unless `false`), the
  *          slow-statement threshold (`slowQueryMs`, `SLOW_QUERY_MS` unless set or `false`), and the VPC it joins
- *          (`shared.network.vpc`); and its shared Valkey cache from `shared.cache` when its engine is `valkey`: node
+ *          (`shared.network.vpc`), with the extensions the service runways name for the environment
+ *          (`plannedExtensions`); and its shared Valkey cache from `shared.cache` when its engine is `valkey`: node
  *          type, shards, replicas, eviction, sign-in, and the VPC and subnet it is reached on.
  * Boundary: plain data in and out. Backups are on whenever a server exists (ADR 0186): the runway only sizes them. A
  *           dedicated deployment uses its environment's database and cache blocks in its own project. Memorystore is
@@ -13,10 +14,10 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0186 (decisions 1 and 4), ADR 0238, ADR 0354, ADR 0400, ADR 0401, ADR 0212
  *                     (decision 5: pgaudit), STA-1400 (slow-statement log), ADR 0296 (decisions 1 and 5: the shared
- *                     Valkey cache).
+ *                     Valkey cache), ADR 0160 (note of 2026-11-26: the extensions created before migrations).
  */
-import { RequirementEngine, RunwayInvalidError } from "@stackra/runway";
-import type { RootRunway, RunwayEnvironment, RunwayIssue } from "@stackra/runway";
+import { RequirementEngine, RunwayInvalidError, plannedExtensions } from "@stackra/runway";
+import type { RootRunway, RunwayEnvironment, RunwayIssue, ServiceRunway } from "@stackra/runway";
 
 import { MEMORYSTORE_NODE_TYPES } from "#core/constants/memorystore-node-types.constant";
 import { PGAUDIT_DEFAULTS } from "#core/constants/pgaudit-defaults.constant";
@@ -34,6 +35,8 @@ function isNode(value: string): value is (typeof MEMORYSTORE_NODE_TYPES)[number]
 /**
  * The GCP runtime config of `environment`, or of its dedicated deployment `dedicated`.
  *
+ * @param services - each service member's parsed runway, by member key: the server holds the extensions they name
+ *        for the environment (none when omitted).
  * @throws RunwayInvalidError when the deployment does not run on GCP, a database names no tier or version, or a Valkey
  *         cache names a node type Memorystore does not have or has no VPC to be reached on.
  * @example
@@ -43,6 +46,7 @@ export function gcpRuntimeConfig(
   root: RootRunway,
   environment: RunwayEnvironment,
   dedicated?: string,
+  services: Readonly<Record<string, ServiceRunway>> = {},
 ): GcpRuntimeConfig {
   const runway = parseInfraRunway(root);
   const deployment = gcpDeploymentOf(runway, environment, dedicated);
@@ -95,6 +99,7 @@ export function gcpRuntimeConfig(
                   },
             slowQueryMs: database.slowQueryMs ?? SLOW_QUERY_MS,
             network,
+            extensions: plannedExtensions(services, environment),
           },
     cache:
       cache === undefined || !isValkey || !isNode(node) || network === null

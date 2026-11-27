@@ -130,8 +130,29 @@ Slow statements are logged by the server too, unless `shared.database.slowQueryM
 and `auto_explain` (`cloudsql.enable_auto_explain`, `auto_explain.log_min_duration`) from `slowQueryMs` (1000 by
 default, 10 to 600000), so each statement above it lands in Cloud Logging with its plan. The application logs its own
 slow statements from `DatabaseConfig.queries.slow` (`@stackra/database`); `pg_stat_statements` (ADR 0160 note of
-2026-10-29) is a migration's `schema.createExtension`, not a flag here. AWS is not configured: Encore Cloud owns the RDS
-parameter group.
+2026-10-29) is created like any other planned extension (below), not a flag here. AWS is not configured: Encore Cloud
+owns the RDS parameter group.
+
+The extensions the environment's services name (`environments.<env>.database.extensions` in each
+`services/*/runway.yaml`; pass the parsed service runways as `gcpRuntimeConfig`'s fourth argument) are created before
+any migration (ADR 0160 note of 2026-11-26). `gcpRuntime` then needs `adminPassword`, the server's admin password as a
+Pulumi secret, which the deploy job generates once and keeps in the vault (ADR 0525), and declares: the built-in user
+`stackra_admin` (a `cloudsqlsuperuser` member, kept on a stack change), the password's copy in Secret Manager
+`<prefix>-db-admin` replicated in the server's region only, the service account `<prefix>-dbext` that alone reads it,
+and the Cloud Run job `<prefix>-extensions`. The job runs `createExtensionsScript` (psql in `template1` and every
+database that takes connections) to completion inside the apply, so a failure fails the deploy; it runs again only when
+the extensions, the client image or the server change. On a private server it reaches the private IP over direct VPC
+egress with TLS required (`subnet` names the subnet, else the network's same-named one); otherwise it connects through
+the Cloud SQL volume's connector socket and the account gets `roles/cloudsql.client`. A database created later from
+`template1` starts with the extensions already.
+
+```ts
+const services = { commerce: readRunway("services/commerce/runway.yaml", RunwayKind.Service) };
+gcpRuntime(gcpRuntimeConfig(root, "production", undefined, services), {
+  keyId: foundation.dataKeyId,
+  adminPassword: pulumi.secret(password), // from the vault, never typed here
+});
+```
 
 A shared Valkey cache (`shared.cache.engine: valkey`, the same key the AWS runtime reads) becomes a Memorystore for
 Valkey instance `<prefix>-cache` in the deployment's region, reached only through Private Service Connect on
@@ -166,7 +187,13 @@ deployment's region as `webhooks.egress.region`) and `egressAddresses` (the self
 - Re-link a project's billing after the spend stop detached it, once the cause is fixed.
 - Create the HMAC key the `s3` disk signs with for the infra service account, and store it in the secret store.
 - Subscribe the budget topic (`budgetTopic`) to the alerting channel.
-- Run `create extension pg_stat_statements` where you want statement statistics (or let a migration do it).
+- Enable the Secret Manager API where a service names a Postgres extension (the Cloud Run API is above), plus the
+  Compute Engine API when that server has a private IP (the job's direct VPC egress), and keep the server's admin
+  password in the vault for the deploy job to pass as `adminPassword`. The infra service account already holds
+  `roles/secretmanager.admin` (`DEPLOY_ROLES`) to create the secret, its version and the reader's grant; direct VPC
+  egress asks no compute role of it, since the Cloud Run service agent (`roles/run.serviceAgent`, granted by GCP in the
+  same project) uses the subnet. A Shared VPC subnet in another project needs `roles/compute.networkUser` for that
+  agent on the host project, which its owner grants.
 - Run `create extension pgaudit` in each database once the flag is on, and set `pgaudit.log = 'write'` on the roles
   people sign in with (`alter role ... set pgaudit.log`), so their writes are audited and the app's are not.
 - Enable the Memorystore and Network Connectivity APIs where a Valkey cache is declared, and grant each service's
