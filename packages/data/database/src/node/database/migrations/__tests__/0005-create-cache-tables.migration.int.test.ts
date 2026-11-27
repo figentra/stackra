@@ -2,14 +2,15 @@
  * Stackra file contract:
  * Purpose: integration tests of `CreateCacheTablesMigration` with the `postgres` cache driver on real Postgres: the
  *          migrated tables are unlogged with no row-level security, the driver stores, reads, forgets and drops by tag
- *          on them, the driver never creates a table (a schema the migration did not make rejects the call and stays
+ *          on them, `add` is atomic across drivers (of concurrent adds of one key exactly one wins; a dead row is
+ *          replaced, a live one never), the driver never creates a table (a schema the migration did not make rejects the call and stays
  *          absent), and the migration runs over tables `postgresCacheTables("cache")` made earlier and keeps their
  *          rows.
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled 0005 migration creates the tables.
  *           `CacheSql` here runs each statement on a forked entity manager, outside any transaction.
  * Runtime: node (vitest)
  * Governing contract: ADR 0150 (decision 1); ADR 0159 (as amended); ADR 0210 (2026-10-24 amendment); ADR 0022; ADR
- *                     0269.
+ *                     0269; ADR 0437 (Enforcement: the shared nonce store is `Cache.add`).
  */
 import { buildConfig } from "@stackra/config";
 import {
@@ -22,7 +23,7 @@ import {
 import { CacheSql } from "@stackra/cache/contracts";
 import { PostgresCacheDriver, postgresCacheTables } from "@stackra/cache/node";
 import { Driver, SystemClockDriver } from "@stackra/container";
-import { Duration } from "@stackra/contracts";
+import { Clock, Duration } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { compileMigration } from "#core/functions/compile-migration.function";
@@ -49,13 +50,13 @@ class TestCacheSql extends Driver(CacheSql) {
   }
 }
 
-/** A Postgres cache driver over the tables in `schema`. */
-function driver(schema = "cache"): PostgresCacheDriver {
+/** A Postgres cache driver over the tables in `schema`, on `clock`. */
+function driver(schema = "cache", clock: Clock = new SystemClockDriver()): PostgresCacheDriver {
   return new PostgresCacheDriver(
     buildConfig(CacheConfig, { values: { driver: "postgres", postgres: { schema, sweep: 100 } } }),
     new TestCacheSql(),
     new SharedCacheNamespaceDriver(),
-    new SystemClockDriver(),
+    clock,
     new LocalCacheLockDriver(),
     new NoneCacheMetricsDriver(),
   );
@@ -98,6 +99,40 @@ describe(CreateCacheTablesMigration, () => {
     await expect(cache.get(two)).resolves.toEqual({ id: "prd_2" });
     await cache.forget(two);
     await expect(cache.get(two)).resolves.toBeUndefined();
+  });
+
+  it("adds atomically across drivers: of concurrent adds of one key exactly one wins", async () => {
+    const one = driver();
+    const two = driver();
+    for (let round = 0; round < 20; round += 1) {
+      const key = CacheKey.of(Product, "req", round);
+      // oxlint-disable-next-line no-await-in-loop -- each round races its own adds; rounds run one after another
+      const answers = await Promise.all(
+        [one, two, one, two, one, two].map((cache, n) => cache.add(key, n, TEN_MINUTES)),
+      );
+      expect(answers.filter(Boolean)).toHaveLength(1);
+      // oxlint-disable-next-line no-await-in-loop -- the winner's value, read back before the next round
+      await expect(two.get(key)).resolves.toBe(answers.indexOf(true));
+    }
+  });
+
+  it("replaces a dead row on add and never a live one", async () => {
+    class ShiftedClock extends Clock {
+      shift = 0;
+
+      now(): Date {
+        return new Date(Date.now() + this.shift);
+      }
+    }
+    const clock = new ShiftedClock();
+    const cache = driver("cache", clock);
+    const key = CacheKey.of(Product, "req-dead");
+    await expect(cache.add(key, "first", Duration.seconds(60))).resolves.toBe(true);
+    clock.shift = 59_000;
+    await expect(cache.add(key, "second", Duration.seconds(60))).resolves.toBe(false);
+    clock.shift = 61_000;
+    await expect(cache.add(key, "third", Duration.seconds(60))).resolves.toBe(true);
+    await expect(cache.get(key)).resolves.toBe("third");
   });
 
   it("never creates a table: a schema the migration did not make rejects the call and stays absent", async () => {
