@@ -42,11 +42,11 @@ describe("emitEncoreCronJobs", () => {
     expect(content).toContain("api({ expose: false }");
   });
 
-  it("loads the Encore database first, ahead of the server app (STA-1652)", () => {
+  it("loads the running environment, then the Encore database, ahead of the server app (STA-2844)", () => {
     const content =
       emitEncoreCronJobs(BILLING_IR, buildManifest(BILLING_IR).manifest)?.content ?? "";
     const lines = content.split("\n").filter((line) => line.startsWith("import "));
-    expect(lines[0]).toBe('import "./database";');
+    expect(lines.slice(0, 2)).toEqual(['import "./environment";', 'import "./database";']);
     expect(lines.indexOf('import "./database";')).toBeLessThan(lines.indexOf(ENCORE_APP_IMPORT));
   });
 

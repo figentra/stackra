@@ -3,7 +3,8 @@
  * Purpose: `emitEncoreHttp`, a service's HTTP adapter (`stackra-encore/<member>/http.ts`): `answerHttp(request,
  *          handle)`, which every generated raw endpoint answers through, and `answerCall(req, resp, call)`, the bridge
  *          of every action, query and controller endpoint: Node's request becomes a Fetch `Request` with a streamed
- *          body, `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes`, runs the guards
+ *          body (`nodeBodyStream`, never `Readable.toWeb`, which crashes on Encore's raw request, STA-2794),
+ *          `serveGuardedCall` (`@stackra/app/server`) reads it under `HttpConfig.maxBodyBytes`, runs the guards
  *          over the exact bytes, authenticates through `CallAuthenticator` and runs the call, and the answer is written
  *          to the `ServerResponse` (STA-2577), its body piped as it is produced, so a server-sent-events answer streams. It answers an `OPTIONS` preflight with 204
  *          and `corsHeaders(request, CorsConfig)`, and adds the same CORS headers to every other answer, with
@@ -19,10 +20,10 @@
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order); ADR 0325 (rule 22: the gateway marks signed-in answers); ADR 0295
  *                     (decision 8: the adapters reach the member through `handlers`); ADR 0091 and 0124 (Encore is
  *                     generated); STA-1374 (stackra-216); STA-1385; ADR 0217 (decision 2: the `RateLimit-*` headers
- *                     are sent), STA-1477.
+ *                     are sent), STA-1477; STA-2794.
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
-import { encoreDatabaseImport } from "#core/functions/encore-database-import.function";
+import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
 import { encoreServiceFolder } from "#core/functions/encore-service-folder.function";
 import { generatedHeader } from "#core/functions/generated-header.function";
 import type { GeneratedFile } from "#core/types/generated-file.type";
@@ -56,7 +57,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
     path: `${encoreServiceFolder(ir.member)}/http.ts`,
     content: [
       header,
-      ...encoreDatabaseImport(ir),
+      ...encoreSetupImports(ir),
       'import { Readable } from "node:stream";',
       'import type { IncomingMessage, ServerResponse } from "node:http";',
       "",
@@ -67,6 +68,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "  corsHeaders,",
       "  HttpConfig,",
       "  type KeyCallOptions,",
+      "  nodeBodyStream,",
       "  serveGuardedCall,",
       "  VisitorConfig,",
       "  VisitorIdentityService,",
@@ -141,7 +143,9 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       '  const request = new Request(new URL(req.url ?? "/", "http://encore"), {',
       "    method,",
       "    headers,",
-      '    ...(method === "GET" || method === "HEAD" ? {} : { body: Readable.toWeb(req), duplex: "half" }),',
+      "    // Never `Readable.toWeb(req)`: its end-of-stream cleanup calls `req.req.removeListener`, and Encore's raw request",
+      "    // keeps its native request, no emitter, in `req` (STA-2794).",
+      '    ...(method === "GET" || method === "HEAD" ? {} : { body: nodeBodyStream(req), duplex: "half" }),',
       "  } as RequestInit);",
       "  const response = await answerHttp(request, (incoming, container) =>",
       "    serveGuardedCall({",
