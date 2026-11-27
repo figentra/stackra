@@ -45,6 +45,7 @@ describe("@stackra/runway", () => {
       "PostgresExtension",
       "PreviewDatabaseBrancher",
       "PreviewDatabaseSource",
+      "REGION_PRESETS",
       "RegionKey",
       "RequirementEngine",
       "ResourceKind",
@@ -93,6 +94,7 @@ describe("@stackra/runway", () => {
       "promote",
       "regionsOf",
       "renderWranglerConfig",
+      "resolveRegion",
       "rollback",
       "runtimeOnlyFields",
       "runwayJsonSchema",
@@ -124,6 +126,7 @@ describe("@stackra/runway", () => {
       "unknown_region" | "cloud_unconfigured" | "unknown_account"
     >();
     expectTypeOf(runway.regionsOf).returns.toEqualTypeOf<RunwayRegion[]>();
+    expectTypeOf(runway.resolveRegion).returns.toEqualTypeOf<RunwayRegion | undefined>();
     expectTypeOf<RunwayRegion["cloud"]>().toEqualTypeOf<"aws" | "gcp">();
   });
 });

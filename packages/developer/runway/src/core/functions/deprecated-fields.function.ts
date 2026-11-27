@@ -31,7 +31,7 @@ export function deprecatedFields(root: RootRunway): RunwayIssue[] {
     found.push({
       path: "providers.aws.region",
       message:
-        "Deprecated: set `region` (me, eu or ksa) on each environment instead; removed in the next release",
+        "Deprecated: set `region` on each environment instead (a provider region id such as us-east-1, or a preset: me, eu, ksa); removed in the next release",
     });
   if (typeof aws?.budgets?.monthlyUsd === "object")
     found.push({

@@ -3,7 +3,7 @@
  * Purpose: Stand-in barrel: the `.` entry of @stackra/runway until `stackra gen` writes the entry barrels (STA-339):
  *          the runway readers the generated configs import (`baseUrlOf`, `devPorts`, `updateFeed`, folded in from the
  *          old `./ports` entry, owner Q4; `productOf`, ADR 0335), the version 3 runway check, the JSON Schema derivation, the placement
- *          check, the duplicate dev port check (`checkPorts`, STA-863), the requirement driver check (`checkRequires`, STA-2049), the runtime-only config check (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, STA-2844), the surface host collision check (`checkHosts`, STA-1796), the region check and reader (ADR 0354), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
+ *          check, the duplicate dev port check (`checkPorts`, STA-863), the requirement driver check (`checkRequires`, STA-2049), the runtime-only config check (`checkRuntimeOnlyConfig`, `runtimeOnlyFields`, STA-2844), the surface host collision check (`checkHosts`, STA-1796), the region check and readers (ADR 0354; `resolveRegion` and `REGION_PRESETS`, STA-2896), the one-owner-per-zone check (`checkZoneOwners`, ADR 0519), the deploy targets, the `RunwayProvider` port and the
  *          `deploy`, `promote` and `rollback` orchestration (ADR 0352 decision 3, ADR 0400), the per-environment
  *          deploy lock (`withDeployLock`, ADR 0435), the preview database plan (`previewDatabaseOf`, `previewSeedStep`,
  *          the `PreviewDatabaseBrancher` port, ADR 0238 decision 1), the mobile onboarding ports and the store id derivation
@@ -18,6 +18,7 @@
  */
 export { RunwayConfig } from "#config/runway.config";
 export { APPROVED_POSTGRES_EXTENSIONS } from "#core/constants/approved-postgres-extensions.constant";
+export { REGION_PRESETS } from "#core/constants/region-presets.constant";
 export { RunwayConfig$ } from "#core/constants/runway-config-schema.constant";
 export { TIER_SIZES } from "#core/constants/tier-sizes.constant";
 export { WORKER_VERSION } from "#core/constants/worker-version.constant";
@@ -69,6 +70,7 @@ export { previewSeedStep } from "#core/functions/preview-seed-step.function";
 export { productOf } from "#core/functions/product-of.function";
 export { promote } from "#core/functions/promote.function";
 export { regionsOf } from "#core/functions/regions-of.function";
+export { resolveRegion } from "#core/functions/resolve-region.function";
 export { rollback } from "#core/functions/rollback.function";
 export { runtimeOnlyFields } from "#core/functions/runtime-only-fields.function";
 export { diffWorkerSettings } from "#core/functions/diff-worker-settings.function";

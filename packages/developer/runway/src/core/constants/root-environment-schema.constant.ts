@@ -4,7 +4,8 @@
  *          runs (`destinations`), the dev containers, lanes (with the repository index table `checkPorts` reads), https and proxy, the Encore environment, a preview's ttl
  *          and data, its tier (`TIER_SIZES`), the shared resources (database, cache and NAT sizes typed over the tier),
  *          the defaults members start from, the topology, the domains, the deploy
- *          rule, the mobile and desktop channels, the regions it deploys to, in release order, the cloud its foundation
+ *          rule, the mobile and desktop channels, the region it runs in (any provider region, or a preset), the
+ *          regions it deploys to, in release order, the cloud its foundation
  *          runs on, and the dedicated deployments that ride its release train.
  * Boundary: internal. Strict at its top and in `shared` and `defaults.service`, as the canonical schema is; the
  *           provider facts inside stay open, and the commands that read them check their own part.
@@ -25,7 +26,6 @@ import { TOPOLOGY_SCHEMA } from "#core/constants/topology-schema.constant";
 import { CacheMode } from "#core/enums/cache-mode.enum";
 import { DeployKind } from "#core/enums/deploy-kind.enum";
 import { EnvironmentTier } from "#core/enums/environment-tier.enum";
-import { RegionKey } from "#core/enums/region-key.enum";
 
 /** One root environment. */
 export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
@@ -97,8 +97,15 @@ export const ROOT_ENVIRONMENT_SCHEMA = z.strictObject({
     })
     .optional(),
   topology: TOPOLOGY_SCHEMA.optional(),
-  // The tenant region this environment lives in, inside the product's one account (`ref:aws.account`, ADR 0524).
-  region: z.enum(Enum.values(RegionKey) as [RegionKey, ...RegionKey[]]).optional(),
+  // The region this environment runs in: a provider region id (`us-east-1`, `europe-west1`), a key of the root
+  // `regions`, or a preset (`me`, `eu`, `ksa`); `checkEnvironmentRegion` resolves it (ADR 0524, amended 2026-11-27).
+  region: z
+    .string()
+    .regex(
+      /^[a-z][a-z0-9-]*[a-z0-9]$/,
+      "Expected a region: a provider region id such as us-east-1, a key of `regions`, or a preset (me, eu, ksa)",
+    )
+    .optional(),
   regions: z
     .array(z.string())
     .refine((keys) => new Set(keys).size === keys.length, "A region is listed more than once")
