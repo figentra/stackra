@@ -1,8 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `DbMigrateCommand` on the console: it runs the member's runner with the environment, lists
- *          what it applied (the `--json` data), says so when nothing is pending, targets dev by default and refuses an
- *          unknown environment with exit 2 before the runner loads.
+ *          what it applied (the `--json` data), passes `--release` through, says so when nothing is pending, targets dev
+ *          by default and refuses an unknown environment with exit 2 before the runner loads.
  * Boundary: test only; the runner is a fake, so no database is touched.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 2 as amended); ADR 0506; STA-1966.
@@ -38,6 +38,23 @@ describe("DbMigrateCommand", () => {
     expect(migrate).toHaveBeenCalledWith({ cwd: "/work", environment: "staging" });
     expect(result.stdout).toContain("applied 2");
     expect(result.stdout).toContain("0002_add_status");
+  });
+
+  it("passes --release to the runner, and no release when it is absent (STA-1406)", async () => {
+    migrate.mockResolvedValue({ applied: ["0002_add_status"] });
+    const result = await runCommandForTest(
+      [DbMigrateCommand],
+      ["db:migrate", "--env", "production", "--release", "v1.4.0"],
+    );
+    expect(result.exitCode).toBe(0);
+    expect(migrate).toHaveBeenCalledWith({
+      cwd: "/work",
+      environment: "production",
+      release: "v1.4.0",
+    });
+    migrate.mockClear();
+    await runCommandForTest([DbMigrateCommand], ["db:migrate", "--env", "production"]);
+    expect(migrate).toHaveBeenCalledWith({ cwd: "/work", environment: "production" });
   });
 
   it("returns the environment and the applied names under --json", async () => {
