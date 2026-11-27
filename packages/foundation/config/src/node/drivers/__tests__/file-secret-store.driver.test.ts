@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `FileSecretStoreDriver` on a real folder: it is the `SecretStore` port and throws before it
  *          is loaded; it reads every SCREAMING_SNAKE file (one trailing line break dropped) and skips the platform's
- *          own entries; with `names` it reads only those and fails on a missing one or a folder; it refuses a relative
+ *          own entries; a FIFO named like a secret never stalls the load (skipped when listed, refused when named);
+ *          with `names` it reads only those and fails on a missing one or a folder; it refuses a relative
  *          or empty folder, an unlistable one and a file over 64 KiB; a failed reload keeps the last good copy and a
  *          good one picks up a rotated file. No error carries a value. A file that grows after the size check is
  *          `file-secret-store-race.driver.test.ts`'s.
@@ -10,6 +11,7 @@
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0173; ADR 0371 (amendment 2026-11-27, STA-258).
  */
+import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -65,6 +67,25 @@ describe(FileSecretStoreDriver, () => {
     expect(driver.get("lower")).toBeUndefined();
     expect(driver.get("NOT_A_FILE")).toBeUndefined();
   });
+
+  // A FIFO opened for reading waits for a writer unless it is opened non-blocking; the test fails on its timeout then.
+  it.skipIf(process.platform === "win32")(
+    "never waits on a FIFO named like a secret: skipped when listed, refused when named",
+    { timeout: 5000 },
+    async () => {
+      writeFileSync(join(folder, "REAL_KEY"), "real-canary");
+      execFileSync("mkfifo", [join(folder, "PIPE_KEY")]);
+
+      const listed = store({ directory: folder });
+      await listed.load();
+      expect(listed.get("REAL_KEY")).toBe("real-canary");
+      expect(listed.get("PIPE_KEY")).toBeUndefined();
+
+      await expect(store({ directory: folder, names: ["PIPE_KEY"] }).load()).rejects.toThrow(
+        `The file secret store could not read in ${folder}: PIPE_KEY (not a file)`,
+      );
+    },
+  );
 
   it("reads only the named files, and fails naming a missing one or a folder", async () => {
     writeFileSync(join(folder, "WANTED_KEY"), "wanted-canary");

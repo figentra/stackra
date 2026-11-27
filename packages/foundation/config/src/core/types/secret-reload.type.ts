@@ -10,10 +10,10 @@
 /** A running reload schedule of one secret store. */
 export type SecretReload = {
   /**
-   * Reloads the store now; a reload already running is joined, not repeated.
+   * Reloads the store now; a reload already running is joined, not repeated, until its deadline (`timeoutMs`).
    *
-   * @returns true when the store read every secret, false when it failed (the store keeps its last good copy and
-   *          `onError` was told). It never rejects, even when a listener throws.
+   * @returns true when the store read every secret, false when it failed or timed out (the store keeps its last good
+   *          copy and `onError` was told). It never rejects, even when a listener throws.
    */
   reloadNow: () => Promise<boolean>;
 

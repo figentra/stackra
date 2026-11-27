@@ -68,6 +68,7 @@ each environment's set, with empty placeholders allowed so provisioning does not
 - **SRC-003**: `.github/actions/secrets-decrypt/action.yml` and `packages/developer/runway/src/node/functions/decrypt-scope.function.ts` on `origin/main` (FR-008, FR-012)
 - **SRC-004**: ADR 0371 (with its 2026-11-07 amendment), ADR 0173, ADR 0525, ADR 0294 in `apps/docs/src/docs/adr/` (FR-001 to FR-012)
 - **SRC-005**: STA-258 (this work), STA-2804 (the boot binding and its reload policy), the readiness report item 15.5 (FR-005, FR-006)
+- **SRC-007**: the independent review of the branch (two medium findings: a slow provider could stop reloads for good; the boot wiring is STA-2804), and `@smithy/node-http-handler` 4.12.1, whose `requestTimeout` and `socketTimeout` default to no limit (FR-016 to FR-018)
 - **SRC-006**: the independent review of PR stackra-inc/stackra#1192 (its three low follow-ups) and `packages/foundation/config/src/core/functions/layer-config.function.ts` on the branch, which takes an empty environment value as set (FR-013 to FR-015)
 
 ## Glossary
@@ -129,7 +130,8 @@ reads the secrets its platform mounts as files.
 - **EC-01**: the metadata server is unreachable (not on Google Cloud): the load fails naming it, no value.
 - **EC-02**: a Secret Manager answer is not JSON: the id fails as "unreadable answer"; the body is never quoted.
 - **EC-03**: a name is declared optional in one manifest row and required in another, or listed in a runway: it is required.
-- **EC-04**: two reloads overlap: the second joins the first.
+- **EC-04**: two reloads overlap: the second joins the first, until the first passes its deadline.
+- **EC-05**: a provider connection drops halfway: the AWS request times out and throws; if a `load()` still hangs, the reload deadline reports it and the next tick tries again.
 
 ## Requirements
 
@@ -149,12 +151,15 @@ reads the secrets its platform mounts as files.
 - **FR-012**: `runway secrets decrypt` SHALL, for a product scope of the checked-out repository, run the names check for every runway environment of that scope before it decrypts anything, and exit 1 naming each required secret the scope lacks; it SHALL check nothing for any other scope. Sources: SRC-003
 - **FR-013**: `deployPlan` SHALL mark an optional name a `config` row declares `optional: "default"` and every other optional name `optional: "placeholder"`; `secretSyncPlan` SHALL list the first as `defaults`; `readMemberSecrets` SHALL leave a default out when the scope lacks it or holds it empty; `runway secrets sync` SHALL never write a default the scope lacks, and SHALL say so by name. Sources: SRC-002
 - **FR-014**: `reloadNow()` SHALL never reject: an `onReload` error SHALL go to `onError`, and an `onError` error SHALL be dropped. Sources: SRC-005
+- **FR-016**: EACH reload under `scheduleSecretReload` SHALL have a deadline (`timeoutMs`, 1 to 600,000 ms, default 30,000); WHEN `load()` has not settled by it THE reload SHALL tell `onError` it timed out, answer `false` and release the schedule, so the next tick or `reloadNow()` calls `load()` again; a late failure of the abandoned load SHALL NOT be reported again. Sources: SRC-007
+- **FR-017**: THE AWS driver SHALL build its client with a 3 s connection timeout, a request timeout of `timeoutMs` (100 to 60,000 ms, default 10,000) that throws, and at most three attempts. Sources: SRC-007
+- **FR-018**: THE `file` driver SHALL open each file non-blocking, so a FIFO named like a secret is skipped (listed) or refused (named) without waiting for a writer. Sources: SRC-007
 - **FR-015**: THE `file` driver SHALL open each file once and check its kind and size on that handle and on the bytes it reads, so a file swapped or grown after the check is refused, never read unchecked. Sources: SRC-004
 
 ### Non-functional Requirements
 
 - **NFR-001**: no value, token or response body reaches a log line, an error or an argument. Sources: SRC-004
-- **NFR-002**: every Google request carries a timeout (`timeoutMs`, 100 to 60,000 ms, default 10,000). Sources: SRC-004
+- **NFR-002**: every Google and AWS request carries a timeout (`timeoutMs`, 100 to 60,000 ms, default 10,000), and every reload a deadline (FR-016). Sources: SRC-004, SRC-007
 
 ### Key Entities
 
@@ -176,6 +181,9 @@ reads the secrets its platform mounts as files.
 - **AC-011**: WHEN the scope lacks an optional config name THE check SHALL warn that its default applies, and the sync SHALL write nothing for it.
 - **AC-012**: WHEN `onReload` or `onError` throws THE `reloadNow()` promise SHALL resolve, and the interval SHALL leave no unhandled rejection.
 - **AC-013**: WHEN a secret file grows past 64 KiB after the driver first looked at it THE load SHALL fail naming it, with the last good copy kept.
+- **AC-014**: WHEN a store's `load()` never settles THE reload SHALL answer `false` at its deadline with `onError` told, and THE next `reloadNow()` SHALL call `load()` again.
+- **AC-015**: WHEN a listed folder holds a FIFO named like a secret THE `file` load SHALL finish without it.
+- **AC-016**: WHEN the AWS store builds its client THE client SHALL carry a 3 s connection timeout, a request timeout of `timeoutMs` that throws, and at most three attempts.
 - **AC-006**: THE committed manifest SHALL list `memory`, `aws_secrets_manager`, `gcp_secret_manager` and `file` as `config.SecretStore` candidates.
 
 ## Success Criteria
@@ -203,6 +211,10 @@ reads the secrets its platform mounts as files.
 - 2026-11-27 · review follow-ups: an optional config name is never written empty, so its default applies (FR-013,
   AC-011); a listener that throws never rejects `reloadNow()` (FR-014, AC-012); the `file` driver checks each file on
   one handle and on the bytes read (FR-015, AC-013).
+- 2026-11-27 · second review: every reload has a deadline and a timed-out reload releases the schedule (FR-016, AC-014);
+  the AWS client has connection and request timeouts and three attempts (FR-017); the `file` driver opens
+  non-blocking (FR-018, AC-015). The boot wiring stays STA-2804 (blocking STA-258's runtime half), and the changeset,
+  README and ADR now call `scheduleSecretReload` an opt-in helper and say a `@Secret` field changes only on restart.
 
 ## Status history
 
@@ -213,3 +225,4 @@ reads the secrets its platform mounts as files.
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)
 - 2026-11-27 → Implementing (review findings addressed: T016 to T018)
 - 2026-11-27 → Implementing (review follow-ups addressed: T019 to T021)
+- 2026-11-27 → Implementing (second review addressed: T022 to T024)

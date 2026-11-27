@@ -5,11 +5,14 @@
  *          answers from that copy. A JSON-object secret gives one secret per string member; any other value is one
  *          secret under the secret's name.
  * Boundary: server only. The AWS SDK is an optional peer imported on the first `load`, so loading `./node` never
- *           needs it installed. `get` is synchronous by the port's contract, so the runtime awaits `load()` at boot (and
- *           again after a rotation, `scheduleSecretReload`); a `get` before the first load throws. A load swaps the copy
- *           only when every id was read, so a failed reload keeps the last good values. Values live in a private map, are
- *           never listed, logged or put in an error: a failed load names the secret ids that failed, never a value. No
- *           credential is configured: the SDK's default chain (the role) signs every call.
+ *           needs it installed. `get` is synchronous by the port's contract, so the host that binds this store awaits
+ *           `load()` before it answers (and may reload it with `scheduleSecretReload`; `bootApp` binds it at boot only
+ *           with STA-2804); a `get` before the first load throws. A load swaps the copy only when every id was read, so
+ *           a failed reload keeps the last good values. Every request has limits: `connectionTimeout` 3 s,
+ *           `requestTimeout` `timeoutMs` (it throws, never only warns) and at most three attempts, because the SDK's
+ *           defaults set no time limit and a dropped connection would hang the load forever. Values live in a private
+ *           map, are never listed, logged or put in an error: a failed load names the secret ids that failed, never a
+ *           value. No credential is configured: the SDK's default chain (the role) signs every call.
  * Runtime: node
  * Governing contract: ADR 0173 (nobody reads a value; secrets by name); ADR 0146 as amended by 0305 (rule 34); ADR
  *                     0294 (decision 16); ADR 0171 (AWS accounts per product and region).
@@ -22,6 +25,12 @@ import { secretEntriesOf } from "#core/functions/secret-entries-of.function";
 
 /** The most ids one `BatchGetSecretValue` call takes. */
 const BATCH = 20;
+
+/** Milliseconds to open a connection to Secrets Manager. */
+const CONNECTION_TIMEOUT_MS = 3000;
+
+/** How many times one request is tried, the first included. */
+const MAX_ATTEMPTS = 3;
 
 /**
  * Reads secrets from AWS Secrets Manager.
@@ -36,7 +45,7 @@ export class AwsSecretsManagerSecretStoreDriver extends Driver(SecretStore) {
   private values: ReadonlyMap<string, string> | undefined;
 
   /**
-   * @param config - the region and the secret ids.
+   * @param config - the region, the secret ids and the per-request timeout.
    */
   constructor(config: AwsSecretsManagerConfig) {
     super();
@@ -49,7 +58,7 @@ export class AwsSecretsManagerSecretStoreDriver extends Driver(SecretStore) {
    * @throws Error when the region or the ids are missing, or a secret cannot be read (ids only, no value).
    */
   async load(): Promise<void> {
-    const { region, secretIds } = this.config;
+    const { region, secretIds, timeoutMs } = this.config;
     if (region === "" || secretIds.length === 0)
       throw new Error(
         "The aws-secrets-manager secret store needs a region and at least one secret id",
@@ -57,7 +66,15 @@ export class AwsSecretsManagerSecretStoreDriver extends Driver(SecretStore) {
     // The SDK is an optional peer, imported here so a host that never loads this store never needs it installed.
     const { BatchGetSecretValueCommand, SecretsManagerClient } =
       await import("@aws-sdk/client-secrets-manager");
-    const client = new SecretsManagerClient({ region });
+    const client = new SecretsManagerClient({
+      region,
+      maxAttempts: MAX_ATTEMPTS,
+      requestHandler: {
+        connectionTimeout: CONNECTION_TIMEOUT_MS,
+        requestTimeout: timeoutMs,
+        throwOnRequestTimeout: true,
+      },
+    });
     const values = new Map<string, string>();
     const failed: string[] = [];
     try {

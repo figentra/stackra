@@ -33,6 +33,10 @@ the programming model v3.1 shape (ADR 0294, 0305). Entries `.`, `./contracts`, `
 - A loading driver (`aws_secrets_manager`, `gcp_secret_manager`, `file`) swaps its copy only after every read succeeded,
   so a failed reload (`scheduleSecretReload`) keeps the last good values. Never parse a provider's body where the parse
   error could quote it: the Google driver's `jsonOf` swallows it (ADR 0371, amendment of 2026-11-27).
+- Every provider read has a time limit and every reload a deadline: the AWS client's `connectionTimeout`,
+  `requestTimeout` (`timeoutMs`, `throwOnRequestTimeout`) and `maxAttempts`, the Google driver's per-request
+  `timeoutMs`, the `file` driver's non-blocking open, and `scheduleSecretReload`'s `timeoutMs`. The SDK's defaults never
+  time out, so never build a provider client without limits.
 - The key comes from `configKey` only; gen calls the same function. Never add a `key` option.
 - `hydrateEnv(..., { only: "public" })` reads public-prefixed variables only (`PUBLIC_ENV_PREFIXES`).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.

@@ -4,19 +4,21 @@
  *          platform mounts its secrets in (a Kubernetes Secret volume, Docker or Compose secrets, a systemd credential
  *          directory), named by the secret (`/run/secrets/RESEND_API_KEY`), and keeps them in memory; `get(name)`
  *          answers from that copy. One trailing line break is dropped from each file.
- * Boundary: server only. `get` is synchronous by the port's contract, so the runtime awaits `load()` at boot; a `get`
- *           before the first load throws. A load swaps the copy only when every file was read, so a failed reload
- *           keeps the last good values. Values live in a private map, are never listed, logged or put in an error: a
- *           failed load names the folder, the names and an errno code, never a value. With no `names`, only
- *           SCREAMING_SNAKE regular files are read, so the platform's own entries (`..data`, dotfiles) are skipped. A
- *           file over 64 KiB is refused: each file is opened once, and its kind and size are checked on that handle and
- *           again on the bytes read, so a file swapped or grown between the check and the read is never taken in
- *           unchecked. Kubernetes swaps a mounted Secret's files in place, so a reload (`scheduleSecretReload`) picks up
- *           a rotation with no restart.
+ * Boundary: server only. `get` is synchronous by the port's contract, so the host that binds this store awaits
+ *           `load()` before it answers (`bootApp` binds it at boot only with STA-2804); a `get` before the first load
+ *           throws. A load swaps the copy only when every file was read, so a failed reload keeps the last good values.
+ *           Values live in a private map, are never listed, logged or put in an error: a failed load names the folder,
+ *           the names and an errno code, never a value. With no `names`, only SCREAMING_SNAKE regular files are read,
+ *           so the platform's own entries (`..data`, dotfiles) are skipped. A file over 64 KiB is refused: each file is
+ *           opened once, non-blocking (so a FIFO named like a secret never stalls the load), and its kind and size are
+ *           checked on that handle and again on the bytes read, so a file swapped or grown between the check and the
+ *           read is never taken in unchecked. Kubernetes swaps a mounted Secret's files in place, so a reload
+ *           (`scheduleSecretReload`) picks up a rotation with no restart.
  * Runtime: node
  * Governing contract: ADR 0371 (amendment 2026-11-27, STA-258: on-premises and air-gapped stores); ADR 0173 (nobody
  *                     reads a value; secrets by name); ADR 0294 (decision 16).
  */
+import { constants } from "node:fs";
 import { open, readdir } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
@@ -31,6 +33,12 @@ const NAME = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
 /** The largest secret file read: 64 KiB. */
 const MAX_BYTES = 64 * 1024;
 
+/**
+ * Read-only and non-blocking: opening a FIFO (or a device) named like a secret returns at once instead of waiting for
+ * a writer, and the kind check on the handle then refuses it. It changes nothing for a regular file.
+ */
+const OPEN_FLAGS = constants.O_RDONLY | constants.O_NONBLOCK;
+
 /** The errno code of a file-system failure, never its message (which could quote a path's content). */
 const codeOf = (error: unknown): string =>
   typeof (error as { code?: unknown } | null)?.code === "string"
@@ -39,7 +47,7 @@ const codeOf = (error: unknown): string =>
 
 /** Why a file was not taken, or its text: read through one handle, never more than `MAX_BYTES` + 1 bytes. */
 async function readCapped(path: string): Promise<{ text: string } | { refused: string }> {
-  const handle = await open(path, "r");
+  const handle = await open(path, OPEN_FLAGS);
   try {
     const info = await handle.stat();
     if (!info.isFile()) return { refused: "not a file" };

@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: `AwsSecretsManagerConfig`, the configuration of the AWS Secrets Manager secret store (key
- *          `config.aws_secrets_manager`): the region and the secret ids read at load.
+ *          `config.aws_secrets_manager`): the region, the secret ids read at load and the per-request timeout.
  * Boundary: a configuration class over `AwsSecretsManagerOptions` with no env map; runway's layer sets it per
  *           environment. No credential: the runtime's AWS role signs the reads.
  * Runtime: isomorphic

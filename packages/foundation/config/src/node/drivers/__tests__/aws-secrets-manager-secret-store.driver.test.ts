@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of `AwsSecretsManagerSecretStoreDriver`: it is the `SecretStore` port; `load` reads the ids in
  *          batches of twenty in the configured region, a JSON-object secret gives one secret per string member and a
- *          plain one a secret under its name; a `get` before the load throws; a missing region or id, or an id AWS
- *          refuses, rejects naming ids only.
+ *          plain one a secret under its name; every client has a connection timeout, a request timeout that throws
+ *          (`timeoutMs`) and at most three attempts, since the SDK's defaults never time out; a `get` before the load
+ *          throws; a missing region or id, or an id AWS refuses, rejects naming ids only.
  * Boundary: test only; the AWS SDK is mocked, so no call leaves the process. Every value is a made-up canary.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022; ADR 0269; ADR 0173.
@@ -71,12 +72,32 @@ describe(AwsSecretsManagerSecretStoreDriver, () => {
     const ids = ["app/json", ...Array.from({ length: 20 }, (_, n) => `plain/${n}`)];
     const driver = store({ region: "me-central-1", secretIds: ids });
     await driver.load();
-    expect(aws.regions.at(-1)).toEqual({ region: "me-central-1" });
+    expect(aws.regions.at(-1)).toEqual({
+      region: "me-central-1",
+      maxAttempts: 3,
+      requestHandler: {
+        connectionTimeout: 3000,
+        requestTimeout: 10_000,
+        throwOnRequestTimeout: true,
+      },
+    });
     expect(aws.batches.map((batch) => batch.length)).toEqual([20, 1]);
     expect(driver.get("RESEND_API_KEY")).toBe("json-canary");
     expect(driver.get("COUNT")).toBeUndefined();
     expect(driver.get("plain/19")).toBe("plain/19-canary");
     expect(aws.destroyed).toBe(1);
+  });
+
+  it("bounds every request with the configured timeoutMs, so a dropped connection fails the load", async () => {
+    await store({ region: "me-central-1", secretIds: ["app/prod"], timeoutMs: 2500 }).load();
+    expect(aws.regions.at(-1)).toMatchObject({
+      maxAttempts: 3,
+      requestHandler: {
+        connectionTimeout: 3000,
+        requestTimeout: 2500,
+        throwOnRequestTimeout: true,
+      },
+    });
   });
 
   it("refuses a missing region or id, and names refused ids only", async () => {

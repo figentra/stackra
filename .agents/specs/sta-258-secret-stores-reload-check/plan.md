@@ -66,6 +66,9 @@ ADR 0371 (amended here), ADR 0173, ADR 0525, ADR 0294 (decisions 16, 19, 20, 26)
 - **P-007**: no optional config name is ever written empty, so an empty value never overrides a config default — Validates: FR-013
 - **P-008**: `reloadNow()` resolves whatever its listeners do — Validates: FR-014
 - **P-009**: no value the `file` driver answers is longer than 64 KiB, however the file changes while it is read — Validates: FR-015
+- **P-010**: every `reloadNow()` settles within its deadline, and a reload that passed it never blocks the next `load()` — Validates: FR-016
+- **P-011**: no provider read waits without a limit: every AWS client carries a connection timeout, a request timeout that throws and an attempt cap — Validates: FR-017
+- **P-012**: no file-system entry a `file` load opens can make it wait for another process — Validates: FR-018
 
 ## Architecture overview
 
@@ -87,7 +90,12 @@ sync's placeholders (C4), and that check inside every decrypt of a product scope
 packages/foundation/config/
 ├── src/node/drivers/gcp-secret-manager-secret-store.driver.ts                    (new)
 ├── src/node/drivers/__tests__/gcp-secret-manager-secret-store.driver.test.ts     (new)
-├── src/node/drivers/aws-secrets-manager-secret-store.driver.ts                   (changed: shared JSON split, swap on success)
+├── src/node/drivers/aws-secrets-manager-secret-store.driver.ts                   (changed: shared JSON split, swap on success, request limits)
+├── src/node/drivers/__tests__/aws-secrets-manager-secret-store.driver.test.ts    (changed)
+├── src/config/aws-secrets-manager.config.ts                                      (changed: docs)
+├── src/config/__tests__/aws-secrets-manager.config.test.ts                       (changed)
+├── src/core/schemas/aws-secrets-manager-options.schema.ts                        (changed: timeoutMs)
+├── src/core/constants/aws-secrets-manager-config-schema.constant.ts              (changed: timeoutMs)
 ├── src/config/gcp-secret-manager.config.ts                                       (new)
 ├── src/config/__tests__/gcp-secret-manager.config.test.ts                        (new)
 ├── src/core/schemas/gcp-secret-manager-options.schema.ts                         (new)
@@ -181,6 +189,7 @@ export type LoadableSecretStore = SecretStore & { load: () => Promise<void> };
 export type SecretReloadOptions = {
   readonly everySeconds: number;
   readonly onError?: ((error: unknown) => void) | undefined;
+  readonly timeoutMs?: number | undefined; // one reload's deadline, default 30000
   readonly onReload?: (() => void) | undefined;
 };
 
@@ -192,10 +201,12 @@ export function scheduleSecretReload(
 ): SecretReload;
 ```
 
-**Behaviour**: single-flight `load()`, unref'd `setInterval`, `onReload` and `onError`. `SecretsConfig` carries no
+**Behaviour**: single-flight `load()` raced against an unref'd deadline (`timeoutMs`), unref'd `setInterval`,
+`onReload` and `onError`; a timed-out reload releases the schedule, so the next one calls `load()` again. `SecretsConfig` carries no
 interval: nothing at boot reads one until STA-2804 binds the store, so the host that schedules picks it.
 
-**Failure modes**: a failed load → `onError`, `false`, last good copy kept.
+**Failure modes**: a failed load → `onError`, `false`, last good copy kept; a load past its deadline → `onError`
+(timed out), `false`, last good copy kept, the abandoned load's late failure dropped.
 
 ### C4 `runway env missing` and placeholders
 
