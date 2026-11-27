@@ -8,7 +8,7 @@ so every preset file has a header).
 | -------------------- | ------------ | ---------------------------------------------------------------------- |
 | `./base`             | —            | never directly; the shared baseline                                    |
 | `./node`             | `base`       | Node scripts and tooling                                               |
-| `./library`          | `node`       | a tsdown-built library (`packages/*/*`); DOM lib and automatic JSX     |
+| `./library`          | `node`       | a tsdown-built library (`packages/*/*`) and its gen files (`.stackra/gen`, `.stackra/entry`); DOM lib and automatic JSX |
 | `./decorators`       | `library`    | a library using legacy decorators, no metadata emission (the DI tier)  |
 | `./decorators-react` | `decorators` | a library using decorators + React (DOM lib, automatic JSX)            |
 | `./runtime`          | `decorators` | the tsx runtime loader for a package's `bin/` (never tsc or the build) |

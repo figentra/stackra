@@ -6,7 +6,6 @@
   "modules": [
     {
       "key": "edge",
-      "class": "EdgeModule",
       "exports": [],
       "dependsOn": []
     }

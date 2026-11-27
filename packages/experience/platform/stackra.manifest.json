@@ -43,14 +43,9 @@
     {
       "port": "PlatformPushTransport",
       "key": "platform.PlatformPushTransport",
-      "candidates": [
-        "web_push_transport",
-        "memory_push_transport",
-        "expo_push_transport",
-        "self_hosted_push_transport"
-      ],
+      "candidates": ["web", "memory", "expo", "self_hosted"],
       "classes": {
-        "web_push_transport": {
+        "web": {
           "class": "WebPushTransportDriver",
           "from": "@stackra/platform/browser",
           "deps": [
@@ -62,11 +57,11 @@
             }
           ]
         },
-        "memory_push_transport": {
+        "memory": {
           "class": "MemoryPushTransportDriver",
           "from": "@stackra/platform"
         },
-        "expo_push_transport": {
+        "expo": {
           "class": "ExpoPushTransportDriver",
           "from": "@stackra/platform/native",
           "deps": [
@@ -78,7 +73,7 @@
             }
           ]
         },
-        "self_hosted_push_transport": {
+        "self_hosted": {
           "class": "SelfHostedPushTransportDriver",
           "from": "@stackra/platform/native",
           "deps": [
@@ -150,6 +145,7 @@
         "turnstile": {
           "class": "TurnstileCaptchaVerifierDriver",
           "from": "@stackra/platform/worker",
+          "node": "@stackra/platform/node",
           "deps": [
             {
               "class": {

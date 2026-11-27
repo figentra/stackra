@@ -503,7 +503,12 @@ export function createSourceReader(
         ? (importedNameOf(host.fileName(at), local) ?? resolved)
         : resolved;
     if (isOwn(path)) return { name, from: importPathOf(path) };
-    return { name, from: importsOf(host.fileName(at)).get(local) ?? packageOf(path) ?? path };
+    const from = importsOf(host.fileName(at)).get(local);
+    // An imported class keeps the name its import gives it: a package may export it under another name than its
+    // declaration's (`@mikro-orm/postgresql` exports `PostgreSqlMikroORM` as `MikroORM`), and a generated file imports
+    // it from that same specifier (TS2305, STA-1605).
+    if (from !== undefined) return { name: importedNameOf(host.fileName(at), local) ?? name, from };
+    return { name, from: packageOf(path) ?? path };
   };
 
   // The constant evaluator.
@@ -2182,12 +2187,14 @@ export function createSourceReader(
     if (name === "" || info === undefined || !SHAPE_KINDS.includes(info.kind)) return undefined;
     if (info.kind === "config" && (info.base === undefined || info.base.own)) return undefined;
     const path = host.fileName(node);
+    const parameters = (node.typeParameters ?? []).map((parameter) => nameOf(parameter.name));
     const head = {
       name,
       kind: info.kind,
       module: moduleOf(path),
       file: rel(path),
       importPath: importPathOf(path),
+      ...(parameters.length > 0 ? { typeParameters: parameters } : {}),
     };
     // `Settings.pick([Settings.orders.customersMayCancel])`: the picked keys' own fields (stackra-209).
     if (info.settingsPick === true) {
@@ -3022,6 +3029,34 @@ export function createSourceReader(
           found.set(pkg, (found.get(pkg) ?? new Set()).add(from));
         }
       return found;
+    },
+    driverRegistryKeys: () => {
+      const found = new Set<string>();
+      /** The `DriverRegistry` keys of the statements of an `@stackra/container` augmentation. */
+      const collect = (statements: readonly TsNode[]): void => {
+        for (const statement of statements) {
+          if (
+            kindOf(statement) !== "InterfaceDeclaration" ||
+            nameOf(statement.name) !== "DriverRegistry"
+          )
+            continue;
+          for (const member of statement.members ?? [])
+            if (kindOf(member) === "PropertySignature" && member.name !== undefined)
+              found.add(nameOf(member.name));
+        }
+      };
+      for (const file of all) {
+        // Gen's own output (this member's or a dependency's `.stackra/gen`) is what this pass writes, never authored.
+        if ((file.fileName ?? "").includes("/.stackra/")) continue;
+        for (const statement of file.statements ?? [])
+          if (
+            kindOf(statement) === "ModuleDeclaration" &&
+            nameOf(statement.name) === "@stackra/container"
+          )
+            collect(statement.body?.statements ?? []);
+      }
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here, which nothing else holds; toSorted is ES2023 and the base lib is ES2022
+      return [...found].sort();
     },
     classes: (file) =>
       classNodes(file)

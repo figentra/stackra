@@ -17,7 +17,9 @@ export const EXPORT_CONFIG_SCHEMA = z.object({
   pdfPage: z
     .object({
       widthMm: z.number().positive(),
-      heightMm: z.number().positive().exactOptional(),
+      // `PdfPage.heightMm` is `number | undefined` (a continuous roll), so the generated `X$Check` holds it to that
+      // (STA-1605).
+      heightMm: z.number().positive().optional(),
       marginMm: z.number().min(0),
     })
     .default(() => ({ widthMm: 297, heightMm: 210, marginMm: 10 })),

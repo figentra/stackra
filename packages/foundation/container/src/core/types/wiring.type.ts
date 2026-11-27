@@ -9,6 +9,7 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0263 (decision 11); ADR 0294 (decision 17); ADR 0227 2026-10-24 note (build-time wiring).
  */
+import type { Container } from "#core/services/container.service";
 import type { AnyClass } from "#core/types/any-class.type";
 import type { ModuleClass } from "#core/types/module-class.type";
 import type { WiringBinding } from "#core/types/wiring-binding.type";
@@ -41,8 +42,11 @@ export interface Wiring {
   /** The module graph by module key, in topological order. */
   readonly modules?: Readonly<Record<string, WiringModule>>;
 
-  /** The closed platform set the member injects without a declaration. */
-  readonly platform?: readonly AnyClass[];
+  /**
+   * The closed platform set the member injects without a declaration; `Container` among them is the container itself,
+   * whose constructor is private, as in a binding's `deps` (STA-1605).
+   */
+  readonly platform?: readonly (AnyClass | typeof Container)[];
 
   /** Every class the container builds. */
   readonly bindings?: readonly WiringBinding[];

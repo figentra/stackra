@@ -68,12 +68,11 @@ function ormType(field: FieldIR): string {
  *
  * @param ir - the member read by discovery.
  * @param module - the module key whose models the file holds.
- * @param hosted - the models are a hosted package's, whose published types carry no `"~defaults"` marker.
  * @returns the file content, or undefined when the module declares no model.
  * @example
  * emitEntities(ir, "scope"); // "...export const ScopeNodeSchema = new EntitySchema<ScopeNode>({..."
  */
-export function emitEntities(ir: MemberIR, module: string, hosted = false): string | undefined {
+export function emitEntities(ir: MemberIR, module: string): string | undefined {
   const models = ir.shapes.filter((shape) => shape.kind === "model" && shape.module === module);
   const additions = ir.shapes.filter(
     (shape) => shape.kind === "model_addition" && shape.module === module,
@@ -125,11 +124,6 @@ export function emitEntities(ir: MemberIR, module: string, hosted = false): stri
           candidate.target.name === owner.name,
       )?.name;
 
-  // Only a service's own `T` carries the marker: its schemas file (in the typecheck program) adds it; a package's
-  // committed entity list is checked on `src` alone, and a hosted package's class comes from its published types,
-  // where the model class has no such key (TS2353).
-  const marked = (shape: ShapeIR): boolean =>
-    !hosted && ir.layout !== "package" && shape.fields.some((field) => field.default !== undefined);
   let money = false;
   /** The column properties of `fields`, given the model's `traits`. */
   const fieldProperties = (fields: readonly FieldIR[], traits: ReadonlySet<string>): string[] => {
@@ -231,9 +225,6 @@ export function emitEntities(ir: MemberIR, module: string, hosted = false): stri
     }
     for (const name of shape.entity?.computed ?? [])
       properties.push(`    ${name}: { type: "json", persist: false },`);
-    // The schemas file types a defaulted model with a `"~defaults"` marker (STA-1694); `EntitySchema<T>` names every
-    // string key of `T`, so the marker is listed as not persisted, like a getter.
-    if (marked(shape)) properties.push('    "~defaults": { type: "json", persist: false },');
 
     schemas.push(
       `/** \`${modelKey(module, shape.name)}\` (${shape.file}). */`,
@@ -261,7 +252,6 @@ export function emitEntities(ir: MemberIR, module: string, hosted = false): stri
       "  properties: {",
       '    id: { type: "string", primary: true },',
       ...fieldProperties(shape.fields, new Set()),
-      ...(marked(shape) ? ['    "~defaults": { type: "json", persist: false },'] : []),
       "  },",
       "});",
       "",

@@ -190,6 +190,13 @@ export interface MemberIR {
   readonly clientImports?: readonly { readonly service: string; readonly file: string }[];
 
   /**
+   * The `DriverRegistry` keys an authored augmentation in the member's program already declares (a package's stand-in
+   * naming every driver of its port, ADR 0263 decision 9). The wiring's augmentation leaves them out: a second
+   * declaration of a key with other names is TS2717 (STA-1605). Absent when there is none.
+   */
+  readonly authoredDriverKeys?: readonly string[];
+
+  /**
    * The lang catalogues under `assets/lang/<locale>/<namespace>.json`: locale to namespace to the parsed JSON. The
    * i18n target writes `#stackra/i18n` from it. Absent when the member has no `assets/lang`.
    */

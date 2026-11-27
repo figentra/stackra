@@ -27,6 +27,9 @@ export interface ShapeIR {
   /** The specifier generated files import the class from (`#node/schemas/x.schema`). */
   readonly importPath: string;
 
+  /** The type parameter names of a generic shape class (`ChangeBase<S>`); absent when it has none (STA-1605). */
+  readonly typeParameters?: readonly string[];
+
   /**
    * What the shape builds on: another shape of the member (compiled first, then `.extend`ed), or a package's shipped
    * `X$`, imported as `Base<Name>$`, for a host override, which only replaces defaults (ADR 0305 rule 1), or a

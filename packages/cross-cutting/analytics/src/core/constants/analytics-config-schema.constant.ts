@@ -28,10 +28,14 @@ import { z } from "zod";
 
 import { ANALYTICS_DEFAULT_DESTINATION } from "#core/constants/analytics-default-destination.constant";
 
-/** A consent category an optional send may be gated by: never `necessary`. */
+/**
+ * A consent category an optional send may be gated by: never `necessary`. The check returns a plain boolean, not a type
+ * predicate, so the output stays `ConsentCategory`, the type `AnalyticsDestination` and `consentCategory` state, and
+ * the generated `X$Check` holds (STA-1605).
+ */
 const GATING_CATEGORY = z
   .enum(Enum.values(ConsentCategory))
-  .refine((category) => category !== ConsentCategory.Necessary, {
+  .refine((category): boolean => category !== ConsentCategory.Necessary, {
     message: "Analytics is gated by an optional consent category, never `necessary`",
   });
 
@@ -42,8 +46,10 @@ const DRIVER = z.enum(["none", "memory", "posthog", "relay", "ad-pixel"]);
 const DESTINATION = z.object({
   driver: z.string().min(1),
   category: GATING_CATEGORY,
-  include: z.array(z.string().min(1)).default(() => []),
-  exclude: z.array(z.string().min(1)).default(() => []),
+  // Optional, as `AnalyticsDestination` states them (absent takes every event), so the generated `X$Check` holds
+  // (STA-1605).
+  include: z.array(z.string().min(1)).exactOptional(),
+  exclude: z.array(z.string().min(1)).exactOptional(),
 });
 
 /** One conversion the `ad-pixel` driver fires: the analytics event, the conversion name and the dedup id property. */

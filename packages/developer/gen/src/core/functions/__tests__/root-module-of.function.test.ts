@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `rootModuleOf`: an authored root module wins, a member without one gets the generated
- *          `<Key>Module`, and a package with nothing for the container ships none.
+ *          `<Key>Module`, and a package with nothing for the container, or a member off the container, ships none
+ *          (STA-1605).
  * Boundary: test only; runs on the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0305 (rules 15 and 16).
@@ -28,6 +29,16 @@ describe("rootModuleOf", () => {
       ...rootModule,
       generated: false,
     });
+  });
+
+  it("gives a member off the container no module, as gen writes it no module file (STA-1605)", () => {
+    // `@stackra/csp` builds a config but does not declare `@stackra/container`: no wiring, no `module.ts`.
+    expect(
+      rootModuleOf({ ...COMMERCE_IR, packages: ["@stackra/config", "@stackra/validation"] }),
+    ).toBe(undefined);
+    expect(rootModuleOf({ ...COMMERCE_IR, packages: ["@stackra/container"] })?.name).toBe(
+      "CommerceModule",
+    );
   });
 
   it("gives a package of values only no module", () => {

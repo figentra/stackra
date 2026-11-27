@@ -281,7 +281,7 @@ describe("emitSchemas", () => {
     expect(content).toContain("  [ExploreGroupView, ExploreGroupView$],");
   });
 
-  it("keeps an array default's codes literal, with a fresh array per parse (STA-1695)", () => {
+  it("writes an object or array default through withDefault, typed by the field, fresh per parse (STA-1695, STA-1605)", () => {
     const settings: ShapeIR = {
       name: "SdksSettings",
       kind: "schema",
@@ -319,8 +319,88 @@ describe("emitSchemas", () => {
       { ...COMMERCE_IR, shapes: [settings], enums: [], classes: [] },
       "orders",
     );
-    expect(content).toContain('.default(() => [...(["typescript","python"] as const)])');
-    expect(content).toContain(".default(() => ({}))");
+    expect(content).toContain(
+      'languages: withDefault(z.array(z.enum(["typescript","python","php"])))(() => (["typescript","python"])),',
+    );
+    expect(content).toContain("limits: withDefault(z.record(z.string(), z.number()))(() => ({})),");
+    expect(content).toMatch(/import \{[^}]*\bwithDefault\b[^}]*\} from "@stackra\/validation";/);
+  });
+
+  it("gives a model no ~defaults brand and leaves its getters out of the check (STA-1605)", () => {
+    const invoice = BILLING_IR.shapes.find((shape) => shape.name === "Invoice");
+    const entity = invoice?.entity;
+    if (invoice === undefined || entity === undefined)
+      throw new Error("the fixture has no Invoice model");
+    const content = emitSchemas(
+      {
+        ...BILLING_IR,
+        shapes: BILLING_IR.shapes.map((shape) =>
+          shape === invoice ? { ...invoice, entity: { ...entity, computed: ["balance"] } } : shape,
+        ),
+      },
+      "billing",
+    );
+    // `status` has an initializer, which a schema shape would name in its brand; a model is never a call's input.
+    expect(content).not.toContain("interface Invoice {");
+    expect(content).toMatch(
+      /Invoice\$Check = Assert<Same<[^;]*Omit<Fields<Invoice>, [^>]*"balance">/,
+    );
+  });
+
+  it("checks a generic shape over any arguments and gives it no brand (STA-1605)", () => {
+    const base: ShapeIR = {
+      name: "ChangeBase",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/change-base.schema.ts",
+      importPath: "#modules/orders/schemas/change-base.schema",
+      typeParameters: ["S"],
+      fields: [
+        {
+          name: "note",
+          optional: false,
+          nullable: false,
+          type: { kind: "string" },
+          rules: [],
+          default: { value: "", code: '""', imports: [] },
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [base], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain(
+      "export type ChangeBase$Check = Assert<Same<z.output<typeof ChangeBase$>, Fields<ChangeBase<any>>>>;",
+    );
+    expect(content).not.toContain("interface ChangeBase");
+  });
+
+  it("compiles a driver-name field no driver reaches to any string, never z.enum([]) (STA-1605)", () => {
+    const input: ShapeIR = {
+      name: "RelayInput",
+      kind: "schema",
+      module: "orders",
+      file: "src/modules/orders/schemas/relay-input.schema.ts",
+      importPath: "#modules/orders/schemas/relay-input.schema",
+      fields: [
+        {
+          name: "transport",
+          optional: false,
+          nullable: false,
+          type: { kind: "driver_name", port: "RelayTransport", values: [] },
+          rules: [],
+        },
+      ],
+      relations: [],
+    };
+    const content = emitSchemas(
+      { ...COMMERCE_IR, shapes: [input], enums: [], classes: [] },
+      "orders",
+    );
+    expect(content).toContain("  transport: z.string(),");
+    expect(content).not.toContain("z.enum([])");
   });
 
   it("links each change to its subject beside the schemas", () => {

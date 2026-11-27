@@ -6,7 +6,6 @@
   "modules": [
     {
       "key": "static",
-      "class": "StaticModule",
       "exports": [],
       "dependsOn": []
     }

@@ -37,7 +37,10 @@ type DataKey<T, K extends keyof T> = T[K] extends (...args: never[]) => unknown
   : // `~defaults`, and a config's `~kind` and `~config` (STA-2215): type-only brands, never data.
     K extends `~${string}`
     ? never
-    : K;
+    : // A symbol key (a model's `[OptionalProps]`) is a type-only marker, as in `Fields` (STA-1605).
+      K extends symbol
+      ? never
+      : K;
 
 /**
  * The data fields of `T` as a caller passes them: defaulted fields optional.

@@ -42,6 +42,10 @@ export class CatalogueManifest extends Schema {
   // schema already says its rule and keeps the fields gen adds later (loose)
   @Field(CATALOGUE_MANIFEST_SCHEMA.shape.actions)
   actions: (NonNullable<StackraManifest["actions"]>[number] & {
+    /** `action` or `query`, as the shipped schema checks it. */
+    readonly kind: "action" | "query";
+    /** The data class the action handles (a built-in code or a product's key); the AI gateway routes by it. */
+    readonly dataClass?: string;
     /** The agent tool gen derived (`{ name, default, hints }`), or `true` in a hand-written manifest. */
     readonly tool?: boolean | { readonly name: string; readonly [field: string]: unknown };
     /** Why a user-facing action is not a tool. */

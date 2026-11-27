@@ -28,6 +28,7 @@ import { kebabCase } from "@stackra/support";
 import { CLIENTS_SPECIFIER } from "#core/constants/clients-specifier.constant";
 import { GEN_REACHED_PORTS } from "#core/constants/gen-reached-ports.constant";
 import { driverName } from "#core/functions/driver-name.function";
+import { portMember } from "#core/functions/port-member.function";
 import { folderKey } from "#core/functions/folder-key.function";
 import { isModuleFolder } from "#core/functions/is-module-folder.function";
 import { pairSubclassConnections } from "#core/functions/pair-subclass-connections.function";
@@ -181,6 +182,7 @@ export async function discoverMember(
     const transitive = readTransitiveDependencies(facts.root, dependencies, facts.dependencies);
     // A service is consumed by an injected client, by a listener of one of its events, or by any file importing it.
     const clientImports = reader.clientImports();
+    const authoredDriverKeys = reader.driverRegistryKeys();
     const consumed = [
       ...classes.flatMap((declared) =>
         [...declared.deps.map((dep) => dep.class.from), declared.handle?.event?.from ?? ""]
@@ -234,7 +236,14 @@ export async function discoverMember(
     };
     for (const declared of classes)
       if (declared.kind === "driver" && declared.partner !== undefined)
-        add(declared.partner.name, driverName(declared.file, declared.partner.name));
+        add(
+          declared.partner.name,
+          driverName(
+            declared.file,
+            declared.partner.name,
+            portMember(facts.member, dependencies, declared.partner.from),
+          ),
+        );
     for (const { manifest } of dependencies)
       for (const driver of manifest.drivers ?? [])
         for (const candidate of Array.isArray(driver["candidates"]) ? driver["candidates"] : [])
@@ -317,6 +326,7 @@ export async function discoverMember(
       ...(publishers.length > 0 ? { publishers } : {}),
       ...(workspaceServices.length > 0 ? { workspaceServices } : {}),
       ...(clientImports.length > 0 ? { clientImports } : {}),
+      ...(authoredDriverKeys.length > 0 ? { authoredDriverKeys } : {}),
       ...(catalogues !== undefined ? { catalogues } : {}),
       ...(packageCatalogues.length > 0 ? { packageCatalogues } : {}),
       ...(i18nReferences.length > 0 ? { i18nReferences } : {}),

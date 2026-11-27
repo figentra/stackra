@@ -106,6 +106,7 @@ describe("@stackra/validation", () => {
       "url",
       "validate",
       "verifyOneTimeCode",
+      "withDefault",
     ]);
   });
 

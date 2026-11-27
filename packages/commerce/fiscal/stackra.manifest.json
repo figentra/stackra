@@ -91,9 +91,9 @@
     {
       "port": "FiscalSigner",
       "key": "fiscal.FiscalSigner",
-      "candidates": ["cades_signer", "xades_envelope_signer"],
+      "candidates": ["cades", "xades_envelope"],
       "classes": {
-        "cades_signer": {
+        "cades": {
           "class": "CadesSignerDriver",
           "from": "@stackra/fiscal",
           "deps": [
@@ -105,7 +105,7 @@
             }
           ]
         },
-        "xades_envelope_signer": {
+        "xades_envelope": {
           "class": "XadesEnvelopeSignerDriver",
           "from": "@stackra/fiscal",
           "deps": [
@@ -122,9 +122,9 @@
     {
       "port": "FiscalOnboarding",
       "key": "fiscal.FiscalOnboarding",
-      "candidates": ["eta_onboarding", "zatca_onboarding"],
+      "candidates": ["eta", "zatca"],
       "classes": {
-        "eta_onboarding": {
+        "eta": {
           "class": "EtaOnboardingDriver",
           "from": "@stackra/fiscal",
           "deps": [
@@ -142,7 +142,7 @@
             }
           ]
         },
-        "zatca_onboarding": {
+        "zatca": {
           "class": "ZatcaOnboardingDriver",
           "from": "@stackra/fiscal",
           "deps": [

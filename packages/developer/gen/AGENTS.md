@@ -107,7 +107,10 @@ The Stackra compiler. Member at `packages/developer/gen` (`tier:lib`), in the pr
   row (key from `configKeyOf` and the package's member) unless the member overrides it. The `DriverRegistry`
   augmentation lists the member's own drivers only: packages augment their own ports. A package manifest written
   before this change has no `classes` and contributes nothing until the package is generated again. Test-only
-  candidates (a `ClientFake` transport) are testing plugins, never manifest rows.
+  candidates (a `ClientFake` transport) are testing plugins, never manifest rows. A `./worker` driver is listed
+  only in a Worker member's wiring (its entry needs the Workers runtime types), except a portable one the package's
+  `./node` barrel also exports (ADR 0127 2026-10-26 note, Turnstile): its class row records `node` (that entry), and
+  every other member lists it from there (STA-1605).
 - Package config section (STA-1308). A package manifest lists its config classes under `config`
   (`[{ key, class, from }]`, own configs only, not overrides). `emitWiring` writes a package config row only for a
   token that a declared package's manifest lists there or names as a driver's selecting `config`; it never guesses

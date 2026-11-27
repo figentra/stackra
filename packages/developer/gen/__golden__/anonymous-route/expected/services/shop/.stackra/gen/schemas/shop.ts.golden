@@ -57,13 +57,7 @@ export const Order$ = z.object({
   createdAt: isoDateTime(),
   updatedAt: isoDateTime(),
 });
-export type Order$Check = Assert<Same<z.output<typeof Order$>, Omit<Fields<Order>, "lines">>>;
-declare module "#node/models/order.model" {
-  interface Order {
-    readonly "~defaults"?: "status";
-  }
-}
-
+export type Order$Check = Assert<Same<z.output<typeof Order$>, Omit<Fields<Order>, "lines" | "isOpen">>>;
 
 /** schema `CancelOrderInput` (src/node/schemas/cancel-order-input.schema.ts). */
 export const CancelOrderInput$ = z.object({

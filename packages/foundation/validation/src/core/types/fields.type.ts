@@ -4,8 +4,9 @@
  *          generated `X$Check` compares it with the compiled schema's output, and `X.create` takes it.
  * Boundary: a type only. Optional and readonly modifiers are kept; protected brands (`~kind`) are not in `keyof`, so
  *           they drop out too, and so does the type-only `~defaults` brand gen adds (`InputFields` uses it to make
- *           defaulted fields optional for a caller; `Fields` is the full class data, what `handle` sees). A nested shape (also in an array or a union) becomes its own `Fields`, so plain values
- *           and a schema's `z.output` match it.
+ *           defaulted fields optional for a caller; `Fields` is the full class data, what `handle` sees). A symbol
+ *           key (a model's `[OptionalProps]`, STA-1605) is a type-only marker and drops out too. A nested shape (also
+ *           in an array or a union) becomes its own `Fields`, so plain values and a schema's `z.output` match it.
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decision 26: `X$Check`); the STA-335 type-to-schema and kind-base spikes.
  */
@@ -34,6 +35,9 @@ export type Fields<T> = {
       : // `~defaults`, and a config's `~kind` and `~config` (STA-2215): type-only brands, never data.
         K extends `~${string}`
         ? never
-        : K
+        : // A symbol key is a type-only marker (a model's `[OptionalProps]`), never a wire field (STA-1605).
+          K extends symbol
+          ? never
+          : K
   ]: FieldValue<T[K]>;
 };
