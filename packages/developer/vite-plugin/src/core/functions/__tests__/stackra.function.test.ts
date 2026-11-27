@@ -19,6 +19,7 @@ describe("stackra", () => {
       "stackra:class-components",
       "stackra:generated-modules",
       "stackra:server-only",
+      "stackra:browser-logs",
     ]);
   });
 

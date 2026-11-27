@@ -93,6 +93,7 @@
     "@stackra/console": "workspace:*",
     "@stackra/container": "workspace:*",
     "@stackra/contracts": "workspace:*",
+    "@stackra/logger": "workspace:*",
     "@stackra/validation": "workspace:*",
     "yaml": "catalog:",
     "zod": "catalog:"

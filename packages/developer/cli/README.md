@@ -27,6 +27,7 @@ and `yaml`.
 | `stackra new <tooling\|app:*> <name>`                     | a template kind from `tools/scaffold/templates` (`--description`, `--summary`, `--dry-run`)                                               |
 | `stackra gen [--check] [--manifests]`                     | gen-core on the member or every workspace member: manifests first, then the rest; a warning prints and exits 0, a refusal exits 1         |
 | `stackra dev [--target <t>]`                              | gen, then serve: Vite (web, PWA), Expo (iOS, Android), Wrangler, Encore, Mintlify                                                         |
+| `stackra dev --no-log`                                    | the same with the terminal alone: nothing is copied into the dev log (`.stackra/logs/dev.ndjson`) |
 | `stackra dev --surface <surface>`                         | a product surface in its real shell (published or `--os` checkout), Vite with hot reload                                                  |
 | `stackra dev --mobile <app> --os <c>`                     | a product mobile app from its template line, Release build on the iOS simulator (`--device`)                                              |
 | `stackra dev --product --os <c>`                          | every surface and mobile app of the root runway at once                                                                                   |

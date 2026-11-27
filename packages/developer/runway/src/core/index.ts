@@ -10,7 +10,8 @@
  *          (`mobileIdsOf`, ADR 0482), the resource kinds and sizes (ADR 0493), the approved Postgres extensions (`PostgresExtension`,
  *          `APPROVED_POSTGRES_EXTENSIONS`, ADR 0160), the `SmokeDriver` port of the smoke
  *          step (STA-265), the Worker version proof (`WORKER_VERSION`, `WorkerVersionProof`, `servedVersionProblem`,
- *          STA-2786), their enums, errors and types.
+ *          STA-2786), the dev log's path and entry (`DEV_LOG_PATH`, `DevLogEntry`, STA-2889), their enums, errors and
+ *          types.
  * Boundary: names each re-export and declares nothing. The zod schemas, the facts reader and the dev facts path stay
  *           internal; Vite-facing helpers are `./node`'s.
  * Runtime: isomorphic
@@ -112,6 +113,8 @@ export type { ZoneOwnerIssue } from "#core/types/zone-owner-issue.type";
 export type { RootRunway } from "#core/types/root-runway.type";
 export type { RunwayDocument } from "#core/types/runway-document.type";
 export type { RunwayFacts } from "#core/types/runway-facts.type";
+export { DEV_LOG_PATH } from "#core/constants/dev-log-path.constant";
+export type { DevLogEntry } from "#core/types/dev-log-entry.type";
 export type { RunwayIssue } from "#core/types/runway-issue.type";
 export type { RunwayRegion } from "#core/types/runway-region.type";
 export type { SmokeResult } from "#core/types/smoke-result.type";

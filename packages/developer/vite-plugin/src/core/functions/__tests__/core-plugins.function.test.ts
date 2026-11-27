@@ -1,6 +1,7 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `corePlugins`: the class-component pass first, then `#stackra/*` and the `.server` refusal;
+ * Purpose: unit tests of `corePlugins`: the class-component pass first, then `#stackra/*`, the `.server` refusal and
+ *          the dev server's browser log;
  *          the pass is added once when the given plugins (nested arrays included) already hold it; and the wired pass
  *          compiles a component class through gen.
  * Boundary: test only; runs gen's real pass on a one-class source.
@@ -22,11 +23,12 @@ export class Counter extends Component<{ start: number }> {
 `;
 
 describe("corePlugins", () => {
-  it("runs the class-component pass first, then #stackra/* and the .server refusal", () => {
+  it("runs the class-component pass first, then #stackra/*, the .server refusal and the browser log", () => {
     expect(corePlugins().map(({ name }) => name)).toEqual([
       "stackra:class-components",
       "stackra:generated-modules",
       "stackra:server-only",
+      "stackra:browser-logs",
     ]);
   });
 
@@ -34,6 +36,7 @@ describe("corePlugins", () => {
     expect(corePlugins([[classComponents()]]).map(({ name }) => name)).toEqual([
       "stackra:generated-modules",
       "stackra:server-only",
+      "stackra:browser-logs",
     ]);
   });
 

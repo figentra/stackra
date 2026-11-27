@@ -20,6 +20,7 @@
  *          App Store Connect, Play, Expo, Google Cloud, Firebase and Sentry ports, ADR 0482; the vault port's
  *          memory driver only, ADR 0525).
  *          The local edge for a built surface (`previewServe`, `LocalEdgeKvDriver`, `renderShellPage`, STA-1676).
+ *          The dev log's writer and reader (`devLogFile`, `appendDevLog`, `readDevLog`, STA-2889).
  * Boundary: names each re-export and declares nothing. Node only: it reads files. Imports `.` internals one way
  *           (ADR 0294 decision 15); exports none of `.`'s symbols.
  * Runtime: node
@@ -81,6 +82,9 @@ export { onboardMobile } from "#node/functions/onboard-mobile.function";
 export { deployProduct } from "#node/functions/deploy-product.function";
 export { devServer } from "#node/functions/dev-server.function";
 export { writeDevFacts } from "#node/functions/write-dev-facts.function";
+export { appendDevLog } from "#node/functions/append-dev-log.function";
+export { devLogFile } from "#node/functions/dev-log-file.function";
+export { readDevLog } from "#node/functions/read-dev-log.function";
 export { platformRows } from "#node/functions/platform-rows.function";
 export { prepareMobileDev } from "#node/functions/prepare-mobile-dev.function";
 export { previewServe } from "#node/functions/preview-serve.function";

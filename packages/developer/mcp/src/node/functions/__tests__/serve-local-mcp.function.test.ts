@@ -150,6 +150,9 @@ describe("serveLocalMcp", () => {
       "app_info",
       "manifest",
       "routes",
+      "logs",
+      "last_error",
+      "browser_logs",
       "new",
       "gen",
       "validate",
@@ -686,7 +689,7 @@ describe("serveLocalMcp", () => {
         annotations: { readOnlyHint: true },
       }),
     ]);
-    expect(tools.findIndex((tool) => tool.name === "validate")).toBe(5);
+    expect(tools.findIndex((tool) => tool.name === "validate")).toBe(8);
     const result = await client.request("tools/call", {
       name: "validate",
       arguments: { quick: true },

@@ -62,7 +62,9 @@ declared and who runs the call after the last vote is on [Approvals](/build/appr
 ## The developer MCP
 
 Inside a repository, `stackra mcp` serves a local MCP over stdio for an assistant: `app_info`, `manifest`, `routes`
-and `ls` read the repository's facts, committed manifests and HTTP routes, and `new`, `gen`, `validate`, `check`,
+and `ls` read the repository's facts, committed manifests and HTTP routes; `logs`, `last_error` and `browser_logs`
+read the dev log `stackra dev` writes to `.stackra/logs/dev.ndjson` (each member's server output and what its pages
+reported, redacted); and `new`, `gen`, `validate`, `check`,
 `verify`, `test`, `typecheck` and `lint` run the CLI's own commands through its gates and answer with structured
 results (failing tests, diagnostics by file and line). A tool that writes is refused in a deployed environment. Its
 configuration is `.mcp.yaml`, rendered to `.mcp.json` by `stackra mcp sync`; a server that needs a secret is started

@@ -75,6 +75,7 @@
     "@stackra/contracts": "workspace:*",
     "@stackra/gen": "workspace:*",
     "@stackra/i18n": "workspace:*",
+    "@stackra/logger": "workspace:*",
     "@stackra/runway": "workspace:*",
     "@tailwindcss/vite": "catalog:frontend",
     "@vitejs/plugin-react": "catalog:frontend"

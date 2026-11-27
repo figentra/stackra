@@ -9,7 +9,8 @@
  *          and vitest, tsc
  *          and oxlint everywhere (`--tier int` runs the `.stackra/vitest.int.config.ts` gen writes for a member with an
  *          `.int.test.ts`). Each tool reads the config gen wrote into `.stackra/` when there is one, otherwise the
- *          member-root config it finds itself.
+ *          member-root config it finds itself. Wrangler's and Expo's dev servers are marked `screen`: they draw an
+ *          interactive screen on a terminal, so a teed run keeps their stdout there.
  * Boundary: pure apart from checking which generated configs exist, whether a Fumadocs site's dependencies are
  *           installed, and reading a docs app's dev port from its `runway.yaml` (`environments.dev.port`, the one place
  *           a port is written); starts nothing. A combination with no tool is refused with the reason, never guessed,
@@ -162,7 +163,9 @@ export function resolveTool(
       return refuse("the app declares no targets");
     }
     case "dev": {
-      if (layout === "worker") return at("wrangler", ["dev", ...config("wrangler.jsonc")]);
+      // Wrangler and Expo draw an interactive screen (hotkeys, the QR code and key menu) on a terminal stdout.
+      if (layout === "worker")
+        return { ...at("wrangler", ["dev", ...config("wrangler.jsonc")]), screen: true };
       if (layout === "service") {
         // `encore run` in the member root, where encore.app is; it discovers the services gen wrote beside it.
         if (!existsSync(join(root, ENCORE_SERVICES_DIR)))
@@ -171,7 +174,7 @@ export function resolveTool(
       }
       if (layout !== "app") return refuse(`a ${layout} has nothing to serve`);
       if (web) return at("vite", [...config("vite.config.ts")]);
-      if (native) return at("expo", ["start", ...platform]);
+      if (native) return { ...at("expo", ["start", ...platform]), screen: true };
       return refuse(
         target === "desktop"
           ? "the desktop target has no dev tool yet"

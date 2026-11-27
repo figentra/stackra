@@ -40,6 +40,7 @@ describe("bundleConfig", () => {
       "stackra:class-components",
       "stackra:generated-modules",
       "stackra:server-only",
+      "stackra:browser-logs",
       "react",
       "stackra:bundle",
     ]);

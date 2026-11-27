@@ -97,7 +97,14 @@ describe("resolveTool", () => {
 
   it("serves and exports a mobile app with Expo, per target", () => {
     const mobile = member("app", ["ios", "android"]);
-    expect(resolveTool("dev", mobile, {})).toEqual({ command: "expo", args: ["start"], cwd: root });
+    // Expo draws its QR code and key menu on a terminal stdout, so a teed dev run keeps it there.
+    expect(resolveTool("dev", mobile, {})).toEqual({
+      command: "expo",
+      args: ["start"],
+      cwd: root,
+      screen: true,
+    });
+    expect(resolveTool("build", mobile, {}).screen).toBeUndefined();
     expect(resolveTool("dev", mobile, { target: "ios" }).args).toEqual(["start", "--ios"]);
     expect(resolveTool("build", mobile, {}).args).toEqual(["export", "--platform", "all"]);
     expect(resolveTool("build", mobile, { target: "android" }).args).toEqual([
@@ -155,6 +162,9 @@ describe("resolveTool", () => {
       "--config",
       ".stackra/wrangler.jsonc",
     ]);
+    // Wrangler's hotkeys need a terminal stdout.
+    expect(resolveTool("dev", member("worker"), {}).screen).toBe(true);
+    expect(resolveTool("build", member("worker"), {}).screen).toBeUndefined();
     expect(resolveTool("build", member("worker"), {}).args).toEqual([
       "deploy",
       "--dry-run",

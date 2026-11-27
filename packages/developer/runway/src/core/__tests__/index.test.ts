@@ -34,6 +34,7 @@ describe("@stackra/runway", () => {
       "AppleDeveloper",
       "CacheEviction",
       "CacheMode",
+      "DEV_LOG_PATH",
       "DeployKind",
       "EnvironmentTier",
       "ExpoProjects",
