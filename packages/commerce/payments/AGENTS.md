@@ -38,6 +38,10 @@ the ports in README "Square, Adyen and PayPal"; `cancelTerminal` gets the sessio
 - No vendor code: no Integration, Connection, provider table or vendor helper in this package (R3-8, STA-1281).
 - A connector calls its provider through `this.api` (the managed client). No vendor SDK, no card number, ever (PCI SAQ-A).
 - A lost answer must reach `PaymentService` as `ProviderUnavailableError`; never swallow it in a driver.
+- The merchant reference is the provider's idempotency key, and it is what keeps a retry from charging twice when
+  the database fails: a write that fails inside the caller's transaction rolls the pending record back with it.
+  `payment.service.fault.test.ts` and `postgres-payment-records.driver.fault.int.test.ts` inject provider and database
+  faults into the charge, refund and reconcile paths (ADR 0182 decision 4, STA-2841); a change there adds its case.
 - Every connection carries a `mode` field (`ConnectionMode` or `legacy-connected-account:<platform>`, `own-key` when
   absent); read it with `modeOf`. The pre-verification cap and the payout hold apply to `connected-account` only and
   their values come from `ConnectedAccountLimits` (host data), never from here.

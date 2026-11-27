@@ -5,7 +5,9 @@
  *          the `EventPublisher` (a row change message left
  *          from before the change log to every change consumer of its model, in the row's scope). A delivered message
  *          is deleted; a failed one is retried after an exponential backoff and dead-lettered (and logged) after its
- *          last attempt. With a batch window (`outbox.batchWindowSeconds`), a tick holds a part batch until its oldest
+ *          last attempt. A store that cannot delete a delivered message fails the tick and the message is delivered
+ *          again on a later one; that is never counted as a failed attempt (ADR 0182 decision 4, STA-2841).
+ *          With a batch window (`outbox.batchWindowSeconds`), a tick holds a part batch until its oldest
  *          message has been due that long. Then, for each change consumer the container binds, it reads the retained
  *          change log after that consumer's cursor (claimed across tenants, each tenant's entries loaded in its own
  *          isolation) and hands it each run of one model's changes in one scope
@@ -250,6 +252,8 @@ export class OutboxRelayService extends Service {
    *
    * @throws ClaimNotLoadedError when the claimed message does not load in its tenant.
    * @throws RowIsolationMissingError when it has a tenant and no `CallIsolation` is bound.
+   * @throws a store's error when it cannot delete the delivered message or record a failed delivery: the tick fails and
+   *         the message stays due, unrecorded.
    */
   private async deliver(claim: OutboxClaim, now: Date, resolver: Resolver): Promise<void> {
     const isolation = resolver.has(CallIsolation) ? resolver.get(CallIsolation) : undefined;
@@ -257,36 +261,66 @@ export class OutboxRelayService extends Service {
       inRowOwner(isolation, OUTBOX_ACTOR_ID, claim.ownerId, claim.id, work);
     const message = await inOwner(() => this.driver.load(claim.id));
     if (message === undefined) throw ClaimNotLoadedError.create({ id: claim.id });
+    let envelopes: readonly EventEnvelope[] = [];
     try {
-      if (message.kind === MessageKind.Event) {
-        const envelopes = await this.publish(this.envelopeOf(message), now);
-        await inOwner(async () => {
-          await this.fanOut(envelopes, now);
-          await this.driver.remove(message.id);
-        });
-      } else {
-        await this.consume(message, resolver);
-        await inOwner(() => this.driver.remove(message.id));
-      }
+      if (message.kind === MessageKind.Event)
+        envelopes = await this.publish(this.envelopeOf(message), now);
+      else await this.consume(message, resolver);
     } catch (error) {
-      const failure = this.failureOf(error);
-      const attempt = message.attempts + 1;
-      if (attempt < OUTBOX_DEFAULTS.attempts) {
-        const availableAt = new Date(
-          now.getTime() +
-            backoffDelay({ ...JOB_BACKOFF, backoff: OUTBOX_DEFAULTS.backoff }, attempt),
-        );
-        await inOwner(() => this.driver.retry(message.id, availableAt, failure));
-        return;
-      }
-      await inOwner(() => this.driver.deadLetter(message.id, failure, now));
-      this.logger()?.error(OUTBOX_LOG_EVENTS.messageDead, {
-        messageId: message.id,
-        type: message.type,
-        attempts: attempt,
-        code: failure.code,
-      });
+      await this.failed(message, now, error, inOwner);
+      return;
     }
+    // Recording the delivery is the store's work, not the delivery's: a store that cannot delete the message fails the
+    // tick, and the message is delivered again on a later one (the inbox deduplicates it by id). It is never counted as
+    // a failed attempt, which would dead-letter a message that was delivered (ADR 0182 decision 4, STA-2841). The
+    // fan-out to other apps is still part of the delivery: it shares the delete's transaction, and its failure is one.
+    // Tells a failed fan-out (a failed delivery) apart from a failed delete (the store's) in the transaction they share.
+    const fanOut: { failed: boolean; error?: unknown } = { failed: false };
+    try {
+      await inOwner(async () => {
+        if (message.kind === MessageKind.Event)
+          try {
+            await this.fanOut(envelopes, now);
+          } catch (error) {
+            fanOut.failed = true;
+            fanOut.error = error;
+            throw error;
+          }
+        await this.driver.remove(message.id);
+      });
+    } catch (error) {
+      if (!fanOut.failed) throw error;
+      await this.failed(message, now, fanOut.error, inOwner);
+    }
+  }
+
+  /**
+   * Records a failed delivery of `message`: one more attempt and its retry time, or, at the last, its dead letter.
+   *
+   * @throws a store's error, which fails the tick with nothing recorded.
+   */
+  private async failed(
+    message: OutboxMessage,
+    now: Date,
+    error: unknown,
+    inOwner: <T>(work: () => Promise<T>) => Promise<T>,
+  ): Promise<void> {
+    const failure = this.failureOf(error);
+    const attempt = message.attempts + 1;
+    if (attempt < OUTBOX_DEFAULTS.attempts) {
+      const availableAt = new Date(
+        now.getTime() + backoffDelay({ ...JOB_BACKOFF, backoff: OUTBOX_DEFAULTS.backoff }, attempt),
+      );
+      await inOwner(() => this.driver.retry(message.id, availableAt, failure));
+      return;
+    }
+    await inOwner(() => this.driver.deadLetter(message.id, failure, now));
+    this.logger()?.error(OUTBOX_LOG_EVENTS.messageDead, {
+      messageId: message.id,
+      type: message.type,
+      attempts: attempt,
+      code: failure.code,
+    });
   }
 
   /**

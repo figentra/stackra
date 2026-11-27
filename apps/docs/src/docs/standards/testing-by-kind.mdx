@@ -28,6 +28,15 @@ member that has `.int.test.ts` files: the member's `vitest.int.config.ts` wraps 
 `.stackra/tests/**/*.int.test.ts` (the tenant-isolation test). Those tests start a Testcontainers Postgres through
 `usePostgres()`, so they need Docker; the Quality Gate runs `pnpm test:int` on every pull request (STA-1570).
 
+### Fault injection
+
+The fault-injection tests (ADR 0182 decision 4) are a suite inside the tiers, not a sixth tier. A test that injects a
+provider or store fault into an at-least-once path (a queue job, an outbox message, a payment) is
+`<subject>.fault.test.ts` and runs in the unit tier on memory stores with `injectFaults` from `@stackra/testing`; one
+that makes Postgres refuse a write is `<subject>.fault.int.test.ts` and runs in the int tier with `postgresFault`.
+`pnpm exec vitest run fault` in a member runs its unit fault tests alone. Each proves the path loses nothing and does
+nothing twice: a fault `before` the target acts (the request never arrived) and `after` it (the answer was lost).
+
 ## File kind to test
 
 | Kind folder    | File suffix  | Required test | Test file for `<subject>`                                                                          |

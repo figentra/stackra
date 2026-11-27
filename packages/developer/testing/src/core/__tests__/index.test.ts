@@ -32,6 +32,9 @@ const KIT = {
   factory: kit.factory,
   freezeClock: kit.freezeClock,
   freezeIds: kit.freezeIds,
+  injectFaults: kit.injectFaults,
+  InjectedFaultError: kit.InjectedFaultError,
+  postgresFault: kit.postgresFault,
   testScopeId: kit.testScopeId,
   testScopeRef: kit.testScopeRef,
 };
