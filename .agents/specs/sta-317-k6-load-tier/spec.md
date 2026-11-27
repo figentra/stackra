@@ -117,4 +117,4 @@ measured it.
 
 - 2026-11-26 · — → Draft · Claude (builder) · STA-317 and audit item 14.3
 - 2026-11-26 · Draft → Clarified · Claude (builder) · scope from ADR 0182 decisions 1 and 4 (no open question)
-- 2026-11-26 · Clarified → Implementing · Claude (builder) · plan and tasks; built in this branch on box 2
+- 2026-11-26 · Clarified → Implementing · Claude (builder) · plan and tasks; built in this branch on a Linux build machine

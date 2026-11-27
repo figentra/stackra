@@ -20,8 +20,8 @@ two on Postgres. `load.yml` runs them weekly; `runbooks/capacity.mdx` records wh
 - **Members**: `@stackra/testing`, `@stackra/vitest-config`, `@stackra/gen`, `@stackra/cli`, `@stackra/actions`,
   `@stackra/queue`, `@stackra/outbox`
 - **Testing**: vitest unit tests for every kit piece (k6 replaced by a shell stand-in); the soaks themselves run under
-  real k6 1.3.0 and Postgres on box 2
-- **Storage**: a throwaway Postgres database per soak file (`ownerPostgres`)
+  real k6 1.3.0 and Postgres on a shared Linux build machine
+- **Storage**: a throwaway Postgres database per soak test (`ownerPostgres`), so one test's leftovers never reach the next
 - **Runtime target**: node 24 on a workstation, a testbed box or the weekly hosted runner
 
 ## Constitution Check
@@ -62,7 +62,7 @@ two on Postgres. `load.yml` runs them weekly; `runbooks/capacity.mdx` records wh
   — Validates: AC-006
 - **P-007**: the generated unit config excludes `*.load.test.*`; `loadTier` includes only `LOAD_TESTS`, file
   parallelism off, `maxConcurrency` 1, `retry` 0 — Validates: AC-005, AC-007
-- **P-008**: the three soaks pass under k6 1.3.0 and Postgres on box 2 and write their reports — Validates: AC-008,
+- **P-008**: the three soaks pass under k6 1.3.0 and Postgres on a Linux build machine and write their reports — Validates: AC-008,
   AC-009, AC-010, AC-012
 
 ## Architecture overview
@@ -153,7 +153,7 @@ soaks write as the service role with row security forced, in two tenants, so the
 
 - Unit: every kit function (stand-in k6 shell script for `runK6`), `loadTier`, `emitLoadTierConfig`, `hasLoadTests`,
   `generate`, `resolveTool`, `toolCommand`, the package-boundary test.
-- Load: the three soaks under real k6 1.3.0 and Postgres in box 2's `stackra-demo` container, at the default 30 s and
+- Load: the three soaks under real k6 1.3.0 and Postgres in a Docker container on a Linux build machine, at the default 30 s and
   for the capacity numbers at ten minutes, reports kept in the capacity runbook.
 - Revert checks: removing `load` from the CLI tiers, the gen branch or the boundary entry fails its test.
 

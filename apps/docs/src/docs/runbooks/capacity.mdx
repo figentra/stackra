@@ -14,8 +14,8 @@ the same tests again and uploads the same reports, so a regression shows up as a
 
 | Item     | Value                                                                                                                                                                                                |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Machine  | box 2: 16 vCPU Intel Xeon Platinum 8488C, 61 GB, shared with other build work (load average 13 to 34)                                                                                                |
-| Postgres | 18 (`stackra-postgres-test`), default settings, in Docker on the same machine                                                                                                                        |
+| Machine  | a Linux build machine: 16 vCPU x86 (Intel Xeon), 61 GB, shared with other build work (load average 13 to 34)                                                                                         |
+| Postgres | 18, default settings, in Docker on the same machine                                                                                                                                                  |
 | Runtime  | Node 24.22.0, k6 1.3.0; k6, the subject and Postgres share the machine                                                                                                                               |
 | Shape    | one service process, the service's default pool of ten connections ([ADR 0473](/adr/0473-connection-pooling-a-managed-proxy-per-cloud-a-pool-budget-per-service-and-a-direct-url-for-session-tools)) |
 | Tenancy  | owned writes in two tenants as the NOBYPASSRLS service role, so row security is on under load                                                                                                        |
@@ -128,6 +128,6 @@ without the machine.
 
 From GitHub, run the **Load** workflow (`load.yml`) by hand with a duration and, optionally, a rate. It also runs every
 Monday at 03:17 UTC with a ten-minute soak per test. Download the `load-reports` artifact and compare it with the tables
-above. A hosted runner is slower and noisier than box 2, so the weekly run is advisory and never a required check.
+above. A hosted runner is slower and noisier than that build machine, so the weekly run is advisory and never a required check.
 
 When a change moves a number for good, run the soaks again and update the tables on this page in the same pull request.

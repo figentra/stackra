@@ -9,9 +9,10 @@
  *          queues a backlog first (`STACKRA_LOAD_BACKLOG` jobs, 3000 by default) and times the same workers draining
  *          it: the ceiling one instance's workers reach (`writeLoadReport("queue.ceiling")`).
  * Boundary: load tier (`.load`): runs only where k6 is installed and `TESTBED_POSTGRES_HOST` names a Postgres, skipped
- *           elsewhere. One fresh database (`ownerPostgres`), the service's default pool of ten connections (ADR 0473)
- *           shared by the pushes and the workers, everything owned run as the NOBYPASSRLS service role
- *           (`asService`, `OwnerIsolation`). `STACKRA_LOAD_RATE` and `STACKRA_LOAD_DURATION` stretch it into a soak.
+ *           elsewhere. A fresh database per test (`ownerPostgres`), so jobs a failed soak leaves behind never reach the
+ *           backlog test; the service's default pool of ten connections (ADR 0473) shared by the pushes and the
+ *           workers; everything owned run as the NOBYPASSRLS service role (`asService`, `OwnerIsolation`).
+ *           `STACKRA_LOAD_RATE` and `STACKRA_LOAD_DURATION` stretch it into a soak.
  * Runtime: node (vitest)
  * Governing contract: ADR 0182 (decisions 1 and 4: the load tier, weekly k6 load tests); ADR 0148 (decisions 1 and 3);
  *                     ADR 0473 (the pool budget per service); ADR 0239 (2026-11-07 amendment); ADR 0022.
@@ -22,7 +23,7 @@ import { AccessControl, CallIsolation } from "@stackra/actions/contracts";
 import { type AnyClass, Driver } from "@stackra/container";
 import { ActorKind, Clock } from "@stackra/contracts";
 import { Database } from "@stackra/database";
-import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import {
   k6Binary,
   runK6,
@@ -95,11 +96,13 @@ async function until(done: () => boolean, ms: number): Promise<void> {
 describe.skipIf(HOST === undefined || k6Binary() === undefined)("the queue under a soak", () => {
   let postgres: OwnerPostgres;
 
-  beforeAll(async () => {
+  // Each test gets its own database: a soak that fails part-way leaves jobs on the queue, and the backlog test must
+  // start on an empty one.
+  beforeEach(async () => {
     postgres = await ownerPostgres();
   }, 120_000);
 
-  afterAll(async () => {
+  afterEach(async () => {
     await postgres?.close();
   });
 
@@ -159,8 +162,8 @@ describe.skipIf(HOST === undefined || k6Binary() === undefined)("the queue under
       },
     });
     try {
-      // 50 a second holds a ten-minute soak inside the lag ceiling on box 2; 100 a second held for 30 s but not for
-      // ten minutes, as each reservation slows with the queue's length (runbooks/capacity, STA-2875).
+      // 50 a second holds a ten-minute soak inside the lag ceiling on the measuring machine; 100 a second held for
+      // 30 s but not for ten minutes, as each reservation slows with the queue's length (runbooks/capacity, STA-2875).
       const load = soakLoad({ rate: 50, duration: "30s" });
       const k6 = await runK6({
         target: target.url,
@@ -208,6 +211,7 @@ describe.skipIf(HOST === undefined || k6Binary() === undefined)("the queue under
     const { stamp, push, start } = rig();
     const backlog = Number(process.env["STACKRA_LOAD_BACKLOG"] ?? 3000);
     expect(Number.isInteger(backlog) && backlog > 0).toBe(true);
+    expect(await left()).toBe(0);
     // queue the backlog first, eight calls at a time, so the workers start on a full queue
     const queuedFrom = Date.now();
     let seq = 0;

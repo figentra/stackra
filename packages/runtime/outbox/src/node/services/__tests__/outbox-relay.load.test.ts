@@ -10,8 +10,9 @@
  *          second test writes a backlog first (`STACKRA_LOAD_BACKLOG` messages, 3000 by default) and times one relay
  *          draining it: the ceiling of the one lock-holding relay a service runs (`writeLoadReport("outbox.ceiling")`).
  * Boundary: load tier (`.load`): runs only where k6 is installed and `TESTBED_POSTGRES_HOST` names a Postgres, skipped
- *           elsewhere. One fresh database (`ownerPostgres`) with the service's default pool of ten connections
- *           (ADR 0473), owned rows written and loaded as the NOBYPASSRLS service role (`asService`, `OwnerIsolation`).
+ *           elsewhere. A fresh database per test (`ownerPostgres`), so messages a failed soak leaves behind never reach
+ *           the backlog test, with the service's default pool of ten connections (ADR 0473), owned rows written and
+ *           loaded as the NOBYPASSRLS service role (`asService`, `OwnerIsolation`).
  *           The lock is the in-process one shared by both relays: it shows that a second relay adds no throughput
  *           and no duplicate; across instances the Postgres lock driver does the same (@stackra/locking's tests). The
  *           publisher records in memory, so the numbers are the relay's and Postgres's, not a transport's.
@@ -28,7 +29,7 @@ import { type AnyClass, Driver } from "@stackra/container";
 import { Clock } from "@stackra/contracts";
 import type { PublicId } from "@stackra/contracts";
 import { Locks, MemoryLockDriver } from "@stackra/locking";
-import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
+import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import {
   k6Binary,
   runK6,
@@ -91,11 +92,13 @@ describe.skipIf(HOST === undefined || k6Binary() === undefined)(
   () => {
     let postgres: OwnerPostgres;
 
-    beforeAll(async () => {
+    // Each test gets its own database: a soak that fails part-way leaves messages in the outbox, and the backlog test
+    // must start on an empty one.
+    beforeEach(async () => {
       postgres = await ownerPostgres();
     }, 120_000);
 
-    afterAll(async () => {
+    afterEach(async () => {
       await postgres?.close();
     });
 
@@ -171,8 +174,9 @@ describe.skipIf(HOST === undefined || k6Binary() === undefined)(
         },
       });
       try {
-        // About two thirds of the drain rate one relay reached on box 2 (155 to 177 a second, runbooks/capacity): the soak
-        // holds the relay to its lag below its ceiling; the backlog test below measures the ceiling itself.
+        // About two thirds of the drain rate one relay reached on the measuring machine (155 to 177 a second,
+        // runbooks/capacity): the soak holds the relay to its lag below its ceiling; the backlog test below measures
+        // the ceiling itself.
         const load = soakLoad({ rate: 100, duration: "30s" });
         const k6 = await runK6({
           target: target.url,
@@ -221,6 +225,7 @@ describe.skipIf(HOST === undefined || k6Binary() === undefined)(
       const { publisher, write, start } = rig(1);
       const backlog = Number(process.env["STACKRA_LOAD_BACKLOG"] ?? 3000);
       expect(Number.isInteger(backlog) && backlog > 0).toBe(true);
+      expect(await left()).toBe(0);
       // write the backlog first, eight transactions at a time, so the relay starts on a full outbox
       const writtenFrom = Date.now();
       let seq = 1_000_000;
