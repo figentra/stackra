@@ -112,6 +112,31 @@ describe("oasdiff on the manifest projection", () => {
     }
   });
 
+  it("fails every operation of a member deleted since the base commit", async () => {
+    const workspace = contractWorkspace();
+    try {
+      workspace.write(
+        "services/billing/stackra.manifest.json",
+        contractManifest("billing", [voidInvoice, listInvoices]),
+      );
+      workspace.write("services/orders/stackra.manifest.json", contractManifest("orders", []));
+      const base = workspace.commit("base");
+      workspace.remove("services/billing/stackra.manifest.json");
+      expect(await contractFindings(workspace.root, base, { today: "2026-11-26" })).toEqual([
+        {
+          dir: "services/billing",
+          text: "GET /app/invoices: API path removed without deprecation [api-path-removed-without-deprecation]",
+        },
+        {
+          dir: "services/billing",
+          text: "POST /app/invoices/{invoiceId}/void: API path removed without deprecation [api-path-removed-without-deprecation]",
+        },
+      ]);
+    } finally {
+      workspace.dispose();
+    }
+  });
+
   it("fails the member that broke its contract since the base commit", async () => {
     const workspace = contractWorkspace();
     try {

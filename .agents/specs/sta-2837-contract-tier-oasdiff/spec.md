@@ -81,10 +81,15 @@ makes an input field required merges unnoticed. Split out of STA-229 (whose cove
   request after the manifests are checked against gen.
 - **AC-008**: THE contract tier SHALL hold a real `.contract.test.ts` that runs the pinned `oasdiff`: a removed
   operation and a new required input field are breaks, an added operation and an optional field are not.
+- **AC-009**: WHEN a member that had a manifest at the base has none in the working tree THE check SHALL fail each
+  operation it had as an error-level break (`api-path-removed-without-deprecation`), one row per operation.
+- **AC-010**: THE `servicePreset` unit project and the `libraryPreset` unit, react and native projects SHALL exclude
+  `CONTRACT_TESTS`, so a `.contract.test.ts(x)` runs only in the contract tier, never in the unit tier.
 
 ## Status history
 
 - 2026-11-26 → Clarified (ADR 0182 decisions 1 and 4; audit item 14.1; split from STA-229)
 - 2026-11-26 → Planned (plan.md)
 - 2026-11-26 → Tasked (tasks.md)
-- 2026-11-26 → Implementing (built on box 2; written from what was built)
+- 2026-11-26 → Implementing (written from what was built)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27

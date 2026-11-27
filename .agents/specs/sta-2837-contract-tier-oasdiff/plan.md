@@ -63,6 +63,9 @@ Quality Gate runs it against `HEAD~1` (the base of the pull request's merge comm
   member, operation and rule only — Validates: AC-004, AC-006
 - **P-007**: the real `oasdiff` reports a removed operation and a new required field, and passes additions —
   Validates: AC-008
+- **P-008**: a member whose manifest is gone since the base fails one row per operation it had — Validates: AC-009
+- **P-009**: no unit, react or native project of the service and library presets includes a `.contract.test.ts(x)` —
+  Validates: AC-010
 
 ## Architecture overview
 
@@ -84,6 +87,9 @@ actions references the packages' shapes; the check resolves them on the same sid
 ```text
 packages/tooling/vitest/src/{contract.ts,constants/contract-tests.constant.ts,functions/contract-tier.function.ts} (+ test)
 packages/tooling/vitest/{package.json,README.md}
+packages/tooling/vitest/src/functions/service-preset.function.ts
+packages/tooling/vitest/src/functions/library-preset.function.ts
+packages/tooling/vitest/src/__tests__/factories.test.ts
 packages/developer/gen/src/core/functions/emit-tier-config.function.ts (was emit-int-tier-config, + test)
 packages/developer/gen/src/node/functions/has-tier-tests.function.ts (was has-int-tests, + test)
 packages/developer/gen/src/node/functions/generate.function.ts
@@ -131,6 +137,9 @@ none: the check reads committed files and runs two local binaries with argument 
   `load-accepted-breaks.test.ts`, `oasdiff-breaks.test.ts`, `contract.command.test.ts`.
 - AC-007: the Quality Gate on this pull request (actionlint and zizmor, then the step itself).
 - AC-008: `oasdiff-breaks.contract.test.ts` (`pnpm --filter @stackra/cli test:contract`).
+- AC-009: `oasdiff-breaks.contract.test.ts` ("fails every operation of a member deleted since the base commit").
+- AC-010: `factories.test.ts` (vitest-config: "leaves the contract tier out of the unit project", "leaves the contract
+  tier out of the unit, react and native projects").
 
 ## Rollout
 
