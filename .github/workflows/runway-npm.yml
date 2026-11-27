@@ -12,7 +12,11 @@
 #          release's dependency closure (each dependency in the plan's own scopes) is complete there (STA-2778), and,
 #          with `promote-latest-after: consumer-smoke` (the default), only after the caller's `consumer-smoke` command
 #          has passed as a clean consumer against the release on the registry (STA-2874): a new user's first command is
-#          proven before `latest` points them at it.
+#          proven before `latest` points them at it. The smoke runs downloaded code, so it runs in its own job
+#          (`consumer-smoke`) on its own runner: no environment, no OIDC, no secret, no App token, a read-only
+#          GITHUB_TOKEN and no cache. The `release` job only writes the moves (`registry-promotion`, pinned by its
+#          sha256 in a job output); the `promote` job, in the release environment, moves the dist-tags after the smoke
+#          passed and never runs code the smoke job could have written.
 # Boundary: publishes only to `registry`; never to npmjs (the optional mirror of ADR 0453 decision 16 is off and not
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
@@ -65,11 +69,12 @@ on:
         default: consumer-smoke
       consumer-smoke:
         description: >-
-          The clean-consumer smoke, a shell command run from the repository root with a scrubbed environment: only
-          PATH, LANG, a new empty HOME (so no npm or pnpm settings, cache or store), RUNWAY_REGISTRY (the `registry`
-          input) and RUNWAY_RELEASE (a file of `<name> TAB <version>` lines, every package of the release). No token,
-          no CI variable and no GitHub variable reach it. A non-zero exit keeps `latest` where it was. Required with
-          `promote-latest-after: consumer-smoke`.
+          The clean-consumer smoke, a shell command run from the repository root in the `consumer-smoke` job, which
+          holds no environment, no OIDC permission, no secret and no App token (its GITHUB_TOKEN reads contents only).
+          The command gets a scrubbed environment, so the tools behave as on a new machine: only PATH, LANG, a new
+          empty HOME (no npm or pnpm settings, cache or store), RUNWAY_REGISTRY (the `registry` input) and
+          RUNWAY_RELEASE (a file of `<name> TAB <version>` lines, every package of the release). A non-zero exit keeps
+          `latest` where it was. Required with `promote-latest-after: consumer-smoke`.
         type: string
         default: ""
     secrets:
@@ -92,8 +97,8 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     # 0.17.0 published 118 of 119 packages (~13 s each) before a 30-minute limit cancelled the job (run 42297058735).
-    # The consumer smoke (STA-2874) adds a fresh `stackra create`: install, gen, type-check and test of a new app.
-    timeout-minutes: 90
+    # The consumer smoke (STA-2874) runs in its own job, never in this one.
+    timeout-minutes: 60
     # Runbook (release): a human keeps this environment protected and restricted to main, so a branch that edits the
     # workflow cannot obtain a credential, and every run waits for the owner's approval.
     environment: ${{ inputs.environment }}
@@ -103,6 +108,10 @@ jobs:
       id-token: write # the registry's OIDC exchange and the Sigstore provenance of each tarball
     outputs:
       published: ${{ steps.changesets.outputs.published }}
+      # STA-2874: `true` when the dist-tags wait for the consumer smoke, and the sha256 of the moves the promote job
+      # may make. A job output, not an artifact: nothing the smoke job runs can change it.
+      promotion-due: ${{ steps.promotion.outputs.due }}
+      promotion-sha256: ${{ steps.promotion.outputs.sha256 }}
     env:
       # A step's `if` cannot read `secrets`, so only whether the caller passed the App key is carried, never a value.
       HAS_APP_SECRETS: ${{ secrets.app-id != '' && secrets.app-private-key != '' }}
@@ -695,20 +704,6 @@ jobs:
               node "$RUNNER_TEMP/registry-plan.mjs" --closure "$packed" "$packuments" "$1" < /dev/null
           }
 
-          # The clean consumer (STA-2874): the caller's command, from the repository root, with nothing of this job but
-          # PATH. `env -i` drops the OIDC request token, the publish token, the App token, CI and every GitHub variable, so
-          # the code the smoke downloads and runs can mint no token and the tools behave as on a new machine (pnpm reads
-          # CI to refuse an install without a lockfile). HOME is new and empty: no ~/.npmrc, no npm cache, no pnpm store.
-          consumer_smoke() {
-            local home="$RUNNER_TEMP/consumer-smoke-home" release="$RUNNER_TEMP/consumer-smoke-release.tsv"
-            rm -rf "$home"
-            mkdir -p "$home"
-            awk -F'\t' '{ print $1 "\t" $2 }' "$packed" > "$release"
-            echo "Consumer smoke: ${CONSUMER_SMOKE}"
-            env -i PATH="$PATH" LANG=C.UTF-8 HOME="$home" RUNWAY_REGISTRY="$REGISTRY" RUNWAY_RELEASE="$release" \
-              bash -c "$CONSUMER_SMOKE" < /dev/null
-          }
-
           # One git-tag event per version: the action pushes the tag and creates the GitHub release from it. A tag left by an
           # earlier run that published nothing is kept (run 40896627689); a new one is annotated, so it carries its tagger and
           # date (changesets/action has set the git user).
@@ -782,7 +777,7 @@ jobs:
             [ "$stops" -eq 0 ] || exit 1
             echo "Dry run: ${would_publish} would be published, ${would_skip} already there; nothing was published, tagged or announced"
             if [ "$promote" = consumer-smoke ]; then
-              echo "Dry run: latest would move only after the consumer smoke passed: ${CONSUMER_SMOKE}"
+              echo "Dry run: latest would move only after the consumer-smoke job passed: ${CONSUMER_SMOKE}"
             else
               echo "Dry run: latest would move once the closure held on the registry (promote-latest-after: immediate)"
             fi
@@ -883,17 +878,20 @@ jobs:
           fi
           moves="$RUNNER_TEMP/registry-moves.tsv"
           node "$RUNNER_TEMP/registry-plan.mjs" --moves "$packed" "$packuments" "$hold_tag" "$moves" < /dev/null
-          # STA-2874: no tag moves until a clean consumer has used the release from the registry. Only a move that sets a
-          # tag waits for it (a run with nothing to move, or that only drops the holding tag, runs no smoke); a re-run
-          # after a failed smoke runs it again, since the moves are still due.
+          # STA-2874: no tag moves until a clean consumer has used the release from the registry, and the smoke runs
+          # downloaded code, so it never runs here, where the OIDC request token and the App token are. Only a move that
+          # sets a tag waits for it (a run with nothing to move, or that only drops the holding tag, moves at once): the
+          # moves and the release list are left in PROMOTION_DIR for the `consumer-smoke` and `promote` jobs, and no tag
+          # moves in this job. A re-run with the moves still due leaves them again.
           if [ "$promote" = consumer-smoke ] && awk -F'\t' '$3 != "-" { due = 1 } END { exit !due }' "$moves"; then
-            if ! consumer_smoke; then
-              smoke_state="failed"
-              echo "::error title=Consumer smoke failed::a clean consumer could not use this release from the registry. Every version is on the registry under ${hold_tag}; latest has not moved. Fix the cause and release again, or re-run the failed jobs when the cause was outside the release."
-              exit 1
-            fi
-            smoke_state="passed"
-            echo "Consumer smoke passed; the dist-tags move"
+            promotion="${PROMOTION_DIR:-$RUNNER_TEMP/registry-promotion}"
+            rm -rf "$promotion"
+            mkdir -p "$promotion"
+            cp "$moves" "$promotion/moves.tsv"
+            awk -F'\t' '{ print $1 "\t" $2 }' "$packed" > "$promotion/release.tsv"
+            smoke_state="due in the consumer-smoke job"
+            echo "Dist-tags: $(count "$moves") moves wait for the consumer-smoke job; every version stays under ${hold_tag} until the promote job moves them"
+            exit 0
           fi
           load_lines "$moves"
           for line in "${lines[@]}"; do
@@ -962,6 +960,207 @@ jobs:
           name: published-packages
           path: published-packages.json
           retention-days: 1
+
+      # STA-2874: the moves the registry script left for after the consumer smoke. Their sha256 is a job output, so the
+      # promote job moves exactly these tags even if something else uploaded under the artifact's name.
+      - name: Promotion plan
+        id: promotion
+        if: ${{ !inputs.dry-run }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/registry-promotion"
+          if [ -f "$dir/moves.tsv" ]; then
+            echo "due=true" >> "$GITHUB_OUTPUT"
+            echo "sha256=$(sha256sum "$dir/moves.tsv" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Consumer smoke::latest moves after the consumer-smoke job passed"
+          fi
+
+      - name: Upload the promotion plan
+        if: steps.promotion.outputs.due == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: registry-promotion
+          path: ${{ runner.temp }}/registry-promotion/
+          if-no-files-found: error
+          retention-days: 14
+
+  # STA-2874: the clean-consumer smoke, apart from every credential. It runs the code a new app downloads (the CLI, the
+  # template's dependency tree, Encore), so it gets its own runner: no environment, no OIDC permission, no secret, no
+  # App token, a GITHUB_TOKEN that reads contents only (the repository is the caller's own checkout) and no cache, so
+  # nothing it writes reaches a later job. What it hands on is its exit status; the promote job reads the moves from the
+  # release job's artifact and checks them against the release job's sha256 output.
+  consumer-smoke:
+    name: Consumer smoke
+    runs-on: ubuntu-latest
+    # A fresh `stackra create`: install, gen, type-check and test of a new app, and Encore installed with mise.
+    timeout-minutes: 60
+    needs: release
+    if: needs.release.outputs.promotion-due == 'true'
+    permissions:
+      contents: read # check out the caller's repository, which holds the consumer-smoke command
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          submodules: false # .notes is a private owner-only submodule; CI never needs it (STA-178)
+
+      # node, pnpm and mise as a new user has them; no cache is restored or saved, so this job leaves nothing behind.
+      - name: Toolchain (mise)
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        with:
+          # Pinned: the action otherwise fetches its cached mise, whose release asset GitHub answered 504 for.
+          version: 2026.11.4
+          install_args: node pnpm
+          cache: false
+
+      - name: Download the promotion plan
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: registry-promotion
+          path: ${{ runner.temp }}/registry-promotion
+
+      # Inside the job the command still gets a scrubbed environment, for a clean consumer rather than for secrecy (this
+      # job has none): pnpm reads CI to refuse an install without a lockfile, and a new HOME has no npm settings.
+      - name: Consumer smoke
+        env:
+          REGISTRY: ${{ inputs.registry }}
+          CONSUMER_SMOKE: ${{ inputs.consumer-smoke }}
+        run: |
+          cat > "$RUNNER_TEMP/registry-smoke.sh" <<'SH'
+          set -euo pipefail
+          release="${PROMOTION_DIR:-$RUNNER_TEMP/registry-promotion}/release.tsv"
+          if [ ! -s "$release" ]; then
+            echo "::error title=Consumer smoke::the release job left no release list (${release})"
+            exit 1
+          fi
+          if [ -z "${CONSUMER_SMOKE:-}" ]; then
+            echo "::error title=Consumer smoke::no consumer-smoke command is set"
+            exit 1
+          fi
+          home="$RUNNER_TEMP/consumer-smoke-home"
+          rm -rf "$home"
+          mkdir -p "$home"
+          echo "Consumer smoke: ${CONSUMER_SMOKE}"
+          if ! env -i PATH="$PATH" LANG=C.UTF-8 HOME="$home" RUNWAY_REGISTRY="$REGISTRY" RUNWAY_RELEASE="$release" \
+            bash -c "$CONSUMER_SMOKE" < /dev/null; then
+            echo "::error title=Consumer smoke failed::a clean consumer could not use this release from the registry. Every version is on the registry under release-pending; latest has not moved. Fix the cause and release again, or re-run the failed jobs when the cause was outside the release."
+            exit 1
+          fi
+          echo "Consumer smoke passed; the promote job moves the dist-tags"
+          SH
+          bash "$RUNNER_TEMP/registry-smoke.sh"
+
+  # STA-2874: the dist-tag moves, after the smoke passed. The registry's trusted publisher row names the release
+  # environment, so this job waits in it as the release job does (its required reviewer approves this job too). It
+  # checks out nothing, installs nothing and restores no cache: it runs only the script below, on the moves the release
+  # job wrote, whose sha256 must equal the release job's output.
+  promote:
+    name: Promote
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [release, consumer-smoke]
+    if: needs.release.outputs.promotion-due == 'true' && needs.consumer-smoke.result == 'success'
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write # the registry's OIDC exchange, per package, for its dist-tag moves
+    steps:
+      - name: Download the promotion plan
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: registry-promotion
+          path: ${{ runner.temp }}/registry-promotion
+
+      - name: Move the dist-tags
+        env:
+          REGISTRY: ${{ inputs.registry }}
+          PROMOTION_SHA256: ${{ needs.release.outputs.promotion-sha256 }}
+        run: |
+          cat > "$RUNNER_TEMP/registry-promote.sh" <<'SH'
+          set -euo pipefail
+          # Bounded and retried as the registry script's calls are; -f where a failure must stop the step.
+          curl() { command curl -sS --connect-timeout 10 --max-time 20 --retry 3 --retry-delay 5 "$@"; }
+          case "$REGISTRY" in https://*/) ;; *) echo "::error::registry must be an https URL ending in /"; exit 1 ;; esac
+          host="${REGISTRY#https://}"
+          hold_tag=release-pending
+          moves="${PROMOTION_DIR:-$RUNNER_TEMP/registry-promotion}/moves.tsv"
+          # Only the moves the release job wrote: their sha256 is that job's output, which nothing in the smoke job can set.
+          if [ ! -f "$moves" ] || ! [[ "${PROMOTION_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error title=Promote::no promotion plan, or no sha256 from the release job; no dist-tag was moved"
+            exit 1
+          fi
+          actual="$(sha256sum "$moves" | cut -d' ' -f1)"
+          if [ "$actual" != "$PROMOTION_SHA256" ]; then
+            echo "::error title=Promote::the promotion plan is not the one the release job wrote (sha256 ${actual}); no dist-tag was moved"
+            exit 1
+          fi
+          lines=()
+          while IFS= read -r line; do lines+=("$line"); done < "$moves"
+          # Each line is checked before any tag moves: a name, a version, a tag or -, drop or -.
+          for line in "${lines[@]}"; do
+            IFS=$'\t' read -r name version tag drop <<< "$line"
+            if ! [[ "$name" =~ ^(@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$ &&
+              "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ &&
+              "$tag" =~ ^(-|[a-z][a-z0-9-]*)$ && "$drop" =~ ^(-|drop)$ ]]; then
+              echo "::error title=Promote::a promotion line is not name, version, tag, drop; no dist-tag was moved"
+              exit 1
+            fi
+          done
+
+          # curl with an Authorization header read from its config on stdin, so a token is never in a command line.
+          authed_curl() {
+            local header="$1"
+            shift
+            printf 'header = "Authorization: %s"\n' "$header" | curl --config - "$@"
+          }
+
+          # A GitHub ID token exchanged for a publish token bound to the one name $1, left masked in `token`.
+          exchange_token() {
+            local id_token
+            id_token="$(authed_curl "bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" -f \
+              "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:${host%/}" | jq -er '.value')" || return 1
+            echo "::add-mask::${id_token}"
+            token="$(authed_curl "Bearer ${id_token}" -f -X POST \
+              "${REGISTRY}-/npm/v1/oidc/token/exchange/package/${1/\//%2f}" | jq -er '.token')" || return 1
+            echo "::add-mask::${token}"
+          }
+
+          # One dist-tag move ($3 is the tag, or - for none) and, with $4 = drop, the holding tag removed. Both are
+          # idempotent, so a retry or a re-run repeats them.
+          move_tag() {
+            local name="$1" version="$2" tag="$3" drop="$4" tags_url
+            tags_url="${REGISTRY}-/package/${name/\//%2f}/dist-tags"
+            exchange_token "$name" || return 1
+            if [ "$tag" != - ]; then
+              authed_curl "Bearer ${token}" -f -o /dev/null -X PUT -H "content-type: application/json" \
+                --data "\"${version}\"" "${tags_url}/${tag}" < /dev/null || return 1
+            fi
+            if [ "$drop" = drop ]; then
+              authed_curl "Bearer ${token}" -f -o /dev/null -X DELETE "${tags_url}/${hold_tag}" < /dev/null || return 1
+            fi
+          }
+
+          moved=0
+          for line in "${lines[@]}"; do
+            IFS=$'\t' read -r name version tag drop <<< "$line"
+            attempt=1
+            until move_tag "$name" "$version" "$tag" "$drop"; do
+              if [ "$attempt" -ge 3 ]; then
+                echo "::error title=Dist-tag not moved::${name}@${version}: ${tag} after ${attempt} attempts (${moved} moved). Every version of this release is on the registry with its dependencies; re-run the failed jobs to move the rest."
+                exit 1
+              fi
+              attempt=$((attempt + 1))
+              echo "retry dist-tag ${name}@${version}: attempt ${attempt}"
+              sleep "${PUBLISH_RETRY_DELAY:-15}"
+            done
+            if [ "$tag" != - ]; then
+              moved=$((moved + 1))
+              echo "dist-tag ${tag}: ${name}@${version}"
+            fi
+          done
+          echo "Dist-tags: ${moved} moved after the consumer smoke; ${hold_tag} dropped where it was set"
+          SH
+          bash "$RUNNER_TEMP/registry-promote.sh"
 
   # Runs only after a publish: the SBOM of what was installed, signed keylessly with this job's OIDC identity, kept as
   # an artifact and attached, with the tarballs' SHA-256 sums, to every release the publish created. No App token and

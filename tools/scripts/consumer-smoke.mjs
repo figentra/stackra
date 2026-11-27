@@ -12,9 +12,12 @@
  *          mise.toml pins). After it, the app must be pinned to the release, installed and committed.
  * Boundary: reads RUNWAY_REGISTRY (the registry URL, ending in /), RUNWAY_RELEASE (a file of `<name> TAB <version>`
  *           lines) and HOME, which runway-npm.yml makes new and empty; works only under `$HOME/consumer`. Runs `create`
- *           with a PATH of the tool folders alone, HOME, LANG and a git identity: no npm or pnpm setting, token, CI
- *           variable or core checkout reaches it. Reads no secret. Exit 0 the app was made; 1 a check or a step
- *           failed (named); 2 a usage error.
+ *           with a PATH of the tool folders alone, HOME, LANG and a git identity: no npm or pnpm setting, CI variable
+ *           or core checkout reaches it, so it behaves as on a new machine. That scrubbing is not what keeps tokens
+ *           away from the code it downloads: runway-npm.yml runs this in its `consumer-smoke` job, which holds no
+ *           environment, no OIDC permission, no secret and no App token (a read-only GITHUB_TOKEN only), and moves
+ *           the dist-tags in a separate `promote` job after it. Reads no secret. Exit 0 the app was made; 1 a check or
+ *           a step failed (named); 2 a usage error.
  * Runtime: node (built-ins only)
  * Governing contract: ADR 0515 (decisions 3, 4 and 8: the starter, the pin, the steps); ADR 0453 (the registry);
  *                     STA-2874; the customer guide /customers/create ("What your machine needs").
