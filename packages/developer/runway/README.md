@@ -94,6 +94,11 @@ one, where `fields` are the `env` rows that the manifests the files configure ma
 (`runtimeOnlyFields`, or `runtimeOnlyFieldsOf(root)` from `./node`). The running environment (`STACKRA_ENVIRONMENT`)
 is the first such field: it comes from the platform or the runtime, never from a runway file (STA-2844).
 
+A `config` block never sets a field only the runtime may set: `checkRuntimeOnlyConfig(document, fields)` reports each
+one, where `fields` are the `env` rows that the manifests the files configure map to a safety-critical variable
+(`runtimeOnlyFields`, or `runtimeOnlyFieldsOf(root)` from `./node`). The running environment (`STACKRA_ENVIRONMENT`)
+is the first such field: it comes from the platform or the runtime, never from a runway file (STA-2844).
+
 `providers.npm` is typed: `registry` (an `https://` URL ending in `/`) is where the repository's packages publish,
 and `scope` the npm scope it owns. For Stackra that is `https://npm.stackra.figentra.com/` and `@stackra` (ADR 0453);
 the release workflow's `registry` input carries the same value to `runway-npm.yml`, and no member's `publishConfig`

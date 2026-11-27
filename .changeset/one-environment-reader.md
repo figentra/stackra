@@ -22,3 +22,5 @@ Encore file. `runway validate` and `stackra validate --repository` refuse a runw
 Upgrading: remove any `environment` value from a runway `config` block or a test's `values` for a configuration mapped to
 `STACKRA_ENVIRONMENT` (`outbox.relay_inbox`, `market_packs`), and set the variable on the runtime instead, or leave it
 unset on Encore Cloud. Regenerate with `stackra gen` so each service gets its `environment.ts`.
+
+Preview needs to be named. A deployed app with `STACKRA_ENVIRONMENT` unset, on a platform that reports its environment, boots as the environment the platform reports. So a preview deployment boots as `preview` only when the platform reports preview or `STACKRA_ENVIRONMENT=preview` is set; otherwise it boots as whatever the platform says.

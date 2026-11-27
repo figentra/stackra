@@ -4,7 +4,8 @@
  *          protocol) server shared by every instance of the member, so a value cached by one instance serves all, with
  *          tags, stale-while-revalidate and, through `CacheLock`, one load across instances.
  * Boundary: the server is the `CACHE_VALKEY_URL` secret; every key is `cache.valkey.keyPrefix` plus the namespaced
- *           key. Each value is JSON with its expiry on the `Clock`, written with `PX` so the server reclaims it. A set
+ *           key. Each value is JSON with its expiry on the `Clock`, written with `PX` so the server reclaims it; `add`
+ *           is one `SET … PX … NX`, atomic on the server. A set
  *           (the keys a key covers, the keys carrying a tag) is a sorted set at `<keyPrefix>#<set>`, each member scored
  *           with the instant its entry may go: an add drops the members already past it and keeps the set alive as
  *           long as its longest member, so `forget` and `forgetTag` read one set and never `SCAN`. No command touches
@@ -68,6 +69,15 @@ export class ValkeyCacheDriver extends StoredCacheDriver<Cache> {
         write: async (key, text, ttl) => {
           await client.set(prefix + key, text, "PX", Math.ceil(Duration.toMilliseconds(ttl)));
         },
+        create: async (key, text, ttl) =>
+          // NX: one command, so of two concurrent creates of a key exactly one is answered OK
+          (await client.set(
+            prefix + key,
+            text,
+            "PX",
+            Math.ceil(Duration.toMilliseconds(ttl)),
+            "NX",
+          )) === "OK",
         delete: async (key) => {
           await client.del(prefix + key);
         },

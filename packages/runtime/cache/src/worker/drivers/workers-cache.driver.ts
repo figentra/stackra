@@ -7,7 +7,8 @@
  *           Each value is JSON in an envelope with its expiry on the `Clock`, so a lifetime under KV's 60-second floor
  *           still ends on time; KV's own expiry only reclaims space. `forget` lists KV by prefix; a tag's members
  *           are empty marker keys under `#`, each expiring with its entry. KV is eventually consistent: a write, a
- *           `forget` or a `forgetTag` reaches other locations within about a minute. Single-flight is per isolate;
+ *           `forget` or a `forgetTag` reaches other locations within about a minute, and has no set-if-absent, so `add`
+ *           rejects. Single-flight is per isolate;
  *           `CacheLock` (config `cache.lock`) can share a fill. HTML is never cached here (ADR 0297 decision 3).
  * Runtime: worker
  * Governing contract: ADR 0297 (decision 3); ADR 0150 (decisions 1, 2 and 4, amended by ADR 0297); ADR 0305 (rule 32).

@@ -51,6 +51,7 @@ import type { ScopeTree } from "@stackra/scope/contracts";
 import { TenantScopeMismatchError } from "#core/errors/tenant-scope-mismatch.error";
 import { TenantScopeUnresolvedError } from "#core/errors/tenant-scope-unresolved.error";
 import { TenantSwitchRefusedError } from "#core/errors/tenant-switch-refused.error";
+import { readTreeAtRoot } from "#core/functions/read-tree-at-root.function";
 import { tenantOf } from "#core/functions/tenant-of.function";
 import type { TenantIsolationService } from "#node/services/tenant-isolation.service";
 
@@ -218,26 +219,12 @@ export class CallIsolationDriver extends Driver(CallIsolation) {
   }
 
   /**
-   * `read`'s answer, run in a scope session over the root label of `at`'s path, which grants the whole tree for this
-   * one read of `scope_nodes`. A failing read throws, so the call never runs on a tree it could not read.
-   *
-   * The read runs in a savepoint (a transaction of its own outside one) that is rolled back once it has read, so the
-   * root-label scope settings it needs never outlive it: inside a running transaction a released savepoint would keep
-   * them until the outer transaction ends, and a caller that catches a later refusal would read the whole tree.
+   * `read`'s answer, read in a scope session over the root label of `at`'s path (`readTreeAtRoot`), which grants the
+   * whole tree for this one read of `scope_nodes` and is rolled back once it has read. A failing read throws, so the
+   * call never runs on a tree it could not read.
    */
-  private async inTree<T>(at: ScopeRef, read: () => Promise<T>): Promise<T> {
-    const root = { id: at.id, path: at.path.split(".")[0] ?? at.path };
-    let answer: { readonly value: T } | undefined;
-    try {
-      await this.database.withScope(root, async () => {
-        answer = { value: await read() };
-        throw ROLL_BACK;
-      });
-    } catch (error) {
-      if (answer === undefined) throw error;
-    }
-    if (answer === undefined) throw new Error("the scope tree read did not run");
-    return answer.value;
+  private inTree<T>(at: ScopeRef, read: () => Promise<T>): Promise<T> {
+    return readTreeAtRoot(this.database, at, read);
   }
 }
 
@@ -246,9 +233,6 @@ type Resolved = { readonly tenant: PublicId<"scp"> | undefined } | undefined;
 
 /** Marks an unknown scope among several, so it never counts as the same tenant as a known one. */
 const UNRESOLVED = Symbol("a scope the tree does not show");
-
-/** Thrown inside the tree read to roll its savepoint back; never leaves `resolve`. */
-const ROLL_BACK = Symbol("roll back the tree read");
 
 /**
  * The actor a job or system call runs as in `scope`: it takes the tenant its scope resolves to only when no user
