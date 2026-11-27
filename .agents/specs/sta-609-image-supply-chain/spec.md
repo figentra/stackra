@@ -47,6 +47,9 @@ or verified an image: Trivy scanned only the npm lockfile and cosign signed only
   commit, `runway-v<n>` tag or Stackra's main, GitHub's issuer, the caller repository and the caller's ref (main by
   default), so a workflow on another branch of the caller cannot sign an ungated image the verify accepts; a key file
   is refused (KMS references only); a KMS signature writes nothing to the public Rekor log (no image digest or key).
+  A keyless signature does: its Rekor entry and certificate publish the caller repository, its ref, the commit SHA, the
+  workflow run URL and the repository's visibility. The runbook, the README and the `kms-key` input say so, and point a
+  private repository that must not disclose them to a KMS key or its own Sigstore.
 - **Secrets**: none new. The registry login is the job's own (ECR over GitHub OIDC with a role ARN, or GHCR with the
   job's token); keyless signing needs no key.
 - **ADR needed**: no (implements ADR 0174 decisions 1 and 2 and ADR 0168 decision 2; ADR 0174's Enforcement line is
@@ -68,7 +71,7 @@ or verified an image: Trivy scanned only the npm lockfile and cosign signed only
 ## Acceptance criteria
 
 - **AC-001**: WHEN `publishImage` runs THE image SHALL be built by `encore build docker --skip-config --base <base>
---arch <arch> <image>:<sha>` in the deploy commit's tree (`encoreDeployTree`), with the repository's installed
+--arch <arch> <image>:<sha>-<arch>` in the deploy commit's tree (`encoreDeployTree`), with the repository's installed
   `node_modules` linked in, and the checkout SHALL be removed afterwards.
 - **AC-002**: WHEN Trivy finds a critical vulnerability with a released fix THE step SHALL refuse the image
   (`RunwayImageRejectedError`, step `scan`) and push, describe and sign nothing.
@@ -95,14 +98,28 @@ or verified an image: Trivy scanned only the npm lockfile and cosign signed only
   named signing config and trusted root SHALL be passed to cosign instead.
 - **AC-010**: WHEN a keyless `runway image:publish` runs on another ref THE command SHALL refuse before the build
   (the job's `GITHUB_REF` differs from `--ref`, default `refs/heads/main`).
+- **AC-011**: WHEN `publishImage` builds for an architecture THE image SHALL be tagged `<image>:<sha>-<arch>`, so runs
+  for two architectures of one commit never share a tag; the record's `tag` SHALL be `<sha>-<arch>`.
+
+## Not built yet
+
+Filed in Linear under STA-2796; the runbook's "What is not built yet" table lists them.
+
+- STA-2907: a signed multi-arch image index over the per-architecture images (ADR 0174 decision 1).
+- STA-2908: signed OCI image tarballs for on-prem and air-gapped installs (ADR 0174 decision 1).
+- STA-2909: the Compose smoke test of each release image (ADR 0289 decision 8).
+- STA-2910: a self-hosted deploy driver that pins and verifies the image reference.
 
 ## Status history
 
 - 2026-11-26 → Clarified (the audit's claim re-verified on origin/main de40b3c75: no image is built, scanned or signed)
 - 2026-11-26 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-26 → Tasked (tasks.md)
 - 2026-11-26 → Implementing (built in this branch; unit tests and a real run of build, Trivy, push, syft, cosign sign,
-  attest and verify on box 2)
+  attest and verify against a local registry)
 - 2026-11-26 → Implementing (review: the keyless verify pins the caller's ref and a commit, tag or main signer; a KMS
   signature uses no transparency log; proved with publishImage and verifyImage against real cosign 3.1.4, a
   `hashivault://` transit key in a dev Vault and a local registry, with every Sigstore host unreachable)
+- 2026-11-27 → Implementing (CTO conditions: one tag per architecture (AC-011), the public Rekor disclosure of keyless
+  signing documented, the not-built-yet items filed as STA-2907 to STA-2910)

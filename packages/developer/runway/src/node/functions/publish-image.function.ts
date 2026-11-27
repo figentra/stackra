@@ -7,12 +7,13 @@
  *          (keyless with the job's GitHub OIDC identity, or a KMS key with no transparency log unless a private
  *          Sigstore's signing config is named), attests the SBOM to it, verifies both (`verifyImage`, pinning the
  *          caller's ref for keyless) and writes the record a deploy pins (`runway-image-<name>.json`).
- * Boundary: runs git, encore, trivy, docker, syft and cosign through the given runner, each with its own login (the
- *           registry login, GitHub OIDC, the KMS role); no credential is an argument or written. Writes only the SBOM
- *           and the record under `out`, the temporary checkout `encoreDeployTree` removes and, for a KMS signature
- *           with no signing config named, the offline signing config in a temporary folder it removes. Every input is checked
- *           before the build: a tagged or upper-case image, a base not pinned by digest, a key file. A failed scan
- *           pushes nothing.
+ * Boundary: tags the local image `<image>:<sha>-<arch>`, one tag per architecture, and signs only the digest; no
+ *           multi-arch index is built. Runs git, encore, trivy, docker, syft and cosign through the given runner, each
+ *           with its own login (the registry login, GitHub OIDC, the KMS role); no credential is an argument or
+ *           written. Writes only the SBOM and the record under `out`, the temporary checkout `encoreDeployTree`
+ *           removes and, for a KMS signature with no signing config named, the offline signing config in a temporary
+ *           folder it removes. Every input is checked before the build: a tagged or upper-case image, a base not
+ *           pinned by digest, a key file. A failed scan pushes nothing.
  * Runtime: node
  * Governing contract: ADR 0174 (decisions 1 and 2: syft SBOM, cosign signature and attestations, Trivy fails on a
  *                     fixable critical finding, KMS key for air-gapped installs); ADR 0168 (decision 2: `encore build
@@ -108,7 +109,9 @@ export async function publishImage(request: ImagePublishRequest): Promise<ImageP
     throw new RunwayUnresolvedError(
       "no generated Encore app under services/: run stackra gen before the image step",
     );
-  const tag = `${image}:${sha}`;
+  // One tag per architecture: an arm64 run of the same commit never moves the amd64 tag. Nothing after the push names
+  // the tag (the digest is what is signed and pinned); a multi-arch index is not built yet.
+  const tag = `${image}:${sha}-${arch}`;
   try {
     // The deploy commit is already written, so the checkout needs no link back to the repository: inside a git
     // worktree `encore build docker` (1.58.8) walks the repository and never finishes. `dispose` prunes the entry.
@@ -192,7 +195,7 @@ export async function publishImage(request: ImagePublishRequest): Promise<ImageP
   const publication: ImagePublication = {
     schema: settings.recordSchema,
     image,
-    tag: sha,
+    tag: `${sha}-${arch}`,
     digest: reference.slice(image.length + 1),
     reference,
     sourceSha: sha,

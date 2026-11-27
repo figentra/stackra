@@ -504,9 +504,10 @@ decision 2), through the reusable `runway-image.yml` workflow. In order, each st
 (`RunwayImageRejectedError`, naming the step) that stops the rest ([ADR 0174](https://docs.stackra.figentra.com/adr/0174-supply-chain-images-signing-sbom-dependency-policy-and-rotation)
 decisions 1 and 2):
 
-1. **Build.** `encore build docker --skip-config --base <base> --arch <arch> <image>:<sha>` in the deploy commit's tree
+1. **Build.** `encore build docker --skip-config --base <base> --arch <arch> <image>:<sha>-<arch>` in the deploy commit's tree
    (`encoreDeployTree`, the tree Encore Cloud builds), with the installed `node_modules` linked in. The base must be
-   pinned by digest; no infra config is baked in, so one digest is promoted through every environment.
+   pinned by digest; no infra config is baked in, so one digest is promoted through every environment. The tag carries
+   the architecture, so an arm64 run never moves the amd64 tag; no multi-arch index is built yet (STA-2907).
 2. **Scan.** `trivy image` on the local image: a critical vulnerability with a released fix fails before anything is
    pushed.
 3. **Push**, then the digest the registry answered: everything after it names `<image>@sha256:<digest>`, never a tag.
@@ -516,7 +517,9 @@ decisions 1 and 2):
    air-gapped signer; a key file is refused. A KMS signature is signed with a Sigstore signing config that names no
    transparency log or timestamp authority (`IMAGE_SUPPLY_CHAIN_SETTINGS.kmsOffline`, written to a temporary folder),
    so it needs no Sigstore service and nothing reaches the public Rekor log, unless `signingConfig` names a private
-   Sigstore.
+   Sigstore. A keyless signature, by contrast, publishes the caller repository, its ref, the commit SHA, the workflow
+   run URL and the repository's visibility to the public Rekor log; a private repository that must not disclose them
+   signs with a KMS key or its own Sigstore.
 6. **Verify** (`verifyImage`, also `runway image:verify`): `cosign verify` and `cosign verify-attestation`. Keyless, the
    certificate must name Runway's `runway-image.yml` called by a commit, a `runway-v<n>` tag or Stackra's main
    (`IMAGE_SUPPLY_CHAIN_SETTINGS.signerIdentity`), GitHub's issuer, the caller repository and the caller's ref

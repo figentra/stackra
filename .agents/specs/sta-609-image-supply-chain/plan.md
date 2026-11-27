@@ -16,7 +16,7 @@ image:verify`), and the reusable workflow `runway-image.yml` runs it in a deploy
 - **Language**: TypeScript (ESM), GitHub Actions YAML
 - **Members**: `packages/developer/runway` (developer); `.github/workflows`
 - **Testing**: vitest in `src/**/__tests__/` (a temporary git repository with the real git and a recording fake for the
-  tools); actionlint and zizmor on the workflow; a real run on box 2
+  tools); actionlint and zizmor on the workflow; a real run against a local registry
 - **Storage**: none
 - **Runtime target**: a GitHub Actions deploy or release job (ubuntu-latest, docker present)
 
@@ -127,16 +127,17 @@ root; a private Sigstore is named by its signing config and trusted root instead
 - AC-004, AC-005: `image-trust-arguments.function.test.ts`, `verify-image.function.test.ts` (a fake cosign that checks
   a certificate's claims with the flags given refuses a branch caller and a branch signer).
 - AC-009: `publish-image.function.test.ts` (the offline signing config's content at sign time, removed afterwards),
-  `verify-image.function.test.ts`; a real run on box 2 against a `hashivault://` key with Sigstore unreachable.
+  `verify-image.function.test.ts`; a real run against a `hashivault://` key with Sigstore unreachable.
 - AC-010: `runway-image-publish.command.test.ts`.
 - Commands: `runway-image-publish.command.test.ts`, `runway-image-verify.command.test.ts`.
-- AC-008: actionlint and zizmor; the real run on box 2 (encore, Trivy, local registry, syft, cosign).
+- AC-008: actionlint and zizmor; the real run (encore, Trivy, local registry, syft, cosign).
 
 ## Rollout
 
 A minor changeset for `@stackra/runway`. A caller pins `runway-image.yml` by commit with its `runway-v<n>` tag once
-released. The Compose smoke test (ADR 0289 decision 8) and a self-hosted deploy driver that pins and verifies the
-reference follow under STA-609.
+released. The Compose smoke test (ADR 0289 decision 8, STA-2909), a self-hosted deploy driver that pins and verifies
+the reference (STA-2910), a signed multi-arch index (STA-2907) and signed OCI tarballs for on-prem (STA-2908) follow,
+each filed under STA-2796.
 
 ## Delegation and risk plan
 

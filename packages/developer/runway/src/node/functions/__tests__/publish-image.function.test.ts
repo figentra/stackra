@@ -4,7 +4,7 @@
  *          (generated app at the root, no `.git` link, the installed `node_modules` linked in), with the pinned base and no infra
  *          config; Trivy gates it before the push; the digest the registry answered is what syft describes, cosign
  *          signs and attests and the verify checks (pinning the caller's main); the record names it; the checkout is
- *          removed. A failed scan pushes nothing, a missing digest signs nothing, a KMS key signs with the key and the
+ *          removed; each architecture gets its own `<sha>-<arch>` tag. A failed scan pushes nothing, a missing digest signs nothing, a KMS key signs with the key and the
  *          offline signing config (no transparency log) unless a private Sigstore is named and verifies with the log
  *          check skipped, and bad inputs stop before the build.
  * Boundary: test only; a temporary git repository with the real `git` (`runProgram`) and a recording fake for encore,
@@ -144,7 +144,7 @@ describe("publishImage", () => {
   it("builds from the deploy tree, scans, pushes, then describes, signs, attests and verifies the digest", async () => {
     const { run, calls, seen } = fake();
     const publication = await publishImage(request(run));
-    const tag = `${IMAGE}:${sha}`;
+    const tag = `${IMAGE}:${sha}-amd64`;
     const reference = `${IMAGE}@${DIGEST}`;
     const sbom = join(out, "sbom-acme-core.cdx.json");
     const identity = [
@@ -192,7 +192,7 @@ describe("publishImage", () => {
     expect(publication).toEqual({
       schema: "runway.image/v1",
       image: IMAGE,
-      tag: sha,
+      tag: `${sha}-amd64`,
       digest: DIGEST,
       reference,
       sourceSha: sha,
@@ -214,7 +214,7 @@ describe("publishImage", () => {
     const failed = publishImage(request(run));
 
     await expect(failed).rejects.toThrow(RunwayImageRejectedError);
-    await expect(failed).rejects.toMatchObject({ step: "scan", image: `${IMAGE}:${sha}` });
+    await expect(failed).rejects.toMatchObject({ step: "scan", image: `${IMAGE}:${sha}-amd64` });
     // The refusal names the finding Trivy printed.
     await expect(failed).rejects.toThrow(/CVE-2026-0001 openssl 3\.0\.1 -> 3\.0\.2/);
     expect(calls.map(({ command }) => command)).toEqual(["encore", "trivy"]);
@@ -242,6 +242,22 @@ describe("publishImage", () => {
    * timestamp authority (so no Sigstore service is reached and the digest never reaches the public log), and the verify
    * skips the log check to match; no keyless identity is asked for. The config is removed afterwards.
    */
+  /** Two architectures of one commit push two tags: an arm64 run never moves the amd64 tag. */
+  it("tags each architecture apart, so a second architecture never overwrites the first", async () => {
+    const pushed: string[] = [];
+    for (const arch of ["amd64", "arm64"] as const) {
+      const { run, calls } = fake();
+      const publication = await publishImage(request(run, { arch }));
+      pushed.push(
+        ...calls
+          .filter(({ command, args }) => command === "docker" && args[0] === "push")
+          .map(({ args }) => args[1] as string),
+      );
+      expect(publication.tag).toBe(`${sha}-${arch}`);
+    }
+    expect(pushed).toEqual([`${IMAGE}:${sha}-amd64`, `${IMAGE}:${sha}-arm64`]);
+  });
+
   it("signs, attests and verifies with a KMS key and no transparency log", async () => {
     const { run, calls, seen } = fake();
     const key = "awskms:///alias/acme-images";

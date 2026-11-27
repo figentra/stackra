@@ -11,6 +11,9 @@ signer, with no transparency log unless a private Sigstore's `--signing-config` 
 pins a keyless signature to Runway's workflow at a commit, `runway-v<n>` tag or Stackra's main and to the caller's ref
 (`--ref`, default `refs/heads/main`), and checks a KMS signature with no Sigstore service unless `--trusted-root` is
 named. The reusable workflow `runway-image.yml` runs the step in a deploy or release job.
+Each architecture is tagged `<image>:<sha>-<arch>`; the digest is what is signed and pinned. A keyless signature
+publishes the caller repository, its ref, the commit SHA, the run URL and the repository's visibility to the public
+Rekor log; a private repository that must not disclose them signs with a KMS key or its own Sigstore.
 New exports: `RunwayImageRejectedError` and `ImageStep` from `.`; `publishImage`, `verifyImage`,
 `IMAGE_SUPPLY_CHAIN_SETTINGS` and the `ImagePublishRequest`, `ImagePublication`, `ImageVerifyRequest` and `ImageTrust`
 types from `./node`. `EncoreDeployTree` also answers the checkout folder (`dir`).

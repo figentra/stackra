@@ -59,7 +59,9 @@ on:
       kms-key:
         description: >-
           A KMS key reference (`awskms://…`, `gcpkms://…`) for an air-gapped signer (ADR 0174 decision 2), signed with no
-          transparency log; empty signs keyless with this job's GitHub OIDC identity (Sigstore), from main only.
+          transparency log; empty signs keyless with this job's GitHub OIDC identity (Sigstore), from main only. Keyless
+          signing publishes the caller repository, ref, commit SHA, run URL and repository visibility to the public Rekor
+          log; a private repository that must not disclose them sets a KMS key.
         type: string
         default: ""
       install-args:

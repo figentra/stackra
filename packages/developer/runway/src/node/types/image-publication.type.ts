@@ -13,7 +13,7 @@ export type ImagePublication = {
   readonly schema: string;
   /** The image repository. */
   readonly image: string;
-  /** The tag pushed (the source commit). */
+  /** The tag pushed, `<source commit>-<arch>`: one per architecture, so runs for two architectures never share one. */
   readonly tag: string;
   /** The manifest digest the registry answered (`sha256:…`). */
   readonly digest: string;
