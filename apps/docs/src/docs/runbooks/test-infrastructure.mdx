@@ -85,9 +85,10 @@ For callers such as `fflow gate`:
 
 By SSH through **SSM Session Manager**: `ssh`, `rsync` and every verb connect to `ubuntu@<instance-id>` with an
 `AWS-StartSSHSession` `ProxyCommand`. The security group has no inbound rule, so a changing public IP (Cloudflare WARP)
-does not matter. Needs on the Mac: the `aws` CLI with the `<profile>` profile, the SSH key, and the Session Manager
-plugin, pinned in `mise.toml` (`mise install`). The box side is already there: the instance role has
-`AmazonSSMManagedInstanceCore`, the Ubuntu image runs the SSM agent, and egress is open.
+does not matter. Needs on the Mac: the `aws` CLI with the `<profile>` profile, the private key of the EC2 key pair
+that `TESTBED_KEY_PAIR` names (Step 2a), and the Session Manager plugin, pinned in `mise.toml` (`mise install`). The
+box side is already there: the instance role has `AmazonSSMManagedInstanceCore`, the Ubuntu image runs the SSM agent,
+and egress is open.
 
 `stackra testbed --ssh-direct` (or `STACKRA_TESTBED_SSH_DIRECT=1`) is the fallback: it connects to the public IP and
 swaps this machine's address into the port-22 allowlist, which exists only when `TESTBED_SSH_CIDRS` was set at apply.
@@ -244,8 +245,9 @@ yes ([plan](https://github.com/figentra/stackra/tree/main/.agents/specs/sta-1626
     fallback, wait for free slots, stop the boxes.
   </Step>
   <Step title="Retire">
-    After a week stopped and unused, terminate the old boxes and their disks, delete the emptied
-    `stackra-testbed` security groups, and delete the shim's fallback with every `~/.ci-env`.
+    After a week stopped and unused, terminate the old boxes and their disks, delete the old boxes'
+    emptied security groups (the pre-testbed CI group, never the testbed's own `stackra-testbed`),
+    and delete the shim's fallback with every `~/.ci-env`.
   </Step>
 </Steps>
 
@@ -322,9 +324,14 @@ aws iam put-role-policy --role-name stackra-testbed-deploy --policy-name testbed
 ```
 
 Then in GitHub, figentra/stackra, Settings, Environments, New environment `testbed`: deployment branches **main**
-only, required reviewer the owner, and two environment variables (neither is secret):
+only, required reviewer the owner, and these environment variables (none is secret):
 
 - `TESTBED_DEPLOY_ROLE_ARN` = `arn:aws:iam::<account-id>:role/stackra-testbed-deploy`
+- `TESTBED_KEY_PAIR` (required) = the name of the EC2 key pair the boxes get, one that exists in the account in every
+  enabled region and whose private key the operators hold (`aws ec2 describe-key-pairs` with `--key-names <name>`
+  finds it in each region). The workflow refuses to apply without it and never falls back to the package default, so
+  an apply never swaps the boxes key. Change it together with the CLIs key file (`TESTBED_CLI_DEFAULTS.key`, or
+  `STACKRA_TESTBED_SSH_KEY` on each machine).
 - `TESTBED_SSH_CIDRS` (optional) = a port-22 allowlist as `x.x.x.x/32`, comma-separated, for `--ssh-direct` only.
   Leave it unset: the CLI reaches the boxes through SSM. A rule already applied stays until the owner revokes it.
 

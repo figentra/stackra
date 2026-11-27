@@ -13,7 +13,9 @@
 # Owner: release-operations
 # Secrets: none. AWS access is GitHub OIDC into the role in the `testbed` environment variable TESTBED_DEPLOY_ROLE_ARN
 #          (trusts repo:figentra/stackra:environment:testbed only). The stack config is ids and CIDRs, no secret, so
-#          the Pulumi passphrase is empty by design. The Infisical ids come from the organization variables.
+#          the Pulumi passphrase is empty by design. The Infisical ids come from the organization variables. The
+#          `testbed` environment variable TESTBED_KEY_PAIR names the boxes' EC2 key pair; a run without it refuses
+#          to apply rather than fall back to the package default (STA-2876).
 name: Apply testbed
 
 on:
@@ -69,7 +71,8 @@ jobs:
       PROJECT_ID: ${{ vars.INFISICAL_GATE_PROJECT_ID }}
       # Optional: the permissions boundary the program sets on the roles it creates (notes testbed-boundary draft).
       PERMISSIONS_BOUNDARY: ${{ vars.TESTBED_PERMISSIONS_BOUNDARY_ARN }}
-      # Optional: the EC2 key pair the boxes get, when it is not the package default (stackra-testbed).
+      # Required: the EC2 key pair the boxes get, the one the operators' SSH key belongs to. Never a default: a pair
+      # that does not exist in the account stops every new box from launching (runbook: test-infrastructure, Step 2).
       KEY_PAIR: ${{ vars.TESTBED_KEY_PAIR }}
       PULUMI_TOOL: pulumi@3.268.0
       PULUMI_SKIP_UPDATE_CHECK: "true"
@@ -101,6 +104,11 @@ jobs:
           for name in ROLE_ARN IDENTITY_ID PROJECT_ID; do
             [ -n "${!name}" ] || { echo "::error title=$name::missing (runbook: test-infrastructure, Step 2)"; exit 1; }
           done
+          # The launch template names this pair; no fallback, so an unset variable never swaps the boxes' key.
+          if [ -z "$KEY_PAIR" ]; then
+            echo "::error title=TESTBED_KEY_PAIR::missing: set the testbed environment variable TESTBED_KEY_PAIR to the account's EC2 key pair (runbook: test-infrastructure, Step 2)"
+            exit 1
+          fi
           # One image pipeline, in the home region; its distribution copies each AMI to every region (STA-2042).
           if [ "$ACTION" = build-image ] && [ "$REGION" != "$HOME_REGION" ]; then
             echo "::error title=build-image::runs in the home region ($HOME_REGION) only; its build reaches every region"
@@ -171,7 +179,7 @@ jobs:
           done
           pulumi config set groups "$DECLARE_GROUPS"
           if [ -n "$PERMISSIONS_BOUNDARY" ]; then pulumi config set permissionsBoundary "$PERMISSIONS_BOUNDARY"; fi
-          if [ -n "$KEY_PAIR" ]; then pulumi config set keyPair "$KEY_PAIR"; else pulumi config rm keyPair || true; fi
+          pulumi config set keyPair "$KEY_PAIR" # required, checked in Prerequisites
           pulumi config set heavyMin "$HEAVY_MIN"
           pulumi config set lightMin "$LIGHT_MIN"
           # Image Builder components and recipes are kept in AWS when replaced (retainOnDelete, STA-1953). The engine
