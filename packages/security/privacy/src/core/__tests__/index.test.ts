@@ -22,6 +22,7 @@ describe("@stackra/privacy", () => {
       "PrivacyOptions",
       "SubjectErased",
       "SubjectExportService",
+      "looserErasureFields",
       "personalDataDeclarations",
       "registerPersonalData",
     ]);

@@ -48,6 +48,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { BUILT_IN_DATA_CLASSES } from "@stackra/contracts";
 import { describe, expect, it } from "@stackra/testing";
 
 import { createSourceReader } from "#node/functions/create-source-reader.function";
@@ -1804,6 +1805,140 @@ describe("createSourceReader on data classes", async () => {
     );
     expect(note).toBe("clinical_note");
     expect(refund).toBe("financial");
+  });
+});
+
+/**
+ * A model whose fields carry @stackra/model's built-in classes (one through an alias) and a same-named class of another
+ * package, which is a product class gen cannot read (ADR 0540 decision 7: built-in classes are recognised by package).
+ */
+const BUILT_IN_CLASS_SOURCES: Readonly<Record<string, string>> = {
+  ...DATA_CLASS_SOURCES,
+  "node_modules/@stackra/model/index.d.ts": [
+    DATA_CLASS_SOURCES["node_modules/@stackra/model/index.d.ts"] ?? "",
+    "declare const CredentialDataClass_base: abstract new () => object;",
+    "export declare class CredentialDataClass extends CredentialDataClass_base {}",
+    "declare const PrivilegedDataClass_base: abstract new () => object;",
+    "export declare class PrivilegedDataClass extends PrivilegedDataClass_base {}",
+    "",
+  ].join("\n"),
+  "node_modules/@acme/lookalike/package.json": JSON.stringify({
+    name: "@acme/lookalike",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@acme/lookalike/index.d.ts": [
+    "declare const CredentialDataClass_base: abstract new () => object;",
+    "export declare class CredentialDataClass extends CredentialDataClass_base {}",
+    "",
+  ].join("\n"),
+  "src/node/models/connection.model.ts": [
+    'import { Classify, CredentialDataClass as Secret, HasPublicId, Model, PrivilegedDataClass } from "@stackra/model";',
+    'import { CredentialDataClass as Lookalike } from "@acme/lookalike";',
+    "",
+    'export class Connection extends Model.with(HasPublicId("con")) {',
+    "  @Classify(Secret)",
+    "  accessToken!: string;",
+    "",
+    "  @Classify(PrivilegedDataClass)",
+    "  advice!: string;",
+    "",
+    "  @Classify(Lookalike)",
+    "  note!: string;",
+    "}",
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on built-in data classes", async () => {
+  const root = writeFixtureMember("built-in-data-classes", BUILT_IN_CLASS_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+  const facetOf = (member: string) =>
+    classes
+      .find((declared) => declared.name === "Connection")
+      ?.facets.find((candidate) => candidate.name === "Classify" && candidate.member === member);
+
+  it("takes a @stackra/model built-in class's effects from the contracts table, through an alias", () => {
+    expect(facetOf("accessToken")?.options).toMatchObject({
+      dataClass: BUILT_IN_DATA_CLASSES.CredentialDataClass,
+    });
+    expect(facetOf("advice")?.options).toMatchObject({
+      dataClass: BUILT_IN_DATA_CLASSES.PrivilegedDataClass,
+    });
+  });
+
+  it("never takes a built-in's effects for a same-named class of another package", () => {
+    expect(facetOf("note")).toBeDefined();
+    expect(facetOf("note")?.options).not.toHaveProperty("dataClass");
+  });
+});
+
+/** A model and its `PersonalData` declarations, one listing its fields and one leaving them to the classes (ADR 0540). */
+const PERSONAL_DATA_SOURCES: Readonly<Record<string, string>> = {
+  ...MODEL_STAND_IN,
+  "node_modules/@stackra/privacy/package.json": JSON.stringify({
+    name: "@stackra/privacy",
+    types: "./index.d.ts",
+  }),
+  "node_modules/@stackra/privacy/index.d.ts": [
+    'export declare const ErasureMethod: { readonly Shred: "shred"; readonly Delete: "delete"; readonly Anonymise: "anonymise" };',
+    "export type ErasureMethod = (typeof ErasureMethod)[keyof typeof ErasureMethod];",
+    'export interface PersonalData { readonly "~kind": "personal_data" }',
+    "export declare const PersonalData: (options: { readonly model: () => unknown; readonly subject: string; readonly fields?: Readonly<Record<string, ErasureMethod>> }) => new () => PersonalData;",
+    "",
+  ].join("\n"),
+  "src/modules/crm/models/customer.model.ts": [
+    'import { HasPublicId, Model } from "@stackra/model";',
+    "",
+    'export class Customer extends Model.with(HasPublicId("cus")) {',
+    "  userId!: string;",
+    "  email!: string | null;",
+    "}",
+    "",
+  ].join("\n"),
+  "src/modules/crm/privacy/customer.personal-data.ts": [
+    'import { ErasureMethod, PersonalData } from "@stackra/privacy";',
+    'import { Customer } from "#modules/crm/models/customer.model";',
+    "",
+    "export class CustomerPersonalData extends PersonalData({",
+    "  model: () => Customer,",
+    '  subject: "userId",',
+    "  fields: { email: ErasureMethod.Anonymise },",
+    "}) {}",
+    "",
+  ].join("\n"),
+  "src/modules/crm/privacy/lead.personal-data.ts": [
+    'import { PersonalData } from "@stackra/privacy";',
+    'import { Customer } from "#modules/crm/models/customer.model";',
+    "",
+    'export class LeadPersonalData extends PersonalData({ model: () => Customer, subject: "userId" }) {}',
+    "",
+  ].join("\n"),
+};
+
+describe("createSourceReader on personal-data declarations", async () => {
+  const root = writeFixtureMember("personal-data", PERSONAL_DATA_SOURCES);
+  const host = await openHost(join(root, "tsconfig.json"));
+  const reader = createSourceReader(host, readMemberFacts(root));
+  const classes = reader.sources.flatMap((file) => reader.classes(file));
+  host.close();
+
+  it("reads a PersonalData class as the personal_data kind, with its model, subject and constant fields", () => {
+    const declared = classes.find((candidate) => candidate.name === "CustomerPersonalData");
+    expect(declared?.kind).toBe("personal_data");
+    expect(declared?.options).toMatchObject({
+      model: { $class: "Customer" },
+      subject: "userId",
+      fields: { email: "anonymise" },
+    });
+  });
+
+  it("reads a declaration without fields with none, so the checks derive them", () => {
+    const declared = classes.find((candidate) => candidate.name === "LeadPersonalData");
+    expect(declared?.kind).toBe("personal_data");
+    expect(declared?.options).not.toHaveProperty("fields");
   });
 });
 

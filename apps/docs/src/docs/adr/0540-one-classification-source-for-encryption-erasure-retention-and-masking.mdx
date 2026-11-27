@@ -1,0 +1,134 @@
+---
+title: "0540 — One classification source for encryption, erasure, retention and masking"
+description: "Proposed · 2026-11-26"
+---
+
+<Note>
+  Proposed (STA-1421, data-layer batch stackra-314, gap gov3). It amends
+  [0134](/adr/0134-data-invariants-classification-and-delete-lifecycle) decision 2,
+  [0341](/adr/0341-product-defined-data-classes-and-the-privileged-class) decision 2 and
+  [0380](/adr/0380-data-class-effects-for-the-built-in-classes-seeded-as-data-over-a-code-floor)
+  decisions 2 and 3, and reads with [0494](/adr/0494-credential-data-class-for-provider-secrets).
+</Note>
+
+## Context
+
+A field's handling was stated in up to four places that nothing compared: `@Classified(DataClassification.X)` of
+`@stackra/validation` (export, erasure, the logs), `@Classify(DataClass)` of `@stackra/model` with four access effects
+(AI, support, search, export), `HasEncryptedFields` naming the sealed fields, and a `PersonalData({ fields })`
+declaration of `@stackra/privacy` naming each erased field and its method. A health field could rest in clear, a
+`PersonalData` declaration could anonymise a field its product had decided to shred, and gen could not see either,
+because it did not read `PersonalData` and no class said how its fields are kept. ADR 0134 decision 2 promised "fixed
+effects" per class that were never listed for encryption, erasure, retention or masking.
+
+## Decision
+
+1. **Eight effects.** A data class sets eight effects, all required: the four access effects of 0341 (`ai`, `support`,
+   `search`, `export`) and four keeping effects:
+   - `encrypt`: `clear`, `sealed` (named by `HasEncryptedFields`) or `subject_sealed` (named by
+     `HasEncryptedFields({ subject })`, so erasing the subject shreds it);
+   - `erasure`: `keep` (not the subject's personal data), `anonymise`, `delete` or `shred`;
+   - `retention`: `none`, or `required` (a model holding the field declares `Retention`);
+   - `mask`: what a masked copy writes, `keep`, `hash` (keyed, joins still match), `fake` or `null`.
+
+   `DataClass({...})` refuses a class that leaves an effect out or names an unknown code.
+
+2. **The built-in classifications are data classes, in one table.** `@Classified(DataClassification.X)` means the
+   built-in class `X`, whose effects are row `X` of `DATA_CLASSIFICATION_EFFECTS` in `@stackra/contracts`. That table is
+   the one statement; `@stackra/model` (`builtInDataClass`), `@stackra/privacy` and gen read it, and
+   `CredentialDataClass` is held equal to the `credential` row by a test.
+
+   | Class          | `ai`            | `support` | `search`     | `export`   | `encrypt` | `erasure`   | `retention` | `mask` |
+   | -------------- | --------------- | --------- | ------------ | ---------- | --------- | ----------- | ----------- | ------ |
+   | `personal`     | `allowed`       | `visible` | `snippet`    | `labelled` | `clear`   | `anonymise` | `none`      | `fake` |
+   | `financial`    | `allowed`       | `visible` | `snippet`    | `labelled` | `clear`   | `anonymise` | `none`      | `fake` |
+   | `health`       | `tenant_opt_in` | `hidden`  | `no_snippet` | `labelled` | `sealed`  | `anonymise` | `required`  | `null` |
+   | `pseudonymous` | `allowed`       | `visible` | `snippet`    | `labelled` | `clear`   | `anonymise` | `none`      | `hash` |
+   | `regulated`    | `tenant_opt_in` | `hidden`  | `no_snippet` | `labelled` | `clear`   | `anonymise` | `none`      | `fake` |
+   | `credential`   | `never`         | `hidden`  | `no_snippet` | `excluded` | `sealed`  | `keep`      | `none`      | `null` |
+   | `privileged`   | `tenant_opt_in` | `hidden`  | `no_snippet` | `labelled` | `clear`   | `keep`      | `none`      | `null` |
+
+   `privileged` is `PrivilegedDataClass` of `@stackra/model` (0341 decision 3); it is not a `DataClassification` code.
+   `regulated` stays `clear` so the products already storing regulated identifiers are not forced into a re-seal by an
+   upgrade; a product that must seal them declares a stricter class.
+
+3. **The floor is an order, in code.** `DATA_CLASS_EFFECT_RANKS` ranks each effect's codes from loosest to strictest
+   (0380 decision 3, extended): `allowed` < `tenant_opt_in` < `never`; `visible` < `hidden`; `snippet` < `no_snippet`;
+   `labelled` < `excluded`; `clear` < `sealed` < `subject_sealed`; `keep` < `anonymise` < `delete` = `shred`; `none` <
+   `required`; `keep` < `hash` < `fake` < `null`. A class never loosens its floor (`loosenedEffects`).
+
+4. **One effective class per field.** A field's class is its `@Classify` class, its `@Classified` built-in class, or,
+   when it carries both, the stricter code of the two on every effect under the `@Classify` key (`strictestEffects`).
+   `fieldDataClasses` of `@stackra/model` and gen's `fieldDataClassOf` apply the same rule; gen refuses a `@Classify`
+   class looser than the field's `@Classified` class, so the merge only guards a member gen has not checked.
+
+5. **`PersonalData` is derived.** A `PersonalData({ model, subject })` declaration may leave `fields` out: its fields are
+   then the model's classified fields whose class's `erasure` is not `keep`, each with that method. A listed field list
+   stays authoritative (a personal field on the row may belong to another person), but no listed method may be weaker
+   than its field's class, and a credential is never listed (0494 rule 4). The erasure workflow refuses a weaker method
+   (`looserErasureFields`), and gen refuses it at build time. Erasure fails closed: a declaration that ends with no
+   field (it lists none, or an empty list, and no class of its model derives one) would erase nothing and still let the
+   receipt report the subject erased, so gen refuses it (`personal_data_no_fields`) and the erasure workflow refuses to
+   start while one is registered (`emptyPersonalDataDeclarations`).
+
+6. **Who reads each keeping effect.** Gen reads `encrypt` (the field must be named by `HasEncryptedFields`, with
+   `subject` for `subject_sealed`), `retention` (the model declares `Retention`) and `erasure` (each `PersonalData`
+   declaration of an own model). `@stackra/privacy` reads `erasure` to derive declarations. `maskOf` of `@stackra/model`
+   gives each field's `mask`, which the masked-copy job (data-layer gap gov15) applies; no masker keeps its own list of
+   columns. An encrypted field still carries `@Classified`: the log redaction (`redact` of `@stackra/logger`), the
+   panel export and `changeCaptureOf` read only `@Classified`, so gen's `encrypted_field_unclassified` does not count a
+   `@Classify` class alone (a sealed field with only `@Classify` would be logged and exported in clear once decrypted).
+   Moving those readers onto the table is a later change; until then `@Classify` adds to `@Classified`, never replaces
+   it, on a field that holds personal or secret data.
+
+7. **Built-in classes are recognised by package.** A published package carries a class's declaration (`.d.ts`), not the
+   `DataClass({...})` call gen reads a product class's effects from, so gen could not see the effects of
+   `@Classify(CredentialDataClass)` in a product. Gen resolves the `@Classify` argument through the type checker to its
+   class declaration (an alias or a re-export resolves to the original) and, when that declaration belongs to the
+   `@stackra/model` package and its name is a key of `BUILT_IN_DATA_CLASSES` in `@stackra/contracts`, takes the class's
+   key and effects from that table. The package is read from the declaration's own `package.json`, never from the import
+   text. Recognising by a symbol (a brand property on the class) was the alternative: it is rejected because a product
+   class could carry the same brand and claim a built-in's effects, and a brand is a type-level value gen would have to
+   read out of a `.d.ts`, while a declaration's package is fixed by where it is installed. A same-named class in any
+   other package is a product class, read from its own `DataClass({...})` call or, when gen cannot read it, counted
+   only through its `@Classified` code. `@stackra/model`'s tests hold each built-in class equal to its row.
+
+## Consequences
+
+- A field is classified once. Its encryption, erasure, retention and masking follow from its class, and gen names the
+  first place a model or a declaration disagrees with it.
+- A product data class must state all eight effects; a class declared before this change fails to type-check and is
+  refused by `DataClass` until it states the four keeping effects.
+- A model holding a `health` field must encrypt it and declare `Retention`; gen refuses it otherwise.
+- `@stackra/contracts` carries the classification table, so a package that cannot import `@stackra/model` (gen today,
+  the logger once its redaction moves onto the table) reads the same effects.
+- The seeded `data-class` records of 0380 decision 1 remain a later change: today the table is code, and a tenant's
+  tightening through settings is not built.
+
+## Enforcement
+
+- `@stackra/model` `DataClass` refuses a missing or unknown effect (`src/core/bases/__tests__/data-class.base.test.ts`);
+  `CredentialDataClass` equals the table's `credential` row (same test).
+- `@stackra/contracts` fixes the table and the ranks
+  (`src/core/constants/__tests__/data-classification-effects.constant.test.ts`,
+  `src/core/functions/__tests__/loosened-effects.function.test.ts`).
+- `@stackra/gen`, full pass: `checkEncryptedFields` (`classified_field_not_encrypted`,
+  `classified_field_not_subject_sealed`, `credential_field_not_encrypted`, `encrypted_field_unclassified`),
+  `checkDataClasses` (`data_class_effects_missing`, `data_class_looser_than_classified`,
+  `classified_model_without_retention`) and `checkPersonalData` (`personal_data_field_unknown`,
+  `personal_data_credential_field`, `personal_data_looser_than_class`, `personal_data_shred_unsealed`,
+  `personal_data_anonymise_not_nullable`, `personal_data_no_fields`); the source reader takes a built-in class's
+  effects from `BUILT_IN_DATA_CLASSES` by package (`src/node/functions/__tests__/create-source-reader.function.test.ts`).
+- `@stackra/privacy` `EraseSubjectWorkflow` refuses a declared method weaker than its field's class before any row is
+  touched, and refuses to start while a declaration resolves to no field
+  (`src/node/workflows/__tests__/erase-subject.workflow.test.ts`).
+- `@stackra/contracts` fixes the built-in classes' rows (`src/core/constants/__tests__/built-in-data-classes.constant.test.ts`);
+  `@stackra/model` holds `CredentialDataClass` and `PrivilegedDataClass` equal to them.
+- planned: the masked-copy job applying `maskOf` (gap gov15) and the seeded `data-class` records of 0380.
+
+## Supersedes and sources
+
+Supersedes: none. Amends: 0134 decision 2 (the class effects are listed here), 0341 decision 2 (eight effects, not four)
+and 0380 decisions 2 and 3 (the keeping effects and their order). Sources:
+`notes/handover/gap-analysis/data-layer/governance.md` (gap gov3), `notes/handover/gap-analysis/data-layer/BATCHES.md`
+(stackra-314) and `DECISIONS.md` (owner decision 11: merge into one `DataClass` declaration), 2026-10-28.

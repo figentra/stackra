@@ -4,6 +4,14 @@ description: "Proposed · 2026-10-26"
 ---
 
 <Note>
+  Amended 2026-11-26 (STA-1421) by
+  [0540](/adr/0540-one-classification-source-for-encryption-erasure-retention-and-masking), when
+  accepted: the built-in rows are the six `DataClassification` codes, with four more effects
+  (`encrypt`, `erasure`, `retention`, `mask`) and their order of strictness in code; the seeded
+  `data-class` records of decision 1 remain planned.
+</Note>
+
+<Note>
   Amended 2026-10-30 (STA-1677) by [0494](/adr/0494-credential-data-class-for-provider-secrets): the
   built-in classes gain `credential`, whose floor is the strictest value on every effect (`ai:
   never`, `support: hidden`, `search: no_snippet`, `export: excluded`) and is code, never seed data.

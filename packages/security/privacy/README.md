@@ -42,6 +42,10 @@ export class CustomerPersonalData extends PersonalData({
 }) {}
 registerPersonalData("crm", [CustomerPersonalData]); // shortcut until gen registers privacy/ groups (STA-339)
 
+// or let the model's data classes give the fields: every @Classified / @Classify field whose class erases, with its
+// method (`personal`, `financial`, `health`, `pseudonymous`, `regulated` anonymise; a credential is never included)
+export class PatientPersonalData extends PersonalData({ model: () => Patient, subject: "userId" }) {}
+
 // the host's request flow, after verifying the person
 const { url, expiresAt } = await pipeline.execute(
   ExportSubjectDataAction,
@@ -97,7 +101,7 @@ export class PrivacyConfig extends BasePrivacyConfig {
 
 | Entry         | Symbol                                                                                                             | Use                                                                    |
 | ------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| `.`           | `PersonalData`, `registerPersonalData`, `personalDataDeclarations`                                                 | the kind, its registration and the resolved declarations               |
+| `.`           | `PersonalData`, `registerPersonalData`, `personalDataDeclarations`, `looserErasureFields`                          | the kind, its registration, the resolved declarations, the class check |
 | `.`           | `SubjectExportService`                                                                                             | `collect(subject, at)` and `archive(export)`                           |
 | `.`           | `PrivacyConfig`, `PrivacyOptions`, `PrivacyConfig$`                                                                | `store` (`repository`, `memory`), `exportTtlDays` (7), `exportFolder`  |
 | `.`           | `MemoryPersonalDataStoreDriver`, `MemorySubjectSaltStoreDriver`                                                    | memory drivers for tests and previews; seed them with `put`            |

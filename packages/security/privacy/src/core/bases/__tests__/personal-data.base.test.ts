@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of the `PersonalData` kind: a called form that records its options in the kind registry and
- *          refuses a missing model thunk, an empty subject, no fields, or an unknown erasure method.
+ *          refuses a missing model thunk, an empty subject, an empty field list, or an unknown erasure method, and
+ *          records no fields when they are left out (they are derived from the model's data classes).
  * Boundary: test only; no container.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 25); STA-1375.
+ * Governing contract: ADR 0022; ADR 0269; ADR 0294 (decision 25); ADR 0540 (decision 5); STA-1375.
  */
 import { kindOf } from "@stackra/container";
 import { describe, expect, it } from "@stackra/testing";
@@ -23,6 +24,12 @@ describe("PersonalData", () => {
     expect(record.options["subject"]).toBe("userId");
     expect(record.options["fields"]).toEqual({ name: "shred", phone: "anonymise" });
     expect(Object.isFrozen(record.options["fields"])).toBe(true);
+  });
+
+  it("records no fields when they are left out, so the model's data classes give them", () => {
+    const options = kindOf(PersonalData({ model: () => Customer, subject: "userId" }))?.options;
+    expect(options?.["subject"]).toBe("userId");
+    expect(options).not.toHaveProperty("fields");
   });
 
   it("refuses a model that is not a thunk", () => {

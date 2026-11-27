@@ -10,7 +10,8 @@
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (R1 to R3, decision 16: the kind table); ADR 0305 (rules 1 to 3); STA-903 (`agent`,
  *                     `pass`); ADR 0336 (decision 1: `<base>.model-addition.ts`, `<Base>Addition`); ADR 0470
- *                     (decision 1: `<name>.report.ts`, `<Name>Report`).
+ *                     (decision 1: `<name>.report.ts`, `<Name>Report`); ADR 0540 (decision 5:
+ *                     `<model>.personal-data.ts`, `<Model>PersonalData`).
  */
 
 /** Kind code to its file suffix and class-name suffix. */
@@ -53,6 +54,7 @@ export const KIND_FILES: Readonly<
   panel: { file: "panel", suffix: "Panel" },
   pass: { file: "pass", suffix: "Pass" },
   permissions: { file: "permissions", suffix: "Permissions" },
+  personal_data: { file: "personal-data", suffix: "PersonalData" },
   policy: { file: "policy", suffix: "Policy" },
   port: { file: "port", suffix: "" },
   precondition: { file: "precondition", suffix: "Precondition" },

@@ -43,7 +43,8 @@ The whole package is one `.` entry, so its enums, ports and types sit under `src
   bits, which keep one process's ids in minting order. Keep the lowercase UUIDv7 form: ids are stored and compared.
 - `Enum.of` codes are snake_case except a tool-owned value (`HttpMethod`), which keeps the tool's spelling.
 - A new `DataClassification` code is appended, never inserted or renamed: codes are stored, and stored checks
-  (`@stackra/access-log`'s `t.dataClassification`) list them literally.
+  (`@stackra/access-log`'s `t.dataClassification`) list them literally. It gets its row in `DATA_CLASSIFICATION_EFFECTS`
+  in the same change (ADR 0540); a row is never loosened, and a new effect gets its ranks in `DATA_CLASS_EFFECT_RANKS`.
 - `Duration` values are canonical ISO 8601 strings; keep `Duration.*` pure, because gen evaluates them in defaults.
   `Duration.parse` also reads the short form (`"200ms"`, `"6h"`); no package declares another interval string.
 - `RetryPolicy` and `backoffDelay` are the one retry shape and formula (stackra-223). A package keeps its defaults as

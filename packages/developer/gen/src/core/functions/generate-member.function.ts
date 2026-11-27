@@ -29,7 +29,8 @@
  *           ADR 0305 rule 30 (`checkEndpoints`, STA-340), a semantic `@Searchable` over an `ai: never` field
  *           (`checkSemanticSearch`, STA-1251), a facet that differs from its table's latest `t.searchable` literals
  *           (`checkSearchableDrift`, `searchable_columns_drift`, data-layer gap se10), an encryption mismatch or a write past the unit of work on an encrypted
- *           model (`checkEncryptedFields`, stackra-262), a service model neither owned nor global (`checkModelScope`,
+ *           model (`checkEncryptedFields`, stackra-262), a field or model that breaks its data class (`checkDataClasses`,
+ *           ADR 0540), a `PersonalData` declaration that breaks its model's classes (`checkPersonalData`, ADR 0540), a service model neither owned nor global (`checkModelScope`,
  *           `model_tenancy_missing`, stackra-258, packages too) or a site-cached query that reads its caller
  *           (`checkQueryCache`, `site_cache_reads_caller`, ADR 0305 rule 31) or a slot fill that breaks its slot's contract (`checkSlotFills`,
  *           ADR 0438) or two shell dependencies on one surface with different lines (`checkSurfaces`,
@@ -60,7 +61,9 @@ import { buildManifest } from "#core/functions/build-manifest.function";
 import { checkConventions } from "#core/functions/check-conventions.function";
 import { checkEndpoints } from "#core/functions/check-endpoints.function";
 import { checkBlindIndexes } from "#core/functions/check-blind-indexes.function";
+import { checkDataClasses } from "#core/functions/check-data-classes.function";
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
+import { checkPersonalData } from "#core/functions/check-personal-data.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
 import { checkApproval } from "#core/functions/check-approval.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
@@ -212,6 +215,8 @@ export function generateMember(
     ...checkSemanticSearch(ir),
     ...checkSearchableDrift(ir),
     ...checkEncryptedFields(ir),
+    ...checkDataClasses(ir),
+    ...checkPersonalData(ir),
     ...checkBlindIndexes(ir),
     ...checkModelScope(ir),
     ...checkApproval(ir),

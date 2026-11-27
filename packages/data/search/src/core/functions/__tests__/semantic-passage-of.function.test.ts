@@ -12,9 +12,13 @@ import {
   Classify,
   DataClass,
   ExportLabel,
+  FieldEncryption,
+  MaskMethod,
   Model,
   PrivilegedDataClass,
+  RetentionBound,
   SearchSnippet,
+  SubjectErasure,
   SupportAccess,
   Translated,
 } from "@stackra/model";
@@ -28,6 +32,10 @@ class ClinicalNoteDataClass extends DataClass({
   support: SupportAccess.Hidden,
   search: SearchSnippet.NoSnippet,
   export: ExportLabel.Labelled,
+  encrypt: FieldEncryption.Clear,
+  erasure: SubjectErasure.Keep,
+  retention: RetentionBound.None,
+  mask: MaskMethod.Null,
 }) {}
 
 class Finding extends Model.with() {

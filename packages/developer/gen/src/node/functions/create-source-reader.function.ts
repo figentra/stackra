@@ -30,7 +30,9 @@
  *                     STA-1306 (`kind_base_name_reserved`, `secret_name_missing`, `partner_mismatch` for every
  *                     same-stem kind, and each file's exported class names for `kind_unregistered_base`);
  *                     STA-1251 (a `@Classify(Class)` facet carries its data class's constant effects as
- *                     `options.dataClass`, read from the `DataClass({...})` its chain extends, own or a package's);
+ *                     `options.dataClass`, read from the `DataClass({...})` its chain extends, own or a package's;
+ *                     a built-in class of `@stackra/model`, recognised by package, from `BUILT_IN_DATA_CLASSES`, ADR
+ *                     0540 decision 7);
  *                     ADR 0438 (each exported `defineSlot<P>` and `fillSlot` of `@stackra/panel`: options as
  *                     constants, the slot's `props` type as a record, the fill's slot by its import;
  *                     `slot_options_not_constant`); STA-1363 (`remoteShape` of `@stackra/clients` is a schema base whose
@@ -50,6 +52,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { BUILT_IN_DATA_CLASS_PACKAGE, BUILT_IN_DATA_CLASSES } from "@stackra/contracts";
 import type { StackraManifest } from "@stackra/contracts";
 import { refusalCode } from "@stackra/errors";
 import { pascalCase, snakeCase } from "@stackra/support";
@@ -936,11 +939,20 @@ export function createSourceReader(
   };
 
   /**
-   * The constant effects (`{ key, ai, support, search, export }`) of the data class `node` names: the argument of the
+   * The constant effects (`{ key, ai, support, search, export, … }`) of the data class `node` names: a built-in class of
+   * `@stackra/model`'s, recognised by package (the declaration the checker resolves `node` to lives in that package and
+   * is named in `BUILT_IN_DATA_CLASSES`, whose row it takes, ADR 0540 decision 7), else the argument of the
    * `DataClass({...})` from `@stackra/*` its chain extends; undefined when it is no data class or they are not constant.
    */
   const dataClassOf = (node: TsNode | undefined): Record<string, unknown> | undefined => {
     let declaration = classDeclarationOf(node === undefined ? undefined : host.symbolAt(node));
+    const builtIn = declaration === undefined ? "" : nameOf(declaration.name);
+    if (
+      declaration !== undefined &&
+      Object.hasOwn(BUILT_IN_DATA_CLASSES, builtIn) &&
+      packageOf(host.fileName(declaration)) === BUILT_IN_DATA_CLASS_PACKAGE
+    )
+      return { ...BUILT_IN_DATA_CLASSES[builtIn as keyof typeof BUILT_IN_DATA_CLASSES] };
     for (const seen = new Set<TsNode>(); declaration !== undefined && !seen.has(declaration);) {
       seen.add(declaration);
       const heritage = heritageOf(declaration);
