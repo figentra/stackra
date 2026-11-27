@@ -73,7 +73,7 @@ name out of the customer docs until the owner holds it on npmjs, and pointed the
 - **SRC-004**: `packages/developer/repo-checks/src/node/functions/expected-name.function.ts`, `check-member-files.function.ts`, `npm-metadata-for.function.ts` and `.github/workflows/runway-npm.yml` on `origin/main` (FR-007, FR-008, FR-010)
 - **SRC-005**: ADR 0199 decision 1 and the readiness audit item 22.3 (2026-11-26) (FR-001, FR-004, FR-009)
 - **SRC-006**: the move of the Stackra repositories to the `stackra-inc` GitHub organisation (2026-11-26) and npm's provenance rule that `repository.url` names the repository whose workflow signed the publish (the comment in `check-member-files.function.ts`) (FR-010)
-- **SRC-007**: the box 2 runs in `stackra-demo` with an empty `HOME` (2026-11-27): `npx -y --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create` answers `ETARGET` for `@stackra/csp@0.33.1`; `@stackra/cli@0.33.0 create --starter <stackra-template checkout> --yes` writes the app and its `.npmrc`, installs, and stops at `stackra gen` (`encore.dev` undeclared in `services/example`) (FR-009)
+- **SRC-007**: the Linux runs in `stackra-demo` with an empty `HOME` (2026-11-27): `npx -y --@stackra:registry=https://npm.stackra.figentra.com/ @stackra/cli create` answers `ETARGET` for `@stackra/csp@0.33.1`; `@stackra/cli@0.33.0 create --starter <stackra-template checkout> --yes` writes the app and its `.npmrc`, installs, and stops at `stackra gen` (`encore.dev` undeclared in `services/example`) (FR-009)
 - **SRC-008**: the review of 2026-11-27 on the pull request (the supply-chain finding on the initializer's name) (FR-009)
 
 ## Glossary
@@ -92,7 +92,7 @@ initializer is published, the same run is `npm create stackra@latest my-app`.
 
 **Why this priority**: it is the audit's blocker; nobody outside can start an app today.
 
-**Independent Test**: `run-create-stackra.function.test.ts` (the npx call with the scope flag) and the box 2 proof in
+**Independent Test**: `run-create-stackra.function.test.ts` (the npx call with the scope flag) and the Linux proof in
 `stackra-demo` with an empty `HOME`, against the real registry.
 
 **Acceptance Scenarios**:
@@ -166,7 +166,7 @@ starter and the new app's installs all come from it.
 
 ## Success Criteria
 
-- **SC-001**: on a Linux machine with no `.npmrc`, the documented line installs `@stackra/cli` from the real Stackra registry with every other package from npmjs, writes no `.npmrc` in `HOME`, and (with an installable CLI version and a template checkout) writes the app and its `.npmrc` — verified by: the box 2 proof in `stackra-demo` (logged in the pull request); a working app from the line alone waits on STA-2794 and STA-2874
+- **SC-001**: on a Linux machine with no `.npmrc`, the documented line installs `@stackra/cli` from the real Stackra registry with every other package from npmjs, writes no `.npmrc` in `HOME`, and (with an installable CLI version and a template checkout) writes the app and its `.npmrc` — verified by: the Linux proof in `stackra-demo` (logged in the pull request); a working app from the line alone waits on STA-2794 and STA-2874
 - **SC-002**: every requirement above has a failing test without its code — verified by: unit (the revert checks in the pull request)
 
 ## Out of scope
@@ -190,7 +190,7 @@ starter and the new app's installs all come from it.
 ## Status history
 
 - 2026-11-27 · — → Draft · spec author · written from the audit item and the built change
-- 2026-11-27 · Draft → Clarified · spec author · questions answered from ADR 0199, ADR 0453 and the box 2 proof
+- 2026-11-27 · Draft → Clarified · spec author · questions answered from ADR 0199, ADR 0453 and the Linux proof
 - 2026-11-27 → Planned (plan.md)
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)

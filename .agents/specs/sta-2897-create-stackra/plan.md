@@ -17,7 +17,7 @@ publish wait on the owner, and no page names `npm create stackra` as a line to r
 
 - **Language**: TypeScript (ESM), Node 24 (`mise.toml`)
 - **Members**: `packages/developer/create-stackra` (new), `packages/developer/cli`, `packages/developer/repo-checks`, `apps/docs`
-- **Testing**: vitest in `src/**/__tests__/` (ADR 0022); the end-to-end run in `stackra-demo` on box 2 against the real registry
+- **Testing**: vitest in `src/**/__tests__/` (ADR 0022); the end-to-end run in `stackra-demo` on a Linux build machine against the real registry
 - **Storage**: none
 - **Runtime target**: a Node binary run by `npm create` / `pnpm create` / `yarn create`, once published
 
@@ -328,7 +328,7 @@ npmjs name. No tenancy.
 - AC-006: `repository-checks.test.ts` in `@stackra/repo-checks`.
 - AC-008: `check-member-metadata.function.test.ts` and `repository-checks.test.ts` in `@stackra/repo-checks`, and
   `stackra validate --repository` on the branch.
-- AC-007 and SC-001: the built bundle's imports, and the box 2 run against the real registry.
+- AC-007 and SC-001: the built bundle's imports, and the Linux run against the real registry.
 - AC-009: the docs review and the docs build.
 
 ## Rollout
