@@ -17,6 +17,7 @@ import { test } from "node:test";
 
 import {
   isTestPath,
+  globPattern,
   packCandidates,
   packFindings,
   SECRET_RULES,
@@ -177,6 +178,42 @@ test("packCandidates: folders, globs and the always-packed files, minus excluded
     assert.ok(packCandidates({}, dir).includes("notes.md")); // no files list: everything
   } finally {
     rmSync(dir, { recursive: true });
+  }
+});
+
+test("globPattern: a `**/` matches no folder as well as any number of them (a secret guard must not fail open)", () => {
+  const mjs = globPattern("dist/**/*.mjs");
+  for (const path of ["dist/index.mjs", "dist/a/index.mjs", "dist/a/b/c.mjs"])
+    assert.ok(mjs.test(path), path);
+  for (const path of [
+    "dist/index.js",
+    "distx/index.mjs",
+    "src/dist/index.mjs",
+    "dist/a/index.mjs.map",
+  ])
+    assert.ok(!mjs.test(path), path);
+  assert.ok(globPattern("**/README.md").test("README.md"));
+  assert.ok(globPattern("**/README.md").test("docs/README.md"));
+  assert.ok(globPattern("dist/**").test("dist/a/b.mjs"));
+  assert.ok(
+    globPattern("src/*.ts").test("src/a.ts") && !globPattern("src/*.ts").test("src/a/b.ts"),
+  );
+  assert.ok(globPattern("a?.md").test("ab.md") && !globPattern("a?.md").test("a/.md"));
+});
+
+test("packCandidates: a `dist/**/*.mjs` files entry packs the top-level dist file too", () => {
+  const dir = mkdtempSync(join(tmpdir(), "pack-content-glob-"));
+  try {
+    for (const path of ["dist/index.mjs", "dist/a/b.mjs", "dist/a/b.js"]) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true });
+      writeFileSync(join(dir, path), "export {};\n");
+    }
+    assert.deepEqual(packCandidates({ files: ["dist/**/*.mjs"] }, dir).sort(), [
+      "dist/a/b.mjs",
+      "dist/index.mjs",
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });
 

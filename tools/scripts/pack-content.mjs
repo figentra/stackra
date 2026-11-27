@@ -148,12 +148,19 @@ function walk(root, dir = "") {
   });
 }
 
-/** A `files` glob (`*`, `**`, `?`) as a regular expression over a relative path. */
-function globPattern(glob) {
+/**
+ * A `files` glob (`*`, `**`, `?`) as a regular expression over a relative path. A double star followed by a slash is
+ * zero or more folders, so the glob for every `.mjs` under `dist` matches `dist/index.mjs` as well as
+ * `dist/a/b.mjs`; a double star anywhere else is any run of characters.
+ */
+export function globPattern(glob) {
   let source = "";
   for (let i = 0; i < glob.length; i += 1) {
     const char = glob[i];
-    if (char === "*" && glob[i + 1] === "*") {
+    if (char === "*" && glob[i + 1] === "*" && glob[i + 2] === "/") {
+      source += "(?:.*/)?";
+      i += 2;
+    } else if (char === "*" && glob[i + 1] === "*") {
       source += ".*";
       i += 1;
     } else if (char === "*") source += "[^/]*";
