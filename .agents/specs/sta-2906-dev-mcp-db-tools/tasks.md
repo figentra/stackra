@@ -11,7 +11,7 @@ description: "Tasks for STA-2906: tenant-aware database inspections for the dev 
 ## Phase 1: Foundational - the inspection session and its guard
 
 - [x] T001 the limits, the refusal and the environment and host guard in `packages/data/database/src/node/constants/inspection-limits.constant.ts`, `packages/data/database/src/node/errors/inspection-refused.error.ts` and `packages/data/database/src/node/functions/inspection-target.function.ts` — covers: FR-008, NFR-002, AC-004, P-004 — route: spec-task
-- [x] T002 the read-only, always rolled back session with an extended-protocol runner in `packages/data/database/src/node/functions/open-inspection-session.function.ts`, `packages/data/database/src/node/types/inspection-session.type.ts` and `packages/data/database/src/node/types/inspection-row.type.ts` — covers: FR-004, NFR-001, P-002, P-003 — route: spec-task — deps: T001
+- [x] T002 the read-only, always rolled back session with an extended-protocol runner in `packages/data/database/src/node/functions/open-inspection-session.function.ts`, `packages/data/database/src/node/types/inspection-session.type.ts` and `packages/data/database/src/node/types/inspection-row.type.ts` — covers: FR-004, NFR-001, AC-003, P-002, P-003 — route: spec-task — deps: T001
 
 ## Phase 2: User Story 1 - An agent reads a tenant's rows as the app does (Priority: P1)
 
@@ -35,11 +35,12 @@ description: "Tasks for STA-2906: tenant-aware database inspections for the dev 
 
 ## Phase 4: User Story 3 - One Encore path (Priority: P3)
 
-- [x] T009 [US3] the `separate_encore_server` rule in `packages/developer/mcp/src/core/functions/rule-issues.function.ts`, `packages/developer/mcp/src/core/types/mcp-issue.type.ts` and its tests — covers: FR-009, AC-008, P-005 — route: spec-task
+- [x] T009 [US3] the `separate_encore_server` rule in `packages/developer/mcp/src/core/functions/rule-issues.function.ts`, `packages/developer/mcp/src/core/types/mcp-issue.type.ts`, the doc example in `packages/developer/mcp/src/node/functions/read-mcp-config.function.ts` and its tests — covers: FR-009, AC-008, P-005 — route: spec-task
 - [x] T010 [US3] the template drops its `encore` server (stackra-template: `.mcp.yaml`, `flow.config.json`, `.flow/lock.json`, `docs/template-guide.md`) — covers: FR-010, AC-008 — route: spec-task — deps: T009
+- [x] T014 [US3] the no-tenant note on the proxied `encore_query_database` in `packages/developer/mcp/src/node/constants/encore-tool-notes.constant.ts` and `packages/developer/mcp/src/node/functions/serve-local-mcp.function.ts`, with its test in `packages/developer/mcp/src/node/functions/__tests__/serve-local-mcp.function.test.ts` and the README line; the template's `AGENTS.md` (via `flow.config.json`) says to query tenant tables with `db_query` — covers: FR-011, AC-009 — route: spec-task — deps: T009
 
 ## Phase 5: Polish
 
-- [x] T011 barrel exports in `packages/data/database/src/node/index.ts` and `packages/data/database/src/node/__tests__/index.test.ts` — covers: FR-003 — route: spec-task — deps: T003, T006
+- [x] T011 barrel exports in `packages/data/database/src/node/index.ts` and `packages/data/database/src/node/__tests__/index.test.ts` — covers: FR-003, AC-007 — route: spec-task — deps: T003, T006
 - [x] T012 [P] ADR 0334 Enforcement, READMEs and AGENTS.md in `apps/docs/src/docs/adr/0334-final-structure-review-round-up-decided-rules-without-an-adr.mdx`, `packages/data/database/README.md`, `packages/data/database/AGENTS.md` and `packages/developer/mcp/README.md` — covers: FR-009, AC-008 — route: steward-docs — deps: T009
-- [x] T013 [P] changeset for the database, cli and mcp packages (`packages/data/database`, `packages/developer/cli`, `packages/developer/mcp`) in `.changeset/dev-mcp-database-inspections.md` — covers: FR-001, FR-009 — route: steward-changesets — deps: T008, T009
+- [x] T013 [P] changeset for the database, cli and mcp packages (`packages/data/database`, `packages/developer/cli`, `packages/developer/mcp`) in `.changeset/dev-mcp-database-inspections.md` — covers: FR-001, FR-009, AC-007, AC-008, AC-009 — route: steward-changesets — deps: T008, T009

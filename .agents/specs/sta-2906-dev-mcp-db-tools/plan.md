@@ -75,6 +75,8 @@ separate local Encore server in `.mcp.yaml`, and the template drops its own.
 - **P-003**: the caller's text is parsed as one statement, so nothing runs after the transaction ends — Validates: FR-004, NFR-001
 - **P-004**: an inspection outside `dev`/`test`, or in `dev` off this machine, never connects — Validates: FR-008
 - **P-005**: a `.mcp.yaml` with a local `encore mcp` server never renders — Validates: FR-009
+- **P-006**: every inspection reaches an agent only as a read-only `stackra` command and its `db_*` tool, run by the member's own `@stackra/database/node` — Validates: FR-001, FR-002, FR-003
+- **P-007**: no template server starts Encore beside `stackra mcp`, and the proxied `encore_query_database` never reaches an agent without the no-tenant note that points to `db_query` — Validates: FR-010, FR-011
 
 ## Architecture overview
 
@@ -107,6 +109,8 @@ sequenceDiagram
 ```
 
 ## Components and responsibilities
+
+Three components: the inspections (C1), their terminal and MCP faces (C2), and the one Encore path (C3).
 
 ### C1 Inspections in `@stackra/database/node`
 
@@ -156,12 +160,45 @@ packages/developer/cli/src/node/
 └── stackra.manifest.json                              (generated)
 ```
 
+```ts
+export class DbSchemaCommand extends Command({ name: "db:schema", tool: { readOnly: true } }) {}
+export class DbQueryCommand extends Command({ name: "db:query", tool: { readOnly: true } }) {} // <scope> <sql>
+export class DbMigrationsStatusCommand extends Command({
+  name: "db:migrations:status",
+  tool: { readOnly: true },
+}) {}
+export type DatabaseInspector = {
+  describeSchema: typeof describeSchema;
+  queryInScope: typeof queryInScope;
+  migrationStatus: typeof migrationStatus;
+};
+export function loadDatabaseInspector(memberDir: string): Promise<DatabaseInspector>;
+```
+
 **Behaviour**: resolve the member folder and the environment (a set URL, else `encore db conn-uri <database>` in local
 dev), load the member's inspections, run, print a table, return the document.
 
 ### C3 One Encore path
 
-**Responsibility**: refuse a separate local Encore server · **Location**: `packages/developer/mcp/src/core/functions/rule-issues.function.ts`; the template's `.mcp.yaml`, `flow.config.json`, `.flow/lock.json`, `docs/template-guide.md`.
+**Responsibility**: refuse a separate local Encore server, and steer agents from Encore's tenantless
+`query_database` to `db_query` · **Location**: `packages/developer/mcp/src/`; the template's `.mcp.yaml`,
+`flow.config.json`, `AGENTS.md`, `.flow/lock.json`, `docs/template-guide.md`.
+
+```text
+packages/developer/mcp/
+├── src/core/functions/rule-issues.function.ts                    (changed: separate_encore_server)
+├── src/core/types/mcp-issue.type.ts                              (changed: the code's doc)
+├── src/node/functions/read-mcp-config.function.ts                (changed: the doc example)
+├── src/node/constants/encore-tool-notes.constant.ts              (new: the no-tenant note)
+├── src/node/functions/serve-local-mcp.function.ts                (changed: applies the note in tools/list)
+├── src/node/functions/__tests__/serve-local-mcp.function.test.ts (changed)
+└── README.md                                                     (changed)
+```
+
+```ts
+export const ENCORE_TOOL_NOTES: ReadonlyMap<string, string>; // "query_database" → the note that points to db_query
+// ruleIssues(config) adds { code: "separate_encore_server", path: ["mcpServers", name] } for a local `encore mcp` server
+```
 
 ## Files and folders
 
@@ -196,6 +233,7 @@ connection string never leaves the environment it travels in.
 - AC-007: `mcp-command.constant.test.ts`, the three command tests, `inspection-setup.function.test.ts`,
   `load-database-inspector.function.test.ts`.
 - AC-008: `rule-issues.function.test.ts`, `parse-mcp-config.function.test.ts`; the template diff.
+- AC-009: `serve-local-mcp.function.test.ts` (the no-tenant note on `encore_query_database`); the template diff.
 - SC-002: the revert check on box 2 (each guard removed in turn makes its test fail).
 
 ## Rollout

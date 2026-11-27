@@ -16,4 +16,6 @@ dev and the testbed only: `STACKRA_ENVIRONMENT` must be `dev` or `test`, and in 
 machine; with no `DATABASE_URL` set, the CLI asks `encore db conn-uri` for the member's local database.
 `db:migrations:status` takes no lock and creates no table, and flags a migration edited after it ran. A `.mcp.yaml` now
 fails on a separate local Encore server (`separate_encore_server`, ADR 0334 rule 8): `stackra mcp` is the one Encore
-path. Remove an `encore` entry that runs `encore mcp`; the remote `encore-cloud` entry stays.
+path. Remove an `encore` entry that runs `encore mcp`; the remote `encore-cloud` entry stays. The proxied
+`encore_query_database` now says in its description that it runs with no tenant set, so a table under row-level
+security answers no rows there, and points to `db_query`.

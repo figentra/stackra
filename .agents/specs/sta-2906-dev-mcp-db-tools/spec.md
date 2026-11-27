@@ -28,7 +28,7 @@ explicit tenant and limits, local and testbed only; `db_schema`; `db_migrations_
 
 - **Apps touched**: apps/docs (ADR 0334's Enforcement list only)
 - **Services touched**: none
-- **Packages touched**: packages/data/database (three read-only inspections in `./node`), packages/developer/cli (three commands served as MCP tools, a shared member-database import), packages/developer/mcp (one `.mcp.yaml` rule, README)
+- **Packages touched**: packages/data/database (three read-only inspections in `./node`), packages/developer/cli (three commands served as MCP tools, a shared member-database import), packages/developer/mcp (one `.mcp.yaml` rule, the note on the proxied `encore_query_database`, README)
 - **Public contract change**: additive: `@stackra/database/node` exports `describeSchema`, `queryInScope`, `migrationStatus`, `InspectionRefusedError` and the types `SchemaDescription`, `SchemaTable`, `SchemaColumn`, `SchemaPolicy`, `ScopedQuery`, `ScopedQueryResult`, `MigrationStatus`, `MigrationFileStatus`; the `stackra` binary gains `db:schema`, `db:query <scope> <sql>` and `db:migrations:status` (each `--json`, and the `db_schema`, `db_query`, `db_migrations_status` tools of `stackra mcp`); `@stackra/mcp`'s `.mcp.yaml` rules add the code `separate_encore_server`, so a `.mcp.yaml` with a local `encore mcp` server now fails `stackra mcp sync` (breaking for a repository that still has one; the template drops it in the same batch).
 - **Cross-service events**: none
 - **Tenancy and data**: reads only. The tenant is named by its scope id (`scope`), in the scope vocabulary of ADR 0323. `queryInScope` sets `app.tenant_id` with `set_config(…, true)` for its own READ ONLY transaction, as the isolation driver does (ADR 0495), and never sets `app.scope_*`; no table, migration or write.
@@ -64,7 +64,7 @@ explicit tenant and limits, local and testbed only; `db_schema`; `db_migrations_
 
 ### Sources
 
-- **SRC-001**: `packages/developer/mcp/src/node/functions/serve-local-mcp.function.ts`, `open-encore-mcp.function.ts` and `src/node/constants/local-tools.constant.ts` on `origin/main` (FR-001 to FR-003, FR-009)
+- **SRC-001**: `packages/developer/mcp/src/node/functions/serve-local-mcp.function.ts`, `open-encore-mcp.function.ts` and `src/node/constants/local-tools.constant.ts` on `origin/main` (FR-001 to FR-003, FR-009, FR-011)
 - **SRC-002**: a probe of a running local Encore app on box 2 (`encore db conn-uri example`): the connection role is `encore-admin` (no SUPERUSER, no BYPASSRLS, not the owner), tables are owned by `encore-migrator` with FORCE ROW LEVEL SECURITY and policies on `app.tenant_id` (FR-004, FR-005)
 - **SRC-003**: the template's `.mcp.yaml` and `flow.config.json` on `origin/main` of stackra-template; ADR 0334 rule 8 and its Enforcement list (FR-009, FR-010)
 - **SRC-004**: `packages/developer/cli/src/node/constants/mcp-command.constant.ts`, `commands.constant.ts`, `functions/load-database-runner.function.ts`; `packages/developer/console/src/core/functions/tools-of.function.ts` on `origin/main` (FR-001 to FR-003, FR-008)
@@ -126,6 +126,8 @@ with the app id from runway, and a `.mcp.yaml` that adds one fails.
 
 1. **Given** a `.mcp.yaml` server that runs `encore mcp …`, **When** it is parsed, **Then** it fails with
    `separate_encore_server`; the remote `encore-cloud` server passes.
+2. **Given** the local Encore MCP is running, **When** an agent lists the tools of `stackra mcp`, **Then**
+   `encore_query_database` says it runs with no tenant set and points to `db_query`.
 
 ### Edge Cases
 
@@ -151,6 +153,7 @@ with the app id from runway, and a `.mcp.yaml` that adds one fails.
 - **FR-008**: IF `STACKRA_ENVIRONMENT` is not `dev` or `test`, or in `dev` the connection's host is not on this machine, THEN every inspection SHALL refuse; WHEN no URL is set in local dev THE CLI SHALL take the member's local Encore database from `encore db conn-uri`. Sources: SRC-002, SRC-004
 - **FR-009**: THE `.mcp.yaml` rules SHALL refuse a local server that runs `encore mcp` with the code `separate_encore_server`. Sources: SRC-001, SRC-003
 - **FR-010**: THE template's `.mcp.yaml` and `flow.config.json` SHALL have no `encore` server (stackra-template, same batch). Sources: SRC-003
+- **FR-011**: THE local MCP SHALL describe the proxied `encore_query_database` as running with no tenant set, so a table under row-level security answers no rows there, and SHALL point to `db_query`; the template's `AGENTS.md` SHALL say to query tenant tables with `db_query`, never by turning row-level security off. Sources: SRC-001, SRC-002, SRC-003
 
 ### Non-functional Requirements
 
@@ -165,13 +168,14 @@ with the app id from runway, and a `.mcp.yaml` that adds one fails.
 ## Acceptance criteria
 
 - **AC-001**: WHEN `queryInScope` runs as the app role under tenant A on a forced row-level security table THE answer SHALL hold A's rows only, and under a tenant that owns nothing, none.
-- **AC-002**: IF the role can bypass row-level security or owns an unforced table THEN `queryInScope` SHALL refuse with `InspectionRefusedError`.
+- **AC-002**: IF the role can bypass row-level security or owns an unforced table THEN THE `queryInScope` call SHALL refuse with `InspectionRefusedError`.
 - **AC-003**: WHEN the query writes, calls `nextval`, holds a data-modifying CTE or stacks a second statement (a `COMMIT` included) THE call SHALL fail and the table SHALL keep every row.
-- **AC-004**: IF `STACKRA_ENVIRONMENT` is a deployed environment, or a dev URL names another machine, THEN every inspection SHALL refuse before connecting.
+- **AC-004**: IF `STACKRA_ENVIRONMENT` is a deployed environment, or a dev URL names another machine, THEN THE inspection SHALL refuse before connecting.
 - **AC-005**: WHEN `describeSchema` runs THE answer SHALL list each table's columns, primary key, indexes, row-level security and policies, and no system schema.
 - **AC-006**: WHEN `migrationStatus` runs THE answer SHALL mark applied, pending and edited files and list missing versions.
 - **AC-007**: THE `stackra mcp` tool list SHALL hold `db_schema`, `db_query` and `db_migrations_status`, read-only, and `db_query` SHALL require `scope` and `sql`.
 - **AC-008**: WHEN a `.mcp.yaml` server runs `encore mcp` THE parse SHALL fail with `separate_encore_server`, and the template SHALL have no such server.
+- **AC-009**: WHEN `stackra mcp` lists the proxied Encore tools THE `encore_query_database` description SHALL start with the no-tenant note naming `db_query`, other Encore tools SHALL keep their own description, and the call SHALL still be forwarded unchanged.
 
 ## Success Criteria
 
@@ -193,7 +197,9 @@ with the app id from runway, and a `.mcp.yaml` that adds one fails.
 
 ## Amendments
 
-None.
+- 2026-11-27 · review finding: `encore_query_database` stayed beside `db_query` with no steering, so an agent could
+  still get zero rows under row-level security from it. Added FR-011 and AC-009: its description now starts with a
+  no-tenant note that points to `db_query`, and the template's `AGENTS.md` says the same.
 
 ## Status history
 

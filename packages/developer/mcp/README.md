@@ -83,6 +83,10 @@ member named by `member` (local dev and the testbed only):
 | `db_query`             | one SELECT in a READ ONLY transaction as the app's role, under the tenant's `scope` id given, with a row limit and a timeout; refuses a role that bypasses row-level security |
 | `db_migrations_status` | each compiled migration: applied, pending, or edited since it ran                                                                                         |
 
+Encore's own `query_database` (served as `encore_query_database`) runs with no tenant set, so a table under row-level
+security answers no rows there. Its description says so and points to `db_query`: query tenant tables with `db_query`
+and the tenant's scope id, never by turning row-level security off.
+
 ```ts
 import { serveLocalMcp } from "@stackra/mcp/node";
 
