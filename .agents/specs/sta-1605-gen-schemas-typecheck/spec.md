@@ -60,8 +60,8 @@ a generated fixture, and the presets include the generated entries. This spec is
   `library` preset), packages/cross-cutting/analytics, packages/experience/panel, packages/state/settings,
   packages/application/registry (source schemas the new check found wrong), and the regenerated manifests of
   packages/security/csp, packages/data/database, packages/developer/cli, packages/developer/runway,
-  packages/experience/platform, packages/commerce/fiscal and workers/edge, workers/registry, workers/static,
-  workers/turbo-cache
+  packages/experience/platform, packages/commerce/fiscal, packages/state/query (its `QueueLeader` selector, FR-011)
+  and workers/edge, workers/registry, workers/static, workers/turbo-cache
 - **Public contract change**: additive exports and a manifest change. `@stackra/validation` exports `withDefault` and
   the type `DefaultLiteral`; `Fields` and `InputFields` drop symbol keys; `Wiring.platform` admits `Container`. Gen's
   `ShapeIR` gains an optional `typeParameters`, `MemberIR` an optional `authoredDriverKeys`, `SourceReader` a
