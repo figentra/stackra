@@ -4667,6 +4667,9 @@ importers:
       '@stackra/runway':
         specifier: workspace:*
         version: link:../runway
+      '@stackra/skills':
+        specifier: workspace:*
+        version: link:../skills
       yaml:
         specifier: 'catalog:'
         version: 2.9.1

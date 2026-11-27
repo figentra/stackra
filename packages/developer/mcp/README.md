@@ -72,6 +72,33 @@ Every command tool runs through the `run` option, so a write passes the CLI's ow
 its command core, and the default spawns `stackra`. The Encore app id is the root runway's `providers.encore.app`; when
 there is none, or Encore does not answer within ten seconds, the local tools still work.
 
+It also serves resources, so a client with no skills support still gets Stackra's conventions and the repository's
+facts:
+
+| Resource                      | Holds                                                                                        |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| `stackra://guidelines`        | the always-on rules of `@stackra/skills` in full, what to read on request, how a change ends |
+| `stackra://manifest`          | every committed `stackra.manifest.json`, as one JSON array                                   |
+| `stackra://manifest/<member>` | one member's committed manifest                                                              |
+| `stackra://rules/<name>`      | one rule of `@stackra/skills`                                                                |
+| `stackra://skills/<name>`     | one skill of `@stackra/skills`                                                               |
+
+`resources/templates/list` names the three per-item URIs. A URI it does not serve answers `-32002` (resource not
+found). Manifests are read on every request, so they follow `stackra gen`; the skill set is loaded on the first resource
+or prompt request (the `skills` option replaces it).
+
+And prompts, recipes over the same tools that each end with `stackra gen`, `stackra gen --check` and the tests (through
+a `test` tool when the server has one, otherwise `verify`):
+
+| Prompt            | Arguments                                | Recipe                                                                                                                    |
+| ----------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `add-feature`     | `feature` (required), `member`           | read the guidelines and skills, find the member (its manifest attached) or create one with `new`, write actions and tests |
+| `fix-gen-drift`   | `output`                                 | run or quote the check, regenerate a stale file, fix the source a refusal names, keep identities stable                   |
+| `explain-refusal` | `code` (required, snake_case), `message` | the members whose manifests declare the code (the `backend-errors` skill attached), which side is wrong, a test           |
+
+Both are layer 1 (ADR 0282 decision 6): the open documents and the committed manifests as written, and the open
+commands. Layer-2 playbooks stay with the hosted server (decision 7).
+
 ```ts
 import { serveLocalMcp } from "@stackra/mcp/node";
 

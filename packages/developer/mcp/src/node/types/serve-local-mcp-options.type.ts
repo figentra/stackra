@@ -1,12 +1,15 @@
 /**
  * Stackra file contract:
  * Purpose: `ServeLocalMcpOptions`, what `serveLocalMcp` needs: the CLI's version and, all defaulted, the repository
- *          root, the stdio streams, the CLI runner and the upstream Encore connection.
+ *          root, the stdio streams, the CLI runner, the upstream Encore connection, the command tools and the agent
+ *          documents its resources and prompts serve.
  * Boundary: type only.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5); R-29.
+ * Governing contract: ADR 0282 (decision 5); R-29; STA-2919 (`skills`).
  */
 import type { Readable, Writable } from "node:stream";
+
+import type { AgentDocument } from "@stackra/skills";
 
 import type { LocalTool } from "#node/types/local-tool.type";
 import type { McpPeer } from "#node/types/mcp-peer.type";
@@ -35,4 +38,10 @@ export type ServeLocalMcpOptions = {
    * handler; one named like a built-in tool replaces it.
    */
   readonly tools?: readonly LocalTool[];
+
+  /**
+   * The agent documents the resources and prompts serve (rules and skills; other kinds are ignored); defaults to the
+   * open conventions `@stackra/skills` ships (`loadSkillSet()`), read on the first resource or prompt request.
+   */
+  readonly skills?: readonly AgentDocument[];
 };

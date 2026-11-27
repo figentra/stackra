@@ -38,8 +38,9 @@ store-ready, step by step.
 ## Agents
 
 `stackra mcp` serves the local developer MCP over stdio, so an assistant inside the repository reads manifests and
-runs `new`, `gen`, `validate` and `verify` through the CLI's own gates; `stackra mcp sync` renders `.mcp.json` from
-`.mcp.yaml`, and `stackra mcp exec --` starts a server with its secrets without anyone reading them
+runs `new`, `gen`, `validate` and `verify` through the CLI's own gates, and reads the conventions and recipes it serves
+as resources and prompts; `stackra mcp sync` renders `.mcp.json` from `.mcp.yaml`, and `stackra mcp exec --` starts a
+server with its secrets without anyone reading them
 ([ADR 0282](/adr/0282-developer-experience-skills-cli-mcp-and-vellum-as-the-sdlc)). `stackra add` installs a
 registry skill, agent or plugin; `stackra agents check` fails when `.mcp.json` drifted.
 

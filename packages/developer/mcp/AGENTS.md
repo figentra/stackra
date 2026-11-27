@@ -18,6 +18,9 @@ shape (ADR 0294, 0305). Entries `.` and `./node` (ADR 0127, 2026-10-24 note).
 - A secret value never passes through this process: `execWithSecrets` hands `$NAME` references to
   `sops exec-env <file> 'exec …'` (one per secret, ADR 0525) and never reads, prints or puts a value on argv. Never add a flag that takes a value.
 - Every write tool of the local server goes through the CLI's `run`, so the CLI's gates apply.
+- The local resources and prompts (STA-2919) are layer 1 only: they serve `@stackra/skills` documents and the
+  committed manifests as written, and recipes that name only tools the server lists. Fix playbooks and other layer-2
+  know-how belong to the hosted server (ADR 0282 decisions 6 and 7), never here.
 - The hosted server core (`toolTable`, `filterTools`, `protectedResourceMetadata`, `wwwAuthenticate`) is pure and
   lives in `.`. It reads committed manifests only, never adds or annotates a tool by hand, and takes every URL,
   permission and entitlement answer from the host; the deployment itself is the OS `ai` service.

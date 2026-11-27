@@ -2,24 +2,38 @@
  * Stackra file contract:
  * Purpose: `serveLocalMcp(options)`, the local developer MCP behind `stackra mcp`: answers `initialize`, `ping`,
  *          `tools/list` and `tools/call` over stdio with the `LOCAL_TOOLS` (manifest reads and the CLI's `new`, `gen`,
- *          `validate` and `verify`) and every local Encore tool, proxied under an `encore_` prefix. Resolves when the
- *          client disconnects.
+ *          `validate` and `verify`) and every local Encore tool, proxied under an `encore_` prefix; `resources/list`,
+ *          `resources/templates/list` and `resources/read` with `stackra://guidelines`, the manifests and the rules and
+ *          skills of `@stackra/skills`; and `prompts/list` and `prompts/get` with the `LOCAL_PROMPTS` recipes
+ *          (STA-2919). Resolves when the client disconnects.
  * Boundary: every write runs through the given `StackraRunner`, the CLI's own commands and gates; this file writes
- *           nothing itself. Tool arguments are checked before anything runs. The hosted mode of ADR 0282 is a separate
+ *           nothing itself. Tool and prompt arguments are checked before anything runs; resources and prompts only
+ *           read files. The skill set is loaded on the first resource or prompt request. The hosted mode of ADR 0282 is a separate
  *           deployment, not this server.
  * Runtime: node
- * Governing contract: ADR 0282 (decision 5: local mode); R-29 (`stackra mcp` proxies the local Encore tools).
+ * Governing contract: ADR 0282 (decision 5: local mode; decisions 6 and 7: layer 1 only); R-29 (`stackra mcp` proxies
+ *                     the local Encore tools); STA-2919 (resources and prompts).
  */
+import type { AgentDocument } from "@stackra/skills";
+import { loadSkillSet } from "@stackra/skills/node";
 import { z } from "zod";
 
+import { LOCAL_PROMPTS } from "#node/constants/local-prompts.constant";
+import { LOCAL_RESOURCE_TEMPLATES } from "#node/constants/local-resource-templates.constant";
 import { LOCAL_TOOLS } from "#node/constants/local-tools.constant";
 import { MCP_PROTOCOL_VERSIONS } from "#node/constants/mcp-protocol-versions.constant";
 import { McpProtocolError } from "#node/errors/mcp-protocol.error";
+import { argumentsOf } from "#node/functions/arguments-of.function";
 import { connectMcp } from "#node/functions/connect-mcp.function";
+import { getLocalPrompt } from "#node/functions/get-local-prompt.function";
+import { listLocalResources } from "#node/functions/list-local-resources.function";
 import { openEncoreMcp } from "#node/functions/open-encore-mcp.function";
+import { promptArguments } from "#node/functions/prompt-arguments.function";
+import { readLocalResource } from "#node/functions/read-local-resource.function";
 import { readManifests } from "#node/functions/read-manifests.function";
 import { spawnStackra } from "#node/functions/spawn-stackra.function";
 import type { CommandOutcome } from "#node/types/command-outcome.type";
+import type { LocalKnowledge } from "#node/types/local-knowledge.type";
 import type { ServeLocalMcpOptions } from "#node/types/serve-local-mcp-options.type";
 
 /** The name prefix of a proxied Encore tool. */
@@ -40,13 +54,6 @@ const commandResult = (args: readonly string[], { exitCode, output }: CommandOut
   const shown =
     cut > 0 ? `… (${cut} earlier characters cut)\n${output.slice(-OUTPUT_LIMIT)}` : output;
   return textResult(`$ stackra ${args.join(" ")}\n${shown}\nexit ${exitCode}`, exitCode !== 0);
-};
-
-/** `value` checked by `schema`, or an invalid-params error. */
-const argumentsOf = <T extends z.ZodType>(schema: T, value: unknown): z.infer<T> => {
-  const result = schema.safeParse(value ?? {});
-  if (!result.success) throw new McpProtocolError(-32_602, z.prettifyError(result.error));
-  return result.data;
 };
 
 /**
@@ -72,6 +79,17 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
     .catch(() => []);
 
   const commandTools = new Map((options.tools ?? []).map((tool) => [tool.name, tool]));
+
+  // The resources and prompts read the open conventions of @stackra/skills, loaded once on first use.
+  let documents: readonly AgentDocument[] | undefined = options.skills;
+  const toolNames: ReadonlySet<string> = new Set([
+    ...Object.keys(LOCAL_TOOLS),
+    ...commandTools.keys(),
+  ]);
+  const knowledge = (): LocalKnowledge => {
+    documents ??= loadSkillSet();
+    return { root, documents, tools: toolNames };
+  };
 
   const callTool = async (params: unknown): Promise<unknown> => {
     const { name, arguments: args } = (params ?? {}) as { name?: unknown; arguments?: unknown };
@@ -150,7 +168,7 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
               typeof requested === "string" && MCP_PROTOCOL_VERSIONS.includes(requested)
                 ? requested
                 : MCP_PROTOCOL_VERSIONS[0],
-            capabilities: { tools: {} },
+            capabilities: { tools: {}, resources: {}, prompts: {} },
             serverInfo: { name: "stackra", version: options.version },
           };
         }
@@ -180,6 +198,37 @@ export async function serveLocalMcp(options: ServeLocalMcpOptions): Promise<void
         }
         case "tools/call": {
           return callTool(params);
+        }
+        case "resources/list": {
+          return { resources: listLocalResources(knowledge()) };
+        }
+        case "resources/templates/list": {
+          return { resourceTemplates: LOCAL_RESOURCE_TEMPLATES };
+        }
+        case "resources/read": {
+          const uri = (params as { uri?: unknown } | undefined)?.uri;
+          if (typeof uri !== "string")
+            throw new McpProtocolError(-32_602, "resources/read needs a uri");
+          return { contents: [readLocalResource(knowledge(), uri)] };
+        }
+        case "prompts/list": {
+          return {
+            prompts: Object.entries(LOCAL_PROMPTS).map(([name, prompt]) => ({
+              name,
+              title: prompt.title,
+              description: prompt.description,
+              arguments: promptArguments(prompt.input),
+            })),
+          };
+        }
+        case "prompts/get": {
+          const { name, arguments: args } = (params ?? {}) as {
+            name?: unknown;
+            arguments?: unknown;
+          };
+          if (typeof name !== "string")
+            throw new McpProtocolError(-32_602, "prompts/get needs a prompt name");
+          return getLocalPrompt(knowledge(), name, args);
         }
         default: {
           if (method.startsWith("notifications/")) return undefined;

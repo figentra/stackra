@@ -5,17 +5,20 @@
  *          `validate` and `verify` run through the given CLI runner (the CLI's gates), with a failing exit marked as
  *          an error; invalid arguments are refused before anything runs; an Encore call is forwarded unprefixed; the
  *          server resolves when the client disconnects; command tools (STA-1966) are served with their own schema and
- *          handler, their `--json` document as the structured result.
+ *          handler, their `--json` document as the structured result; resources (`stackra://guidelines`, the manifests,
+ *          the rules and skills) and prompts (`add-feature`, `fix-gen-drift`, `explain-refusal`) answer over the
+ *          protocol, with the MCP error codes for an unknown URI, prompt or argument (STA-2919).
  * Boundary: test only; in-memory streams, a fake runner, a fake Encore peer and a throwaway repository in the OS temp
  *           directory.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 5 and enforcement); R-29.
+ * Governing contract: ADR 0022 (test placement); ADR 0282 (decision 5 and enforcement); R-29; STA-2919.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
 
+import type { AgentDocument } from "@stackra/skills";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
@@ -45,11 +48,33 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-/** A started server with a client peer; `encore` is the upstream peer or `null`. */
+/** The agent documents the resources and prompts serve in these tests. */
+const SKILLS: readonly AgentDocument[] = [
+  {
+    kind: "rule",
+    name: "naming",
+    title: "Naming",
+    description: "How to name things.",
+    always: true,
+    globs: [],
+    body: "# Naming\n\nUse whole words.\n",
+    source: "rules/naming.md",
+  },
+  {
+    kind: "skill",
+    name: "backend-errors",
+    description: "Raise errors the Stackra way.",
+    body: "# Errors\n\nRefusal codes are snake_case.\n",
+    source: "skills/backend-errors/SKILL.md",
+  },
+];
+
+/** A started server and its client; `encore` is the upstream peer or `null`, `skills` `null` keeps the default. */
 function start(
   run: StackraRunner,
   encore: McpPeer | null = null,
   tools: readonly LocalTool[] = [],
+  skills: readonly AgentDocument[] | null = SKILLS,
 ) {
   const toServer = new PassThrough();
   const toClient = new PassThrough();
@@ -61,6 +86,7 @@ function start(
     run,
     encore,
     tools,
+    ...(skills === null ? {} : { skills }),
   });
   const client = connectMcp(toClient, toServer);
   return { client, served, disconnect: () => toServer.end() };
@@ -78,7 +104,7 @@ describe("serveLocalMcp", () => {
       client.request("initialize", { protocolVersion: "2025-06-18", capabilities: {} }),
     ).resolves.toEqual({
       protocolVersion: "2025-06-18",
-      capabilities: { tools: {} },
+      capabilities: { tools: {}, resources: {}, prompts: {} },
       serverInfo: { name: "stackra", version: "1.2.3" },
     });
     await expect(
@@ -100,7 +126,7 @@ describe("serveLocalMcp", () => {
     ]);
     expect(tools[1]?.inputSchema).toMatchObject({ type: "object", required: ["kind", "name"] });
 
-    await expect(client.request("resources/list")).rejects.toMatchObject({ code: -32_601 });
+    await expect(client.request("completion/complete")).rejects.toMatchObject({ code: -32_601 });
     disconnect();
     await expect(served).resolves.toBeUndefined();
   });
@@ -259,6 +285,133 @@ describe("serveLocalMcp", () => {
       isError: true,
     });
     expect(run).not.toHaveBeenCalled();
+
+    disconnect();
+    await served;
+  });
+
+  it("serves the guidelines, the manifests, the rules and the skills as resources", async () => {
+    const { client, served, disconnect } = start(vi.fn<StackraRunner>());
+
+    const { resources } = (await client.request("resources/list")) as {
+      resources: { uri: string; name: string; mimeType: string }[];
+    };
+    expect(resources.map((resource) => resource.uri)).toEqual([
+      "stackra://guidelines",
+      "stackra://manifest",
+      "stackra://manifest/commerce",
+      "stackra://rules/naming",
+      "stackra://skills/backend-errors",
+    ]);
+    const { resourceTemplates } = (await client.request("resources/templates/list")) as {
+      resourceTemplates: { uriTemplate: string }[];
+    };
+    expect(resourceTemplates.map((template) => template.uriTemplate)).toEqual([
+      "stackra://manifest/{member}",
+      "stackra://rules/{name}",
+      "stackra://skills/{name}",
+    ]);
+
+    const guidelines = (await client.request("resources/read", {
+      uri: "stackra://guidelines",
+    })) as { contents: { uri: string; mimeType: string; text: string }[] };
+    expect(guidelines.contents).toEqual([
+      {
+        uri: "stackra://guidelines",
+        mimeType: "text/markdown",
+        text: expect.stringContaining("## Naming\n\nUse whole words."),
+      },
+    ]);
+    expect(guidelines.contents[0]?.text).toContain("`stackra://skills/backend-errors` (skill)");
+    // The tool list decides how the tests run: no `test` tool here, so `verify`.
+    expect(guidelines.contents[0]?.text).toContain("the tests with the `verify` tool");
+
+    const manifest = (await client.request("resources/read", {
+      uri: "stackra://manifest/commerce",
+    })) as { contents: { text: string }[] };
+    expect(JSON.parse(manifest.contents[0]?.text ?? "")).toMatchObject({
+      member: "commerce",
+      actions: [{ key: "orders.order.cancel@1" }],
+    });
+
+    await expect(
+      client.request("resources/read", { uri: "stackra://manifest/billing" }),
+    ).rejects.toMatchObject({
+      code: -32_002,
+      message: "Resource not found: stackra://manifest/billing",
+    });
+    await expect(client.request("resources/read", {})).rejects.toMatchObject({ code: -32_602 });
+
+    disconnect();
+    await served;
+  });
+
+  it("serves the recipes as prompts, each ending with gen --check and the tests", async () => {
+    const test: LocalTool = {
+      name: "test",
+      description: "Run the tests",
+      inputSchema: { type: "object" },
+      readOnly: true,
+      invoke: async () => ({ document: { ok: true }, exitCode: 0 }),
+    };
+    const { client, served, disconnect } = start(vi.fn<StackraRunner>(), null, [test]);
+
+    const { prompts } = (await client.request("prompts/list")) as {
+      prompts: { name: string; title: string; arguments: { name: string; required: boolean }[] }[];
+    };
+    expect(
+      prompts.map((prompt) => [prompt.name, prompt.arguments.map((argument) => argument.name)]),
+    ).toEqual([
+      ["add-feature", ["feature", "member"]],
+      ["fix-gen-drift", ["output"]],
+      ["explain-refusal", ["code", "message"]],
+    ]);
+
+    const got = (await client.request("prompts/get", {
+      name: "add-feature",
+      arguments: { feature: "Refund an order", member: "commerce" },
+    })) as {
+      description: string;
+      messages: { role: string; content: { type: string; text?: string } }[];
+    };
+    expect(got.messages.map((message) => [message.role, message.content.type])).toEqual([
+      ["user", "text"],
+      ["user", "resource"],
+    ]);
+    expect(got.messages[0]?.content.text).toContain("2. Run `stackra gen --check`");
+    // A `test` command tool is served, so the recipe runs the tests through it.
+    expect(got.messages[0]?.content.text).toContain("3. Run the tests with the `test` tool.");
+
+    await expect(client.request("prompts/get", { name: "deploy" })).rejects.toMatchObject({
+      code: -32_602,
+      message: "Unknown prompt: deploy",
+    });
+    await expect(
+      client.request("prompts/get", { name: "explain-refusal", arguments: {} }),
+    ).rejects.toMatchObject({ code: -32_602 });
+    await expect(client.request("prompts/get", {})).rejects.toMatchObject({ code: -32_602 });
+
+    disconnect();
+    await served;
+  });
+
+  it("serves the conventions @stackra/skills ships when no skills are given", async () => {
+    const { client, served, disconnect } = start(vi.fn<StackraRunner>(), null, [], null);
+
+    const { resources } = (await client.request("resources/list")) as {
+      resources: { uri: string }[];
+    };
+    expect(resources.map((resource) => resource.uri)).toEqual(
+      expect.arrayContaining([
+        "stackra://rules/naming-and-casing",
+        "stackra://skills/backend-errors",
+        "stackra://skills/backend-author-an-action",
+      ]),
+    );
+    const read = (await client.request("resources/read", {
+      uri: "stackra://skills/backend-errors",
+    })) as { contents: { text: string }[] };
+    expect(read.contents[0]?.text).toContain("Refusal codes");
 
     disconnect();
     await served;
