@@ -107,3 +107,4 @@ stops a submodule from coming back: the layout check accepts any root entry that
 
 - 2026-11-27 · — → Draft · Stackra readiness lane (Claude) · from the readiness audit, batch 23 item 23.5
 - 2026-11-27 · Draft → Implementing · Stackra readiness lane (Claude) · built and proven on the build machine; awaiting the approver's line
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
