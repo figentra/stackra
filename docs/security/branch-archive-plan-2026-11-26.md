@@ -51,7 +51,8 @@ it was bundled is refused, and the script stops there. To restore a branch, run
 `git clone <bundle>` or `git fetch <bundle> refs/heads/<branch>:refs/heads/<branch>`.
 
 Deleting a branch does not remove the `refs/pull/*` refs of its pull requests. GitHub keeps those, and only GitHub
-Support can remove one. The full-history scan found nothing in them that needs removal.
+Support can remove one. The full-history scan found no secrets in them; internal identifiers remain, and asking
+GitHub Support to remove those refs is an owner step.
 
 The run on 2026-11-26 bundled all 37 core branches and both template branches. Every bundle verified and the mirrors'
 refs were unchanged.

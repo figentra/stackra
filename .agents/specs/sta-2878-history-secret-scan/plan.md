@@ -54,3 +54,78 @@ lease-guarded deletion commands for the owner. Two dated reports under `docs/sec
 | Deploy modes (ADR 0076)               | N/A    | not shipped                                                  |
 | Licence tier (ADR 0077)               | PASS   | free, MIT                                                    |
 | Docs and ADRs                         | PASS   | two dated reports under `docs/security/`; scripts README row |
+
+## Deploy modes
+
+| Mode       | Behaviour                                                    |
+| ---------- | ------------------------------------------------------------ |
+| SaaS       | none: a developer and CI tool over a repository, not shipped |
+| On-prem    | same                                                         |
+| Air-gapped | same; it reads a local mirror clone only                     |
+
+## Correctness properties
+
+- **P-001**: every commit reachable from any ref of the mirror (branch, tag, `refs/pull/*`) is read by both passes — Validates: FR-001
+- **P-002**: a finding only the raw pass reports is listed as `allowlisted`, and an inline `gitleaks:allow` hides nothing from the raw pass — Validates: FR-002
+- **P-003**: no byte of a matched value appears in any output; output that would carry one is refused whole — Validates: FR-003
+- **P-004**: every branch gets exactly one class, and a protected branch is never listed for archiving — Validates: FR-004
+- **P-005**: `archive` leaves every ref as it found it, and each deletion command deletes only a branch still at its archived tip — Validates: FR-005
+
+## Architecture overview
+
+```mermaid
+flowchart TD
+  mirror["mirror clone (every ref)"] --> scan["scan: gitleaks, policy pass and raw pass"]
+  scan --> check["assertValueFree"] --> report["value-free Markdown report"]
+  mirror --> branches["branches: one class per branch"]
+  branches --> archive["archive: bundles, manifest, lease-guarded deletion script"]
+```
+
+## Components and responsibilities
+
+One component: `tools/scripts/secrets-history-scan.mjs` (commands `scan`, `branches`, `archive`). It reads a local
+mirror clone and the pinned gitleaks, and writes only the report, the bundles, the manifest and the deletion script it
+is asked for.
+
+## Files and folders
+
+```text
+tools/scripts/secrets-history-scan.mjs                    (new)
+tools/scripts/__tests__/secrets-history-scan.test.mjs     (new)
+tools/scripts/README.md                                   (a row)
+package.json                                              (script secrets:scan:history)
+docs/security/history-secret-scan-2026-11-26.md           (the report)
+docs/security/branch-archive-plan-2026-11-26.md           (the archive plan)
+```
+
+## Data models and migrations
+
+none
+
+## Contracts
+
+- `pnpm secrets:scan:history scan <mirror>`, `branches <mirror>`, `archive <mirror> <out> <branch>…`; exit 0 done, 1 a
+  refusal (a matched value would be printed), 2 usage.
+- The report rows: file, line, commit, rule, policy result, placeholder or review, on `main` or not, and the refs.
+
+## Error handling
+
+A bad command line exits 2 with the usage and never echoes it. Output that would carry a matched value is refused
+whole: nothing is printed. `archive` refuses a protected branch or a name that is not a plain ref before writing.
+
+## Security and tenancy
+
+The tool never prints a matched value (checked before printing), deletes nothing and pushes nothing; the deletion
+script is an owner step guarded by `--force-with-lease`. Pull request refs can only be removed by GitHub Support
+(STA-2922). No tenant data.
+
+## Testing strategy
+
+- AC-001 to AC-011: `tools/scripts/__tests__/secrets-history-scan.test.mjs`, one named test per criterion (the
+  Acceptance criteria section names each); AC-006 and AC-007 run the real gitleaks 8.30.1.
+- P-001 to P-005: the same tests; each guard has a revert check (removing it fails a test).
+
+## Rollout
+
+Nothing deploys. The owner runs the archive plan and turns on GitHub secret scanning and push protection; the pull
+request refs are a GitHub Support request (STA-2922).
