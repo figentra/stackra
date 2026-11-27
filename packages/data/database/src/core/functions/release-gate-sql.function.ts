@@ -11,9 +11,11 @@
  *           (Encore's runner on dev and staging, PGlite and `usePostgres` tests), the version setting unset (a rollback
  *           environment) or `0` (a fresh database). Otherwise it fails closed: a run that names no release is refused,
  *           since the gate cannot tell its release from the one that applied `after`, and so is a run whose release
- *           applied `after` (a release id reused across deploys holds the step until the id changes). A step recorded
- *           before the ledger kept releases (`release_id` null) counts as an older release. It has no blank line, so a
- *           runner that splits a step on blank lines keeps it whole, and it undoes nothing.
+ *           applied `after` (a release id reused across deploys holds the step until the id changes). A step with no
+ *           release (`release_id` null) counts as an older release: the runner records none only for a file applied
+ *           before the ledger kept releases, on a fresh database, or in a rollback environment, since a forward-only
+ *           run on a database with applied files must name its release (`migrate`). It has no blank line, so a runner
+ *           that splits a step on blank lines keeps it whole, and it undoes nothing.
  * Runtime: node
  * Governing contract: ADR 0159 (decision 3; the 2026-10-24 note: `stackra db migrate` is the release step, and
  *                     `schema_migrations_history`).

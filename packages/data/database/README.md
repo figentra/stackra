@@ -249,8 +249,11 @@ schema.drop("order_drafts", { after: "orders.0007_rename_note" });
   commit: `stackra db migrate --release <id>`, else `STACKRA_RELEASE`. The runner records it on every
   `schema_migrations_history` row and sets `stackra.migrate_from_version` and `stackra.migrate_release` in
   forward-only environments, so a retried deploy of the same release (a CI retry, a re-run pipeline) is refused as its
-  first run was, a run that names no release is refused, and only the next release passes. Give every deploy its own
-  id: one reused across deploys holds the step until it changes. The gate passes on a fresh database, on dev, preview
+  first run was, a run that names no release is refused, and only the next release passes. Outside dev, preview and
+  test, `stackra db migrate` refuses a run that names no release before any change whenever the database already has
+  applied files: a file recorded with no release could not be told from the release a retry names, so the retry
+  would pass the drop while the release before still serves. Give every deploy its own id: one reused across deploys
+  holds the step until it changes. The gate passes on a fresh database, on dev, preview
   and test, and wherever Encore's runner or a test applies the files (no `schema_migrations_history`).
 - **Column rename.** `t.renameColumn(from, to, { type })` adds `to` (`.nullable()` with its comment: no default, no
   generation, not NOT NULL, refused otherwise, since a filled `to` hides the rows still to copy) and the trigger
@@ -260,8 +263,9 @@ schema.drop("order_drafts", { after: "orders.0007_rename_note" });
   `t.change` after the finish. Indexes are not copied.
 - **Row-level security.** The data gate (`requireBackfill`, the finish of a column rename) and every backfill batch run
   with `row_security` off, so they read every tenant's rows or fail: on a table under row-level security (every
-  tenant table is `ENABLE` + `FORCE`), a role that is neither superuser nor `BYPASSRLS` gets a refusal naming the
-  table (SQLSTATE 42501 for a backfill), never a count of the rows its policy shows, which with no tenant set is none.
+  tenant table is `ENABLE` + `FORCE`), a role that is neither superuser nor `BYPASSRLS`, or one without SELECT on the
+  table, gets a refusal naming the table, the role and both causes (SQLSTATE 42501 for a backfill), never a count of
+  the rows its policy shows, which with no tenant set is none.
   Run migrations and backfills on `DATABASE_DIRECT_URL` as a role that bypasses row security; the runtime role never
   does (the health check fails readiness when it could).
 - **Table rename.** `schema.rename(from, to)` renames the table and leaves a `security_invoker` view under the old
@@ -324,7 +328,9 @@ checksum, applied_at, release_id)` records each applied file's SHA-256 and the r
   version dirty.
 - Outside dev, preview and test, a run sets `stackra.migrate_from_version` to the version it started from and
   `stackra.migrate_release` to its release (`--release`, else `STACKRA_RELEASE`: letters, digits and `. _ + / -`),
-  which the release gate of every contract step reads (see "Dropping and renaming").
+  which the release gate of every contract step reads (see "Dropping and renaming"). There a run with files to apply
+  must name its release once the database has an applied file, and is refused before any change otherwise; only a
+  fresh database records files with no release.
 
 ## Scope isolation
 

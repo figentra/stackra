@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `migrate`: an edited applied file is refused, applied files are adopted into the history, a
- *          step timeout is set and reset, each applied file is recorded with its checksum, and a failed concurrent
- *          index is dropped with the version put back clean.
+ *          step timeout is set and reset, each applied file is recorded with its checksum and release, a failed
+ *          concurrent index is dropped with the version put back clean, and a forward-only run naming no release is
+ *          refused on a database with applied files (STA-1406).
  * Boundary: test only; `openMigrationSession` is mocked by an in-memory session that records the SQL, so no Postgres
  *           runs.
  * Runtime: node (vitest)
@@ -115,7 +116,7 @@ describe("migrate", () => {
   it("sets the release gate's starting version in a forward-only environment, before any file (STA-1406)", async () => {
     reset([file(1, "select 1"), file(2, "select 2")], 1);
     fake.history = [{ version: 1, name: "0001_orders_step", checksum: "sum1" }];
-    await migrate({ cwd: ".", environment: "production" });
+    await migrate({ cwd: ".", environment: "production", release: "v2" }, {});
     const sql = fake.executed.map(([statement]) => statement);
     const gate = sql.indexOf("select set_config('stackra.migrate_from_version', '1', false)");
     expect(gate).toBeGreaterThanOrEqual(0);
@@ -140,6 +141,33 @@ describe("migrate", () => {
     expect(sql.at(-1)).toContain(
       "insert into schema_migrations_history (version, name, checksum, release_id) values (2, '0002_orders_step', 'sum2', 'v1.4.0')",
     );
+  });
+
+  it("refuses a forward-only run that names no release on a database with applied files, before any statement (STA-1406)", async () => {
+    // recorded with no release, the next file could not be told from the release a retry names, so a contract step
+    // waiting for it would pass its gate while this release still serves
+    reset([file(1, "select 1"), file(2, "select 2")], 1);
+    fake.history = [{ version: 1, name: "0001_orders_step", checksum: "sum1" }];
+    await expect(migrate({ cwd: ".", environment: "staging" }, {})).rejects.toThrow(
+      /refused before any change: this staging run names no release, and the database already has applied migrations \(version 1\)/,
+    );
+    expect(fake.executed).toEqual([]);
+  });
+
+  it("applies a forward-only run that names no release on a fresh database, recording no release (STA-1406)", async () => {
+    reset([file(1, "select 1")]);
+    expect(await migrate({ cwd: ".", environment: "production" }, {})).toEqual({
+      applied: ["0001_orders_step"],
+    });
+    const sql = fake.executed.map(([statement]) => statement);
+    expect(sql.some((statement) => statement.includes("stackra.migrate_release"))).toBe(false);
+    expect(sql.at(-1)).toContain("values (1, '0001_orders_step', 'sum1', null)");
+  });
+
+  it("lets a forward-only run that names no release through when nothing is pending (STA-1406)", async () => {
+    reset([file(1, "select 1")], 1);
+    fake.history = [{ version: 1, name: "0001_orders_step", checksum: "sum1" }];
+    expect(await migrate({ cwd: ".", environment: "production" }, {})).toEqual({ applied: [] });
   });
 
   it("reads the release from STACKRA_RELEASE when none is passed (STA-1406)", async () => {

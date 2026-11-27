@@ -5,8 +5,9 @@
  *          many (up to 1000) and what to do.
  * Boundary: pure SQL text over literals the migration wrote. It counts with `row_security` off for its own statement
  *           (restored after), so it reads every tenant's rows or fails: a role that row-level security would filter
- *           (a `FORCE` table, a role neither superuser nor `BYPASSRLS`) gets a refusal naming the table, never a count
- *           of the rows its policy happens to show, which would let a drop through with rows still to copy. It has no
+ *           (a `FORCE` table, a role neither superuser nor `BYPASSRLS`) or that lacks SELECT on the table gets a
+ *           refusal naming the table, the role and both causes (with Postgres's own message), never a count of the
+ *           rows its policy happens to show, which would let a drop through with rows still to copy. It has no
  *           blank line, so a runner that splits a step on blank lines keeps it whole, and it undoes nothing. A fresh
  *           database has no rows, so it passes there.
  * Runtime: node
@@ -43,7 +44,7 @@ export function pendingRowsGateSql(qualified: string, pending: string, refusal: 
     `    select count(*) into n from (select 1 from ${qualified} where ${pending} limit ${COUNT_LIMIT + 1}) pending;`,
     "    perform set_config('row_security', security, true);",
     "  exception when insufficient_privilege then",
-    `    raise exception 'refused before any change: % hides rows from role % under row-level security, so its pending rows cannot be counted (%): run the migration as a role that bypasses row security (a superuser or BYPASSRLS, DATABASE_DIRECT_URL)', ${sqlLiteral(qualified)}, current_user, sqlerrm;`,
+    `    raise exception 'refused before any change: role % cannot count the pending rows of % (%): it lacks SELECT on the table, or row-level security would hide rows from it; run the migration as a role that can read the table and bypasses row security (a superuser or BYPASSRLS, DATABASE_DIRECT_URL)', current_user, ${sqlLiteral(qualified)}, sqlerrm;`,
     "  end;",
     "  if n > 0 then",
     `    raise exception 'refused before any change: % rows of % still match %: %', case when n > ${COUNT_LIMIT} then 'more than ${COUNT_LIMIT}' else n::text end, ${sqlLiteral(qualified)}, ${sqlLiteral(pending)}, ${sqlLiteral(refusal)};`,

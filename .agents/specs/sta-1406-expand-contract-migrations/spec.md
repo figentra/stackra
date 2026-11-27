@@ -87,6 +87,8 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
 - **AC-002**: IF a forward-only run's release applied the named migration THEN THE release gate SHALL refuse the step
   before any change, naming the step, the migration and the release, whether the run is that release's first or a
   retry of the same deploy; a migration never applied, and a run that names no release, are refused the same way.
+  IF a forward-only run with files to apply names no release on a database with an applied file THEN THE runner
+  SHALL refuse it before any change, so no file is recorded without the release a later retry names.
 - **AC-003**: THE gate SHALL pass on a fresh database (the run started at version 0), in dev, preview and test, and
   wherever no `schema_migrations_history` exists (Encore's runner, tests).
 - **AC-004**: WHEN a column is renamed (expand), THE compiled step SHALL add the new column and a trigger that keeps the
@@ -108,9 +110,9 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
   it SHALL pass once none does.
 - **AC-011**: THE gen kind tables, the lint kind table and the module-group check SHALL know a backfill file under
   `database/backfills/`.
-- **AC-012**: IF row security would hide rows from the migrating role THEN THE data gate SHALL refuse the migration,
-  naming the table and the role, and a backfill batch fails with SQLSTATE 42501 without finishing, rather than either
-  finding no rows (a `FORCE` table, a role neither superuser nor `BYPASSRLS`).
+- **AC-012**: IF the migrating role lacks SELECT or row security hides rows from it THEN THE data gate SHALL refuse
+  the migration, naming the table, the role and both causes, and a backfill batch fails with SQLSTATE 42501 without
+  finishing, rather than either finding no rows (a `FORCE` table, a role neither superuser nor `BYPASSRLS`).
 - **AC-013**: IF a column rename's new column has a default, a generation or NOT NULL THEN THE compiler SHALL refuse the
   migration, so the rows the copy has not reached keep the new column null.
 
@@ -122,3 +124,6 @@ CHECK constraints (the fourth part of the STA-1406 batch title) are not in this 
 - 2026-11-26 → Implementing (built on `figentra/sta-1406-expand-contract-dsl`)
 - 2026-11-26 → Implementing (review fixes: AC-002 compares releases, not runs; AC-012 row security; AC-013 rename
   defaults)
+- 2026-11-27 → Implementing (review fixes: AC-002 a forward-only run naming no release on a database with applied
+  files is refused before any change; AC-012 the refusal names a missing SELECT grant too; follow-ups STA-2901,
+  STA-2902, STA-2903)

@@ -1,9 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: integration test of the release gate through the real runner on real Postgres: `migrate` in a forward-only
- *          environment refuses a contract step whose release it applies, leaves the version at that release, clean,
- *          refuses it again when the same release is retried and when a run names no release, and applies it under the
- *          next release (STA-1406).
+ *          environment refuses a run that names no release on a database with applied files before any change (so a
+ *          retry naming the release cannot pass a step that run applied), refuses a contract step whose release it
+ *          applies, leaves the version at that release, clean, refuses it again when the same release is retried, and
+ *          applies it under the next release; on a fresh database a run naming no release applies every file
+ *          (STA-1406).
  * Boundary: integration tier (`.int`): needs Docker for Testcontainers; the compiled migrations are written as gen
  *           writes them into a temporary member folder, and `DATABASE_URL` points the runner at the container.
  * Runtime: node (vitest)
@@ -13,7 +15,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterAll, beforeAll, describe, expect, it } from "@stackra/testing";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "@stackra/testing";
 
 import { Migration } from "#core/bases/migration.base";
 import { compileMigration } from "#core/functions/compile-migration.function";
@@ -93,18 +95,45 @@ const ALL = [
   ["notes.0003_drop_ref", DropRefMigration],
 ] as const;
 
+/** The rows of `sql` on the container. */
+const read = (sql: string) =>
+  postgres.database.transaction(() => postgres.database.em().execute(sql));
+
+/** The columns of `notes.notes`, in order. */
+const columns = () =>
+  read(
+    "select column_name from information_schema.columns where table_schema = 'notes' and table_name = 'notes' order by ordinal_position",
+  );
+
 describe("migrate and the release gate", () => {
+  beforeEach(async () => {
+    await read(
+      "drop schema if exists notes cascade; drop table if exists schema_migrations, schema_migrations_history",
+    );
+  });
+
   it("refuses a contract step under the release that applied the step it waits for, retried or not, and applies it under the next", async () => {
     const environment = "production";
-    expect(await migrate({ cwd: member(ALL.slice(0, 1)), environment, release: "v1" })).toEqual({
-      applied: ["0001_notes_0001_create_notes"],
-    });
+    const env = {};
+    expect(
+      await migrate({ cwd: member(ALL.slice(0, 1)), environment, release: "v1" }, env),
+    ).toEqual({ applied: ["0001_notes_0001_create_notes"] });
     const next = member(ALL);
+    // the deploy of v2 forgot STACKRA_RELEASE: refused before 0002 applies, so no row of v2 is recorded without its
+    // release, where a retry naming v2 would take it for an older release and drop the column v1 still reads
+    await expect(migrate({ cwd: next, environment }, env)).rejects.toThrow(
+      /refused before any change: this production run names no release, and the database already has applied migrations \(version 1\)/,
+    );
+    expect(await read("select version, dirty from schema_migrations")).toEqual([
+      { version: "1", dirty: false },
+    ]);
+    expect(
+      await read("select version, release_id from schema_migrations_history order by version"),
+    ).toEqual([{ version: "1", release_id: "v1" }]);
     const refused =
       /0003_notes_0003_drop_ref failed: .*notes\.notes drop column legacy_ref is a contract step after notes\.0002_stop_reading_ref, which release v2 applies/;
-    await expect(migrate({ cwd: next, environment, release: "v2" })).rejects.toThrow(refused);
-    const { database } = postgres;
-    const read = (sql: string) => database.transaction(() => database.em().execute(sql));
+    // the retry names v2: 0002 is recorded under v2, so the drop waits for a later release
+    await expect(migrate({ cwd: next, environment, release: "v2" }, env)).rejects.toThrow(refused);
     expect(await read("select version, dirty from schema_migrations")).toEqual([
       { version: "2", dirty: false },
     ]);
@@ -114,27 +143,40 @@ describe("migrate and the release gate", () => {
       { version: "1", release_id: "v1" },
       { version: "2", release_id: "v2" },
     ]);
+    expect(await columns()).toContainEqual({ column_name: "legacy_ref" });
     // the same deploy retried (a CI retry, a re-run pipeline): release v1's code may still be serving
-    await expect(migrate({ cwd: next, environment, release: "v2" })).rejects.toThrow(refused);
+    await expect(migrate({ cwd: next, environment, release: "v2" }, env)).rejects.toThrow(refused);
     // a run that names no release cannot be told from v2
-    await expect(migrate({ cwd: next, environment })).rejects.toThrow(/this run names no release/);
+    await expect(migrate({ cwd: next, environment }, env)).rejects.toThrow(
+      /refused before any change: this production run names no release/,
+    );
     expect(await read("select version, dirty from schema_migrations")).toEqual([
       { version: "2", dirty: false },
     ]);
-    expect(await migrate({ cwd: next, environment, release: "v3" })).toEqual({
+    expect(await migrate({ cwd: next, environment, release: "v3" }, env)).toEqual({
       applied: ["0003_notes_0003_drop_ref"],
     });
-    const columns = await database.transaction(() =>
-      database
-        .em()
-        .execute(
-          "select column_name from information_schema.columns where table_schema = 'notes' and table_name = 'notes' order by ordinal_position",
-        ),
-    );
-    expect(columns).toEqual([
+    expect(await columns()).toEqual([
       { column_name: "id" },
       { column_name: "body" },
       { column_name: "source" },
+    ]);
+  });
+
+  it("applies every file on a fresh database when the run names no release, where no older release serves", async () => {
+    expect(await migrate({ cwd: member(ALL), environment: "production" }, {})).toEqual({
+      applied: [
+        "0001_notes_0001_create_notes",
+        "0002_notes_0002_stop_reading_ref",
+        "0003_notes_0003_drop_ref",
+      ],
+    });
+    expect(
+      await read("select version, release_id from schema_migrations_history order by version"),
+    ).toEqual([
+      { version: "1", release_id: null },
+      { version: "2", release_id: null },
+      { version: "3", release_id: null },
     ]);
   });
 });

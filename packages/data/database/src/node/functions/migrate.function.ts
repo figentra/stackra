@@ -11,11 +11,14 @@
  *           indexes it left (a failed `create index concurrently`) are dropped and the version goes back to the last
  *           applied file, clean: the failed transaction rolled back and a failed single statement left nothing else,
  *           so the next run starts that file again. Each applied file's history row records the release the run applies
- *           (`release`, else `STACKRA_RELEASE`; a run may name none). In a forward-only environment (not dev, preview or
- *           test) the run sets `MIGRATE_FROM_VERSION_SETTING` to the version it started from and
- *           `MIGRATE_RELEASE_SETTING` to its release, which each contract step's release gate reads: a drop or finished
- *           rename is refused while the migration it waits for was applied under this same release (a retried deploy
- *           included), and on a database with older releases when the run names none.
+ *           (`release`, else `STACKRA_RELEASE`). In a forward-only environment (not dev, preview or test) a run with
+ *           files to apply on a database that already has applied files must name its release, and is refused before
+ *           any change when it names none: a row recorded with no release could not be told from the release that
+ *           applied it, so a retry naming that release would pass a contract step's gate. Only a fresh database (no
+ *           applied file, no older release serving) records files with no release there. The run sets
+ *           `MIGRATE_FROM_VERSION_SETTING` to the version it started from and `MIGRATE_RELEASE_SETTING` to its release,
+ *           which each contract step's release gate reads: a drop or finished rename is refused while the migration it
+ *           waits for was applied under this same release (a retried deploy included).
  * Runtime: node
  * Governing contract: ADR 0159 (decision 2 as amended 2026-10-24, decision 3: timeouts per session; destructive steps
  *                     deferred to a later release).
@@ -42,8 +45,9 @@ const RELEASE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._+/-]{0,127}$/;
  *
  * @param options.release - the release this run applies; `STACKRA_RELEASE` when absent.
  * @param env - the environment `STACKRA_RELEASE` is read from, `process.env` by default.
- * @throws TypeError for a release that is not a version, tag or commit; Error when an applied file was edited, the
- *         version is dirty or a file fails; the message names the file.
+ * @throws TypeError for a release that is not a version, tag or commit; Error when a forward-only run with files to
+ *         apply names no release on a database with applied files, an applied file was edited, the version is dirty
+ *         or a file fails; the message names the file.
  * @example
  * const { applied } = await migrate({ cwd: "apps/api", environment: "production", release: "v1.4.0" });
  */
@@ -68,9 +72,15 @@ export async function migrate(
       throw new Error(
         `version ${current.version} is dirty${last ? ` (${last.name})` : ""}: fix it by hand`,
       );
+    const pending = files.filter((candidate) => candidate.version > current.version);
+    const forwardOnly = !ROLLBACK_ENVIRONMENTS.has(options.environment);
+    if (forwardOnly && release === undefined && current.version > 0 && pending.length > 0)
+      throw new Error(
+        `refused before any change: this ${options.environment} run names no release, and the database already has applied migrations (version ${current.version}): each file applied here records the release that applied it, which a contract step's release gate compares, so pass --release or set STACKRA_RELEASE to the deploy's version or commit`,
+      );
     await checkHistory(session, current.version);
     // raw-sql: the release gate of a contract step reads where this run started; a rollback environment has no gate
-    if (!ROLLBACK_ENVIRONMENTS.has(options.environment)) {
+    if (forwardOnly) {
       await execute(
         `select set_config(${sqlLiteral(MIGRATE_FROM_VERSION_SETTING)}, ${sqlLiteral(String(current.version))}, false)`,
         false,
@@ -83,7 +93,7 @@ export async function migrate(
     }
     const applied: string[] = [];
     let previous = current.version;
-    for (const file of files.filter((candidate) => candidate.version > current.version)) {
+    for (const file of pending) {
       // raw-sql: the version row is the runner's bookkeeping
       await execute(
         `insert into schema_migrations (version, dirty) values (${file.version}, true) on conflict (version) do nothing; delete from schema_migrations where version < ${file.version}`,

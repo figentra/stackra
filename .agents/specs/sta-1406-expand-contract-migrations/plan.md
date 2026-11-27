@@ -68,9 +68,11 @@ contract step's data gate.
   a failed batch leaves the cursor and records the SQLSTATE — Validates: AC-009
 - **P-011**: `requireBackfill` refuses while a pending row exists and passes after — Validates: AC-010
 - **P-012**: with `after` applied under release v2, a run of v2 (first or retried) and a run naming no release are
-  refused and leave the version clean; a run of v3 applies the step — Validates: AC-002
-- **P-013**: as an owner role on a `FORCE` table with no tenant set, the data gate is refused naming the role and the
-  old column keeps its values; a backfill fails with 42501, records it and is not finished — Validates: AC-012
+  refused and leave the version clean; a run of v3 applies the step; a forward-only run naming no release on a
+  database with an applied file is refused before `after` applies, so the retry with v2 records `after` under v2 and
+  its contract step is refused; on a fresh database such a run applies every file — Validates: AC-002
+- **P-013**: as an owner role on a `FORCE` table with no tenant set, or a role without SELECT on the table, the data
+  gate is refused naming the role and both causes and the old column keeps its values; a backfill fails with 42501, records it and is not finished — Validates: AC-012
 - **P-014**: a rename whose new column has a default, a setting default, a generation or NOT NULL does not compile —
   Validates: AC-013
 

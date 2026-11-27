@@ -126,7 +126,7 @@ describe("BlueprintRecord expand and contract on Postgres", () => {
     await apply(pg, expand, "owner_role");
     // with app.tenant_id unset the policy shows no row, so a count would find nothing to copy and drop both notes
     await expect(apply(pg, finish, "owner_role")).rejects.toThrow(
-      /refused before any change: "shop"\."orders" hides rows from role owner_role under row-level security/,
+      /refused before any change: role owner_role cannot count the pending rows of "shop"\."orders"/,
     );
     expect(await rows(pg, "select id, note, memo from shop.orders order by id")).toEqual([
       { id: "a", note: "first", memo: null },

@@ -5,7 +5,7 @@
  *          finish drops the view behind the release gate, a dropped table waits for its gate (a retried deploy of the
  *          release that applied the step it waits for, or a run naming no release, is refused), and `requireBackfill`
  *          refuses while a row is pending, passes on a database with none, and refuses a role that row-level security
- *          would filter instead of counting the rows its policy shows (STA-1406).
+ *          would filter, or that lacks SELECT on the table, instead of counting the rows it can see (STA-1406).
  * Boundary: test only; each test applies compiled migrations to a fresh in-memory PGlite as the runner would, and plays
  *           the runner's ledger and setting where a gate reads them.
  * Runtime: node (vitest)
@@ -239,7 +239,7 @@ describe("SchemaRecord table steps on Postgres", () => {
     });
     // with app.tenant_id unset the policy shows no row: a count would be 0 and the drop would lose both names
     await expect(apply(pg, contract, "owner_role")).rejects.toThrow(
-      /refused before any change: "shop"\."customer" hides rows from role owner_role under row-level security/,
+      /refused before any change: role owner_role cannot count the pending rows of "shop"\."customer" \(.*\): it lacks SELECT on the table, or row-level security would hide rows from it/,
     );
     expect(await rows(pg, "select name from shop.customer order by id")).toEqual([
       { name: "Ada" },
@@ -255,5 +255,27 @@ describe("SchemaRecord table steps on Postgres", () => {
       { id: "c1", email: "Ada@example.test" },
       { id: "c2", email: "Grace@example.test" },
     ]);
+  });
+
+  it("refuses a contract step as a role without SELECT on the table, naming the missing grant", async () => {
+    const pg = new PGlite();
+    // no row-level security here: the role simply was never granted SELECT on the table it migrates
+    await pg.exec(`
+      create schema shop;
+      create table shop.invoice (id text primary key, number text);
+      insert into shop.invoice values ('i1', null);
+      create role migrator nologin;
+      grant usage, create on schema shop to migrator;
+    `);
+    const gate = compiled((schema) =>
+      schema.requireBackfill("shop.fill_numbers", { table: "invoice", pending: "number is null" }),
+    );
+    await expect(apply(pg, gate, "migrator")).rejects.toThrow(
+      /refused before any change: role migrator cannot count the pending rows of "shop"\."invoice" \(permission denied for table invoice\): it lacks SELECT on the table/,
+    );
+    await pg.exec("grant select on shop.invoice to migrator");
+    await expect(apply(pg, gate, "migrator")).rejects.toThrow(
+      /1 rows of "shop"\."invoice" still match number is null/,
+    );
   });
 });

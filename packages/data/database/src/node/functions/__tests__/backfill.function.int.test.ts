@@ -168,7 +168,7 @@ describe("backfill", () => {
     await expect(
       query(`set local role scoped_owner;\n${contract.steps[0]?.sql.join(";\n") ?? ""}`),
     ).rejects.toThrow(
-      /"shop"\."scoped_orders" hides rows from role scoped_owner under row-level security/,
+      /role scoped_owner cannot count the pending rows of "shop"\."scoped_orders" \(.*\): it lacks SELECT on the table, or row-level security would hide rows from it/,
     );
     expect(
       await query(
