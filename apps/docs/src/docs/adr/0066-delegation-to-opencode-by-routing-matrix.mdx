@@ -37,7 +37,7 @@ Accepted pages: once accepted, it changes rule 4 of 0017 and reopens that row of
 3. **One git worktree per delegated task**, started by `tools/scripts/delegate.mjs` as `opencode run --agent <x> --format json`. OpenCode never runs in the main checkout, and never with `--auto` where it may ask.
 4. **`.agents/routing.yaml` is the matrix**: task type to executor and model. An override is a flag or `STACKRA_EXECUTOR`, and is logged.
 5. **Budget: $150 per day**, warning at 80%, measured by `pnpm ai:spend`. `delegate.mjs` refuses to start a task over the cap, and the SessionStart hook prints the spend.
-6. **A guard plugin for OpenCode** (ported from the academorix repository) enforces worktree-only writes and the path guards Claude's hooks apply.
+6. **A guard plugin for OpenCode** (ported from an earlier product repository) enforces worktree-only writes and the path guards Claude's hooks apply.
 7. **Delegated output is reviewed like any other change** and merges only after Claude's review and a green `pnpm verify`. Tier-to-model names stay in `.agents/models.json`.
 
 ## Consequences

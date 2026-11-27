@@ -27,7 +27,12 @@ import { portFiles } from "../guard-port.mjs";
 
 const TOOL = fileURLToPath(new URL("../guard-port.mjs", import.meta.url));
 const HOOKS = fileURLToPath(new URL("../../../.agents/hooks/", import.meta.url));
-const S = "/Users/akouta/Projects/stackra";
+// The ported rules protect the porter's Stackra checkout (GUARD_PORT_STACKRA, else ~/Projects/stackra) and, for the
+// muslin port, its read-only reference checkout (GUARD_PORT_MUSLIN_REFERENCE): no person's path is built in.
+const S = "/Users/me/Projects/stackra";
+const REFERENCE = "/Users/me/Projects/reference";
+process.env.GUARD_PORT_STACKRA = S;
+process.env.GUARD_PORT_MUSLIN_REFERENCE = REFERENCE;
 const read = (f) => readFileSync(join(HOOKS, f), "utf8");
 
 // A temporary repository: main, and the session's own worktree `a` on feature/x (the cwd), whose last commit adds
@@ -82,6 +87,12 @@ const rules = {
 
 test("guard-port: usage exits 2; a drifted anchor throws before anything is written", () => {
   assert.equal(spawnSync(process.execPath, [TOOL]).status, 2);
+  // A muslin port without its reference checkout is a usage error, and writes nothing.
+  const unset = { ...process.env, GUARD_PORT_MUSLIN_REFERENCE: "" };
+  const bare = mkdtempSync(join(tmpdir(), "guard-port-muslin-"));
+  after(() => rmSync(bare, { recursive: true, force: true }));
+  assert.equal(spawnSync(process.execPath, [TOOL, bare, "muslin"], { env: unset }).status, 2);
+  assert.equal(existsSync(join(bare, "_rules.mjs")), false);
   assert.throws(
     () => portFiles("os", (f) => (f === "guard-bash.mjs" ? "" : read(f))),
     /guard-bash/,
@@ -156,7 +167,7 @@ test("guard-port: the owner's config and the Stackra checkout are never written;
   const writes = [
     [rules.muslin, join(wt, ".claude/settings.json"), "deny"],
     [rules.muslin, `${S}/package.json`, "deny"],
-    [rules.muslin, "/Users/akouta/Projects/academorix/x.md", "deny"],
+    [rules.muslin, `${REFERENCE}/x.md`, "deny"],
     [rules.muslin, join(wt, "AuthKey_X.p8"), "deny"],
     [rules.muslin, join(wt, "src/x.ts"), "allow"],
     [rules.os, join(wt, "docs/catalogue/commerce.md"), "deny"],
@@ -221,7 +232,7 @@ test("guard-port: folders, links, bare redirects, globs, find, tar and git inter
     ["echo x > $PWD/.claude/settings.json", "deny"],
     [`echo x > ${wt}/.claude//settings.json`, "deny"],
     [`echo x > ${wt}/.claude/x/../settings.json`, "deny"],
-    ["echo x > /Users/akouta/Projects/muslin/../stackra/package.json", "deny"],
+    ["echo x > /Users/me/Projects/muslin/../stackra/package.json", "deny"],
     ["find .agents -exec sed -i s/a/b/ {} +", "deny"],
     ["find .agents/hooks -delete", "deny"],
     ["find . -exec git push \\;", "deny"],
@@ -317,7 +328,7 @@ test("guard-port: tool reads and writes are read in every spelling; home secrets
   const writes = [
     `${wt}/.claude//settings.json`,
     `${wt}/.agents/./hooks/_rules.mjs`,
-    "/Users/akouta/Projects//stackra/package.json",
+    "/Users/me/Projects//stackra/package.json",
     `${wt}/.git`,
     `${main}/.git/config`,
     "~/.gitconfig",

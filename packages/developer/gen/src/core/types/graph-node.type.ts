@@ -14,7 +14,7 @@ export interface GraphNode extends MemberGraph {
   /** The node's id across the system, `<repo>.<member>` (`os.billing`). */
   readonly id: string;
 
-  /** The repo key, the graph's layer (`stackra`, `os`, `commerce`, `mezzora`). */
+  /** The repo key, the graph's layer (`stackra`, `os`, `commerce`, `bistro`). */
   readonly repo: string;
 
   /** The member folder relative to the repo root (`services/billing`). */

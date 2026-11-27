@@ -54,7 +54,7 @@ afterEach(() => {
 
 describe("checkShellCompatibility", () => {
   it("builds each product against the next import map and passes a compatible bundle", async () => {
-    const repository = product("mezzora");
+    const repository = product("bistro");
     await checkShellCompatibility({
       repositories: [repository],
       importMap,

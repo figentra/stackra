@@ -32,7 +32,7 @@ export class StackraDocsConfig extends DocsConfig {
 
   /**
    * The site's languages: English is the source; an Arabic page sits beside its English page as `<page>.ar.mdx` and
-   * is served under `/ar/` (STA-2676). Every Arabic page is a native draft for Qossai's review; a page without one
+   * is served under `/ar/` (STA-2676). Every Arabic page is a native draft awaiting a native reviewer; a page without one
    * falls back to English.
    */
   override readonly locales = [
@@ -191,6 +191,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runway/env-check",
             "runway/env-orphans",
             "runway/evidence",
+            "runway/migrations-record",
           ],
         },
       ],

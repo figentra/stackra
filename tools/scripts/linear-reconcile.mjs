@@ -13,7 +13,9 @@
  * Governing contract: ADR 0065 (rule 7: Linear sync never blocks); ADR 0121 (SDLC tooling roles and Linear).
  * Idempotent: every comment carries a `linear-reconcile (<tag>)` marker and an action whose marker is already on the
  * issue is skipped, so a human who reopens an issue is not overridden. `--dry-run` writes nothing.
- * Inputs: for every repo in linear-reconcile.repos.yaml (or `--repos a,b`): `gh pr list` (merged since `--since`,
+ * Inputs: for every repo in linear-reconcile.repos.yaml, plus `--extra-repos a,b` (the private repos this public file
+ *   does not name: the `LINEAR_RECONCILE_EXTRA_REPOS` repository variable in CI, STA-2876), or only `--repos a,b`:
+ *   `gh pr list` (merged since `--since`,
  *   default 14 days back, and open) and `gh api …/commits?sha=main` (their `Refs:`/`Fixes:` trailers), each capped at
  *   `--max-pages` pages of 100 (GH_TOKEN in CI); `git for-each-ref refs/remotes/origin`, apps/docs/src/docs/adr/*.mdx.
  *   A repo the token cannot read is reported and skipped, never failed.
@@ -284,11 +286,22 @@ export function gather({ org, repos, since, maxPages, gh }) {
   return out;
 }
 
-/** The repo list: `--repos a,b` or linear-reconcile.repos.yaml beside this script. */
+/** A comma- or newline-separated list, trimmed, empty items dropped. */
+const list = (value) =>
+  (value ?? "")
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+/**
+ * The repo list: `--repos a,b` alone, or linear-reconcile.repos.yaml beside this script plus `--extra-repos a,b` (the
+ * org's other repos, which this public file does not name), each repo once.
+ */
 export function readRepos(argv, text) {
   const { org, repos } = parseYaml(text);
   const cli = flag(argv, "repos");
-  return { org, repos: cli ? cli.split(",").filter(Boolean) : repos };
+  if (cli !== undefined) return { org, repos: list(cli) };
+  return { org, repos: [...new Set([...repos, ...list(flag(argv, "extra-repos"))])] };
 }
 
 const flag = (argv, name) => {

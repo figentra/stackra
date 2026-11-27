@@ -2,11 +2,11 @@
  * Stackra file contract:
  * Purpose: `FiscalCheckPart`, one paid part of a guest check: its document id and number, when it was paid, the lines
  *          it paid for and its tenders.
- * Boundary: a type only; built by the host (a Mezzora guest check) after it splits the check by seat, item, fraction,
+ * Boundary: a type only; built by the host (a Bistro guest check) after it splits the check by seat, item, fraction,
  *           even share or amount. Split arithmetic and tax stay upstream: a part's lines carry computed amounts, and
  *           this package never prorates them.
  * Runtime: isomorphic
- * Governing contract: ADR 0364 (decisions 8 and 9); Mezzora guest_checks spec (RES-150).
+ * Governing contract: ADR 0364 (decisions 8 and 9); Bistro guest_checks spec (RES-150).
  */
 import type { FiscalLine } from "#contracts/types/fiscal-line.type";
 import type { FiscalPayment } from "#contracts/types/fiscal-payment.type";

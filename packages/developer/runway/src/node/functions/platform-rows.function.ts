@@ -6,8 +6,8 @@
  *          surface takes (ADR 0436 decision 10)), and the app-link files of every mobile
  *          app on its linked hosts (`wellknown:<host>:apple-app-site-association` and `wellknown:<host>:assetlinks.json`).
  * Boundary: pure; answers rows as KV key → JSON text and writes nothing. A host name is relative to the environment's
- *           `domains.zone` (`console.mezzora` → `console.mezzora.figentra.com`, D9) unless it already ends in that
- *           zone or ends in `.` (a product's own domain, `mezzora.com.`). Scope rows are never built here: they are
+ *           `domains.zone` (`console.bistro` → `console.bistro.figentra.com`, D9) unless it already ends in that
+ *           zone or ends in `.` (a product's own domain, `bistro.example.`). Scope rows are never built here: they are
  *           the edge projector's. Status and realm come from `EDGE_PUBLISH_SETTINGS`.
  * Runtime: node
  * Governing contract: ADR 0437 (the KV copy); app-shells 5.1, 5.3 and 8.3; owner decisions D2 (two hosts, one

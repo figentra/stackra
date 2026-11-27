@@ -1,7 +1,7 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `parseRunway` for the root `surfaces` and `mobile` blocks: the product repositories' drafts
- *          (Mezzora, Academorix) parse; the `ops` surface holds only a declarative contribution (a shell, a component
+ *          (Bistro, Academy) parse; the `ops` surface holds only a declarative contribution (a shell, a component
  *          or a module path as a block fails); asset paths outside `assets/` fail; two canonical hosts, a repeated
  *          capability and a repository index used twice fail; an app runway takes per-tenant white-label variants; social
  *          sign-in without Apple fails with the guideline named.
@@ -16,31 +16,31 @@ import { describe, expect, it } from "@stackra/testing";
 import { RunwayInvalidError } from "#core/errors/runway-invalid.error";
 import { parseRunway } from "#core/functions/parse-runway.function";
 
-const ROOT = { version: 3, project: "mezzora", environments: {} };
+const ROOT = { version: 3, project: "bistro", environments: {} };
 
-/** Mezzora's draft blocks, as its root runway carries them. */
+/** Bistro's draft blocks, as its root runway carries them. */
 const SURFACES = {
   console: {
     shell: "os/console@3",
-    host: "console.mezzora",
-    packages: ["@figentra/mezzora-console-ui", "@figentra/mezzora-kds-ui"],
+    host: "console.bistro",
+    packages: ["@figentra/bistro-console-ui", "@figentra/bistro-kds-ui"],
   },
-  till: { shell: "commerce/till@1", host: "till.mezzora", packages: ["@figentra/mezzora-till-ui"] },
-  landing: { shell: "os/landing@1", host: "mezzora", content: "assets/landing" },
-  ops: { contributes: "@figentra/mezzora-ops-ui" },
+  till: { shell: "commerce/till@1", host: "till.bistro", packages: ["@figentra/bistro-till-ui"] },
+  landing: { shell: "os/landing@1", host: "bistro", content: "assets/landing" },
+  ops: { contributes: "@figentra/bistro-ops-ui" },
 };
 
 const STAFF = {
   template: "os/mobile@3",
-  packages: ["@figentra/mezzora-mobile-ui"],
+  packages: ["@figentra/bistro-mobile-ui"],
   assets: "assets/mobile/staff",
   store: "assets/store/staff",
   identity: {
-    name: { en: "Mezzora Staff", ar: "ميزورا للموظفين" },
-    ios: { bundleId: "com.figentra.mezzora.staff", team: "figentra" },
-    android: { package: "com.figentra.mezzora.staff" },
-    scheme: "mezzora-staff",
-    links: ["console.mezzora.figentra.com"],
+    name: { en: "Bistro Staff", ar: "بيسترو للموظفين" },
+    ios: { bundleId: "com.figentra.bistro.staff", team: "figentra" },
+    android: { package: "com.figentra.bistro.staff" },
+    scheme: "bistro-staff",
+    links: ["console.bistro.figentra.com"],
   },
   capabilities: ["scanner", "push", "printer"],
   stores: { apple: { account: "figentra" }, google: { account: "figentra" } },
@@ -69,33 +69,33 @@ const social = (providers: string[]) =>
   withMobile({ staff: { ...STAFF, signIn: { social: providers } } });
 
 describe("parseRunway surfaces and mobile", () => {
-  it("accepts Mezzora's draft blocks and Academorix's hosts, tablet and white-label", () => {
+  it("accepts Bistro's draft blocks and Academy's hosts, tablet and white-label", () => {
     const parsed = parseRunway("root", { ...ROOT, surfaces: SURFACES, mobile: { staff: STAFF } });
     expect(parsed.surfaces).toEqual(SURFACES);
     expect(parsed.mobile).toEqual({ staff: STAFF });
 
-    const academorix = parseRunway("root", {
+    const academy = parseRunway("root", {
       ...ROOT,
-      project: "academorix",
-      product: { key: "academorix" },
+      project: "academy",
+      product: { key: "academy" },
       surfaces: {
         landing: {
           shell: "os/landing@1",
           content: "assets/landing",
-          packages: ["@figentra/academorix-landing-blocks"],
-          host: "academorix",
-          hosts: [{ host: "academorix.com", canonical: true }],
+          packages: ["@figentra/academy-landing-blocks"],
+          host: "academy",
+          hosts: [{ host: "academy.example", canonical: true }],
         },
         portal: {
           shell: "os/portal@3",
-          packages: ["@figentra/academorix-family-ui"],
-          host: "*.academorix.com",
+          packages: ["@figentra/academy-family-ui"],
+          host: "*.academy.example",
         },
       },
       mobile: {
-        academorix: {
+        academy: {
           ...STAFF,
-          assets: "assets/mobile/academorix",
+          assets: "assets/mobile/academy",
           tablet: true,
           whiteLabel: {
             entitlement: "academy.white_label",
@@ -104,15 +104,12 @@ describe("parseRunway surfaces and mobile", () => {
         },
       },
     });
-    expect(academorix.mobile?.["academorix"]?.whiteLabel?.modes).toEqual([
-      "managed",
-      "bring-your-own",
-    ]);
+    expect(academy.mobile?.["academy"]?.whiteLabel?.modes).toEqual(["managed", "bring-your-own"]);
   });
 
   it("refuses a white-label entitlement that is not an entitlement key, at config load", () => {
     for (const malformed of [
-      "entitlement:academorix:white-label",
+      "entitlement:academy:white-label",
       "storefront",
       "Storefront.WhiteLabel",
       "storefront.white-label",

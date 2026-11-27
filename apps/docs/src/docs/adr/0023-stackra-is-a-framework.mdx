@@ -19,7 +19,7 @@ shared code. The owner agreed the purpose on 2026-10-19.
 1. **Stackra is the shared framework tier.** It holds the `@stackra/*` packages (DI, contracts, tooling presets, brand
    and the rest) and the reference members that prove them: `apps/console` (an operator and admin console, not a
    customer UI), `apps/mobile`, `apps/docs` and `services/*`.
-2. **Products live in their own repositories** (Academorix, Juristra and Retail OS are examples) and install published
+2. **Products live in their own repositories** (the academy product, Juristra and Retail OS are examples) and install published
    `@stackra/*` packages ([0025](/adr/0025-packages-publish-to-private-registry)). Product code never lands in this repository.
 3. **Shared packages never contain a product literal**: no product name, project id or brand URL of a product. They expose
    factories; the product supplies the definition ([0003](/adr/0003-tier-dependency-direction)).
@@ -37,7 +37,7 @@ shared code. The owner agreed the purpose on 2026-10-19.
 ## Enforcement
 
 Planned — the product-literal check already planned in [0003](/adr/0003-tier-dependency-direction), scanning `packages/**/src`
-for product names (`academorix`, `juristra`, `retail-os`). Nothing checks this today; review and the `architecture-guardian` agent are the only guard.
+for product names (`acme`, `juristra`, `retail-os`). Nothing checks this today; review and the `architecture-guardian` agent are the only guard.
 
 ## Supersedes and sources
 

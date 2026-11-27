@@ -56,7 +56,7 @@ tool configs call so no port, origin or feed URL is typed outside a `runway.yaml
 | `./node`    | `screenshotCaptureJob(request)`, `runScreenshotCapture`, `SCREENSHOT_CAPTURE_DEFAULTS`, `ScreenshotCaptureJob`, …                                           | the store-screenshot capture job on a Mac CI runner                                                                                                                    |
 | `./node`    | `smokePreview(request)`, `PlaywrightSmokeDriver`, `MaestroSmokeDriver`, `ElectronSmokeDriver`, `SmokePreviewRequest`                                        | the smoke step after a preview deploy (STA-265); the `SmokeDriver` port and smoke types are `.`'s                                                                      |
 | `./node`    | `launchCheckJob(request)`, `runLaunchCheck`, `LAUNCH_CHECK_DEFAULTS`, `LaunchCheckJob`, `LaunchCheckRequest`                                                | the mobile launch check: Maestro flows on a CI simulator or emulator (STA-265)                                                                                         |
-| `./node`    | `publishProduct(request)`, `pullRequestPreviewHost(product, n)`, `PULL_REQUEST_PREVIEW_SETTINGS`, `ProductPublishRequest`, `ProductPublishResult`                                                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary                                                              |
+| `./node`    | `publishProduct(request)`, `pullRequestPreviewHost(product, n, zone)`, `PULL_REQUEST_PREVIEW_SETTINGS`, `ProductPublishRequest`, `ProductPublishResult`                                                                                  | the publish step: bundles to R2, platform `host:`/`wellknown:` rows, the `release:` pointer or the canary                                                              |
 | `./node`    | `publishShell`, `promoteCanary`, `canaryVerdict`, `EDGE_PUBLISH_SETTINGS`, `EdgeCanary`, `CanarySample`, …                                                  | the shell canary list and health-gated promotion of release and shell canaries                                                                                         |
 | `./node`    | `checkShellCompatibility(request)`, `checkOpsReview(review)`                                                                                                | the shell compatibility gate and the ops second-reviewer gate                                                                                                          |
 | `./node`    | `platformRows`, `readBundles`, `uploadBundle`, `bundleSurfaces`                                                                                             | the publish step's parts: rows from the root runway, built bundles, the R2 upload, the surfaces that bundle                                                            |
@@ -336,9 +336,9 @@ capture job's runner it runs before `runScreenshotCapture`, from the same build.
 2. Builds the platform rows (`platformRows`): a `host:<hostname>` row (product, surface, home region, status, realm,
    canonical host) for every `host` and `hosts` entry of every web surface, and the app-link files
    (`wellknown:<host>:apple-app-site-association`, `wellknown:<host>:assetlinks.json`) of every mobile app on its
-   `identity.links` hosts. A host name is relative to `environments.<env>.domains.zone` (`console.mezzora` →
-   `console.mezzora.figentra.com`, D9) unless it already ends in that zone or ends in `.` (a product's own domain,
-   `mezzora.com.`); every host of a surface names the canonical one (D2). The home region is the request's, else the
+   `identity.links` hosts. A host name is relative to `environments.<env>.domains.zone` (`console.bistro` →
+   `console.bistro.figentra.com`, D9) unless it already ends in that zone or ends in `.` (a product's own domain,
+   `bistro.example.`); every host of a surface names the canonical one (D2). The home region is the request's, else the
    environment's first. Apple team ids and Android certificate fingerprints are request data (`appLinks`).
 3. Reads each bundle surface's one built bundle (`<bundleDir>/<surface>/<version>/bundle.manifest.json`, written by
    `stackra.bundleConfig`), and the `ops` bundle when the product sets `surfaces.ops.contributes` (`buildProduct`
@@ -369,10 +369,10 @@ so a preview nobody pushes to cleans itself up:
 
 | Row                                | Holds                                                                                              |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `host:<product>-pr-<n>.figentra.cloud` | an `EdgeHostRow` (product, surface `console`, region, status, realm, canonical) plus `pullRequest` |
+| `host:<product>-pr-<n>.<zone>`      | an `EdgeHostRow` (product, surface `console`, region, status, realm, canonical) plus `pullRequest` |
 | `release:<product>:console:pr-<n>` | the console's `EdgeRelease`, written directly: a preview has no canary                             |
 
-The answer's `host` is `<product>-pr-<n>.figentra.cloud` (`pullRequestPreviewHost(product, n)`): the product is in the label because every product repository numbers its pull requests from 1, and the publish refuses a host row another product already holds (ADR 0289's 2026-11-09 note). No app-link file and no ops review run,
+The answer's `host` is `<product>-pr-<n>.<zone>` (`pullRequestPreviewHost(product, n, zone)`), where the zone is the root runway's `environments.preview.domains.pullRequestZone` (a publish without it is refused): the product is in the label because every product repository numbers its pull requests from 1, and the publish refuses a host row another product already holds (ADR 0289's 2026-11-09 note). No app-link file and no ops review run,
 and the shared `preview` environment's rows are untouched. The router Worker that serves the host (`/api/*` to the
 Encore Cloud preview, the console at `/`) is not built here; the asset-store objects are not expired (a bucket
 lifecycle rule is infrastructure's).
@@ -383,7 +383,7 @@ workflows that call these functions.
 
 ## Dev lanes and the repository index
 
-`environments.dev.lanes.repos` is the one repository index table (`os: 0, commerce: 1, …, academorix: 7`; no two
+`environments.dev.lanes.repos` is the one repository index table (`os: 0, commerce: 1, …, academy: 7`; no two
 repositories share an index) and `lanes.worktrees` the lanes per repository (default 10): lane = index × worktrees +
 worktree, and every dev port moves by lane × `portStep`. `checkPorts(root, members)` walks every lane of the table over
 the root's dev infra ports (gateway, Encore dashboard, Postgres, otel UI, …; a block with `perLane: false` is one
@@ -521,6 +521,8 @@ GitHub, where each run sits behind its environment's protection (and, in a priva
 | `runway secrets decrypt --scope <s> [--dir <d>] [--names A,B]` | One figentra/secrets scope (ADR 0525), decrypted with the job's own Cloud KMS identity from the ciphertext `.github/actions/secrets-decrypt` downloads, masked and exported into `GITHUB_ENV`; names only on output, and it refuses to run without `GITHUB_ENV` | 0; throws on a bad scope, a missing name or a refused key |
 | `runway env check` | Every environment name (manifest `env` rows, member `secrets:`, the `names:` of a `secrets-decrypt` step) has a sops scope (`products/<project>/<dev\|staging\|production>`; a preview reads dev's); a raw read of an undeclared name warns. Names only, no login | 1 on an error |
 | `runway env check --values --env <env>` | CI only: each declared name of `<env>`, read from the job's environment after `secrets-decrypt`, checked against its rules; prints names, the scope, pass or the broken rule and a SHA-256 prefix, never a value | 1 on an error |
+| `runway evidence <env> --target <t> --sha <sha> [--member <m>] [--previous <record>]` | The approvals bot's evidence for one deploy job (ADR 0533): `rollout`, and `destructive` from gen's migration classes against the `runway-migrations` record of the environment's last successful deploy; writes `runway-evidence-<env>[-<m>].json` | 0; 2 on a bad option or record |
+| `runway migrations:record <env> --target <t> --sha <sha> [--member <m>]` | After the deploy step succeeded: the `<member>:<id>` keys of the migrations it applied, `runway-migrations-<env>[-<m>].json`, the next evidence's `--previous` | 0; 2 on a bad option |
 | `runway env orphans <env> [--dir <d>]` | CI only: warns on each name in `<env>`'s sops scope (its ciphertext file names under `<d>`, default `.secrets`) that no code declares; decrypts nothing | 0 |
 
 Approvals and "CI only" are proved by the job's GitHub OIDC token (`proveGithubJob`, audience `stackra-runway`), never

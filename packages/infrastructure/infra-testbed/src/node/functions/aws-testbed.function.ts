@@ -177,8 +177,8 @@ export function awsTestbed(plan: TestbedPlan, options: AwsTestbedOptions): AwsTe
         name: "stackra-testbed",
         imageId: `resolve:ssm:${plan.image.amiParameter}`,
         instanceType: plan.groups.heavy.instanceTypes[0] ?? "c7i.2xlarge",
-        // `stackra testbed` connects with this pair's key file (TESTBED_DEFAULTS.keyFile).
-        keyName: D.keyPair,
+        // `stackra testbed` connects with this pair's key file (TESTBED_DEFAULTS.keyFile, or the stack's own).
+        keyName: options.keyPair ?? D.keyPair,
         // The home stack owns the profile; a member region names it, since IAM is global (STA-2042).
         iamInstanceProfile: { name: home?.instanceProfile.name ?? D.instanceProfile },
         metadataOptions: {

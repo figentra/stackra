@@ -1,5 +1,5 @@
 {
-  "rule": "Accent Separation, as the engine defines it (core/color/separation.mjs): separated when hueDelta >= 25 deg OR lightnessDelta >= 0.1 (oklch). Stackra's subjects (accent, link, focus) are achromatic (chroma < 0.02), so a row that fails both deltas is still separated by chroma and says so in its note. Compared: the shared status colours, the amber cursor, and the family accents read from their owners (Figentra OS cyan, Academorix volt, Figentra Flow violet; scripts/lib/family.mjs).",
+  "rule": "Accent Separation, as the engine defines it (core/color/separation.mjs): separated when hueDelta >= 25 deg OR lightnessDelta >= 0.1 (oklch). Stackra's subjects (accent, link, focus) are achromatic (chroma < 0.02), so a row that fails both deltas is still separated by chroma and says so in its note. Compared: the shared status colours, the amber cursor, and the family accents read from their owners (Figentra OS cyan, Academy volt, Figentra Flow violet; scripts/lib/family.mjs).",
   "neutrality": [
     {
       "theme": "base",
@@ -199,9 +199,9 @@
     {
       "theme": "base",
       "subject": "accent",
-      "compared": "academorix:volt-700",
+      "compared": "academy:volt-700",
       "group": "family",
-      "brand": "Academorix (volt)",
+      "brand": "Academy (volt)",
       "hueDelta": 112,
       "lightnessDelta": 0.342,
       "chroma": {
@@ -308,9 +308,9 @@
     {
       "theme": "base",
       "subject": "link",
-      "compared": "academorix:volt-700",
+      "compared": "academy:volt-700",
       "group": "family",
-      "brand": "Academorix (volt)",
+      "brand": "Academy (volt)",
       "hueDelta": 112,
       "lightnessDelta": 0.342,
       "chroma": {
@@ -417,9 +417,9 @@
     {
       "theme": "base",
       "subject": "focus",
-      "compared": "academorix:volt-700",
+      "compared": "academy:volt-700",
       "group": "family",
-      "brand": "Academorix (volt)",
+      "brand": "Academy (volt)",
       "hueDelta": 112,
       "lightnessDelta": 0.342,
       "chroma": {
@@ -526,9 +526,9 @@
     {
       "theme": "dark",
       "subject": "accent",
-      "compared": "academorix:volt",
+      "compared": "academy:volt",
       "group": "family",
-      "brand": "Academorix (volt)",
+      "brand": "Academy (volt)",
       "hueDelta": 8,
       "lightnessDelta": 0.052,
       "chroma": {
@@ -636,9 +636,9 @@
     {
       "theme": "dark",
       "subject": "link",
-      "compared": "academorix:volt",
+      "compared": "academy:volt",
       "group": "family",
-      "brand": "Academorix (volt)",
+      "brand": "Academy (volt)",
       "hueDelta": 8,
       "lightnessDelta": 0.052,
       "chroma": {
@@ -746,9 +746,9 @@
     {
       "theme": "dark",
       "subject": "focus",
-      "compared": "academorix:volt",
+      "compared": "academy:volt",
       "group": "family",
-      "brand": "Academorix (volt)",
+      "brand": "Academy (volt)",
       "hueDelta": 8,
       "lightnessDelta": 0.052,
       "chroma": {

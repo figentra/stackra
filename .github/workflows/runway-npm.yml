@@ -6,7 +6,8 @@
 #          `sha256sums.txt` of the published tarballs, to each GitHub release it created. A Trivy filesystem scan of
 #          the lockfile blocks the publish on a critical vulnerability that has a fix (ADR 0174). Every tarball
 #          is made by `pnpm publish` (or `pnpm pack` for the dry run), so the workspace `.pnpmfile.mjs` beforePacking
-#          hook strips the repo-only `imports` map and `@stackra/source` condition first.
+#          hook strips the repo-only `imports` map and `@stackra/source` condition first. With `pack-check`, the caller's
+#          command reads every tarball that would be published before anything is (STA-2876).
 # Boundary: publishes only to `registry`; never to npmjs (the optional mirror of ADR 0453 decision 16 is off and not
 #           built here) and never with a long-lived token. Selecting what is published is the caller's (`build-args`).
 # Runtime: GitHub Actions
@@ -43,6 +44,14 @@ on:
         description: Pack and run `pnpm -r publish --dry-run` instead of the version PR and the publish.
         type: boolean
         default: false
+      pack-check:
+        description: >-
+          A command run with the path of every tarball that would be published (`pnpm pack` of each package with
+          "private" not true) as its last arguments, after the build and before the dry run, the version PR or the
+          publish; a non-zero exit stops the job, so nothing is published. Space-separated words, no quoting. Empty
+          (the default): no check.
+        type: string
+        default: ""
       registry:
         description: >-
           The npm-compatible registry packages publish to, an https URL ending in /. The caller passes its root
@@ -165,6 +174,27 @@ jobs:
           set -f
           # shellcheck disable=SC2086 # word splitting of the argument list is the point
           pnpm turbo run build $BUILD_ARGS
+
+      # STA-2876: the caller's content check reads exactly what would be published (the same `pnpm pack`, so the same
+      # beforePacking hook) before the dry run, the version PR or the publish.
+      - name: Tarball check
+        if: inputs.pack-check != ''
+        env:
+          PACK_CHECK: ${{ inputs.pack-check }}
+        run: |
+          set -euo pipefail
+          packs="$RUNNER_TEMP/packs"
+          mkdir -p "$packs"
+          pnpm -r ls --depth -1 --json |
+            jq -r '.[] | select(.private != true) | .path' |
+            while IFS= read -r dir; do
+              (cd "$dir" && pnpm pack --pack-destination "$packs" > /dev/null)
+            done
+          mapfile -t tarballs < <(find "$packs" -name '*.tgz' | sort)
+          [ "${#tarballs[@]}" -gt 0 ] || { echo "::error title=pack-check::no tarball was packed"; exit 1; }
+          read -ra check <<< "$PACK_CHECK"
+          echo "${#tarballs[@]} tarballs: ${check[*]}"
+          "${check[@]}" "${tarballs[@]}"
 
       - name: Registry
         env:

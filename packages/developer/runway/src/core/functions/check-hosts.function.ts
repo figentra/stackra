@@ -19,7 +19,7 @@ import type { RootRunway } from "#core/types/root-runway.type";
  * @param root - the parsed root runway.
  * @example
  * checkHosts(root);
- * // [{ code: "host_collision", host: "app.mezzora.figentra.com", environment: "production",
+ * // [{ code: "host_collision", host: "app.bistro.figentra.com", environment: "production",
  * //    surfaces: ["console", "web"], path: "surfaces.web.host", message: "…" }]
  */
 export function checkHosts(root: RootRunway): HostIssue[] {
