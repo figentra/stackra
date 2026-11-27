@@ -6,9 +6,10 @@
  * Boundary: pure: the caller passes the top-level entry names and the texts it read.
  * Runtime: node
  * Governing contract: ADR 0195 (decision 7); ADR 0177 (amendment 2026-10-21); ADR 0025; ADR 0453 (the registry);
- *                     ADR 0461 (no Pro member here).
+ *                     ADR 0461 (no Pro member here); ADR 0199 (amendment of 2026-11-27: the npmjs initializer).
  */
 import { checkExports } from "#node/functions/check-exports.function";
+import { npmMetadataFor } from "#node/functions/npm-metadata-for.function";
 import { tierFor } from "#node/functions/tier-for.function";
 import type { PackageManifest } from "#node/types/package-manifest.type";
 
@@ -53,13 +54,12 @@ export function checkMemberFiles(member: {
     if (pkg.sideEffects !== false) out.push("package.json sideEffects must be false");
     out.push(...checkExports(pkg.exports));
     // ADR 0453: @stackra/* publishes to the Stackra registry, public, with provenance.
-    // npm provenance rejects a package whose repository.url differs from the signing repository.
-    if (
-      pkg.repository?.url !== "git+https://github.com/figentra/stackra.git" ||
-      !pkg.repository?.directory
-    )
+    // npm provenance rejects a package whose repository.url differs from the signing repository; an npmjs member
+    // (`UNSCOPED_PACKAGES`) names the repository that signs its npmjs publish (`npmMetadataFor`, STA-2897).
+    const url = npmMetadataFor(dir).repository.url;
+    if (pkg.repository?.url !== url || !pkg.repository?.directory)
       out.push(
-        'package.json repository must be { type: "git", url: "git+https://github.com/figentra/stackra.git", directory } (ADR 0177)',
+        `package.json repository must be { type: "git", url: "${url}", directory } (ADR 0177)`,
       );
     const pc = pkg.publishConfig ?? {};
     if (pc.access !== "public" || pc.provenance !== true || "registry" in pc)

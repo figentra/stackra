@@ -10,15 +10,15 @@
     "scaffolding",
     "stackra"
   ],
-  "homepage": "https://github.com/figentra/stackra/tree/main/packages/developer/create-stackra#readme",
+  "homepage": "https://github.com/stackra-inc/stackra/tree/main/packages/developer/create-stackra#readme",
   "bugs": {
-    "url": "https://github.com/figentra/stackra/issues"
+    "url": "https://github.com/stackra-inc/stackra/issues"
   },
   "license": "MIT",
   "author": "Figentra (https://figentra.com)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/figentra/stackra.git",
+    "url": "git+https://github.com/stackra-inc/stackra.git",
     "directory": "packages/developer/create-stackra"
   },
   "bin": {
