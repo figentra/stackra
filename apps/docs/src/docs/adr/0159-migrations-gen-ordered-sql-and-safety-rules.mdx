@@ -1,7 +1,37 @@
 ---
 title: "0159 — Migrations: gen-ordered SQL, migrations shipped in packages, and safety rules"
-description: "Accepted, amended by 0294, 0305, 0334 · 2026-10-20 · amended 2026-10-24 (STA-408), 2026-11-10 (STA-2678)"
+description: "Accepted, amended by 0294, 0305, 0334 · 2026-10-20 · amended 2026-10-24 (STA-408), 2026-11-10 (STA-2678), 2026-11-26 (STA-2160)"
 ---
+
+<Note>
+  Amended 2026-11-26 (STA-2160), carrying out the leader's decision of 2026-11-06 (os 0.14 migration,
+  decision 5): a migration is frozen by its locked or applied state, never by a merge to main. The
+  2026-10-23 note's SHA-256 lock is now written and enforced:
+
+- **The lock.** A service's `stackra gen` writes a `migrations` section to its `stackra.manifest.json`:
+  each compiled migration's id and the SHA-256 of what it compiled to (its `after` ids and each step's
+  statements, inverse and transactional flag; lint comment lines are left out, as the runner's checksum
+  leaves them out), in apply order. `stackra gen --check` reports a manifest whose lock is stale.
+- **Frozen.** A migration the committed lock names may already be applied, so gen refuses it when it
+  compiles to other SQL (`migration_locked_changed`), when it is gone (`migration_locked_missing`) or
+  when one that runs before it is not locked (`migration_lock_gap`). A malformed lock is refused
+  (`migration_lock_malformed`), never read as empty. The locked migrations keep their place at the head
+  of the order, so a new migration, a new package's included, runs after them. `stackra db diff` reads
+  the same lock.
+- **Rules added later.** A locked migration compiles with `frozen`: an authoring rule that only checks
+  how it is written (every column states its nullability and has a comment) comes back as a
+  `migration_rule_frozen` warning instead of a refusal, and the SQL must still hash as locked. A safety
+  rule still refuses.
+- **Not frozen.** A migration the lock does not name stays editable, and every rule applies to it. To
+  change one that was locked but no environment has applied, remove its entry from the section by hand,
+  in a reviewed diff, and run `stackra gen`.
+- **Applied.** Gen cannot see a database. A migration that was applied but never locked (a manifest that
+  predates the lock) is still guarded by the runner: `stackra db migrate` refuses an applied file whose
+  checksum changed.
+- **Services only.** A package's own migrations are compiled and checked but not locked: only a service's
+  database applies them, and the lock of each service that hosts the package freezes them there.
+
+</Note>
 
 <Note>
   Amended 2026-11-10 (STA-2678), decided by the leader under the owner's delegation. The generated
@@ -135,7 +165,7 @@ owner also set expand-and-contract rules and a forward-only policy (DP13 and DP1
 
 ## Enforcement
 
-planned — the squawk lint in CI, the lock and statement timeouts in the migration runner, and `stackra gen --check` for stale SQL.
+planned — the squawk lint in CI, the lock and statement timeouts in the migration runner, and `stackra gen --check` for stale SQL. The migration lock is enforced by `stackra gen` and `stackra db diff` (`checkMigrationLock`, STA-2160) and, for an applied file, by the runner's checksum.
 The upgrade runbook is a final-pass item (`runbooks/upgrade.mdx`).
 
 ## Alternatives

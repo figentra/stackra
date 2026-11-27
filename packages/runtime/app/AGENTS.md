@@ -25,7 +25,7 @@ note).
 | The `RequestGuard` extension point   | `src/server/bases/request-guard.base.ts`                                                    |
 | The edge-header guard                | `src/server/services/edge-header.guard.ts`                                                  |
 | Its ports (keys, seen nonces)        | `src/contracts/ports/edge-*.port.ts`                                                        |
-| Their memory drivers                 | `src/server/drivers/memory-edge-*.driver.ts`                                                |
+| Their drivers                        | `src/server/drivers/*-edge-*.driver.ts`                                                     |
 | The edge signature bytes             | `src/core/functions/sign-edge-request.function.ts`                                          |
 | The origin and CSRF guards           | `src/server/services/{origin,csrf}.guard.ts`                                                |
 | The bearer-token guard, its claims   | `src/server/services/{bearer-token.guard,verified-token.service}.ts`                        |
@@ -57,6 +57,9 @@ note).
   the boot connects with its service's Encore database url (STA-1401), and the migrate and seed CLIs use
   `directDatabaseUrl()` of `@stackra/database/node` (ADR 0473), so nothing here reads `DATABASE_URL`.
 - Report each unexpected error once through the `ErrorReporter`; never report a refusal.
+- The server drain is bounded by `HttpConfig.drainTimeoutSeconds` (ADR 0143 decision 3): at the deadline `drain()`
+  reports one `DrainTimeoutError` (a count, never a call's data) and resolves, so `close()` still runs the shutdown
+  hooks. Never wait on calls in flight without that deadline.
 - No rate-limit code here: the area bucket per tenant lives in the `@stackra/actions` pipeline (`RateLimitBudget`);
   this package only forwards the verified tenant from the signed edge headers.
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).
@@ -66,7 +69,12 @@ note).
   re-join the fields elsewhere. A new covered field is a change to `EdgeSignatureInput`, the function and os-80 at once.
 - The edge-header guard fails closed: no active key, a stale or future timestamp, a seen request id or a missing
   identity header is one `EdgeSignatureInvalidError`, with no detail. Claim the nonce only after the signature holds.
-- Edge signing secrets come only from the bound `EdgeSigningKeys`; never a literal, never logged.
+- Edge signing secrets come only from the bound `EdgeSigningKeys`; never a literal, never logged. The `env` and
+  `secrets` drivers read the secret's text only through `edgeSigningKeysOf`. The `secrets` driver follows the bound
+  `SecretStore`, which `bootApp` sets to the boot environment and never reloads (STA-2804); never document either
+  driver as taking a rotation without a restart until the bound store reloads.
+- A shared nonce store claims only through `Cache.add` (atomic set-if-absent); never a `get` then a `put`. A claim
+  that cannot be made (a cache with no atomic `add`) rejects, so the check fails closed.
 - Origins, methods, headers, credentials, max-age and the CSRF header and cookie are `CorsConfig` and `CsrfConfig`
   fields, never literals in a guard. Allowed origins are exact (`scheme://host[:port]`); never add a wildcard.
   `OriginGuard` and `corsHeaders` compare origins only through `isAllowedOrigin`.
@@ -101,3 +109,4 @@ note).
 | Unexpected errors       | `ErrorReporter`                | Passed as they are; the reporter driver scrubs personal data (ADR 0232). |
 
 - `serveGuardedCall` (`./server`) is the one path of every generated HTTP adapter (STA-2577): body read once under `HttpConfig.maxBodyBytes` (413), `handlers.guard` over the exact bytes, `CallAuthenticator` (a present bad `Authorization` is 401, never anonymous), input, pipeline. Failures of a guard or the authenticator are one generic 401 or 403.
+- `nodeBodyStream` (`./server`) is how a generated adapter turns Node's request body into the `Request` body `serveGuardedCall` reads: plain `data` / `end` listeners with pause / resume. Never `Readable.toWeb(req)` or `for await (… of req)` on an Encore `RawRequest`: both run Node's end-of-stream, whose cleanup calls `req.req.removeListener`, and Encore's `req` is its native request, so the service crashed on every request with a body (STA-2794).

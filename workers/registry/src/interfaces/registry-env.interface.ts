@@ -1,9 +1,9 @@
 /**
  * Stackra file contract:
- * Purpose: `RegistryEnv`: the bindings, the secret and the vars of `stackra-registry`.
+ * Purpose: `RegistryEnv`: the bindings, the secret, the vars and the version metadata binding of `stackra-registry`.
  * Boundary: types only; `readSettings` parses the vars.
  * Runtime: worker
- * Governing contract: ADR 0453 (decisions 3, 9, 19); ADR 0173 (secrets).
+ * Governing contract: ADR 0453 (decisions 3, 9, 19); ADR 0173 (secrets); ADR 0536 (the version proof).
  */
 import type { D1Database } from "#src/interfaces/d1-database.interface";
 import type { KvNamespace } from "#src/interfaces/kv-namespace.interface";
@@ -20,5 +20,7 @@ export interface RegistryEnv {
   readonly CACHE: KvNamespace;
   /** PKCS#8 PEM of the ECDSA P-256 signing key (sops `ci/production/registry`). */
   readonly REGISTRY_SIGNING_KEY: string;
+  /** The version metadata binding: the id of the Worker version that runs (the deploy smoke's proof, STA-2786). */
+  readonly CF_VERSION_METADATA?: { readonly id: string };
   readonly [variable: `REGISTRY_${string}`]: VarValue;
 }

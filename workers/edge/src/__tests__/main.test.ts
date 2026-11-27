@@ -2,8 +2,9 @@
  * Stackra file contract:
  * Purpose: unit tests of the Worker entry: it reaches the origin through the runtime's `fetch` for both of its callers,
  *          the forward of a mapped host's request and the frame-ancestor lookup of a `"request"` path, whose answer
- *          ends in the response's `frame-ancestors`. The global `fetch` here refuses a wrong `this` as the Workers
- *          runtime does ("Illegal invocation"), which Node's `fetch` does not.
+ *          ends in the response's `frame-ancestors`; every answer names its version (`x-stackra-version`). The global
+ *          `fetch` here refuses a wrong `this` as the Workers runtime does ("Illegal invocation"), which Node's `fetch`
+ *          does not.
  * Boundary: test only; the entry over a dev-shaped environment, a stubbed global `fetch`, no network.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0437 (decisions 2, 4 and 5).
@@ -33,6 +34,7 @@ const env = {
   EDGE_TOKEN_LEEWAY_SECONDS: 60,
   EDGE_CSP: JSON.stringify({ "pay.checkout": { frameAncestors: { "/c/*": "request" } } }),
   EDGE_FRAME_ANCESTORS_SECONDS: 60,
+  CF_VERSION_METADATA: { id: "dc8dcd28-271b-4367-9840-6c244f84cb40" },
 } as unknown as EdgeEnv;
 
 /** What reached the origin. */
@@ -69,6 +71,7 @@ describe("the Worker entry", () => {
     const response = await worker.fetch(new Request("https://app.acme.example/api/x"), env);
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("page");
+    expect(response.headers.get("x-stackra-version")).toBe("dc8dcd28-271b-4367-9840-6c244f84cb40");
     expect(reached.map((request) => request.url)).toEqual(["https://origin.example/api/x"]);
   });
 

@@ -134,6 +134,7 @@ const metadata = {
 
 /** A recording entity manager. */
 function fakeEm() {
+  const driver = {};
   const builder = {
     select: vi.fn(() => builder),
     where: vi.fn(() => builder),
@@ -162,6 +163,7 @@ function fakeEm() {
       endCursor: "c2",
     })),
     isInTransaction: vi.fn(() => false),
+    getDriver: vi.fn(() => driver),
     transactional: vi.fn(async (work: (em: unknown) => Promise<unknown>, _options?: unknown) =>
       work(em),
     ),

@@ -4,15 +4,17 @@
  *          from REGISTRY_SIGNING_KEY, the D1 store, the GitHub key set through KV, the D1 licence check behind the edge
  *          cache, the licence API's store) and hands the request to `handleRequest`. A missing var, a missing or
  *          unreadable signing key fails closed: every route answers 503 `registry_misconfigured`, the health check
- *          included, and the log names the cause without the key.
+ *          included, and the log names the cause without the key. Every answer, a 503 included, names the version that
+ *          gave it (`withVersion`, from the CF_VERSION_METADATA binding), the deploy smoke's proof (STA-2786).
  * Boundary: wiring only; `handleRequest` owns the routes and their own failures (500 `internal_error`). The signer is
  *           imported once per isolate and per key.
  * Runtime: worker
- * Governing contract: ADR 0453 (decisions 2, 3, 13, 14 and 19); ADR 0173 (secrets); stackra-183 (STA-1335).
+ * Governing contract: ADR 0453 (decisions 2, 3, 13, 14 and 19); ADR 0173 (secrets); stackra-183 (STA-1335); ADR 0536.
  */
 import { cachedLicenceCheck } from "#src/access/cached-licence-check";
 import { failure } from "#src/http/failure";
 import { handleRequest } from "#src/http/handle-request";
+import { withVersion } from "#src/http/with-version";
 import type { EdgeCache } from "#src/interfaces/edge-cache.interface";
 import type { RegistryDeps } from "#src/interfaces/registry-deps.interface";
 import type { RegistryEnv } from "#src/interfaces/registry-env.interface";
@@ -79,6 +81,8 @@ export async function serveRegistry(
   ctx: WorkerContext,
   edge: EdgeCache,
 ): Promise<Response> {
+  // The version that answered, for the deploy smoke's proof (STA-2786).
+  const version = env.CF_VERSION_METADATA?.id;
   let deps: RegistryDeps;
   try {
     deps = await depsOf(env, ctx, edge);
@@ -88,7 +92,7 @@ export async function serveRegistry(
       "stackra-registry",
       error instanceof Error ? `${error.name}: ${error.message}` : "unknown error",
     );
-    return failure(503, "registry_misconfigured");
+    return withVersion(failure(503, "registry_misconfigured"), version);
   }
-  return handleRequest(request, deps);
+  return withVersion(await handleRequest(request, deps), version);
 }

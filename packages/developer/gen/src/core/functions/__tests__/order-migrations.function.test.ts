@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
  * Purpose: unit tests of `orderMigrations`: number order inside a module, `after` ids across members, `needs`
- *          (module and macro edges: ai after tenancy), packages first on a tie, and the `migration_after_unknown`, `migration_id_duplicate` and `migration_cycle` refusals.
+ *          (module and macro edges: ai after tenancy), packages first on a tie, the `migration_after_unknown`, `migration_id_duplicate` and `migration_cycle` refusals, and a locked prefix
+ *          that keeps its place ahead of every new migration (STA-2160).
  * Boundary: test only; units are built inline.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0159 (decisions 1 and 2).
+ * Governing contract: ADR 0022 (test placement); ADR 0159 (decisions 1 and 2; 2026-10-23 note); STA-2160.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -117,5 +118,53 @@ describe("orderMigrations", () => {
       unit("b.0001_y", "member", ["a.0001_x"]),
     ]);
     expect(errors.map((error) => error.code)).toEqual(["migration_cycle", "migration_cycle"]);
+  });
+
+  describe("with a locked prefix (STA-2160)", () => {
+    it("keeps the locked migrations first, in their locked order, so a new package migration runs after them", () => {
+      const units = [
+        unit("billing.0001_create_invoices", "member"),
+        unit("billing.0002_add_totals", "member"),
+        unit("search.0001_create_text_functions", "package"),
+      ];
+      // Unlocked, the package migration would run first.
+      expect(orderMigrations(units).ordered[0]?.id).toBe("search.0001_create_text_functions");
+      const { ordered, errors } = orderMigrations(units, [
+        "billing.0001_create_invoices",
+        "billing.0002_add_totals",
+      ]);
+      expect(errors).toEqual([]);
+      expect(ordered.map((entry) => entry.id)).toEqual([
+        "billing.0001_create_invoices",
+        "billing.0002_add_totals",
+        "search.0001_create_text_functions",
+      ]);
+    });
+
+    it("keeps a locked migration in place although a module it needs gained a migration since", () => {
+      const { ordered, errors } = orderMigrations(
+        [
+          unit("billing.0001_create_invoices", "member", [], ["tenants"]),
+          unit("tenants.0001_create_tenants", "member"),
+          unit("tenants.0002_add_region", "member"),
+        ],
+        ["tenants.0001_create_tenants", "billing.0001_create_invoices"],
+      );
+      expect(errors).toEqual([]);
+      expect(ordered.map((entry) => entry.id)).toEqual([
+        "tenants.0001_create_tenants",
+        "billing.0001_create_invoices",
+        "tenants.0002_add_region",
+      ]);
+    });
+
+    it("skips a locked id no unit has", () => {
+      const { ordered, errors } = orderMigrations(
+        [unit("billing.0001_create_invoices", "member")],
+        ["search.0001_gone", "billing.0001_create_invoices"],
+      );
+      expect(errors).toEqual([]);
+      expect(ordered.map((entry) => entry.id)).toEqual(["billing.0001_create_invoices"]);
+    });
   });
 });
