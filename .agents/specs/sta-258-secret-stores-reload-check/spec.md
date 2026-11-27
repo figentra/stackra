@@ -70,6 +70,9 @@ each environment's set, with empty placeholders allowed so provisioning does not
 - **SRC-005**: STA-258 (this work), STA-2804 (the boot binding and its reload policy), the readiness report item 15.5 (FR-005, FR-006)
 - **SRC-007**: the independent review of the branch (two medium findings: a slow provider could stop reloads for good; the boot wiring is STA-2804), and `@smithy/node-http-handler` 4.12.1, whose `requestTimeout` and `socketTimeout` default to no limit (FR-016 to FR-018)
 - **SRC-006**: the independent review of PR stackra-inc/stackra#1192 (its three low follow-ups) and `packages/foundation/config/src/core/functions/layer-config.function.ts` on the branch, which takes an empty environment value as set (FR-013 to FR-015)
+- **SRC-008**: the second review's follow-up on `sync-secrets.function.ts` (an optional secret of one service written
+  empty over another service's optional config default, since Encore secrets are app-wide) and the CTO's conditions
+  of 2026-11-27 on PR stackra-inc/stackra#1192 (FR-019)
 
 ## Glossary
 
@@ -155,6 +158,7 @@ reads the secrets its platform mounts as files.
 - **FR-017**: THE AWS driver SHALL build its client with a 3 s connection timeout, a request timeout of `timeoutMs` (100 to 60,000 ms, default 10,000) that throws, and at most three attempts. Sources: SRC-007
 - **FR-018**: THE `file` driver SHALL open each file non-blocking, so a FIFO named like a secret is skipped (listed) or refused (named) without waiting for a writer. Sources: SRC-007
 - **FR-015**: THE `file` driver SHALL open each file once and check its kind and size on that handle and on the bytes it reads, so a file swapped or grown after the check is refused, never read unchecked. Sources: SRC-004
+- **FR-019**: `runway secrets sync` SHALL never write an empty value for a name that any service of the environment declares as an optional `config` row with a default, even when another service declares the same name an optional secret, since Encore secrets are app-wide and an empty value would override that default. Sources: SRC-002, SRC-008
 
 ### Non-functional Requirements
 
@@ -184,12 +188,27 @@ reads the secrets its platform mounts as files.
 - **AC-014**: WHEN a store's `load()` never settles THE reload SHALL answer `false` at its deadline with `onError` told, and THE next `reloadNow()` SHALL call `load()` again.
 - **AC-015**: WHEN a listed folder holds a FIFO named like a secret THE `file` load SHALL finish without it.
 - **AC-016**: WHEN the AWS store builds its client THE client SHALL carry a 3 s connection timeout, a request timeout of `timeoutMs` that throws, and at most three attempts.
+- **AC-017**: WHEN one service declares a name an optional secret and another declares it an optional config with a default, and the scope lacks it, THE sync SHALL write nothing for that name and say its default applies.
 - **AC-006**: THE committed manifest SHALL list `memory`, `aws_secrets_manager`, `gcp_secret_manager` and `file` as `config.SecretStore` candidates.
 
 ## Success Criteria
 
 - **SC-001**: every new behaviour has a unit test that fails without it; `@stackra/config` coverage stays above the shared gate — verified by: unit
 - **SC-002**: on a real Linux file system the `file` driver follows the kubelet's `..data` swap — verified by: unit (`file-secret-store.driver.test.ts` on box 2)
+
+## Compatibility and migration
+
+- **The `check-environment` input of the secrets-decrypt action is removed.** An earlier commit of this branch
+  added it as an opt-in for the names check; it never reached a release or `main`. `runway secrets decrypt` now
+  runs the check for every product scope (`products/<project>/<env>`) with no input. A workflow that pinned the
+  action at that earlier commit and passes `check-environment` gets GitHub's "Unexpected input" warning, and the
+  value is ignored: delete the input. There is no way to turn the check off; a deploy whose scope lacks a required
+  name now fails before anything is decrypted.
+  Add the missing name to the scope, or declare it `required: false` (a placeholder) if the service runs without
+  it.
+- **Optional names are no longer always written.** An optional config name with a default is never written empty
+  (FR-013, FR-019), and an optional secret is written empty only when Encore holds no value for it (FR-011).
+  A value set by hand in Encore stays.
 
 ## Out of scope
 
@@ -216,11 +235,17 @@ reads the secrets its platform mounts as files.
   non-blocking (FR-018, AC-015). The boot wiring stays STA-2804 (blocking STA-258's runtime half), and the changeset,
   README and ADR now call `scheduleSecretReload` an opt-in helper and say a `@Secret` field changes only on restart.
 
+- 2026-11-27 · the CTO's conditions: an empty value never overwrites an optional config default across services
+  (FR-019, AC-017, T025); a compatibility section records the removed `check-environment` input. The security
+  reviewer's sign-off (R3) is the CTO's third condition and is not recorded here. STA-2804's deferral is accepted
+  as tracked.
+
 ## Status history
 
 - 2026-11-27 · — → Draft · spec author · written from the readiness item 15.5 and STA-258
 - 2026-11-27 · Draft → Clarified · spec author · questions answered from ADR 0371, STA-258 and STA-2804
 - 2026-11-27 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)
 - 2026-11-27 → Implementing (review findings addressed: T016 to T018)

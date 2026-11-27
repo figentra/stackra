@@ -69,6 +69,7 @@ ADR 0371 (amended here), ADR 0173, ADR 0525, ADR 0294 (decisions 16, 19, 20, 26)
 - **P-010**: every `reloadNow()` settles within its deadline, and a reload that passed it never blocks the next `load()` — Validates: FR-016
 - **P-011**: no provider read waits without a limit: every AWS client carries a connection timeout, a request timeout that throws and an attempt cap — Validates: FR-017
 - **P-012**: no file-system entry a `file` load opens can make it wait for another process — Validates: FR-018
+- **P-013**: for every name some service of the environment reads as optional config with a default, the sync writes no empty value, whichever service declares it an optional secret and in whichever order — Validates: FR-019
 
 ## Architecture overview
 
