@@ -96,6 +96,9 @@ the code's section of the reference and the command that shows the finding again
 1. **Given** a code the reference lists, **When** `stackra explain <code>` runs, **Then** it prints the row and the
    link and exits 0; with `--json` the row is the data.
 2. **Given** a mistyped code, **When** it runs, **Then** it exits 2 and suggests the closest codes.
+3. **Given** a `stackra check` finding copied as printed, `<tool>/<rule>` (such as `repo-checks/imports`), **When**
+   `stackra explain` runs on it, **Then** it explains the check rule (`imports`), and a mistyped rule is hinted the same
+   way; a tool prefix never reaches a gen or Runway code.
 
 ### User Story 2 - Every finding and error links to the docs (Priority: P1)
 
@@ -114,7 +117,8 @@ explain <code>)`.
 
 ### Edge Cases
 
-- **EC-01**: a code in another case, or with `-` for `_`, finds its row.
+- **EC-01**: a code in another case, or with `-` for `_`, finds its row; so does a check finding pasted as
+  `<tool>/<rule>`.
 - **EC-02**: a code the reference does not list links gen's docs line to the page itself.
 - **EC-03**: `stackra explain` with no code: asked for at a terminal; a usage error (exit 2) without one.
 - **EC-04**: a heading with inline Markdown on the page: the writer refuses it, since its site id needs the full
@@ -127,7 +131,7 @@ explain <code>)`.
 - **FR-001**: THE error-code reference page SHALL be the one catalogue: `pnpm error-codes:write` (apps/docs) SHALL write its rows (code, tool, group, the group heading's site id, cause, fix) to `@stackra/gen`'s `ERROR_CODES`. Sources: SRC-001
 - **FR-002**: THE row's anchor SHALL be the id fumadocs-core's `remarkHeading` gives the heading the row sits under. Sources: SRC-005
 - **FR-003**: THE `formatGenError` output SHALL end with `  docs: <link> (stackra explain <code>)`, the link being the reference page with the code's group anchor, or the page itself for an unlisted code. Sources: SRC-002
-- **FR-004**: THE `stackra explain <code>` command SHALL print the code's tool, group, cause, fix, docs link and, for gen and check, the command that shows the finding again; with `--json` the same fields are the data. Sources: SRC-001
+- **FR-004**: THE `stackra explain <code>` command SHALL print the code's tool, group, cause, fix, docs link and, for gen and check, the command that shows the finding again; with `--json` the same fields are the data. A `stackra check` finding copied as printed, `<tool>/<rule>`, SHALL explain its check rule. Sources: SRC-001
 - **FR-005**: THE local developer MCP SHALL serve `explain` as a read-only tool with the command's schema and handler. Sources: SRC-004
 - **FR-006**: WHEN the catalogue and the page differ, or a code gen, `stackra check` or Runway can print has no row, THEN the catalogue test SHALL fail. Sources: SRC-001
 - **FR-007**: THE `ConsoleConfig` SHALL take an optional `docs`, shown on an error screen (and `--json` error) when neither the error nor the command names a link; `stackra` SHALL set it to the troubleshooting page. Sources: SRC-003
@@ -148,6 +152,8 @@ explain <code>)`.
 - **AC-003**: WHEN a `stackra` command fails with no closer link THE error screen and `--json` error SHALL carry the troubleshooting page.
 - **AC-004**: THE `stackra mcp` tool list SHALL contain `explain`, read-only.
 - **AC-005**: WHEN a page row changes without `pnpm error-codes:write`, or a tool gains a code without a row, THE apps/docs tests SHALL fail.
+- **AC-006**: WHEN `stackra explain repo-checks/imports` runs THE output SHALL be the `imports` row with `…/customers/error-codes#repository-rules` and `stackra check`; a tool prefix SHALL never reach a gen or Runway code.
+- **AC-007**: IF `stackra explain` is given a code no row lists (such as `shape_numbr_kind` or `repo-checks/import`) THEN THE command SHALL exit 2 with the closest codes as the hint and the reference as the docs link.
 
 ## Success Criteria
 
@@ -166,7 +172,8 @@ explain <code>)`.
 
 ## Amendments
 
-None.
+- 2026-11-27 · review finding: a `stackra check` finding pasted as printed (`repo-checks/imports`) did not explain;
+  FR-004 now reads `<tool>/<rule>` as its check rule (AC-006, P-005) and the hint reads the rule too (AC-007, P-007).
 
 ## Status history
 
