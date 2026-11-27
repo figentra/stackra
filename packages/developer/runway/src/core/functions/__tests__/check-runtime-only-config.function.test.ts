@@ -3,7 +3,8 @@
  * Purpose: unit tests of `checkRuntimeOnlyConfig`: a member's `environments.<name>.config` and the root's
  *          `environments.<name>.defaults.service.config` that set a runtime-only field are refused at their path,
  *          naming the variable and never the value; another field of the same block, another config key and a document
- *          without `config` pass, and no fields means no findings (STA-2844).
+ *          without `config` pass, and no fields means no findings (STA-2844); a block that sets the dev sign-in's key
+ *          set (`app.bearer.devKeys`) is refused the same way (STA-2795).
  * Boundary: test only; pure inputs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0296 (amendment
@@ -12,6 +13,7 @@
 import { describe, expect, it } from "@stackra/testing";
 
 import { checkRuntimeOnlyConfig } from "#core/functions/check-runtime-only-config.function";
+import { runtimeOnlyFields } from "#core/functions/runtime-only-fields.function";
 import type { RuntimeOnlyField } from "#core/types/runtime-only-field.type";
 
 const FIELDS: RuntimeOnlyField[] = [
@@ -42,6 +44,41 @@ describe("checkRuntimeOnlyConfig", () => {
       },
     ]);
     expect(JSON.stringify(issues)).not.toContain("dev-relaxed");
+  });
+
+  it("refuses a config block that sets the dev sign-in's key set, read from the app manifest's row (STA-2795)", () => {
+    const fields = runtimeOnlyFields([
+      {
+        env: [
+          {
+            name: "STACKRA_DEV_ISSUER_KEYS",
+            kind: "config",
+            config: "app.bearer",
+            class: "BearerConfig",
+            field: "devKeys",
+          },
+        ],
+      },
+    ]);
+    const issues = checkRuntimeOnlyConfig(
+      {
+        environments: {
+          production: {
+            config: { "app.bearer": { devKeys: '{"keys":["leaked-dev-key"]}', leewaySeconds: 30 } },
+          },
+          dev: { defaults: { service: { config: { "app.bearer": { devKeys: "{}" } } } } },
+        },
+      },
+      fields,
+    );
+    expect(issues.map((issue) => issue.path)).toEqual([
+      "environments.production.config.app.bearer.devKeys",
+      "environments.dev.defaults.service.config.app.bearer.devKeys",
+    ]);
+    expect(issues[0]?.message).toContain(
+      "is read from STACKRA_DEV_ISSUER_KEYS in the runtime environment only, never set as a runway config value",
+    );
+    expect(JSON.stringify(issues)).not.toContain("leaked-dev-key");
   });
 
   it("refuses the root's service defaults that set it", () => {

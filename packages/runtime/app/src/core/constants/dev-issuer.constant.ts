@@ -23,7 +23,11 @@ export const DEV_ISSUER = Object.freeze({
   issuer: "https://dev-issuer.stackra.invalid",
   /** The `aud` of every dev token. */
   audience: "stackra-dev",
-  /** The variable holding the dev issuer's public JWK Set, set by `stackra dev` only. */
+  /**
+   * The variable holding the dev issuer's public JWK Set, set by `stackra dev` only. It is safety-critical
+   * (`SAFETY_CRITICAL_VARIABLES` of @stackra/config): a runway `config` block or a values layer that sets
+   * `app.bearer.devKeys` is refused, like the running environment.
+   */
   keysVariable: "STACKRA_DEV_ISSUER_KEYS",
   /** The only running environment (`readEnvironment`) that accepts the dev issuer: a developer machine. */
   environment: StackraEnvironment.Dev,

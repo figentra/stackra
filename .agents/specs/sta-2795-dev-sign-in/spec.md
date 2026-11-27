@@ -38,7 +38,8 @@ refuses, with a test; ZITADEL and OIDC stay the only path outside local developm
 
 - **Apps touched**: apps/docs (the ADR 0206 amendment, the CLI table in English and Arabic, the development guide)
 - **Services touched**: none
-- **Packages touched**: app (`@stackra/app`: the `BearerConfig` `devKeys` field, `verifyCallToken`, `devIssuerKeys`,
+- **Packages touched**: config (`@stackra/config`: `SAFETY_CRITICAL_VARIABLES` gains `STACKRA_DEV_ISSUER_KEYS`);
+  runway (`@stackra/runway`: the `checkRuntimeOnlyConfig` message fits every safety-critical variable); app (`@stackra/app`: the `BearerConfig` `devKeys` field, `verifyCallToken`, `devIssuerKeys`,
   `DEV_ISSUER`, `createDevIssuerKey`, `mintDevToken`, two types, the internal `runningEnvironment` over the one reader,
   the boot check in `createApp`, manifest); cli (`@stackra/cli`:
   `stackra dev token`, `ensureDevIssuer`, `devIssuerEnv`, the `stackra dev` run of a service, manifest, a workspace
@@ -47,6 +48,7 @@ refuses, with a test; ZITADEL and OIDC stay the only path outside local developm
   default, and no environment field (the running environment is the one reader's answer, STA-2844); new exports
   `DEV_ISSUER` (its `environment` is `StackraEnvironment.Dev`), `createDevIssuerKey`, `mintDevToken`, `DevIssuerKey`,
   `DevTokenClaims` (`@stackra/app`) and `devIssuerKeys(config, environment)`,
+  `SAFETY_CRITICAL_VARIABLES` (`@stackra/config`) holds `STACKRA_DEV_ISSUER_KEYS` beside `STACKRA_ENVIRONMENT`,
   `verifyCallToken(token, config, keys, environment)` (`@stackra/app/server`), whose `environment` is a
   `StackraEnvironment`; the CLI manifest gains the `dev:token` command; the app manifest declares
   `STACKRA_DEV_ISSUER_KEYS` only
@@ -55,8 +57,9 @@ refuses, with a test; ZITADEL and OIDC stay the only path outside local developm
   memberships, permissions) a ZITADEL token does, so tenancy and IAM see it as a real caller and keep enforcing
 - **Security and privacy**: a new accepted token issuer on the authentication path, bounded to a running environment
   of `dev` as the one environment reader answers it from the runtime (never a configuration value, so a values layer
-  or a host override cannot turn it on); a deployed process that carries dev keys fails boot; no personal data (the
-  seeded dev user is generated)
+  or a host override cannot turn it on); the dev key set is runtime-only like the environment (a runway `config`
+  block or a values layer that sets it is refused); a deployed process that carries dev keys fails boot; no personal
+  data (the seeded dev user is generated)
 - **Secrets**: no Encore secret added or read; the dev private key lives only in the workspace's git-ignored
   `.stackra/dev-issuer.json` (mode 600) and never travels; services receive the public key set only
 - **ADR needed**: amendment of ADR 0206, dated 2026-11-26 (in this branch)
@@ -100,12 +103,19 @@ refuses, with a test; ZITADEL and OIDC stay the only path outside local developm
   and judge dev tokens by the one reader's answer, refusing dev keys with `ConfigInvalidError` on a deployed platform.
   A configuration value is a host override or values layer setting `environment = "dev"` on `BearerConfig`, or
   `STACKRA_ENVIRONMENT` in the configuration's own layers.
+- **AC-011**: THE dev key set SHALL be runtime-only, like the running environment: `STACKRA_DEV_ISSUER_KEYS` is in
+  `SAFETY_CRITICAL_VARIABLES`, so IF a values layer sets `app.bearer.devKeys` THEN `buildConfig` SHALL refuse it with
+  `ConfigInvalidError` naming the field and the variable, never the value, and IF a runway `config` block sets it
+  THEN `runway validate` (`checkRuntimeOnlyConfig` over the app manifest's `env` row) SHALL refuse it at its path.
+  Only `stackra dev` sets the variable, on the process it runs.
 
 ## Compatibility and migration
 
 - Additive. `devKeys` defaults to empty, so every existing deployment reads no dev keys and boots and verifies exactly
   as before; `CallAuthenticator` and `BearerTokenGuard` keep their constructors and answers.
-- A deployment must not set `STACKRA_DEV_ISSUER_KEYS`; if it does, it now fails boot by design (fail closed).
+- A deployment must not set `STACKRA_DEV_ISSUER_KEYS`; if it does, it now fails boot by design (fail closed). A
+  runway `config` block or a values layer may never set `app.bearer.devKeys`: `runway validate` and `buildConfig`
+  refuse it, as they refuse the running environment. No runway file sets it today.
   `BearerConfig` reads no `STACKRA_ENVIRONMENT`: the gate asks `readEnvironment` (STA-2844), which every other
   environment check shares, so nothing changes meaning.
 - Consumers that called `verifyBearerToken` directly are untouched; `verifyCallToken` is the new single path the two
@@ -138,3 +148,5 @@ None.
 - 2026-11-26 → Tasked (tasks.md; built in the same branch)
 - 2026-11-27 → Implementing (rebased onto the one environment reader, STA-2844: the dev-token gate reads
   `readEnvironment`, never `app.bearer.environment`, per the CTO's verdict of 2026-11-26; awaiting the CTO's approval)
+- 2026-11-27 → Implementing (the CTO's review of 2026-11-27: the dev key set is runtime-only, refused from runway and
+  the values layer like the environment, AC-011; awaiting the CTO's approval)

@@ -5,7 +5,9 @@
  *          `JsonWebKeys` driver.
  * Boundary: a configuration class over `BearerOptions`; the issuer and audience come from `STACKRA_BEARER_ISSUER` and
  *           `STACKRA_BEARER_AUDIENCE` or runway, since they are deployment data (public values, never a secret). A host
- *           overrides it as `class BearerConfig extends BaseBearerConfig` with `override` members only.
+ *           overrides it as `class BearerConfig extends BaseBearerConfig` with `override` members only. `devKeys` is
+ *           runtime-only: `STACKRA_DEV_ISSUER_KEYS` is safety-critical, so a runway `config` block or a values layer
+ *           that sets it is refused (`runway validate`, `buildConfig`), like the running environment (STA-2795).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 19 and 20); ADR 0306; ADR 0206 (decision 8 and its amendment of
  *                     2026-11-26: the dev issuer).

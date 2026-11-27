@@ -137,8 +137,16 @@ packages/infrastructure/infra-testbed/
   src/agent/testbed-agent.sh
   src/agent/__tests__/testbed-agent.test.ts
   src/core/constants/testbed-defaults.constant.ts
+packages/foundation/config/
+  README.md
+  src/core/constants/safety-critical-variables.constant.ts
+  src/core/constants/__tests__/safety-critical-variables.constant.test.ts
+packages/developer/runway/
+  src/core/functions/check-runtime-only-config.function.ts
+  src/core/functions/__tests__/{check-runtime-only-config,runtime-only-fields}.function.test.ts
 apps/docs/src/docs/
   adr/0206-zitadel-is-the-identity-provider-and-stackra-identity-is-provider-neutral.mdx
+  adr/0296-runway-v3-member-requires-and-root-topology-groups.mdx
   cli.mdx
   cli.ar.mdx
   development.mdx
@@ -153,7 +161,9 @@ that is not a valid dev sign-in throws naming the file and how to reset it, neve
 ## Contracts
 
 - `BearerOptions.devKeys: string = ""`; the app manifest declares `STACKRA_DEV_ISSUER_KEYS` as optional config of
-  `app.bearer` and nothing for `STACKRA_ENVIRONMENT`.
+  `app.bearer` and nothing for `STACKRA_ENVIRONMENT`. `STACKRA_DEV_ISSUER_KEYS` is in `SAFETY_CRITICAL_VARIABLES`
+  of `@stackra/config`, so `devKeys` is runtime-only: `buildConfig` refuses it from a values layer and `runway
+validate` refuses it in a runway `config` block, as both refuse the running environment.
 - `verifyCallToken(token, config: BearerConfig, keys: JsonWebKeys, environment: StackraEnvironment)` answers the
   verified claims or `undefined`; it never throws on an untrusted token, throws when the configured issuer is
   unreachable, and throws `ConfigInvalidError` when dev keys are set outside `dev`.
@@ -177,7 +187,8 @@ that is not a valid dev sign-in throws naming the file and how to reset it, neve
 
 The new issuer is accepted only in a process the one environment reader answers `dev` for, with a public key set;
 any other process carrying dev keys never boots (a deployed platform derives its environment with no variable, and a
-variable the reader refuses fails boot), and no configuration value takes part. The issuer host is under
+variable the reader refuses fails boot), and no configuration value takes part. The key set itself comes from the
+runtime only: a runway `config` block or a values layer that sets it is refused, like the running environment. The issuer host is under
 `.invalid` (RFC 2606), so no discovery or key fetch can ever reach a real provider. The private half never travels (a
 key with `d` is refused) and the workspace file is mode 600, git-ignored and excluded from the testbed sync. A dev token
 passes through `actorOf`, the scope chain and IAM like a real one; nothing bypasses authorisation (a fresh app without

@@ -62,8 +62,8 @@ Lowest first: the schema defaults, the host override, the `env` variables, runwa
 secrets. `buildConfig` validates the result with the schema's generated `X$` and freezes it. A nested object in a
 later layer replaces the earlier one whole. An environment string is coerced to the type of the value it replaces.
 
-A field mapped to a safety-critical variable (`SAFETY_CRITICAL_VARIABLES`; `STACKRA_ENVIRONMENT` is the first) is
-runtime-only: a value for it (a runway `config` block, a test's `values`) fails boot with `ConfigInvalidError` naming
+A field mapped to a safety-critical variable (`SAFETY_CRITICAL_VARIABLES`: `STACKRA_ENVIRONMENT`, and the dev
+sign-in's key set `STACKRA_DEV_ISSUER_KEYS`) is runtime-only: a value for it (a runway `config` block, a test's `values`) fails boot with `ConfigInvalidError` naming
 the field and the variable, and `runway validate` refuses it before a deploy. A set `STACKRA_ENVIRONMENT` must name a
 Stackra environment, so a typo fails boot instead of reading as some environment (STA-2844, ADR 0296 as amended on
 2026-11-26).

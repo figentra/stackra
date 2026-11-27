@@ -4,8 +4,9 @@
  *          `environments.<name>.config`, the root's `environments.<name>.defaults.service.config`, or any other `config`
  *          map of config key to field values) may never set a field only the runtime environment may set
  *          (`runtimeOnlyFields`): the running environment comes from `STACKRA_ENVIRONMENT` and the platform, never from
- *          the values layer, so a runway file cannot make a deployment run as `dev`. `buildConfig` refuses the same
- *          value at boot; this check refuses it before a deploy.
+ *          the values layer, so a runway file cannot make a deployment run as `dev`; the dev sign-in's key set
+ *          (`STACKRA_DEV_ISSUER_KEYS`) is runtime-only the same way (STA-2795). `buildConfig` refuses the same value at
+ *          boot; this check refuses it before a deploy.
  * Boundary: pure; walks the parsed document and returns every finding instead of throwing, for `runway validate` and
  *           `stackra validate --repository` to print with the file. A finding names the path and the variable, never
  *           the value.
@@ -46,8 +47,8 @@ export function checkRuntimeOnlyConfig(
               path: [...path, key, config, field].join("."),
               message:
                 `is read from ${variable} in the runtime environment only, never set as a runway config value ` +
-                `(it decides which safety checks apply): remove it; the platform's report or ${variable} on the ` +
-                "runtime decides it",
+                `(it is safety-critical): remove it; only the runtime sets ${variable} (the running environment ` +
+                "may also come from the platform's report)",
             });
         }
       walk(value, [...path, key]);

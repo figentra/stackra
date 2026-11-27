@@ -1,4 +1,6 @@
 ---
+"@stackra/config": minor
+"@stackra/runway": patch
 "@stackra/app": minor
 "@stackra/cli": minor
 "@stackra/infra-testbed": patch
@@ -19,5 +21,9 @@ environment)` refuses dev keys in any running environment but `dev` with `Config
 with the environment it boots as, before the generated boot, so a deployed service that carries the key never
 starts. New exports: `DEV_ISSUER`, `createDevIssuerKey`, `mintDevToken`
 (`@stackra/app`) and `devIssuerKeys`, `verifyCallToken` (`@stackra/app/server`). ADR 0206, amendment of 2026-11-26.
+
+`@stackra/config`: `SAFETY_CRITICAL_VARIABLES` gains `STACKRA_DEV_ISSUER_KEYS`, so the dev key set is runtime-only
+like the running environment: `buildConfig` refuses `app.bearer.devKeys` from a values layer and `runway validate`
+refuses it in a runway `config` block. `@stackra/runway`: that refusal's message fits every safety-critical variable.
 
 `@stackra/infra-testbed`: the box sync leaves out `.stackra/dev-issuer.json`, as it does the dev secrets.

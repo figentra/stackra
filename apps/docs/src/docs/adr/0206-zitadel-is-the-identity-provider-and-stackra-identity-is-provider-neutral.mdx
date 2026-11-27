@@ -106,12 +106,18 @@ environment refuses, with a test; ZITADEL and OIDC stay the only path outside lo
    before the generated boot runs), and so does one the reader refuses (a misspelt name, `dev` on a deployed platform,
    a self-hosted image that reports nothing), so a deployment never answers a dev token. `CallAuthenticator` and
    `BearerTokenGuard` ask the reader again on every call. Without the keys a dev token is checked only against the
-   real issuer, which refuses it. A private key never travels in the variable.
+   real issuer, which refuses it. A private key never travels in the variable. The key set itself is runtime-only,
+   like the running environment: `STACKRA_DEV_ISSUER_KEYS` is a safety-critical variable (`SAFETY_CRITICAL_VARIABLES`
+   of `@stackra/config`), so `buildConfig` refuses `app.bearer.devKeys` from a values layer and `runway validate`
+   refuses it in a runway `config` block before a deploy; only `stackra dev` sets the variable, on the process it
+   runs.
 4. **ZITADEL stays.** Decision 4's local ZITADEL remains the full-fidelity path (sign-in pages, refresh, real
    organisations); the dev issuer is the zero-setup one.
 
 **Enforcement.** `@stackra/app` tests: `devIssuerKeys`, `verifyCallToken`, `runningEnvironment`, `BearerConfig` (no
-environment field), `CallAuthenticator`, `BearerTokenGuard` (a host override naming `environment = "dev"` on a
+environment field; the dev key set refused as a value), `CallAuthenticator`, `BearerTokenGuard` (a host override naming `environment = "dev"` on a
 production platform still refused) and `createApp` (boot refused in `test`, `preview`, `staging`, `production` and on a
 production platform with no variable); `@stackra/cli` tests: `stackra dev token`, `ensureDevIssuer`, `devIssuerEnv`
-(nothing handed under another or a misspelt environment) and the `stackra dev` run of a service.
+(nothing handed under another or a misspelt environment) and the `stackra dev` run of a service; `@stackra/config`
+(`SAFETY_CRITICAL_VARIABLES` holds `STACKRA_DEV_ISSUER_KEYS`) and `@stackra/runway` (`runtimeOnlyFields` and
+`checkRuntimeOnlyConfig` refuse `app.bearer.devKeys` in a runway `config` block).
