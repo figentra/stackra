@@ -45,6 +45,20 @@ registerPermissions([
 ]);
 
 describe(selectsPermission, () => {
+  it("picks nothing for a selector with anything before or after its shape (Stryker survivors, STA-2887)", () => {
+    // an unanchored match would read "1.@read" as "@read" and "@readonly" as "@read", picking every read
+    for (const selector of [
+      "1.@read",
+      "Selector_fixture.@read",
+      "@readonly",
+      "@read.",
+      "@risk:l3x",
+      " @risk:l3",
+    ])
+      for (const key of ["selector_fixture.ledger.view", "selector_fixture.ledger.refund"])
+        expect(selectsPermission(selector, key)).toBe(false);
+  });
+
   it("picks every read by kind and every permission at one risk", () => {
     expect(selectsPermission("@read", "selector_fixture.ledger.view")).toBe(true);
     expect(selectsPermission("@read", "selector_fixture.ledger.read")).toBe(true);

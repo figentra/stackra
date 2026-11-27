@@ -130,6 +130,13 @@ catalogs:
     oxfmt: 0.71.0
     vitest: 5.0.5
     "@vitest/coverage-v8": 5.0.3
+    # Property-based tests (ADR 0220 enforcement, STA-2887): money, ledger, ids and validation generate their inputs
+    # instead of listing examples, and a failing seed is kept as an example test. MIT; one dependency (pure-rand).
+    fast-check: 4.10.2
+    # The mutation-testing trial (STA-2887, ADR 0182): Stryker mutates @stackra/iam's decision functions and reruns
+    # vitest to measure what the tests catch. Apache-2.0; bump the pair together.
+    "@stryker-mutator/core": 10.1.1
+    "@stryker-mutator/vitest-runner": 10.1.1
     knip: 6.41.0
     # Copy-paste detector behind `stackra duplication`, the per-member ratchet of `pnpm validate` (rule-gap
     # B-9, stackra-235). 5.x is the Rust engine (platform binaries as optional dependencies); MIT.

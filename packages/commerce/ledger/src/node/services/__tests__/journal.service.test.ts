@@ -7,17 +7,12 @@
  *          go negative), posts balanced lines or nothing, reads a posting's lines back by reference, and refuses floats and a model without `AppendOnly`. A model with a currency field
  *          keeps one ISO 4217 currency per posting and sums balances per currency. A model with `extra` fields writes
  *          and reads them beside the journal's five, keeps them on a reversal and refuses an unlisted one.
- * Boundary: test only; the entries live in a memory repository that keeps the model's unique (account, reference)
- *           index, and the locks are the real `Locks` over the memory lock driver.
+ * Boundary: test only; the entries live in the memory repository of `memory-entries.fixture.ts`, which keeps the
+ *           model's unique (account, reference) index, and the locks are the real `Locks` over the memory lock driver.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0220 (decisions 4 and 5).
  */
-import type { AnyClass } from "@stackra/container";
-import { Clock } from "@stackra/contracts";
-import { UniqueViolation } from "@stackra/database";
-import type { Repository } from "@stackra/database";
 import { isRefusal } from "@stackra/errors";
-import { Locks, MemoryLockDriver } from "@stackra/locking";
 import { AppendOnly, Model } from "@stackra/model";
 import type { CurrencyCode } from "@stackra/money";
 import { describe, expect, expectTypeOf, it } from "@stackra/testing";
@@ -25,8 +20,10 @@ import { describe, expect, expectTypeOf, it } from "@stackra/testing";
 import { Journaled } from "#core/decorators/journaled.decorator";
 import { UnbalancedPostingError } from "#core/errors/unbalanced-posting.error";
 import type { JournalEntry } from "#core/types/journal-entry.type";
-import { journalOf } from "#node/functions/journal-of.function";
 import type { Journal } from "#node/services/journal.service";
+
+import { journalOver } from "./journal-over.fixture";
+import { MemoryEntries } from "./memory-entries.fixture";
 
 /** Why a points entry exists. */
 type PointsKind = "earn" | "redeem" | "expire" | "adjust";
@@ -65,99 +62,6 @@ class CashEntry extends Model.with(AppendOnly) {
 /** A row that may be updated, which no journal accepts. */
 class DraftEntry extends Model.with() {
   account!: string;
-}
-
-/** A stored row. */
-type Row = Record<string, unknown>;
-
-/** Reads the host clock. */
-class HostClock extends Clock {
-  now(): Date {
-    return new Date();
-  }
-}
-
-/** Whether `row` matches `filter`: equality, `$lt`, `$in` and `$or`, the filters the journal sends. */
-function matches(row: Row, filter: Row): boolean {
-  return Object.entries(filter).every(([key, expected]) => {
-    if (key === "$or") return (expected as Row[]).some((branch) => matches(row, branch));
-    const actual = row[key];
-    if (expected !== null && typeof expected === "object" && !(expected instanceof Date)) {
-      const operator = expected as { readonly $lt?: Date; readonly $in?: readonly unknown[] };
-      if (operator.$lt !== undefined) return (actual as Date).getTime() < operator.$lt.getTime();
-      if (operator.$in !== undefined) return operator.$in.includes(actual);
-    }
-    return actual === expected;
-  });
-}
-
-/** A sortable form of a stored value. */
-function rankOf(value: unknown): number | string {
-  return value instanceof Date ? value.getTime() : String(value);
-}
-
-/** The entries of one model in memory, unique on (account field, reference field) as the model's index is. */
-class MemoryEntries {
-  readonly rows: Row[] = [];
-
-  /** The account and reference fields of the unique index. */
-  private readonly unique: readonly [string, string];
-
-  constructor(account: string, reference = "reference") {
-    this.unique = [account, reference];
-  }
-
-  async find(where: Row, options?: { readonly orderBy?: Row }): Promise<Row[]> {
-    const keys = Object.keys(options?.orderBy ?? {});
-    return this.rows
-      .filter((row) => matches(row, where))
-      .sort((a, b) => {
-        for (const key of keys) {
-          const [left, right] = [rankOf(a[key]), rankOf(b[key])];
-          if (left !== right) return left < right ? -1 : 1;
-        }
-        return 0;
-      });
-  }
-
-  async findOne(where: Row): Promise<Row | null> {
-    return this.rows.find((row) => matches(row, where)) ?? null;
-  }
-
-  async count(where: Row): Promise<number> {
-    return this.rows.filter((row) => matches(row, where)).length;
-  }
-
-  async sum(field: string, where: Row): Promise<number> {
-    return this.rows
-      .filter((row) => matches(row, where))
-      .reduce((total, row) => total + Number(row[field]), 0);
-  }
-
-  async insert(data: Row): Promise<Row> {
-    const [account, reference] = this.unique;
-    if (
-      this.rows.some((row) => row[account] === data[account] && row[reference] === data[reference])
-    )
-      throw new UniqueViolation(new Error("duplicate key value violates unique constraint"));
-    this.rows.push(data);
-    return data;
-  }
-}
-
-/** A journal over `model` whose entries live in `entries`. */
-function journalOver<M extends object>(model: AnyClass<M>, entries: MemoryEntries): Journal<M> {
-  const clock = new HostClock();
-  class MemoryJournal extends journalOf(model) {
-    // journalOf's type is `Journal<M>`, whose `model` is abstract, so a subclass names it again.
-    protected override readonly model: AnyClass<M> = model;
-
-    protected override entries(): Repository<M> {
-      // reason: the memory store has the repository methods the journal calls, untyped by model
-      return entries as unknown as Repository<M>;
-    }
-  }
-  return new MemoryJournal(new Locks(new MemoryLockDriver(clock), clock));
 }
 
 /** Midnight UTC on a day of January 2026. */

@@ -33,7 +33,14 @@ Money is wrong in a payment system when it is stored as a float, rounded differe
 
 ## Enforcement
 
-planned — property tests on the allocation and the rounding modes; the ledger rejects an update to a posted entry.
+Property tests (fast-check, STA-2887). In `@stackra/money`, `money-properties.value.test.ts` checks every rounding
+mode of `divide` and `times` against an independent floor-and-ceiling model, allocation (the parts sum exactly, each
+part is within one minor unit of its share, the split is deterministic and mirrored for a refund), cash rounding and
+the decimal round trip. In `@stackra/ledger`, `journal-properties.service.test.ts` checks that any balanced posting is
+written, any unbalanced one is refused, a balance is the sum of its entries and a floor is never crossed, compared
+exactly also beside `Number.MAX_SAFE_INTEGER`; a floored write against a balance beyond that limit is refused. The ledger
+rejects an update to a posted entry: `Journal` refuses an entry model without `AppendOnly`, and `CrudService` refuses
+every update of an `AppendOnly` model with `AppendOnlyWriteError`.
 
 ## Supersedes and sources
 

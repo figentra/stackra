@@ -65,6 +65,13 @@ Permissions, policies, roles and the embedded policy decision point (ADR 0208, 0
   `scope`; never read the descriptor's `scopeId` (it is going away).
 - No parameter properties and no `#private` fields: apps typecheck this source under `erasableSyntaxOnly`.
 
+- `test:mutation` (`stryker.config.mjs`, STA-2887) runs Stryker over `src/core/functions` (the `register-*` boot
+  functions left out) with `vitest.stryker.config.ts`, the unit tier less the declaration-emit test, which cannot run
+  from Stryker's sandbox. About four minutes; not in `test` or CI. Score on 2026-11-26: 79.35% (292 of 368 mutants
+  killed), then 81.25% after tests for the security-relevant survivors (a write mixing writable and hidden fields, a
+  non-public call, an unanchored selector, a second-person break-glass approval); `selects-permission` and
+  `assert-fields-writable` at 100%. The weakest are `decode-policy-snapshot` (65%) and `policy-row-of` (67%). A new
+  decision function keeps or raises the score; read `reports/mutation/mutation.html` for what survived.
 - `test:int` (`vitest.int.config.ts`, which wraps `vitest.config.ts` in `intTier` from `@stackra/vitest-config/int`)
   runs the `.int.test.ts` files on a Testcontainers Postgres and needs Docker; `test` never runs them (STA-1570).
 

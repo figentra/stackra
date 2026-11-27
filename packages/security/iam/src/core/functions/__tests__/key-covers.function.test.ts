@@ -80,4 +80,10 @@ describe(keyCovers, () => {
       false,
     );
   });
+
+  it("refuses a call that is not public, whatever the key holds (a Stryker survivor, STA-2887)", () => {
+    expect(keyCovers({ credential: key("key_fixture.payment.read", "key_fixture.@read") })).toBe(
+      false,
+    );
+  });
 });
