@@ -11,7 +11,9 @@
  *          `Cache-Control: private, no-store` where `apiCacheControl` forces it (ADR 0325 rule 22), inside
  *          `app.handlers.run` so a drain waits for it. When the service declares `@stackra/errors`, a
  *          `RateLimitedError` thrown by `handle` answers 429 with its envelope and `rateLimitHeaders` (`Retry-After`,
- *          `RateLimit-*`).
+ *          `RateLimit-*`). A call `app.handlers.run` turns away before it starts (the instance sheds load, or it
+ *          drains) is answered by `app.handlers.shed`: 503 with its envelope, `Retry-After` and the CORS headers
+ *          (STA-1467).
  * Boundary: pure; written only for a service that declares `@stackra/app` (the wiring then binds `CorsConfig` as
  *           `app.cors`). The adapter never decides an origin itself: `corsHeaders` echoes only an allowed one and
  *           `OriginGuard` refuses the request. `Vary: Origin` is appended to what the handler set, never replacing it.
@@ -20,7 +22,7 @@
  * Governing contract: ADR 0237 (STA-2577 note: every generated adapter is raw); ADR 0437 (server-check order); ADR 0325 (rule 22: the gateway marks signed-in answers); ADR 0295
  *                     (decision 8: the adapters reach the member through `handlers`); ADR 0091 and 0124 (Encore is
  *                     generated); STA-1374 (stackra-216); STA-1385; ADR 0217 (decision 2: the `RateLimit-*` headers
- *                     are sent), STA-1477; STA-2794.
+ *                     are sent), STA-1477; STA-2794; ADR 0140 and STA-1467 (load shedding answers 503).
  */
 import { ENCORE_APP_IMPORT } from "#core/constants/encore-app-import.constant";
 import { encoreSetupImports } from "#core/functions/encore-setup-imports.function";
@@ -84,7 +86,8 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "/**",
       " * Answers one request: an `OPTIONS` preflight with 204 and the CORS headers, any other with `handle`'s answer and",
       ` * the CORS headers${errors ? " (a rate-limited refusal as 429 with its back-off headers)" : ""}; \`private, no-store\` when the`,
-      " * request is signed in or the answer sets a cookie (ADR 0325 r22).",
+      " * request is signed in or the answer sets a cookie (ADR 0325 r22). A call the app turns away before it starts",
+      " * (overloaded or draining) is answered 503 by `app.handlers.shed`.",
       " */",
       "export function answerHttp(",
       "  request: Request,",
@@ -112,7 +115,7 @@ export function emitEncoreHttp(ir: MemberIR): GeneratedFile | undefined {
       "    const cacheControl = apiCacheControl(request, response);",
       '    if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);',
       "    return response;",
-      "  });",
+      "  }).catch((error: unknown) => app.handlers.shed(request, error));",
       "}",
       "",
       "/** What an endpoint states: its route, whether anonymous callers may reach it, its action, and the call it runs. */",

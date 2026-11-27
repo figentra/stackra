@@ -31,7 +31,8 @@ import { app } from "../../.stackra/entry/server";
 /**
  * Answers one request: an `OPTIONS` preflight with 204 and the CORS headers, any other with `handle`'s answer and
  * the CORS headers (a rate-limited refusal as 429 with its back-off headers); `private, no-store` when the
- * request is signed in or the answer sets a cookie (ADR 0325 r22).
+ * request is signed in or the answer sets a cookie (ADR 0325 r22). A call the app turns away before it starts
+ * (overloaded or draining) is answered 503 by `app.handlers.shed`.
  */
 export function answerHttp(
   request: Request,
@@ -55,7 +56,7 @@ export function answerHttp(
     const cacheControl = apiCacheControl(request, response);
     if (cacheControl !== undefined) response.headers.set("cache-control", cacheControl);
     return response;
-  });
+  }).catch((error: unknown) => app.handlers.shed(request, error));
 }
 
 /** What an endpoint states: its route, whether anonymous callers may reach it, its action, and the call it runs. */

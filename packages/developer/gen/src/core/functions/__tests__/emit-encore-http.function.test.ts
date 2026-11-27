@@ -5,12 +5,13 @@
  *          bound `CorsConfig`, and adds those headers to every other answer (`Vary` appended) with `apiCacheControl`'s
  *          `private, no-store` (ADR 0325 rule 22); a service that declares @stackra/errors answers a `RateLimitedError`
  *          with 429 and `rateLimitHeaders` (STA-1477), one without it keeps the plain answer; the request body is
- *          `nodeBodyStream(req)`, never `Readable.toWeb` (STA-2794); a service without
+ *          `nodeBodyStream(req)`, never `Readable.toWeb` (STA-2794); a call `run` turns away (overloaded or draining)
+ *          is answered by `app.handlers.shed` (STA-1467); a service without
  *          @stackra/app, a package and an app get none.
  * Boundary: test only; asserts on the generated source text of the IR fixtures.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0437; ADR 0295 (decision 8); ADR 0325 (rule 22); STA-1385;
- *                     STA-1448; STA-2794.
+ *                     STA-1448; STA-2794; STA-1467.
  */
 import { describe, expect, it } from "@stackra/testing";
 
@@ -73,6 +74,11 @@ describe(emitEncoreHttp, () => {
     })?.content;
     expect(bare).not.toContain("@stackra/errors");
     expect(bare).toContain("    const answered = await handle(request, container);");
+  });
+
+  it("answers a call the app sheds or turns away while draining through app.handlers.shed (STA-1467)", () => {
+    const content = emitEncoreHttp(BILLING_IR)?.content ?? "";
+    expect(content).toContain("  }).catch((error: unknown) => app.handlers.shed(request, error));");
   });
 
   it("writes none without @stackra/app or outside a service", () => {

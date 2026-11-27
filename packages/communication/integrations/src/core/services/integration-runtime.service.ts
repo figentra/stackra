@@ -3,21 +3,26 @@
  * Purpose: `IntegrationRuntime`, the platform service every Integration is built with (gen wires it as the one
  *          constructor dependency of an integration binding): it makes the managed clients, keeps each credential's
  *          OAuth tokens in memory and renews them single-flight (a refresh, a client credentials grant or a signed JWT
- *          bearer assertion), and revokes them at disconnect.
+ *          bearer assertion), revokes them at disconnect, and keeps the circuit breaker and bulkhead of each
+ *          Integration and origin that every client of it shares (STA-1467): 5 failures in a row open a circuit for
+ *          30 seconds unless the Integration states its own `circuitBreaker` (or `false`); a bulkhead only when it
+ *          states `concurrency`.
  * Boundary: a service with three dependencies: the `SecretStore` (the Integration's `@Secret` fields, read blind by
  *           name at call time), the `RateLimitStore` of `@stackra/actions` (the providers' buckets) and the `Clock`.
  *           Tokens are kept per `<integration>:<connection id | platform>`, never logged; an access token is renewed
  *           `refresh.buffer` before it expires, by one call however many requests wait for it. An `OAuth2Code`
- *           integration calls only through a connection.
+ *           integration calls only through a connection. The breakers and bulkheads are in memory, per instance, keyed by
+ *           the Integration's class name and the origin called (`Resend:https://api.resend.com`), never a credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 3, 4, 6, 7, 12, 13 and 20); ADR 0173 (secrets); ADR 0294 (decision 17);
- *                     owner D10 2026-10-28 (stackra-223): the lengths are `Duration`s.
+ *                     owner D10 2026-10-28 (stackra-223): the lengths are `Duration`s; STA-1467 (circuit breaker and
+ *                     bulkhead).
  */
 import type { RateLimitStore } from "@stackra/actions/contracts";
 import type { SecretStore } from "@stackra/config/contracts";
 import { Service } from "@stackra/container";
 import type { Clock } from "@stackra/contracts";
-import { Duration } from "@stackra/contracts";
+import { Bulkhead, CircuitBreaker, Duration } from "@stackra/contracts";
 
 import type { Connection } from "#core/bases/connection.base";
 import type { Integration } from "#core/bases/integration.base";
@@ -46,6 +51,9 @@ type OAuthOptions = Extract<
   }
 >;
 
+/** The circuit breaker an Integration gets when it states none: 5 failures in a row open it for 30 seconds. */
+const CIRCUIT = Object.freeze({ failureThreshold: 5, cooldown: Duration.seconds(30) });
+
 /** The grant type of a JWT bearer assertion (RFC 7523 section 2.1). */
 const JWT_BEARER_GRANT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
 
@@ -70,6 +78,12 @@ export class IntegrationRuntime extends Service {
 
   /** The latest tokens of each credential, settled or being renewed. */
   private readonly tokens = new Map<string, Promise<OAuthTokens>>();
+
+  /** The circuit breaker and bulkhead of each Integration and origin (`Resend:https://api.resend.com`). */
+  private readonly guards = new Map<
+    string,
+    { readonly breaker?: CircuitBreaker; readonly bulkhead?: Bulkhead }
+  >();
 
   /**
    * @param secrets - the secret store.
@@ -114,6 +128,7 @@ export class IntegrationRuntime extends Service {
       clock: this.clock,
       ...(connection === undefined ? {} : { connection }),
       ...(accessToken === undefined ? {} : { accessToken }),
+      guardsOf: (origin) => this.guardsOf(integration, origin),
     });
   }
 
@@ -163,6 +178,41 @@ export class IntegrationRuntime extends Service {
         throw ProviderUnavailableError.create({ provider, status: response.status });
     }
     this.tokens.delete(key);
+  }
+
+  /** The circuit breaker and bulkhead of `integration` calling `origin`, made on first use and then shared. */
+  private guardsOf(
+    integration: Integration,
+    origin: string,
+  ): { readonly breaker?: CircuitBreaker; readonly bulkhead?: Bulkhead } {
+    const key = `${integration.constructor.name}:${origin}`;
+    const known = this.guards.get(key);
+    if (known !== undefined) return known;
+    const { circuitBreaker, concurrency } = integrationOptionsOf(integration.constructor);
+    const circuit = circuitBreaker === false ? undefined : { ...CIRCUIT, ...circuitBreaker };
+    const built = {
+      ...(circuit === undefined
+        ? {}
+        : {
+            breaker: new CircuitBreaker({
+              failureThreshold: circuit.failureThreshold,
+              cooldownMs: Duration.toMilliseconds(circuit.cooldown),
+            }),
+          }),
+      ...(concurrency === undefined
+        ? {}
+        : {
+            bulkhead: new Bulkhead({
+              limit: concurrency.limit,
+              ...(concurrency.queue === undefined ? {} : { queue: concurrency.queue }),
+              ...(concurrency.maxWait === undefined
+                ? {}
+                : { maxWaitMs: Duration.toMilliseconds(concurrency.maxWait) }),
+            }),
+          }),
+    };
+    this.guards.set(key, built);
+    return built;
   }
 
   /** The credential key tokens are kept under. */

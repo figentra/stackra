@@ -13,14 +13,18 @@
  *           resolve to an https origin, or an http one on an `.internal` host (the private tools namespace, STA-1653);
  *           a whole-URL `{field}` is filled the same way. A `GET`, `HEAD`, `PUT` or `DELETE`
  *           retries on no answer, 408, 429 or 5xx; a `POST` or `PATCH` only with an idempotency key the provider
- *           deduplicates on. A 4xx is `ProviderRefusedError`; spent retries, or a bucket full past the longest wait,
- *           are `ProviderUnavailableError`. No credential, token or response body is ever put in an error: the
+ *           deduplicates on. Each attempt is aborted at the Integration's `timeout` (30 s by default, the body read
+ *           included) and goes through the circuit breaker and bulkhead the runtime keeps for its origin (`guardsOf`):
+ *           an open circuit or a full bulkhead refuses it without sending (STA-1467). A 4xx is `ProviderRefusedError`;
+ *           spent retries, a bucket full past the longest wait, an open circuit or a full bulkhead are
+ *           `ProviderUnavailableError`, with a `reason` when the client itself gave up. No credential, token or response body is ever put in an error: the
  *           provider's code is scrubbed against the call's credentials (the connection's and the Integration's
  *           `@Secret` values and the key, password or token sent) before the refusal is built. A bucket key names the
  *           connection id (or `platform`), never a credential.
  * Runtime: isomorphic
  * Governing contract: ADR 0308 (rules 4, 6, 13 and 20); ADR 0217 (token buckets); ADR 0140 (refusals); STA-793;
- *                     owner D10 2026-10-28 (stackra-223): the waits are the contracts `backoffDelay`.
+ *                     owner D10 2026-10-28 (stackra-223): the waits are the contracts `backoffDelay`; STA-1467
+ *                     (per-attempt timeout, circuit breaker and bulkhead).
  */
 import { Secret } from "@stackra/config";
 import type { AnyClass } from "@stackra/container";
@@ -50,6 +54,20 @@ const RETRY = Object.freeze({
   base: Duration.parse("200ms"),
   max: Duration.seconds(30),
 });
+
+/** How long one attempt may take when the Integration states no `timeout` (STA-1467). */
+const TIMEOUT = Duration.seconds(30);
+
+/**
+ * One attempt as sent: its answer (undefined when nothing came back), the error when nothing did, whether the
+ * Integration's `timeout` cut it short, and `finish`, which disarms its timer and frees its bulkhead place (idempotent).
+ */
+interface Attempt {
+  readonly response: Response | undefined;
+  readonly failure: unknown;
+  readonly timedOut: () => boolean;
+  readonly finish: () => void;
+}
 
 /** Methods that act the same however often they are sent. */
 const IDEMPOTENT_METHODS: ReadonlySet<string> = new Set(["GET", "HEAD", "PUT", "DELETE"]);
@@ -122,6 +140,7 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   const { idempotencyHeader, ...policy } = { ...RETRY, ...declared.retry };
   const { attempts } = policy;
   const maxDelay = Duration.toMilliseconds(policy.max);
+  const timeoutMs = Duration.toMilliseconds(declared.timeout ?? TIMEOUT);
   const connectionSecrets =
     connection === undefined ? [] : [...Secret.members(connection.constructor as AnyClass).keys()];
   const integrationSecrets = [...Secret.members(integration.constructor as AnyClass).values()];
@@ -225,19 +244,85 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
   }
 
   /**
+   * Sends one attempt through the circuit breaker and bulkhead of its origin, aborted at the Integration's `timeout`
+   * or by the caller's signal, and reports its outcome to the breaker: no answer, a timeout, 408 or a 5xx is a
+   * failure, a 429 says nothing about the provider's health, anything else is an answer. `finish` disarms the timer and
+   * gives the bulkhead place back once the answer's body is read (or dropped), so the timeout also bounds the read.
+   *
+   * @throws ProviderUnavailableError without sending when the circuit is open (`circuit_open`) or the bulkhead and its
+   *         queue are full (`bulkhead_full`), carrying the status of `previous`, the attempt before it.
+   * @throws the caller's abort reason when the caller's signal aborted the attempt.
+   */
+  async function attemptOnce(
+    url: URL,
+    init: RequestInit,
+    caller: AbortSignal | undefined,
+    previous: Response | undefined,
+  ): Promise<Attempt> {
+    // A caller that already gave up sends nothing and holds no place.
+    caller?.throwIfAborted();
+    const { breaker, bulkhead } = options.guardsOf?.(url.origin) ?? {};
+    const status = previous === undefined ? {} : { status: previous.status };
+    const ticket = breaker?.admit(clock.now().getTime());
+    if (breaker !== undefined && ticket === undefined)
+      throw ProviderUnavailableError.create({
+        provider,
+        ...status,
+        reason: "circuit_open",
+        retryAfterMs: breaker.retryAfterMs(clock.now().getTime()),
+      });
+    const release = bulkhead === undefined ? undefined : await bulkhead.enter();
+    if (bulkhead !== undefined && release === undefined) {
+      ticket?.release();
+      throw ProviderUnavailableError.create({ provider, ...status, reason: "bulkhead_full" });
+    }
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+    const onAbort = (): void => {
+      controller.abort(caller?.reason);
+    };
+    if (caller?.aborted === true) onAbort();
+    else caller?.addEventListener("abort", onAbort, { once: true });
+    let finished = false;
+    const finish = (): void => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      caller?.removeEventListener("abort", onAbort);
+      release?.();
+    };
+    try {
+      const response = await fetch(url, { ...init, signal: controller.signal });
+      if (response.status === 408 || response.status >= 500) ticket?.fail(clock.now().getTime());
+      else if (response.status === 429) ticket?.release();
+      else ticket?.succeed();
+      return { response, failure: undefined, timedOut: () => timedOut, finish };
+    } catch (error) {
+      finish();
+      if (caller?.aborted === true) {
+        ticket?.release();
+        throw error;
+      }
+      ticket?.fail(clock.now().getTime());
+      return { response: undefined, failure: error, timedOut: () => timedOut, finish };
+    }
+  }
+
+  /**
    * Builds one call and sends it with its retries: the first answer that is not transient, or the last one once the
-   * retries are spent; `response` is undefined when nothing came back. `sent` lists the credential values it sent.
+   * retries are spent; `response` is undefined when nothing came back. `sent` lists the credential values it sent;
+   * the caller calls `finish` once it read the answer.
    */
   async function exchange(
     method: string,
     path: string,
     body: unknown,
     request: RequestOptions,
-  ): Promise<{
-    readonly response: Response | undefined;
-    readonly failure: unknown;
-    readonly sent: readonly string[];
-  }> {
+  ): Promise<Attempt & { readonly sent: readonly string[] }> {
     if (request.body !== undefined && body !== undefined)
       throw new TypeError("A call sends either its body or RequestOptions.body, not both");
     const url = urlOf(path, request.query);
@@ -268,25 +353,59 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
         : body === undefined
           ? {}
           : { body: form ? formOf(body) : JSON.stringify(body) }),
-      ...(request.signal === undefined ? {} : { signal: request.signal }),
     };
+    let previous: Response | undefined;
     for (let attempt = 1; ; attempt += 1) {
       await takeRateLimits();
-      let response: Response | undefined;
-      let failure: unknown;
-      try {
-        response = await fetch(url, init);
-      } catch (error) {
-        if (request.signal?.aborted === true) throw error;
-        failure = error;
-      }
-      if (response !== undefined && !isTransient(response.status))
-        return { response, failure, sent };
-      if (!retryable || attempt >= attempts) return { response, failure, sent };
+      const outcome = await attemptOnce(url, init, request.signal, previous);
+      const { response } = outcome;
+      if (response !== undefined && !isTransient(response.status)) return { ...outcome, sent };
+      if (!retryable || attempt >= attempts) return { ...outcome, sent };
+      outcome.finish();
+      // Free the connection of an answer that is not read.
+      await response?.body?.cancel().catch(() => undefined);
+      previous = response;
       await sleep(
         Math.min(retryAfterMs(response, clock.now()) ?? backoffDelay(policy, attempt), maxDelay),
       );
     }
+  }
+
+  /**
+   * Reads an answer's body; a read the timeout cut short, or a connection dropped mid-answer, is
+   * `ProviderUnavailableError`, and a read the caller aborted throws the caller's reason.
+   */
+  async function readBody<T>(
+    outcome: Attempt,
+    caller: AbortSignal | undefined,
+    read: () => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await read();
+    } catch (error) {
+      if (caller?.aborted === true) throw error;
+      throw ProviderUnavailableError.create(
+        {
+          provider,
+          ...(outcome.response === undefined ? {} : { status: outcome.response.status }),
+          ...(outcome.timedOut() ? { reason: "timeout" as const } : {}),
+        },
+        { cause: error },
+      );
+    }
+  }
+
+  /** The refusal of a call that got no usable answer: the last status, and `timeout` when the last attempt timed out. */
+  function unavailable(outcome: Attempt): ProviderUnavailableError {
+    const { response, failure } = outcome;
+    return ProviderUnavailableError.create(
+      {
+        provider,
+        ...(response === undefined ? {} : { status: response.status }),
+        ...(response === undefined && outcome.timedOut() ? { reason: "timeout" as const } : {}),
+      },
+      { cause: failure },
+    );
   }
 
   /** Sends one typed call and reads the answer, or refuses with the provider's outcome. */
@@ -296,43 +415,54 @@ export function managedClient(options: ManagedClientOptions): IntegrationApi {
     body: unknown,
     request: RequestOptions = {},
   ): Promise<unknown> {
-    const { response, failure, sent } = await exchange(method, path, body, request);
-    if (response?.ok === true) {
-      if (request.bytes === true) return new Uint8Array(await response.arrayBuffer());
-      const text = await response.text();
-      if (request.text === true) return text;
-      return text === "" ? undefined : parsed(text);
+    const outcome = await exchange(method, path, body, request);
+    const { response, sent } = outcome;
+    try {
+      if (response?.ok === true) {
+        if (request.bytes === true)
+          return new Uint8Array(
+            await readBody(outcome, request.signal, () => response.arrayBuffer()),
+          );
+        const text = await readBody(outcome, request.signal, () => response.text());
+        if (request.text === true) return text;
+        return text === "" ? undefined : parsed(text);
+      }
+      if (response !== undefined && !isTransient(response.status)) {
+        const code = providerCodeOf(
+          parsed(await readBody(outcome, request.signal, () => response.text())),
+        );
+        throw ProviderRefusedError.create({
+          provider,
+          status: response.status,
+          ...(code === undefined ? {} : { code: redactSecrets(code, credentialsOf(sent)) }),
+        });
+      }
+      throw unavailable(outcome);
+    } finally {
+      outcome.finish();
     }
-    if (response !== undefined && !isTransient(response.status)) {
-      const code = providerCodeOf(parsed(await response.text()));
-      throw ProviderRefusedError.create({
-        provider,
-        status: response.status,
-        ...(code === undefined ? {} : { code: redactSecrets(code, credentialsOf(sent)) }),
-      });
-    }
-    throw ProviderUnavailableError.create(
-      { provider, ...(response === undefined ? {} : { status: response.status }) },
-      { cause: failure },
-    );
   }
 
   /** Sends `raw` and returns the answer as it came, whatever its status. */
   async function send(raw: RawRequest): Promise<RawResponse> {
-    const { response, failure } = await exchange(raw.method, raw.path, undefined, {
+    const outcome = await exchange(raw.method, raw.path, undefined, {
       text: true,
       ...(raw.headers === undefined ? {} : { headers: raw.headers }),
       ...(raw.body === undefined ? {} : { body: raw.body }),
       ...(raw.idempotencyKey === undefined ? {} : { idempotencyKey: raw.idempotencyKey }),
       ...(raw.signal === undefined ? {} : { signal: raw.signal }),
     });
-    if (response === undefined)
-      throw ProviderUnavailableError.create({ provider }, { cause: failure });
-    return {
-      status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
-      body: await response.text(),
-    };
+    try {
+      const { response } = outcome;
+      if (response === undefined) throw unavailable(outcome);
+      return {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: await readBody(outcome, raw.signal, () => response.text()),
+      };
+    } finally {
+      outcome.finish();
+    }
   }
 
   return {

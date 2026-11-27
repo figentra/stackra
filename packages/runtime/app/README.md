@@ -39,9 +39,10 @@ peers, each loaded only by the entry that needs it.
 | `createApp`, `ServerApp`                     | `./server`  | `key`, `ready()`, `probe()`, `drain()`, `close()`, `handlers`; `/healthz`, `/readyz`  |
 | `Controller`                                 | `./server`  | `extends Controller({ path })`: a raw endpoint with `handle(request)`                 |
 | `RequestGuard`                               | `./server`  | a check every inbound request passes; `handlers.guard(request, container)` runs them  |
-| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB) and `drainTimeoutSeconds` (20) |
+| `serveGuardedCall`, `HttpConfig`             | `./server`  | the one path of every generated HTTP adapter: capped body (413), guards over the exact bytes, `CallAuthenticator`, input, pipeline; `app.http` `maxBodyBytes` (1 MiB), `drainTimeoutSeconds` (20) and the load-shedding `maxConcurrentCalls` (1024), `maxQueuedCalls` (1024), `maxQueueWaitMs` (5000) |
 | `nodeBodyStream`                             | `./server`  | a Node or Encore raw request's body as a web stream, with backpressure; `Readable.toWeb` crashes on Encore's `RawRequest` (STA-2794) |
 | `AppDrainingError`                           | `./server`  | the 503 refusal a draining server answers                                             |
+| `AppOverloadedError`                         | `./server`  | the 503 refusal (`Retry-After: 1`) a server at capacity sheds a call with (STA-1467)  |
 | `DrainTimeoutError`                          | `./server`  | reported (never thrown) when the drain deadline passes with calls still in flight     |
 | `EdgeHeaderGuard`                            | `./server`  | the first server check: signed, fresh, unreplayed edge headers (ADR 0437)             |
 | `EdgeSignatureInvalidError`                  | `./server`  | the 401 refusal for a missing, wrong, stale or replayed edge signature                |
@@ -144,6 +145,25 @@ and seed CLIs connect on their own with `directDatabaseUrl()` of `@stackra/datab
 `DATABASE_URL`, ADR 0473). `close()` aborts that signal after the drain, which disconnects the bus and inbox and stops
 the relay. SIGTERM and
 SIGINT close and exit 0, or report and exit 1 when shutdown fails.
+
+### Load shedding
+
+Every call through `handlers.run` (HTTP, a Pub/Sub delivery, a queue job, a cron tick) passes one `Bulkhead` sized by
+`app.http`: at most `maxConcurrentCalls` (1024) run at once, the next `maxQueuedCalls` (1024) wait in arrival order for
+at most `maxQueueWaitMs` (5000), and every other call is refused with `AppOverloadedError` before its request container
+exists, so an overload answers fast instead of piling up until the process stalls. Each shed call is counted on the
+bound `Metrics` as `app.calls.shed` (`reason: overloaded`). The generated HTTP adapter answers it through
+`handlers.shed(request, error)`: 503 with the refusal's envelope, `Retry-After: 1`, `Cache-Control: no-store` and the
+CORS headers, and a draining refusal the same way without a wait. A shed Pub/Sub delivery or queue job is retried by
+its transport. A queued call counts as in flight, so a drain waits for it. `maxConcurrentCalls: 0` turns shedding off.
+`/healthz` and `/readyz` never pass the bulkhead, so an overloaded instance stays live and ready.
+
+```ts
+export class HttpConfig extends BaseHttpConfig {
+  override maxConcurrentCalls = 256;
+  override maxQueueWaitMs = 2000;
+}
+```
 
 ### Readiness
 

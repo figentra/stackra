@@ -24,6 +24,14 @@
       "from": "@stackra/app"
     },
     {
+      "code": "app_overloaded",
+      "kind": "unavailable",
+      "category": "unavailable",
+      "module": "app",
+      "class": "AppOverloadedError",
+      "from": "@stackra/app"
+    },
+    {
       "code": "bearer_token_invalid",
       "kind": "unauthenticated",
       "category": "unauthenticated",

@@ -1,7 +1,8 @@
 /**
  * Stackra file contract:
  * Purpose: Stand-in barrel: the `./server` runtime-target entry of @stackra/app (the server `createApp`, its app
- *          object and the `DrainTimeoutError` it reports at the drain deadline, the `Controller` kind for raw HTTP, the `RequestGuard` extension point, and the signed edge-header
+ *          object, the `AppOverloadedError` it sheds load with (STA-1467) and the `DrainTimeoutError` it reports at the
+ *          drain deadline, the `Controller` kind for raw HTTP, the `RequestGuard` extension point, and the signed edge-header
  *          guard with its `EdgeConfig`, memory, `env` and `secrets` key drivers, memory and `cache` nonce drivers and refusal, the origin and CSRF guards with their
  *          configuration and refusals, the JWKS bearer-token guard with its configuration, key drivers, refusal and the request's
  *          `VerifiedToken`, `CallAuthenticator` (the generated Encore auth handler's check, API keys included) with its call types,
@@ -32,6 +33,7 @@ export { OidcJsonWebKeysDriver } from "#server/drivers/oidc-json-web-keys.driver
 export { SecretsEdgeSigningKeysDriver } from "#server/drivers/secrets-edge-signing-keys.driver";
 export { ServiceClientSessionDriver } from "#server/drivers/service-client-session.driver";
 export { AppDrainingError } from "#server/errors/app-draining.error";
+export { AppOverloadedError } from "#server/errors/app-overloaded.error";
 export { DrainTimeoutError } from "#server/errors/drain-timeout.error";
 export { BearerTokenInvalidError } from "#server/errors/bearer-token-invalid.error";
 export { CsrfTokenInvalidError } from "#server/errors/csrf-token-invalid.error";

@@ -19,17 +19,19 @@
  */
 import { Driver, Module, Service } from "@stackra/container";
 import type { Container, Wiring } from "@stackra/container";
-import { HealthIndicator, HealthStatus, Tracer } from "@stackra/contracts";
+import { HealthIndicator, HealthStatus, Metrics, Tracer } from "@stackra/contracts";
 import type { HealthReport, TraceAttributes, TraceCarrier, TraceSpan } from "@stackra/contracts";
 import { isRefusal } from "@stackra/errors";
 import { ErrorReporter } from "@stackra/errors/contracts";
 import { afterEach, describe, expect, it } from "@stackra/testing";
 import { vi } from "vitest";
 
+import { CorsConfig } from "#config/cors.config";
 import { HttpConfig } from "#config/http.config";
 import { EdgeHeader } from "#contracts/enums/edge-header.enum";
 import { RequestGuard } from "#server/bases/request-guard.base";
 import { AppDrainingError } from "#server/errors/app-draining.error";
+import { AppOverloadedError } from "#server/errors/app-overloaded.error";
 import { DrainTimeoutError } from "#server/errors/drain-timeout.error";
 import { createApp } from "#server/functions/create-app.function";
 
@@ -62,6 +64,17 @@ const wiring: Wiring = {
     { module: "orders", kind: "action", provide: CancelOrderAction },
   ],
 };
+
+/** A call that settles when its `finish` is called, counting itself in `started` once it runs. */
+function gated(started: string[], name: string) {
+  const gate: { finish?: () => void } = {};
+  const call = () =>
+    new Promise<string>((resolve) => {
+      started.push(name);
+      gate.finish = () => resolve(name);
+    });
+  return { gate, call };
+}
 
 describe("createApp (server)", () => {
   afterEach(() => {
@@ -433,6 +446,202 @@ describe("createApp (server)", () => {
       await app.handlers.run((container) => app.handlers.guard(request, container));
       await app.handlers.run(() => "no guard");
       expect(CarrierTracer.carriers).toEqual([{ traceparent, requestId: "req-1" }, {}]);
+      await app.close();
+    });
+  });
+  describe("load shedding", () => {
+    /** Keeps every counter the app records. */
+    class MemoryMetricsDriver extends Driver(Metrics) {
+      static readonly counted: { name: string; delta: number; attributes?: TraceAttributes }[] = [];
+
+      counter(name: string, delta: number, attributes?: TraceAttributes): void {
+        MemoryMetricsDriver.counted.push({ name, delta, ...(attributes ? { attributes } : {}) });
+      }
+
+      histogram(): void {
+        // Not recorded by createApp.
+      }
+
+      gauge(): void {
+        // Not recorded by createApp.
+      }
+    }
+
+    /** One call at once, one more waiting at most 500 ms. */
+    class TightHttpConfig extends HttpConfig {
+      override maxConcurrentCalls = 1;
+
+      override maxQueuedCalls = 1;
+
+      override maxQueueWaitMs = 500;
+    }
+
+    /** Load shedding off. */
+    class UnboundedHttpConfig extends HttpConfig {
+      override maxConcurrentCalls = 0;
+    }
+
+    /** A host's allowed browser origin. */
+    class AcmeCorsConfig extends CorsConfig {
+      override allowedOrigins = ["https://app.acme.example"];
+    }
+
+    const tight: Wiring = {
+      ...wiring,
+      config: [
+        { key: "app.http", provide: HttpConfig, override: TightHttpConfig },
+        { key: "app.cors", provide: CorsConfig, override: AcmeCorsConfig },
+      ],
+      drivers: [
+        { port: Metrics, candidates: { memory: () => Promise.resolve(MemoryMetricsDriver) } },
+      ],
+    };
+
+    afterEach(() => {
+      vi.useRealTimers();
+      MemoryMetricsDriver.counted.length = 0;
+    });
+
+    it("runs at most maxConcurrentCalls at once, queues the next and turns the rest away as overloaded", async () => {
+      const app = await createApp(OrdersModule, { wiring: tight });
+      const started: string[] = [];
+      const first = gated(started, "first");
+      const second = gated(started, "second");
+      const running = app.handlers.run(first.call);
+      const queued = app.handlers.run(second.call);
+      await vi.waitFor(() => expect(started).toEqual(["first"]));
+      const refused = await app.handlers.run(() => "third").catch((error: unknown) => error);
+      expect(isRefusal(refused, AppOverloadedError)).toBe(true);
+      expect(refused).toMatchObject({ code: "app_overloaded", retryAfterMs: 1000 });
+      expect(MemoryMetricsDriver.counted).toEqual([
+        { name: "app.calls.shed", delta: 1, attributes: { reason: "overloaded" } },
+      ]);
+      first.gate.finish?.();
+      await expect(running).resolves.toBe("first");
+      await vi.waitFor(() => expect(started).toEqual(["first", "second"]));
+      second.gate.finish?.();
+      await expect(queued).resolves.toBe("second");
+      await expect(app.handlers.run(() => "after")).resolves.toBe("after");
+      await app.close();
+    });
+
+    it("turns a queued call away once maxQueueWaitMs passes without a place", async () => {
+      const app = await createApp(OrdersModule, { wiring: tight });
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      const started: string[] = [];
+      const first = gated(started, "first");
+      const running = app.handlers.run(first.call);
+      const queued = app.handlers
+        .run(() => started.push("queued"))
+        .catch((error: unknown) => error);
+      await vi.advanceTimersByTimeAsync(499);
+      expect(started).toEqual(["first"]);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(isRefusal(await queued, AppOverloadedError)).toBe(true);
+      first.gate.finish?.();
+      await running;
+      expect(started).toEqual(["first"]);
+      await app.close();
+    });
+
+    it("lets a failed call give its place back", async () => {
+      const app = await createApp(OrdersModule, { wiring: tight });
+      await expect(app.handlers.run(() => Promise.reject(new Error("boom")))).rejects.toThrow(
+        "boom",
+      );
+      await expect(app.handlers.run(() => "next")).resolves.toBe("next");
+      await app.close();
+    });
+
+    it("counts a queued call as in flight, so the drain waits for it", async () => {
+      const app = await createApp(OrdersModule, { wiring: tight });
+      const started: string[] = [];
+      const first = gated(started, "first");
+      const second = gated(started, "second");
+      const running = app.handlers.run(first.call);
+      const queued = app.handlers.run(second.call);
+      await vi.waitFor(() => expect(started).toEqual(["first"]));
+      let drained = false;
+      const draining = app.drain().then(() => (drained = true));
+      first.gate.finish?.();
+      await running;
+      await vi.waitFor(() => expect(started).toEqual(["first", "second"]));
+      expect(drained).toBe(false);
+      second.gate.finish?.();
+      await queued;
+      await draining;
+      expect(drained).toBe(true);
+      await app.close();
+    });
+
+    it("runs 1024 calls at once by default and queues the 1025th", async () => {
+      const app = await createApp(OrdersModule, { wiring });
+      const started: string[] = [];
+      const calls = Array.from({ length: 1025 }, (_, index) => gated(started, String(index)));
+      const settled = calls.map(({ call }) => app.handlers.run(call));
+      await vi.waitFor(() => expect(started).toHaveLength(1024));
+      await Promise.resolve();
+      expect(started).toHaveLength(1024);
+      calls[0]?.gate.finish?.();
+      await vi.waitFor(() => expect(started).toHaveLength(1025));
+      for (const { gate } of calls) gate.finish?.();
+      await Promise.all(settled);
+      await app.close();
+    });
+
+    it("sheds nothing when a host sets maxConcurrentCalls to 0", async () => {
+      const app = await createApp(OrdersModule, {
+        wiring: {
+          ...wiring,
+          config: [{ key: "app.http", provide: HttpConfig, override: UnboundedHttpConfig }],
+        },
+      });
+      const started: string[] = [];
+      const calls = Array.from({ length: 2000 }, (_, index) => gated(started, String(index)));
+      const settled = calls.map(({ call }) => app.handlers.run(call));
+      await vi.waitFor(() => expect(started).toHaveLength(2000));
+      for (const { gate } of calls) gate.finish?.();
+      await Promise.all(settled);
+      await app.close();
+    });
+
+    it("answers an overloaded call 503 with its envelope, Retry-After, no-store and the CORS headers", async () => {
+      const app = await createApp(OrdersModule, { wiring: tight });
+      const request = new Request("https://api.example/orders", {
+        headers: { origin: "https://app.acme.example" },
+      });
+      const response = await app.handlers.shed(
+        request,
+        AppOverloadedError.create({ retryAfterMs: 1500 }),
+      );
+      expect(response.status).toBe(503);
+      expect(response.headers.get("retry-after")).toBe("2");
+      expect(response.headers.get("cache-control")).toBe("no-store");
+      expect(response.headers.get("access-control-allow-origin")).toBe("https://app.acme.example");
+      expect(await response.json()).toMatchObject({
+        code: "app_overloaded",
+        category: "unavailable",
+        retryable: true,
+      });
+      await app.close();
+    });
+
+    it("answers a draining refusal 503 without a wait", async () => {
+      const app = await createApp(OrdersModule, { wiring });
+      const response = await app.handlers.shed(
+        new Request("https://api.example/orders"),
+        AppDrainingError.create(),
+      );
+      expect(response.status).toBe(503);
+      expect(response.headers.get("retry-after")).toBeNull();
+      expect(await response.json()).toMatchObject({ code: "app_draining" });
+      await app.close();
+    });
+
+    it("rethrows anything it does not shed", async () => {
+      const app = await createApp(OrdersModule, { wiring });
+      const boom = new Error("boom");
+      await expect(app.handlers.shed(new Request("https://api.example/"), boom)).rejects.toBe(boom);
       await app.close();
     });
   });

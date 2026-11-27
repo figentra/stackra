@@ -7,20 +7,22 @@
  *          4xx into `ProviderRefusedError` and spent retries into `ProviderUnavailableError`, while `send` answers
  *          every status as it came and throws only when nothing came back, all without a credential in
  *          either: a provider code that echoes a connection's or the platform's secret, or the bearer sent, is
- *          redacted under every key a provider names it, and the client logs nothing.
+ *          redacted under every key a provider names it, and the client logs nothing; an attempt is aborted at the
+ *          Integration's `timeout` (the body read included), the caller's abort stays its own, and the origin's circuit
+ *          breaker and bulkhead refuse a call without sending it (STA-1467).
  * Boundary: test only; `fetch` is stubbed, the secret store answers from a map, the clock is frozen and the buckets
  *           are the memory driver of `@stackra/actions`.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0308 (rules 4, 6, 13 and 20); ADR 0217; STA-793; stackra-223
  *                     (`retry.base` was `retry.backoff: "1ms"`; the default 200 ms doubling to 30 s is pinned in the
- *                     contracts `backoffDelay` test).
+ *                     contracts `backoffDelay` test); STA-1467.
  */
 import { inspect } from "node:util";
 
 import { MemoryRateLimitStoreDriver } from "@stackra/actions";
 import { Secret } from "@stackra/config";
 import { SecretStore } from "@stackra/config/contracts";
-import { Clock, Duration, HttpMethod } from "@stackra/contracts";
+import { Bulkhead, CircuitBreaker, Clock, Duration, HttpMethod } from "@stackra/contracts";
 import { afterEach, beforeEach, describe, expect, it } from "@stackra/testing";
 import { type MockInstance, vi } from "vitest";
 
@@ -622,5 +624,168 @@ describe("managedClient with a provider that echoes a credential", () => {
       .get("/domains")
       .catch((error: unknown) => error);
     expect(ProviderRefusedError.is(refused, { status: 400, code: "invalid_request" })).toBe(true);
+  });
+});
+
+/** A `fetch` that answers only when its signal aborts, as a provider that never answers. */
+function stubSilentFetch() {
+  return stubFetch(
+    (_url, init) =>
+      new Promise<Response>((_resolve, reject) => {
+        if (init.signal?.aborted === true) reject(init.signal.reason);
+        init.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+      }),
+  );
+}
+
+describe("managedClient with a slow or failing provider (STA-1467)", () => {
+  class SlowIntegration extends Integration({
+    ...BASE,
+    provider: "slow",
+    timeout: Duration.parse("100ms"),
+    retry: { attempts: 2, base: Duration.parse("1ms") },
+    auth: { type: AuthType.None },
+  }) {}
+
+  /** A client of `SlowIntegration` whose every origin goes through `guards`. */
+  function guardedClient(guards: { breaker?: CircuitBreaker; bulkhead?: Bulkhead }) {
+    return managedClient({
+      integration: new SlowIntegration(),
+      secrets: new MapSecretStore(),
+      limits: new MemoryRateLimitStoreDriver(),
+      clock: new FrozenClock(),
+      guardsOf: () => guards,
+    });
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("aborts an attempt at the Integration's timeout, retries it, then refuses with reason timeout", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const fetchMock = stubSilentFetch();
+    const refused = clientOf(new SlowIntegration())
+      .get("/messages")
+      .catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(99);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await vi.advanceTimersByTimeAsync(101);
+    const error = await refused;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(error).toBeInstanceOf(ProviderUnavailableError);
+    expect(error).toMatchObject({ provider: "slow", reason: "timeout" });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("bounds the read of an answer's body by the same timeout", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    stubFetch((_url, init) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"partial":'));
+          init.signal?.addEventListener("abort", () => controller.error(init.signal?.reason));
+        },
+      });
+      return new Response(body, { status: 200 });
+    });
+    const refused = clientOf(new SlowIntegration())
+      .get("/messages")
+      .catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(await refused).toMatchObject({ provider: "slow", status: 200, reason: "timeout" });
+  });
+
+  it("throws the caller's abort, not a refusal, and leaves no timer", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const fetchMock = stubSilentFetch();
+    const caller = new AbortController();
+    const call = clientOf(new SlowIntegration())
+      .get("/messages", { signal: caller.signal })
+      .catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    caller.abort(new Error("caller gave up"));
+    expect(await call).toEqual(new Error("caller gave up"));
+    expect(vi.getTimerCount()).toBe(0);
+    const early = await clientOf(new SlowIntegration())
+      .get("/messages", { signal: caller.signal })
+      .catch((error: unknown) => error);
+    expect(early).toEqual(new Error("caller gave up"));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the circuit after failures in a row and refuses without sending until the cooldown passes", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 2, cooldownMs: 30_000 });
+    const fetchMock = stubFetch(() => json({}, 503));
+    const api = guardedClient({ breaker });
+    await expect(api.post("/messages", {})).rejects.toBeInstanceOf(ProviderUnavailableError);
+    await expect(api.post("/messages", {})).rejects.toBeInstanceOf(ProviderUnavailableError);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const shed = await api.get("/messages").catch((error: unknown) => error);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(shed).toBeInstanceOf(ProviderUnavailableError);
+    expect(shed).toMatchObject({ provider: "slow", reason: "circuit_open", retryAfterMs: 30_000 });
+  });
+
+  it("stops retrying once the circuit opens mid-call, naming the last status", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 1, cooldownMs: 30_000 });
+    const fetchMock = stubFetch(() => json({}, 502));
+    const shed = await guardedClient({ breaker })
+      .get("/messages")
+      .catch((error: unknown) => error);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(shed).toMatchObject({ reason: "circuit_open", status: 502 });
+  });
+
+  it("counts a 4xx as an answer and a 429 as neither, so neither opens the circuit", async () => {
+    const breaker = new CircuitBreaker({ failureThreshold: 1, cooldownMs: 30_000 });
+    let status = 404;
+    const fetchMock = stubFetch(() => json({}, status));
+    const api = guardedClient({ breaker });
+    await expect(api.get("/messages")).rejects.toBeInstanceOf(ProviderRefusedError);
+    status = 429;
+    await expect(api.post("/messages", {})).rejects.toBeInstanceOf(ProviderUnavailableError);
+    status = 200;
+    await expect(api.get("/messages")).resolves.toEqual({});
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("counts a timeout as a failure of the circuit", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const breaker = new CircuitBreaker({ failureThreshold: 1, cooldownMs: 30_000 });
+    const fetchMock = stubSilentFetch();
+    const api = guardedClient({ breaker });
+    const first = api.post("/messages", {}).catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(await first).toMatchObject({ reason: "timeout" });
+    expect(await api.get("/messages").catch((error: unknown) => error)).toMatchObject({
+      reason: "circuit_open",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses an attempt without sending it while the provider's bulkhead is full", async () => {
+    const bulkhead = new Bulkhead({ limit: 1 });
+    const gate: { answer?: (response: Response) => void } = {};
+    const fetchMock = stubFetch(
+      () =>
+        new Promise<Response>((resolve) => {
+          gate.answer = resolve;
+        }),
+    );
+    const api = guardedClient({ bulkhead });
+    const first = api.post("/messages", {});
+    await vi.waitFor(() => expect(gate.answer).toBeDefined());
+    const shed = await api.post("/messages", {}).catch((error: unknown) => error);
+    expect(shed).toBeInstanceOf(ProviderUnavailableError);
+    expect(shed).toMatchObject({ provider: "slow", reason: "bulkhead_full" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    gate.answer?.(json({ id: "m_1" }));
+    await expect(first).resolves.toEqual({ id: "m_1" });
+    expect(bulkhead.active).toBe(0);
+    stubFetch(() => json({ id: "m_2" }));
+    await expect(api.post("/messages", {})).resolves.toEqual({ id: "m_2" });
   });
 });

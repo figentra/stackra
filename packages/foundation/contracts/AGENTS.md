@@ -49,6 +49,9 @@ The whole package is one `.` entry, so its enums, ports and types sit under `src
 - `RetryPolicy` and `backoffDelay` are the one retry shape and formula (stackra-223). A package keeps its defaults as
   a frozen constant and passes them in; it never declares another policy type or backoff formula. `Backoff` codes are
   stored on jobs and automation documents: append, never rename.
+- `Bulkhead` and `CircuitBreaker` are the one concurrency limit and the one circuit breaker (STA-1467). They are in
+  memory, never throw while running and take time as epoch milliseconds from the caller; the caller raises its own
+  refusal. A new admission limit or breaker builds on them instead of a fresh one.
 - `Tracer` and `Metrics` are ports with no-op drivers here; their OTLP drivers live in `@stackra/logger`. Span and
   metric attributes are `TraceAttributes`: ids and codes only. `TraceCarrier` is mutable on purpose (filled by the
   server app's guard step after `continueTrace` began).

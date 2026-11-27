@@ -50,7 +50,7 @@ voice meter writes to) and `@stackra/market-packs` (`valueOf`); `./node` adds `@
 | `registerConnections`                                                                                                   | links each connection class to its Integration and key; gen emits the call                           |
 | `resolvePlaceholders`                                                                                                   | fills `{field}` placeholders, for `@stackra/webhooks`' secret lookup                                 |
 | types `IntegrationWebhooks`, `WebhookSignature`, `WebhookSchemeRecipe`                                                  | the `webhooks` option: an HMAC body recipe (`signature`) or a non-HMAC scheme's data (`recipe`)      |
-| `ProviderRefusedError`, `ProviderUnavailableError`                                                                      | a provider's 4xx, and spent retries or a full bucket                                                 |
+| `ProviderRefusedError`, `ProviderUnavailableError`                                                                      | a provider's 4xx, and spent retries, a full bucket, a timeout, an open circuit or a full bulkhead    |
 | `ConnectionCheckFailedError`, `ConnectionAmbiguousError`, `InvalidSignatureError`                                       | a failed `check()`, an ambiguous `find`, a webhook that does not verify                              |
 | `./testing`: `fakeIntegrationApi`, `makeConnection`, `.withIntegrationApi`, `.withConnection`                           | fakes of the managed client and the store for tests                                                  |
 | `./testing`: `liveConnection`, `LiveConnectionOptions`                                                                  | a connection over the real managed client, for a certification suite against a provider sandbox      |
@@ -122,6 +122,26 @@ Every length of time is a `Duration` from `@stackra/contracts` (`Duration.second
 for the short form); the `Interval` string is gone (stackra-223). `retry` is the contracts `RetryPolicy` plus
 `idempotencyHeader`: 3 attempts, `base` 200 ms doubling, `max` 30 s when left out (`backoff` and `maxDelay` became
 `base` and `max`).
+
+A slow or failing provider is contained (STA-1467). Each attempt is aborted at the Integration's `timeout` (30 s by
+default, the body read included) and counts as no answer. The runtime keeps one `CircuitBreaker` per Integration and
+origin, shared by every connection in the instance: 5 attempts in a row with no answer, a timeout, 408 or a 5xx open it
+(a 4xx is an answer and a 429 says nothing), and for 30 s every call is refused without being sent, as
+`ProviderUnavailableError` with `reason: "circuit_open"` and `retryAfterMs`; then one trial call goes and its outcome
+closes or reopens it. `circuitBreaker: { failureThreshold, cooldown }` tunes it and `false` turns it off.
+`concurrency: { limit, queue, maxWait }` adds a bulkhead on the same key: past it a call is refused at once with
+`reason: "bulkhead_full"`. A call whose last attempt timed out carries `reason: "timeout"`; a caller's own abort is
+rethrown as it was.
+
+```ts
+Integration({
+  provider: "resend",
+  // ...
+  timeout: Duration.seconds(10),
+  circuitBreaker: { failureThreshold: 3, cooldown: Duration.seconds(20) },
+  concurrency: { limit: 20 },
+});
+```
 
 A `{field}` placeholder resolves on the connection first, then on the Integration, so a scope's own key wins over the
 platform's with no second mechanism. A secret is always a name; its value is read blind at call time.

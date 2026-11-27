@@ -60,6 +60,10 @@ note).
 - The server drain is bounded by `HttpConfig.drainTimeoutSeconds` (ADR 0143 decision 3): at the deadline `drain()`
   reports one `DrainTimeoutError` (a count, never a call's data) and resolves, so `close()` still runs the shutdown
   hooks. Never wait on calls in flight without that deadline.
+- Load shedding (STA-1467): every call through `handlers.run` passes the one `Bulkhead` sized by `HttpConfig`
+  (`maxConcurrentCalls`, `maxQueuedCalls`, `maxQueueWaitMs`). A call it turns away is refused with
+  `AppOverloadedError` before its request container exists and answered 503 by `handlers.shed`; never add a second
+  limiter in an adapter, and never put the health probes behind it.
 - No rate-limit code here: the area bucket per tenant lives in the `@stackra/actions` pipeline (`RateLimitBudget`);
   this package only forwards the verified tenant from the signed edge headers.
 - The desktop hardening baseline is not configurable (ADR 0251 decision 3).
