@@ -9,14 +9,17 @@
  * Boundary: read-only. The denied terms are stored only as SHA-256 hashes of their lower-case spelling (with their
  *           length, to skip most words unhashed), so this file does not publish what it forbids; `--hash <term>`
  *           prints the entry to add one. A word is checked whole (letters and digits), and a dotted host by each of
- *           its suffixes of two labels or more. Two exemptions, both visible: an approval line in `.agents/specs`
- *           (`Approved by …`, `**Approver**:`), which only the approver writes, and the entries of
- *           `public-content.allow.json` (a repository `path`, or a tarball's `package` name), each with its reason
- *           and the issue that removes it.
+ *           its suffixes of two labels or more. One exemption, visible and tracked: the entries of
+ *           `public-content.allow.yaml` (a repository `path`, one line of a file by its `lineSha256`, or a tarball's
+ *           `package` name), each with its reason and the issue that removes it. No line is exempt by its wording: a
+ *           spec approval line that names a person is a finding like any other (role-only approvals, STA-2905), and
+ *           a line entry whose line is gone is reported, so the list only shrinks. `--hash-line <path>:<n>` prints
+ *           the entry for one line.
  * Runtime: node
  * Governing contract: ADR 0291 (porting provenance: a port keeps its reference, not its source's private paths);
  *                     ADR 0453 (the registry ships what the tarball holds); STA-2876.
- * Usage: `guard-public-content.mjs` (tracked files), `--pack <file.tgz>…` (tarballs), `--hash <term>`.
+ * Usage: `guard-public-content.mjs` (tracked files), `--pack <file.tgz>…` (tarballs), `--hash <term>`,
+ *        `--hash-line <path>:<n>`.
  * Exit: 0 clean, 1 findings (each printed as `path:line: reason`; line 0 is the path itself), 2 usage.
  */
 import { createHash } from "node:crypto";
@@ -25,6 +28,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
+import { parse as parseYaml } from "yaml";
 
 /** SHA-256 of each denied term, lower case, with its length and what it is; never the term itself. */
 export const DENIED = new Map([
@@ -94,8 +98,6 @@ const HOME_PATH = /(?:^|[^\w.-])\/(?:Users|home)\/([A-Za-z0-9._-]+)\//g;
 const WORD = /[a-z0-9]+/g;
 /** A dotted host name, checked by each suffix of two labels or more. */
 const HOST = /[a-z0-9-]+(?:\.[a-z0-9-]+)+/g;
-/** The approver's lines in a spec (`Approved by …`, `**Approver**:`), which only the approver writes or changes. */
-const APPROVAL = /approved by|\*\*approver\*\*/i;
 
 const hashes = new Map();
 /** The SHA-256 of `term`, lower case, as hex. */
@@ -107,6 +109,11 @@ export function hashTerm(term) {
     hashes.set(key, hash);
   }
   return hash;
+}
+
+/** The SHA-256 of one line's exact text, as hex: what a line entry of the allow list (`lineSha256`) names. */
+export function hashLine(line) {
+  return createHash("sha256").update(line).digest("hex");
 }
 
 /** Why `candidate` (lower case) is denied, or undefined. */
@@ -151,18 +158,52 @@ export function allowedBy(path, pattern) {
 /**
  * Every finding of one file, as `{ path, line, reason }`: its path (line 0), then each line of its text.
  *
- * @param allow - the allow list's entries (`{ path, reason, issue }`); an allowed path is not read.
+ * @param allow - the allow list's entries: `{ path }` (`dir/**` or exact) exempts the whole file, unread;
+ *                `{ path, lineSha256 }` (an exact path) exempts only the line of that file with that exact text.
  */
 export function scanText(path, text, allow = []) {
-  if (allow.some((entry) => entry.path !== undefined && allowedBy(path, entry.path))) return [];
+  if (
+    allow.some(
+      (entry) =>
+        entry.path !== undefined && entry.lineSha256 === undefined && allowedBy(path, entry.path),
+    )
+  )
+    return [];
+  const lines = new Set(
+    allow
+      .filter((entry) => entry.lineSha256 !== undefined && entry.path === path)
+      .map((entry) => entry.lineSha256),
+  );
   const findings = lineFindings(path).map((reason) => ({ path, line: 0, reason }));
   if (text.includes("\u0000")) return findings; // binary: its name only
-  const spec = path.startsWith(".agents/specs/");
   text.split("\n").forEach((line, index) => {
-    if (spec && APPROVAL.test(line)) return;
-    for (const reason of lineFindings(line)) findings.push({ path, line: index + 1, reason });
+    const found = lineFindings(line);
+    if (found.length === 0 || lines.has(hashLine(line))) return;
+    for (const reason of found) findings.push({ path, line: index + 1, reason });
   });
   return findings;
+}
+
+/**
+ * The line entries of the allow list whose line is no longer in their file, as findings (line 0): a rewritten or
+ * removed line takes its entry with it, so the list only shrinks.
+ *
+ * @param read - the text of a repository path, or undefined when it is gone.
+ */
+export function staleLineEntries(allow, read) {
+  return allow
+    .filter((entry) => entry.lineSha256 !== undefined)
+    .filter((entry) => {
+      const text = entry.path === undefined ? undefined : read(entry.path);
+      return (
+        text === undefined || !text.split("\n").some((line) => hashLine(line) === entry.lineSha256)
+      );
+    })
+    .map((entry) => ({
+      path: entry.path ?? "(no path)",
+      line: 0,
+      reason: `an allow entry (${entry.issue}) for a line that is no longer there: remove it`,
+    }));
 }
 
 /** The files inside a `.tgz` tarball, as `[path, text]` (ustar, as `npm pack` and `pnpm pack` write it). */
@@ -223,11 +264,12 @@ function trackedFiles(root) {
 
 /** The allow list beside this script. */
 export function readAllow() {
-  const file = fileURLToPath(new URL("public-content.allow.json", import.meta.url));
-  return JSON.parse(readFileSync(file, "utf8")).allow;
+  const file = fileURLToPath(new URL("public-content.allow.yaml", import.meta.url));
+  return parseYaml(readFileSync(file, "utf8")).allow;
 }
 
-const USAGE = "usage: guard-public-content.mjs [--pack <file.tgz>…] [--hash <term>]";
+const USAGE =
+  "usage: guard-public-content.mjs [--pack <file.tgz>…] [--hash <term>] [--hash-line <path>:<n>]";
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
@@ -237,6 +279,21 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       process.exit(2);
     }
     console.log(JSON.stringify([hashTerm(args[1]), { length: args[1].length, reason: "…" }]));
+    process.exit(0);
+  }
+  if (args[0] === "--hash-line") {
+    const at = /^(.+):(\d+)$/.exec(args[1] ?? "");
+    if (args.length !== 2 || at === null) {
+      console.error(USAGE);
+      process.exit(2);
+    }
+    const [, path, n] = at;
+    const line = readFileSync(path, "utf8").split("\n")[Number(n) - 1];
+    if (line === undefined) {
+      console.error(`guard-public-content: ${path} has no line ${n}`);
+      process.exit(2);
+    }
+    console.log(JSON.stringify({ path, lineSha256: hashLine(line), reason: "…", issue: "STA-…" }));
     process.exit(0);
   }
   const allow = readAllow();
@@ -250,15 +307,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       findings.push(...scanTarball(tarball, readFileSync(tarball), allow));
   } else if (args.length === 0) {
     const root = fileURLToPath(new URL("../..", import.meta.url));
-    for (const file of trackedFiles(root)) {
-      let text;
+    const read = (file) => {
       try {
-        text = readFileSync(join(root, file), "utf8");
+        return readFileSync(join(root, file), "utf8");
       } catch {
-        text = ""; // deleted in the working tree, or not a file: its path is still read
+        return undefined; // deleted in the working tree, or not a file: its path is still read
       }
-      findings.push(...scanText(file, text, allow));
-    }
+    };
+    for (const file of trackedFiles(root))
+      findings.push(...scanText(file, read(file) ?? "", allow));
+    findings.push(...staleLineEntries(allow, read));
   } else {
     console.error(USAGE);
     process.exit(2);
@@ -267,7 +325,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (findings.length > 0) {
     console.error(
       `guard-public-content: ${findings.length} line(s) carry internal content. Use a neutral example (acme, ` +
-        "example.com, /Users/me) instead; an exemption goes in tools/scripts/public-content.allow.json with its issue.",
+        "example.com, /Users/me) instead; an exemption goes in tools/scripts/public-content.allow.yaml with its issue.",
     );
     process.exit(1);
   }

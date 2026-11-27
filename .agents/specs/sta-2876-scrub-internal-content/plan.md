@@ -86,7 +86,7 @@ and both release paths read every tarball before publishing.
 flowchart TD
   files["tracked files (git ls-files)"] --> guard["guard-public-content.mjs"]
   packs["pnpm pack of each published package"] --> guard
-  allow["public-content.allow.json"] --> guard
+  allow["public-content.allow.yaml"] --> guard
   guard -->|finding| fail["exit 1: validate or the release job stops"]
   guard -->|clean| pass["merge / publish"]
 ```
@@ -104,7 +104,7 @@ text scrub (C4).
 ```text
 tools/scripts/
 ├── guard-public-content.mjs                    (new)
-├── public-content.allow.json                   (new)
+├── public-content.allow.yaml                   (new)
 ├── README.md                                   (changed)
 └── __tests__/guard-public-content.test.mjs     (new)
 ```
@@ -275,6 +275,7 @@ is touched.
 
 ## Rollout
 
-Merge; the next release publishes clean tarballs. Before the next testbed apply the owner sets `TESTBED_KEY_PAIR` (or
-creates `stackra-testbed`); for the nightly reconcile to keep reading private repos, `LINEAR_RECONCILE_EXTRA_REPOS`.
+Merge; the next release publishes clean tarballs. Before the next testbed apply the owner sets `TESTBED_KEY_PAIR` to the
+existing pair (the workflow refuses without it); for the nightly reconcile to keep reading private repos,
+`LINEAR_RECONCILE_EXTRA_REPOS`. Approvers write role-only approval lines (STA-2905).
 A product that publishes pull-request previews adds `pullRequestZone` before its next pull request.

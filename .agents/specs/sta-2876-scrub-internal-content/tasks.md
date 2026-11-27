@@ -41,7 +41,7 @@ description: "Tasks for STA-2876: public repos and packages carry nothing intern
 
 **Independent Test**: `tools/scripts/__tests__/guard-public-content.test.mjs`.
 
-- [x] T011 [US2] the guard and its allow list in `tools/scripts/guard-public-content.mjs` and `tools/scripts/public-content.allow.json` — covers: FR-002, FR-003, FR-004, FR-005, NFR-001, NFR-002, AC-001, AC-003, AC-009, P-001, P-002, P-003 — route: spec-task
+- [x] T011 [US2] the guard and its allow list in `tools/scripts/guard-public-content.mjs` and `tools/scripts/public-content.allow.yaml` — covers: FR-002, FR-003, FR-004, FR-005, NFR-001, NFR-002, AC-001, AC-003, AC-009, P-001, P-002, P-003 — route: spec-task
 - [x] T012 [US2] tests, including the whole repository, in `tools/scripts/__tests__/guard-public-content.test.mjs` — covers: FR-001 to FR-005, AC-001, AC-003, SC-002 — route: tests — deps: T011
 - [x] T013 [US2] the tarball steps in `.github/workflows/runway-npm.yml` (input `pack-check`) and `.github/workflows/release.yml` (release and prerelease) — covers: FR-006, AC-002, AC-004, P-004, SC-001 — route: spec-task — deps: T011
 
@@ -49,3 +49,9 @@ description: "Tasks for STA-2876: public repos and packages carry nothing intern
 
 - [x] T014 [P] docs in `apps/docs/src/docs/runbooks/release.mdx`, `apps/docs/src/docs/runbooks/runway.mdx`, `.github/workflows/README.md`, `tools/scripts/README.md` and `packages/developer/runway/README.md` — covers: FR-006, FR-008, AC-002, AC-005 — route: steward-docs — deps: T013
 - [x] T015 [P] changeset for the touched packages in `.changeset/public-content-scrub.md` — covers: FR-008, FR-009, AC-005, AC-006 — route: steward-changesets — deps: T007, T009
+
+## Phase 6: Review fixes
+
+- [x] T016 `TESTBED_KEY_PAIR` required, no fallback, in `.github/workflows/apply-testbed.yml`, with `tools/scripts/__tests__/apply-testbed-workflow.test.mjs` — covers: FR-009, AC-006 — route: spec-task
+- [x] T017 [P] the Retire step and Step 2 variables in `apps/docs/src/docs/runbooks/test-infrastructure.mdx`; the worked example in `apps/docs/src/docs/runbooks/mobile-onboarding.mdx` — covers: FR-001, FR-009, AC-001, AC-006 — route: steward-docs
+- [x] T018 [US2] line entries and stale-entry reports in `tools/scripts/guard-public-content.mjs`, `tools/scripts/public-content.allow.yaml` and `tools/scripts/__tests__/guard-public-content.test.mjs`; the approval-line exemption removed (STA-2905) — covers: FR-001, FR-004, AC-001, AC-010 — route: spec-task

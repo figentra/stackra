@@ -1,8 +1,9 @@
 /**
  * Stackra file contract:
  * Purpose: hold `guard-public-content.mjs` to its contract (STA-2876): denied words and hosts by hash, personal home
- *          folders, a file's path as well as its text, the approver's spec lines and the allow list exempt, tarballs
- *          read file by file (an allowed package skipped), and this repository's tracked files clean.
+ *          folders, a file's path as well as its text, approval lines checked like any other (STA-2905), the allow
+ *          list exempt (a path, one line by its hash, a package) and its stale line entries reported, tarballs read
+ *          file by file (an allowed package skipped), and this repository's tracked files clean.
  * Boundary: a test-only denied term ("zorblax") is added to the in-memory list; tarballs are built in a temp folder
  *           with the system `tar`; never writes this checkout.
  * Runtime: node
@@ -17,11 +18,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   DENIED,
+  hashLine,
   hashTerm,
   lineFindings,
   readAllow,
   scanTarball,
   scanText,
+  staleLineEntries,
   tarballFiles,
 } from "../guard-public-content.mjs";
 
@@ -98,16 +101,72 @@ test("guard-public-content: a file's path is read as well as its text (line 0); 
   assert.deepEqual(scanText("font.woff2", "\u0000zorblax"), []);
 });
 
-test("guard-public-content: only a spec's approval lines are exempt, and only in .agents/specs", () => {
-  const text = "Approved by zorblax on 2026-11-01\n**Approver**: zorblax\nWritten by zorblax\n";
+test("guard-public-content: an approval line that names a person is a finding, in a spec or anywhere", () => {
+  const text =
+    "- 2026-11-26 → Planned — Approved by zorblax (CTO) 2026-11-26\n**Approver**: CTO (zorblax)\n" +
+    "the design zorblax approved by mail\n- 2026-11-27 → Planned — Approved by CTO 2026-11-27\n";
   assert.deepEqual(
     scanText(".agents/specs/sta-1-x/spec.md", text).map((f) => f.line),
-    [3],
+    [1, 2, 3],
   );
   assert.deepEqual(
     scanText("docs/notes.md", text).map((f) => f.line),
     [1, 2, 3],
   );
+});
+
+test("guard-public-content: a line entry exempts that exact line of that file only", () => {
+  const named = "- 2026-11-26 → Planned — Approved by zorblax (CTO) 2026-11-26";
+  const text = `${named}\n**Approver**: CTO (zorblax)\n`;
+  const allow = [{ path: ".agents/specs/sta-1-x/spec.md", lineSha256: hashLine(named) }];
+  assert.deepEqual(
+    scanText(".agents/specs/sta-1-x/spec.md", text, allow).map((f) => f.line),
+    [2],
+  );
+  // The same line in another file, or the line changed, is still a finding.
+  assert.deepEqual(
+    scanText(".agents/specs/sta-2-y/spec.md", text, allow).map((f) => f.line),
+    [1, 2],
+  );
+  assert.deepEqual(
+    scanText(".agents/specs/sta-1-x/spec.md", `${named} \n`, allow).map((f) => f.line),
+    [1],
+  );
+  // A line entry never exempts the file's path (line 0).
+  assert.deepEqual(
+    scanText("zorblax.md", named, [{ path: "zorblax.md", lineSha256: hashLine(named) }]).map(
+      (f) => f.line,
+    ),
+    [0],
+  );
+});
+
+test("guard-public-content: a line entry whose line is gone is reported, so the list only shrinks", () => {
+  const named = "Approved by zorblax 2026-11-26";
+  const allow = [
+    { path: "a.md", lineSha256: hashLine(named), issue: "STA-1" },
+    { path: "b.md", lineSha256: hashLine(named), issue: "STA-2" },
+    { path: "c.md", lineSha256: hashLine(named), issue: "STA-3" },
+    { path: "d/**", issue: "STA-4" },
+  ];
+  const files = { "a.md": `x\n${named}\n`, "b.md": "Approved by CTO 2026-11-27\n" };
+  assert.deepEqual(
+    staleLineEntries(allow, (path) => files[path]).map((f) => `${f.path}:${f.line}`),
+    ["b.md:0", "c.md:0"],
+  );
+  assert.match(staleLineEntries(allow, (path) => files[path])[0].reason, /STA-2.*remove it/);
+});
+
+test("guard-public-content: --hash-line prints the line entry of one line", () => {
+  const file = join(root, "approval.md");
+  writeFileSync(file, "one\nApproved by zorblax 2026-11-26\n");
+  const out = spawnSync(process.execPath, [TOOL, "--hash-line", `${file}:2`], { encoding: "utf8" });
+  assert.equal(out.status, 0, out.stderr);
+  const entry = JSON.parse(out.stdout);
+  assert.equal(entry.path, file);
+  assert.equal(entry.lineSha256, hashLine("Approved by zorblax 2026-11-26"));
+  assert.equal(spawnSync(process.execPath, [TOOL, "--hash-line", `${file}:9`]).status, 2);
+  assert.equal(spawnSync(process.execPath, [TOOL, "--hash-line", file]).status, 2);
 });
 
 test("guard-public-content: the allow list exempts a folder or an exact path, never a sibling", () => {
@@ -120,6 +179,11 @@ test("guard-public-content: the allow list exempts a folder or an exact path, ne
   for (const entry of readAllow()) {
     assert.ok((entry.path ?? entry.package) !== undefined, JSON.stringify(entry));
     assert.ok(entry.reason?.length > 0 && /^STA-\d+$/.test(entry.issue), JSON.stringify(entry));
+    // A line entry names one exact file and the line's SHA-256, never the line.
+    if (entry.lineSha256 !== undefined) {
+      assert.match(entry.lineSha256, /^[0-9a-f]{64}$/, JSON.stringify(entry));
+      assert.ok(entry.path !== undefined && !entry.path.endsWith("/**"), JSON.stringify(entry));
+    }
   }
 });
 
