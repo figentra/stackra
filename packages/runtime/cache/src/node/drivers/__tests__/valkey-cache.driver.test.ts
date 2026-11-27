@@ -5,7 +5,8 @@
  *          the key prefix with `PX` milliseconds, reads it back until the lifetime passes on the clock, indexes each key
  *          in a sorted set under every key that covers it (dropping members past their instant, keeping the set alive
  *          for its longest member), `forget` drops only the covered keys from that set without a `SCAN`, and
- *          `forgetTag` drops the tagged entries.
+ *          `forgetTag` drops the tagged entries, and `add` is one `SET … PX … NX` answered by the server, indexed so
+ *          `forget` still finds it.
  * Boundary: test only; `iovalkey` is mocked by an in-memory client (strings and sorted sets), so no server runs.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0269 (tests import @stackra/testing); ADR 0150 (decisions 1, 2
@@ -37,7 +38,8 @@ vi.mock("iovalkey", () => ({
   default: class {
     get = vi.fn(async (key: string) => server.values.get(key) ?? null);
 
-    set = vi.fn(async (key: string, value: string) => {
+    set = vi.fn(async (key: string, value: string, ...options: unknown[]) => {
+      if (options.includes("NX") && server.values.has(key)) return null;
       server.values.set(key, value);
       return "OK";
     });
@@ -189,5 +191,23 @@ describe("ValkeyCacheDriver", () => {
     await expect(cache.get(CacheKey.of(Product, "prd_1"))).resolves.toBeUndefined();
     await expect(cache.get(CacheKey.of(Product, "prd_2"))).resolves.toBe("two");
     expect(server.sets.has("commerce:#t//Category:cat_1")).toBe(false);
+  });
+
+  it("adds with one SET PX NX, answering whether the server stored it, and indexes the key for forget", async () => {
+    const { cache } = setup();
+    const key = CacheKey.of(Product, "req-1");
+    await expect(cache.add(key, true, Duration.seconds(120))).resolves.toBe(true);
+    expect(cache.client.set).toHaveBeenLastCalledWith(
+      "commerce:/Product:req-1",
+      expect.any(String),
+      "PX",
+      120_000,
+      "NX",
+    );
+    await expect(cache.add(key, true, Duration.seconds(120))).resolves.toBe(false);
+    await expect(cache.get(key)).resolves.toBe(true);
+    expect(server.sets.get("commerce:#k//Product")?.has("/Product:req-1")).toBe(true);
+    await cache.forget(CacheKey.of(Product));
+    await expect(cache.add(key, true, Duration.seconds(120))).resolves.toBe(true);
   });
 });
