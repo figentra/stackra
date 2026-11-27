@@ -110,3 +110,7 @@ allow:
     lineSha256: "255f98c0ea1b59492fbf35419e0ed430e38e6fc5dbbf01eba1ec4535ccda23a2"
     reason: "A spec approval line that names the approver; only the approver rewrites it, with the role only."
     issue: "STA-2905"
+  - path: ".agents/specs/sta-2911-public-content-policy/spec.md"
+    lineSha256: "255f98c0ea1b59492fbf35419e0ed430e38e6fc5dbbf01eba1ec4535ccda23a2"
+    reason: "A spec approval line that names the approver; only the approver rewrites it, with the role only."
+    issue: "STA-2905"

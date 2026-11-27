@@ -174,5 +174,6 @@ the pre-commit hook, and again by `pnpm verify` and the Quality Gate.
 - 2026-11-27 · — → Draft · spec author · written from the branch's diff and the audit item
 - 2026-11-27 · Draft → Clarified · spec author · scope fixed by the item text and the STA-2876 review
 - 2026-11-27 → Planned (plan.md)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)
