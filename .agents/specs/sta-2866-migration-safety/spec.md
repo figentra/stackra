@@ -150,10 +150,17 @@ names the migration, step and statement, and says to move the backfill to a queu
 - **EC-01**: A statement on a table created earlier in the same migration with a plain `CREATE TABLE` is `additive`:
   no release reads that table yet. `CREATE TABLE IF NOT EXISTS` may adopt a table already in use, so it marks nothing
   created (`database.0005_create_cache_tables` is therefore classed `banned` and joins the released set).
-- **EC-02**: Comment lines, string literals and dollar-quoted bodies never change the class. A function body that
-  writes rows is the function's, not the migration's.
-- **EC-03**: A `DO` block is judged by its body. Only reads and raises are `additive`, a data write is `banned` and
-  anything else is `contract`. `FOR UPDATE` locks rows and writes nothing.
+- **EC-02**: Comments (line, inline and nested block ones), string literals, quoted identifiers and dollar-quoted
+  bodies never change the class: keywords are matched on the code alone (`sqlCodeOf`, which shares
+  `splitSqlStatements`' scanner). A function body that writes rows is the function's, not the migration's.
+- **EC-03**: A `DO` block is judged by its body. Only reads and raises that call no function outside the read-only
+  list (aggregates, the scalar, array and `ltree` helpers the released pre-flights use, GUC reads and writes, advisory
+  locks) are `additive`; a data write is `banned`; anything else, an assignment from another call or a body that is no
+  dollar-quoted one included, is `contract`. `FOR UPDATE` locks rows and writes nothing.
+- **EC-10**: A top-level `SELECT` or `WITH` read is `additive` only when it calls no function outside the same list,
+  since a function may delete or backfill rows (`select purge_tenant_data()` is `contract`). `SELECT … INTO` creates a
+  table and copies rows into it, so it is `banned`; so is `CREATE TABLE … AS` unless it is `WITH NO DATA` or
+  temporary. A temporary table or a `CREATE MATERIALIZED VIEW … AS` is judged by its query like a read.
 - **EC-04**: A statement gen cannot read is `contract`, so an unknown is destructive and never safe. A raw string with
   several top-level statements is split on its semicolons (outside literals, quoted identifiers, dollar-quoted bodies
   and comments) and each part is classed alone; `classifyMigrationStatement` given such a string returns `contract`.
@@ -211,6 +218,8 @@ names the migration, step and statement, and says to move the backfill to a queu
 - **AC-008**: WHEN a deploy was rejected or failed THE next deploy's `--previous` record SHALL NOT include its
   migrations (only `runway migrations:record` after a successful deploy writes one).
 - **AC-009**: WHEN a compiled `schema.sql()` string holds a destructive statement after a harmless one THE gen run SHALL class the migration destructive and name that statement in its own finding.
+- **AC-010**: WHEN a statement calls a function or a comment holds a keyword THE classifier SHALL class it
+  `contract` or higher unless the function is on its read-only list and the keyword is code, never `additive` by guess.
 
 ## Success Criteria _(mandatory)_
 
@@ -275,6 +284,10 @@ None.
   nothing created, so `database.0005_create_cache_tables` joins the released banned set; `runway evidence` no longer
   writes the `runway-migrations` record and the new `runway migrations:record` writes it after a successful deploy
   (FR-004 and FR-007 changed, FR-009, FR-010, AC-007, AC-008, AC-009, EC-09 added).
+- 2026-11-26 · review fixes 2 (Claude, STA-2866 session): the classifier fails closed on what it cannot vouch for: a
+  read or a `DO` block that calls a function outside the read-only list is `contract`, `SELECT … INTO` and a filled
+  `CREATE TABLE … AS` are `banned`, a `DO` body that is not dollar-quoted is `contract`, and inline and block comments and quoted identifiers are masked
+  before any keyword is matched (EC-02 and EC-03 changed, EC-10 and AC-010 added).
 
 ## Status history
 

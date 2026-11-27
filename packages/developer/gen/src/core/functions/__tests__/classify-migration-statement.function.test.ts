@@ -4,9 +4,10 @@
  *          and raw `schema.sql` steps compile to (adds and relaxations are additive, concurrent builds, index drops and
  *          validations are online, drops, renames, `SET NOT NULL` and type changes are contract, data writes, locks
  *          and write-blocking index builds are banned), a table the same migration created makes any change to it
- *          additive (only after a plain `CREATE TABLE`: `IF NOT EXISTS` may adopt an existing table), comment
- *          lines and literals never change the class, a `DO` block is judged by its body, and an unknown statement or
- *          a string of several statements counts as contract.
+ *          additive (only after a plain `CREATE TABLE`: `IF NOT EXISTS` may adopt an existing table), comments
+ *          (inline and block ones too), literals and quoted names never change the class, a read or a `DO` block that
+ *          calls a function gen does not know to be read-only counts as contract, `SELECT … INTO` is banned, a `DO`
+ *          block is judged by its body, and an unknown statement or a string of several statements counts as contract.
  * Boundary: test only; pure.
  * Runtime: node (vitest)
  * Governing contract: ADR 0022 (test placement); ADR 0159 (decision 3; the 2026-10-23 note); ADR 0334 (rule 4).
@@ -153,11 +154,143 @@ describe("classifyMigrationStatement", () => {
     );
   });
 
+  /** A comment anywhere is not code: an inline `--` or a block comment never lowers the class (STA-2866 review). */
+  it("ignores inline and block comments", () => {
+    expect(classOf("alter table orders add column note text not null /* default later */")).toBe(
+      "contract",
+    );
+    expect(classOf("alter table orders add constraint c check (x > 0) -- not valid")).toBe(
+      "contract",
+    );
+    expect(
+      classOf("alter table orders /* a /* nested */ not valid */ add constraint c check (x > 0)"),
+    ).toBe("contract");
+    expect(classOf("alter table orders add column note text null -- not null")).toBe("additive");
+    expect(classOf("comment on table orders.orders is 'not -- a comment'")).toBe("additive");
+  });
+
+  /** A quoted name is a name, never a keyword: a column called "generated" is no generated column. */
+  it("reads a quoted name as a name, not a keyword", () => {
+    expect(classOf('alter table "orders"."orders" add column "generated" boolean not null')).toBe(
+      "contract",
+    );
+    expect(classOf('alter table "orders"."orders" add constraint "not valid" check (a > 0)')).toBe(
+      "contract",
+    );
+    expect(classOf('with x as (select * from "update") select 1')).toBe("additive");
+    expect(classOf('create index "i" on "Orders"."Orders" ("id")', ["orders.orders"])).toBe(
+      "additive",
+    );
+  });
+
+  /** A function may delete or backfill rows, so a read that calls one gen cannot vouch for is destructive. */
+  it.each([
+    "select purge_tenant_data()",
+    "select * from purge_tenant_data()",
+    "select orders.backfill_totals(100)",
+    'select "count"(*) from orders.orders',
+    "select evil.set_config('a', 'b', true)",
+    "select nextval('orders.seq')",
+    "with x as (select purge_tenant_data()) select 1",
+    "select e'\\'', purge_tenant_data(), 'x'",
+  ])("classes the read %s as contract", (sql) => {
+    expect(classOf(sql)).toBe("contract");
+  });
+
+  /** Aggregates, settings and advisory locks write nothing. */
+  it.each([
+    "select count(*) from orders.orders where note is null",
+    "select set_config('search_path', '', true)",
+    "select pg_catalog.set_config('lock_timeout', '5s', true)",
+    "select pg_advisory_xact_lock(42)",
+    "select pg_try_advisory_lock(42)",
+    "select 1 where exists (select 1 from orders.orders where id in (1, 2))",
+    "select '1'::numeric(10, 2)",
+  ])("classes the read %s as additive", (sql) => {
+    expect(classOf(sql)).toBe("additive");
+  });
+
+  /** `SELECT … INTO` creates a table and copies rows into it: a backfill, never a migration step. */
+  it("classes SELECT INTO as banned", () => {
+    expect(classOf("select * into orders.archive from orders.orders")).toBe("banned");
+  });
+
+  /** A table filled by a query copies rows; a materialized view or a temporary table is judged by its query. */
+  it.each([
+    ["create table orders.archive as select * from orders.orders", "banned"],
+    ['create unlogged table "orders"."archive" (id) as table orders.orders', "banned"],
+    ["create table orders.archive as select * from orders.orders with no data", "additive"],
+    ["create temp table purged as select purge_tenant_data()", "contract"],
+    ["create temporary table counted as select count(*) from orders.orders", "additive"],
+    ["create materialized view orders.totals as select purge_tenant_data()", "contract"],
+    ["create materialized view orders.totals as select sum(total) from orders.orders", "additive"],
+    ["create materialized view orders.totals as execute totals_plan", "contract"],
+    ["create table orders.lines (id bigint generated always as (1) stored)", "additive"],
+  ])("classes %s as %s", (sql, expected) => {
+    expect(classOf(sql)).toBe(expected);
+  });
+
+  /** A `DO` block that calls an unknown function, assigns from one or hides its body in a literal is destructive. */
+  it.each([
+    "do $$ declare n int; begin n := purge_rows(); end $$",
+    "do $$ begin if orders.purge() then raise notice 'done'; end if; end $$",
+    "do $body$ begin select purge_rows() into strict n; end $body$",
+    "do $$ begin lock table orders.orders; end $$",
+    "do 'begin raise notice ''x''; end'",
+    "do $$ begin null; /* perform */ n := purge_rows(); end $$",
+  ])("classes %s as contract", (sql) => {
+    expect(classOf(sql)).toBe("contract");
+  });
+
   /** A pre-flight `DO` block that counts and raises reads only; `FOR UPDATE` locks rows, it writes nothing. */
   it("judges a DO block by its body", () => {
     expect(
       classOf(
         "do $$\ndeclare n bigint;\nbegin\n  select count(*) into n from orders.orders where note is null for update;\n  if n > 0 then raise exception 'refused before any change: % rows to update', n; end if;\nend\n$$",
+      ),
+    ).toBe("additive");
+    expect(
+      classOf(
+        "do language plpgsql $$ declare n int; begin n := (select count(*) from orders.orders); -- purge()\n if n > 0 then raise exception 'perform purge() first'; end if; end $$",
+      ),
+    ).toBe("additive");
+  });
+
+  /** The pre-flights gen's own builder and the released migrations write stay additive (settings.0004 among them). */
+  it("keeps the released pre-flight DO blocks additive", () => {
+    expect(
+      classOf(
+        [
+          "do $$",
+          "declare",
+          "  found text[] := '{}';",
+          "  n bigint;",
+          "begin",
+          '  select count(*) into n from "settings"."stored_settings" where "tenant_id" is null and (nlevel("scope_path") > 3);',
+          "  if n > 0 then found := found || format('%s %s', 'settings.stored_settings', n); end if;",
+          "  if cardinality(found) > 0 then",
+          "    raise exception 'refused before any change: rows with a null %: %. %', 'tenant_id', array_to_string(found, ', '), 'fill it';",
+          "  end if;",
+          "end",
+          "$$",
+        ].join("\n"),
+      ),
+    ).toBe("additive");
+    expect(
+      classOf(
+        [
+          "do $$",
+          "declare",
+          "  n bigint;",
+          "begin",
+          '  select count(*) into n from (select 1 from "settings"."stored_settings" where "user_id" is not null',
+          '    group by "tenant_id", "group_key", "user_id" having count(*) > 1) as duplicated;',
+          "  if n > 0 then",
+          "    raise exception 'refused before any change: settings.stored_settings %. %', n, 'merge them';",
+          "  end if;",
+          "end",
+          "$$",
+        ].join("\n"),
       ),
     ).toBe("additive");
   });

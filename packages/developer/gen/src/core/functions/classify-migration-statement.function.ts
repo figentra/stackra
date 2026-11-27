@@ -12,16 +12,22 @@
  *          may adopt a table that already exists, so it marks nothing created. A statement gen cannot read counts as
  *          `contract`, so an unknown is destructive; so does a string that holds more than one top-level statement
  *          (`splitSqlStatements`), which `classifyMigrations` splits before it asks.
- * Boundary: pure; reads the SQL text only. Comment lines are dropped and string literals and dollar-quoted bodies
- *           blanked before keywords are matched, so a function body or a quoted word never changes the class. A `DO`
- *           block is judged by its body: only reads and raises are `additive`, a data write is `banned`, anything
- *           else `contract`.
+ * Boundary: pure; reads the SQL text only. Keywords are matched on `sqlCodeOf`'s code: every comment (inline and
+ *           block ones included) dropped, literals and dollar-quoted bodies blanked and quoted identifiers masked, so a
+ *           function body, a comment or a quoted word never changes the class. A `SELECT` or `WITH` read is
+ *           `additive` only when it calls no function outside `READ_ONLY_CALLS` (any other may write, so it is
+ *           `contract`) and creates no table (`SELECT … INTO` copies rows, `banned`). A `DO` block is judged by its
+ *           body: only reads and raises that call no other function are `additive`, a data write is `banned`,
+ *           anything else (a body that is no dollar-quoted one included) `contract`.
+ *           `CREATE TABLE … AS` copies rows (`banned`) unless it is empty or temporary; a temporary one and
+ *           `CREATE MATERIALIZED VIEW … AS` are judged by their query like a read.
  * Runtime: isomorphic
  * Governing contract: ADR 0159 (decision 3; the 2026-10-23 note: Additive, Online, Contract and Banned); ADR 0334
  *                     (rule 4: no data change in a migration).
  */
 import { migrationSafetyRank } from "#core/functions/migration-safety-rank.function";
 import { splitSqlStatements } from "#core/functions/split-sql-statements.function";
+import { sqlCodeOf } from "#core/functions/sql-code-of.function";
 import type { ClassifiedStatement } from "#core/types/classified-statement.type";
 import type { MigrationSafetyClass } from "#core/types/migration-safety-class.type";
 
@@ -45,6 +51,62 @@ const UNREAD = "gen cannot classify this statement, so it counts as destructive"
 const SEVERAL =
   "holds more than one statement, which gen classifies one at a time, so it counts as destructive";
 
+/** The reason of a read or a `DO` block that calls a function gen does not know to be read-only. */
+const CALLS =
+  "calls a function that may write or drop data, which gen cannot read, so it counts as destructive";
+
+/**
+ * The functions a read or a `DO` block may call and stay `additive`: aggregates and scalar, array and `ltree` helpers
+ * that write nothing (the ones `schema.refuseNulls` and the released pre-flights call), GUC reads and writes, and
+ * advisory locks. Any other call may delete or backfill rows, so it counts as `contract`.
+ */
+const READ_ONLY_CALLS: ReadonlySet<string> = new Set([
+  "array_agg",
+  "array_length",
+  "array_to_string",
+  "avg",
+  "bool_and",
+  "bool_or",
+  "cardinality",
+  "char_length",
+  "coalesce",
+  "count",
+  "current_setting",
+  "every",
+  "format",
+  "greatest",
+  "least",
+  "length",
+  "lower",
+  "max",
+  "min",
+  "nlevel",
+  "now",
+  "nullif",
+  "set_config",
+  "string_agg",
+  "string_to_array",
+  "sum",
+  "to_regclass",
+  "upper",
+]);
+
+/** The advisory lock functions, `pg_advisory_*` and `pg_try_advisory_*`, which are read-only too. */
+const ADVISORY = /^pg_(?:try_)?advisory_[a-z_]+$/;
+
+/** The keywords and type names a `(` may follow without being a call. */
+const NOT_CALLS: ReadonlySet<string> = new Set(
+  (
+    "all and any array as begin between bit by case cast char character check decimal declare distinct else elsif " +
+    "end except exception exists filter float from group having if ilike in intersect interval into is join " +
+    "lateral like limit loop not numeric offset on or order over partition raise recursive return returning row " +
+    "select similar some then time timestamp union using values varchar varying when where while with within"
+  ).split(" "),
+);
+
+/** A call: a name, schema-qualified or not, then `(`; a `::` before it makes it a type modifier. */
+const CALL = new RegExp(String.raw`(::\s*)?(?:(${IDENT})\s*\.\s*)?(${IDENT})\s*\(`, "g");
+
 /** The reason of a type change. */
 const TYPE_CHANGE =
   "changes a column type, which rewrites the table and breaks the running release's values";
@@ -59,30 +121,43 @@ const of = (safety: MigrationSafetyClass, reason: string): ClassifiedStatement =
 const higher = (a: ClassifiedStatement, b: ClassifiedStatement): ClassifiedStatement =>
   migrationSafetyRank(b.class) > migrationSafetyRank(a.class) ? b : a;
 
+/** One part of a name as the folded code spells it, unquoted: a masked identifier (`sqlCodeOf`) is read back. */
+const partOf = (part: string): string =>
+  /^"0(?:[0-9a-f]{6})*"$/.test(part)
+    ? String.fromCodePoint(
+        ...(part.slice(2, -1).match(/.{6}/g) ?? []).map((unit) => Number.parseInt(unit, 16)),
+      )
+    : part.replaceAll('"', "");
+
 /** A name as the created-table set holds it: unquoted and lowercased. */
-const nameOf = (name: string | undefined): string => (name ?? "").replaceAll('"', "").toLowerCase();
+const nameOf = (name: string | undefined): string =>
+  (name ?? "")
+    .split(".")
+    .map((part) => partOf(part))
+    .join(".")
+    .toLowerCase();
 
-/** The text without its comment lines. */
-const uncommented = (sql: string): string =>
-  sql
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("--"))
-    .join("\n");
-
-/** Blanks every single-quoted literal. */
-const blankLiterals = (sql: string): string => sql.replaceAll(/'(?:[^']|'')*'/g, "''");
-
-/** The statement lowercased, without comment lines, literals and dollar-quoted bodies blanked, whitespace folded. */
+/** The statement's code (`sqlCodeOf`) lowercased, whitespace folded, without its closing semicolon. */
 const fold = (sql: string): string =>
-  blankLiterals(
-    uncommented(sql)
-      .toLowerCase()
-      .replaceAll(/\$([a-z_][a-z0-9_]*)?\$[\s\S]*?\$\1\$/g, "$$$$"),
-  )
-    .replaceAll(/\s+/g, " ")
-    .trim()
-    .replace(/;$/, "")
-    .trim();
+  sqlCodeOf(sql).toLowerCase().replaceAll(/\s+/g, " ").trim().replace(/;$/, "").trim();
+
+/** Whether folded `code` calls a function outside `READ_ONLY_CALLS`, schema-qualified by anything but `pg_catalog`. */
+function callsUnknownFunction(code: string): boolean {
+  for (const [, cast, schema, name] of code.matchAll(CALL)) {
+    if (cast !== undefined || name === undefined) continue;
+    if (schema === undefined && NOT_CALLS.has(name)) continue;
+    const builtin = schema === undefined || schema === "pg_catalog";
+    if (!builtin || !(READ_ONLY_CALLS.has(name) || ADVISORY.test(name))) return true;
+  }
+  return false;
+}
+
+/** The class of a `SELECT` or `WITH` statement: a read, unless it writes, creates a table or calls an unknown function. */
+function read(s: string): ClassifiedStatement {
+  if (WRITE.test(s) || /\binto\b/.test(s)) return of("banned", WRITES_DATA);
+  if (callsUnknownFunction(s)) return of("contract", CALLS);
+  return of("additive", "reads only");
+}
 
 /** Splits an `ALTER TABLE` action list on its top-level commas. */
 function clausesOf(actions: string): string[] {
@@ -150,19 +225,25 @@ function alterTableClause(clause: string): ClassifiedStatement {
   return of("contract", UNREAD);
 }
 
-/** The class of a `DO` block, judged by its body. */
+/** The class of a `DO` block, judged by its dollar-quoted body; a body gen cannot find counts as `contract`. */
 function doBlock(sql: string): ClassifiedStatement {
-  const body = blankLiterals(
-    uncommented(
-      /\$([a-z_][a-z0-9_]*)?\$([\s\S]*?)\$\1\$/.exec(uncommented(sql).toLowerCase())?.[2] ?? "",
-    ),
-  );
+  const code = sqlCodeOf(sql, true);
+  const open = /(?<![\w$])\$(?:[A-Za-z_]\w*)?\$/.exec(code);
+  const end = open === null ? -1 : code.indexOf(open[0], open.index + open[0].length);
+  if (open === null || end === -1)
+    return of("contract", "a DO block whose body gen cannot read, so it counts as destructive");
+  const body = fold(code.slice(open.index + open[0].length, end));
   if (WRITE.test(body)) return of("banned", WRITES_DATA);
-  if (/\b(?:perform|execute|call|create|alter|drop|grant|revoke)\b/.test(body))
+  if (
+    /\b(?:perform|execute|call|create|alter|drop|grant|revoke|lock|notify|commit|rollback|refresh|reindex)\b/.test(
+      body,
+    )
+  )
     return of(
       "contract",
       "a DO block that runs statements gen cannot read, so it counts as destructive",
     );
+  if (callsUnknownFunction(body)) return of("contract", CALLS);
   return of("additive", "a DO block that only reads and raises, a pre-flight");
 }
 
@@ -181,8 +262,35 @@ function alterOther(s: string): ClassifiedStatement {
     : of("contract", UNREAD);
 }
 
+/** A `CREATE TABLE … AS` or `CREATE MATERIALIZED VIEW … AS`: its persistence, the object and the query that fills it. */
+const FILLED = new RegExp(
+  String.raw`^create (?:(?:global |local )?(temp|temporary|unlogged) )?(table|materialized view) (?:if not exists )?${QUALIFIED}(?: .*?)? as ((?:select|with|values|table|execute)\b.*)$`,
+);
+
+/**
+ * The class of a table or materialized view a query fills, or `undefined` for any other statement: an empty one
+ * (`WITH NO DATA`) is `additive`; a table that outlives the migration copies rows, a data write (`banned`, like
+ * `SELECT … INTO`); a temporary table or a materialized view is judged by its query like a read, so a call gen cannot
+ * vouch for is `contract`.
+ */
+function filledBy(s: string): ClassifiedStatement | undefined {
+  const filled = FILLED.exec(s);
+  if (filled === null) return undefined;
+  const [, persistence, object = "table", query = ""] = filled;
+  if (s.endsWith(" with no data")) return of("additive", `creates an empty ${object}`);
+  if (object === "table" && persistence !== "temp" && persistence !== "temporary")
+    return of("banned", WRITES_DATA);
+  if (/^execute\b/.test(query)) return of("contract", UNREAD);
+  const judged = read(query);
+  return judged.class === "additive"
+    ? of("additive", `creates a ${object} filled by a read`)
+    : judged;
+}
+
 /** The class of a `CREATE` or `DROP`, or `undefined` for any other statement. */
 function createOrDrop(s: string, created: ReadonlySet<string>): ClassifiedStatement | undefined {
+  const filled = filledBy(s);
+  if (filled !== undefined) return filled;
   if (/^create (?:unique )?index\b/.test(s)) {
     if (/^create (?:unique )?index concurrently\b/.test(s))
       return of("online", "builds an index concurrently in its own step");
@@ -222,7 +330,7 @@ function createOrDrop(s: string, created: ReadonlySet<string>): ClassifiedStatem
 /**
  * The class of `sql`, one statement of a compiled step.
  *
- * @param sql - one statement as the compiled step holds it, comment lines included; several count as `contract`.
+ * @param sql - one statement as the compiled step holds it, comments included; several count as `contract`.
  * @param created - the tables an earlier statement of the same migration created (unquoted, lowercased).
  * @example
  * classifyMigrationStatement('alter table "orders"."orders" drop column "note"', new Set()).class; // "contract"
@@ -234,8 +342,7 @@ export function classifyMigrationStatement(
   if (splitSqlStatements(sql).length > 1) return of("contract", SEVERAL);
   const s = fold(sql);
   if (s === "") return of("additive", "a comment or marker line");
-  if (/^with\b/.test(s))
-    return WRITE.test(s) ? of("banned", WRITES_DATA) : of("additive", "reads only");
+  if (/^(?:with|select)\b/.test(s)) return read(s);
   if (/^(?:insert|update|delete|merge|truncate|copy)\b/.test(s)) return of("banned", WRITES_DATA);
   if (
     /^(?:vacuum|cluster|lock|load|checkpoint|alter system|create database|alter database|drop database|drop owned|reassign owned)\b/.test(
@@ -263,8 +370,8 @@ export function classifyMigrationStatement(
           .map((clause) => alterTableClause(clause))
           .reduce(higher, of("additive", "changes the table's settings, not its data"));
   if (/^alter\b/.test(s)) return alterOther(s);
-  if (/^(?:comment on|grant|revoke|select|set|reset|security label|analyze)\b/.test(s))
-    return of("additive", "annotates, grants or reads; changes no data");
+  if (/^(?:comment on|grant|revoke|set|reset|security label|analyze)\b/.test(s))
+    return of("additive", "annotates, grants or sets a setting; changes no data");
   if (/^do\b/.test(s)) return doBlock(sql);
   return of("contract", UNREAD);
 }
