@@ -51,6 +51,9 @@ import type { TemplateFile } from "#node/types/template-file.type";
 /** A kebab-case name. */
 const KEBAB = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
+/** A table name as `--table` takes it: snake_case, starting with a letter (`order_lines`). */
+const SNAKE = /^[a-z][a-z0-9_]*$/;
+
 /** The packages each kind's files import, as dependencies: `zod` for the schemas gen compiles from the shapes. */
 const RUNTIME: Readonly<Record<string, readonly string[]>> = {
   model: [
@@ -188,6 +191,8 @@ export function scaffoldFeature(options: FeatureOptions): FeatureResult {
   ] as const)
     if (value !== undefined && !KEBAB.test(value))
       throw new CliUsageError(`${flag} ${value} is not kebab-case`);
+  if (options.table !== undefined && !SNAKE.test(options.table))
+    throw new CliUsageError(`--table ${options.table} is not snake_case, such as order_lines`);
   const member = resolveMember(options.cwd, options.member);
   const manifestFile = join(member, "package.json");
   const manifest = JSON.parse(readFileSync(manifestFile, "utf8")) as Manifest;
@@ -343,7 +348,11 @@ export function scaffoldFeature(options: FeatureOptions): FeatureResult {
       const level = kind === "action" ? "L2" : "L0";
       const permissionsPath = `src/modules/${moduleKey}/access/${names.stem}.permissions.ts`;
       if (!existsSync(join(member, permissionsPath)))
-        files.push({ path: permissionsPath, content: permissionsFile(names, verb, level) });
+        // A query always takes the model's `read`, never its own verb.
+        files.push({
+          path: permissionsPath,
+          content: permissionsFile(names, kind === "action" ? verb : "read", level),
+        });
       else {
         const text = read(permissionsPath);
         const existing = new RegExp(

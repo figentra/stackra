@@ -54,10 +54,87 @@ permission static is the camelCase verb. Decorated fields come first in every cl
 | Licence tier (ADR 0077)               | PASS   | free, MIT                                                                             |
 | Docs and ADRs                         | PASS   | README, `cli.mdx`, `guides/scaffolding.mdx`; implements ADR 0282 decision 3           |
 
+## Deploy modes
+
+| Mode       | Behaviour                                                           |
+| ---------- | ------------------------------------------------------------------- |
+| SaaS       | a developer command; it writes source files in the developer's repo |
+| On-prem    | the same                                                            |
+| Air-gapped | the same; it reads only local files and gen's built-in registry     |
+
+## Architecture overview
+
+`stackra new <kind> <name>` hands the five feature kinds to `scaffoldFeature(options)` before the member kinds. It
+checks the names and flags, finds the service around the working folder, and reads what it needs from the service: its
+package.json, its modules and models, the module's Permissions classes and its next migration number. Pure builders
+render the new files; small editors extend the Permissions class, the model or package.json. It refuses before writing
+anything when a check fails or a file exists, writes the files and edits (or lists them on `--dry-run`), declares the
+packages they import, and formats what it wrote with the workspace's oxfmt.
+
+## Components and responsibilities
+
+- `scaffoldFeature` (`functions/scaffold-feature.function.ts`): checks, orchestration, refusals, declared packages,
+  formatting.
+- `resolveMember`: the service (`--member`, else the nearest `stackra.config.ts` calling `defineService`).
+- `modelNames`, `derivePrefix`, `singular`, `nextMigrationNumber`: names as gen derives them.
+- `modelFiles`, `migrationFiles`, `actionFiles`, `queryFiles`: the builders, pure.
+- `readModel`, `appendMembers`, `ensureImport`: reading and extending authored files.
+- `parseFields`, `propertyLines`, `decoratorNames`, `sampleValue`, `contractHeader`: small helpers.
+- `NEW_COMMAND` (`constants/new-command.constant.ts`): the flags and the dispatch.
+
+## Files and folders
+
+- `packages/developer/cli/src/node/feature-scaffold/` (new): `constants/feature-kinds.constant.ts`,
+  `constants/field-types.constant.ts`, `functions/*.function.ts` (the components above) with their tests in
+  `functions/__tests__/`, `types/feature-field.type.ts`, `feature-options.type.ts`, `feature-result.type.ts`,
+  `field-type.type.ts`, `model-facts.type.ts`, `model-names.type.ts`
+- `packages/developer/cli/src/node/constants/new-command.constant.ts` and its test
+- Docs: `packages/developer/cli/README.md`, `apps/docs/src/docs/cli.mdx`, `apps/docs/src/docs/guides/scaffolding.mdx`,
+  `.changeset/stackra-new-feature-pieces.md`
+
+## Data models and migrations
+
+None in this repository. The command writes models and migrations into the developer's service: a create migration
+with each model, and nullable add-column migrations (`--fields`, on the model's table or `--table`, snake_case).
+
+## Contracts
+
+- `stackra new <module|model|migration|action|query> <name> [--module <key>] [--model <name>] [--fields ...]
+[--prefix <abc>] [--global] [--table <t>] [--member <path>] [--dry-run]`.
+- `scaffoldFeature(options: FeatureOptions): FeatureResult`; `FeatureResult` is `{ member, created, changed,
+dependencies, notes }`.
+- Written code follows gen's rules: an action is `<model>.<verb>` at L2 or above with idempotency; a query reads the
+  model's `read` at L0.
+
+## Error handling
+
+Every refusal is a `CliUsageError` (exit 2) raised before anything is written: an unknown kind, a name, `--module` or
+`--model` not in kebab-case, a `--table` not in snake_case, a missing service, module or model, a module that exists, a
+create, empty or NOT NULL migration, and a file that exists. A missing oxfmt is a note, not an error.
+
+## Security and tenancy
+
+The command writes only inside the service. An action is never below L2 and always carries idempotency; a query reads
+the model's `read` at L0. In a service that runs `@stackra/tenancy` a model is tenant-owned unless `--global` says
+otherwise (ADR 0239). `--table` is checked as snake_case before it reaches generated SQL. No secret and no network.
+
+## Testing strategy
+
+- AC-001 to AC-006, AC-008: `scaffold-feature.function.test.ts` and the helper tests in `functions/__tests__/`; the
+  review conditions in "writes `read` at L0, not the query's verb, when the model has no Permissions class" and the
+  `--table` refusals.
+- AC-007: `scaffold-feature-gen.function.test.ts`, gen strict over a plain and a tenancy service.
+- AC-009: the format note tests; `new-command.constant.test.ts` for the flags.
+- Revert checks: undoing the `--table` check or the query's `read` fails its test.
+
+## Rollout
+
+A minor changeset for `@stackra/cli`. Additive: existing kinds and flags are unchanged. Ships with the next CLI release.
+
 ## Verification
 
 - Unit tests of every helper and of `scaffoldFeature` (files, owners, prefixes, keys, permissions, migrations, refusals,
   dry run) and of the command's output.
 - `scaffold-feature-gen.function.test.ts`: gen strict over a plain and a tenancy service built with all five kinds.
-- Box 2: the same services typecheck, pass oxfmt and oxlint with the repository config, and their 19 generated tests
+- A Linux build host: the same services typecheck, pass oxfmt and oxlint with the repository config, and their 19 generated tests
   (PGlite migrations included) pass.

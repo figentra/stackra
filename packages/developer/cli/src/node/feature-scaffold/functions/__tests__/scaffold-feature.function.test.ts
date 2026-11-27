@@ -5,8 +5,9 @@
  *          member's own models, the next migration number, actions and queries named `<verb>-<model>` (keys, the L2
  *          permission added once, the `read` a query takes, a plural model, `--model`), the alter migration (nullable
  *          columns, the model's new fields with decorated ones first), `--dry-run`, and every refusal: no service, a
- *          missing or existing module, an unknown model, a NOT NULL or create migration, and a file that exists
- *          (nothing written).
+ *          missing or existing module, an unknown model, a NOT NULL or create migration, a `--table` that is not
+ *          snake_case, and a file that exists (nothing written); a query on a model with no Permissions class writes
+ *          `read` at L0.
  * Boundary: test only; writes a throwaway service in the OS temp directory and never formats (`format: false`); gen
  *           over the same output is `scaffold-feature-gen.function.test.ts`.
  * Runtime: node (vitest)
@@ -244,6 +245,17 @@ describe(scaffoldFeature, () => {
     );
   });
 
+  it("writes `read` at L0, not the query's verb, when the model has no Permissions class", () => {
+    run({ kind: "module", name: "orders" });
+    rmSync(join(member, "src/modules/orders/access/order.permissions.ts"));
+    const query = run({ kind: "query", name: "list-orders", module: "orders" });
+
+    expect(query.created).toContain("src/modules/orders/access/order.permissions.ts");
+    const permissions = read("src/modules/orders/access/order.permissions.ts");
+    expect(permissions).toContain("static readonly read = Permission.L0;");
+    expect(permissions).not.toContain("static readonly list");
+  });
+
   it("writes the next migration, nullable, and adds its fields to the model", () => {
     run({ kind: "module", name: "orders", fields: "notes:text?" });
     const made = run({
@@ -314,6 +326,10 @@ describe(scaffoldFeature, () => {
     expect(() => run({ kind: "migration", name: "add-sku", module: "orders" })).toThrow(
       "a migration needs --fields",
     );
+    for (const table of ["Orders", "order-lines", "2orders", "orders;drop", "_orders"])
+      expect(() =>
+        run({ kind: "migration", name: "add-sku", module: "orders", table, fields: "sku:string?" }),
+      ).toThrow(`--table ${table} is not snake_case`);
     expect(() =>
       run({ kind: "migration", name: "add-sku", module: "orders", fields: "sku:string" }),
     ).toThrow(
