@@ -8,13 +8,16 @@
  *          check (`migration_import_forbidden` for a value, a type-only and a dynamic import, before the file is
  *          loaded), and the merged `Blueprint` augmentation of an own macro, through which a TypeScript program accepts
  *          the call and rejects a wrong argument, and `module_key_collision` for an own module with migrations whose
- *          key a made-up declared package's migrations need (STA-2161); and the migration lock (STA-2160): the lock
+ *          key a made-up declared package's migrations need (STA-2161); the migration lock (STA-2160): the lock
  *          it returns, a locked migration changed or gone refused, a new one added after the lock passing, a locked
  *          migration a newer rule would refuse still compiling with a `migration_rule_frozen` warning, and every rule
- *          applying to an unlocked one.
+ *          applying to an unlocked one; and the ADR 0159 classes it returns with a `migration_banned` refusal for a
+ *          data write unless the lock names its migration, and an empty classification for a service with no
+ *          migration (STA-2866).
  * Boundary: test only; writes under the OS temp folder and removes it. No workspace dependency is used.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305; STA-2160.
+ * Governing contract: ADR 0022 (test placement); ADR 0159 as amended by ADR 0305; ADR 0159 decision 3 (STA-2866);
+ *                     STA-2160.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -27,6 +30,7 @@ import type * as TypeScript from "typescript6";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { compileMigrations } from "#node/functions/compile-migrations.function";
+import { migrationSha256 } from "#node/functions/migration-sha256.function";
 
 /** The roots written by this file. */
 const roots: string[] = [];
@@ -57,11 +61,14 @@ const BASE: Readonly<Record<string, string>> = {
     "    blueprint[stem.charAt(0).toLowerCase() + stem.slice(1)] = (...args) => new M().apply(blueprint, ...args);",
     "  }",
     "  const tables = [];",
-    "  new type().up({ create: (table, define) => { tables.push(table); define(blueprint); } });",
-    "  return {",
-    "    after: type.after ?? [],",
-    "    steps: tables.map((table) => ({ sql: ['create table ' + table], transactional: true, inverse: false })),",
-    "  };",
+    "  const raws = [];",
+    "  new type().up({",
+    "    create: (table, define) => { tables.push(table); define(blueprint); },",
+    "    sql: (statement) => { raws.push(statement); },",
+    "  });",
+    "  const steps = tables.map((table) => ({ sql: ['create table ' + table], transactional: true, inverse: false }));",
+    "  if (raws.length > 0) steps.push({ sql: raws, transactional: true, inverse: false });",
+    "  return { after: type.after ?? [], steps };",
     "};",
     "",
   ].join("\n"),
@@ -352,6 +359,80 @@ describe("compileMigrations", () => {
   it("writes no blueprint file when the service has no own macro", async () => {
     const { files } = await compileMigrations(host(), serviceIr(["shop"]));
     expect(files.some((file) => file.path.endsWith("blueprint.ts"))).toBe(false);
+  });
+
+  /** Each migration takes the highest class of its statements; runway reads the document gen writes from it. */
+  it("returns the ADR 0159 class of every migration (STA-2866)", async () => {
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-drop-note.migration.ts":
+        migration("DropNote", 'schema.sql("alter table ai.agents drop column note");'),
+    });
+    const { safety, errors } = await compileMigrations(root, serviceIr(["shop"]));
+    expect(errors).toEqual([]);
+    expect(
+      safety?.migrations.map((row) => [row.id, row.class, row.destructive, row.files]),
+    ).toEqual([
+      ["tenancy.0001_create_tenants", "additive", false, ["0001_tenancy_0001_create_tenants"]],
+      ["ai.0001_create_agents", "additive", false, ["0002_ai_0001_create_agents"]],
+      ["ai.0002_drop_note", "contract", true, ["0003_ai_0002_drop_note"]],
+    ]);
+  });
+
+  /** "No migration" is a classification too, so runway can tell it from a checkout where gen has not run. */
+  it("returns an empty classification for a service with no migration (STA-2866)", async () => {
+    const { files, errors, safety } = await compileMigrations(host(), {
+      ...serviceIr([]),
+      packages: [],
+    });
+    expect([files, errors]).toEqual([[], []]);
+    expect(safety).toEqual({ schema: "stackra.migration-safety/v1", migrations: [] });
+  });
+
+  /** A data write is a queue job, never a migration: refused, and no file is written. */
+  it("refuses a migration that writes data with migration_banned (STA-2866)", async () => {
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts": migration(
+        "Backfill",
+        'schema.sql("update ai.agents set note = 1");',
+      ),
+    });
+    const { files, errors } = await compileMigrations(root, serviceIr(["shop"]));
+    expect(files).toEqual([]);
+    expect(errors.map((error) => [error.code, error.file, error.subject])).toEqual([
+      [
+        "migration_banned",
+        "@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts",
+        "ai.0002_backfill step 1 statement 1",
+      ],
+    ]);
+  });
+
+  /** A migration the committed lock names may already be applied: its banned statement is classified, not refused. */
+  it("classifies a banned statement in a locked migration instead of refusing it (STA-2866)", async () => {
+    const { lock } = await compileMigrations(host(), serviceIr(["shop"]));
+    const backfill = {
+      id: "ai.0002_backfill",
+      sha256: migrationSha256({
+        after: [],
+        steps: [{ sql: ["update ai.agents set note = 1"], transactional: true, inverse: false }],
+      }),
+    };
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts": migration(
+        "Backfill",
+        'schema.sql("update ai.agents set note = 1");',
+      ),
+    });
+    const { files, errors, safety } = await compileMigrations(root, serviceIr(["shop"]), {
+      locked: [...(lock ?? []), backfill],
+    });
+    expect(errors).toEqual([]);
+    expect(files.length).toBeGreaterThan(0);
+    expect(safety?.migrations.at(-1)).toMatchObject({
+      id: "ai.0002_backfill",
+      class: "banned",
+      destructive: true,
+    });
   });
 });
 

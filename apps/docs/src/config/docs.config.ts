@@ -191,6 +191,7 @@ export class StackraDocsConfig extends DocsConfig {
             "runway/env-check",
             "runway/env-orphans",
             "runway/evidence",
+            "runway/migrations-record",
           ],
         },
       ],
