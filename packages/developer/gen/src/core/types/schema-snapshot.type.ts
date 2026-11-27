@@ -5,9 +5,11 @@
  *          `@stackra/database/node`'s `readMigratedSchema` returns the actual one.
  * Boundary: a type only, structural so the pure entry needs no `@stackra/database` import (the `MigrationUnit`
  *           precedent). An expected column whose field type has no Postgres mapping has no `type`; the comparison
- *           reports it as `type_unmapped` instead of guessing. An actual type is Postgres's `format_type` text.
+ *           reports it as `type_unmapped` instead of guessing. An actual type is Postgres's `format_type` text. Only
+ *           an expected row says `nullable: "either"` (a trait column a new table writes not null and an existing
+ *           one nullable) or `optional` (an index a trait's macro writes only on request).
  * Runtime: isomorphic
- * Governing contract: ADR 0159 (migrations); ADR 0282 (decision 3: `stackra db diff`); STA-1808.
+ * Governing contract: ADR 0159 (migrations); ADR 0282 (decision 3: `stackra db diff`); STA-1808; STA-1408.
  */
 /** A schema as flat rows. */
 export interface SchemaSnapshot {
@@ -17,7 +19,7 @@ export interface SchemaSnapshot {
     readonly table: string;
     readonly name: string;
     readonly type?: string;
-    readonly nullable: boolean;
+    readonly nullable: boolean | "either";
   }[];
 
   /** Every index but a primary key. */
@@ -29,6 +31,7 @@ export interface SchemaSnapshot {
     readonly unique: boolean;
     readonly method?: string;
     readonly predicate?: string | undefined;
+    readonly optional?: true;
   }[];
 
   /** Every foreign key. */

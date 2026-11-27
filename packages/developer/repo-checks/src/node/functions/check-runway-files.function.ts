@@ -3,21 +3,25 @@
  * Purpose: `checkRunwayFiles(input)`, ADR 0296 enforcement (STA-598): each runway file parses as YAML with no repeated key
  *          and passes `parseRunway` for its kind; the root also passes `checkPlacement` against the service keys, and each
  *          service runway passes `checkRequires` against the root (STA-2049); the root passes `checkDestinations`, when
- *          the runway build has it (O8, STA-2100), and `checkEnvironmentRegion` (ADR 0524).
+ *          the runway build has it (O8, STA-2100), and `checkEnvironmentRegion` (ADR 0524). Every parsed file passes
+ *          `checkRuntimeOnlyConfig` against `runtimeOnly`, when the runway build has it: a `config` block never sets a
+ *          field only the runtime may set (STA-2844).
  * Boundary: pure apart from `read`; `runway` is the built `@stackra/runway` entry (or a fake). Errors other than
  *           `RunwayInvalidError` propagate.
  * Runtime: node
- * Governing contract: ADR 0296.
+ * Governing contract: ADR 0296 (and its amendment of 2026-11-26, STA-2844).
  */
 import { parseDocument } from "yaml";
 
 import { runwayKindOf } from "#node/functions/runway-kind-of.function";
 import type { RunwayApi } from "#node/types/runway-api.type";
+import type { RuntimeOnlyFieldShape } from "#node/types/runtime-only-field-shape.type";
 
 /**
  * The runway-file findings.
  *
- * @param input - the runway `files`, `read` for their text, the `runway` API and the service member keys `services`.
+ * @param input - the runway `files`, `read` for their text, the `runway` API, the service member keys `services` and
+ *                the repository's runtime-only fields `runtimeOnly` (none when omitted).
  * @example
  * checkRunwayFiles({ files: ["runway.yaml"], read, runway, services: ["notes"] });
  */
@@ -26,8 +30,9 @@ export function checkRunwayFiles(input: {
   readonly read: (path: string) => string;
   readonly runway: RunwayApi;
   readonly services: readonly string[];
+  readonly runtimeOnly?: readonly RuntimeOnlyFieldShape[];
 }): string[] {
-  const { files, read, runway, services } = input;
+  const { files, read, runway, services, runtimeOnly = [] } = input;
   const out: string[] = [];
   let root: unknown;
   const parsedServices: [file: string, runway: unknown][] = [];
@@ -54,6 +59,9 @@ export function checkRunwayFiles(input: {
         out.push(`${file}: ${path || "(document)"}: ${message}`);
       continue;
     }
+    // STA-2844: the running environment and every other safety-critical field come from the runtime only.
+    for (const { path, message } of runway.checkRuntimeOnlyConfig?.(parsed, runtimeOnly) ?? [])
+      out.push(`${file}: ${path}: ${message}`);
     if (kind === "service") parsedServices.push([file, parsed]);
     if (kind === "root") {
       root = parsed;

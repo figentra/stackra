@@ -146,7 +146,7 @@ describe(ContractInboxVerifierDriver, () => {
       verified: false,
       reason: "unknown_key",
     });
-    const prodVerifier = new ContractInboxVerifierDriver(inboxConfig(keys, "prod"), clock);
+    const prodVerifier = new ContractInboxVerifierDriver(inboxConfig(keys, "production"), clock);
     await expect(prodVerifier.verify(await signed(pay), BODY)).resolves.toEqual({
       verified: false,
       reason: "unknown_key",

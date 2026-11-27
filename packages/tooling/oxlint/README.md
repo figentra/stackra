@@ -39,6 +39,12 @@ All at `error` in `base.jsonc` (rule-gap list N-1 to N-10, notes `handover/testi
 | B-8 | `react/jsx-no-literals` (`ignoreProps`, punctuation in `allowedStrings`)                                                                    | `.tsx` but tests, stories and e2e            |
 | B-7 | `typescript/explicit-module-boundary-types`: an exported function or class member spells its return type                                    | packages; off in apps, workers, tools, tests |
 
+## Mail bodies (STA-2582)
+
+`react/no-danger` is at `error` in every `**/*.mail.tsx`: a mail body never writes `dangerouslySetInnerHTML`. HTML a
+tenant or a client wrote (a branch's note, an editor's message) goes into a mail through `useMail().richText(html)`
+from `@stackra/notifications/react`, which writes back only what `@stackra/csp`'s `sanitizeHtml` keeps.
+
 `toSorted` and `toReversed` are ES2023 and the TypeScript base lib is ES2022, so a TypeScript site that sorts or
 reverses an array it just built carries `oxlint-disable-next-line unicorn/no-array-sort -- sorts an array built here,
 ...`; the Node-only `.mjs` tools use `toSorted`. When the lib moves to ES2023, those disables become `toSorted()`. The
