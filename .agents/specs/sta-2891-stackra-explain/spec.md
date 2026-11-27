@@ -182,3 +182,4 @@ explain <code>)`.
 - 2026-11-27 → Planned (plan.md)
 - 2026-11-27 → Tasked (tasks.md)
 - 2026-11-27 → Implementing (built on the branch, tasks ticked)
+- 2026-11-27 → Planned (plan.md) — Approved by Idris (CTO) 2026-11-27
