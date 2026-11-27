@@ -1,10 +1,11 @@
 /**
  * Stackra file contract:
- * Purpose: unit tests of `DEV_COMMAND`: it is the body of the registered `dev` (`DevCommand`), surface flags need `--surface`, and a surface run
- *          stops with a usage error before gen when the surface is bad.
+ * Purpose: unit tests of `DEV_COMMAND`: it is the body of the registered `dev` (`DevCommand`), surface flags need
+ *          `--surface`, the infra flags are the member mode's only, and a surface run stops with a usage error before
+ *          gen when the surface is bad.
  * Boundary: test only; runs `runCli` against a temporary product root; no tool process starts.
  * Runtime: node (vitest)
- * Governing contract: ADR 0022 (test placement); ADR 0436 (decision 6).
+ * Governing contract: ADR 0022 (test placement); ADR 0436 (decision 6); STA-2664 (item 6).
  */
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -61,6 +62,25 @@ describe("DEV_COMMAND", () => {
     const { io, output } = captureIo();
     expect(await runCli(["dev", "--os", "../os"], io, { cwd: root })).toBe(2);
     expect(output()).toContain("--os needs --surface");
+  });
+
+  it("documents the infra flags and refuses them outside the member mode", async () => {
+    expect(DEV_COMMAND.usage).toContain("--infra <name>[,<name>]");
+    expect(DEV_COMMAND.usage).toContain("--no-infra");
+    for (const [args, message] of [
+      [
+        ["dev", "--surface", "console", "--infra", "otel-lgtm"],
+        "--infra runs in the member mode only, not with --surface",
+      ],
+      [
+        ["dev", "--product", "--no-infra"],
+        "--no-infra runs in the member mode only, not with --product",
+      ],
+    ] as const) {
+      const { io, output } = captureIo();
+      expect(await runCli(args, io, { cwd: root })).toBe(2);
+      expect(output()).toContain(message);
+    }
   });
 
   it("refuses a bad or unknown surface, and a surface with no API, before running gen", async () => {
