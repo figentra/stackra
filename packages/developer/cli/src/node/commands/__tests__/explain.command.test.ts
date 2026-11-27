@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: unit tests of `ExplainCommand` on the console: a gen, check and Runway code explained with its cause, fix,
  *          docs link (the code's group in the error-code reference) and the command that shows it again, as text and
- *          as the `--json` data; a code in another case or with `-` for `_` found; an unknown code exits 2 with close
+ *          as the `--json` data; a code in another case or with `-` for `_` found; a check finding copied as
+ *          `<tool>/<rule>` found, and hinted when its rule is mistyped; an unknown code exits 2 with close
  *          codes as the hint and the reference as the docs link; a missing code exits 2 without a terminal; and the
  *          command is a read-only local MCP tool.
  * Boundary: test only; reads the committed catalogue, writes nothing.
@@ -55,6 +56,25 @@ describe("ExplainCommand", () => {
     });
     expect((lower.json as { data: { rerun?: string } }).data.rerun).toBeUndefined();
     expect((dashed.json as { data: { code: string } }).data.code).toBe("shape_number_kind");
+  });
+
+  it("explains a stackra check finding copied as <tool>/<rule>", async () => {
+    const result = await explain(["repo-checks/imports", "--json"]);
+
+    expect(result.exitCode).toBe(0);
+    expect((result.json as { data: unknown }).data).toMatchObject({
+      code: "imports",
+      tool: "check",
+      docs: `${ERROR_CODES_PAGE}#repository-rules`,
+      rerun: "stackra check",
+    });
+  });
+
+  it("hints the rule of a mistyped <tool>/<rule>", async () => {
+    const result = await explain(["repo-checks/import"]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("Did you mean imports");
   });
 
   it("refuses an unknown code with close codes and the reference", async () => {

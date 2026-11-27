@@ -4,7 +4,7 @@
  *          tool and group, what usually causes it, the usual fix, the docs link to its place in the error-code
  *          reference, and the command that shows the finding again (`Rerun`). The entry is the `--json` data, and the local
  *          developer MCP serves the same command as its `explain` tool. A code in another case, or with `-` for `_`,
- *          still finds its entry.
+ *          still finds its entry, and so does a `stackra check` finding copied as printed, `<tool>/<rule>`.
  * Boundary: reads `ERROR_CODES` (`@stackra/gen`, copied from the reference page) only; never runs a tool. An unknown
  *           code is a usage error (exit 2) with up to five close codes as the hint and the reference as the docs link;
  *           left out at a terminal, the code is asked for.
@@ -13,10 +13,11 @@
  *                     (decision 5: the local MCP shares the CLI's commands); ADR 0506; STA-2853; STA-2891.
  */
 import { Argument, Command, type CommandIo } from "@stackra/console";
-import { ERROR_CODES, ERROR_CODES_PAGE, errorCodeDocs, errorCodeEntry } from "@stackra/gen";
+import { ERROR_CODES, ERROR_CODES_PAGE, errorCodeDocs } from "@stackra/gen";
 
 import { CliUsageError } from "#node/errors/cli-usage.error";
 import { closestCodes } from "#node/explain/functions/closest-codes.function";
+import { findErrorCode } from "#node/explain/functions/find-error-code.function";
 
 /** The command that shows a finding of each tool again, where one does. */
 const SHOW_AGAIN: Readonly<Record<string, string>> = {
@@ -31,19 +32,22 @@ export class ExplainCommand extends Command({
   bin: true,
   tool: { readOnly: true },
   docs: ERROR_CODES_PAGE,
-  examples: ["stackra explain shape_number_kind", "stackra explain json-configs --json"],
+  examples: [
+    "stackra explain shape_number_kind",
+    "stackra explain repo-checks/imports",
+    "stackra explain json-configs --json",
+  ],
 }) {
   /** The code to explain. */
   @Argument({
-    description: "The code a tool printed, such as shape_number_kind",
+    description: "The code a tool printed, such as shape_number_kind or repo-checks/imports",
     prompt: "Which error code? (the word after error or warning)",
   })
   code!: string;
 
   /** Prints the entry, or refuses an unknown code with the closest ones. */
   handle(io: CommandIo): void {
-    const entry =
-      errorCodeEntry(this.code) ?? errorCodeEntry(this.code.trim().replaceAll("-", "_"));
+    const entry = findErrorCode(this.code);
     if (entry === undefined) {
       const close = closestCodes(
         this.code,

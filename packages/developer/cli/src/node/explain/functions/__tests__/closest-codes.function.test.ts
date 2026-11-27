@@ -35,6 +35,12 @@ describe("closestCodes", () => {
     expect(closestCodes("json_config", CODES)).toEqual(["json-configs"]);
   });
 
+  it("reads a check finding's <tool>/<rule> as its rule", () => {
+    expect(closestCodes("repo-checks/json-config", CODES)).toEqual(["json-configs"]);
+    expect(closestCodes("oxlint/stackra/kind_pth", CODES)).toEqual(["kind_path"]);
+    expect(closestCodes("repo-checks/", CODES)).toEqual([]);
+  });
+
   it("suggests at most five, and nothing for an empty or distant word", () => {
     expect(closestCodes("_", CODES)).toHaveLength(5);
     expect(closestCodes("  ", CODES)).toEqual([]);

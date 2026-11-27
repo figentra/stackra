@@ -2,7 +2,8 @@
  * Stackra file contract:
  * Purpose: `closestCodes(typed, codes)`, up to five codes to suggest for one `stackra explain` does not know: codes
  *          that contain what was typed (`number` finds `shape_number_kind`) first, then codes within three edits of it,
- *          nearest first. Case and `-` / `_` are ignored, so `shape-number-kind` finds `shape_number_kind`.
+ *          nearest first. Case and `-` / `_` are ignored, so `shape-number-kind` finds `shape_number_kind`, and so is
+ *          a check finding's tool prefix: `repo-checks/import` is read as `import` and finds `imports`.
  * Boundary: pure.
  * Runtime: node
  * Governing contract: STA-2891.
@@ -16,6 +17,9 @@ const MAX_EDITS = 3;
 
 /** `text` lower-cased with `-` read as `_`. */
 const fold = (text: string) => text.trim().toLowerCase().replaceAll("-", "_");
+
+/** What was typed without a `<tool>/` prefix: no code contains `/`, `stackra check` prints `<tool>/<rule>`. */
+const rule = (typed: string) => typed.slice(typed.lastIndexOf("/") + 1);
 
 /** The Levenshtein distance between `a` and `b`. */
 function edits(a: string, b: string): number {
@@ -43,7 +47,7 @@ function edits(a: string, b: string): number {
  * closestCodes("shape_numbr_kind", ["shape_number_kind", "kind_path"]); // ["shape_number_kind"]
  */
 export function closestCodes(typed: string, codes: readonly string[]): string[] {
-  const wanted = fold(typed);
+  const wanted = fold(rule(typed));
   if (wanted === "") return [];
   const containing = codes.filter((code) => fold(code).includes(wanted));
   const near = codes
