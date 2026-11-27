@@ -265,6 +265,16 @@
       "config": "media",
       "class": "MediaConfig",
       "field": "c2paSigningKey"
+    },
+    {
+      "name": "STACKRA_ENVIRONMENT",
+      "kind": "config",
+      "type": "enum",
+      "values": ["dev", "test", "preview", "staging", "production"],
+      "required": false,
+      "config": "media",
+      "class": "MediaConfig",
+      "field": "environment"
     }
   ],
   "services": [

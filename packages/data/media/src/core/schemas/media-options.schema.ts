@@ -1,20 +1,23 @@
 /**
  * Stackra file contract:
  * Purpose: `MediaOptions`, the shape of `MediaConfig`: which uploader the client uses, how long an upload stays valid, where the HTTP uploader asks for a signed URL, the in-region OCR
- *          service and the C2PA signing slot.
+ *          service, the C2PA signing slot and the running environment.
  * Boundary: a shape class; it registers this package's own schema (`MEDIA_CONFIG_SCHEMA`) for itself when the module
  *           loads, so `buildConfig(MediaConfig)` validates with no generated file. Deploy-time values only; the one
  *           credential, the C2PA certificate chain and key, is two `@Secret` names resolved blind from the secret store
  *           (ADR 0173), empty until the certificate exists. The disk, bucket, region and public base URL are
  *           `FilesystemConfig`'s: media stores on the one `FileSystem` disk per region and environment (ADR 0222
- *           decision 1; ADR 0465, which dropped the `disk` field here).
+ *           decision 1; ADR 0465, which dropped the `disk` field here). The `memory` scanner (the default, ADR 0266
+ *           decision 2) is allowed only in `dev` and `test`: a deployed environment (`STACKRA_ENVIRONMENT` `preview`,
+ *           `staging` or `production`, as the one reader `readEnvironment` of @stackra/config settles it) names
+ *           `guard_duty` or `clamav` in runway, or boot fails (STA-669).
  * Runtime: isomorphic
  * Governing contract: ADR 0294 (decisions 4, 19 and 26); ADR 0305 (rule 34); ADR 0222 (decisions 1 and 2); ADR 0173;
- *                     R3-SO-13; STA-789.
+ *                     R3-SO-13; STA-789; ADR 0266 (decision 2); ADR 0296 (amendment 2026-11-26); STA-2844; STA-669.
  */
 import "#core/types/media-driver-names.type";
 
-import { Secret } from "@stackra/config";
+import { Secret, StackraEnvironment } from "@stackra/config";
 import type { DriverName } from "@stackra/container";
 import { Duration } from "@stackra/contracts";
 import { Field, registerSchemas, Schema } from "@stackra/validation";
@@ -100,8 +103,18 @@ export class MediaOptions extends Schema {
   /** Where the `http` uploader asks for a signed URL: the `upload.create` endpoint of the media module. */
   uploadEndpoint = "/api/uploads";
 
-  /** The malware scanner: `guard_duty` where GuardDuty runs in the region, `clamav` elsewhere, `memory` in tests. */
+  /**
+   * The malware scanner: `guard_duty` where GuardDuty runs in the region, `clamav` elsewhere, `memory` in `dev` and
+   * `test` only (it calls every file but the EICAR test file clean, so a deployed environment refuses it at boot).
+   */
   scanner: DriverName<FileScanner> = "memory";
+
+  /**
+   * The running environment, read from `STACKRA_ENVIRONMENT` in the runtime only (never a runway or test value: the
+   * values layer refuses it, STA-2844). Only `dev` and `test` may keep the `memory` scanner; a deployed one
+   * (`isDeployedEnvironment`: `preview`, `staging`, `production`) fails boot until `scanner` names a real one.
+   */
+  environment: StackraEnvironment = StackraEnvironment.Dev;
 }
 
 registerSchemas([[MediaOptions, MEDIA_CONFIG_SCHEMA]]);
