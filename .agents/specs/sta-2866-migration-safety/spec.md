@@ -172,6 +172,11 @@ names the migration, step and statement, and says to move the backfill to a queu
   that are gone is reported by `--check` and rewritten by a write run. A missing safety file always means gen has not
   run, so the stream is unknown (`null`), never "no migrations".
 - **EC-09**: A service target in a repository with no service folder is `null`.
+- **EC-11**: `ADD COLUMN` stores a non-volatile default as metadata and rewrites nothing; a volatile default
+  (`gen_random_uuid()`, `nextval()`, `clock_timestamp()`), a `serial`, a stored generated or an identity column fills
+  every existing row under an exclusive lock, so it is `contract`. A default calls only the stable functions on a short
+  list (`now`, `current_setting`, the JSON builders …) to stay `additive`; any other call counts as volatile. On a
+  table the same migration created, it stays `additive` (no row yet).
 
 ## Requirements _(mandatory)_
 
@@ -182,8 +187,10 @@ names the migration, step and statement, and says to move the backfill to a queu
 - **FR-002**: THE `classifyMigrations` function SHALL class each ordered migration by the highest class of its
   statements. It SHALL mark `contract` and `banned` as destructive, record the step file names `emitMigrations` writes,
   and list every statement above `additive` with its step, position, class, reason and SQL excerpt.
-- **FR-003**: IF a migration holds a `banned` statement and is not in `RELEASED_BANNED_MIGRATIONS` THEN gen SHALL refuse
-  it with `migration_banned`, naming the migration, step and statement, and write no migration file.
+- **FR-003**: IF a migration holds a `banned` statement and is neither in `RELEASED_BANNED_MIGRATIONS` nor named by the
+  service's committed migration lock (STA-2160) THEN gen SHALL refuse it with `migration_banned`, naming the migration,
+  step and statement, and write no migration file. A locked migration may already be applied, so it is classed
+  `banned` and compiles.
 - **FR-004**: Gen SHALL write `.stackra/migration-safety.json` (`stackra.migration-safety/v1`) for every service, with
   no rows when it has no migration, so a missing file means gen has not run.
 - **FR-005**: FOR a service target (`encore-cloud`, `aws-ecs`, `compose`, `helm`), `deployEvidence` SHALL set
@@ -220,6 +227,10 @@ names the migration, step and statement, and says to move the backfill to a queu
 - **AC-009**: WHEN a compiled `schema.sql()` string holds a destructive statement after a harmless one THE gen run SHALL class the migration destructive and name that statement in its own finding.
 - **AC-010**: WHEN a statement calls a function or a comment holds a keyword THE classifier SHALL class it
   `contract` or higher unless the function is on its read-only list and the keyword is code, never `additive` by guess.
+- **AC-011**: WHEN a call's name holds a letter of any script or starts with a digit THE classifier SHALL read the
+  whole name (`ücount(` is not `count(`), so it is never matched against the read-only list by its tail.
+- **AC-012**: WHEN `ADD COLUMN` on an existing table has a volatile default (a call outside the stable list), a `serial` type, a stored generated column or an identity column THE classifier SHALL class it `contract`, since Postgres fills every row by rewriting the table; a constant or stable default (`now()`, `'{}'::jsonb`) stays `additive`.
+- **AC-013**: WHEN the service's committed migration lock names a migration with a `banned` statement THE gen run SHALL compile it, classed `banned` and destructive, instead of refusing it.
 
 ## Success Criteria _(mandatory)_
 
@@ -288,6 +299,11 @@ None.
   read or a `DO` block that calls a function outside the read-only list is `contract`, `SELECT … INTO` and a filled
   `CREATE TABLE … AS` are `banned`, a `DO` body that is not dollar-quoted is `contract`, and inline and block comments and quoted identifiers are masked
   before any keyword is matched (EC-02 and EC-03 changed, EC-10 and AC-010 added).
+- 2026-11-27 · review notes and the migration lock (Claude, STA-2866 session): a call's name is read whole in any
+  script (AC-011); an added column that rewrites the table is `contract` (EC-11, AC-012); after merging `main`'s
+  SHA-256 migration lock (STA-2160), a migration the committed lock names counts as released like
+  `RELEASED_BANNED_MIGRATIONS` (FR-003 changed, AC-013 added). Re-classing all 13,862 statements of the 1,750 compiled
+  package migration files in the repository changes none.
 
 ## Status history
 

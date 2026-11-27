@@ -12,8 +12,12 @@ index built on an existing table without `CONCURRENTLY`, a lock or a table rewri
 `CREATE TABLE IF NOT EXISTS` counts as existing, since it may be adopted. Gen never guesses safe: a statement it cannot
 read is `contract`, a read or a `DO` block that calls a function outside a short read-only list (aggregates, settings,
 advisory locks) is `contract`, `SELECT … INTO` and a filled `CREATE TABLE … AS` are `banned`, and comments, literals and quoted names never change the
-class. Ten released migrations already hold one. They are frozen, so gen keeps compiling them and classes them
-`banned`. New exports: `classifyMigrationStatement`, `classifyMigrations`, `emitMigrationSafety`,
+class. A call's name is read whole in any script, so `ücount(` never passes as `count(`. An `ADD COLUMN` that makes
+Postgres rewrite the table is `contract`: a volatile default such as `gen_random_uuid()` or `nextval()`, a `serial`
+type, a stored generated column or an identity column; a constant or stable default such as `now()` stays `additive`.
+Ten released migrations already hold a banned statement. They are frozen, so gen keeps compiling them and classes them
+`banned`; so is any migration the service's committed migration lock names, since a database may already have applied
+it. New exports: `classifyMigrationStatement`, `classifyMigrations`, `emitMigrationSafety`,
 `MIGRATION_SAFETY_FILE` and the `MigrationSafety*` types.
 
 `runway evidence` now fills `destructive` and `destructiveMigrations` instead of always writing `null`:

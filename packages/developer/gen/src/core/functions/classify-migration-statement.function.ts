@@ -5,8 +5,9 @@
  *          constraint, a comment, a grant, a dropped constraint or default), `online` runs without blocking writes (a
  *          concurrent index build, an index drop, a constraint validation, a concurrent reindex or refresh), `contract`
  *          removes or narrows what the running release uses (a dropped table, column, function, policy or trigger, a
- *          rename, `SET NOT NULL`, a type change, a NOT NULL column without a default, a constraint checked under a
- *          lock) and `banned` never belongs in a migration (a data write, an index built on an existing table without
+ *          rename, `SET NOT NULL`, a type change, a NOT NULL column without a default, an added column that rewrites
+ *          the table: a volatile default, a `serial`, a stored generated or identity column, a constraint checked
+ *          under a lock) and `banned` never belongs in a migration (a data write, an index built on an existing table without
  *          `CONCURRENTLY`, a lock, a vacuum, a table rewrite). A statement on a table the same migration created with a
  *          plain `CREATE TABLE` is `additive`, since no release reads that table yet; `CREATE TABLE IF NOT EXISTS`
  *          may adopt a table that already exists, so it marks nothing created. A statement gen cannot read counts as
@@ -104,8 +105,53 @@ const NOT_CALLS: ReadonlySet<string> = new Set(
   ).split(" "),
 );
 
-/** A call: a name, schema-qualified or not, then `(`; a `::` before it makes it a type modifier. */
-const CALL = new RegExp(String.raw`(::\s*)?(?:(${IDENT})\s*\.\s*)?(${IDENT})\s*\(`, "g");
+/**
+ * A name a call may carry: a masked quoted one, or a whole bare word of any script, digits included, so a call is
+ * never read from the tail of a longer word (`ücount(` is `ücount`, not the allowlisted `count`).
+ */
+const CALL_NAME = String.raw`(?:"[^"]+"|[\p{L}\p{N}_$]+)`;
+
+/**
+ * A call: a name, schema-qualified or not, then `(`, starting at a word boundary in any script; a `::` before it
+ * makes it a type modifier.
+ */
+const CALL = new RegExp(
+  String.raw`(::\s*)?(?<![\p{L}\p{N}_$])(?:(${CALL_NAME})\s*\.\s*)?(${CALL_NAME})\s*\(`,
+  "gu",
+);
+
+/**
+ * The functions a column default may call and still be evaluated once, so `ADD COLUMN` stores it as metadata: the
+ * stable and immutable ones Stackra's schema builder and migrations use. Any other call may be volatile
+ * (`gen_random_uuid()`, `nextval()`, `clock_timestamp()`), which fills every existing row by rewriting the table.
+ */
+const NON_VOLATILE_DEFAULT_CALLS: ReadonlySet<string> = new Set([
+  "coalesce",
+  "current_setting",
+  "current_time",
+  "current_timestamp",
+  "greatest",
+  "jsonb_build_array",
+  "jsonb_build_object",
+  "json_build_array",
+  "json_build_object",
+  "least",
+  "localtime",
+  "localtimestamp",
+  "lower",
+  "make_interval",
+  "now",
+  "nullif",
+  "timezone",
+  "to_json",
+  "to_jsonb",
+  "transaction_timestamp",
+  "upper",
+]);
+
+/** The reason of an added column that rewrites the table. */
+const ADD_REWRITES =
+  "adds a column every existing row must be filled for, which rewrites the table under an exclusive lock; add it nullable, backfill it with a queue job, then set its default";
 
 /** The reason of a type change. */
 const TYPE_CHANGE =
@@ -141,15 +187,40 @@ const nameOf = (name: string | undefined): string =>
 const fold = (sql: string): string =>
   sqlCodeOf(sql).toLowerCase().replaceAll(/\s+/g, " ").trim().replace(/;$/, "").trim();
 
-/** Whether folded `code` calls a function outside `READ_ONLY_CALLS`, schema-qualified by anything but `pg_catalog`. */
-function callsUnknownFunction(code: string): boolean {
+/**
+ * Whether folded `code` calls a function outside `allowed` (by default `READ_ONLY_CALLS` and the advisory locks),
+ * schema-qualified by anything but `pg_catalog`.
+ */
+function callsUnknownFunction(
+  code: string,
+  allowed: (name: string) => boolean = (name) => READ_ONLY_CALLS.has(name) || ADVISORY.test(name),
+): boolean {
   for (const [, cast, schema, name] of code.matchAll(CALL)) {
     if (cast !== undefined || name === undefined) continue;
     if (schema === undefined && NOT_CALLS.has(name)) continue;
     const builtin = schema === undefined || schema === "pg_catalog";
-    if (!builtin || !(READ_ONLY_CALLS.has(name) || ADVISORY.test(name))) return true;
+    if (!builtin || !allowed(name)) return true;
   }
   return false;
+}
+
+/**
+ * Whether an `ADD COLUMN` clause fills every existing row by rewriting the table: a `serial` type (its default is
+ * `nextval()`), a stored generated or identity column, or a default that calls a function outside
+ * `NON_VOLATILE_DEFAULT_CALLS`. A constant or stable default is stored once as metadata and rewrites nothing.
+ */
+function addRewritesTable(clause: string): boolean {
+  if (/\b(?:small|big)?serial[248]?\b/.test(clause)) return true;
+  if (/\bgenerated (?:always|by default) as identity\b/.test(clause)) return true;
+  if (/\bgenerated always as\b.*\bstored\b/.test(clause)) return true;
+  const defaulted = /\bdefault\b(.*)$/.exec(clause)?.[1];
+  if (defaulted === undefined) return false;
+  // The default expression ends where a column constraint starts.
+  const expression =
+    defaulted.split(
+      /\b(?:references|constraint|check|unique|primary key|collate|generated)\b/,
+    )[0] ?? "";
+  return callsUnknownFunction(expression, (name) => NON_VOLATILE_DEFAULT_CALLS.has(name));
 }
 
 /** The class of a `SELECT` or `WITH` statement: a read, unless it writes, creates a table or calls an unknown function. */
@@ -185,6 +256,7 @@ function alterTableClause(clause: string): ClassifiedStatement {
           "contract",
           "adds a constraint that checks every existing row under a lock; add it NOT VALID and validate it in a later step",
         );
+  if (/^add\b/.test(clause) && addRewritesTable(clause)) return of("contract", ADD_REWRITES);
   if (/^add\b/.test(clause))
     return /\bnot null\b/.test(clause) && !/\bdefault\b|\bgenerated\b/.test(clause)
       ? of(

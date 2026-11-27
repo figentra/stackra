@@ -30,6 +30,7 @@ import type * as TypeScript from "typescript6";
 import { LOYALTY_KIT_IR } from "#core/__tests__/fixtures/loyalty-kit-ir.fixture";
 import type { MemberIR } from "#core/types/member-ir.type";
 import { compileMigrations } from "#node/functions/compile-migrations.function";
+import { migrationSha256 } from "#node/functions/migration-sha256.function";
 
 /** The roots written by this file. */
 const roots: string[] = [];
@@ -404,6 +405,34 @@ describe("compileMigrations", () => {
         "ai.0002_backfill step 1 statement 1",
       ],
     ]);
+  });
+
+  /** A migration the committed lock names may already be applied: its banned statement is classified, not refused. */
+  it("classifies a banned statement in a locked migration instead of refusing it (STA-2866)", async () => {
+    const { lock } = await compileMigrations(host(), serviceIr(["shop"]));
+    const backfill = {
+      id: "ai.0002_backfill",
+      sha256: migrationSha256({
+        after: [],
+        steps: [{ sql: ["update ai.agents set note = 1"], transactional: true, inverse: false }],
+      }),
+    };
+    const root = host({
+      "node_modules/@stackra/ai/src/node/database/migrations/0002-backfill.migration.ts": migration(
+        "Backfill",
+        'schema.sql("update ai.agents set note = 1");',
+      ),
+    });
+    const { files, errors, safety } = await compileMigrations(root, serviceIr(["shop"]), {
+      locked: [...(lock ?? []), backfill],
+    });
+    expect(errors).toEqual([]);
+    expect(files.length).toBeGreaterThan(0);
+    expect(safety?.migrations.at(-1)).toMatchObject({
+      id: "ai.0002_backfill",
+      class: "banned",
+      destructive: true,
+    });
   });
 });
 
