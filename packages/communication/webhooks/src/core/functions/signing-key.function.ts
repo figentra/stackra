@@ -17,7 +17,8 @@ const SECRET_PREFIX = "whsec_";
  *
  * @throws TypeError when the secret is empty, or a `whsec_` secret whose rest is not Base64.
  * @example
- * const key = await signingKey("whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", "verify");
+ * // `endpoint.secret` is the endpoint's `whsec_<Base64>` secret, read from the secret store, never written out.
+ * const key = await signingKey(endpoint.secret, "verify");
  */
 export async function signingKey(secret: string, usage: "sign" | "verify"): Promise<CryptoKey> {
   const bytes = secret.startsWith(SECRET_PREFIX)
