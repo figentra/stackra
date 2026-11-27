@@ -155,7 +155,7 @@ or personal data is read.
 - AC-006: `create.command.test.ts` with a scripted process runner.
 - AC-007: the `Windows smoke` workflow itself; actionlint, zizmor and `stackra validate --repository`
   (`workflow-triggers`) in the gate.
-- Revert check: each source put back to origin/main makes its test fail (run on box 2).
+- Revert check: each source put back to origin/main makes its test fail (run on a Linux build machine).
 
 ## Rollout
 
