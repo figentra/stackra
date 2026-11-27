@@ -29,6 +29,7 @@ configuration and the action testing helpers.
 | `.`           | `Idempotency`, `OfflineMode`, `IdMinting`, `OfflinePrecondition`, `ConflictResolution`                         | the enums of the `idempotency` and `offline` options                                           |
 | `.`           | `ActionPipeline`, `PipelineStage`, `RequestContext`                                                            | the runtime: the fixed steps, their names, the running call's context                          |
 | `.`           | `RateLimitConfig`, `RateLimitConfig$`                                                                          | the area and default action buckets (key `actions.rate_limit`)                                 |
+| `.`           | `AuditConfig`, `AuditConfig$`, `AuditOptions`                                                                  | the running environment that makes a missing `AuditTrail` an error (key `actions.audit`)       |
 | `.`           | `MemoryIdempotencyStoreDriver`, `MemoryRateLimitStoreDriver`                                                   | the in-process stores                                                                          |
 | `.`           | `registerActions`, `registerExtensions`, `connectExtensions`                                                   | what gen's entry and the runtime call at boot                                                  |
 | `.`           | `OfflineCap`, `ActionAccepts`, `RuleEvaluator`, `RuleEvaluation`                                               | `offline.cap`, `accepts` (client rule code)                                                    |
@@ -101,7 +102,7 @@ its key is never freed: a failed completion is logged (`actions.idempotency_stor
 output, and a retry is told the key is in progress, never run again. A refused query's usage event and the audit's refusal entries are written outside it. With no
 `CallIsolation` bound a call runs as before, and a model with a tenant policy fails closed. The queue worker, outbox
 relay and inbox and workflow runner run each unit through the same port as the actor stored with it. A step whose port nobody binds is skipped,
-except permission, which fails closed. Approval runs only when an `ApprovalGate` is bound; an action that declares
+except permission, which fails closed, and the audit of an action outside `dev` and `test` (below). Approval runs only when an `ApprovalGate` is bound; an action that declares
 `approval: true` fails closed without one (ADR 0397 as amended by STA-813). An action that declares
 `stepUp: AssuranceLevel.Aal2` (`AssuranceLevel` and the meter's `MeterKind` are `@stackra/contracts`', shared with
 identity and model) is checked for a user caller right after the permission by the bound `StepUpCheck` (a driver over
@@ -292,6 +293,17 @@ perScope: true }` runs once per scope the scheduler's `CronScopes` driver lists 
 - **Entitlements**: `entitlement: ExportsEntitlement` (or a list) on an `Action` or `Query` names the plan right a call
   needs; gen lists the call in that entitlement's `gates` and `PlanEntitlementCheckDriver` checks it. A class that is
   not an entitlement does not compile, and one that resolves to no entitlement fails gen (`entitlement_unknown`).
+- **Audit fails closed** (ADR 0212, STA-1571, on the one reader of STA-2844): in a deployed environment (`preview`,
+  `staging`, `production`: `isDeployedEnvironment` of `@stackra/config`) an action with no `AuditTrail` bound is an
+  error before any step runs, never an unaudited write. The environment is `AuditConfig.environment` (key
+  `actions.audit`), one of `StackraEnvironment` read from `STACKRA_ENVIRONMENT` in the runtime only: a misspelt name
+  (`prod`) fails boot, and so does a value for it from the values layer (a runway `config` block). The field has no
+  default of its own: unset, and in a container that binds no `AuditConfig` (a wiring gen has not regenerated, a
+  hand-built resolver), the pipeline asks the one reader (`readEnvironment`) over the process environment, so only the
+  reader decides that a process is `dev`. On a server the `createApp` of `@stackra/app` sets the variable to the
+  reader's answer from what Encore reports (gen's `environment.ts`), so a deployed service is never `dev`, and gen
+  refuses a v2 service that runs `@stackra/app` from an authored `src/main.ts` (`authored_main_environment`). Gen binds
+  `AuditConfig` in every service that runs an action. A query is not audited.
 - **Audit**: `OutboxAuditTrailDriver` writes each audit entry as an `AuditEntryRecorded` event for the audit service.
   `OutboxListenerAuditTrailDriver` does the same for each listener delivery (`@stackra/events`' `ListenerAuditTrail`,
   key `listener:<Listener>`, the event's id as the call id, `ctx.audit` fields; STA-1715).

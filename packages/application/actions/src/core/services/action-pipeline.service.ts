@@ -44,8 +44,12 @@
  *          stripped of what the credential gave, before the descriptor and context are built.
  * Boundary: built by the runtime (and the testing module) over a `Resolver`, so it reads the action instances, their
  *           preconditions and interceptors and every step's port by class. Steps whose owner is not installed are
- *           skipped (tenancy, entitlement, flag, limit reservation, unit of work, audit); permission fails closed (no
- *           `AccessControl` is an error, never an allowed call); approval runs only when an `ApprovalGate` is bound,
+ *           skipped (tenancy, entitlement, flag, limit reservation, unit of work); permission fails closed (no
+ *           `AccessControl` is an error, never an allowed call), and so does the audit of an action outside `dev` and
+ *           `test` (no `AuditTrail` is an error before any step runs; the environment is the bound `AuditConfig`'s, else
+ *           the one reader's answer over the runtime environment, so neither an unset variable nor a container with no
+ *           `AuditConfig` runs unaudited where the runtime says it is deployed; STA-1571, STA-2844); approval runs only
+ *           when an `ApprovalGate` is bound,
  *           except that an action declaring `approval: true` fails closed without one (ADR 0397 as amended); a declared rate limit, Idempotency-Key, device order,
  *           offline cap, `accepts`, replica, `structural`, `meter` or `stepUp` with no port bound is an error. The approval gate
  *           sees the validated input; a metered action's usage event and a successful call's audit entry are written
@@ -78,9 +82,13 @@
  *                     (decision 1: OpenTelemetry), STA-1513; ADR 0057 (decision 6: read replica), STA-1504; ADR 0216
  *                     (decision 1: analytics is its own stream), STA-1512; data-layer gaps scale-performance 8 and
  *                     caching 13 (STA-1400: `QueryBudget` around `handle`, `ctx.memo`); ADR 0495 (note of 2026-11-26:
- *                     the idempotency completion commits with the call), STA-2797.
+ *                     the idempotency completion commits with the call), STA-2797; ADR 0212 (decisions 1 and 4: no
+ *                     action unaudited outside dev and test), STA-1571; ADR 0296 (amendment 2026-11-26: the
+ *                     environment comes from the runtime only), STA-2844.
  */
 import { Cache } from "@stackra/cache/contracts";
+import { isDeployedEnvironment, readEnvironment } from "@stackra/config";
+import type { StackraEnvironment } from "@stackra/config";
 import { kindOf, type AnyClass } from "@stackra/container";
 import {
   actingScopeId,
@@ -114,6 +122,7 @@ import type { Event } from "@stackra/events";
 import { EventOutbox } from "@stackra/events/contracts";
 import { duration, schemaOf, validate } from "@stackra/validation";
 
+import { AuditConfig } from "#config/audit.config";
 import { RateLimitConfig } from "#config/rate-limit.config";
 import { ApprovalExecution } from "#contracts/enums/approval-execution.enum";
 import { CallOriginKind } from "#contracts/enums/call-origin-kind.enum";
@@ -335,6 +344,10 @@ interface Call {
 type Handler = { handle: (input: unknown, ctx: unknown) => Promise<unknown> };
 
 const IAM = "bind an AccessControl driver (@stackra/iam); calls fail closed without one";
+
+const AUDIT =
+  "bind an AuditTrail driver (outbox from @stackra/actions, or @stackra/access-log's postgres); outside dev and test " +
+  "(STACKRA_ENVIRONMENT) an action fails closed without one";
 
 const APPROVALS =
   "declares approval: true, so bind an ApprovalGate driver (the OS tasks-approvals service); it fails closed without one";
@@ -1632,7 +1645,7 @@ export class ActionPipeline {
    */
   private async audited(call: Call, work: () => Promise<unknown>): Promise<unknown> {
     if (call.kind === "query") return work();
-    const trail = this.optional(AuditTrail);
+    const trail = this.trail();
     try {
       const output = await work();
       if (!call.state.audited) await trail?.record(this.auditEntry(call, "ok"));
@@ -1641,6 +1654,35 @@ export class ActionPipeline {
       if (isRefusal(error)) await trail?.record(this.auditEntry(call, "refused", error.code));
       throw error;
     }
+  }
+
+  /**
+   * The bound `AuditTrail`. With none bound, `undefined` in `dev` and `test`, and an error in any deployed environment,
+   * before any step runs: no action runs unaudited in a deployment (ADR 0212 decisions 1 and 4, STA-1571).
+   *
+   * @throws Error when no `AuditTrail` is bound outside `dev` and `test`; ConfigInvalidError (from the reader) when the
+   *         runtime's `STACKRA_ENVIRONMENT` names no Stackra environment.
+   */
+  private trail(): AuditTrail | undefined {
+    const trail = this.optional(AuditTrail);
+    if (trail !== undefined) return trail;
+    const environment = this.environment();
+    if (!isDeployedEnvironment(environment)) return undefined;
+    throw new Error(`AuditTrail is not bound in ${environment}: ${AUDIT}`);
+  }
+
+  /**
+   * The running environment: the bound `AuditConfig`'s when it names one, else the one reader's answer over the runtime
+   * environment (`process.env` where there is one). A container with no `AuditConfig` (a wiring gen has not regenerated,
+   * a hand-built resolver) and an unset field are never exempt by themselves: only the reader decides that a process
+   * is `dev` (STA-2844).
+   */
+  private environment(): StackraEnvironment {
+    const configured = this.optional(AuditConfig)?.environment;
+    if (configured !== undefined) return configured;
+    const runtime = (globalThis as { process?: { env?: Readonly<Record<string, unknown>> } })
+      .process;
+    return readEnvironment(runtime?.env ?? {});
   }
 
   /** The action's audit entry with `outcome`, and the fields the handler added so far. */

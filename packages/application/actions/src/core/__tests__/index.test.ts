@@ -3,7 +3,8 @@
  * Purpose: the consumer contract of the `.` entry: every value the template imports from `@stackra/actions` (`Action`,
  *          `ConflictResolution`, `Extension`, `ExtensionPoint`, `IdMinting`, `Idempotency`, `OfflineMode`,
  *          `OfflinePrecondition`, `Precondition`, `Query`, `RateLimitConfig`, `RateLimitConfig$`, `RequestContext`)
- *          and the registry row's runtime are exported with the offline additions (the device, cap, replica and review
+ *          and the registry row's runtime are exported with the audit step's `AuditConfig`, `AuditConfig$` and
+ *          `AuditOptions` (STA-1571), the offline additions (the device, cap, replica and review
  *          memory drivers, `ReplicaFeed` and two refusals; no header name), the query cache's `CacheScope`,
  *          `registerCachedQueries`, `QueryCacheEvictorListener` and `SHARED_CACHE_CONTEXT`, the `AnalyticsTracked` event (STA-1512), the
  *          owner-row helpers (`inRowOwner`, `boundIsolation`, `ClaimNotLoadedError`, `RowIsolationMissingError`), nothing else is, the ports are not,
@@ -59,7 +60,10 @@ describe("@stackra/actions", () => {
       "ApprovalPendingLimitError",
       "ApprovalRequiredError",
       "ApprovalSettingsUnavailableError",
+      "AuditConfig",
+      "AuditConfig$",
       "AuditEntryRecorded",
+      "AuditOptions",
       "CacheScope",
       "ClaimNotLoadedError",
       "ConflictResolution",

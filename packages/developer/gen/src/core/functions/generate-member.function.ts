@@ -36,7 +36,10 @@
  *           `surface_targets_conflict`, ADR 0436) or a resource table recorded this run that sorts or filters on an unindexed path
  *           (`checkTableIndexes`, `sort_not_indexed`, `filter_not_indexed`, ADR 0307 rule 2) or a client tool that collides, prefills a `tool: false` action, points at an undeclared anchor or publishes a record that is not a public id (`clientToolsOf`: `client_tool_collision`, `prefill_tool_off`, `anchor_undeclared`, `context_record_not_public_id`, ADR 0490) or, in an app, one panel resource key two dependencies record with different
  *           classes (`hostResourcesOf`, `resource_duplicate`, STA-1947) or an adapter that reaches a workflow directly
- *           (`checkActionFirst`, `workflow_without_action`, ADR 0101) on the full pass only. A warning
+ *           (`checkActionFirst`, `workflow_without_action`, ADR 0101) or a service that could boot a deployment as
+ *           `dev`: one running `@stackra/app` from an authored `src/main.ts`, or on an `@stackra/app` older than the
+ *           `environment.ts` it gets needs (`checkServerEnvironment`, `authored_main_environment`, `app_version_floor`,
+ *           STA-1571) on the full pass only. A warning
  *           (`severity: "warning"`, such as `action_without_workflow`) never blocks: the full pass returns it in
  *           `warnings` beside the files (STA-340). An app that hosts the panel
  *           also gets `#stackra/resources` (`emitResources`). Other per-target outputs (navigation trees, the rest of the Encore app, ...)
@@ -63,6 +66,7 @@ import { checkBlindIndexes } from "#core/functions/check-blind-indexes.function"
 import { checkEncryptedFields } from "#core/functions/check-encrypted-fields.function";
 import { checkModelScope } from "#core/functions/check-model-scope.function";
 import { checkApproval } from "#core/functions/check-approval.function";
+import { checkServerEnvironment } from "#core/functions/check-server-environment.function";
 import { checkQueryCache } from "#core/functions/check-query-cache.function";
 import { checkSearchableDrift } from "#core/functions/check-searchable-drift.function";
 import { checkSemanticSearch } from "#core/functions/check-semantic-search.function";
@@ -144,7 +148,8 @@ const json = formatJson;
  * @param previous - the committed manifest, whose identities are locked; absent on the first run.
  * @param options - `pass`: `"manifests"` returns the manifest alone, refused by anything but a consumed workspace
  *                  service still to come; `"clients"` returns the client files alone, refused only by the clients
- *                  target. Omitted, every file.
+ *                  target. Omitted, every file. `generatorVersion`: gen's own version, so the `@stackra/app` floor
+ *                  never exceeds it (`checkServerEnvironment`).
  * @example
  * const { files, errors } = generateMember(ir, committed);
  * if (errors.length === 0) files.map((file) => file.path);
@@ -152,7 +157,11 @@ const json = formatJson;
 export function generateMember(
   authored: MemberIR,
   previous?: StackraManifest,
-  options: { readonly pass?: "manifests" | "clients"; readonly strict?: boolean } = {},
+  options: {
+    readonly pass?: "manifests" | "clients";
+    readonly strict?: boolean;
+    readonly generatorVersion?: string;
+  } = {},
 ): {
   readonly files: readonly GeneratedFile[];
   readonly errors: readonly GenError[];
@@ -219,6 +228,8 @@ export function generateMember(
     ...checkShownOnce(ir),
     ...checkSlotFills(ir),
     ...checkSurfaces(ir),
+    // A service that could boot a deployment as dev: a v2 main or an app older than its environment.ts (STA-1571).
+    ...checkServerEnvironment(ir, options.generatorVersion),
     // This run's recorded trees, so an unindexed path is refused in the run that adds it (ADR 0307 rule 2).
     ...checkTableIndexes(ir, manifest),
     // ADR 0101: an action crossing a boundary without a workflow warns; an adapter reaching a workflow refuses.

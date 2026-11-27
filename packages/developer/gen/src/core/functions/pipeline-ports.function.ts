@@ -10,13 +10,17 @@
  *          - `DeviceSequenceStore` for an `offline` action, and `OfflineCapStore` when it has a `cap`;
  *          - `ReviewItemSink` for an action that `accepts` offline documents;
  *          - `StepUpCheck` for an action that declares `stepUp`;
- *          - `WorkflowRunner` when the service declares a workflow (`ctx.run` and `ctx.signal` start and wake it).
+ *          - `WorkflowRunner` when the service declares a workflow (`ctx.run` and `ctx.signal` start and wake it);
+ *          - `AuditConfig` (a config row, `actions.audit`, from `STACKRA_ENVIRONMENT`) when an own or hosted action
+ *            runs, so outside `dev` and `test` an action with no `AuditTrail` bound fails closed (STA-1571).
  * Boundary: pure; reads the IR only. A service only, like `replicaReadsPorts`: a package's own wiring is registered by
  *           its tests. A port no declared package ships a table for stays unbound, and the pipeline names the package
  *           to install. Before STA-2573 these ports were bound only where a constructor injected them, so a service
- *           that only published through `ctx.publish` threw "EventOutbox is not bound".
+ *           that only published through `ctx.publish` threw "EventOutbox is not bound". `AuditConfig` is linked as a
+ *           package config only when the declared @stackra/actions manifest lists it, so an older one adds nothing.
  * Runtime: isomorphic
- * Governing contract: ADR 0263 (gen writes the wiring); ADR 0138 (as amended: the pipeline's steps); STA-2573.
+ * Governing contract: ADR 0263 (gen writes the wiring); ADR 0138 (as amended: the pipeline's steps); STA-2573; ADR
+ *                     0212 (decisions 1 and 4: no action unaudited outside dev and test), STA-1571.
  */
 import type { MemberIR } from "#core/types/member-ir.type";
 import type { TokenRef } from "#core/types/token-ref.type";
@@ -30,6 +34,9 @@ const actionsPort = (name: string): TokenRef => ({
 const EVENT_OUTBOX: TokenRef = {
   class: { name: "EventOutbox", from: "@stackra/events/contracts" },
 };
+
+/** The audit step's configuration: the running environment that decides whether an action needs an `AuditTrail`. */
+const AUDIT_CONFIG: TokenRef = { class: { name: "AuditConfig", from: "@stackra/actions" } };
 
 /**
  * The pipeline ports `ir`'s wiring must reach.
@@ -54,11 +61,11 @@ export function pipelinePorts(ir: MemberIR): TokenRef[] {
     ) ||
     some("meter") ||
     some("analytics");
+  const hostsActions = ir.dependencies.some(({ manifest }) =>
+    (manifest.actions ?? []).some((action) => action.kind === "action"),
+  );
   const keyed =
-    actions.some((declared) => declared.options["idempotency"] !== "never") ||
-    ir.dependencies.some(({ manifest }) =>
-      (manifest.actions ?? []).some((action) => action.kind === "action"),
-    );
+    actions.some((declared) => declared.options["idempotency"] !== "never") || hostsActions;
   const capped = actions.some(
     (declared) =>
       (declared.options["offline"] as { readonly cap?: unknown } | undefined)?.cap !== undefined,
@@ -73,5 +80,6 @@ export function pipelinePorts(ir: MemberIR): TokenRef[] {
     ...(ir.classes.some((declared) => declared.kind === "workflow")
       ? [actionsPort("WorkflowRunner")]
       : []),
+    ...(actions.length > 0 || hostsActions ? [AUDIT_CONFIG] : []),
   ];
 }

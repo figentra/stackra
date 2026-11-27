@@ -87,7 +87,8 @@ const FIXTURES: readonly GoldenFixture[] = [
   // the shop publishes OrderPaid, so its EventOutbox table comes from the outbox it reaches only by a type.
   { name: "contracts-pipeline-port", base: "service", members: ["services/shop"] },
   // The pipeline's own ports are bound from what the service declares, not from a constructor (STA-2573): its
-  // integration event reaches EventOutbox, its idempotent action IdempotencyStore.
+  // integration event reaches EventOutbox, its idempotent action IdempotencyStore, and any action the `actions.audit`
+  // config row its @stackra/actions manifest lists (STA-1571).
   { name: "pipeline-ports", base: "service", members: ["services/shop"] },
   // A package's own routes get the `Routes` ref table (`#stackra/routes`), keyed as its manifest records them.
   { name: "package-routes", base: "package-drivers", members: ["packages/shop"] },
